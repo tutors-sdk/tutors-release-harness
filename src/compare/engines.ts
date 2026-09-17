@@ -288,6 +288,8 @@ function median(xs: number[]): number {
 
 export const timing: Engine = (a, b, ctx) => {
   const hunks: Hunk[] = [];
+  // A laptop's stack and a live deployment behind a CDN are not the same clock.
+  if (a.external || b.external) return hunks;
   const samples = (capture: SideCapture) => {
     const byPage = new Map<string, { ttfb: number[]; path: string }>();
     const byJourney = new Map<string, number[]>();

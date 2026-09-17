@@ -19,13 +19,14 @@ export function page(overrides: Partial<PageCapture> = {}): PageCapture {
     ],
     console: [],
     axe: [{ rule: "button-name", impact: "critical", target: "#dialog-trigger" }],
+    focus: ['a "Skip to content"', 'button "Open course tree"', 'a "Topic 1"'],
     timing: { ttfbMs: 40, responseEndMs: 60 },
     ...overrides
   };
 }
 
 export function journey(overrides: Partial<JourneyCapture> = {}): JourneyCapture {
-  return { journey: "anonymous-student-reads-course", run: 1, durationMs: 4000, pages: [page()], ...overrides };
+  return { journey: "anonymous-student-reads-course", run: 1, anonymous: true, durationMs: 4000, pages: [page()], persistence: [], ...overrides };
 }
 
 export function capture(side: SideName, overrides: Partial<SideCapture> = {}): SideCapture {

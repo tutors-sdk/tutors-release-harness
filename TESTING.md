@@ -1,0 +1,98 @@
+# Testing the harness
+
+The harness gates releases, so it needs the same discipline it enforces: one
+owning tier per failure class, a signal per tier that proves the tier can
+fail, and ratchets. This is the runway for the runway.
+
+## The map
+
+| Failure class | Example | Owning tier |
+| --- | --- | --- |
+| An engine misses a diff | a dropped header produces no hunk | Unit, with a planted change per engine |
+| An engine invents a diff | identical captures produce a hunk | Unit A/A |
+| A mask hides too much or too little | a mask with no reason; a pattern that never fires | Unit (schema), report (silent masks), nightly A/A |
+| The claim matcher is too generous | a `dom` claim covers a `headers` hunk; `scope: "**"` passes without a human | Unit |
+| The gate fails without the right to | release FAILS with no clean A/A | Unit |
+| A rehearsal rule is wrong | expand/contract accepts a dropped column; a rollout with 5xx passes | Unit on catalogues and k6 output |
+| A fixture stub misbehaves | persistence stub sends a Date header; identity stub mints a token for a bad code; edge drops in-flight requests | Fixture tests (in-process servers) |
+| The stacks are not identical | side b has an env var side a lacks | Unit on `compose.harness.yaml` and the kind manifests |
+| The whole thing cannot boot | compose or kind fails on a laptop or in CI | Smoke: A/A on one journey (CI, every PR) |
+| The harness cannot fail | a planted regression passes release mode | Mutants (weekly, and after any engine or mask change) |
+| The harness is noisy | A/A on the production tag is not clean | Nightly noise; the gate degrades to warn automatically |
+
+## Tiers
+
+### Unit (`pnpm test`, seconds, every PR)
+
+Vitest over `tests/*.test.ts`. No Docker, no browser. Every engine has an A/A
+case (identical in → nothing out) and at least one planted change; every
+schema (masks, claims, mutants) has a negative fixture; the gate is tested
+per mode with and without a clean A/A; migration's expand/contract and
+upgrade's judgement run on hand-built catalogues and k6 output.
+
+Rules for a new engine or rule: it does not merge without (1) the A/A test,
+(2) a planted change it catches, (3) a change it must *not* flag.
+
+### Fixture tests (`pnpm test`, seconds, every PR)
+
+`tests/fixtures.test.ts` starts each stub in-process on an ephemeral port and
+drives it with `fetch`: the persistence stub records writes and resets, sends
+CORS and no Date header; the identity stub completes the authorise → token →
+profile flow for every role and refuses a bad code; the course server serves
+the fixture with CORS and no caching headers; the edge switches upstreams
+without dropping an in-flight request; the mutant wrapper plants each fault.
+The fixtures are code the harness ships; they get tests like any other.
+
+### Smoke (CI `two-stacks`, ~10 minutes, every PR)
+
+Both stacks up from the base tag, one journey, A/A, reports uploaded. Proves
+the substrate and the collectors end to end. Phase H0's exit criterion, kept
+running.
+
+### Mutants (`pnpm harness mutants`, ~15 minutes, weekly and on demand)
+
+The harness's own negative fixtures: eight planted regressions
+(`mutants/mutants.yaml`), each of which must produce a FAIL verdict
+attributed to the expected artefact. A/A runs first, so the mutants are
+caught by a harness that has the right to gate. **Run this after any change
+to an engine, a mask, or a journey.**
+
+### Noise (nightly)
+
+A/A on the production tag, three runs. Zero diffs, or the harness is advisory
+until the normaliser is fixed. The status it writes is what release mode
+consults; a release run without it warns instead of failing.
+
+### Rehearsal fixtures (on demand, ~1 minute each)
+
+`tests/fixtures/migrations/{a,b-good,b-bad}`: migration mode must PASS on
+`b-good` and FAIL on `b-bad` with exactly four violations. Run both when the
+expand/contract rule changes:
+
+```bash
+pnpm harness run --mode migration --a dir:tests/fixtures/migrations/a --b dir:tests/fixtures/migrations/b-good   # PASS
+pnpm harness run --mode migration --a dir:tests/fixtures/migrations/a --b dir:tests/fixtures/migrations/b-bad    # FAIL, 4
+```
+
+Upgrade mode's negative fixture is the `route-500` mutant rolled in through
+the edge: `pnpm harness run --mode upgrade --a local --b tutors-harness/mutant-route-500:latest`
+must fail with failures attributed to `b`.
+
+## Ratchets
+
+| Metric | Direction | Enforced where |
+| --- | --- | --- |
+| A/A diff count on the production tag | stays 0 | nightly noise → gate degrades |
+| Mutants caught and attributed | 8 of 8 | weekly mutants |
+| Masks in `normalise/masks.yaml` | grow only with review | CODEOWNERS |
+| Masks that never fire | → 0 | listed in every report as "silent" |
+| Engines without a planted-change test | 0 | review |
+| Retries anywhere in the harness | 0 | `vitest.config.ts`, no Playwright retries |
+
+## What is deliberately not tested here
+
+- The apps. A journey that fails on both sides is reported, not fixed here.
+- Production. Post-deploy mode reads production; it never writes to it, and it
+  runs only the anonymous reference-course journeys.
+- OpenShift itself. kind with restricted PSA is the stand-in; the monorepo's
+  conformance tier owns the real overlays.

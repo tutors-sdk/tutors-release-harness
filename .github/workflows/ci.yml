@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   unit:
-    name: Typecheck, lint, unit
+    name: Typecheck, lint, unit and fixture tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -31,16 +31,16 @@ jobs:
       - run: pnpm lint
       - run: pnpm test
 
-  # Phase H0 exit criterion: any two tags boot side by side in under five
-  # minutes, and one journey runs against both. Uses the images the monorepo
-  # publishes; until a registry exists, builds them from the pinned ref.
+  # Phase H0 exit criterion, kept running: any two tags boot side by side and
+  # one journey runs against both. Images come from the registry when it has
+  # them, otherwise from the monorepo ref (docs/images.md).
   two-stacks:
     name: Two stacks boot and one journey runs (A/A)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
       HARNESS_IMAGE_PREFIX: ${{ vars.HARNESS_IMAGE_PREFIX || 'tutors' }}
-      BASE_REF: ${{ vars.HARNESS_BASE_REF || 'main' }}
+      TAG: ${{ vars.HARNESS_PRODUCTION_TAG || 'main' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -53,25 +53,26 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
 
-      - name: Pull or build the base images
-        run: |
-          if docker pull "$HARNESS_IMAGE_PREFIX/reader:$BASE_REF" 2>/dev/null; then
-            docker pull "$HARNESS_IMAGE_PREFIX/catalogue:$BASE_REF"
-            docker pull "$HARNESS_IMAGE_PREFIX/live:$BASE_REF"
-          else
-            scripts/build-images.sh "$BASE_REF"
-          fi
+      - name: Pull or build the images
+        run: pnpm harness images ensure --a "$TAG" --b "$TAG"
 
       - name: A/A on one journey
-        run: pnpm harness run --mode noise --a "$BASE_REF" --b "$BASE_REF" --journey anonymous-student-reads-course
+        run: pnpm harness run --mode noise --a "$TAG" --b "$TAG" --set fixture --journey anonymous-student-reads-course
+
+      - name: Migration rehearsal fixtures (must pass, must fail)
+        run: |
+          pnpm harness run --mode migration --a dir:tests/fixtures/migrations/a --b dir:tests/fixtures/migrations/b-good
+          if pnpm harness run --mode migration --a dir:tests/fixtures/migrations/a --b dir:tests/fixtures/migrations/b-bad; then
+            echo "the contracting fixture was accepted" >&2; exit 1
+          fi
 
       - name: Stack logs on failure
         if: failure()
-        run: docker compose -p tutors-harness -f compose.harness.yaml logs --no-color || true
+        run: docker compose -p tutors-harness -f compose.harness.yaml --profile upgrade logs --no-color || true
 
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: harness-aa
+          name: harness-ci
           path: out/
           retention-days: 7

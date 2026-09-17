@@ -1,0 +1,89 @@
+# After a deploy, and every fifteen minutes after that: run the reference-course
+# journeys against production and compare with the candidate's recorded
+# release-mode capture. A new difference opens a rollback issue with the report.
+#
+# Dispatched by the monorepo's deploy job (repository_dispatch "deployed" with
+# client_payload.candidate) and scheduled as the synthetic monitor. The recorded
+# run is the latest release-report artifact whose candidate matches.
+name: Post-deploy and synthetic monitor
+
+on:
+  repository_dispatch:
+    types: [deployed]
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+    inputs:
+      recorded_run_id:
+        description: "Workflow run id of the release harness whose report to compare against (default: latest)"
+        required: false
+
+permissions:
+  contents: read
+  actions: read
+  issues: write
+
+concurrency:
+  group: post-deploy
+  cancel-in-progress: false
+
+jobs:
+  post-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PRODUCTION_URLS: ${{ vars.HARNESS_PRODUCTION_URLS || 'reader=https://tutors.dev,catalogue=https://catalogue.tutors.dev,live=https://live.tutors.dev' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+
+      - name: Fetch the recorded release run
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          workflow: release.yml
+          name: release-report
+          path: recorded
+          run_id: ${{ inputs.recorded_run_id }}
+          if_no_artifact_found: fail
+
+      - name: Fetch the latest nightly noise status
+        uses: dawidd6/action-download-artifact@v6
+        continue-on-error: true
+        with:
+          workflow: nightly-noise.yml
+          name: noise-status
+          path: noise
+          if_no_artifact_found: warn
+
+      - name: Post-deploy mode
+        id: run
+        run: |
+          recorded="$(ls -d recorded/*-release | head -1)"
+          noise="$(ls noise/*/noise-status.json 2>/dev/null | head -1 || true)"
+          pnpm harness run --mode post-deploy --recorded "$recorded" --production "$PRODUCTION_URLS" ${noise:+--noise "$noise"}
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: post-deploy-report
+          path: out/
+          retention-days: 14
+
+      - name: Open a rollback issue
+        if: failure() && steps.run.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          body="$(cat out/*-post-deploy/report.md)"
+          gh issue create --title "Rollback candidate: production differs from the tested release ($(date -u +%Y-%m-%dT%H:%MZ))" \
+            --label rollback --body "$body
+
+Report artifact: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"

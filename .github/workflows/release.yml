@@ -1,10 +1,12 @@
-# Release mode: the candidate beside the production tag. Called by the
-# monorepo when a release branch is created (workflow_dispatch or
-# repository_dispatch from tutors-sdk/tutors-mono-repo), or by hand.
+# Release gate: the candidate beside the production tag. Dispatched by the
+# monorepo when a release branch is pushed (docs/monorepo/release-dispatch.yml)
+# or run by hand.
 #
-# It FAILS on an unclaimed diff only when a clean nightly A/A exists from the
-# last week; otherwise it warns and says why. Claims come from the release PR,
-# never from this repository.
+# Three jobs, all against the same two tags:
+#   release   — A/B with claims, 3 runs, k6; FAILS on an unclaimed diff only
+#               when a clean nightly A/A from the last week exists
+#   migration — the candidate's migrations on the production schema
+#   upgrade   — the candidate rolled in under load through the edge
 name: Release harness
 
 on:
@@ -19,8 +21,14 @@ on:
       claims_url:
         description: "Raw URL of the release's claims.yaml (optional)"
         required: false
+      migrations_a:
+        description: "Monorepo git ref for production's migrations (default v<production>)"
+        required: false
+      migrations_b:
+        description: "Monorepo git ref for the candidate's migrations (default v<candidate>)"
+        required: false
       runs:
-        description: "Journey repetitions per side (3 enables statistical timing)"
+        description: "Journey repetitions per side"
         required: false
         default: "3"
   repository_dispatch:
@@ -30,16 +38,18 @@ permissions:
   contents: read
   actions: read
 
+env:
+  HARNESS_IMAGE_PREFIX: ${{ vars.HARNESS_IMAGE_PREFIX || 'tutors' }}
+  PRODUCTION: ${{ inputs.production || github.event.client_payload.production }}
+  CANDIDATE: ${{ inputs.candidate || github.event.client_payload.candidate }}
+  CLAIMS_URL: ${{ inputs.claims_url || github.event.client_payload.claims_url }}
+  RUNS: ${{ inputs.runs || github.event.client_payload.runs || '3' }}
+
 jobs:
   release:
+    name: Release mode (A/B, claims, k6)
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    env:
-      HARNESS_IMAGE_PREFIX: ${{ vars.HARNESS_IMAGE_PREFIX || 'tutors' }}
-      PRODUCTION: ${{ inputs.production || github.event.client_payload.production }}
-      CANDIDATE: ${{ inputs.candidate || github.event.client_payload.candidate }}
-      CLAIMS_URL: ${{ inputs.claims_url || github.event.client_payload.claims_url }}
-      RUNS: ${{ inputs.runs || github.event.client_payload.runs || '3' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -53,15 +63,7 @@ jobs:
       - run: pnpm exec playwright install --with-deps chromium
 
       - name: Pull or build both sides
-        run: |
-          for tag in "$PRODUCTION" "$CANDIDATE"; do
-            if docker pull "$HARNESS_IMAGE_PREFIX/reader:$tag" 2>/dev/null; then
-              docker pull "$HARNESS_IMAGE_PREFIX/catalogue:$tag"
-              docker pull "$HARNESS_IMAGE_PREFIX/live:$tag"
-            else
-              scripts/build-images.sh "$tag"
-            fi
-          done
+        run: pnpm harness images ensure --a "$PRODUCTION" --b "$CANDIDATE"
 
       - name: Fetch the release's claims
         if: env.CLAIMS_URL != ''
@@ -79,7 +81,7 @@ jobs:
       - name: Release mode
         run: |
           noise="$(ls noise/*/noise-status.json 2>/dev/null | head -1 || true)"
-          pnpm harness run --mode release --a "$PRODUCTION" --b "$CANDIDATE" --runs "$RUNS" \
+          pnpm harness run --mode release --a "$PRODUCTION" --b "$CANDIDATE" --runs "$RUNS" --load 20x30s \
             ${CLAIMS_URL:+--claims claims.yaml} ${noise:+--noise "$noise"}
 
       - uses: actions/upload-artifact@v4
@@ -91,4 +93,59 @@ jobs:
 
       - name: Show the PR comment
         if: always()
-        run: cat out/*/report.md >> "$GITHUB_STEP_SUMMARY"
+        run: cat out/*-release/report.md >> "$GITHUB_STEP_SUMMARY"
+
+  migration:
+    name: Migration rehearsal
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      MIGRATIONS_A: ${{ inputs.migrations_a || github.event.client_payload.migrations_a }}
+      MIGRATIONS_B: ${{ inputs.migrations_b || github.event.client_payload.migrations_b }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Migration mode
+        run: pnpm harness run --mode migration --a "${MIGRATIONS_A:-v$PRODUCTION}" --b "${MIGRATIONS_B:-v$CANDIDATE}"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: migration-report
+          path: out/
+          retention-days: 30
+      - if: always()
+        run: cat out/*-migration/report.md >> "$GITHUB_STEP_SUMMARY"
+
+  upgrade:
+    name: Upgrade rehearsal (rollout under load)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm harness images ensure --a "$PRODUCTION" --b "$CANDIDATE"
+      - name: Upgrade mode
+        run: pnpm harness run --mode upgrade --a "$PRODUCTION" --b "$CANDIDATE" --set fixture --journey anonymous-student-reads-course
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: upgrade-report
+          path: out/
+          retention-days: 30
+      - if: always()
+        run: cat out/*-upgrade/report.md >> "$GITHUB_STEP_SUMMARY"

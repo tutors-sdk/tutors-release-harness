@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { parse } from "yaml";
 import { z } from "zod";
 import { ROOT } from "../stack.ts";
-import { ARTEFACTS, type PageCapture, type SideCapture } from "../types.ts";
+import { ARTEFACTS, MODES, type Mode, type PageCapture, type SideCapture } from "../types.ts";
 
 const artefactList = z.union([z.enum(ARTEFACTS), z.array(z.enum(ARTEFACTS)).min(1)]).transform((v) => (Array.isArray(v) ? v : [v]));
 
@@ -12,6 +12,8 @@ export const MaskSchema = z
     id: z.string().regex(/^[a-z0-9-]+$/, "mask ids are kebab-case"),
     artefact: artefactList,
     reason: z.string().min(20, "a mask needs a reason a reviewer can weigh (20+ characters)"),
+    /** Only apply in these modes (default: every mode). */
+    modes: z.array(z.enum(MODES)).min(1).optional(),
     header: z.string().optional(),
     pattern: z.string().optional(),
     replace: z.string().optional(),
@@ -59,15 +61,13 @@ function hit(hits: MaskHits, id: string, n = 1) {
   if (n > 0) hits[id] = (hits[id] ?? 0) + n;
 }
 
+/** `replace` may use $1, $2 … to keep parts of the match (e.g. an asset's name without its hash). */
 function applyPattern(text: string, mask: Mask, hits: MaskHits): string {
   const re = new RegExp(mask.pattern!, "g");
-  let count = 0;
-  const out = text.replace(re, () => {
-    count += 1;
-    return mask.replace ?? "{{masked}}";
-  });
+  const count = (text.match(re) ?? []).length;
+  if (!count) return text;
   hit(hits, mask.id, count);
-  return out;
+  return text.replace(re, mask.replace ?? "{{masked}}");
 }
 
 function normalisePage(page: PageCapture, masks: Mask[], hits: MaskHits): PageCapture {
@@ -86,6 +86,9 @@ function normalisePage(page: PageCapture, masks: Mask[], hits: MaskHits): PageCa
           hit(hits, mask.id);
         }
       }
+      if (artefact === "headers" && mask.pattern) {
+        for (const [name, value] of Object.entries(headers)) headers[name] = applyPattern(value, mask, hits);
+      }
       if (artefact === "dom" && mask.pattern) aria = applyPattern(aria, mask, hits);
       if (artefact === "network" && mask.pattern && mask.drop) {
         const re = new RegExp(mask.pattern);
@@ -101,14 +104,15 @@ function normalisePage(page: PageCapture, masks: Mask[], hits: MaskHits): PageCa
   return { ...page, aria, headers, network, console: consoleEntries };
 }
 
-/** Apply every mask to a capture. Pure: returns a new capture and the hit counts. */
-export function normalise(capture: SideCapture, file: MasksFile): { capture: SideCapture; hits: MaskHits } {
+/** Apply every mask that applies in `mode` to a capture. Pure: returns a new capture and the hit counts. */
+export function normalise(capture: SideCapture, file: MasksFile, mode?: Mode): { capture: SideCapture; hits: MaskHits } {
   const hits: MaskHits = {};
-  for (const m of file.masks) hits[m.id] = 0;
+  const masks = file.masks.filter((m) => !m.modes || (mode !== undefined && m.modes.includes(mode)));
+  for (const m of masks) hits[m.id] = 0;
 
-  const journeys = capture.journeys.map((j) => ({ ...j, pages: j.pages.map((p) => normalisePage(p, file.masks, hits)) }));
+  const journeys = capture.journeys.map((j) => ({ ...j, pages: j.pages.map((p) => normalisePage(p, masks, hits)) }));
 
-  const seriesMasks = file.masks.filter((m) => m.series && m.artefact.includes("metrics")).map((m) => ({ id: m.id, re: new RegExp(m.series!) }));
+  const seriesMasks = masks.filter((m) => m.series && m.artefact.includes("metrics")).map((m) => ({ id: m.id, re: new RegExp(m.series!) }));
   const dropSeries = (snapshot: SideCapture["metrics"]["before"]) =>
     Object.fromEntries(
       Object.entries(snapshot).map(([app, snap]) => {
@@ -122,7 +126,7 @@ export function normalise(capture: SideCapture, file: MasksFile): { capture: Sid
       })
     );
 
-  const keyMasks = file.masks.filter((m) => m.key && m.artefact.includes("logs"));
+  const keyMasks = masks.filter((m) => m.key && m.artefact.includes("logs"));
   const logs = Object.fromEntries(
     Object.entries(capture.logs).map(([app, summary]) => {
       const keys = summary.keys.filter((k) => {

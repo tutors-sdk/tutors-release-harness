@@ -5,19 +5,26 @@
 
 export type SideName = "a" | "b";
 
-/** Every kind of thing the harness captures. Claims and masks name these. */
-export const ARTEFACTS = ["dom", "screenshot", "network", "console", "headers", "axe", "metrics", "logs", "timing"] as const;
+/** Every kind of thing the harness captures or rehearses. Claims and masks name these. */
+export const ARTEFACTS = ["dom", "screenshot", "network", "console", "headers", "axe", "focus", "metrics", "logs", "timing", "persistence", "migration", "upgrade"] as const;
 export type Artefact = (typeof ARTEFACTS)[number];
 
 export const MODES = ["noise", "release", "any-two", "upgrade", "migration", "post-deploy"] as const;
 export type Mode = (typeof MODES)[number];
 
-/** Where one side's apps answer. Journeys are parameterised by this and nothing else. */
+export const SUBSTRATES = ["compose", "kind"] as const;
+export type Substrate = (typeof SUBSTRATES)[number];
+
+/** Where one side's services answer. Journeys are parameterised by this and nothing else. */
 export interface StackUrls {
   reader: string;
   catalogue: string;
   live: string;
-  /** A course id the reader resolves to http://<id>/tutors.json. */
+  /** The reader configured for sign-in (identity + persistence stubs); absent for an external side. */
+  readerAuth?: string;
+  /** The side's persistence stub, when it has one. */
+  persistence?: string;
+  /** A course id the reader resolves to http(s)://<id>/tutors.json. */
   courseId: string;
 }
 
@@ -26,13 +33,15 @@ export interface SideSpec {
   /** Image references per app, as passed to compose. */
   images: { reader: string; catalogue: string; live: string };
   urls: StackUrls;
+  /** True when the side is a live deployment the harness did not start (post-deploy mode). */
+  external?: boolean;
 }
 
 // ---- captured artefacts ------------------------------------------------------
 
 export interface NetworkEntry {
   method: string;
-  /** Path and query with the side's own origin replaced by {{origin}}. */
+  /** Path and query with the side's own origin replaced by {{origin}} and the course host by {{course}}. */
   url: string;
   status: number;
   contentType: string;
@@ -67,19 +76,32 @@ export interface PageCapture {
   aria: string;
   /** Relative path of the PNG within the capture directory, when taken. */
   screenshot?: string;
-  /** Response headers of the document request. */
+  /** Response headers of the document request; empty after a client-side route change. */
   headers: Record<string, string>;
   network: NetworkEntry[];
   console: ConsoleEntry[];
   axe: AxeFinding[];
+  /** Keyboard order: what receives focus on each successive Tab from the top of the page. */
+  focus: string[];
   timing: Timing;
+}
+
+export interface PersistenceWrite {
+  kind: "write" | "rpc";
+  method: string;
+  table: string;
+  rows: number;
 }
 
 export interface JourneyCapture {
   journey: string;
   run: number;
+  /** True when the journey ran without a session; any persistence write is then a finding. */
+  anonymous: boolean;
   durationMs: number;
   pages: PageCapture[];
+  /** What the side's persistence stub recorded during this journey (empty when the side has no stub). */
+  persistence: PersistenceWrite[];
   /** Set when the journey did not complete; the pages captured so far are kept. */
   error?: string;
 }
@@ -99,13 +121,65 @@ export interface LogSummary {
   requestIdRatio: number;
 }
 
+/** One k6 run against a side. */
+export interface LoadSummary {
+  requests: number;
+  failed: number;
+  /** Count of responses with status >= 500. */
+  serverErrors: number;
+  /** http_req_duration samples in ms (subsampled to at most `maxSamples`). */
+  samples: number[];
+  p50: number;
+  p95: number;
+  rate: number;
+  duration: string;
+}
+
 export interface SideCapture {
   side: SideName;
   images: SideSpec["images"];
   capturedAt: string;
+  /** A live deployment rather than a harness stack: latency and load are not comparable with a laptop's. */
+  external?: boolean;
   journeys: JourneyCapture[];
   metrics: { before: Record<string, MetricsSnapshot>; after: Record<string, MetricsSnapshot> };
   logs: Record<string, LogSummary>;
+  load?: LoadSummary;
+}
+
+// ---- schema catalogue (migration mode) -------------------------------------------
+
+export interface ColumnInfo {
+  type: string;
+  nullable: boolean;
+  default: string | null;
+}
+
+export interface SchemaCatalog {
+  tables: Record<string, Record<string, ColumnInfo>>;
+  indexes: string[];
+  functions: string[];
+  policies: string[];
+}
+
+export interface MigrationResult {
+  a: { ref: string; files: string[]; catalog: SchemaCatalog };
+  b: { ref: string; files: string[]; catalog: SchemaCatalog };
+  /** Catalog after restoring a's snapshot over b's schema: the rollback rehearsal. */
+  rolledBack: SchemaCatalog;
+}
+
+// ---- upgrade rehearsal -----------------------------------------------------------------
+
+export interface UpgradeResult {
+  substrate: Substrate;
+  /** Every request the load generator made, attributed to the side that answered it. */
+  requests: number;
+  failed: number;
+  serverErrors: number;
+  byUpstream: Record<string, { requests: number; failed: number; serverErrors: number; p95: number }>;
+  switchedAt: number;
+  durationMs: number;
 }
 
 // ---- comparison ----------------------------------------------------------------
@@ -114,7 +188,7 @@ export interface SideCapture {
 export interface Hunk {
   id: string;
   artefact: Artefact;
-  /** What a claim's scope glob is matched against: a page key, a route, a series name, a header. */
+  /** What a claim's scope glob is matched against: a page key, a route, a series name, a header, a table.column. */
   scope: string;
   /** The page's route, when the hunk belongs to a page; a claim's scope glob also matches this. */
   path?: string;
@@ -162,6 +236,7 @@ export interface NoiseStatus {
 export interface RunReport {
   harnessVersion: string;
   mode: Mode;
+  substrate: Substrate;
   ranAt: string;
   now: string;
   runs: number;
@@ -174,4 +249,7 @@ export interface RunReport {
   compare: CompareResult;
   /** Masks that actually changed something in this run, by id, with a count. */
   masksApplied: Record<string, number>;
+  migration?: MigrationResult;
+  upgrade?: UpgradeResult;
+  load?: { a: Omit<LoadSummary, "samples">; b: Omit<LoadSummary, "samples"> };
 }

@@ -1,0 +1,48 @@
+# kind substrate (phase H6)
+
+The two sides as two namespaces — `harness-a`, `harness-b` — in a local kind
+cluster with Pod Security Admission `restricted` enforced, instead of two
+compose stacks. Everything above the substrate (journeys, collectors, masks,
+engines, claims, gate, report) is identical; only `stackUp`/`stackDown` change.
+
+```bash
+pnpm harness run --mode noise --a local --b local --substrate kind --set fixture
+pnpm harness kind rollout --a 16.2.0 --b 16.3.0-rc.1      # rolling update of harness-a/reader under k6 load
+pnpm harness kind down                                     # delete the namespaces; the cluster stays
+kind delete cluster --name tutors-harness                  # remove the cluster
+```
+
+Needs `kind` and `kubectl` on the PATH and Docker. The first `up` creates the
+cluster from `kind-config.yaml` (NodePorts published on host ports 4100–4102
+and 4200–4202, the compose ports plus 1000, so a cluster left running never
+blocks the compose stack) and
+loads the images with `kind load docker-image`; later runs reuse it.
+
+## What runs where
+
+| Component | compose | kind |
+| --- | --- | --- |
+| reader, catalogue, live per side | containers, hardened | Deployments under `restricted` PSA, same probes/security context/resources as the monorepo's `deploy/k8s/base` |
+| fixture course server | container | a Node process on the host (the browser fetches the course; the apps never do) |
+| signed-in reader, identity and persistence stubs | containers | not yet (the `auth` set is skipped on kind) |
+| edge proxy for `upgrade` mode | container | not needed: `kind rollout` uses a real RollingUpdate |
+
+## Why restricted PSA stands in for the restricted SCC
+
+OpenShift's restricted SCC requires a non-root, arbitrary UID, no privilege
+escalation, all capabilities dropped and a runtime-default seccomp profile;
+`restricted` PSA requires the same set. The monorepo's images run as UID 1001
+with GID 0 for exactly this reason, and the manifests here carry the same
+`securityContext` as its kustomize base, so a release that passes here would
+pass admission there. What this does not rehearse: Routes, the OpenShift
+router's headers, and the arbitrary-UID *assignment* (kind runs the image's
+own UID). The monorepo's conformance tier covers `kubeconform`/`conftest` on
+the real overlays.
+
+## Rollout rehearsal
+
+`harness kind rollout` brings both namespaces up, runs k6 against
+`harness-a/reader` through its NodePort, and a third of the way in does
+`kubectl set image deployment/reader app=<b image>` with `maxUnavailable: 0`,
+`maxSurge: 1`, then `rollout status`. Any failed or 5xx request during the
+window fails the rehearsal. The result lands in `out/<ts>-kind-rollout/rollout.json`.

@@ -2,8 +2,10 @@ import { createHash } from "node:crypto";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { AxeBuilder } from "@axe-core/playwright";
-import type { Browser, BrowserContext, Page, Response } from "playwright";
+import { chromium, type Browser, type BrowserContext, type Page, type Response } from "playwright";
 import type { Journey } from "../../traffic/journeys/journeys.ts";
+import { reference } from "../../traffic/journeys/reference.ts";
+import { IDENTITY_URL } from "../stack.ts";
 import type { AxeFinding, ConsoleEntry, JourneyCapture, NetworkEntry, PageCapture, SideSpec, Timing } from "../types.ts";
 
 export interface BrowserCaptureOptions {
@@ -13,21 +15,36 @@ export interface BrowserCaptureOptions {
   now: string;
   screenshots: boolean;
   axe: boolean;
+  /** How many Tab presses the keyboard-order walk records per page. */
+  focusStops: number;
 }
 
 const VIEWPORT = { width: 1280, height: 800 };
 const MAX_HASHED_BODY = 512 * 1024;
 
 /**
- * Replace a side's own origins with a placeholder so the two sides' captures
- * are comparable. This is structural, not a mask: both sides necessarily
- * answer on different ports, and nothing about that is a finding.
+ * One browser for the whole run. `*.harness.test` resolves to the host, so the
+ * page can reach each side's persistence stub at the same name the containers
+ * use (see compose.harness.yaml extra_hosts).
+ */
+export async function launchBrowser(): Promise<Browser> {
+  return chromium.launch({ args: ['--host-resolver-rules=MAP *.harness.test 127.0.0.1'] });
+}
+
+/**
+ * Replace a side's own origins with {{origin}} and every course host the
+ * journeys use with {{course}} so the two sides' captures are comparable.
+ * This is structural, not a mask: both sides necessarily answer on different
+ * ports, and nothing about that is a finding. The course hosts are the same on
+ * both sides in a run; they are normalised so a recorded run compares with a
+ * later one that pins the course elsewhere.
  */
 export function stripOrigins(text: string, spec: SideSpec): string {
   let out = text;
-  for (const origin of [spec.urls.reader, spec.urls.catalogue, spec.urls.live]) {
-    out = out.split(origin).join("{{origin}}");
-  }
+  const origins = [spec.urls.reader, spec.urls.catalogue, spec.urls.live, spec.urls.readerAuth, spec.urls.persistence].filter((o): o is string => !!o);
+  for (const origin of origins) out = out.split(origin).join("{{origin}}");
+  const courseHosts = [...new Set([spec.urls.courseId, reference.host, reference.courseId])].sort((x, y) => y.length - x.length);
+  for (const host of courseHosts) for (const scheme of ["http://", "https://"]) out = out.split(`${scheme}${host}`).join("{{course}}");
   return out;
 }
 
@@ -91,6 +108,32 @@ async function axeOn(page: Page): Promise<AxeFinding[]> {
     .sort((x, y) => `${x.rule} ${x.target}`.localeCompare(`${y.rule} ${y.target}`));
 }
 
+/**
+ * Keyboard order: what receives focus on each successive Tab from the top of
+ * the page. Roles and names only, so the sequence survives markup churn but
+ * not a lost focus stop or a reordered one.
+ */
+async function focusWalk(page: Page, stops: number): Promise<string[]> {
+  await page.evaluate(() => {
+    (document.activeElement as HTMLElement | null)?.blur?.();
+    window.scrollTo(0, 0);
+  });
+  const seen: string[] = [];
+  for (let i = 0; i < stops; i += 1) {
+    await page.keyboard.press("Tab");
+    const label = await page.evaluate(() => {
+      const el = document.activeElement as HTMLElement | null;
+      if (!el || el === document.body) return "(body)";
+      const role = el.getAttribute("role") ?? el.tagName.toLowerCase();
+      const name = (el.getAttribute("aria-label") ?? el.getAttribute("title") ?? el.innerText ?? "").trim().replace(/\s+/g, " ").slice(0, 40);
+      return `${role} "${name}"`;
+    });
+    if (label === "(body)" && seen.length) break;
+    seen.push(label);
+  }
+  return seen;
+}
+
 async function newContext(browser: Browser, now: string): Promise<BrowserContext> {
   // Everything that could differ between two runs on the same machine is pinned.
   return browser.newContext({
@@ -105,12 +148,31 @@ async function newContext(browser: Browser, now: string): Promise<BrowserContext
 }
 
 /**
+ * Send the browser's GitHub OAuth hops to the identity stub. The reader
+ * redirects to https://github.com/login/oauth/authorize; the stub answers on
+ * the host's published port and redirects straight back to the callback.
+ */
+async function routeIdentity(context: BrowserContext) {
+  await context.route(/^https:\/\/(api\.)?github\.com\//, async (route) => {
+    const original = new URL(route.request().url());
+    const target = `${IDENTITY_URL}${original.pathname}${original.search}`;
+    try {
+      const response = await route.fetch({ url: target, maxRedirects: 0 });
+      await route.fulfill({ response });
+    } catch (error) {
+      await route.fulfill({ status: 502, body: `identity stub unreachable at ${target}: ${error instanceof Error ? error.message : error}` });
+    }
+  });
+}
+
+/**
  * Run one journey against one side and capture everything observable at every
  * page it reaches. A journey that throws is recorded with its error and the
  * pages it did reach; the run continues with the next journey.
  */
 export async function captureJourney(browser: Browser, spec: SideSpec, journey: Journey, run: number, opts: BrowserCaptureOptions): Promise<JourneyCapture> {
   const context = await newContext(browser, opts.now);
+  if (journey.target === "readerAuth") await routeIdentity(context);
   const page = await context.newPage();
   await page.clock.setFixedTime(new Date(opts.now));
 
@@ -155,6 +217,7 @@ export async function captureJourney(browser: Browser, spec: SideSpec, journey: 
         network,
         console: consoleEntries,
         axe: opts.axe ? await axeOn(page) : [],
+        focus: [],
         timing: isDocument ? timingOf(documentResponse) : timingOf(undefined)
       };
       if (opts.screenshots) {
@@ -163,6 +226,8 @@ export async function captureJourney(browser: Browser, spec: SideSpec, journey: 
         await page.screenshot({ path: file, animations: "disabled", caret: "hide", fullPage: false });
         capture.screenshot = file.slice(opts.outDir.length + 1).replaceAll("\\", "/");
       }
+      // Last, because it moves focus.
+      if (opts.focusStops > 0) capture.focus = await focusWalk(page, opts.focusStops);
       pages.push(capture);
     });
   } catch (e) {
@@ -171,7 +236,7 @@ export async function captureJourney(browser: Browser, spec: SideSpec, journey: 
     await context.close();
   }
 
-  const result: JourneyCapture = { journey: journey.name, run, durationMs: Date.now() - started, pages };
+  const result: JourneyCapture = { journey: journey.name, run, anonymous: journey.anonymous, durationMs: Date.now() - started, pages, persistence: [] };
   if (error !== undefined) result.error = error;
   return result;
 }

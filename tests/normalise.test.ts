@@ -56,6 +56,41 @@ describe("normalise", () => {
     expect(hits["log-time"]).toBe(1);
   });
 
+  it("keeps the asset name and drops the hash ($1 in replace)", () => {
+    const input = capture("a");
+    input.journeys[0]!.pages[0]!.network.push(
+      { method: "GET", url: "{{origin}}/_app/immutable/assets/0.IqN_BvhY.css", status: 200, contentType: "text/css", cacheControl: "", schemaHash: "" },
+      { method: "GET", url: "{{origin}}/_app/immutable/chunks/B1n-O3K0.js", status: 200, contentType: "text/javascript", cacheControl: "", schemaHash: "" },
+      { method: "GET", url: "{{origin}}/_app/immutable/entry/start.CkQ9dBEs.js", status: 200, contentType: "text/javascript", cacheControl: "", schemaHash: "" }
+    );
+    const { capture: out, hits } = normalise(input, masks, "release");
+    const urls = out.journeys[0]!.pages[0]!.network.map((n) => n.url);
+    expect(urls).toContain("{{origin}}/_app/immutable/assets/0.{{hash}}.css");
+    expect(urls).toContain("{{origin}}/_app/immutable/chunks/{{hash}}.js");
+    expect(urls).toContain("{{origin}}/_app/immutable/entry/start.{{hash}}.js");
+    expect(hits["hashed-assets"]).toBe(3);
+  });
+
+  it("rewrites hashed asset names inside header values too", () => {
+    const input = capture("a");
+    input.journeys[0]!.pages[0]!.headers.link = '<../_app/immutable/assets/0.IqN_BvhY.css>; rel="preload"; as="style"';
+    const { capture: out } = normalise(input, masks, "release");
+    expect(out.journeys[0]!.pages[0]!.headers.link).toBe('<../_app/immutable/assets/0.{{hash}}.css>; rel="preload"; as="style"');
+  });
+
+  it("applies mode-scoped masks only in their modes", () => {
+    const input = capture("a");
+    input.journeys[0]!.pages[0]!.headers.age = "0";
+    input.journeys[0]!.pages[0]!.headers["content-length"] = "912";
+    const release = normalise(input, masks, "release").capture.journeys[0]!.pages[0]!.headers;
+    expect(release).toHaveProperty("age");
+    expect(release).not.toHaveProperty("content-length");
+    const post = normalise(input, masks, "post-deploy");
+    expect(post.capture.journeys[0]!.pages[0]!.headers).not.toHaveProperty("age");
+    expect(post.hits["cdn-age"]).toBe(1);
+    expect(normalise(input, masks, "release").hits).not.toHaveProperty("cdn-age");
+  });
+
   it("rejects drop on anything but a network pattern (negative fixture)", () => {
     const bad = { ...masks, masks: [{ id: "bad-drop", artefact: "dom", pattern: "x", drop: true, reason: "drop is only meaningful for requests" }] };
     expect(MasksFileSchema.safeParse(bad).success).toBe(false);

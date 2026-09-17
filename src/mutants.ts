@@ -53,8 +53,11 @@ export async function runMutants(opts: MutantsOptions): Promise<boolean> {
   const baseImages = imagesFor(opts.base, opts.imagePrefix);
   const baseSpec = `reader=${baseImages.reader},catalogue=${baseImages.catalogue},live=${baseImages.live}`;
 
+  // The fixture and signed-in journeys are enough to catch every mutant, and
+  // they need nothing outside this stack.
+  const sets = opts.sets.filter((s) => s !== "reference");
   opts.log(`self-test: A/A on ${baseImages.reader} first`);
-  const noise = await run({ ...opts, mode: "noise", a: baseSpec, b: baseSpec, runs: 1 });
+  const noise = await run({ ...opts, sets, mode: "noise", a: baseSpec, b: baseSpec, runs: 1 });
   const noiseStatus = join(noise.outDir, "noise-status.json");
   if (noise.report.verdict !== "pass") {
     opts.log(`A/A is not clean (${noise.report.compare.hunks.length} diff(s)); the mutant self-test cannot be trusted. Report: ${noise.files.html}`);
@@ -65,7 +68,7 @@ export async function runMutants(opts: MutantsOptions): Promise<boolean> {
   for (const mutant of mutants) {
     const image = buildMutant(mutant.name, baseImages.reader, opts.log);
     const bSpec = `reader=${image},catalogue=${baseImages.catalogue},live=${baseImages.live}`;
-    const outcome = await run({ ...opts, mode: "release", a: baseSpec, b: bSpec, noise: noiseStatus, runs: Math.max(opts.runs, mutant.runs ?? 1) });
+    const outcome = await run({ ...opts, sets, mode: "release", a: baseSpec, b: bSpec, noise: noiseStatus, runs: Math.max(opts.runs, mutant.runs ?? 1) });
     const artefacts = [...new Set(outcome.report.compare.unclaimed.map((h) => h.artefact))];
     const caught = outcome.report.verdict === "fail";
     const attributed = mutant.expect.some((a) => artefacts.includes(a));

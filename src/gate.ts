@@ -20,10 +20,12 @@ export interface GateOutput {
 /**
  * Turn a comparison into a verdict for the mode.
  *
- * The rule that keeps the harness honest: it may only FAIL a release while its
- * own A/A is clean. Without a clean, recent noise run the same findings are
- * reported as a warning, with the reason stated, so the harness never becomes
- * the flaky gate everyone bypasses — and never quietly loses its teeth either.
+ * The rule that keeps the harness honest: it may only FAIL a release on
+ * captured differences while its own A/A is clean. Without a clean, recent
+ * noise run the same findings are reported as a warning, with the reason
+ * stated, so the harness never becomes the flaky gate everyone bypasses — and
+ * never quietly loses its teeth either. Rehearsals (migration, upgrade) are
+ * deterministic and need no A/A.
  */
 export function gate(input: GateInput): GateOutput {
   const { mode, compare } = input;
@@ -41,22 +43,27 @@ export function gate(input: GateInput): GateOutput {
     }
     case "any-two":
       return { verdict: "pass", reasons: [`investigation only: ${failing} unclaimed diff(s), ${info} informational`, ...reasons] };
-    case "release": {
+    case "release":
+    case "post-deploy": {
       if (compare.broadUnapproved.length) {
         reasons.unshift(`${compare.broadUnapproved.length} broad claim(s) without approvedBy: claim precisely or have a human approve`);
       }
       if (failing === 0 && compare.broadUnapproved.length === 0) {
-        return { verdict: "pass", reasons: ["every difference is claimed", ...reasons] };
+        return { verdict: "pass", reasons: [mode === "release" ? "every difference is claimed" : "production behaves as the recorded candidate did", ...reasons] };
       }
-      if (failing) reasons.unshift(`${failing} unclaimed diff(s)`);
+      if (failing) reasons.unshift(mode === "release" ? `${failing} unclaimed diff(s)` : `${failing} new difference(s) between production and the recorded candidate: open a rollback issue`);
       const trust = trustNoise(input);
       if (trust.ok) return { verdict: "fail", reasons };
       return { verdict: "warn", reasons: [`advisory only: ${trust.why}`, ...reasons] };
     }
-    case "upgrade":
-    case "migration":
-    case "post-deploy":
-      return { verdict: "warn", reasons: [`mode "${mode}" is not implemented yet (see README, phases H4–H5)`] };
+    case "migration": {
+      if (failing === 0) return { verdict: "pass", reasons: ["the candidate's migrations respect expand/contract and roll back cleanly", ...reasons] };
+      return { verdict: "fail", reasons: [`${failing} expand/contract or rollback violation(s)`, ...reasons] };
+    }
+    case "upgrade": {
+      if (failing === 0) return { verdict: "pass", reasons: ["the candidate rolled in under load with no failed request", ...reasons] };
+      return { verdict: "fail", reasons: [`${failing} finding(s) during the rollout`, ...reasons] };
+    }
   }
 }
 

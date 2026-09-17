@@ -1,0 +1,63 @@
+# Drop into tutors-sdk/tutors-mono-repo/.github/workflows/release-dispatch.yml
+#
+# When a release branch is pushed, tag the candidate so it gets a real image
+# (publish-images.yml builds v* tags), then ask the harness to run release
+# mode against the production tag. Needs a repository secret HARNESS_TOKEN: a
+# fine-grained PAT with "contents: read, actions: write" on
+# tutors-sdk/tutors-release-harness (repository_dispatch needs a token with
+# write access to the target repo).
+#
+# The production tag is read from the reader overlay, which the deploy updates.
+# The candidate's claims file lives in the release branch at release/claims.yaml.
+name: Release candidate -> harness
+
+on:
+  push:
+    branches: ["release/**"]
+
+permissions:
+  contents: write
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Work out the versions
+        id: versions
+        run: |
+          candidate="$(node -p "require('./package.json').version")"
+          production="$(grep -A1 'newName:' deploy/k8s/overlays/reader/kustomization.yaml | grep newTag | sed 's/.*newTag: *"\{0,1\}\([^"]*\)"\{0,1\}/\1/')"
+          rc="${candidate}-rc.${GITHUB_RUN_NUMBER}"
+          echo "candidate=$rc" >> "$GITHUB_OUTPUT"
+          echo "production=$production" >> "$GITHUB_OUTPUT"
+          echo "candidate $rc, production $production"
+
+      - name: Tag the candidate so it gets an immutable image
+        env:
+          RC: ${{ steps.versions.outputs.candidate }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag "v$RC"
+          git push origin "v$RC"
+
+      - name: Dispatch the harness
+        env:
+          GH_TOKEN: ${{ secrets.HARNESS_TOKEN }}
+          PRODUCTION: ${{ steps.versions.outputs.production }}
+          CANDIDATE: ${{ steps.versions.outputs.candidate }}
+          CLAIMS_URL: https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/release/claims.yaml
+        run: |
+          gh api repos/tutors-sdk/tutors-release-harness/dispatches \
+            -f event_type=release-candidate \
+            -F 'client_payload[production]='"$PRODUCTION" \
+            -F 'client_payload[candidate]='"$CANDIDATE" \
+            -F 'client_payload[claims_url]='"$CLAIMS_URL" \
+            -F 'client_payload[runs]=3' \
+            -F 'client_payload[migrations_a]=v'"$PRODUCTION" \
+            -F 'client_payload[migrations_b]='"$GITHUB_SHA"

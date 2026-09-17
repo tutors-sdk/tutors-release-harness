@@ -80,12 +80,29 @@ describe("any-two mode", () => {
   });
 });
 
-describe("unimplemented modes", () => {
-  it("warn and say so", () => {
-    for (const mode of ["upgrade", "migration", "post-deploy"] as const) {
-      const out = gate({ ...base, mode, compare: matchClaims([], []) });
-      expect(out.verdict).toBe("warn");
-      expect(out.reasons[0]).toMatch(/not implemented/);
-    }
+describe("rehearsal modes need no A/A", () => {
+  it("migration fails on an unclaimed violation and passes clean", () => {
+    expect(gate({ ...base, mode: "migration", compare: matchClaims([], []) }).verdict).toBe("pass");
+    const out = gate({ ...base, mode: "migration", compare: matchClaims([{ ...fail("app_errors.level"), artefact: "migration" }], []) });
+    expect(out.verdict).toBe("fail");
+    expect(out.reasons[0]).toMatch(/expand\/contract/);
+  });
+
+  it("upgrade fails on any finding during the rollout", () => {
+    expect(gate({ ...base, mode: "upgrade", compare: matchClaims([], []) }).verdict).toBe("pass");
+    expect(gate({ ...base, mode: "upgrade", compare: matchClaims([{ ...fail("rollout"), artefact: "upgrade" }], []) }).verdict).toBe("fail");
+  });
+});
+
+describe("post-deploy mode", () => {
+  it("passes when production matches the recorded candidate", () => {
+    expect(gate({ ...base, mode: "post-deploy", compare: matchClaims([], []), noise: clean }).verdict).toBe("pass");
+  });
+
+  it("asks for a rollback issue on a new difference, subject to the A/A rule", () => {
+    const out = gate({ ...base, mode: "post-deploy", compare: matchClaims([fail("reference:course")], []), noise: clean });
+    expect(out.verdict).toBe("fail");
+    expect(out.reasons[0]).toMatch(/rollback/);
+    expect(gate({ ...base, mode: "post-deploy", compare: matchClaims([fail("reference:course")], []) }).verdict).toBe("warn");
   });
 });

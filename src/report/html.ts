@@ -47,6 +47,26 @@ export function renderHtml(report: RunReport): string {
 <tbody>${(["reader", "catalogue", "live"] as const).map((app) => `<tr><td>${app}</td><td><code>${esc(report.sides.a[app])}</code></td><td><code>${esc(report.sides.b[app])}</code></td></tr>`).join("")}</tbody>
 </table>
 
+${
+  report.migration
+    ? `<h2>Migration rehearsal</h2><p>a: <code>${esc(report.migration.a.ref)}</code> — ${report.migration.a.files.length} migration(s), ${Object.keys(report.migration.a.catalog.tables).length} table(s).<br>b: <code>${esc(report.migration.b.ref)}</code> — new migration(s): ${report.migration.b.files.filter((f) => !report.migration!.a.files.includes(f)).map((f) => `<code>${esc(f)}</code>`).join(", ") || "none"}.</p>`
+    : ""
+}
+${
+  report.upgrade
+    ? `<h2>Upgrade rehearsal (${esc(report.upgrade.substrate)})</h2><table><thead><tr><th>upstream</th><th>requests</th><th>failed</th><th>5xx</th><th>p95</th></tr></thead><tbody>${Object.entries(report.upgrade.byUpstream)
+        .map(([k, v]) => `<tr><td>${esc(k)}</td><td>${v.requests}</td><td>${v.failed}</td><td>${v.serverErrors}</td><td>${v.p95} ms</td></tr>`)
+        .join("")}<tr><td><strong>all</strong></td><td>${report.upgrade.requests}</td><td>${report.upgrade.failed}</td><td>${report.upgrade.serverErrors}</td><td>switched at ${(report.upgrade.switchedAt / 1000).toFixed(1)} s</td></tr></tbody></table>`
+    : ""
+}
+${
+  report.load
+    ? `<h2>Load (k6, ${report.load.a.rate} req/s for ${esc(report.load.a.duration)})</h2><table><thead><tr><th>side</th><th>requests</th><th>failed</th><th>5xx</th><th>p50</th><th>p95</th></tr></thead><tbody>${(["a", "b"] as const)
+        .map((s) => `<tr><td>${s}</td><td>${report.load![s].requests}</td><td>${report.load![s].failed}</td><td>${report.load![s].serverErrors}</td><td>${report.load![s].p50} ms</td><td>${report.load![s].p95} ms</td></tr>`)
+        .join("")}</tbody></table>`
+    : ""
+}
+
 <h2>Differences (${compare.hunks.length}; ${compare.unclaimed.length} unclaimed)</h2>
 ${compare.hunks.length ? `<table><thead><tr><th>artefact</th><th>scope</th><th>what changed</th><th>claimed by</th></tr></thead><tbody>${rows}</tbody></table>` : "<p>None. The two sides are observably identical after normalisation.</p>"}
 

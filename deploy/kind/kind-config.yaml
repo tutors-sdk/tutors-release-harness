@@ -1,0 +1,21 @@
+# A single-node kind cluster whose NodePorts are published on host ports of
+# their own (the compose stack's plus 1000), so a cluster that stays around
+# between runs never blocks the compose stack:
+#   4100-4102 -> side a reader/catalogue/live, 4200-4202 -> side b.
+#
+#   kind create cluster --name tutors-harness --config deploy/kind/kind-config.yaml
+#
+# Pod Security Admission is enforced per namespace (see src/substrate/kind.ts):
+# both harness namespaces carry pod-security.kubernetes.io/enforce=restricted,
+# the closest upstream equivalent of OpenShift's restricted SCC.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      - { containerPort: 30100, hostPort: 4100, protocol: TCP }
+      - { containerPort: 30101, hostPort: 4101, protocol: TCP }
+      - { containerPort: 30102, hostPort: 4102, protocol: TCP }
+      - { containerPort: 30200, hostPort: 4200, protocol: TCP }
+      - { containerPort: 30201, hostPort: 4201, protocol: TCP }
+      - { containerPort: 30202, hostPort: 4202, protocol: TCP }

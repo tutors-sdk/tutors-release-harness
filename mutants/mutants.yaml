@@ -1,4 +1,4 @@
-# The harness's own negative fixtures: six planted regressions the release
+# The harness's own negative fixtures: eight planted regressions the release
 # gate must catch, each attributed to the right artefact. `harness mutants`
 # builds each one from the base reader image, runs release mode (base vs
 # mutant) and asserts the verdict is FAIL with at least one unclaimed hunk of
@@ -32,3 +32,11 @@ mutants:
     plants: 400 ms added to every HTML response
     expect: [timing]
     runs: 3
+
+  - name: anon-write
+    plants: every page records a learning event for anonymous readers
+    expect: [persistence]
+
+  - name: focus-order
+    plants: navigator links leave the tab order
+    expect: [focus]

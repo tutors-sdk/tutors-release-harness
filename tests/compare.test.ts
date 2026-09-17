@@ -151,6 +151,16 @@ describe("timing", () => {
   });
 });
 
+describe("external sides", () => {
+  it("latency is not compared between a harness stack and a live deployment", () => {
+    const a = capture("a");
+    const b = capture("b", { external: true });
+    b.journeys[0]!.pages[0]!.timing = { ttfbMs: 400, responseEndMs: 420 };
+    b.journeys[0]!.durationMs = 9000;
+    expect(diff(a, b)).toEqual([]);
+  });
+});
+
 describe("determinism", () => {
   it("the same inputs give the same hunks in the same order", () => {
     const a = capture("a");

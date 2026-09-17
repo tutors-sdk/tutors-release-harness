@@ -15,6 +15,7 @@ const hunks: Hunk[] = [
 const report: RunReport = {
   harnessVersion: "0.1.0",
   mode: "release",
+  substrate: "compose",
   ranAt: "2026-09-16T09:10:00.000Z",
   now: "2026-09-16T09:05:00.000Z",
   runs: 1,

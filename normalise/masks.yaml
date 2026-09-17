@@ -8,12 +8,15 @@
 #
 # Mask kinds, by artefact:
 #   headers:  `header: <name>`               drops that response header
+#             `pattern: <regex>`             rewrites matches inside every header value
 #   dom | console | network:
 #             `pattern: <regex>`             replaces matches with `replace` (default "{{masked}}")
 #             `network` masks apply to the request URL only; with `drop: true`
 #             the matching requests are removed from the comparison entirely
 #   metrics:  `series: <regex>`              drops matching series names
 #   logs:     `key: <name>`                  drops that key from the key-set comparison
+# `replace` may keep parts of the match with $1, $2 …; `modes: [post-deploy]`
+# limits a mask to some modes (default: all).
 #
 # Structural normalisation that is NOT a mask (and needs no entry here): each
 # side's own origin is replaced by {{origin}} by the collector, because the two
@@ -55,6 +58,70 @@ masks:
       image attributes them to different pages on the two sides. A release that adds or removes a third-party
       dependency shows up as a dom or console change instead. Stubbing the CDN in the fixture stack would
       let this mask go.
+
+  - id: hashed-assets
+    artefact: [network, headers]
+    pattern: "(/_app/immutable/[a-z]+/(?:[A-Za-z0-9_-]+\\.)?)[A-Za-z0-9_-]{8}(\\.(?:js|css|woff2?|json))"
+    replace: "$1{{hash}}$2"
+    reason: >-
+      SvelteKit names every chunk and stylesheet by content hash, so two builds — even of the same
+      commit on different machines — request different file names. What is compared instead is how many
+      chunks and stylesheets each page loads and their statuses; a bundle that grows or splits still shows.
+
+  - id: transport-length
+    artefact: headers
+    header: content-length
+    reason: Set by the transport (adapter, compression, CDN), not by the app; body differences are the dom and network engines' job.
+  - id: transport-connection
+    artefact: headers
+    header: connection
+    reason: A hop-by-hop header the client and proxy negotiate; nothing the release controls.
+  - id: transport-encoding
+    artefact: headers
+    header: content-encoding
+    reason: Compression is applied by whatever fronts the app (CDN, router), not by the image.
+  - id: transport-transfer
+    artefact: headers
+    header: transfer-encoding
+    reason: Chunked or not is a transport decision, not an application one.
+  - id: transport-keepalive
+    artefact: headers
+    header: keep-alive
+    reason: Connection reuse parameters of the transport; a CDN or router rewrites them.
+
+  # Production sits behind a CDN the harness stacks do not have; these headers
+  # describe the CDN. Security headers are deliberately NOT here: a CDN that
+  # adds HSTS is a difference worth seeing once and claiming.
+  - id: cdn-age
+    artefact: headers
+    header: age
+    modes: [post-deploy]
+    reason: Cache age at the CDN; only exists in front of production.
+  - id: cdn-cache-status
+    artefact: headers
+    header: cache-status
+    modes: [post-deploy]
+    reason: Netlify's cache trace header; only exists in front of production.
+  - id: cdn-server
+    artefact: headers
+    header: server
+    modes: [post-deploy]
+    reason: Names the CDN or router, not the app.
+  - id: cdn-request-id
+    artefact: headers
+    header: x-nf-request-id
+    modes: [post-deploy]
+    reason: Netlify's per-request id; generated, never comparable.
+  - id: cdn-vary
+    artefact: headers
+    header: vary
+    modes: [post-deploy]
+    reason: Netlify adds Accept-Encoding to Vary in front of production; the app's own Vary is compared in release mode.
+  - id: cdn-netlify-vary
+    artefact: headers
+    header: netlify-vary
+    modes: [post-deploy]
+    reason: Netlify's own cache-key directive; only exists in front of production.
 
 # Engine settings. Thresholds are noise floors measured by A/A runs; raising
 # one is a mask and needs the same review.

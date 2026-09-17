@@ -13,12 +13,16 @@ const PORT = Number(process.env.PORT ?? 3000);
 const INNER = PORT + 1000;
 const ROUTE = new RegExp(process.env.MUTANT_ROUTE ?? "^/course/");
 const DELAY_MS = Number(process.env.MUTANT_DELAY_MS ?? 400);
+// Where this side persists: set on the anonymous readers as HARNESS_PERSISTENCE_URL
+// (ignored by the apps) and on the signed-in readers as PUBLIC_SUPABASE_URL.
+const PERSISTENCE = process.env.HARNESS_PERSISTENCE_URL ?? process.env.PUBLIC_SUPABASE_URL ?? "";
 
 const child = spawn(process.execPath, ["build/index.js"], { env: { ...process.env, PORT: String(INNER) }, stdio: "inherit" });
 child.on("exit", (code) => process.exit(code ?? 1));
 for (const signal of ["SIGTERM", "SIGINT"]) process.on(signal, () => child.kill(signal));
 
 const isHtml = (headers) => /text\/html/.test(headers["content-type"] ?? "");
+const REWRITING = ["console-error", "dom-note", "missing-alt", "anon-write", "focus-order"];
 
 function mutateHtml(html) {
   switch (MUTANT) {
@@ -28,6 +32,15 @@ function mutateHtml(html) {
       return html.replace("</body>", '<div role="note">planted note from the mutant</div></body>');
     case "missing-alt":
       return html.replace("</body>", '<img src="/mutant-planted.png" width="1" height="1"></body>');
+    case "anon-write":
+      // A page that records a learning event for whoever is looking at it, signed in or not.
+      return html.replace(
+        "</body>",
+        `<script>fetch(${JSON.stringify(`${PERSISTENCE}/rest/v1/learning_records`)}, { method: "POST", headers: { "content-type": "application/json", apikey: "mutant" }, body: JSON.stringify({ course_id: "mutant", lo: location.pathname }) }).catch(() => {});</script></body>`
+      );
+    case "focus-order":
+      // A navigator whose links leave the tab order: keyboard users can no longer reach them.
+      return html.replace("</body>", '<script>addEventListener("load", () => { for (const a of document.querySelectorAll("nav a")) a.tabIndex = -1; });</script></body>');
     default:
       return html;
   }
@@ -43,7 +56,7 @@ http
       const headers = { ...up.headers };
       if (MUTANT === "dropped-header") delete headers["x-content-type-options"];
 
-      const rewrite = ["console-error", "dom-note", "missing-alt"].includes(MUTANT) && isHtml(headers) && !headers["content-encoding"];
+      const rewrite = REWRITING.includes(MUTANT) && isHtml(headers) && !headers["content-encoding"];
       const delay = MUTANT === "slow-ssr" && isHtml(headers) ? DELAY_MS : 0;
 
       if (!rewrite) {

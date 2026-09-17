@@ -37,6 +37,36 @@ export function renderMarkdown(report: RunReport): string {
     lines.push("");
   }
 
+  if (report.migration) {
+    const m = report.migration;
+    lines.push(`### Migration rehearsal`);
+    lines.push("");
+    lines.push(`- a: \`${m.a.ref}\` — ${m.a.files.length} migration(s), ${Object.keys(m.a.catalog.tables).length} table(s)`);
+    lines.push(`- b: \`${m.b.ref}\` — ${m.b.files.filter((f) => !m.a.files.includes(f)).length} new migration(s): ${m.b.files.filter((f) => !m.a.files.includes(f)).map((f) => `\`${f}\``).join(", ") || "none"}`);
+    lines.push("");
+  }
+  if (report.upgrade) {
+    const u = report.upgrade;
+    lines.push(`### Upgrade rehearsal (${u.substrate})`);
+    lines.push("");
+    lines.push(`| upstream | requests | failed | 5xx | p95 |`);
+    lines.push(`|---|---|---|---|---|`);
+    for (const [k, v] of Object.entries(u.byUpstream)) lines.push(`| ${k} | ${v.requests} | ${v.failed} | ${v.serverErrors} | ${v.p95} ms |`);
+    lines.push(`| **all** | ${u.requests} | ${u.failed} | ${u.serverErrors} | switched at ${(u.switchedAt / 1000).toFixed(1)} s |`);
+    lines.push("");
+  }
+  if (report.load) {
+    lines.push(`### Load (k6, ${report.load.a.rate} req/s for ${report.load.a.duration})`);
+    lines.push("");
+    lines.push(`| side | requests | failed | 5xx | p50 | p95 |`);
+    lines.push(`|---|---|---|---|---|---|`);
+    for (const side of ["a", "b"] as const) {
+      const l = report.load[side];
+      lines.push(`| ${side} | ${l.requests} | ${l.failed} | ${l.serverErrors} | ${l.p50} ms | ${l.p95} ms |`);
+    }
+    lines.push("");
+  }
+
   const info = compare.hunks.filter((h) => h.severity === "info");
   if (info.length) {
     lines.push(`<details><summary>Informational (${info.length})</summary>`);

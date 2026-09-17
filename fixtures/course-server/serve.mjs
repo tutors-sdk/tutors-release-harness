@@ -29,6 +29,8 @@ const TYPES = {
 };
 
 const server = createServer((req, res) => {
+  // Node adds a Date header by default; the fixture is deterministic without it.
+  res.sendDate = false;
   const headers = { "access-control-allow-origin": "*", "cache-control": "no-store" };
   const pathname = decodeURIComponent(new URL(req.url ?? "/", "http://localhost").pathname);
 
@@ -45,6 +47,4 @@ const server = createServer((req, res) => {
     res.writeHead(404, headers).end("not found");
   }
 });
-// Node adds a Date header by default; the fixture is deterministic without it.
-server.on("request", (_req, res) => res.sendDate = false);
 server.listen(port, () => console.log(JSON.stringify({ level: "info", message: "fixture course server listening", port, root })));
