@@ -1,0 +1,126 @@
+# Two identical Tutors stacks, "a" and "b", that differ only in the application
+# images, plus the fixtures both sides share (one course server, one clock).
+#
+# The harness CLI sets every *_IMAGE_* variable from --a / --b before it runs
+# `docker compose up`; the defaults below only exist so the file can be started
+# by hand:
+#
+#   READER_IMAGE_A=tutors/reader:16.2.0 READER_IMAGE_B=tutors/reader:16.3.0-rc.1 \
+#     docker compose -p tutors-harness -f compose.harness.yaml up -d --wait
+#
+# The apps run exactly as the monorepo's e2e stack runs them: anonymous mode,
+# read-only root filesystem, no capabilities, JSON logs. Nothing here may
+# differ between the two sides except the image reference: any other
+# difference would show up in the report as the harness's own noise.
+name: tutors-harness
+
+x-app: &app
+  init: true
+  read_only: true
+  tmpfs:
+    - /tmp
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  healthcheck:
+    test:
+      - CMD
+      - node
+      - -e
+      - "fetch('http://127.0.0.1:3000/healthz/live').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+    interval: 2s
+    timeout: 3s
+    retries: 30
+  depends_on:
+    course:
+      condition: service_healthy
+
+# Identical on both sides. HARNESS_NOW is the clock fixture (fixtures/clock):
+# test builds that honour it see a frozen wall clock, and the harness also
+# freezes the browser clock to the same instant.
+x-env: &env
+  PUBLIC_ANON_MODE: "TRUE"
+  LOG_LEVEL: info
+  HARNESS_NOW: ${HARNESS_NOW:-2026-09-16T09:05:00.000Z}
+  # Anonymous mode with a secret set, as a deployment that also offers sign-in
+  # would run it. Not a real secret; it exists only inside this stack.
+  PRIVATE_AUTH_SECRET: harness-only-not-a-real-secret-000000000000
+
+services:
+  # ---- shared fixtures ----------------------------------------------------
+  course:
+    image: node:22-bookworm-slim
+    init: true
+    read_only: true
+    user: "1001:0"
+    command: ["node", "/fixture/serve.mjs", "/srv/course", "8080"]
+    volumes:
+      - ./fixtures/course-server/serve.mjs:/fixture/serve.mjs:ro
+      - ./fixtures/course-server/course:/srv/course:ro
+    # Course pages are client-rendered: the browser fetches
+    # http://localhost:8080/tutors.json directly, so the fixture is published
+    # on the host at the course id's port and both sides share it.
+    ports:
+      - "${COURSE_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/healthz').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+  # ---- side a -------------------------------------------------------------
+  reader-a:
+    <<: *app
+    image: ${READER_IMAGE_A:-tutors/reader:local}
+    ports:
+      - "${READER_PORT_A:-3100}:3000"
+    environment:
+      <<: *env
+      ORIGIN: http://localhost:${READER_PORT_A:-3100}
+
+  catalogue-a:
+    <<: *app
+    image: ${CATALOGUE_IMAGE_A:-tutors/catalogue:local}
+    ports:
+      - "${CATALOGUE_PORT_A:-3101}:3000"
+    environment:
+      <<: *env
+      ORIGIN: http://localhost:${CATALOGUE_PORT_A:-3101}
+
+  live-a:
+    <<: *app
+    image: ${LIVE_IMAGE_A:-tutors/live:local}
+    ports:
+      - "${LIVE_PORT_A:-3102}:3000"
+    environment:
+      <<: *env
+      ORIGIN: http://localhost:${LIVE_PORT_A:-3102}
+
+  # ---- side b -------------------------------------------------------------
+  reader-b:
+    <<: *app
+    image: ${READER_IMAGE_B:-tutors/reader:local}
+    ports:
+      - "${READER_PORT_B:-3200}:3000"
+    environment:
+      <<: *env
+      ORIGIN: http://localhost:${READER_PORT_B:-3200}
+
+  catalogue-b:
+    <<: *app
+    image: ${CATALOGUE_IMAGE_B:-tutors/catalogue:local}
+    ports:
+      - "${CATALOGUE_PORT_B:-3201}:3000"
+    environment:
+      <<: *env
+      ORIGIN: http://localhost:${CATALOGUE_PORT_B:-3201}
+
+  live-b:
+    <<: *app
+    image: ${LIVE_IMAGE_B:-tutors/live:local}
+    ports:
+      - "${LIVE_PORT_B:-3202}:3000"
+    environment:
+      <<: *env
+      ORIGIN: http://localhost:${LIVE_PORT_B:-3202}

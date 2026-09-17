@@ -1,0 +1,94 @@
+# Release mode: the candidate beside the production tag. Called by the
+# monorepo when a release branch is created (workflow_dispatch or
+# repository_dispatch from tutors-sdk/tutors-mono-repo), or by hand.
+#
+# It FAILS on an unclaimed diff only when a clean nightly A/A exists from the
+# last week; otherwise it warns and says why. Claims come from the release PR,
+# never from this repository.
+name: Release harness
+
+on:
+  workflow_dispatch:
+    inputs:
+      production:
+        description: "Production tag (side a)"
+        required: true
+      candidate:
+        description: "Candidate tag (side b)"
+        required: true
+      claims_url:
+        description: "Raw URL of the release's claims.yaml (optional)"
+        required: false
+      runs:
+        description: "Journey repetitions per side (3 enables statistical timing)"
+        required: false
+        default: "3"
+  repository_dispatch:
+    types: [release-candidate]
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      HARNESS_IMAGE_PREFIX: ${{ vars.HARNESS_IMAGE_PREFIX || 'tutors' }}
+      PRODUCTION: ${{ inputs.production || github.event.client_payload.production }}
+      CANDIDATE: ${{ inputs.candidate || github.event.client_payload.candidate }}
+      CLAIMS_URL: ${{ inputs.claims_url || github.event.client_payload.claims_url }}
+      RUNS: ${{ inputs.runs || github.event.client_payload.runs || '3' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+
+      - name: Pull or build both sides
+        run: |
+          for tag in "$PRODUCTION" "$CANDIDATE"; do
+            if docker pull "$HARNESS_IMAGE_PREFIX/reader:$tag" 2>/dev/null; then
+              docker pull "$HARNESS_IMAGE_PREFIX/catalogue:$tag"
+              docker pull "$HARNESS_IMAGE_PREFIX/live:$tag"
+            else
+              scripts/build-images.sh "$tag"
+            fi
+          done
+
+      - name: Fetch the release's claims
+        if: env.CLAIMS_URL != ''
+        run: curl -fsSL "$CLAIMS_URL" -o claims.yaml
+
+      - name: Fetch the latest nightly noise status
+        uses: dawidd6/action-download-artifact@v6
+        continue-on-error: true
+        with:
+          workflow: nightly-noise.yml
+          name: noise-status
+          path: noise
+          if_no_artifact_found: warn
+
+      - name: Release mode
+        run: |
+          noise="$(ls noise/*/noise-status.json 2>/dev/null | head -1 || true)"
+          pnpm harness run --mode release --a "$PRODUCTION" --b "$CANDIDATE" --runs "$RUNS" \
+            ${CLAIMS_URL:+--claims claims.yaml} ${noise:+--noise "$noise"}
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: release-report
+          path: out/
+          retention-days: 30
+
+      - name: Show the PR comment
+        if: always()
+        run: cat out/*/report.md >> "$GITHUB_STEP_SUMMARY"

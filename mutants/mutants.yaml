@@ -1,0 +1,34 @@
+# The harness's own negative fixtures: six planted regressions the release
+# gate must catch, each attributed to the right artefact. `harness mutants`
+# builds each one from the base reader image, runs release mode (base vs
+# mutant) and asserts the verdict is FAIL with at least one unclaimed hunk of
+# the expected artefact. A harness that cannot catch its own mutants has no
+# business gating a release.
+#
+# `runs` is the number of journey repetitions the mutant needs to be caught;
+# only the timing mutant needs more than one.
+mutants:
+  - name: dropped-header
+    plants: the X-Content-Type-Options header is no longer sent
+    expect: [headers]
+
+  - name: route-500
+    plants: every /course/* document request answers 500
+    expect: [network, dom]
+
+  - name: console-error
+    plants: a console.error on every server-rendered page
+    expect: [console]
+
+  - name: dom-note
+    plants: an extra landmark at the end of every page body
+    expect: [dom]
+
+  - name: missing-alt
+    plants: an image with no alternative text on every page
+    expect: [axe]
+
+  - name: slow-ssr
+    plants: 400 ms added to every HTML response
+    expect: [timing]
+    runs: 3

@@ -1,0 +1,72 @@
+# Course properties. Full reference:
+#   https://tutors.dev/note/tutors-reference-manual/unit-1-getting-started/note-d-properties
+
+# Course card / title-bar icon (any Iconify name + hex colour).
+icon:
+  type: "fluent-color:book-open-lightbulb-24"
+  color: "ffffff"
+
+# Course author(s) - shown as the subtitle on the course home page.
+credits: Tutors CI
+
+# --- Everything below is optional: uncomment a line to enable it -----------
+
+# A custom footer line shown on every page.
+# footer: © 2026 My Institution
+
+# A parent course, shown as a home icon in the breadcrumbs.
+# parent: course/my-programme.netlify.app
+
+# Add an "Edit this page" button linking back to the source repo.
+# github: https://github.com/my-org/my-course/blob/main
+
+# Force GitHub sign-in before the course can be viewed.
+# auth: 1
+
+# Private course: hidden from the Gallery/Catalogue and the login menus
+# (pair with enrollment.yaml to restrict exactly who can view it).
+# private: 1
+
+# Portfolio mode: show units and links only - no topics or table of contents.
+# portfolio: true
+
+# Hide every video in the course without removing the ids.
+# hideVideos: true
+
+# Auto-number lab steps (01, 02, ...) from their file order.
+# labStepsAutoNumber: true
+
+# LLM resources page: 0 = off, 1 = generated but link hidden, 2 = link shown.
+# llm: 2
+
+# Talk PDF reader: adobe (default) or mozilla.
+# defaultPdfReader: mozilla
+
+# PDF orientation for the Adobe reader: landscape (default) or portrait.
+# pdfOrientation: portrait
+
+# Enable the shared whiteboard.
+# whiteboard: 1
+
+# Hide selected topic folders from students...
+# ignore:
+#   - topic-01
+# ...and set a PIN the instructor can enter anywhere to reveal them again.
+# ignorepin: 4019
+
+# --- Companion links (shown in the course toolbar) ------------------------
+# slack: https://my-workspace.slack.com/
+# moodle: https://moodle.my-institution.edu/course/view.php?id=1
+# youtube: https://youtube.com/@my-channel
+# zoom: https://zoom.us/j/00000000000
+# teams: https://teams.microsoft.com/l/meetup-join/...
+# podcast: https://my-podcast.example.com/
+
+# Custom companions (any service, each with its own icon):
+# companions:
+#   piazza:
+#     link: https://piazza.com/my-course
+#     title: Course Piazza
+#     icon:
+#       type: academicons:piazza
+#       color: info

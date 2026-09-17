@@ -1,0 +1,62 @@
+# Nightly A/A on the production tag. Calibrates the masks; a diff here is
+# noise the normaliser must learn to mask, or non-determinism in the stack.
+# The status it writes is what release mode consults before it may FAIL.
+name: Nightly noise (A/A)
+
+on:
+  schedule:
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Production tag to compare with itself"
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  noise:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      HARNESS_IMAGE_PREFIX: ${{ vars.HARNESS_IMAGE_PREFIX || 'tutors' }}
+      TAG: ${{ inputs.tag || vars.HARNESS_PRODUCTION_TAG || 'main' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+
+      - name: Pull or build the production images
+        run: |
+          if docker pull "$HARNESS_IMAGE_PREFIX/reader:$TAG" 2>/dev/null; then
+            docker pull "$HARNESS_IMAGE_PREFIX/catalogue:$TAG"
+            docker pull "$HARNESS_IMAGE_PREFIX/live:$TAG"
+          else
+            scripts/build-images.sh "$TAG"
+          fi
+
+      - name: A/A, three runs
+        run: pnpm harness run --mode noise --a "$TAG" --b "$TAG" --runs 3
+
+      - name: Publish the noise status for release runs
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: noise-status
+          path: out/*/noise-status.json
+          retention-days: 8
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: noise-report
+          path: out/
+          retention-days: 8

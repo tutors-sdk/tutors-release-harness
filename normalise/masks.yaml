@@ -1,0 +1,87 @@
+# Every field the harness deliberately does not compare, with a reason.
+#
+# A mask is a blind spot you chose. Adding one requires a review (CODEOWNERS
+# covers this file) and the reason must say what noise it hides and why that
+# noise is not a regression. Masks are applied to BOTH sides before comparing,
+# and the report lists which masks actually changed something in a run, so a
+# mask that never fires can be removed.
+#
+# Mask kinds, by artefact:
+#   headers:  `header: <name>`               drops that response header
+#   dom | console | network:
+#             `pattern: <regex>`             replaces matches with `replace` (default "{{masked}}")
+#             `network` masks apply to the request URL only; with `drop: true`
+#             the matching requests are removed from the comparison entirely
+#   metrics:  `series: <regex>`              drops matching series names
+#   logs:     `key: <name>`                  drops that key from the key-set comparison
+#
+# Structural normalisation that is NOT a mask (and needs no entry here): each
+# side's own origin is replaced by {{origin}} by the collector, because the two
+# sides necessarily answer on different ports.
+
+masks:
+  - id: response-date
+    artefact: headers
+    header: date
+    reason: Node sets Date on every response; wall-clock time on the server is not under the harness's control until HARNESS_NOW is honoured.
+
+  - id: request-id
+    artefact: headers
+    header: x-request-id
+    reason: Generated per request by the apps' request logger; its presence is asserted by the logs collector instead.
+
+  - id: etag
+    artefact: headers
+    header: etag
+    reason: SvelteKit derives ETags from response bytes, so an ETag difference always accompanies a body difference that the dom or network engine reports on its own.
+
+  - id: metrics-process
+    artefact: metrics
+    series: "^(process_|nodejs_)"
+    reason: Runtime gauges (heap, event loop lag, uptime, GC) describe the host and the moment, not the release.
+
+  - id: metrics-timing-histograms
+    artefact: metrics
+    series: "_(seconds|milliseconds)_(bucket|sum)$"
+    reason: Latency histogram buckets and sums move with the machine; latency is compared statistically by the timing engine, not by metrics deltas.
+
+  - id: third-party-requests
+    artefact: network
+    pattern: "^https?://(?!localhost[:/]|127\\.0\\.0\\.1[:/])"
+    drop: true
+    reason: >-
+      Requests to hosts the fixture stack does not serve (today the KaTeX stylesheet on cdn.jsdelivr.net) are
+      timed by the network, not the release, and land on whichever page is open when they finish, so the same
+      image attributes them to different pages on the two sides. A release that adds or removes a third-party
+      dependency shows up as a dom or console change instead. Stubbing the CDN in the fixture stack would
+      let this mask go.
+
+# Engine settings. Thresholds are noise floors measured by A/A runs; raising
+# one is a mask and needs the same review.
+screenshot:
+  # Fraction of differing pixels above which a screenshot pair is a finding.
+  maxDiffRatio: 0.001
+  # pixelmatch colour tolerance (0..1); 0.1 is the library default.
+  pixelThreshold: 0.1
+
+metrics:
+  # A counter delta on side b may differ from side a by this fraction of the
+  # larger delta, or by `deltaAbsolute` counts, whichever is greater.
+  deltaTolerance: 0.25
+  deltaAbsolute: 2
+
+logs:
+  # Per-level line counts may differ by this fraction before it is a finding.
+  levelTolerance: 0.25
+  # A drop in the fraction of lines carrying a request id larger than this is a finding.
+  requestIdDrop: 0.05
+
+timing:
+  # Timing is compared with Mann-Whitney U only with at least this many runs per side;
+  # with fewer, a large median shift is reported as info, never as a failure.
+  minRuns: 3
+  alpha: 0.05
+  # Side b's median must exceed side a's by at least this fraction AND this
+  # many milliseconds to count: a 3 ms → 4 ms TTFB is +33% and means nothing.
+  minEffect: 0.2
+  minShiftMs: 20

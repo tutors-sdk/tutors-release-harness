@@ -1,0 +1,50 @@
+{
+  "name": "tutors-release-harness",
+  "version": "0.1.0",
+  "description": "Runs a Tutors release candidate beside the production image, diffs everything observable, and fails unless every difference is claimed.",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@10.28.1",
+  "bin": {
+    "harness": "./bin/harness.mjs"
+  },
+  "scripts": {
+    "harness": "tsx src/cli.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "stack:up": "tsx src/cli.ts stack up",
+    "stack:down": "tsx src/cli.ts stack down",
+    "noise": "tsx src/cli.ts run --mode noise",
+    "release": "tsx src/cli.ts run --mode release",
+    "mutants": "tsx src/cli.ts mutants"
+  },
+  "dependencies": {
+    "@axe-core/playwright": "^4.10.2",
+    "diff": "^8.0.2",
+    "picomatch": "^4.0.3",
+    "pixelmatch": "^7.1.0",
+    "playwright": "^1.63.0",
+    "pngjs": "^7.0.0",
+    "yaml": "^2.8.1",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@types/diff": "^8.0.0",
+    "@types/node": "^22.19.0",
+    "@types/picomatch": "^4.0.2",
+    "@types/pixelmatch": "^5.2.6",
+    "@types/pngjs": "^6.0.5",
+    "eslint": "^9.39.1",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.48.0",
+    "vitest": "^3.2.4"
+  }
+}

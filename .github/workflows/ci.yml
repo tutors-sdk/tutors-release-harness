@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit:
+    name: Typecheck, lint, unit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm test
+
+  # Phase H0 exit criterion: any two tags boot side by side in under five
+  # minutes, and one journey runs against both. Uses the images the monorepo
+  # publishes; until a registry exists, builds them from the pinned ref.
+  two-stacks:
+    name: Two stacks boot and one journey runs (A/A)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      HARNESS_IMAGE_PREFIX: ${{ vars.HARNESS_IMAGE_PREFIX || 'tutors' }}
+      BASE_REF: ${{ vars.HARNESS_BASE_REF || 'main' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+
+      - name: Pull or build the base images
+        run: |
+          if docker pull "$HARNESS_IMAGE_PREFIX/reader:$BASE_REF" 2>/dev/null; then
+            docker pull "$HARNESS_IMAGE_PREFIX/catalogue:$BASE_REF"
+            docker pull "$HARNESS_IMAGE_PREFIX/live:$BASE_REF"
+          else
+            scripts/build-images.sh "$BASE_REF"
+          fi
+
+      - name: A/A on one journey
+        run: pnpm harness run --mode noise --a "$BASE_REF" --b "$BASE_REF" --journey anonymous-student-reads-course
+
+      - name: Stack logs on failure
+        if: failure()
+        run: docker compose -p tutors-harness -f compose.harness.yaml logs --no-color || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: harness-aa
+          path: out/
+          retention-days: 7

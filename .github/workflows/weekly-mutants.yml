@@ -1,0 +1,54 @@
+# The harness's own signal: every planted regression must be caught and
+# attributed. A harness that cannot catch its own mutants has no business
+# gating a release.
+name: Weekly mutants
+
+on:
+  schedule:
+    - cron: "41 3 * * 1"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Base tag to plant mutants on"
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  mutants:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      HARNESS_IMAGE_PREFIX: ${{ vars.HARNESS_IMAGE_PREFIX || 'tutors' }}
+      TAG: ${{ inputs.tag || vars.HARNESS_PRODUCTION_TAG || 'main' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+
+      - name: Pull or build the base images
+        run: |
+          if docker pull "$HARNESS_IMAGE_PREFIX/reader:$TAG" 2>/dev/null; then
+            docker pull "$HARNESS_IMAGE_PREFIX/catalogue:$TAG"
+            docker pull "$HARNESS_IMAGE_PREFIX/live:$TAG"
+          else
+            scripts/build-images.sh "$TAG"
+          fi
+
+      - name: Six mutants, all caught
+        run: pnpm harness mutants --base "$TAG"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mutant-reports
+          path: out/
+          retention-days: 14
