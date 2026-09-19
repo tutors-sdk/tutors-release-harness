@@ -81,7 +81,7 @@ A difference means production is not behaving as the tested candidate did:
 the workflow opens a rollback issue with `report.md`.
 
 The same command on a 15-minute schedule is the synthetic monitor
-(`.github/workflows/synthetic.yml`).
+(the schedule in `.github/workflows/post-deploy.yml`).
 
 ## Re-comparing
 

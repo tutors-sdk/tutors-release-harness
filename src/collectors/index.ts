@@ -2,6 +2,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Journey } from "../../traffic/journeys/journeys.ts";
 import { serviceLogs, serviceName } from "../stack.ts";
+import { harnessInfo } from "../version.ts";
 import type { JourneyCapture, LogSummary, MetricsSnapshot, SideCapture, SideSpec } from "../types.ts";
 import { captureJourney, launchBrowser } from "./browser.ts";
 import { runLoad } from "./load.ts";
@@ -90,7 +91,7 @@ export async function captureSide(spec: SideSpec, journeys: Journey[], opts: Cap
     }
   }
 
-  const capture: SideCapture = { side: spec.name, images: spec.images, capturedAt: new Date().toISOString(), journeys: captured, metrics: { before, after }, logs, ...(spec.external ? { external: true } : {}) };
+  const capture: SideCapture = { side: spec.name, harness: harnessInfo(), images: spec.images, capturedAt: new Date().toISOString(), journeys: captured, metrics: { before, after }, logs, ...(spec.external ? { external: true } : {}) };
   if (opts.load) {
     capture.load = runLoad({
       base: spec.external ? spec.urls.reader : `http://reader-${spec.name}:3000`,

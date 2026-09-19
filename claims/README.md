@@ -21,11 +21,14 @@ claims:
     reason: "fix(reader): #270 CSP allows the new video host"
 ```
 
+The file may start with `version: 1` (optional; any other value is refused).
+The format is part of [the contract](../docs/contract.md#claims-file).
+
 ## Fields
 
 | field | meaning |
 | --- | --- |
-| `artefact` | `dom`, `screenshot`, `network`, `console`, `headers`, `axe`, `metrics`, `logs`, `timing`, or `*` |
+| `artefact` | `dom`, `screenshot`, `network`, `console`, `headers`, `axe`, `focus`, `metrics`, `logs`, `timing`, `persistence`, `migration`, `upgrade`, or `*` |
 | `scope` | a glob matched against the hunk's scope **or** its route (see below) |
 | `reason` | the Rule id or changelog entry. "see PR" and "approved" are rejected by the schema |
 | `approvedBy` | required for a broad claim; a person, never a bot |

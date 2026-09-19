@@ -135,8 +135,20 @@ export interface LoadSummary {
   duration: string;
 }
 
+/** Which harness produced a report or a capture. */
+export interface HarnessInfo {
+  /** `version` in the harness's package.json. */
+  version: string;
+  /** Commit of the harness checkout, or null when it is not a git checkout and HARNESS_GIT_SHA is unset. */
+  gitSha: string | null;
+  /** Version of the integration contract (docs/contract.md) the harness implements. */
+  contractVersion: string;
+}
+
 export interface SideCapture {
   side: SideName;
+  /** Absent only in captures written before contract 1.0.0. */
+  harness?: HarnessInfo;
   images: SideSpec["images"];
   capturedAt: string;
   /** A live deployment rather than a harness stack: latency and load are not comparable with a laptop's. */
@@ -227,6 +239,8 @@ export interface CompareResult {
 export type Verdict = "pass" | "fail" | "warn";
 
 export interface NoiseStatus {
+  /** The contract's major version; absent in files written before contract 1.0.0. */
+  schemaVersion?: number;
   /** ISO timestamp of the noise run this status describes. */
   ranAt: string;
   clean: boolean;
@@ -234,6 +248,10 @@ export interface NoiseStatus {
 }
 
 export interface RunReport {
+  /** The contract's major version (docs/contract.md). A reader should refuse a value it does not know. */
+  schemaVersion: number;
+  harness: HarnessInfo;
+  /** Same as harness.version; kept for readers of pre-contract reports. */
   harnessVersion: string;
   mode: Mode;
   substrate: Substrate;

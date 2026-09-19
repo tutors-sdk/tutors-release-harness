@@ -2,9 +2,9 @@
 # journeys against production and compare with the candidate's recorded
 # release-mode capture. A new difference opens a rollback issue with the report.
 #
-# Dispatched by the monorepo's deploy job (repository_dispatch "deployed" with
-# client_payload.candidate) and scheduled as the synthetic monitor. The recorded
-# run is the latest release-report artifact whose candidate matches.
+# Dispatched by the monorepo's deploy job (repository_dispatch "deployed"; no
+# payload field is read) and scheduled as the synthetic monitor. The recorded
+# run is the release-report artifact of the latest successful release run.
 name: Post-deploy and synthetic monitor
 
 on:
@@ -83,6 +83,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           body="$(cat out/*-post-deploy/report.md)"
+          gh label create rollback --color B60205 --description "Production differs from the tested release" 2>/dev/null || true
           gh issue create --title "Rollback candidate: production differs from the tested release ($(date -u +%Y-%m-%dT%H:%MZ))" \
             --label rollback --body "$body
 

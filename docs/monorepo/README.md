@@ -10,7 +10,12 @@ automatic. Each file here is ready to copy.
 | `release/claims.yaml` | the release's claims (see `../../claims/README.md`) | written by the release author |
 
 And one repository secret in the monorepo: `HARNESS_TOKEN`, a fine-grained
-PAT with `actions: write` on this repository, for `repository_dispatch`.
+PAT with `contents: write` on this repository — what GitHub requires for
+`repository_dispatch`.
+
+What the harness accepts, writes and promises — event types, payload fields,
+`report.json`, exit codes, what it will never do to a PR — is in
+[the contract](../contract.md). Pin the harness by tag (`v1.0.0`).
 
 On the harness side, set the repository variables:
 
@@ -27,7 +32,7 @@ Then the sequence for a release is:
    candidate sha), **upgrade** mode (edge rollout under load). The PR comment
    is in the workflow summary and the report is an artifact.
 2. Tag / deploy → the monorepo updates `HARNESS_PRODUCTION_TAG` and dispatches
-   `post-deploy`: the harness runs the reference-course journeys against
+   `deployed`: the harness runs the reference-course journeys against
    production and compares with the recorded candidate run; a new difference
    opens a rollback issue with the report attached.
 3. Every 15 minutes → the synthetic workflow repeats the post-deploy
