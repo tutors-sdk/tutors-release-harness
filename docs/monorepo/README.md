@@ -51,13 +51,52 @@ On the harness side, set the repository variables:
 | `HARNESS_PRODUCTION_TAG` | the deployed version, e.g. `16.2.0`; the deploy job updates it |
 | `HARNESS_PRODUCTION_URLS` | `reader=https://tutors.dev,catalogue=https://catalogue.tutors.dev,live=https://live.tutors.dev` |
 
+## First day on Quay
+
+The order matters: the harness has nothing to judge until production's own
+images exist, and production (`v16.2.2`) was tagged before `image-build.yml`
+existed, so its tag push published nothing.
+
+1. In Quay, create the public repositories `tutors-reader`,
+   `tutors-catalogue`, `tutors-live` and `tutors-time` under `tutors-sdk`, and
+   a robot account with write on all four. Store it in the monorepo as
+   `QUAY_USERNAME` / `QUAY_PASSWORD`.
+2. Merge the monorepo's `image-build.yml` (PR #143). The push to `main`
+   publishes `:main` and `:sha-<short>`: the first proof the robot account,
+   signing and SBOM attestation work.
+3. Backfill production. Dispatching on the old tag cannot work (the tag has no
+   copy of the workflow), so run it from `main` with the tag as input; it
+   builds that tag's own Dockerfile and publishes `X.Y.Z`, `X.Y` and
+   `sha-<short>`, never `latest`:
+
+   ```bash
+   gh workflow run image-build.yml --repo tutors-sdk/tutors-mono-repo --ref main -f release_tag=v16.2.2
+   ```
+
+   Its signature identity ends in `@refs/heads/main`, which the default
+   `HARNESS_COSIGN_IDENTITY` accepts.
+4. Check the round trip from a laptop before any workflow depends on it:
+
+   ```bash
+   cosign verify --certificate-identity-regexp '^https://github.com/tutors-sdk/tutors-mono-repo/\.github/workflows/image-build\.yml@' \
+     --certificate-oidc-issuer https://token.actions.githubusercontent.com quay.io/tutors-sdk/tutors-reader:16.2.2
+   pnpm harness images ensure --a 16.2.2 --b main    # pulled+verified on both sides, nothing built
+   ```
+
+5. Set `HARNESS_PRODUCTION_TAG=16.2.2` here and dispatch **Nightly noise** once
+   by hand. Until the monorepo has a deploy job (plan items M11/M12), this
+   variable is updated by hand after every release.
+6. Add `HARNESS_TOKEN` to the monorepo. The next `release/**` push is the
+   first end-to-end candidate.
+
 Then the sequence for a release is:
 
 1. Release branch pushed → candidate tagged and built → harness **release**
    mode (A/B with claims, 3 runs, k6), **migration** mode (production ref vs
    candidate sha), **upgrade** mode (edge rollout under load). The PR comment
    is in the workflow summary and the report is an artifact.
-2. Tag / deploy → the monorepo updates `HARNESS_PRODUCTION_TAG` and dispatches
+2. Tag / deploy → the monorepo updates `HARNESS_PRODUCTION_TAG` (by hand until
+   it has a deploy job) and dispatches
    `deployed`: the harness runs the reference-course journeys against
    production and compares with the recorded candidate run; a new difference
    opens a rollback issue with the report attached.

@@ -17,6 +17,9 @@
 #   tag v16.2.0       -> quay.io/tutors-sdk/tutors-<app>:16.2.0, :16.2, :latest and :sha-<short>
 #   tag v16.3.0-rc.1  -> quay.io/tutors-sdk/tutors-<app>:16.3.0-rc.1 and :sha-<short>
 #                        (a prerelease never moves :latest or :16.3)
+#   dispatch from main with release_tag=v16.2.2
+#                     -> :16.2.2, :16.2 and :sha-<short> (never :latest); the backfill
+#                        for releases tagged before the workflow existed
 #
 # Every image is signed with cosign (keyless, GitHub OIDC) BY DIGEST and carries
 # an SPDX SBOM attestation (`cosign attest --type spdxjson`), plus the OCI labels
