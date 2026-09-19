@@ -16,7 +16,9 @@ import { exitCodeFor, gate } from "../src/gate.ts";
 import { parseNoiseStatus } from "../src/noise.ts";
 import { DEFAULT_MASKS_FILE } from "../src/normalise/masks.ts";
 import { compareFromCaptures, defaultRunOptions } from "../src/run.ts";
-import { ARTEFACTS, MODES, SUBSTRATES, type CompareResult, type Mode, type RunReport, type SchemaCatalog } from "../src/types.ts";
+import { DEFAULT_COSIGN_IDENTITY, DEFAULT_COSIGN_ISSUER, EXIT_CANNOT_JUDGE, EXIT_UNAVAILABLE } from "../src/images.ts";
+import { DEFAULT_IMAGE_PREFIX, QUAY_IMAGE_TEMPLATE, imagesFor } from "../src/image-ref.ts";
+import { ARTEFACTS, MODES, PROVENANCES, SUBSTRATES, type CompareResult, type Mode, type RunReport, type SchemaCatalog } from "../src/types.ts";
 import { CLAIMS_VERSION, CONTRACT_VERSION, HARNESS_VERSION, SCHEMA_VERSION, harnessInfo } from "../src/version.ts";
 import { capture, clone } from "./support/captures.ts";
 
@@ -54,6 +56,21 @@ function expectValid(validate: ValidateFunction, value: unknown) {
 type DeepRequired<T> = T extends (infer U)[] ? DeepRequired<U>[] : T extends object ? { [K in keyof T]-?: DeepRequired<T[K]> } : T;
 
 const catalog: SchemaCatalog = { tables: { learner: { id: { type: "uuid", nullable: false, default: null } } }, indexes: ["learner_pkey"], functions: ["touch()"], policies: ["learner/own_rows"] };
+const D = (n: number) => `sha256:${String(n).repeat(64)}`;
+/** One image carrying every field ImageInfo allows (no real image carries them all at once; the schema must know each). */
+const imageInfo = (app: string, n: number) => ({
+  ref: `quay.io/tutors-sdk/tutors-${app}:16.2.0`,
+  id: `sha256:${"a".repeat(64)}`,
+  digest: D(n),
+  revision: "1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b",
+  version: "16.2.0",
+  created: "2026-09-01T10:00:00Z",
+  provenance: "pulled+verified" as const,
+  verifiedIdentity: "^https://github.com/tutors-sdk/tutors-mono-repo/",
+  unverifiedReason: "no valid signature",
+  builtFrom: { ref: "v16.2.0", sha: "1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b" }
+});
+const sideProvenance = { summary: "pulled+verified", allowedUnsigned: true as const, images: { reader: imageInfo("reader", 1), catalogue: imageInfo("catalogue", 2), live: imageInfo("live", 3) } };
 const load = { requests: 600, failed: 0, serverErrors: 0, p50: 12, p95: 40, rate: 20, duration: "30s" };
 
 /**
@@ -72,6 +89,7 @@ const full: DeepRequired<RunReport> = {
   now: "2026-09-16T09:05:00.000Z",
   runs: 3,
   sides: { a: { reader: "tutors/reader:16.2.0", catalogue: "tutors/catalogue:16.2.0", live: "tutors/live:16.2.0" }, b: { reader: "tutors/reader:rc", catalogue: "tutors/catalogue:rc", live: "tutors/live:rc" } },
+  provenance: { a: sideProvenance, b: sideProvenance },
   verdict: "fail",
   reasons: ["1 unclaimed diff(s)"],
   noise: { schemaVersion: SCHEMA_VERSION, ranAt: "2026-09-16T02:00:00.000Z", clean: true, hunks: 0 },
@@ -151,6 +169,23 @@ describe("report.json", () => {
     expect(written.compare.staleClaims).toHaveLength(1);
   });
 
+  it("image provenance: the schema's values are the code's, a real report carrying it is accepted, and an unknown field or value is not", () => {
+    expect(reportSchema.definitions.imageInfo.properties.provenance.enum).toEqual([...PROVENANCES]);
+    expect(validateReport({ ...full, provenance: { a: sideProvenance } })).toBe(true);
+    expect(validateReport({ ...full, provenance: { a: { ...sideProvenance, images: { ...sideProvenance.images, reader: { ...imageInfo("reader", 1), provenance: "trusted" } } } } })).toBe(false);
+    expect(validateReport({ ...full, provenance: { a: { ...sideProvenance, images: { ...sideProvenance.images, reader: { ...imageInfo("reader", 1), digest: "sha256:short" } } } } })).toBe(false);
+    expect(validateReport({ ...full, provenance: { a: { ...sideProvenance, signedBy: "x" } } })).toBe(false);
+
+    const dir = mkdtempSync(join(tmpdir(), "harness-contract-"));
+    const local = { summary: "local (unverified)", images: { reader: { ref: "tutors/reader:a", id: "sha256:1", provenance: "local" as const }, catalogue: { ref: "tutors/catalogue:a", provenance: "local" as const }, live: { ref: "tutors/live:a", provenance: "local" as const } } };
+    const outcome = compareFromCaptures({ mode: "any-two", substrate: "compose", captureDir: dir, a: capture("a", { provenance: local }), b: capture("b"), claims: [], masksFile: DEFAULT_MASKS_FILE, noiseMaxAgeDays: 7, now: "2026-09-16T09:05:00.000Z", runs: 1, log: () => {} });
+    const written = JSON.parse(readFileSync(outcome.files.json, "utf8")) as RunReport;
+    expectValid(validateReport, written);
+    expect(written.provenance).toEqual({ a: local });
+    for (const field of ["provenance", "digest", "revision", "verifiedIdentity", "unverifiedReason", "builtFrom", "allowedUnsigned"]) expect(contractMd, field).toContain(`\`${field}\``);
+    for (const value of PROVENANCES) expect(contractMd, value).toContain(`\`${value}\``);
+  });
+
   it("every mode writes a report the schema accepts", () => {
     for (const mode of MODES) expectValid(validateReport, runFixture(mode, { mutate: true }).written);
   });
@@ -224,6 +259,13 @@ describe("exit codes", () => {
     for (const [code, meaning] of Object.entries(cli.exitCodes)) expect(contractMd).toContain(`| \`${code}\` | ${meaning[0]!.toUpperCase()}${meaning.slice(1)}`);
   });
 
+  it("an image that may not be judged is 2, one that cannot be obtained is 1, as the table says", () => {
+    expect([EXIT_UNAVAILABLE, EXIT_CANNOT_JUDGE]).toEqual([1, 2]);
+    expect(cli.exitCodes["1"]).toContain("images ensure could not obtain an image");
+    expect(cli.exitCodes["2"]).toContain("an image may not be judged");
+    expect(read("src/cli.ts")).toMatch(/error instanceof ImageTrustError\) \{\s*console\.error\(`cannot judge: [^\n]*\n\s*process\.exit\(EXIT_CANNOT_JUDGE\);/);
+  });
+
   it("usage errors and harness failures exit 2", () => {
     const source = read("src/cli.ts");
     expect(source).toMatch(/function fail\(message: string\): never \{\s*console\.error\(message\);\s*process\.exit\(2\);/);
@@ -264,6 +306,26 @@ describe("CLI", () => {
   it("the enumerated flag values are the code's", () => {
     expect(cli.flags.find((f) => f.name === "mode")!.values).toEqual([...MODES]);
     expect(cli.flags.find((f) => f.name === "substrate")!.values).toEqual([...SUBSTRATES]);
+  });
+
+  it("the environment variables and image forms in cli.json are the code's, and contract.md documents them", () => {
+    const env = (json("docs/contract/cli.json") as { environment: Record<string, { default: string }> }).environment;
+    expect(env.HARNESS_IMAGE_PREFIX!.default).toBe(DEFAULT_IMAGE_PREFIX);
+    expect(defaultRunOptions().imagePrefix).toBe(process.env.HARNESS_IMAGE_PREFIX ?? DEFAULT_IMAGE_PREFIX);
+    expect(env.HARNESS_COSIGN_IDENTITY!.default).toBe(DEFAULT_COSIGN_IDENTITY);
+    expect(env.HARNESS_COSIGN_ISSUER!.default).toBe(DEFAULT_COSIGN_ISSUER);
+    for (const name of Object.keys(env).filter((k) => !k.startsWith("$"))) {
+      expect(contractMd, name).toContain(`\`${name}\``);
+      expect(read("src/images.ts") + read("src/run.ts"), name).toContain(name);
+    }
+    expect(contractMd).toContain(`\`${DEFAULT_COSIGN_IDENTITY}\``);
+    // The forms the contract promises, against the one function that expands them.
+    const d = `sha256:${"1".repeat(64)}`;
+    expect(imagesFor("16.2.0", QUAY_IMAGE_TEMPLATE).reader).toBe("quay.io/tutors-sdk/tutors-reader:16.2.0");
+    expect(imagesFor("16.2.0", "tutors").reader).toBe("tutors/reader:16.2.0");
+    expect(imagesFor(`reader=r@${d},catalogue=c:1@${d},live=l:1`, "tutors").reader).toBe(`r@${d}`);
+    expect(() => imagesFor(`16.2.0@${d}`, "tutors")).toThrow();
+    expect(() => imagesFor(`quay.io/x/tutors-reader@${d}`, "tutors")).toThrow();
   });
 
   it("contract.md documents every stable command and flag", () => {
@@ -349,6 +411,23 @@ describe("workflows", () => {
     for (const v of Object.values(actual)) v.usedBy.sort();
     expect(actual).toEqual(workflowsContract.repositoryVariables);
     for (const name of Object.keys(actual)) expect(contractMd).toContain(`\`${name}\``);
+  });
+
+  it("install cosign 3 in every job that runs images ensure, and nowhere pass --allow-unsigned", () => {
+    const tools = (json("docs/contract/workflows.json") as { tools: { cosign: { action: string; minimumMajor: number; usedBy: string[] } } }).tools.cosign;
+    const using = files.filter((f) => text[f]!.includes("harness images ensure")).sort();
+    expect(using).toEqual(tools.usedBy);
+    for (const f of using) {
+      const ensures = [...text[f]!.matchAll(/harness images ensure/g)].length;
+      const installs = [...text[f]!.matchAll(new RegExp(`uses: ${tools.action}@v(\\d+)`, "g"))];
+      expect(installs.length, f).toBe(ensures);
+      // cosign-installer v4 is the first whose default is cosign 3.
+      for (const m of installs) expect(Number(m[1]), f).toBeGreaterThanOrEqual(4);
+    }
+    expect(tools.minimumMajor).toBe(3);
+    for (const f of files) expect(text[f], f).not.toMatch(/allow-unsigned|HARNESS_ALLOW_UNSIGNED/);
+    expect(workflowsContract.repositoryVariables.HARNESS_IMAGE_PREFIX!.default).toBe(QUAY_IMAGE_TEMPLATE);
+    expect(workflowsContract.repositoryVariables.HARNESS_COSIGN_IDENTITY!.default).toBe(DEFAULT_COSIGN_IDENTITY);
   });
 
   it("publish exactly the artifacts the contract lists", () => {

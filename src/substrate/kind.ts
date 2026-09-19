@@ -2,6 +2,7 @@ import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { judgeUpgrade, summariseUpgrade } from "../modes/upgrade.ts";
+import { APPS, dockerRef, kindImageName } from "../image-ref.ts";
 import { ROOT, docker } from "../stack.ts";
 import type { SideName, SideSpec } from "../types.ts";
 
@@ -20,7 +21,6 @@ import type { SideName, SideSpec } from "../types.ts";
 
 export const CLUSTER = process.env.HARNESS_KIND_CLUSTER ?? "tutors-harness";
 const KIND_CONFIG = resolve(ROOT, "deploy", "kind", "kind-config.yaml");
-const APPS = ["reader", "catalogue", "live"] as const;
 
 /**
  * Host port -> node port: 4100 -> 30100. The kind config maps them one to one.
@@ -100,7 +100,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: app
-          image: ${spec.images[app]}
+          image: ${kindImageName(spec.images[app])}
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -196,8 +196,11 @@ export function kindUp(a: SideSpec, b: SideSpec, now: string, log: (m: string) =
   }
   const images = [...new Set([...Object.values(a.images), ...Object.values(b.images)])];
   for (const image of images) {
-    log(`  loading ${image} into the cluster`);
-    sh("kind", ["load", "docker-image", image, "--name", CLUSTER], { quiet: true });
+    // `kind load` carries tags, not digests: a digest-pinned image gets a local tag derived from its digest.
+    const name = kindImageName(image);
+    if (name !== image) docker(["tag", dockerRef(image), name], { quiet: true });
+    log(`  loading ${name} into the cluster`);
+    sh("kind", ["load", "docker-image", name, "--name", CLUSTER], { quiet: true });
   }
   for (const [side, spec] of [["a", a], ["b", b]] as const) {
     kubectl(["apply", "-f", "-"], { input: manifestsFor(side, spec, now), quiet: true });
@@ -251,8 +254,8 @@ export async function kindRollout(a: SideSpec, b: SideSpec, now: string, opts: R
   opts.log(`  load against harness-a/reader for ${opts.seconds}s at ${opts.rate} req/s`);
   await new Promise((r) => setTimeout(r, (opts.seconds * 1000) / 3));
   const started = Date.now();
-  opts.log(`  kubectl set image deployment/reader app=${b.images.reader}`);
-  kubectl(["-n", namespaceFor("a"), "set", "image", "deployment/reader", `app=${b.images.reader}`], { quiet: true });
+  opts.log(`  kubectl set image deployment/reader app=${kindImageName(b.images.reader)}`);
+  kubectl(["-n", namespaceFor("a"), "set", "image", "deployment/reader", `app=${kindImageName(b.images.reader)}`], { quiet: true });
   kubectl(["-n", namespaceFor("a"), "rollout", "status", "deployment/reader", "--timeout=120s"], { quiet: true });
   opts.log(`  rollout complete in ${((Date.now() - started) / 1000).toFixed(1)}s`);
   docker(["wait", name], { quiet: true });

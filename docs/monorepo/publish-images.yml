@@ -1,13 +1,38 @@
-# Drop into tutors-sdk/tutors-mono-repo/.github/workflows/publish-images.yml
+# Reference copy of the publishing contract the harness depends on.
 #
-# Builds the four app images from the root Dockerfile and pushes them to GHCR:
-#   push to main  -> ghcr.io/tutors-sdk/tutors/<app>:sha-<short>  and :main
-#   tag v16.2.0   -> ghcr.io/tutors-sdk/tutors/<app>:16.2.0       and :latest
-#   tag v16.3.0-rc.1 -> ghcr.io/tutors-sdk/tutors/<app>:16.3.0-rc.1
-# Each image is signed (cosign keyless) and gets an SBOM attestation.
+# In tutors-sdk/tutors-mono-repo the real file is .github/workflows/image-build.yml
+# (from its PR #143); that file is the source of truth. This copy exists so the
+# contract can be read next to the code that relies on it. If you start from
+# this copy, install it AS `.github/workflows/image-build.yml`: the harness
+# verifies signatures against that workflow path,
+#   ^https://github.com/tutors-sdk/tutors-mono-repo/\.github/workflows/image-build\.yml@
+# and a workflow by any other name signs with an identity the harness refuses
+# (or set HARNESS_COSIGN_IDENTITY in the harness to match).
 #
-# The release harness pulls these by tag: --a 16.2.0 --b 16.3.0-rc.1.
-name: Publish images
+# Builds the four app images from the root Dockerfile, multi-arch (amd64 + arm64),
+# and pushes them to Quay.io. Quay has no nested repositories, so the app is
+# part of the repository name:
+#
+#   push to main      -> quay.io/tutors-sdk/tutors-<app>:main and :sha-<short>
+#   tag v16.2.0       -> quay.io/tutors-sdk/tutors-<app>:16.2.0, :16.2, :latest and :sha-<short>
+#   tag v16.3.0-rc.1  -> quay.io/tutors-sdk/tutors-<app>:16.3.0-rc.1 and :sha-<short>
+#                        (a prerelease never moves :latest or :16.3)
+#
+# Every image is signed with cosign (keyless, GitHub OIDC) BY DIGEST and carries
+# an SPDX SBOM attestation (`cosign attest --type spdxjson`), plus the OCI labels
+# org.opencontainers.image.revision | version | created | source, which the
+# harness reads into every report.
+#
+# Needs two repository secrets, from a Quay ROBOT account with write access to
+# the four repositories (never a person's credentials):
+#   QUAY_USERNAME   e.g. tutors-sdk+github_actions
+#   QUAY_PASSWORD   the robot token
+# The four Quay repositories must exist and be public (the harness pulls
+# anonymously): tutors-reader, tutors-catalogue, tutors-live, tutors-time.
+#
+# The release harness pulls these by tag: --a 16.2.0 --b 16.3.0-rc.1
+# with HARNESS_IMAGE_PREFIX=quay.io/tutors-sdk/tutors-{app}.
+name: Image build
 
 on:
   push:
@@ -16,19 +41,21 @@ on:
 
 permissions:
   contents: read
-  packages: write
-  id-token: write
-  attestations: write
+  id-token: write # cosign keyless: the OIDC token is the signing identity
 
 concurrency:
-  group: publish-${{ github.ref }}
+  group: image-build-${{ github.ref }}
   cancel-in-progress: false
+
+env:
+  REGISTRY: quay.io
+  NAMESPACE: tutors-sdk
 
 jobs:
   publish:
     name: ${{ matrix.app }}
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -38,23 +65,28 @@ jobs:
         with:
           persist-credentials: false
 
+      - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
 
       - uses: docker/login-action@v3
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
 
       - id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository_owner }}/tutors/${{ matrix.app }}
+          images: ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/tutors-${{ matrix.app }}
+          # latest is set by hand below so that a prerelease (v16.3.0-rc.1) never moves it.
+          flavor: latest=false
           tags: |
             type=sha,prefix=sha-,format=short
             type=ref,event=branch
             type=semver,pattern={{version}}
-            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') && !contains(github.ref, '-') }}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, '-') }}
+          # revision, version, created and source come from the action's defaults.
           labels: |
             org.opencontainers.image.title=tutors-${{ matrix.app }}
 
@@ -62,6 +94,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
+          platforms: linux/amd64,linux/arm64
           build-args: |
             APP_NAME=${{ matrix.app }}
             GIT_SHA=${{ github.sha }}
@@ -69,22 +102,38 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=publish-${{ matrix.app }}
-          cache-to: type=gha,scope=publish-${{ matrix.app }},mode=max
-          provenance: true
-          sbom: true
+          cache-from: type=gha,scope=image-${{ matrix.app }}
+          cache-to: type=gha,scope=image-${{ matrix.app }},mode=max
 
-      - uses: sigstore/cosign-installer@v3
+      - uses: sigstore/cosign-installer@v4.1.2 # cosign 3; verifiers need cosign >= 3 too
 
-      - name: Sign the image
+      # One signature on the digest covers every tag that points at it. For a
+      # multi-arch image this is the index digest, which is also what
+      # `docker pull` records and what the harness verifies.
+      - name: Sign the image (keyless)
         env:
-          DIGEST: ${{ steps.build.outputs.digest }}
-          TAGS: ${{ steps.meta.outputs.tags }}
-        run: |
-          for tag in $TAGS; do cosign sign --yes "${tag}@${DIGEST}"; done
+          IMAGE: ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/tutors-${{ matrix.app }}@${{ steps.build.outputs.digest }}
+        run: cosign sign --yes "$IMAGE"
 
-      - uses: actions/attest-build-provenance@v1
+      - name: Generate the SBOM (SPDX JSON)
+        uses: anchore/sbom-action@v0
         with:
-          subject-name: ghcr.io/${{ github.repository_owner }}/tutors/${{ matrix.app }}
-          subject-digest: ${{ steps.build.outputs.digest }}
-          push-to-registry: true
+          image: ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/tutors-${{ matrix.app }}@${{ steps.build.outputs.digest }}
+          format: spdx-json
+          output-file: sbom.spdx.json
+          upload-artifact: false
+
+      - name: Attest the SBOM
+        env:
+          IMAGE: ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/tutors-${{ matrix.app }}@${{ steps.build.outputs.digest }}
+        run: cosign attest --yes --type spdxjson --predicate sbom.spdx.json "$IMAGE"
+
+      - name: Prove what the harness will check
+        env:
+          IMAGE: ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/tutors-${{ matrix.app }}@${{ steps.build.outputs.digest }}
+        run: |
+          cosign verify \
+            --certificate-identity-regexp '^https://github.com/${{ github.repository }}/\.github/workflows/image-build\.yml@' \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            "$IMAGE" > /dev/null
+          echo "$IMAGE" >> "$GITHUB_STEP_SUMMARY"

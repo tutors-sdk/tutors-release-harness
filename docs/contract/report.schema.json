@@ -21,6 +21,12 @@
       "required": ["a", "b"],
       "properties": { "a": { "$ref": "#/definitions/images" }, "b": { "$ref": "#/definitions/images" } }
     },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Since contract 1.1.0. Where each side's images came from, their registry digests and OCI labels. A side is absent when it was not inspected: migration mode, the live side of post-deploy mode, a capture recorded before 1.1.0.",
+      "properties": { "a": { "$ref": "#/definitions/sideProvenance" }, "b": { "$ref": "#/definitions/sideProvenance" } }
+    },
     "verdict": { "enum": ["pass", "fail", "warn"] },
     "reasons": { "type": "array", "items": { "type": "string" }, "description": "Why the verdict is what it is, one line each. For people; the wording is not part of the contract." },
     "noise": { "$ref": "#/definitions/noiseStatus" },
@@ -116,6 +122,43 @@
       "additionalProperties": false,
       "required": ["reader", "catalogue", "live"],
       "properties": { "reader": { "type": "string" }, "catalogue": { "type": "string" }, "live": { "type": "string" } }
+    },
+    "sideProvenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["summary", "images"],
+      "properties": {
+        "summary": { "type": "string", "description": "One line for people, e.g. pulled+verified, or built-from-ref v16.2.0@1a2b3c4d5e6f. Do not parse; read images.*.provenance." },
+        "allowedUnsigned": { "const": true, "description": "Present when --allow-unsigned let the run judge a registry image whose signature was not verified." },
+        "images": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["reader", "catalogue", "live"],
+          "properties": { "reader": { "$ref": "#/definitions/imageInfo" }, "catalogue": { "$ref": "#/definitions/imageInfo" }, "live": { "$ref": "#/definitions/imageInfo" } }
+        }
+      }
+    },
+    "imageInfo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref", "provenance"],
+      "properties": {
+        "ref": { "type": "string", "description": "The image reference as given or expanded; the same string as in sides." },
+        "id": { "type": "string", "description": "Local image id (sha256:... of the image config)." },
+        "digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$", "description": "Registry digest of the manifest (for a multi-arch image, of the index). Only for a pulled image." },
+        "revision": { "type": "string", "description": "org.opencontainers.image.revision label: the monorepo commit, as the image states it." },
+        "version": { "type": "string", "description": "org.opencontainers.image.version label." },
+        "created": { "type": "string", "description": "org.opencontainers.image.created label." },
+        "provenance": { "enum": ["local", "pulled+verified", "pulled-unverified", "built-from-ref"], "description": "local: present and never pulled, not verified. pulled+verified: pulled and its cosign signature verified by digest against verifiedIdentity. pulled-unverified: pulled, not verified, judged only because of --allow-unsigned. built-from-ref: built on this machine from a monorepo git ref; not the published image." },
+        "verifiedIdentity": { "type": "string", "description": "pulled+verified: the certificate identity regular expression the signature was checked against." },
+        "unverifiedReason": { "type": "string", "description": "pulled-unverified: why verification failed. For people." },
+        "builtFrom": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ref"],
+          "properties": { "ref": { "type": "string", "description": "The monorepo git ref." }, "sha": { "type": "string", "description": "The commit it resolved to." } }
+        }
+      }
     },
     "artefact": { "enum": ["dom", "screenshot", "network", "console", "headers", "axe", "focus", "metrics", "logs", "timing", "persistence", "migration", "upgrade"] },
     "hunk": {

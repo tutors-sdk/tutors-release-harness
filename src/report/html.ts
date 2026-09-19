@@ -7,6 +7,26 @@ function hunkRow(h: Hunk, claimedBy?: string): string {
   return `<tr class="${h.severity}"><td><code>${h.artefact}</code></td><td><code>${esc(h.scope)}</code>${h.path ? `<br><small>${esc(h.path)}</small>` : ""}</td><td>${esc(h.summary)}${detail}</td><td>${claimedBy ? esc(claimedBy) : h.severity === "info" ? "<em>informational</em>" : "<strong>unclaimed</strong>"}</td></tr>`;
 }
 
+const short = (v: string | undefined) => (v ? v.replace(/^sha256:/, "").slice(0, 12) : "");
+
+/** The header block that says where each side's images came from and what they say about themselves. */
+function provenanceBlock(report: RunReport): string {
+  const p = report.provenance;
+  if (!p?.a && !p?.b) return "";
+  const loud = (["a", "b"] as const).filter((side) => Object.values(p[side]?.images ?? {}).some((info) => info.provenance === "pulled-unverified" || info.provenance === "built-from-ref"));
+  const cell = (side: "a" | "b", app: "reader" | "catalogue" | "live") => {
+    const info = p[side]?.images[app];
+    if (!info) return "<td>—</td>";
+    const bits = [info.digest ? `digest <code>${esc(info.digest)}</code>` : info.id ? `id <code>${esc(short(info.id))}</code> (no registry digest)` : "", info.revision ? `revision <code>${esc(short(info.revision))}</code>` : "revision <em>unlabelled</em>", info.version ? `version <code>${esc(info.version)}</code>` : "version <em>unlabelled</em>", info.unverifiedReason ? `<strong>not verified:</strong> ${esc(info.unverifiedReason)}` : ""].filter(Boolean);
+    return `<td>${bits.join("<br>")}</td>`;
+  };
+  return `<table class="provenance">
+<thead><tr><th>provenance</th><th>a — ${esc(p.a?.summary ?? "not recorded")}</th><th>b — ${esc(p.b?.summary ?? "not recorded")}</th></tr></thead>
+<tbody>${(["reader", "catalogue", "live"] as const).map((app) => `<tr><td>${app}</td>${cell("a", app)}${cell("b", app)}</tr>`).join("")}</tbody>
+</table>
+${loud.length ? `<p class="loud">Side ${loud.join(" and ")} did not run signature-verified registry images (${loud.map((side) => esc(p[side]!.summary)).join("; ")}). This run is not evidence about the images that ship.</p>` : ""}`;
+}
+
 /** One self-contained HTML file per run: verdict, sides, every hunk with its claim, masks that fired. */
 export function renderHtml(report: RunReport): string {
   const { compare } = report;
@@ -30,6 +50,8 @@ export function renderHtml(report: RunReport): string {
   th { font-size:12px; text-transform:uppercase; letter-spacing:.06em; opacity:.7; }
   tr.info td { opacity:.75; }
   tr.fail td:last-child strong { color:var(--fail); }
+  table.provenance td { font-size:13px; word-break:break-all; }
+  .loud { border-left:4px solid var(--warn); padding:6px 10px; font-weight:600; }
   code, pre { font-family: ui-monospace, Menlo, Consolas, monospace; font-size:13px; }
   pre { white-space:pre-wrap; margin:6px 0 0; padding:8px; background:#8881; border-radius:4px; }
   details summary { cursor:pointer; font-size:13px; opacity:.8; }
@@ -46,6 +68,7 @@ export function renderHtml(report: RunReport): string {
 <thead><tr><th></th><th>a</th><th>b</th></tr></thead>
 <tbody>${(["reader", "catalogue", "live"] as const).map((app) => `<tr><td>${app}</td><td><code>${esc(report.sides.a[app])}</code></td><td><code>${esc(report.sides.b[app])}</code></td></tr>`).join("")}</tbody>
 </table>
+${provenanceBlock(report)}
 
 ${
   report.migration

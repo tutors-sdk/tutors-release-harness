@@ -11,6 +11,18 @@ export function renderMarkdown(report: RunReport): string {
   lines.push(`| | a | b |`);
   lines.push(`|---|---|---|`);
   for (const app of ["reader", "catalogue", "live"] as const) lines.push(`| ${app} | \`${report.sides.a[app]}\` | \`${report.sides.b[app]}\` |`);
+  if (report.provenance?.a || report.provenance?.b) {
+    const p = report.provenance;
+    const short = (v: string | undefined) => (v ? v.replace(/^sha256:/, "").slice(0, 12) : "—");
+    lines.push(`| **provenance** | **${p.a?.summary ?? "not recorded"}** | **${p.b?.summary ?? "not recorded"}** |`);
+    for (const app of ["reader", "catalogue", "live"] as const) {
+      const cell = (side: "a" | "b") => {
+        const info = p[side]?.images[app];
+        return info ? `${info.digest ? `\`${info.digest}\`` : "no registry digest"} · rev \`${short(info.revision)}\` · version \`${info.version ?? "—"}\`` : "—";
+      };
+      lines.push(`| ${app} image | ${cell("a")} | ${cell("b")} |`);
+    }
+  }
   lines.push("");
   for (const reason of report.reasons) lines.push(`- ${reason}`);
   if (report.noise) lines.push(`- A/A consulted: ${report.noise.clean ? "clean" : `${report.noise.hunks} diff(s)`} at ${report.noise.ranAt}`);

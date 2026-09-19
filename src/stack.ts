@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
+import { dockerRef } from "./image-ref.ts";
 import type { SideName, SideSpec, StackUrls } from "./types.ts";
 
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -43,29 +44,8 @@ export function urlsFor(side: SideName): StackUrls {
   };
 }
 
-/**
- * Resolve `--a 16.2.0` or `--a ghcr.io/tutors-sdk/tutors/reader:16.2.0` into the
- * three image references for a side. A bare tag uses `prefix/<app>:<tag>`; a
- * full reference for one app is used for that app only, the rest take the
- * prefix and that reference's tag. `reader=..,catalogue=..,live=..` sets each.
- */
-export function imagesFor(spec: string, prefix: string): SideSpec["images"] {
-  if (spec.includes("=")) {
-    const parts = Object.fromEntries(spec.split(",").map((kv) => kv.split("=") as [string, string]));
-    const missing = ["reader", "catalogue", "live"].filter((app) => !parts[app]);
-    if (missing.length) throw new Error(`--a/--b with app=image pairs must name every app; missing ${missing.join(", ")}`);
-    return { reader: parts.reader!, catalogue: parts.catalogue!, live: parts.live! };
-  }
-  if (spec.includes("/") || spec.includes(":")) {
-    // Full reference for one app, e.g. tutors/reader:16.2.0 or a mutant image.
-    const tag = spec.split(":").pop()!;
-    const app = /\/(reader|catalogue|live)(?::|$)/.exec(spec)?.[1] as keyof SideSpec["images"] | undefined;
-    const images = { reader: `${prefix}/reader:${tag}`, catalogue: `${prefix}/catalogue:${tag}`, live: `${prefix}/live:${tag}` };
-    if (app) images[app] = spec;
-    return images;
-  }
-  return { reader: `${prefix}/reader:${spec}`, catalogue: `${prefix}/catalogue:${spec}`, live: `${prefix}/live:${spec}` };
-}
+// Image naming lives in image-ref.ts; re-exported here because a side is made of images.
+export { imagesFor } from "./image-ref.ts";
 
 export function sideSpec(name: SideName, images: SideSpec["images"]): SideSpec {
   return { name, images, urls: urlsFor(name) };
@@ -89,12 +69,12 @@ function composeEnv(a: SideSpec, b: SideSpec, now: string): NodeJS.ProcessEnv {
   return {
     ...process.env,
     HARNESS_NOW: now,
-    READER_IMAGE_A: a.images.reader,
-    CATALOGUE_IMAGE_A: a.images.catalogue,
-    LIVE_IMAGE_A: a.images.live,
-    READER_IMAGE_B: b.images.reader,
-    CATALOGUE_IMAGE_B: b.images.catalogue,
-    LIVE_IMAGE_B: b.images.live
+    READER_IMAGE_A: dockerRef(a.images.reader),
+    CATALOGUE_IMAGE_A: dockerRef(a.images.catalogue),
+    LIVE_IMAGE_A: dockerRef(a.images.live),
+    READER_IMAGE_B: dockerRef(b.images.reader),
+    CATALOGUE_IMAGE_B: dockerRef(b.images.catalogue),
+    LIVE_IMAGE_B: dockerRef(b.images.live)
   };
 }
 

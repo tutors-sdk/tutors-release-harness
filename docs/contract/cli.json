@@ -1,10 +1,10 @@
 {
   "$comment": "The harness CLI, machine-readable. tests/contract.test.ts fails when this list and src/cli.ts disagree, when a workflow uses a command or flag not marked stable, or when docs/contract.md omits a stable one. stable: true is covered by the compatibility promise in docs/contract.md; stable: false may change in a minor release.",
-  "contractVersion": "1.0.0",
+  "contractVersion": "1.1.0",
   "commands": [
     { "name": "run", "stable": true, "summary": "Start both stacks, capture, compare, claim, gate, report." },
     { "name": "compare", "stable": true, "summary": "Re-run normalise/compare/claim/gate on captures already on disk." },
-    { "name": "images", "stable": true, "subcommands": ["ensure"], "summary": "Pull each side's images, or build them from the monorepo ref." },
+    { "name": "images", "stable": true, "subcommands": ["ensure"], "summary": "Per image: use it if local, else pull it and verify its cosign signature by digest, else build it from the monorepo ref." },
     { "name": "mutants", "stable": true, "summary": "Build every mutant from the base reader image and prove the harness catches each." },
     { "name": "version", "stable": true, "summary": "Harness version, git sha, contract version." },
     { "name": "journeys", "stable": false, "summary": "List the journeys." },
@@ -41,12 +41,44 @@
     { "name": "focus", "type": "boolean", "stable": false },
     { "name": "keep", "type": "boolean", "stable": false },
     { "name": "stack", "type": "boolean", "stable": false },
+    { "name": "allow-unsigned", "type": "boolean", "stable": true, "since": "1.1.0" },
     { "name": "json", "type": "boolean", "stable": true },
     { "name": "help", "type": "boolean", "stable": true }
   ],
+  "imageSpecs": {
+    "$comment": "What --a, --b and --base accept outside migration mode (src/image-ref.ts). Since 1.1.0: @sha256 digests.",
+    "forms": [
+      "<tag>",
+      "<repo>:<tag>[@sha256:<64 hex>] - that app; the others take the prefix and the tag",
+      "reader=<ref>,catalogue=<ref>,live=<ref> - each <ref> is <repo>[:<tag>][@sha256:<64 hex>]"
+    ],
+    "refused": [
+      "<tag>@sha256:... - a digest names one image",
+      "<repo>@sha256:... on its own - no tag for the other apps to take"
+    ]
+  },
+  "environment": {
+    "$comment": "Environment variables that are part of the contract. Since 1.1.0, except HARNESS_IMAGE_PREFIX (whose {app} template form is since 1.1.0).",
+    "HARNESS_IMAGE_PREFIX": {
+      "default": "tutors",
+      "meaning": "prefix (<prefix>/<app>:<tag>) or template containing {app}, for bare tags; --image-prefix overrides"
+    },
+    "HARNESS_COSIGN_IDENTITY": {
+      "default": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@",
+      "meaning": "regular expression the signing certificate's identity must match; empty means the default"
+    },
+    "HARNESS_COSIGN_ISSUER": {
+      "default": "https://token.actions.githubusercontent.com",
+      "meaning": "OIDC issuer of the signing certificate; empty means the default"
+    },
+    "HARNESS_ALLOW_UNSIGNED": {
+      "default": "",
+      "meaning": "1 | true | yes: the same as --allow-unsigned"
+    }
+  },
   "exitCodes": {
     "0": "verdict pass or warn; or the command succeeded",
-    "1": "verdict fail; or images ensure, mutants or kind rollout did not succeed",
-    "2": "usage error, or the harness itself failed (an uncaught error); no verdict was reached"
+    "1": "verdict fail; or images ensure could not obtain an image, or mutants or kind rollout did not succeed",
+    "2": "usage error, the harness itself failed (an uncaught error), or an image may not be judged; no verdict was reached"
   }
 }

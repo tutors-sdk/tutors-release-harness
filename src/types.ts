@@ -33,8 +33,53 @@ export interface SideSpec {
   /** Image references per app, as passed to compose. */
   images: { reader: string; catalogue: string; live: string };
   urls: StackUrls;
+  /** Where the images came from; filled in by `run` before the stack starts. */
+  provenance?: SideProvenance;
   /** True when the side is a live deployment the harness did not start (post-deploy mode). */
   external?: boolean;
+}
+
+// ---- image provenance ----------------------------------------------------------
+
+/**
+ * How an image came to be on this machine, which is how far it can be trusted:
+ *   local              present and never pulled (a `docker compose build`, a mutant): not verified, by design
+ *   pulled+verified    pulled from a registry and its cosign signature checked against the publishing workflow's identity
+ *   pulled-unverified  pulled from a registry and NOT verified; only ever under --allow-unsigned
+ *   built-from-ref     built here from a monorepo git ref because the registry had no such tag
+ */
+export const PROVENANCES = ["local", "pulled+verified", "pulled-unverified", "built-from-ref"] as const;
+export type Provenance = (typeof PROVENANCES)[number];
+
+/** What the harness knows about one image it ran. */
+export interface ImageInfo {
+  /** The reference as given on the command line (or expanded from the tag). */
+  ref: string;
+  /** The local image id (`sha256:…` of the config). */
+  id?: string;
+  /** The registry digest of the manifest (`sha256:…`), for a pulled image. */
+  digest?: string;
+  /** `org.opencontainers.image.revision`: the monorepo commit the image was built from. */
+  revision?: string;
+  /** `org.opencontainers.image.version`. */
+  version?: string;
+  /** `org.opencontainers.image.created`. */
+  created?: string;
+  provenance: Provenance;
+  /** The signing identity a verified image was checked against. */
+  verifiedIdentity?: string;
+  /** Why a pulled image is unverified. */
+  unverifiedReason?: string;
+  /** For built-from-ref: the git ref and the commit it resolved to. */
+  builtFrom?: { ref: string; sha?: string };
+}
+
+export interface SideProvenance {
+  /** One line for the report header, e.g. `pulled+verified` or `built-from-ref v16.2.0@1a2b3c4`. */
+  summary: string;
+  /** True when the run was allowed to judge unverified registry images. */
+  allowedUnsigned?: boolean;
+  images: Record<"reader" | "catalogue" | "live", ImageInfo>;
 }
 
 // ---- captured artefacts ------------------------------------------------------
@@ -150,6 +195,8 @@ export interface SideCapture {
   /** Absent only in captures written before contract 1.0.0. */
   harness?: HarnessInfo;
   images: SideSpec["images"];
+  /** Where those images came from and what they say about themselves; absent for an external or recorded-before-R1 side. */
+  provenance?: SideProvenance;
   capturedAt: string;
   /** A live deployment rather than a harness stack: latency and load are not comparable with a laptop's. */
   external?: boolean;
@@ -259,6 +306,8 @@ export interface RunReport {
   now: string;
   runs: number;
   sides: { a: SideSpec["images"]; b: SideSpec["images"] };
+  /** Per-side image provenance, digests and OCI labels; shown in the report header. */
+  provenance?: { a?: SideProvenance; b?: SideProvenance };
   verdict: Verdict;
   /** Why the verdict is what it is, in one line each. */
   reasons: string[];

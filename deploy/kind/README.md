@@ -18,6 +18,16 @@ and 4200–4202, the compose ports plus 1000, so a cluster left running never
 blocks the compose stack) and
 loads the images with `kind load docker-image`; later runs reuse it.
 
+Images are named exactly as on compose (`HARNESS_IMAGE_PREFIX`, prefix or
+`{app}` template — [docs/images.md](../../docs/images.md)) and are under the
+same rule: they must be present locally, and a registry image must have a
+verified cosign signature, before `kind up` loads anything; run
+`pnpm harness images ensure` first. The pods use `imagePullPolicy: IfNotPresent`
+and the cluster never pulls from Quay itself. `kind load` carries tags, not
+digests, so a digest-pinned image (`repo@sha256:…`) is given a local tag
+derived from its digest (`repo:16.2.0-sha256-0123456789ab`) and the manifests
+use that name.
+
 ## What runs where
 
 | Component | compose | kind |

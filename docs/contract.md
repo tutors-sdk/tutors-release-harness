@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.0.0`
+Contract version: `1.1.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -28,16 +28,16 @@ Three numbers, all stamped where a reader can see them:
 
 ```console
 $ pnpm harness version
-harness 1.0.0 (3f2c…) · contract 1.0.0
+harness 1.1.0 (3f2c…) · contract 1.1.0
 $ pnpm harness version --json
-{"version":"1.0.0","gitSha":"3f2c…","contractVersion":"1.0.0"}
+{"version":"1.1.0","gitSha":"3f2c…","contractVersion":"1.1.0"}
 ```
 
 `gitSha` is `git rev-parse HEAD` of the harness checkout, or the
 `HARNESS_GIT_SHA` environment variable when set, or `null` when neither is
 available (a tarball).
 
-Pin the harness by tag (`v1.0.0`) or by sha, and check `schemaVersion === 1`
+Pin the harness by tag (`v1.1.0`) or by sha, and check `schemaVersion === 1`
 before reading a report.
 
 ## Output directory
@@ -73,6 +73,7 @@ written). Source of truth: `RunReport` in `src/types.ts`.
 | `now` | string | the frozen clock both sides were given (`--now` / `HARNESS_NOW`) |
 | `runs` | integer ≥ 1 | journey repetitions per side |
 | `sides` | `{ a, b }`, each `{ reader, catalogue, live }` | the image reference of each app on each side. In migration mode `reader` is `migrations:<ref>` and the others `-`; in post-deploy mode `a` is the recorded candidate's images and each of `b`'s is `external:<URL>` |
+| `provenance` | `{ a?, b? }`, optional — since 1.1.0 | where each side's images came from; see [Image provenance](#image-provenance). A side is absent when it was not inspected: migration mode, the live side of post-deploy mode, a capture recorded before 1.1.0 |
 | `verdict` | `pass` \| `warn` \| `fail` | see [Verdicts and exit codes](#verdicts-and-exit-codes) |
 | `reasons` | string[] | why, one line each. For people: **do not parse** |
 | `noise` | noise status, optional | the status consulted for the gating decision; absent when `--noise` was not given or was `skip` |
@@ -97,7 +98,39 @@ harness versions. `summary` and `detail` are for people.
 **Claim**: `{ artefact, scope, reason, approvedBy? }`, exactly as parsed from
 the claims file.
 
-What a consumer can rely on: `verdict`, `compare.unclaimed.length`,
+### Image provenance
+
+Since 1.1.0. `provenance.a` and `provenance.b` are each
+`{ summary, allowedUnsigned?, images: { reader, catalogue, live } }`, and each
+image is:
+
+| Field | Meaning |
+| --- | --- |
+| `ref` | the reference as given or expanded; the same string as in `sides` |
+| `provenance` | `local` \| `pulled+verified` \| `pulled-unverified` \| `built-from-ref` — below |
+| `id` | local image id (`sha256:…` of the config) |
+| `digest` | registry digest of the manifest (of the index, for a multi-arch image), `sha256:` + 64 hex. **Only for a pulled image** |
+| `revision`, `version`, `created` | the image's `org.opencontainers.image.*` labels, as the image states them; absent when unlabelled |
+| `verifiedIdentity` | `pulled+verified`: the certificate-identity regular expression the signature was checked against |
+| `unverifiedReason` | `pulled-unverified`: why verification failed. For people |
+| `builtFrom` | `built-from-ref`: `{ ref, sha? }`, the monorepo git ref and the commit it resolved to |
+
+| `provenance` | Means |
+| --- | --- |
+| `local` | present on the machine and never pulled (a `docker compose build`, a mutant). Not verified, by design |
+| `pulled+verified` | pulled from a registry, and `cosign verify` succeeded **by digest** against `verifiedIdentity` and the OIDC issuer |
+| `pulled-unverified` | pulled, not verified, and judged only because `--allow-unsigned` was given. `allowedUnsigned: true` is set on the side |
+| `built-from-ref` | built on this machine from `builtFrom.ref` because the registry had no such tag. Not the image that ships |
+
+`summary` is one line for people (`pulled+verified`,
+`built-from-ref v16.2.0@1a2b3c4d5e6f`, or each app spelled out when they
+differ): do not parse it. A consumer deciding whether a run is evidence for a
+release checks that every `images.*.provenance` on both sides is
+`pulled+verified`. A side that is `pulled-unverified` or `built-from-ref` also
+adds a line to `reasons`; it does not change the verdict.
+
+What a consumer can rely on: `verdict`, `provenance.*.images.*.provenance` and
+`.digest`, `compare.unclaimed.length`,
 `compare.broadUnapproved.length`, `compare.staleClaims`, the `artefact`,
 `scope`, `path` and `severity` of each hunk, `sides`, `harness`, and the
 numbers under `migration`, `upgrade` and `load`.
@@ -107,8 +140,17 @@ numbers under `migration`, `upgrade` and `load`.
 | Exit code | Meaning |
 | --- | --- |
 | `0` | Verdict pass or warn; or the command succeeded |
-| `1` | Verdict fail; or images ensure, mutants or kind rollout did not succeed |
-| `2` | Usage error, or the harness itself failed (an uncaught error); no verdict was reached |
+| `1` | Verdict fail; or images ensure could not obtain an image, or mutants or kind rollout did not succeed |
+| `2` | Usage error, the harness itself failed (an uncaught error), or an image may not be judged; no verdict was reached |
+
+"An image may not be judged" (since 1.1.0) is: at `run`, an image that is not
+present locally (run `harness images ensure` first — the harness never lets
+compose pull one unverified); at `run` or `images ensure`, a registry image
+whose cosign signature is missing, is by another identity, or cannot be checked
+because cosign (≥ 3) is not installed. The reason is printed to stderr after
+`cannot judge:` (`run`) or `ERROR:` (`images ensure`). `images ensure` still
+exits `1`, as in 1.0.0, when an image is simply not obtainable — not in the
+registry and not buildable from a git ref; `2` wins when both happen.
 
 `warn` exits `0` on purpose: a harness that has not earned the right to fail
 must not block. A consumer that wants to treat `warn` differently reads
@@ -211,19 +253,41 @@ change in a minor release.
 
 | Command | Stable flags |
 | --- | --- |
-| `harness run` | `--mode` (required), `--a`, `--b` (required except in post-deploy), `--claims <file>`, `--noise <file\|dir\|skip>`, `--runs <n>`, `--set <fixture,auth,reference>`, `--journey <name>` (repeatable), `--load <rate>x<duration>`, `--out <dir>`, `--image-prefix <registry/namespace>`; post-deploy: `--recorded <release run dir>`, `--production reader=URL,catalogue=URL,live=URL` |
+| `harness run` | `--mode` (required), `--a`, `--b` (required except in post-deploy), `--claims <file>`, `--noise <file\|dir\|skip>`, `--runs <n>`, `--set <fixture,auth,reference>`, `--journey <name>` (repeatable), `--load <rate>x<duration>`, `--out <dir>`, `--image-prefix <prefix or {app} template>`, `--allow-unsigned`; post-deploy: `--recorded <release run dir>`, `--production reader=URL,catalogue=URL,live=URL` |
 | `harness compare` | `--dir <run dir>` (required), `--mode` (required), `--claims`, `--noise` |
-| `harness images ensure` | `--a`, `--b` (required), `--ref-a`, `--ref-b` (monorepo git refs to build from when the pull fails), `--image-prefix` |
-| `harness mutants` | `--base <tag or reader image>` (required), `--out` |
+| `harness images ensure` | `--a`, `--b` (required), `--ref-a`, `--ref-b` (monorepo git refs to build from when the pull fails), `--image-prefix`, `--allow-unsigned` |
+| `harness mutants` | `--base <tag or reader image>` (required), `--out`, `--image-prefix`, `--allow-unsigned` |
 | `harness version` | `--json` |
 | any | `--help` |
 
-`--a` / `--b` take a bare tag (`16.2.0`, resolved as
-`<image prefix>/<app>:<tag>`), one reader image reference, or
-`reader=…,catalogue=…,live=…`; in migration mode a monorepo git ref or
-`dir:<path>`. The image prefix is `--image-prefix`, else the
-`HARNESS_IMAGE_PREFIX` environment variable, else `tutors`
-([images.md](images.md)).
+`--a` / `--b` take a bare tag (`16.2.0`), one app's image reference (the other
+two apps take the prefix and that reference's tag), or
+`reader=REF,catalogue=REF,live=REF`; in migration mode a monorepo git ref or
+`dir:<path>`. Since 1.1.0 a `REF` may be pinned by digest —
+`repo:tag@sha256:<64 hex>` or `repo@sha256:<64 hex>` — and then the digest
+alone decides what runs. A digest names one image, so `16.2.0@sha256:…` is
+refused (exit `2`), as is a lone `repo@sha256:…` with no tag for the other
+apps to take.
+
+The image prefix is `--image-prefix`, else the `HARNESS_IMAGE_PREFIX`
+environment variable, else `tutors`. It is either a bare prefix
+(`tutors` → `tutors/<app>:<tag>`) or, since 1.1.0, a template containing
+`{app}` (`quay.io/tutors-sdk/tutors-{app}` →
+`quay.io/tutors-sdk/tutors-reader:<tag>`); `<app>` is `reader`, `catalogue` or
+`live` ([images.md](images.md)).
+
+`--allow-unsigned` (or `HARNESS_ALLOW_UNSIGNED=1`) lets a registry image whose
+signature could not be verified be judged anyway; the report records it
+(`pulled-unverified`, `allowedUnsigned`). The workflows never pass it.
+
+Environment variables in the contract, all since 1.1.0 except the first:
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `HARNESS_IMAGE_PREFIX` | `tutors` | as above |
+| `HARNESS_COSIGN_IDENTITY` | `^https://github.com/tutors-sdk/tutors-mono-repo/\.github/workflows/image-build\.yml@` | regular expression the signing certificate's identity must match; empty means the default |
+| `HARNESS_COSIGN_ISSUER` | `https://token.actions.githubusercontent.com` | the certificate's OIDC issuer; empty means the default |
+| `HARNESS_ALLOW_UNSIGNED` | unset | `1`, `true` or `yes`: the same as `--allow-unsigned` |
 
 Stdout is for people, except `harness version --json`. The last lines of
 `run` and `compare` are `verdict: <VERDICT>`, the reasons, and
@@ -255,9 +319,14 @@ required field fails the run at its first harness step (exit `2`).
 
 | Variable | Default when unset | Used for |
 | --- | --- | --- |
-| `HARNESS_IMAGE_PREFIX` | `tutors` | registry/namespace bare tags are resolved under, e.g. `ghcr.io/tutors-sdk/tutors` |
+| `HARNESS_IMAGE_PREFIX` | `quay.io/tutors-sdk/tutors-{app}` (since 1.1.0; was `tutors`) | where bare tags are resolved: a prefix or an `{app}` template. When the registry lacks the tag the workflows still build from the monorepo ref, as before, and the report says `built-from-ref` |
+| `HARNESS_COSIGN_IDENTITY` | `^https://github.com/tutors-sdk/tutors-mono-repo/\.github/workflows/image-build\.yml@` (since 1.1.0) | who must have signed a pulled image: the monorepo's `image-build.yml` workflow. Set it only if the signing workflow is another |
 | `HARNESS_PRODUCTION_TAG` | `main` | the tag nightly noise, weekly mutants and CI's smoke run use; the deploy updates it |
 | `HARNESS_PRODUCTION_URLS` | `reader=https://tutors.dev,catalogue=https://catalogue.tutors.dev,live=https://live.tutors.dev` | the live deployment post-deploy mode reads |
+
+Every job that runs `harness images ensure` first installs cosign ≥ 3 with
+`sigstore/cosign-installer`; the images are public, so no registry credentials
+are held.
 
 ### Artifacts
 

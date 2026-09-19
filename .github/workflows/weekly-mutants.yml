@@ -60,7 +60,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 120
     env:
-      HARNESS_IMAGE_PREFIX: ${{ vars.HARNESS_IMAGE_PREFIX || 'tutors' }}
+      HARNESS_IMAGE_PREFIX: ${{ vars.HARNESS_IMAGE_PREFIX || 'quay.io/tutors-sdk/tutors-{app}' }}
+      # Who must have signed a pulled image: the monorepo's image-build.yml workflow (docs/contract.md).
+      HARNESS_COSIGN_IDENTITY: ${{ vars.HARNESS_COSIGN_IDENTITY || '^https://github.com/tutors-sdk/tutors-mono-repo/\.github/workflows/image-build\.yml@' }}
       TAG: ${{ inputs.tag || vars.HARNESS_PRODUCTION_TAG || 'main' }}
     steps:
       - uses: actions/checkout@v4
@@ -74,14 +76,12 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
 
-      - name: Pull or build the base images
-        run: |
-          if docker pull "$HARNESS_IMAGE_PREFIX/reader:$TAG" 2>/dev/null; then
-            docker pull "$HARNESS_IMAGE_PREFIX/catalogue:$TAG"
-            docker pull "$HARNESS_IMAGE_PREFIX/live:$TAG"
-          else
-            scripts/build-images.sh "$TAG"
-          fi
+      # `images ensure` verifies the cosign signature of every image it pulls (docs/images.md).
+      # The images are signed with cosign 3, and verifying them needs cosign >= 3: installer v4 installs it.
+      - uses: sigstore/cosign-installer@v4.1.2
+
+      - name: Pull and verify, or build, the base images
+        run: pnpm harness images ensure --a "$TAG" --b "$TAG"
 
       - name: Every mutant, caught and attributed
         run: pnpm harness mutants --base "$TAG"
