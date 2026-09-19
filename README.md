@@ -39,6 +39,7 @@ Every run writes `out/<timestamp>-<mode>/` with `a/` and `b/` captures
 `report.md` (the PR comment) and, in noise mode, `noise-status.json`.
 
 Docs: [where the A and B images come from](docs/images.md) ·
+[the integration contract](docs/contract.md) ·
 [modes](docs/modes.md) · [claims](claims/README.md) ·
 [what the monorepo needs to do](docs/monorepo/README.md) ·
 [kind substrate](deploy/kind/README.md) · [testing the harness](TESTING.md).
@@ -161,9 +162,16 @@ harness stack up|down --a <ref> --b <ref>
 harness kind up|down|rollout --a <ref> --b <ref>
 harness mutants --base <ref>
 harness journeys
+harness version [--json]
 ```
 
-Exit codes: 0 pass or warn, 1 fail, 2 usage or harness error.
+Exit codes: 0 pass or warn, 1 fail, 2 usage or harness error. Which commands,
+flags, report fields and workflow inputs are stable, and what bumps the
+version, is in [docs/contract.md](docs/contract.md).
+
+Every `report.json` and `capture.json` is stamped with
+`harness: { version, gitSha, contractVersion }` (`harness version --json`
+prints the same), and the HTML and Markdown reports name it in their footer.
 
 ## Automation
 
@@ -173,7 +181,7 @@ Exit codes: 0 pass or warn, 1 fail, 2 usage or harness error.
 | `nightly-noise.yml` | nightly | A/A on the production tag, three runs; publishes `noise-status.json` |
 | `release.yml` | monorepo dispatch on a release branch, or by hand | release mode with claims, 3 runs, k6; migration rehearsal; upgrade rehearsal |
 | `post-deploy.yml` | monorepo dispatch after deploy, then every 15 minutes | reference journeys against production vs the recorded candidate; opens a rollback issue on a new difference |
-| `weekly-mutants.yml` | weekly | the eight mutants |
+| `weekly-mutants.yml` | weekly, and on every PR | the eight mutants; on a PR only when it touches an engine, a mask, a journey, the gate or a mutant, which also needs a version bump |
 
 Images are pulled from the registry named by `HARNESS_IMAGE_PREFIX` or built
 from the monorepo ref when the registry lacks the tag — [docs/images.md](docs/images.md).

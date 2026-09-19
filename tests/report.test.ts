@@ -13,7 +13,9 @@ const hunks: Hunk[] = [
 ];
 
 const report: RunReport = {
-  harnessVersion: "0.1.0",
+  schemaVersion: 1,
+  harness: { version: "1.0.0", gitSha: "0123456789abcdef0123456789abcdef01234567", contractVersion: "1.0.0" },
+  harnessVersion: "1.0.0",
   mode: "release",
   substrate: "compose",
   ranAt: "2026-09-16T09:10:00.000Z",

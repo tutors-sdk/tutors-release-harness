@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/tutors-sdk/tutors-release-harness/blob/main/docs/contract/noise-status.schema.json",
+  "title": "noise-status.json (contract 1.x)",
+  "description": "What a noise (A/A) run leaves for the gate. Derived from NoiseStatus in src/types.ts and NoiseStatusSchema in src/noise.ts.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["ranAt", "clean", "hunks"],
+  "properties": {
+    "schemaVersion": { "const": 1, "description": "Major version of the contract. Written since 1.0.0; a file without it is read as 1." },
+    "ranAt": { "type": "string", "format": "date-time", "description": "When the noise run was judged (UTC). Freshness is measured from here." },
+    "clean": { "type": "boolean", "description": "True exactly when hunks is 0." },
+    "hunks": { "type": "integer", "minimum": 0, "description": "Failing hunks the A/A produced." }
+  }
+}

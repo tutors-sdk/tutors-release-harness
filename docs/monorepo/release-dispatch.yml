@@ -3,9 +3,9 @@
 # When a release branch is pushed, tag the candidate so it gets a real image
 # (publish-images.yml builds v* tags), then ask the harness to run release
 # mode against the production tag. Needs a repository secret HARNESS_TOKEN: a
-# fine-grained PAT with "contents: read, actions: write" on
-# tutors-sdk/tutors-release-harness (repository_dispatch needs a token with
-# write access to the target repo).
+# fine-grained PAT with "contents: write" on tutors-sdk/tutors-release-harness
+# (what GitHub requires for repository_dispatch). Event type and payload fields:
+# docs/contract.md in the harness.
 #
 # The production tag is read from the reader overlay, which the deploy updates.
 # The candidate's claims file lives in the release branch at release/claims.yaml.
