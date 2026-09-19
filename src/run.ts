@@ -11,6 +11,7 @@ import { runMigration } from "./modes/migration.ts";
 import { runUpgrade } from "./modes/upgrade.ts";
 import { DEFAULT_MASKS_FILE, loadMasks, normalise, type MaskHits } from "./normalise/masks.ts";
 import { writeReports } from "./report/index.ts";
+import { fileLedger, realExec, resolveSideProvenance, trustPolicyFromEnv } from "./images.ts";
 import { ROOT, externalSide, imagesFor, sideSpec, stackDown, stackUp } from "./stack.ts";
 import { kindDown, kindSide, kindUp } from "./substrate/kind.ts";
 import type { Claim, Hunk, Mode, NoiseStatus, RunReport, SideCapture, SideSpec, Substrate } from "./types.ts";
@@ -43,6 +44,8 @@ export interface RunOptions {
   keep: boolean;
   /** Don't start or stop the stack; assume it is up. */
   noStack: boolean;
+  /** Judge registry images whose signature could not be verified. Loud, and recorded in the report. */
+  allowUnsigned: boolean;
   /** post-deploy: the release-mode run directory whose b capture is the recorded side. */
   recorded?: string;
   /** post-deploy: live URLs, reader=...,catalogue=...,live=... */
@@ -122,8 +125,9 @@ export function compareFromCaptures(input: CompareInput): RunOutcome {
     now: input.now,
     runs: input.runs,
     sides: { a: input.a.images, b: input.b.images },
+    ...(input.a.provenance || input.b.provenance ? { provenance: { ...(input.a.provenance ? { a: input.a.provenance } : {}), ...(input.b.provenance ? { b: input.b.provenance } : {}) } } : {}),
     verdict: verdict.verdict,
-    reasons: verdict.reasons,
+    reasons: [...verdict.reasons, ...provenanceReasons(input.a, input.b)],
     ...(noise.status ? { noise: noise.status } : {}),
     compare,
     masksApplied,
@@ -138,6 +142,20 @@ export function compareFromCaptures(input: CompareInput): RunOutcome {
     writeFileSync(join(input.captureDir, "noise-status.json"), JSON.stringify(status, null, 2));
   }
   return { report, outDir: input.captureDir, files };
+}
+
+/** Anything about where the images came from that a reader of the verdict must not miss. */
+function provenanceReasons(a: SideCapture, b: SideCapture): string[] {
+  const reasons: string[] = [];
+  for (const side of [a, b]) {
+    if (!side.provenance) continue;
+    const images = Object.values(side.provenance.images);
+    const unverified = images.filter((i) => i.provenance === "pulled-unverified");
+    if (unverified.length) reasons.push(`side ${side.side} ran ${unverified.length} registry image(s) whose signature was NOT verified (--allow-unsigned); this run is not evidence for a release`);
+    const built = images.find((i) => i.provenance === "built-from-ref");
+    if (built) reasons.push(`side ${side.side} was built here from monorepo ref ${built.builtFrom?.ref ?? "?"}, not pulled from the registry: it is not the image that ships`);
+  }
+  return [...new Set(reasons)];
 }
 
 export function loadCapture(dir: string, side: "a" | "b"): SideCapture {
@@ -197,8 +215,13 @@ export async function run(opts: RunOptions): Promise<RunOutcome> {
     throw new Error("noise mode compares a tag with itself; --a and --b differ");
   }
   const selected: Journey[] = selectJourneys(opts.sets, opts.journeys);
-  opts.log(`  a: ${a.images.reader}, ${a.images.catalogue}, ${a.images.live}`);
-  opts.log(`  b: ${b.images.reader}, ${b.images.catalogue}, ${b.images.live}`);
+  // Before anything starts: read each image's digest and labels, and refuse a
+  // registry image with no verified signature (ImageTrustError -> exit 2).
+  const trust = { exec: realExec, ledger: fileLedger(), policy: trustPolicyFromEnv(process.env, opts.allowUnsigned), log: opts.log };
+  a.provenance = resolveSideProvenance(a.images, trust);
+  b.provenance = resolveSideProvenance(b.images, trust);
+  opts.log(`  a: ${a.images.reader}, ${a.images.catalogue}, ${a.images.live} — ${a.provenance.summary}`);
+  opts.log(`  b: ${b.images.reader}, ${b.images.catalogue}, ${b.images.live} — ${b.provenance.summary}`);
   opts.log(`  journeys: ${selected.map((j) => j.name).join(", ")}`);
 
   const up = () => {
@@ -265,6 +288,7 @@ export const defaultRunOptions = (): Omit<RunOptions, "mode" | "a" | "b"> => ({
   focusStops: 12,
   keep: false,
   noStack: false,
+  allowUnsigned: false,
   upgrade: { seconds: 45, rate: 20 },
   log: (m) => console.log(m)
 });

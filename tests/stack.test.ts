@@ -9,7 +9,7 @@ import { kindSide, manifestsFor } from "../src/substrate/kind.ts";
 describe("image references", () => {
   it("a bare tag expands to all three apps under the prefix", () => {
     expect(imagesFor("16.2.0", "tutors")).toEqual({ reader: "tutors/reader:16.2.0", catalogue: "tutors/catalogue:16.2.0", live: "tutors/live:16.2.0" });
-    expect(imagesFor("16.2.0", "ghcr.io/tutors-sdk/tutors").reader).toBe("ghcr.io/tutors-sdk/tutors/reader:16.2.0");
+    expect(imagesFor("16.2.0", "quay.io/tutors-sdk/tutors-{app}").reader).toBe("quay.io/tutors-sdk/tutors-reader:16.2.0");
   });
 
   it("one app's full reference replaces that app only", () => {

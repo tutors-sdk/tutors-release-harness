@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { journeys, type JourneySet } from "../traffic/journeys/journeys.ts";
 import { loadClaims } from "./claims/schema.ts";
 import { exitCodeFor } from "./gate.ts";
-import { ensureImages } from "./images.ts";
+import { EXIT_CANNOT_JUDGE, ImageTrustError, ensureImages, fileLedger, realExec, resolveSideProvenance, trustPolicyFromEnv } from "./images.ts";
 import { runMutants } from "./mutants.ts";
 import { compareFromCaptures, defaultRunOptions, loadCapture, run } from "./run.ts";
 import { imagesFor, sideSpec, stackDown, stackUp } from "./stack.ts";
@@ -16,9 +16,14 @@ const USAGE = `tutors-release-harness
       Start both stacks, capture, compare, claim, gate, report.
       --mode        ${MODES.join(" | ")}
       --a, --b      a tag (16.2.0), one app's image (tutors/reader:16.2.0, mutant images),
-                    reader=..,catalogue=..,live=..; for migration mode a git ref or dir:<path>
+                    reader=REF,catalogue=REF,live=REF (each REF may be pinned: repo@sha256:…);
+                    for migration mode a git ref or dir:<path>
       --substrate   compose (default) | kind
-      --image-prefix  registry/namespace for bare tags (default: tutors, or HARNESS_IMAGE_PREFIX)
+      --image-prefix  where bare tags live (default: tutors, or HARNESS_IMAGE_PREFIX): a prefix
+                    (tutors -> tutors/reader:TAG) or a template with {app}
+                    (quay.io/tutors-sdk/tutors-{app} -> quay.io/tutors-sdk/tutors-reader:TAG)
+      --allow-unsigned  judge registry images whose cosign signature could not be verified
+                    (or HARNESS_ALLOW_UNSIGNED=1). Local work only; the report records it.
       --claims      claims.yaml for release mode
       --noise       noise-status.json (or its directory) from a recent A/A run; "skip" waives it, loudly
       --runs        journey repetitions per side; 3+ enables statistical timing (default 1)
@@ -35,8 +40,11 @@ const USAGE = `tutors-release-harness
   harness compare --dir <run dir> --mode <mode> [--claims f] [--noise f]
       Re-run normalise/compare/claim/gate on captures already on disk.
 
-  harness images ensure --a <ref> --b <ref> [--ref-a git-ref] [--ref-b git-ref]
-      Pull each side's images, or build them from the monorepo ref when the registry lacks them.
+  harness images ensure --a <ref> --b <ref> [--ref-a git-ref] [--ref-b git-ref] [--allow-unsigned]
+      Per image: use it if local; else pull it and verify its cosign signature by digest
+      (HARNESS_COSIGN_IDENTITY, HARNESS_COSIGN_ISSUER override who must have signed it);
+      else, for a bare tag, build it from the monorepo ref. Exit 2 when an image cannot be
+      obtained or a registry image is unsigned, wrongly signed, or cosign is missing.
   harness stack up|down --a <ref> --b <ref>
   harness kind up|down|rollout --a <ref> --b <ref>
   harness mutants --base <ref> [--out dir]
@@ -102,6 +110,7 @@ async function main(argv: string[]): Promise<number> {
       focus: { type: "boolean", default: true },
       keep: { type: "boolean", default: false },
       stack: { type: "boolean", default: true },
+      "allow-unsigned": { type: "boolean", default: false },
       help: { type: "boolean", short: "h", default: false }
     },
     allowNegative: true
@@ -136,7 +145,15 @@ async function main(argv: string[]): Promise<number> {
     axe: values.axe,
     focusStops: values.focus ? defaults.focusStops : 0,
     keep: values.keep,
-    noStack: !values.stack
+    noStack: !values.stack,
+    allowUnsigned: values["allow-unsigned"]
+  };
+
+  /** A side for the hand-driven commands, under the same rule as `run`: no unverified registry image is started. */
+  const trustedSide = (name: "a" | "b", spec: string) => {
+    const side = sideSpec(name, imagesFor(spec, common.imagePrefix));
+    side.provenance = resolveSideProvenance(side.images, { exec: realExec, ledger: fileLedger(), policy: trustPolicyFromEnv(process.env, common.allowUnsigned), log: common.log });
+    return side;
   };
 
   switch (command) {
@@ -177,17 +194,22 @@ async function main(argv: string[]): Promise<number> {
     case "images": {
       if (positionals[0] !== "ensure") fail("images ensure --a <ref> --b <ref>");
       if (!values.a || !values.b) fail("images ensure needs --a and --b");
-      const ok = ensureImages([
-        { spec: values.a, ...(values["ref-a"] ? { ref: values["ref-a"] } : {}) },
-        { spec: values.b, ...(values["ref-b"] ? { ref: values["ref-b"] } : {}) }
-      ], common.imagePrefix, common.log);
-      return ok ? 0 : 1;
+      const result = ensureImages(
+        [
+          { spec: values.a, ...(values["ref-a"] ? { ref: values["ref-a"] } : {}) },
+          { spec: values.b, ...(values["ref-b"] ? { ref: values["ref-b"] } : {}) }
+        ],
+        common.imagePrefix,
+        { log: common.log, policy: trustPolicyFromEnv(process.env, common.allowUnsigned) }
+      );
+      return result.exitCode;
     }
     case "stack": {
       const action = positionals[0];
       if (!values.a || !values.b) fail("stack needs --a and --b");
-      const a = sideSpec("a", imagesFor(values.a, common.imagePrefix));
-      const b = sideSpec("b", imagesFor(values.b, common.imagePrefix));
+      if (action !== "up" && action !== "down") fail("stack up|down");
+      const a = action === "up" ? trustedSide("a", values.a) : sideSpec("a", imagesFor(values.a, common.imagePrefix));
+      const b = action === "up" ? trustedSide("b", values.b) : sideSpec("b", imagesFor(values.b, common.imagePrefix));
       if (action === "up") stackUp(a, b, common.now, { profiles: ["upgrade"] });
       else if (action === "down") stackDown(a, b, common.now);
       else fail("stack up|down");
@@ -200,8 +222,9 @@ async function main(argv: string[]): Promise<number> {
         return 0;
       }
       if (!values.a || !values.b) fail("kind up|rollout need --a and --b");
-      const a = kindSide(sideSpec("a", imagesFor(values.a, common.imagePrefix)));
-      const b = kindSide(sideSpec("b", imagesFor(values.b, common.imagePrefix)));
+      if (action !== "up" && action !== "rollout") fail("kind up|down|rollout");
+      const a = kindSide(trustedSide("a", values.a));
+      const b = kindSide(trustedSide("b", values.b));
       if (action === "up") kindUp(a, b, common.now, common.log);
       else if (action === "rollout") {
         const ok = await kindRollout(a, b, common.now, { rate: common.upgrade.rate, seconds: common.upgrade.seconds, outDir: common.outDir, log: common.log });
@@ -232,6 +255,11 @@ function printOutcome(verdict: string, reasons: string[], files: { json: string;
 main(process.argv.slice(2)).then(
   (code) => process.exit(code),
   (error) => {
+    // Could not judge: said plainly, without a stack trace, same exit class as any harness error.
+    if (error instanceof ImageTrustError) {
+      console.error(`cannot judge: ${error.message}`);
+      process.exit(EXIT_CANNOT_JUDGE);
+    }
     console.error(error instanceof Error ? error.stack ?? error.message : error);
     process.exit(2);
   }

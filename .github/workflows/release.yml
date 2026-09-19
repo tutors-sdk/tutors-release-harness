@@ -39,7 +39,9 @@ permissions:
   actions: read
 
 env:
-  HARNESS_IMAGE_PREFIX: ${{ vars.HARNESS_IMAGE_PREFIX || 'tutors' }}
+  HARNESS_IMAGE_PREFIX: ${{ vars.HARNESS_IMAGE_PREFIX || 'quay.io/tutors-sdk/tutors-{app}' }}
+  # Empty means the default: the monorepo's image-build.yml workflow (src/images.ts).
+  HARNESS_COSIGN_IDENTITY: ${{ vars.HARNESS_COSIGN_IDENTITY }}
   PRODUCTION: ${{ inputs.production || github.event.client_payload.production }}
   CANDIDATE: ${{ inputs.candidate || github.event.client_payload.candidate }}
   CLAIMS_URL: ${{ inputs.claims_url || github.event.client_payload.claims_url }}
@@ -62,7 +64,11 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
 
-      - name: Pull or build both sides
+      # `images ensure` verifies the cosign signature of every image it pulls (docs/images.md).
+      # The images are signed with cosign 3, and verifying them needs cosign >= 3: installer v4 installs it.
+      - uses: sigstore/cosign-installer@v4.1.2
+
+      - name: Pull and verify, or build, both sides
         run: pnpm harness images ensure --a "$PRODUCTION" --b "$CANDIDATE"
 
       - name: Fetch the release's claims
@@ -138,7 +144,12 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
-      - run: pnpm harness images ensure --a "$PRODUCTION" --b "$CANDIDATE"
+      # `images ensure` verifies the cosign signature of every image it pulls (docs/images.md).
+      # The images are signed with cosign 3, and verifying them needs cosign >= 3: installer v4 installs it.
+      - uses: sigstore/cosign-installer@v4.1.2
+
+      - name: Pull and verify, or build, both sides
+        run: pnpm harness images ensure --a "$PRODUCTION" --b "$CANDIDATE"
       - name: Upgrade mode
         run: pnpm harness run --mode upgrade --a "$PRODUCTION" --b "$CANDIDATE" --set fixture --journey anonymous-student-reads-course
       - uses: actions/upload-artifact@v4

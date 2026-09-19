@@ -4,7 +4,8 @@ import { join, resolve } from "node:path";
 import { parse } from "yaml";
 import { z } from "zod";
 import { run, type RunOptions } from "./run.ts";
-import { ROOT, imagesFor } from "./stack.ts";
+import { dockerRef, imagesFor, specFor } from "./image-ref.ts";
+import { ROOT } from "./stack.ts";
 import { ARTEFACTS } from "./types.ts";
 
 const MutantsFileSchema = z.object({
@@ -31,7 +32,7 @@ export function mutantImage(name: string): string {
 function buildMutant(name: string, base: string, log: (m: string) => void) {
   const image = mutantImage(name);
   log(`building ${image} from ${base}`);
-  const result = spawnSync("docker", ["build", "-q", "-f", join(ROOT, "mutants", "Dockerfile"), "--build-arg", `BASE=${base}`, "--build-arg", `MUTANT=${name}`, "-t", image, join(ROOT, "mutants")], {
+  const result = spawnSync("docker", ["build", "-q", "-f", join(ROOT, "mutants", "Dockerfile"), "--build-arg", `BASE=${dockerRef(base)}`, "--build-arg", `MUTANT=${name}`, "-t", image, join(ROOT, "mutants")], {
     stdio: ["ignore", "pipe", "inherit"],
     encoding: "utf8"
   });
@@ -44,14 +45,19 @@ export interface MutantsOptions extends Omit<RunOptions, "mode" | "a" | "b"> {
 }
 
 /**
- * The harness's own signal. Noise mode on the base first (a harness whose A/A
+ * The harness's own signal. Mutants are built FROM the base reader image —
+ * with a registry prefix, the pulled and signature-verified production image
+ * (`images ensure` first; `run` refuses an unverified one) — so a mutant is
+ * production plus exactly one planted fault. The mutant itself is a local
+ * build and is recorded as such.
+ * Noise mode on the base first (a harness whose A/A
  * is not clean cannot fail anything), then release mode against each mutant,
  * asserting FAIL and the expected artefact.
  */
 export async function runMutants(opts: MutantsOptions): Promise<boolean> {
   const mutants = loadMutants();
   const baseImages = imagesFor(opts.base, opts.imagePrefix);
-  const baseSpec = `reader=${baseImages.reader},catalogue=${baseImages.catalogue},live=${baseImages.live}`;
+  const baseSpec = specFor(baseImages);
 
   // The fixture and signed-in journeys are enough to catch every mutant, and
   // they need nothing outside this stack.
@@ -67,7 +73,7 @@ export async function runMutants(opts: MutantsOptions): Promise<boolean> {
   const results: { name: string; caught: boolean; attributed: boolean; verdict: string; artefacts: string[]; report: string }[] = [];
   for (const mutant of mutants) {
     const image = buildMutant(mutant.name, baseImages.reader, opts.log);
-    const bSpec = `reader=${image},catalogue=${baseImages.catalogue},live=${baseImages.live}`;
+    const bSpec = specFor({ ...baseImages, reader: image });
     const outcome = await run({ ...opts, sets, mode: "release", a: baseSpec, b: bSpec, noise: noiseStatus, runs: Math.max(opts.runs, mutant.runs ?? 1) });
     const artefacts = [...new Set(outcome.report.compare.unclaimed.map((h) => h.artefact))];
     const caught = outcome.report.verdict === "fail";

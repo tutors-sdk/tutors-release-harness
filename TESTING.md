@@ -15,6 +15,9 @@ fail, and ratchets. This is the runway for the runway.
 | The gate fails without the right to | release FAILS with no clean A/A | Unit |
 | A rehearsal rule is wrong | expand/contract accepts a dropped column; a rollout with 5xx passes | Unit on catalogues and k6 output |
 | A fixture stub misbehaves | persistence stub sends a Date header; identity stub mints a token for a bad code; edge drops in-flight requests | Fixture tests (in-process servers) |
+| An image is named wrongly | the Quay template expands to `quay.io/…/tutors/reader`; the shell script and the CLI disagree | Unit on `src/image-ref.ts`, with `build-images.sh --print-images` held to the same answers |
+| An untrusted image is judged | an unsigned or wrongly-signed pull passes; a missing cosign is skipped; a stale verification vouches for new content | Unit on `src/images.ts` with the process runner injected (a fake docker, registry and cosign) |
+| A report hides where its images came from | a side built from source reads like a published one | Unit on the report header and on capture → report flow |
 | The stacks are not identical | side b has an env var side a lacks | Unit on `compose.harness.yaml` and the kind manifests |
 | The whole thing cannot boot | compose or kind fails on a laptop or in CI | Smoke: A/A on one journey (CI, every PR) |
 | The harness cannot fail | a planted regression passes release mode | Mutants (weekly, and after any engine or mask change) |
@@ -29,6 +32,11 @@ case (identical in → nothing out) and at least one planted change; every
 schema (masks, claims, mutants) has a negative fixture; the gate is tested
 per mode with and without a clean A/A; migration's expand/contract and
 upgrade's judgement run on hand-built catalogues and k6 output.
+
+Anything that would run `docker`, `cosign` or `bash` takes its process runner
+as a parameter (`Exec` in `src/images.ts`); the tests pass a fake and assert on
+the exact commands, so the ensure flow — local, pull, verify by digest, build,
+refuse — is covered without Docker.
 
 Rules for a new engine or rule: it does not merge without (1) the A/A test,
 (2) a planted change it catches, (3) a change it must *not* flag.

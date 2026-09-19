@@ -12,9 +12,12 @@ and that nothing else moved.
 > in the application image, normalise the noise, diff everything observable,
 > and fail unless each diff hunk is claimed by a changelog entry or a Rule.
 
-This is a standalone project. It consumes the monorepo's images by tag and
-knows nothing about their source, so it can compare any two tags — including
-two it did not build — and cannot be quietly weakened by the PR it is judging.
+This is a standalone project. It consumes the monorepo's published images
+(`quay.io/tutors-sdk/tutors-<app>`, cosign-signed) by tag or digest and knows
+nothing about their source, so it can compare any two tags — including two it
+did not build — and cannot be quietly weakened by the PR it is judging. It
+verifies the signature of every image it pulls, and every report says where
+each side's images came from.
 
 ## Quick start
 
@@ -28,7 +31,9 @@ pnpm harness run --mode release --a 16.2.0 --b 16.3.0-rc.1 \
   --claims ../tutors-mono-repo/release/claims.yaml \
   --noise out/<the noise run> --runs 3 --load 20x30s          # A/B: gate the candidate
 
-pnpm harness images ensure --a 16.2.0 --b 16.3.0-rc.1          # pull, or build from the monorepo ref
+# Published images: pull from Quay, verify the cosign signature, or (loudly) build from the monorepo ref
+export HARNESS_IMAGE_PREFIX='quay.io/tutors-sdk/tutors-{app}'  # default is `tutors` -> tutors/<app>:<tag>, the local build
+pnpm harness images ensure --a 16.2.0 --b 16.3.0-rc.1          # needs cosign >= 3 on PATH for pulled images
 pnpm harness run --mode migration --a v16.2.0 --b release/16.3.0
 pnpm harness run --mode upgrade   --a 16.2.0 --b 16.3.0-rc.1
 pnpm harness mutants --base local                              # eight planted regressions, all caught
@@ -152,18 +157,31 @@ mutants has no business gating a release.
 ```
 harness run --mode <mode> --a <ref> --b <ref> [--substrate compose|kind] [--claims f] [--noise f|skip]
             [--runs n] [--set fixture,auth,reference] [--journey name]... [--load 20x30s]
-            [--now iso] [--out dir] [--image-prefix p] [--no-screenshots] [--no-axe] [--no-focus] [--keep] [--no-stack]
+            [--now iso] [--out dir] [--image-prefix p|template-with-{app}] [--allow-unsigned]
+            [--no-screenshots] [--no-axe] [--no-focus] [--keep] [--no-stack]
             post-deploy: --recorded <release run dir> --production reader=URL,catalogue=URL,live=URL
             migration:   --snapshot <pg_dump>      upgrade: --upgrade-seconds 45 --upgrade-rate 20
 harness compare --dir <run dir> --mode <mode> [--claims f] [--noise f]
-harness images ensure --a <ref> --b <ref> [--ref-a git-ref] [--ref-b git-ref]
+harness images ensure --a <ref> --b <ref> [--ref-a git-ref] [--ref-b git-ref] [--allow-unsigned]
 harness stack up|down --a <ref> --b <ref>
 harness kind up|down|rollout --a <ref> --b <ref>
 harness mutants --base <ref>
 harness journeys
 ```
 
-Exit codes: 0 pass or warn, 1 fail, 2 usage or harness error.
+Exit codes: 0 pass or warn, 1 fail, 2 usage or harness error — which includes
+"could not judge": an image that cannot be obtained, or a registry image that
+is unsigned, signed by the wrong identity, or cannot be checked because cosign
+is missing. `--allow-unsigned` (`HARNESS_ALLOW_UNSIGNED=1`) overrides the
+signature check for local work; the report records it.
+
+Environment: `HARNESS_IMAGE_PREFIX` (a prefix, `tutors`, or a template,
+`quay.io/tutors-sdk/tutors-{app}`), `HARNESS_COSIGN_IDENTITY` and
+`HARNESS_COSIGN_ISSUER` (who must have signed a pulled image; default the
+monorepo's `image-build.yml` workflow via GitHub OIDC), `HARNESS_ALLOW_UNSIGNED`,
+`HARNESS_PROVENANCE_FILE`. `--a`/`--b` also take
+`reader=REF,catalogue=REF,live=REF` with each `REF` pinned as `repo@sha256:…` —
+[docs/images.md](docs/images.md).
 
 ## Automation
 
@@ -175,8 +193,11 @@ Exit codes: 0 pass or warn, 1 fail, 2 usage or harness error.
 | `post-deploy.yml` | monorepo dispatch after deploy, then every 15 minutes | reference journeys against production vs the recorded candidate; opens a rollback issue on a new difference |
 | `weekly-mutants.yml` | weekly | the eight mutants |
 
-Images are pulled from the registry named by `HARNESS_IMAGE_PREFIX` or built
-from the monorepo ref when the registry lacks the tag — [docs/images.md](docs/images.md).
+Images are pulled from Quay (`HARNESS_IMAGE_PREFIX`, default in CI
+`quay.io/tutors-sdk/tutors-{app}`) and their cosign signatures verified — the
+workflows install cosign 3 with `sigstore/cosign-installer@v4` — or built from the
+monorepo ref when the registry lacks the tag, in which case the report header
+says `built-from-ref` — [docs/images.md](docs/images.md).
 The two workflows the monorepo needs are in [docs/monorepo](docs/monorepo/README.md).
 
 ## Determinism

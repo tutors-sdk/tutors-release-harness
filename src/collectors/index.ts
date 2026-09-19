@@ -90,7 +90,7 @@ export async function captureSide(spec: SideSpec, journeys: Journey[], opts: Cap
     }
   }
 
-  const capture: SideCapture = { side: spec.name, images: spec.images, capturedAt: new Date().toISOString(), journeys: captured, metrics: { before, after }, logs, ...(spec.external ? { external: true } : {}) };
+  const capture: SideCapture = { side: spec.name, images: spec.images, ...(spec.provenance ? { provenance: spec.provenance } : {}), capturedAt: new Date().toISOString(), journeys: captured, metrics: { before, after }, logs, ...(spec.external ? { external: true } : {}) };
   if (opts.load) {
     capture.load = runLoad({
       base: spec.external ? spec.urls.reader : `http://reader-${spec.name}:3000`,
