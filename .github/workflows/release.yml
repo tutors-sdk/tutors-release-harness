@@ -40,8 +40,8 @@ permissions:
 
 env:
   HARNESS_IMAGE_PREFIX: ${{ vars.HARNESS_IMAGE_PREFIX || 'quay.io/tutors-sdk/tutors-{app}' }}
-  # Empty means the default: the monorepo's image-build.yml workflow (src/images.ts).
-  HARNESS_COSIGN_IDENTITY: ${{ vars.HARNESS_COSIGN_IDENTITY }}
+  # Who must have signed a pulled image: the monorepo's image-build.yml workflow (docs/contract.md).
+  HARNESS_COSIGN_IDENTITY: ${{ vars.HARNESS_COSIGN_IDENTITY || '^https://github.com/tutors-sdk/tutors-mono-repo/\.github/workflows/image-build\.yml@' }}
   PRODUCTION: ${{ inputs.production || github.event.client_payload.production }}
   CANDIDATE: ${{ inputs.candidate || github.event.client_payload.candidate }}
   CLAIMS_URL: ${{ inputs.claims_url || github.event.client_payload.claims_url }}

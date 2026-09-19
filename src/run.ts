@@ -16,7 +16,10 @@ import { ROOT, externalSide, imagesFor, sideSpec, stackDown, stackUp } from "./s
 import { kindDown, kindSide, kindUp } from "./substrate/kind.ts";
 import type { Claim, Hunk, Mode, NoiseStatus, RunReport, SideCapture, SideSpec, Substrate } from "./types.ts";
 
-export const HARNESS_VERSION: string = JSON.parse(readFileSync(resolve(ROOT, "package.json"), "utf8")).version;
+import { HARNESS_VERSION, SCHEMA_VERSION, harnessInfo } from "./version.ts";
+import { parseNoiseStatus } from "./noise.ts";
+
+export { HARNESS_VERSION };
 export const DEFAULT_NOW = "2026-09-16T09:05:00.000Z";
 
 export interface RunOptions {
@@ -74,8 +77,7 @@ function readNoise(path: string | undefined, log: (m: string) => void): { status
     return { waived: true };
   }
   const file = existsSync(path) && !path.endsWith(".json") ? join(path, "noise-status.json") : path;
-  const status = JSON.parse(readFileSync(file, "utf8")) as NoiseStatus;
-  return { status, waived: false };
+  return { status: parseNoiseStatus(readFileSync(file, "utf8"), file), waived: false };
 }
 
 interface CompareInput {
@@ -118,6 +120,8 @@ export function compareFromCaptures(input: CompareInput): RunOutcome {
     return rest;
   };
   const report: RunReport = {
+    schemaVersion: SCHEMA_VERSION,
+    harness: harnessInfo(),
     harnessVersion: HARNESS_VERSION,
     mode: input.mode,
     substrate: input.substrate,
@@ -138,7 +142,7 @@ export function compareFromCaptures(input: CompareInput): RunOutcome {
   const files = writeReports(input.captureDir, report);
   if (input.mode === "noise") {
     const failing = compare.hunks.filter((h) => h.severity === "fail").length;
-    const status: NoiseStatus = { ranAt: report.ranAt, clean: failing === 0, hunks: failing };
+    const status: NoiseStatus = { schemaVersion: SCHEMA_VERSION, ranAt: report.ranAt, clean: failing === 0, hunks: failing };
     writeFileSync(join(input.captureDir, "noise-status.json"), JSON.stringify(status, null, 2));
   }
   return { report, outDir: input.captureDir, files };
@@ -166,7 +170,7 @@ export function loadCapture(dir: string, side: "a" | "b"): SideCapture {
 
 /** An empty capture standing in for a side that has nothing to compare (migration mode). */
 function emptyCapture(spec: SideSpec): SideCapture {
-  return { side: spec.name, images: spec.images, capturedAt: new Date().toISOString(), journeys: [], metrics: { before: {}, after: {} }, logs: {} };
+  return { side: spec.name, harness: harnessInfo(), images: spec.images, capturedAt: new Date().toISOString(), journeys: [], metrics: { before: {}, after: {} }, logs: {} };
 }
 
 /** The whole thing: stack up, capture both sides, normalise, compare, claim, gate, report, stack down. */

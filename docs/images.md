@@ -27,11 +27,14 @@ pnpm harness images ensure --a 16.2.0 --b 16.3.0-rc.1
 #     reader: quay.io/tutors-sdk/tutors-reader:16.2.0 — pulled+verified · sha256:4f1c… · revision 1a2b3c4d5e6f · version 16.2.0
 ```
 
-Exit codes of `images ensure`: **0** every image is present and may be judged;
-**2** an image could not be obtained, or a registry image is unsigned, signed
-by someone else, or cosign is not installed — with the reason printed. 2 is
-the harness's "could not judge" class (usage and harness errors); 1 is
-reserved for "judged, and it failed".
+Exit codes of `images ensure` ([the contract](contract.md#verdicts-and-exit-codes)):
+**0** every image is present and may be judged; **1** an image could not be
+obtained — not in the registry and not buildable from a git ref (as before);
+**2** an image may not be judged — a registry image that is unsigned, signed by
+someone else, or uncheckable because cosign is not installed, or a spec that
+makes no sense — with the reason printed. 2 wins when both happen. `harness
+run` exits 2 with `cannot judge: …` for the same reasons, and for an image
+that is not present locally.
 
 ## 1. Naming
 

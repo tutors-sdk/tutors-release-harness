@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { parse } from "yaml";
 import { z } from "zod";
 import { ARTEFACTS, type Claim } from "../types.ts";
+import { CLAIMS_VERSION } from "../version.ts";
 
 /**
  * A claim names an artefact, a scope glob and the Rule or changelog entry that
@@ -17,7 +18,8 @@ export const ClaimSchema = z.object({
   approvedBy: z.string().min(1).optional()
 });
 
-export const ClaimsFileSchema = z.object({ claims: z.array(ClaimSchema) });
+/** `version` is optional and defaults to the current format; a file that names another version is refused. */
+export const ClaimsFileSchema = z.object({ version: z.literal(CLAIMS_VERSION).optional(), claims: z.array(ClaimSchema) });
 
 /** A claim that could match anything: every artefact, or a scope that matches every scope. */
 export function isBroad(claim: Claim): boolean {

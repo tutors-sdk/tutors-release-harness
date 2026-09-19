@@ -14,7 +14,7 @@ Repository secrets in the monorepo:
 | Secret | Value |
 | --- | --- |
 | `QUAY_USERNAME`, `QUAY_PASSWORD` | a Quay **robot account** (`tutors-sdk+<name>`) with write access to `tutors-reader`, `tutors-catalogue`, `tutors-live`, `tutors-time` — never a person's login |
-| `HARNESS_TOKEN` | a fine-grained PAT with `actions: write` on this repository, for `repository_dispatch` |
+| `HARNESS_TOKEN` | a fine-grained PAT with `contents: write` on this repository — what GitHub requires for `repository_dispatch` |
 
 The four Quay repositories are public: the harness pulls anonymously and
 needs no registry credentials of its own.
@@ -38,6 +38,10 @@ harness must change with it:
 - **Labels**: `org.opencontainers.image.revision`, `.version`, `.created`,
   `.source` — read into every report.
 
+What the harness accepts, writes and promises — event types, payload fields,
+`report.json`, exit codes, what it will never do to a PR — is in
+[the contract](../contract.md). Pin the harness by tag (`v1.1.0`).
+
 On the harness side, set the repository variables:
 
 | Variable | Value |
@@ -54,7 +58,7 @@ Then the sequence for a release is:
    candidate sha), **upgrade** mode (edge rollout under load). The PR comment
    is in the workflow summary and the report is an artifact.
 2. Tag / deploy → the monorepo updates `HARNESS_PRODUCTION_TAG` and dispatches
-   `post-deploy`: the harness runs the reference-course journeys against
+   `deployed`: the harness runs the reference-course journeys against
    production and compares with the recorded candidate run; a new difference
    opens a rollback issue with the report attached.
 3. Every 15 minutes → the synthetic workflow repeats the post-deploy

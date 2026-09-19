@@ -214,11 +214,11 @@ describe("images ensure", () => {
     expect(side.images.reader.digest).toBeUndefined();
   });
 
-  it("--ref-a names the ref; a ref that does not exist is exit 2", () => {
+  it("--ref-a names the ref; an image that cannot be obtained is exit 1, as contract 1.0.0 promised", () => {
     const w = world({ refs: { main: "f".repeat(40) } });
     expect(ensureImages([{ spec: "16.2.0", ref: "main" }], "tutors", { exec: w.exec, ledger: memoryLedger(), policy, log: quiet }).sides[0]!.provenance!.summary).toBe(`built-from-ref main@${"f".repeat(12)}`);
     const failed = ensureImages([{ spec: "16.9.9", ref: "nope" }], "tutors", { exec: w.exec, ledger: memoryLedger(), policy, log: quiet });
-    expect(failed.exitCode).toBe(2);
+    expect(failed.exitCode).toBe(1);
     expect(failed.problems[0]).toMatch(/could not be built from any of nope/);
   });
 
@@ -233,7 +233,7 @@ describe("images ensure", () => {
     expect(result.sides[0]!.provenance!.images.reader).toMatchObject({ ref: `${repos[0]}:16.2.0@${digestOf(4)}`, digest: digestOf(4), provenance: "pulled+verified" });
 
     const absent = ensureImages([{ spec }], "tutors", { exec: world().exec, ledger: memoryLedger(), policy, log: quiet });
-    expect(absent.exitCode).toBe(2);
+    expect(absent.exitCode).toBe(1);
     expect(absent.problems[0]).toMatch(/not a bare tag, so it cannot be built/);
   });
 

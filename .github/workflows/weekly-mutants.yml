@@ -1,11 +1,18 @@
 # The harness's own signal: every planted regression must be caught and
 # attributed. A harness that cannot catch its own mutants has no business
 # gating a release.
+#
+# Weekly, on demand, and on every pull request: a PR that touches an engine, a
+# mask, a journey, the gate or a mutant (src/ci/engine-change.ts lists the
+# paths) must bump the harness version and pass the mutants before it merges.
+# "Mutants re-run (required)" always reports, so it can be a required check;
+# on any other PR it passes without running them.
 name: Weekly mutants
 
 on:
   schedule:
     - cron: "41 3 * * 1"
+  pull_request:
   workflow_dispatch:
     inputs:
       tag:
@@ -15,14 +22,47 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: mutants-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
+  changes:
+    name: Engine change? Version bumped?
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      run_mutants: ${{ steps.detect.outputs.engine_changed || 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        if: github.event_name == 'pull_request'
+      - uses: actions/setup-node@v4
+        if: github.event_name == 'pull_request'
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+        if: github.event_name == 'pull_request'
+      - name: Engine paths touched, and the version bumped if so
+        id: detect
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: pnpm exec tsx src/ci/engine-change.ts --base "$BASE_SHA"
+
   mutants:
+    needs: changes
+    if: needs.changes.outputs.run_mutants == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 120
     env:
       HARNESS_IMAGE_PREFIX: ${{ vars.HARNESS_IMAGE_PREFIX || 'quay.io/tutors-sdk/tutors-{app}' }}
-      # Empty means the default: the monorepo's image-build.yml workflow (src/images.ts).
-      HARNESS_COSIGN_IDENTITY: ${{ vars.HARNESS_COSIGN_IDENTITY }}
+      # Who must have signed a pulled image: the monorepo's image-build.yml workflow (docs/contract.md).
+      HARNESS_COSIGN_IDENTITY: ${{ vars.HARNESS_COSIGN_IDENTITY || '^https://github.com/tutors-sdk/tutors-mono-repo/\.github/workflows/image-build\.yml@' }}
       TAG: ${{ inputs.tag || vars.HARNESS_PRODUCTION_TAG || 'main' }}
     steps:
       - uses: actions/checkout@v4
@@ -43,7 +83,7 @@ jobs:
       - name: Pull and verify, or build, the base images
         run: pnpm harness images ensure --a "$TAG" --b "$TAG"
 
-      - name: Six mutants, all caught
+      - name: Every mutant, caught and attributed
         run: pnpm harness mutants --base "$TAG"
 
       - uses: actions/upload-artifact@v4
@@ -52,3 +92,18 @@ jobs:
           name: mutant-reports
           path: out/
           retention-days: 14
+
+  required:
+    name: Mutants re-run (required)
+    needs: [changes, mutants]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    env:
+      CHANGES: ${{ needs.changes.result }}
+      MUTANTS: ${{ needs.mutants.result }}
+    steps:
+      - run: |
+          echo "changes: $CHANGES, mutants: $MUTANTS"
+          [ "$CHANGES" = "success" ] || { echo "engine change without a version bump, or the check itself failed" >&2; exit 1; }
+          [ "$MUTANTS" = "success" ] || [ "$MUTANTS" = "skipped" ] || { echo "the mutants did not pass" >&2; exit 1; }

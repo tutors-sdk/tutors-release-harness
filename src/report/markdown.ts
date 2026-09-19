@@ -99,7 +99,7 @@ export function renderMarkdown(report: RunReport): string {
   }
 
   const fired = Object.entries(report.masksApplied).filter(([, n]) => n > 0);
-  lines.push(`<sub>harness ${report.harnessVersion} · ${report.ranAt} · clock ${report.now} · ${report.runs} run(s) · masks fired: ${fired.length ? fired.map(([id, n]) => `${id}×${n}`).join(", ") : "none"}</sub>`);
+  lines.push(`<sub>harness ${report.harness.version} (${report.harness.gitSha?.slice(0, 12) ?? "no git sha"}, contract ${report.harness.contractVersion}) · ${report.ranAt} · clock ${report.now} · ${report.runs} run(s) · masks fired: ${fired.length ? fired.map(([id, n]) => `${id}×${n}`).join(", ") : "none"}</sub>`);
   return lines.join("\n") + "\n";
 }
 

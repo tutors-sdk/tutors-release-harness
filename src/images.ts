@@ -6,12 +6,18 @@ import { ROOT } from "./stack.ts";
 import type { ImageInfo, SideProvenance } from "./types.ts";
 
 /**
- * Exit code for "the images could not be obtained or could not be trusted":
- * the same class as a usage or harness error (README: 0 pass or warn, 1 fail,
- * 2 usage or harness error). It is deliberately not 1 — 1 means the harness
- * judged a release and it failed; here nothing was judged at all.
+ * Exit code for "an image may not be judged" — a registry image that is
+ * unsigned, signed by the wrong identity, or unverifiable because cosign is
+ * missing; or a spec that makes no sense. The contract's class 2: no verdict
+ * was reached (docs/contract.md).
  */
 export const EXIT_CANNOT_JUDGE = 2;
+/**
+ * Exit code for "an image could not be obtained" (not in the registry, and not
+ * buildable): contract 1.0.0 already says `images ensure` exits 1 when it does
+ * not succeed, and that promise is kept.
+ */
+export const EXIT_UNAVAILABLE = 1;
 
 /** The identity the monorepo's image-build workflow signs as (cosign keyless, GitHub OIDC). */
 export const DEFAULT_COSIGN_IDENTITY = "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@";
@@ -279,7 +285,7 @@ export interface EnsureDeps {
 
 export interface EnsureResult {
   ok: boolean;
-  /** 0, or EXIT_CANNOT_JUDGE with every reason in `problems`. */
+  /** 0; EXIT_CANNOT_JUDGE (2) when any image may not be judged; else EXIT_UNAVAILABLE (1) when one could not be obtained. Reasons in `problems`. */
   exitCode: number;
   problems: string[];
   sides: { spec: string; provenance?: SideProvenance }[];
@@ -308,7 +314,9 @@ export function ensureImages(requests: ImageRequest[], prefix: string, deps: Ens
   const { log } = deps;
   const problems: string[] = [];
   const sides: EnsureResult["sides"] = [];
-  const problem = (message: string) => {
+  let exitCode = 0;
+  const problem = (message: string, code: number = EXIT_UNAVAILABLE) => {
+    exitCode = Math.max(exitCode, code);
     problems.push(message);
     log(`  ERROR: ${message}`);
   };
@@ -322,7 +330,7 @@ export function ensureImages(requests: ImageRequest[], prefix: string, deps: Ens
     try {
       images = imagesFor(request.spec, prefix);
     } catch (e) {
-      problem(e instanceof Error ? e.message : String(e));
+      problem(e instanceof Error ? e.message : String(e), EXIT_CANNOT_JUDGE);
       sides.push({ spec: request.spec });
       continue;
     }
@@ -385,12 +393,12 @@ export function ensureImages(requests: ImageRequest[], prefix: string, deps: Ens
       sides.push({ spec: request.spec, provenance });
     } catch (e) {
       if (!(e instanceof ImageTrustError)) throw e;
-      problem(e.message);
+      problem(e.message, EXIT_CANNOT_JUDGE);
       sides.push({ spec: request.spec });
     }
   }
 
   const ok = problems.length === 0;
-  if (!ok) log(`images ensure: ${problems.length} problem(s); nothing may be judged (exit ${EXIT_CANNOT_JUDGE})`);
-  return { ok, exitCode: ok ? 0 : EXIT_CANNOT_JUDGE, problems, sides };
+  if (!ok) log(`images ensure: ${problems.length} problem(s); nothing may be judged (exit ${exitCode})`);
+  return { ok, exitCode, problems, sides };
 }

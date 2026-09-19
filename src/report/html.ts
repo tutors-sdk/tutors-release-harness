@@ -100,7 +100,7 @@ ${compare.broadUnapproved.length ? `<h2>Broad claims without approval (${compare
 <p>Fired: ${fired.length ? fired.map(([id, n]) => `<code>${esc(id)}</code>×${n}`).join(", ") : "none"}.<br>
 Silent this run: ${silent.length ? silent.map(([id]) => `<code>${esc(id)}</code>`).join(", ") : "none"} — a mask that never fires is a mask to delete.</p>
 
-<footer>Every masked field is listed in <code>normalise/masks.yaml</code> with a reason. A mask is a blind spot you chose.</footer>
+<footer>Every masked field is listed in <code>normalise/masks.yaml</code> with a reason. A mask is a blind spot you chose.<br>harness ${esc(report.harness.version)} · ${esc(report.harness.gitSha?.slice(0, 12) ?? "no git sha")} · contract ${esc(report.harness.contractVersion)}</footer>
 </body>
 </html>
 `;

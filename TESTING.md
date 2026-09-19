@@ -20,7 +20,8 @@ fail, and ratchets. This is the runway for the runway.
 | A report hides where its images came from | a side built from source reads like a published one | Unit on the report header and on capture → report flow |
 | The stacks are not identical | side b has an env var side a lacks | Unit on `compose.harness.yaml` and the kind manifests |
 | The whole thing cannot boot | compose or kind fails on a laptop or in CI | Smoke: A/A on one journey (CI, every PR) |
-| The harness cannot fail | a planted regression passes release mode | Mutants (weekly, and after any engine or mask change) |
+| The harness cannot fail | a planted regression passes release mode | Mutants (weekly, and in CI on any PR that changes an engine, a mask, a journey, the gate or a mutant) |
+| The contract drifts | `report.json` gains a field the schema does not know; a workflow uses an undocumented flag | Unit (`tests/contract.test.ts`) |
 | The harness is noisy | A/A on the production tag is not clean | Nightly noise; the gate degrades to warn automatically |
 
 ## Tiers
@@ -62,8 +63,33 @@ running.
 The harness's own negative fixtures: eight planted regressions
 (`mutants/mutants.yaml`), each of which must produce a FAIL verdict
 attributed to the expected artefact. A/A runs first, so the mutants are
-caught by a harness that has the right to gate. **Run this after any change
-to an engine, a mask, or a journey.**
+caught by a harness that has the right to gate.
+
+**A re-run is required when an engine, a mask, a journey, the gate or a mutant
+changes, and CI enforces it.** `weekly-mutants.yml` also runs on every pull
+request. Its first job (`src/ci/engine-change.ts`) looks at the files the PR
+touches:
+
+| Paths | |
+| --- | --- |
+| `src/compare/**`, `src/gate.ts` | engines and the gate |
+| `normalise/**`, `src/normalise/**` | masks and how they are applied |
+| `traffic/journeys/**` | journeys |
+| `mutants/**` | the mutants themselves |
+
+If none is touched, the mutants are skipped and the check passes in a minute.
+If any is, the PR must
+
+1. **bump `version` in `package.json`** (any semver increase over the base
+   branch) — reports carry the harness version, and two reports are only
+   comparable when it is the same; and
+2. **pass the mutants**, all caught and attributed, on the PR's own code.
+
+The job named **Mutants re-run (required)** always reports — pass when nothing
+relevant changed, otherwise the result of both conditions — so it is the one
+to mark as a required status check on `main` (a path-filtered workflow cannot
+be required: it never reports on PRs it skips). The rule's own logic is unit
+tested in `tests/engine-change.test.ts`.
 
 ### Noise (nightly)
 
@@ -91,7 +117,9 @@ must fail with failures attributed to `b`.
 | Metric | Direction | Enforced where |
 | --- | --- | --- |
 | A/A diff count on the production tag | stays 0 | nightly noise → gate degrades |
-| Mutants caught and attributed | 8 of 8 | weekly mutants |
+| Mutants caught and attributed | 8 of 8 | weekly mutants; required on PRs that change an engine, mask, journey, gate or mutant |
+| Harness version on such PRs | goes up | `src/ci/engine-change.ts` in the same workflow |
+| `report.json`, `noise-status.json`, CLI, dispatch payloads vs `docs/contract.md` | no drift | `tests/contract.test.ts` |
 | Masks in `normalise/masks.yaml` | grow only with review | CODEOWNERS |
 | Masks that never fire | → 0 | listed in every report as "silent" |
 | Engines without a planted-change test | 0 | review |

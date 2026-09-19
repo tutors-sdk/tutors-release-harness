@@ -1,0 +1,232 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/tutors-sdk/tutors-release-harness/blob/main/docs/contract/report.schema.json",
+  "title": "report.json (contract 1.x)",
+  "description": "What every `harness run` and `harness compare` writes. Derived from RunReport in src/types.ts; tests/contract.test.ts fails when the two drift.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "harness", "harnessVersion", "mode", "substrate", "ranAt", "now", "runs", "sides", "verdict", "reasons", "compare", "masksApplied"],
+  "properties": {
+    "schemaVersion": { "const": 1, "description": "Major version of the contract. Refuse a value you do not know." },
+    "harness": { "$ref": "#/definitions/harness" },
+    "harnessVersion": { "type": "string", "description": "Same as harness.version; kept for readers of pre-contract reports." },
+    "mode": { "enum": ["noise", "release", "any-two", "upgrade", "migration", "post-deploy"] },
+    "substrate": { "enum": ["compose", "kind"] },
+    "ranAt": { "type": "string", "format": "date-time", "description": "When the comparison was judged (wall clock, UTC)." },
+    "now": { "type": "string", "description": "The frozen clock both sides were given (HARNESS_NOW / --now)." },
+    "runs": { "type": "integer", "minimum": 1, "description": "Journey repetitions per side." },
+    "sides": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["a", "b"],
+      "properties": { "a": { "$ref": "#/definitions/images" }, "b": { "$ref": "#/definitions/images" } }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Since contract 1.1.0. Where each side's images came from, their registry digests and OCI labels. A side is absent when it was not inspected: migration mode, the live side of post-deploy mode, a capture recorded before 1.1.0.",
+      "properties": { "a": { "$ref": "#/definitions/sideProvenance" }, "b": { "$ref": "#/definitions/sideProvenance" } }
+    },
+    "verdict": { "enum": ["pass", "fail", "warn"] },
+    "reasons": { "type": "array", "items": { "type": "string" }, "description": "Why the verdict is what it is, one line each. For people; the wording is not part of the contract." },
+    "noise": { "$ref": "#/definitions/noiseStatus" },
+    "compare": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hunks", "matches", "unclaimed", "staleClaims", "broadUnapproved"],
+      "properties": {
+        "hunks": { "type": "array", "items": { "$ref": "#/definitions/hunk" }, "description": "Every difference, failing and informational." },
+        "matches": {
+          "type": "array",
+          "description": "One entry per hunk, with the claim that covers it when one does.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["hunk"],
+            "properties": { "hunk": { "$ref": "#/definitions/hunk" }, "claim": { "$ref": "#/definitions/claim" } }
+          }
+        },
+        "unclaimed": { "type": "array", "items": { "$ref": "#/definitions/hunk" }, "description": "Failing hunks no claim covers. These are what gates." },
+        "staleClaims": { "type": "array", "items": { "$ref": "#/definitions/claim" }, "description": "Claims that matched nothing." },
+        "broadUnapproved": { "type": "array", "items": { "$ref": "#/definitions/claim" }, "description": "Broad claims without approvedBy; they gate in release and post-deploy modes." }
+      }
+    },
+    "masksApplied": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 }, "description": "Mask id -> how many times it changed something, both sides summed. 0 means silent." },
+    "migration": {
+      "type": "object",
+      "description": "Migration mode only.",
+      "additionalProperties": false,
+      "required": ["a", "b", "rolledBack"],
+      "properties": {
+        "a": { "$ref": "#/definitions/migrationSide" },
+        "b": { "$ref": "#/definitions/migrationSide" },
+        "rolledBack": { "$ref": "#/definitions/schemaCatalog" }
+      }
+    },
+    "upgrade": {
+      "type": "object",
+      "description": "Upgrade mode only.",
+      "additionalProperties": false,
+      "required": ["substrate", "requests", "failed", "serverErrors", "byUpstream", "switchedAt", "durationMs"],
+      "properties": {
+        "substrate": { "enum": ["compose", "kind"] },
+        "requests": { "type": "number" },
+        "failed": { "type": "number" },
+        "serverErrors": { "type": "number" },
+        "byUpstream": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["requests", "failed", "serverErrors", "p95"],
+            "properties": { "requests": { "type": "number" }, "failed": { "type": "number" }, "serverErrors": { "type": "number" }, "p95": { "type": "number" } }
+          }
+        },
+        "switchedAt": { "type": "number", "description": "Milliseconds into the load window at which the edge switched to b." },
+        "durationMs": { "type": "number" }
+      }
+    },
+    "load": {
+      "type": "object",
+      "description": "Present when --load ran on both sides. The samples stay in the captures.",
+      "additionalProperties": false,
+      "required": ["a", "b"],
+      "properties": { "a": { "$ref": "#/definitions/load" }, "b": { "$ref": "#/definitions/load" } }
+    }
+  },
+  "definitions": {
+    "harness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "gitSha", "contractVersion"],
+      "properties": {
+        "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+" },
+        "gitSha": { "type": ["string", "null"] },
+        "contractVersion": { "type": "string", "pattern": "^1\\.\\d+\\.\\d+$" }
+      }
+    },
+    "noiseStatus": {
+      "description": "The noise status consulted for the gating decision (noise-status.schema.json); absent when none was supplied or it was waived with --noise skip.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ranAt", "clean", "hunks"],
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "ranAt": { "type": "string", "format": "date-time" },
+        "clean": { "type": "boolean" },
+        "hunks": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "images": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reader", "catalogue", "live"],
+      "properties": { "reader": { "type": "string" }, "catalogue": { "type": "string" }, "live": { "type": "string" } }
+    },
+    "sideProvenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["summary", "images"],
+      "properties": {
+        "summary": { "type": "string", "description": "One line for people, e.g. pulled+verified, or built-from-ref v16.2.0@1a2b3c4d5e6f. Do not parse; read images.*.provenance." },
+        "allowedUnsigned": { "const": true, "description": "Present when --allow-unsigned let the run judge a registry image whose signature was not verified." },
+        "images": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["reader", "catalogue", "live"],
+          "properties": { "reader": { "$ref": "#/definitions/imageInfo" }, "catalogue": { "$ref": "#/definitions/imageInfo" }, "live": { "$ref": "#/definitions/imageInfo" } }
+        }
+      }
+    },
+    "imageInfo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref", "provenance"],
+      "properties": {
+        "ref": { "type": "string", "description": "The image reference as given or expanded; the same string as in sides." },
+        "id": { "type": "string", "description": "Local image id (sha256:... of the image config)." },
+        "digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$", "description": "Registry digest of the manifest (for a multi-arch image, of the index). Only for a pulled image." },
+        "revision": { "type": "string", "description": "org.opencontainers.image.revision label: the monorepo commit, as the image states it." },
+        "version": { "type": "string", "description": "org.opencontainers.image.version label." },
+        "created": { "type": "string", "description": "org.opencontainers.image.created label." },
+        "provenance": { "enum": ["local", "pulled+verified", "pulled-unverified", "built-from-ref"], "description": "local: present and never pulled, not verified. pulled+verified: pulled and its cosign signature verified by digest against verifiedIdentity. pulled-unverified: pulled, not verified, judged only because of --allow-unsigned. built-from-ref: built on this machine from a monorepo git ref; not the published image." },
+        "verifiedIdentity": { "type": "string", "description": "pulled+verified: the certificate identity regular expression the signature was checked against." },
+        "unverifiedReason": { "type": "string", "description": "pulled-unverified: why verification failed. For people." },
+        "builtFrom": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ref"],
+          "properties": { "ref": { "type": "string", "description": "The monorepo git ref." }, "sha": { "type": "string", "description": "The commit it resolved to." } }
+        }
+      }
+    },
+    "artefact": { "enum": ["dom", "screenshot", "network", "console", "headers", "axe", "focus", "metrics", "logs", "timing", "persistence", "migration", "upgrade"] },
+    "hunk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "artefact", "scope", "summary", "severity"],
+      "properties": {
+        "id": { "type": "string" },
+        "artefact": { "$ref": "#/definitions/artefact" },
+        "scope": { "type": "string" },
+        "path": { "type": "string" },
+        "summary": { "type": "string" },
+        "detail": { "type": "string" },
+        "severity": { "enum": ["fail", "info"] }
+      }
+    },
+    "claim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artefact", "scope", "reason"],
+      "properties": {
+        "artefact": { "anyOf": [{ "$ref": "#/definitions/artefact" }, { "const": "*" }] },
+        "scope": { "type": "string" },
+        "reason": { "type": "string" },
+        "approvedBy": { "type": "string" }
+      }
+    },
+    "schemaCatalog": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tables", "indexes", "functions", "policies"],
+      "properties": {
+        "tables": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["type", "nullable", "default"],
+              "properties": { "type": { "type": "string" }, "nullable": { "type": "boolean" }, "default": { "type": ["string", "null"] } }
+            }
+          }
+        },
+        "indexes": { "type": "array", "items": { "type": "string" } },
+        "functions": { "type": "array", "items": { "type": "string" } },
+        "policies": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "migrationSide": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref", "files", "catalog"],
+      "properties": { "ref": { "type": "string" }, "files": { "type": "array", "items": { "type": "string" } }, "catalog": { "$ref": "#/definitions/schemaCatalog" } }
+    },
+    "load": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requests", "failed", "serverErrors", "p50", "p95", "rate", "duration"],
+      "properties": {
+        "requests": { "type": "number" },
+        "failed": { "type": "number" },
+        "serverErrors": { "type": "number" },
+        "p50": { "type": "number" },
+        "p95": { "type": "number" },
+        "rate": { "type": "number" },
+        "duration": { "type": "string" }
+      }
+    }
+  }
+}

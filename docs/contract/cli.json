@@ -1,0 +1,84 @@
+{
+  "$comment": "The harness CLI, machine-readable. tests/contract.test.ts fails when this list and src/cli.ts disagree, when a workflow uses a command or flag not marked stable, or when docs/contract.md omits a stable one. stable: true is covered by the compatibility promise in docs/contract.md; stable: false may change in a minor release.",
+  "contractVersion": "1.1.0",
+  "commands": [
+    { "name": "run", "stable": true, "summary": "Start both stacks, capture, compare, claim, gate, report." },
+    { "name": "compare", "stable": true, "summary": "Re-run normalise/compare/claim/gate on captures already on disk." },
+    { "name": "images", "stable": true, "subcommands": ["ensure"], "summary": "Per image: use it if local, else pull it and verify its cosign signature by digest, else build it from the monorepo ref." },
+    { "name": "mutants", "stable": true, "summary": "Build every mutant from the base reader image and prove the harness catches each." },
+    { "name": "version", "stable": true, "summary": "Harness version, git sha, contract version." },
+    { "name": "journeys", "stable": false, "summary": "List the journeys." },
+    { "name": "stack", "stable": false, "subcommands": ["up", "down"], "summary": "Start or stop both compose stacks." },
+    { "name": "kind", "stable": false, "subcommands": ["up", "down", "rollout"], "summary": "The kind substrate." }
+  ],
+  "flags": [
+    { "name": "mode", "type": "string", "stable": true, "values": ["noise", "release", "any-two", "upgrade", "migration", "post-deploy"] },
+    { "name": "a", "type": "string", "stable": true },
+    { "name": "b", "type": "string", "stable": true },
+    { "name": "base", "type": "string", "stable": true },
+    { "name": "substrate", "type": "string", "stable": false, "values": ["compose", "kind"] },
+    { "name": "image-prefix", "type": "string", "stable": true },
+    { "name": "ref-a", "type": "string", "stable": true },
+    { "name": "ref-b", "type": "string", "stable": true },
+    { "name": "claims", "type": "string", "stable": true },
+    { "name": "noise", "type": "string", "stable": true },
+    { "name": "runs", "type": "string", "stable": true },
+    { "name": "set", "type": "string", "stable": true },
+    { "name": "journey", "type": "string", "multiple": true, "stable": true },
+    { "name": "load", "type": "string", "stable": true },
+    { "name": "now", "type": "string", "stable": false },
+    { "name": "out", "type": "string", "stable": true },
+    { "name": "dir", "type": "string", "stable": true },
+    { "name": "masks", "type": "string", "stable": false },
+    { "name": "recorded", "type": "string", "stable": true },
+    { "name": "production", "type": "string", "stable": true },
+    { "name": "snapshot", "type": "string", "stable": false },
+    { "name": "upgrade-seconds", "type": "string", "stable": false },
+    { "name": "upgrade-rate", "type": "string", "stable": false },
+    { "name": "noise-max-age-days", "type": "string", "stable": false },
+    { "name": "screenshots", "type": "boolean", "stable": false },
+    { "name": "axe", "type": "boolean", "stable": false },
+    { "name": "focus", "type": "boolean", "stable": false },
+    { "name": "keep", "type": "boolean", "stable": false },
+    { "name": "stack", "type": "boolean", "stable": false },
+    { "name": "allow-unsigned", "type": "boolean", "stable": true, "since": "1.1.0" },
+    { "name": "json", "type": "boolean", "stable": true },
+    { "name": "help", "type": "boolean", "stable": true }
+  ],
+  "imageSpecs": {
+    "$comment": "What --a, --b and --base accept outside migration mode (src/image-ref.ts). Since 1.1.0: @sha256 digests.",
+    "forms": [
+      "<tag>",
+      "<repo>:<tag>[@sha256:<64 hex>] - that app; the others take the prefix and the tag",
+      "reader=<ref>,catalogue=<ref>,live=<ref> - each <ref> is <repo>[:<tag>][@sha256:<64 hex>]"
+    ],
+    "refused": [
+      "<tag>@sha256:... - a digest names one image",
+      "<repo>@sha256:... on its own - no tag for the other apps to take"
+    ]
+  },
+  "environment": {
+    "$comment": "Environment variables that are part of the contract. Since 1.1.0, except HARNESS_IMAGE_PREFIX (whose {app} template form is since 1.1.0).",
+    "HARNESS_IMAGE_PREFIX": {
+      "default": "tutors",
+      "meaning": "prefix (<prefix>/<app>:<tag>) or template containing {app}, for bare tags; --image-prefix overrides"
+    },
+    "HARNESS_COSIGN_IDENTITY": {
+      "default": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@",
+      "meaning": "regular expression the signing certificate's identity must match; empty means the default"
+    },
+    "HARNESS_COSIGN_ISSUER": {
+      "default": "https://token.actions.githubusercontent.com",
+      "meaning": "OIDC issuer of the signing certificate; empty means the default"
+    },
+    "HARNESS_ALLOW_UNSIGNED": {
+      "default": "",
+      "meaning": "1 | true | yes: the same as --allow-unsigned"
+    }
+  },
+  "exitCodes": {
+    "0": "verdict pass or warn; or the command succeeded",
+    "1": "verdict fail; or images ensure could not obtain an image, or mutants or kind rollout did not succeed",
+    "2": "usage error, the harness itself failed (an uncaught error), or an image may not be judged; no verdict was reached"
+  }
+}

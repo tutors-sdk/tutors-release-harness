@@ -9,6 +9,7 @@ import { compareFromCaptures, defaultRunOptions, loadCapture, run } from "./run.
 import { imagesFor, sideSpec, stackDown, stackUp } from "./stack.ts";
 import { kindDown, kindRollout, kindSide, kindUp } from "./substrate/kind.ts";
 import { MODES, SUBSTRATES, type Mode, type Substrate } from "./types.ts";
+import { harnessInfo } from "./version.ts";
 
 const USAGE = `tutors-release-harness
 
@@ -43,13 +44,15 @@ const USAGE = `tutors-release-harness
   harness images ensure --a <ref> --b <ref> [--ref-a git-ref] [--ref-b git-ref] [--allow-unsigned]
       Per image: use it if local; else pull it and verify its cosign signature by digest
       (HARNESS_COSIGN_IDENTITY, HARNESS_COSIGN_ISSUER override who must have signed it);
-      else, for a bare tag, build it from the monorepo ref. Exit 2 when an image cannot be
-      obtained or a registry image is unsigned, wrongly signed, or cosign is missing.
+      else, for a bare tag, build it from the monorepo ref. Exit 1 when an image cannot be
+      obtained; exit 2 when a registry image is unsigned, wrongly signed, or cosign is missing.
   harness stack up|down --a <ref> --b <ref>
   harness kind up|down|rollout --a <ref> --b <ref>
   harness mutants --base <ref> [--out dir]
       Build every mutant from the base reader image and prove the harness catches each.
   harness journeys
+  harness version [--json]
+      Harness version, git sha and the contract version (docs/contract.md).
 `;
 
 function fail(message: string): never {
@@ -111,6 +114,7 @@ async function main(argv: string[]): Promise<number> {
       keep: { type: "boolean", default: false },
       stack: { type: "boolean", default: true },
       "allow-unsigned": { type: "boolean", default: false },
+      json: { type: "boolean", default: false },
       help: { type: "boolean", short: "h", default: false }
     },
     allowNegative: true
@@ -119,6 +123,11 @@ async function main(argv: string[]): Promise<number> {
   if (!command || values.help) {
     console.log(USAGE);
     return command ? 0 : 2;
+  }
+  if (command === "version") {
+    const info = harnessInfo();
+    console.log(values.json ? JSON.stringify(info) : `harness ${info.version} (${info.gitSha ?? "no git sha"}) · contract ${info.contractVersion}`);
+    return 0;
   }
 
   const defaults = defaultRunOptions();

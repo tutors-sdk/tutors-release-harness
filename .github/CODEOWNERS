@@ -4,3 +4,13 @@
 # The harness's own signal: changing what a mutant plants or what it must be
 # attributed to changes what the gate can promise.
 /mutants/              @tutors-sdk/maintainers
+
+# The verdict and the exit code: what may fail a release, and when it may not.
+/src/gate.ts           @tutors-sdk/maintainers
+
+# The integration contract the monorepo builds against, its machine-readable
+# half, and the version constants it is stamped from. A change here is a
+# contract version bump (docs/contract.md, "Compatibility").
+/docs/contract.md      @tutors-sdk/maintainers
+/docs/contract/        @tutors-sdk/maintainers
+/src/version.ts        @tutors-sdk/maintainers
