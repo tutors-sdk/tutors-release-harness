@@ -211,4 +211,27 @@ describe("mutant wrapper", () => {
     expect(wrap).toContain('headers["content-length"] = String(body.length)');
     expect(wrap).toContain('delete headers["etag"]');
   });
+
+  it("plants the focus-order fault on navigators that appear after load, because the reader renders in the browser", async () => {
+    const wrap = readFileSync(resolve(ROOT, "mutants", "wrap.mjs"), "utf8");
+    const script = /case "focus-order":[\s\S]*?<script>([\s\S]*?)<\/script>/.exec(wrap)?.[1];
+    expect(script).toBeTruthy();
+    const anchors: { tabIndex: number }[] = [];
+    let observed: (() => void) | undefined;
+    const context = {
+      document: { documentElement: {}, querySelectorAll: (selector: string) => (selector === "nav a" ? anchors : []) },
+      MutationObserver: class {
+        constructor(cb: () => void) {
+          observed = cb;
+        }
+        observe() {}
+      }
+    };
+    const { runInNewContext } = await import("node:vm");
+    runInNewContext(script as string, context);
+    // The shell has no <nav> yet; the client render adds one, and the observer fires.
+    anchors.push({ tabIndex: 0 }, { tabIndex: 0 });
+    observed?.();
+    expect(anchors.map((a) => a.tabIndex)).toEqual([-1, -1]);
+  });
 });
