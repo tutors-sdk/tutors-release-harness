@@ -136,7 +136,7 @@
       "meaning": "since 1.2.0. Where the SBOM of each image comes from: auto or attestation (the SPDX attestation cosign attached to a pulled image), or generate (a local generator run over the image on both sides)"
     },
     "HARNESS_SBOM_CMD": {
-      "default": "syft docker:{image} -o spdx-json",
+      "default": "syft docker:{image} -o spdx-json (on a Windows host: the same syft run in its anchore/syft container over the Docker socket)",
       "meaning": "since 1.2.0. The SBOM generator for HARNESS_SBOM_SOURCE=generate; {image} is the image reference; prints SPDX JSON on stdout. Split on whitespace and quotes, run without a shell"
     },
     "HARNESS_VULN_CMD": {

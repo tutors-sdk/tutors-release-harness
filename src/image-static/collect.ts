@@ -2,7 +2,7 @@ import { realExec, trustPolicyFromEnv, type Exec, type TrustPolicy } from "../im
 import type { ImageInfo, SideProvenance, SideSpec } from "../types.ts";
 import { osTempFiles, type TempFiles } from "./command.ts";
 import { collectManifest } from "./manifest.ts";
-import { DEFAULT_SBOM_CMD, collectSbom, type SbomAcquired, type SbomSourcePolicy } from "./sbom.ts";
+import { collectSbom, defaultSbomCmd, type SbomAcquired, type SbomSourcePolicy } from "./sbom.ts";
 import { IMAGE_APPS, type AppImageStatic, type Collected, type ImageApp, type SbomData, type SideImageStatic } from "./types.ts";
 import { DEFAULT_VULN_CMD, collectVulns } from "./vulns.ts";
 
@@ -16,12 +16,12 @@ export interface StaticPolicy {
   trust: TrustPolicy;
 }
 
-export function staticPolicyFromEnv(env: NodeJS.ProcessEnv = process.env, trust: TrustPolicy = trustPolicyFromEnv(env)): StaticPolicy {
+export function staticPolicyFromEnv(env: NodeJS.ProcessEnv = process.env, trust: TrustPolicy = trustPolicyFromEnv(env), platform: NodeJS.Platform = process.platform): StaticPolicy {
   const source = (env.HARNESS_SBOM_SOURCE || "auto").toLowerCase();
   if (source !== "auto" && source !== "attestation" && source !== "generate") throw new Error(`HARNESS_SBOM_SOURCE must be auto, attestation or generate, not "${env.HARNESS_SBOM_SOURCE}"`);
   return {
     sbomSource: source,
-    sbomCmd: env.HARNESS_SBOM_CMD || DEFAULT_SBOM_CMD,
+    sbomCmd: env.HARNESS_SBOM_CMD || defaultSbomCmd(platform),
     vulnCmd: env.HARNESS_VULN_CMD || DEFAULT_VULN_CMD,
     ...(env.HARNESS_VULN_DB_DIR ? { vulnDbDir: env.HARNESS_VULN_DB_DIR } : {}),
     trust

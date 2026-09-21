@@ -321,7 +321,7 @@ which changes whenever the base's operating-system layer does.
   SBOM as not verified). An attestation whose subject is not this image's
   digest, that is not SPDX, or that lists no packages is refused.
 - `generate`: a local generator over the image itself, on both sides
-  (`HARNESS_SBOM_CMD`, default `syft docker:{image} -o spdx-json`). This is
+  (`HARNESS_SBOM_CMD`, default `syft docker:{image} -o spdx-json`, run in syft's own container on a Windows host). This is
   what the mutants use, and the way to get an SBOM for a locally built image.
   Do not mix it with attestations in one comparison: two different tools do not
   catalogue an image identically.
