@@ -99,7 +99,7 @@ every report prints them.
 The release dispatch can carry a digest per app instead of a spelled-out
 reference: `production_digests` and `candidate_digests`, which `release.yml`
 passes as `--a-digests` and `--b-digests` (a JSON object, or
-`reader=sha256:…,catalogue=sha256:…,live=sha256:…`) beside the bare tags. The
+`reader=sha256:…,catalogue=sha256:…,live=sha256:…[,time=sha256:…]`) beside the bare tags. The
 references become `repo:tag@sha256:…`, and on top of everything above:
 
 - before anything is pulled, `images ensure` asks the registry what each tag

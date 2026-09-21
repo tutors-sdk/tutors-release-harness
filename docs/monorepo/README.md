@@ -58,8 +58,8 @@ reference copy of `release-dispatch.yml` reads them in its `images` job.
     "production": "16.2.0", "candidate": "16.3.0-rc.4", "claims_url": "https://raw.githubusercontent.com/tutors-sdk/tutors-mono-repo/<sha>/release/claims.yaml",
     "rules_url": "https://raw.githubusercontent.com/tutors-sdk/tutors-mono-repo/<sha>/release/rules.json",
     "runs": 5, "migrations_a": "v16.2.0", "migrations_b": "<sha>",
-    "production_digests": { "reader": "sha256:<64 hex>", "catalogue": "sha256:<64 hex>", "live": "sha256:<64 hex>" },
-    "candidate_digests":  { "reader": "sha256:<64 hex>", "catalogue": "sha256:<64 hex>", "live": "sha256:<64 hex>" } } }
+    "production_digests": { "reader": "sha256:<64 hex>", "catalogue": "sha256:<64 hex>", "live": "sha256:<64 hex>", "time": "sha256:<64 hex>" },
+    "candidate_digests":  { "reader": "sha256:<64 hex>", "catalogue": "sha256:<64 hex>", "live": "sha256:<64 hex>", "time": "sha256:<64 hex>" } } }
 ```
 
 **`deployed`** (sent by the deploy job) gains `production`, the tag that was
@@ -67,7 +67,7 @@ deployed (`16.3.0`), and `digests`, the images that run:
 
 ```json
 { "event_type": "deployed",
-  "client_payload": { "production": "16.3.0", "digests": { "reader": "sha256:<64 hex>", "catalogue": "sha256:<64 hex>", "live": "sha256:<64 hex>" } } }
+  "client_payload": { "production": "16.3.0", "digests": { "reader": "sha256:<64 hex>", "catalogue": "sha256:<64 hex>", "live": "sha256:<64 hex>", "time": "sha256:<64 hex>" } } }
 ```
 
 The harness compares them with what release mode judged, which it kept on its

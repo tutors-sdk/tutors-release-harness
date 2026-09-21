@@ -236,8 +236,8 @@ correction):
 
 Four is the least; five is the default of the nightly, the release workflow and
 the `slow-ssr` mutant because with four a single overlapping pair (p = 0.061)
-already hides a real regression, and with five it does not (p = 0.022). Until
-1.2.1 the p-value function was wrong (it reported 0.0004 for 5 v 5 and 0.014 for
+already hides a real regression, and with five it does not (p = 0.022). Before
+1.3.0 the p-value function was wrong (it reported 0.0004 for 5 v 5 and 0.014 for
 3 v 3) and three runs *seemed* to work: A/A history taken with the earlier
 harness says nothing about the noise floor of these engines. Cost: each run is
 one more pass of every selected journey on each side, so five runs against
@@ -251,7 +251,7 @@ tiny for any visible shift: the effect-size guards carry the load comparison.
 Order of remedies, never a retry:
 
 1. `--runs 5` in the nightly and release (more samples per page, and the test
-   has power to tell noise from shift). Done in 1.2.1; more runs cost wall-clock
+   has power to tell noise from shift). Done in 1.3.0; more runs cost wall-clock
    linearly and tighten the floor (8 v 8: p = 0.0009).
 2. Tighten `alpha` (0.01) or raise `minShiftMs` / `minEffect`: a threshold
    change, so a mask-style PR with the reason measured from the A/A history.

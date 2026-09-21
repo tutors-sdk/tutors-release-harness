@@ -106,7 +106,7 @@ locally; syft must be installed (`harness doctor --for mutants`).
 ### Post-deploy watch: `harness local watch`
 
 ```console
-pnpm harness local watch [--recorded out\<time>-release] [--production reader=URL,catalogue=URL,live=URL] \
+pnpm harness local watch [--recorded out\<time>-release] [--production reader=URL,catalogue=URL,live=URL[,time=URL]] \
     [--interval 15m] [--once] [--dry-run]
 ```
 

@@ -25,7 +25,7 @@ export function erfc(x: number): number {
 /**
  * The standard normal CDF, Phi(z) = 0.5 * (1 + erf(z / sqrt 2)) = 0.5 * erfc(-z / sqrt 2).
  * The argument of erf is z / sqrt 2, not z: passing z straight in (as the harness
- * did before 1.2.1) reads Phi at z * sqrt 2, which made every p-value too small.
+ * did before 1.3.0) reads Phi at z * sqrt 2, which made every p-value too small.
  */
 export function normalCdf(z: number): number {
   return 0.5 * erfc(-z / Math.SQRT2);

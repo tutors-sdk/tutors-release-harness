@@ -395,7 +395,7 @@ them is optional: a dispatch without them behaves exactly as in 1.2.0.
 
 `release-candidate` may carry `production_digests` and `candidate_digests`:
 objects `app -> "sha256:<64 hex>"`, for any of the harness's apps (`reader`,
-`catalogue`, `live`; the harness accepts every app it stacks and names no other).
+`catalogue`, `live`, `time`; the harness accepts every app it stacks and names no other).
 
 ```json
 { "production_digests": { "reader": "sha256:…", "catalogue": "sha256:…", "live": "sha256:…", "time": "sha256:…" },
@@ -404,7 +404,7 @@ objects `app -> "sha256:<64 hex>"`, for any of the harness's apps (`reader`,
 
 `release.yml` hands them to `harness images ensure` and `harness run` as
 `--a-digests` (production) and `--b-digests` (candidate). Each flag takes a JSON
-object or `reader=sha256:…,catalogue=sha256:…,live=sha256:…`; an empty value,
+object or `reader=sha256:…,catalogue=sha256:…,live=sha256:…[,time=sha256:…]`; an empty value,
 `{}` and `null` mean none. What changes when they are given:
 
 - the references become `repo:tag@sha256:…` (the form `--a`/`--b` already read,
@@ -748,17 +748,22 @@ Releases are git tags `v<harness version>` on `main`, cut by a maintainer.
 
 ## Changes
 
-### 1.3.0 (minor; digests, rules, the local store, the local commands, checkout names)
+### 1.3.0 (minor; digests, rules, the local store, the local commands, checkout names, the `time` app, statistics)
 
-One bump carrying every contract-visible change of the local-first work and of
-the release-gate follow-ups. Additive for a consumer written against 1.2.0: a
-dispatch payload without the new fields, a claims file without `rule`, a
-workflow that passes `--noise`, and a checkout with one stack all behave as they
-did. The harness version is 1.3.0 as well. Four things are not purely additive and
-are called out where they occur: a `rule` key in a claim was ignored before and is
-now checked; a missing `--noise` no longer means "no status" on a machine that has
-a local noise store; the default name of the compose project and kind cluster
-changed; and a stack under the old name is left alone.
+`main` is at 1.1.0 and this is its next release: 1.2.0 (below) was never
+released on its own, so 1.3.0 carries everything of 1.2.0 as well, and its entry
+stays as the history of that part. One bump carrying every contract-visible change
+of the local-first work, of the release-gate follow-ups and of the `time` app.
+Additive for a consumer written against 1.2.0 (or 1.1.0, plus the additions
+listed under 1.2.0): a dispatch payload without the new fields, a claims file
+without `rule`, a workflow that passes `--noise`, a checkout with one stack and a
+`--a`/`--b` spec without `time=` all behave as they did. The harness version is
+1.3.0 as well. Five things are not purely additive and are called out where they
+occur: a `rule` key in a claim was ignored before and is now checked; a missing
+`--noise` no longer means "no status" on a machine that has a local noise store;
+the default name of the compose project and kind cluster changed; a stack under
+the old name is left alone; and the `runs` default of `release-candidate` is now
+`5`, not `3`.
 
 **Image digests in the dispatch, the release record, the deployment check**
 ([details](#image-digests-and-the-release-record))
@@ -848,6 +853,27 @@ changed; and a stack under the old name is left alone.
 - A stack under the old default name `tutors-harness` is reported by `harness
   doctor` as a legacy stack, not touched, and never removed. A kind cluster called
   `tutors-harness` is never adopted or deleted: `harness kind` refuses that name.
+**Statistics: the Mann-Whitney p-value, and `runs` defaults to `5`**
+(no field, flag, artefact or verdict rule changes)
+
+- **Bug fix: the Mann-Whitney p-value was too small.** The normal CDF behind
+  the `timing` (page TTFB, journey duration, load) and `startup` artefacts
+  passed z where it needed z / sqrt 2: a perfectly separated 5 v 5 reported
+  p = 0.0004 (correct: 0.0122), 3 v 3 reported 0.014 (correct: 0.081). Reports
+  of 1.2.0 and earlier judged those artefacts on the wrong p, so they are not
+  comparable with 1.3.0 reports (harness version, above).
+- **Three samples a side cannot reach alpha 0.05.** The `timing` engine (as
+  `startup` already did) now says so, as information: `n/n samples cannot reach
+  alpha 0.05 (best possible p=0.081). Raise --runs`, for a shift that clears
+  `minEffect` and `minShiftMs`. Load says the same when k6 left too few samples.
+  Nothing new fails, and nothing that failed before for a reason other than
+  the wrong p stops failing.
+- **Workflow default: `release-candidate` `runs` is `5` (was `3`)**, and the
+  nightly A/A runs `--runs 5`, so both can judge timing at all. A dispatch that
+  passes `runs` is unaffected; one that omits it runs two more passes of the
+  journeys per side. `weekly-mutants.yml`'s `slow-ssr` mutant runs five, and
+  `harness local nightly|gate` default to five as well.
+
 **The `time` app joins the stack**
 
 - The monorepo ships four apps (reader, catalogue, live, time) and the harness
@@ -871,28 +897,6 @@ changed; and a stack under the old name is left alone.
   cluster created before 1.3.0 must be recreated (it never published the time
   ports). Reports of 1.2.x are not comparable with 1.3.0 reports (the harness
   version, above): there are more artefacts to differ.
-
-### 1.2.1 (patch; statistics)
-
-No field, flag, artefact or verdict changes; a consumer written against 1.2.0
-keeps working.
-
-- **Bug fix: the Mann-Whitney p-value was too small.** The normal CDF behind
-  the `timing` (page TTFB, journey duration, load) and `startup` artefacts
-  passed z where it needed z / sqrt 2: a perfectly separated 5 v 5 reported
-  p = 0.0004 (correct: 0.0122), 3 v 3 reported 0.014 (correct: 0.081). Reports
-  of 1.2.0 (and earlier) judged those artefacts on the wrong p, so they are not
-  comparable with 1.2.1 reports (harness version, above).
-- **Three samples a side cannot reach alpha 0.05.** The `timing` engine (as
-  `startup` already did) now says so, as information: `n/n samples cannot reach
-  alpha 0.05 (best possible p=0.081). Raise --runs`, for a shift that clears
-  `minEffect` and `minShiftMs`. Load says the same when k6 left too few samples.
-  Nothing new fails, and nothing that failed on 1.2.0 for a reason other than
-  the wrong p stops failing.
-- **Workflow default: `release-candidate` `runs` is `5` (was `3`)**, and the
-  nightly A/A runs `--runs 5`, so both can judge timing at all. A dispatch that
-  passes `runs` is unaffected; one that omits it runs two more passes of the
-  journeys per side. `weekly-mutants.yml`'s `slow-ssr` mutant runs five.
 
 ### 1.2.0 (minor; R3, R5 and R7)
 
