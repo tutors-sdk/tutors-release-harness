@@ -200,8 +200,13 @@ describe("report.json", () => {
     for (const flag of cli.flags.filter((f: { since?: string }) => f.since === "1.2.0")) expect(changes, flag.name).toContain(`--${flag.name === "runtime" ? "no-runtime" : flag.name}`);
     for (const [name, v] of Object.entries(cli.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.2.0")) expect(changes, name).toContain(name);
     expect(CONTRACT_VERSION).toBe("1.4.0");
-    expect(HARNESS_VERSION).toBe("1.4.0");
+    // The harness version is package.json's and moves at least as far as the contract's (docs/contract.md, Versioning):
+    // a mask or engine PR bumps the patch of the harness alone, so do not pin a literal here.
     expect(json("package.json").version).toBe(HARNESS_VERSION);
+    const tuple = (v: string) => v.split(".").map(Number) as [number, number, number];
+    const [hMajor, hMinor] = tuple(HARNESS_VERSION);
+    const [cMajor, cMinor] = tuple(CONTRACT_VERSION);
+    expect(hMajor > cMajor || (hMajor === cMajor && hMinor >= cMinor), `harness ${HARNESS_VERSION} must not be behind contract ${CONTRACT_VERSION}`).toBe(true);
     for (const doc of [cli, json("docs/contract/workflows.json")]) expect(doc.contractVersion).toBe(CONTRACT_VERSION);
   });
 

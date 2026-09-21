@@ -16,7 +16,7 @@ import { CLUSTER, kindDown, kindRollout, kindSide, kindUp } from "./substrate/ki
 import { refuseLegacyCluster } from "./project.ts";
 import { MODES, SUBSTRATES, type Mode, type Substrate } from "./types.ts";
 import { harnessInfo } from "./version.ts";
-import { helpFor } from "./local/usage.ts";
+import { helpFor, parseArgsErrorText } from "./local/usage.ts";
 import { RequirementError, requirements } from "./not-collected.ts";
 import { UsageError, doctorCommand, guardCommand, localCommand, noiseCommand, overrideCommand, pruneCommand, recordAppliedOverride, vulnDbCommand } from "./local/cli.ts";
 import { defaultNoise } from "./local/noise-store.ts";
@@ -467,6 +467,12 @@ main(process.argv.slice(2)).then(
     // A claims or rules file that cannot be used: which file, which claim, which field, what is wrong; no stack.
     if (error instanceof UsageError || error instanceof DigestError || error instanceof InputFileError || error instanceof RequirementError) {
       console.error(error.message);
+      process.exit(2);
+    }
+    // A flag the command does not take, or one missing its value: the flag and where the usage is, not a Node stack.
+    const flagError = parseArgsErrorText(error, process.argv.slice(2));
+    if (flagError) {
+      console.error(flagError);
       process.exit(2);
     }
     console.error(error instanceof Error ? error.stack ?? error.message : error);

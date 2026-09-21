@@ -559,11 +559,12 @@ Raised here first, and since done in the monorepo (both on its `main`):
 - **A local trigger for the release gate** (its PR #307). `pnpm release:harness` builds the `release-candidate` payload (production tag from the reader overlay, `migrations_a` by probing `v<tag>` then `release/<tag>`, claims path, digests when the overlays carry them) from a clone with git alone; `--print` shows it and `--run` hands it to `harness local gate`. `release-dispatch.yml` itself is unchanged (it tags and dispatches through the API), and a conformance test holds its payload to the script's. Closes R1 and R2.
 - **The deploy job** (its PR #298, `deploy.yml`). After the overlays are verified against the registry, and the `production` environment approved, it sets `HARNESS_PRODUCTION_TAG` on this repository and dispatches `deployed` with `production` and `digests`. `pnpm release:harness --deployed --run` is the local equivalent (`harness local watch --once`, with the tag set). Closes P1.
 
+- **The `time` digest on deploy** (its PR #310). `deploy.yml` now sends four digests (`reader`, `catalogue`, `live`, `time`), so a deployment check against a four-digest release record no longer says `incomplete`.
+
 Still open, and not ours to edit:
 
-1. **`deploy.yml` reports three digests, not four.** Its `digests` object is `{reader, catalogue, live}`, though the overlays pin `time` too and the harness stacks four apps. Release mode records a digest for each app it verified, so a deployment check against a four-digest record says `incomplete` (a warning: "the release record has a digest for `time`, but the deploy did not report one"). Adding `time` to the `jq` object in its `verify` job clears it.
-2. **`release/claims.yaml` is checked by the monorepo's `pnpm check:release-claims`,** a mirror of the harness's parser; the harness has no validate-only command, so a local check runs a whole `harness run`, which reads the claims file first and stops with exit 2 on a bad one before any stack starts.
-3. **`image-build.yml` signs with GitHub OIDC keyless.** Every image a local run verifies was signed by that workflow; a locally built image cannot be signed the same way, so it is `built-from-ref` and refused as evidence. That is intended.
+1. **`release/claims.yaml` is checked by the monorepo's `pnpm check:release-claims`,** a mirror of the harness's parser; the harness has no validate-only command, so a local check runs a whole `harness run`, which reads the claims file first and stops with exit 2 on a bad one before any stack starts.
+2. **`image-build.yml` signs with GitHub OIDC keyless.** Every image a local run verifies was signed by that workflow; a locally built image cannot be signed the same way, so it is `built-from-ref` and refused as evidence. That is intended.
 
 ## Contract notes
 

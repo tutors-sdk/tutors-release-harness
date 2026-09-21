@@ -37,3 +37,18 @@ export function helpFor(argv: string[], usage: string): { text: string; code: nu
   }
   return undefined;
 }
+
+/**
+ * Node's `parseArgs` throws a TypeError with an `ERR_PARSE_ARGS_*` code for a flag the command does not take, or one
+ * that is missing its value. Said plainly: the flag, and where to find the ones the command does take, with no stack.
+ * Returns undefined for any other error.
+ */
+export function parseArgsErrorText(error: unknown, argv: string[]): string | undefined {
+  const code = (error as { code?: unknown } | null)?.code;
+  if (typeof code !== "string" || !code.startsWith("ERR_PARSE_ARGS_")) return undefined;
+  const message = error instanceof Error ? error.message : String(error);
+  // Node adds advice about positional arguments that start with "-"; it does not help here.
+  const reason = (message.split(/\.\s+To specify a positional/)[0] ?? message).replace(/\.$/, "");
+  const command = argv[0] && !argv[0].startsWith("-") ? argv[0] : undefined;
+  return `harness: ${reason}.\nSee \`harness help${command ? ` ${command}` : ""}\` for the flags ${command ? "this command takes" : "harness takes"}.`;
+}
