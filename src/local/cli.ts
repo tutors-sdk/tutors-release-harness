@@ -241,6 +241,16 @@ export async function localCommand(task: string | undefined, v: Values): Promise
   }
 }
 
+/** The verdict a run wrote to its report.json, if it wrote one. */
+function verdictOf(runDir: string): { verdict?: string } {
+  try {
+    const v = (JSON.parse(readFileSync(join(runDir, "report.json"), "utf8")) as { verdict?: unknown }).verdict;
+    return typeof v === "string" ? { verdict: v } : {};
+  } catch {
+    return {};
+  }
+}
+
 /** What the `rollback` issue of post-deploy.yml carries, written to a file instead. */
 export function writeRollback(dir: string, at: Date, runDir: string | undefined): string {
   mkdirSync(dir, { recursive: true });
@@ -275,7 +285,7 @@ async function watchCommand(plan: Plan, env: Record<string, string>, ex: Executo
         runOnce: () => {
           const { code, results } = executePlan(plan, env, ex);
           const runDir = results.find((r) => r.id === "post-deploy")?.runDir;
-          return { code, ...(runDir ? { runDir } : {}) };
+          return { code, ...(runDir ? { runDir } : {}), ...(runDir ? verdictOf(runDir) : {}) };
         },
         sleep: (ms) =>
           new Promise<void>((done) => {

@@ -358,7 +358,8 @@ export function parseInterval(text: string): number {
 }
 
 export interface WatchDeps {
-  runOnce: () => { code: number; runDir?: string };
+  /** `verdict` is the run's own (`report.json`), when it wrote one: exit 0 covers both `pass` and an advisory `warn`. */
+  runOnce: () => { code: number; runDir?: string; verdict?: string };
   sleep: (ms: number) => Promise<void>;
   now: () => Date;
   log: (message: string) => void;
@@ -378,13 +379,16 @@ export async function watch(o: { intervalMs: number; max?: number }, deps: Watch
   let lastCode = 0;
   while (!deps.shouldStop() && (o.max === undefined || iterations < o.max)) {
     const started = deps.now();
-    const { code, runDir } = deps.runOnce();
+    const { code, runDir, verdict } = deps.runOnce();
     iterations += 1;
     lastCode = code;
     if (code === 1) {
       failures += 1;
       deps.onFailure({ at: started, ...(runDir ? { runDir } : {}) });
       deps.log(`${started.toISOString()} watch: production DIFFERS from the recorded candidate${runDir ? ` (${runDir})` : ""}`);
+    } else if (code === 0 && verdict === "warn") {
+      // Exit 0 is also an advisory WARN (no clean A/A, or the deployed images not confirmed): it found differences and may not call them a FAIL.
+      deps.log(`${started.toISOString()} watch: verdict WARN, advisory only: production may differ from the recorded candidate${runDir ? `; read ${runDir}` : ""}`);
     } else if (code === 0) deps.log(`${started.toISOString()} watch: production matches the recorded candidate`);
     else deps.log(`${started.toISOString()} watch: could not judge (exit ${code}); trying again next time`);
     if (o.max !== undefined && iterations >= o.max) break;

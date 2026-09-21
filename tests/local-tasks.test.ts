@@ -311,6 +311,17 @@ describe("the watch loop", () => {
     for (const s of h.sleeps) expect(s).toBeGreaterThan(890_000);
   });
 
+  it("does not say production matches when exit 0 is an advisory WARN", async () => {
+    const h = harness([0]);
+    await watch({ intervalMs: 900_000, max: 1 }, { ...h.deps, runOnce: () => ({ code: 0, runDir: "/out/pd-1", verdict: "warn" }) });
+    expect(h.log.join("\n")).toContain("verdict WARN, advisory only");
+    expect(h.log.join("\n")).not.toContain("production matches");
+    expect(h.failures).toEqual([]);
+    const p = harness([0]);
+    await watch({ intervalMs: 900_000, max: 1 }, { ...p.deps, runOnce: () => ({ code: 0, runDir: "/out/pd-1", verdict: "pass" }) });
+    expect(p.log.join("\n")).toContain("production matches the recorded candidate");
+  });
+
   it("--once is one iteration and returns its code", async () => {
     const h = harness([1]);
     expect(await watch({ intervalMs: 900_000, max: 1 }, h.deps)).toMatchObject({ iterations: 1, lastCode: 1 });
