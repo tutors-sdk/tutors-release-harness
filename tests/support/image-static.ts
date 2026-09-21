@@ -61,7 +61,7 @@ export function staticSide(over: { manifest?: ImageManifest; packages?: Record<s
     sbom: { ok: true as const, data: { source: "attestation" as const, packages: clone(over.packages ?? { "express@4.19.2": 1, "openssl@3.0.14": 1 }) } },
     vulns: { ok: true as const, data: clone(over.vulns ?? vulns({ "CVE-2026-0001": { severity: "Low", packages: ["openssl@3.0.14"] } })) }
   });
-  return { reader: app(), catalogue: app(), live: app() };
+  return { reader: app(), catalogue: app(), live: app(), time: app() };
 }
 
 export function withStatic(side: "a" | "b", imageStatic: SideImageStatic): SideCapture {

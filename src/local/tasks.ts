@@ -7,10 +7,11 @@ export { DEFAULT_PORTS, portEnv } from "./ports.ts";
  * The four things a maintainer does, each as one command, planned as a list of
  * harness CLI invocations.
  *
- *   harness local nightly   A/A on the production tag, pulled and verified, three runs with load, recorded in the local noise store
+ *   harness local nightly   A/A on the production tag, pulled and verified, five runs with load, recorded in the local noise store
  *   harness local gate      the release gate for a candidate: release (A/B, claims, k6), migration and upgrade rehearsals
  *   harness local mutants   the harness's own signal
  *   harness local watch     post-deploy comparison against production, once or every 15 minutes
+ *   harness local smoke     the two-stacks smoke of ci.yml: boot both stacks, one journey A/A, the migration fixtures accepted and rejected
  *
  * A plan is data: the argv of `harness ...` steps, exactly the lines the
  * GitHub workflows run (tests/local-parity.test.ts holds the two together), so a
@@ -23,7 +24,7 @@ export const WORKFLOW_DEFAULTS = {
   imagePrefix: QUAY_IMAGE_TEMPLATE,
   productionTag: "main",
   productionUrls: "reader=https://tutors.dev,catalogue=https://catalogue.tutors.dev,live=https://live.tutors.dev",
-  runs: 3,
+  runs: 5,
   load: "20x30s",
   upgradeJourney: "anonymous-student-reads-course",
   watchIntervalMinutes: 15
@@ -44,10 +45,12 @@ export interface Step {
   gatesStream: boolean;
   /** Informational: its exit code never changes the plan's. */
   informational?: boolean;
+  /** A verdict that must be FAIL (exit 1): the smoke's contracting migration must be rejected. Exit 0 or a harness error (2) is the failure. */
+  expectFailure?: boolean;
 }
 
 export interface Plan {
-  task: "nightly" | "gate" | "mutants" | "watch";
+  task: "nightly" | "gate" | "mutants" | "watch" | "smoke";
   steps: Step[];
 }
 
@@ -128,6 +131,34 @@ export function planGate(o: GateOptions): Plan {
     steps.push({ id: "upgrade", title: "upgrade rehearsal: rollout under load", argv: ["run", "--mode", "upgrade", "--a", o.production, "--b", o.candidate, "--set", "fixture", "--journey", WORKFLOW_DEFAULTS.upgradeJourney, ...pins, ...override], stream: "upgrade", gatesStream: false });
   }
   return { task: "gate", steps };
+}
+
+/** What ci.yml's two-stacks job runs (docs/contract/workflows.json does not list it: it is this repository's own CI, not the monorepo's). */
+export const SMOKE = {
+  journey: WORKFLOW_DEFAULTS.upgradeJourney,
+  fixtures: { a: "dir:tests/fixtures/migrations/a", good: "dir:tests/fixtures/migrations/b-good", bad: "dir:tests/fixtures/migrations/b-bad" }
+} as const;
+
+export type SmokePart = "stacks" | "migration";
+
+/**
+ * The two-stacks smoke, exactly as ci.yml ran it step by step: both stacks from one tag, one journey A/A, then the
+ * migration fixtures (the expanding one must pass, the contracting one must be rejected). One stream: the first step
+ * that does not do what it must stops the rest, as `set -e` did.
+ */
+export function planSmoke(o: { tag: string; only?: SmokePart }): Plan {
+  const stacks = !o.only || o.only === "stacks";
+  const migration = !o.only || o.only === "migration";
+  const steps: Step[] = [];
+  if (stacks) {
+    steps.push({ id: "ensure", title: "pull and verify, or build, the images", argv: ["images", "ensure", "--a", o.tag, "--b", o.tag], stream: "smoke", gatesStream: true });
+    steps.push({ id: "noise", title: `both stacks boot and one journey runs, A/A on ${o.tag}`, argv: ["run", "--mode", "noise", "--a", o.tag, "--b", o.tag, "--set", "fixture", "--journey", SMOKE.journey], stream: "smoke", gatesStream: true });
+  }
+  if (migration) {
+    steps.push({ id: "migration-good", title: "migration rehearsal: the expanding fixture must pass", argv: ["run", "--mode", "migration", "--a", SMOKE.fixtures.a, "--b", SMOKE.fixtures.good], stream: "smoke", gatesStream: true });
+    steps.push({ id: "migration-bad", title: "migration rehearsal: the contracting fixture must be rejected", argv: ["run", "--mode", "migration", "--a", SMOKE.fixtures.a, "--b", SMOKE.fixtures.bad], stream: "smoke", gatesStream: true, expectFailure: true });
+  }
+  return { task: "smoke", steps };
 }
 
 export function planMutants(o: { tag: string }): Plan {
@@ -215,8 +246,11 @@ export function executePlan(plan: Plan, env: Record<string, string>, ex: Executo
       if (!step.informational) worst = Math.max(worst, 2);
       continue;
     }
-    ex.log(`   harness ${filled.argv.join(" ")}`);
-    const code = ex.harness(filled.argv, env);
+    ex.log(`   harness ${commandLine(filled.argv)}`);
+    const raw = ex.harness(filled.argv, env);
+    // A step that must be rejected: the FAIL verdict (exit 1) is what it is here for; acceptance or a harness error is not.
+    const code = step.expectFailure ? (raw === 1 ? 0 : raw === 0 ? 1 : raw) : raw;
+    if (step.expectFailure) ex.log(raw === 1 ? "   rejected, as it must be" : raw === 0 ? "   ACCEPTED, and it must be rejected" : `   could not judge (exit ${raw})`);
     const mode = MODE_OF_STEP[step.id];
     const runDir = mode && step.argv[0] === "run" ? ex.latestRun(mode, started) : undefined;
     results.push({ id: step.id, title: step.title, argv: filled.argv, code, ...(runDir ? { runDir } : {}) });
@@ -230,12 +264,37 @@ export function executePlan(plan: Plan, env: Record<string, string>, ex: Executo
   return { code: worst, results };
 }
 
-/** A plan as text, for `--dry-run`. */
-export function renderPlan(plan: Plan, env: Record<string, string>): string {
+/**
+ * One argument as the shell the person copies it into will read it back as the same one argument.
+ *
+ * - POSIX shells (bash, zsh, sh; also Git Bash on Windows): bare when it is only letters, digits and
+ *   `_ @ % + = : , . / -`, otherwise in single quotes, a single quote inside written `'\''`.
+ * - PowerShell (the platform "win32", where the harness's docs run it): the same bare set, otherwise in
+ *   single quotes, a single quote inside doubled (`''`). cmd.exe is not catered for: it does not read
+ *   single quotes, so paste into PowerShell or Git Bash.
+ *
+ * The empty string is `''` in both. Nothing inside single quotes is expanded by either shell.
+ */
+export function shellQuote(arg: string, platform: NodeJS.Platform = process.platform): string {
+  if (arg !== "" && /^[A-Za-z0-9_@%+=:,./-]+$/.test(arg)) return arg;
+  // PowerShell also reads the typographic single quotes as quote characters, so each is doubled too.
+  return platform === "win32" ? `'${arg.replace(/['‘’‚‛]/g, (q) => q + q)}'` : `'${arg.replaceAll("'", "'\\''")}'`;
+}
+
+/** The arguments of a harness command, each quoted for the shell of `platform`, joined by spaces. */
+export function commandLine(argv: string[], platform: NodeJS.Platform = process.platform): string {
+  return argv.map((a) => shellQuote(a, platform)).join(" ");
+}
+
+/** A plan as text, for `--dry-run`: every command line is safe to copy into a shell of `platform` (see {@link shellQuote}). */
+export function renderPlan(plan: Plan, env: Record<string, string>, platform: NodeJS.Platform = process.platform): string {
   const lines = [`harness local ${plan.task}: ${plan.steps.length} step(s)`, ""];
   const set = Object.entries(env);
-  if (set.length) lines.push(`environment: ${set.map(([k, v]) => `${k}=${v}`).join(" ")}`, "");
-  plan.steps.forEach((s, i) => lines.push(`  ${i + 1}. ${s.title}`, `       harness ${s.argv.join(" ")}`));
+  if (set.length) {
+    const assigned = set.map(([k, v]) => (platform === "win32" ? `$env:${k}=${shellQuote(v, platform)};` : `${k}=${shellQuote(v, platform)}`));
+    lines.push(`environment: ${assigned.join(" ")}`, "");
+  }
+  plan.steps.forEach((s, i) => lines.push(`  ${i + 1}. ${s.title}`, `       harness ${commandLine(s.argv, platform)}`));
   return lines.join("\n");
 }
 
@@ -333,7 +392,8 @@ export function parseInterval(text: string): number {
 }
 
 export interface WatchDeps {
-  runOnce: () => { code: number; runDir?: string };
+  /** `verdict` is the run's own (`report.json`), when it wrote one: exit 0 covers both `pass` and an advisory `warn`. */
+  runOnce: () => { code: number; runDir?: string; verdict?: string };
   sleep: (ms: number) => Promise<void>;
   now: () => Date;
   log: (message: string) => void;
@@ -353,15 +413,20 @@ export async function watch(o: { intervalMs: number; max?: number }, deps: Watch
   let lastCode = 0;
   while (!deps.shouldStop() && (o.max === undefined || iterations < o.max)) {
     const started = deps.now();
-    const { code, runDir } = deps.runOnce();
+    const { code, runDir, verdict } = deps.runOnce();
     iterations += 1;
     lastCode = code;
+    // The line is printed when the run ENDS (about twenty seconds after it started): stamp it with that time and say when the run started.
+    const at = `${deps.now().toISOString()} watch: (run started ${started.toISOString()})`;
     if (code === 1) {
       failures += 1;
       deps.onFailure({ at: started, ...(runDir ? { runDir } : {}) });
-      deps.log(`${started.toISOString()} watch: production DIFFERS from the recorded candidate${runDir ? ` (${runDir})` : ""}`);
-    } else if (code === 0) deps.log(`${started.toISOString()} watch: production matches the recorded candidate`);
-    else deps.log(`${started.toISOString()} watch: could not judge (exit ${code}); trying again next time`);
+      deps.log(`${at} production DIFFERS from the recorded candidate${runDir ? ` (${runDir})` : ""}`);
+    } else if (code === 0 && verdict === "warn") {
+      // Exit 0 is also an advisory WARN (no clean A/A, or the deployed images not confirmed): it found differences and may not call them a FAIL.
+      deps.log(`${at} verdict WARN, advisory only: production may differ from the recorded candidate${runDir ? `; read ${runDir}` : ""}`);
+    } else if (code === 0) deps.log(`${at} production matches the recorded candidate`);
+    else deps.log(`${at} could not judge (exit ${code}); trying again next time`);
     if (o.max !== undefined && iterations >= o.max) break;
     // Keep the schedule: the next run is one interval after this one STARTED.
     const wait = Math.max(0, o.intervalMs - (deps.now().getTime() - started.getTime()));

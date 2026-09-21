@@ -1,6 +1,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Journey } from "../../traffic/journeys/journeys.ts";
+import { APPS } from "../image-ref.ts";
 import { serviceLogs, serviceName } from "../stack.ts";
 import { harnessInfo } from "../version.ts";
 import type { JourneyCapture, LogSummary, MetricsSnapshot, SideCapture, SideSpec, Substrate } from "../types.ts";
@@ -27,13 +28,14 @@ export interface CaptureOptions {
   log: (message: string) => void;
 }
 
-const APPS = ["reader", "catalogue", "live"] as const;
 
 async function metricsFor(spec: SideSpec): Promise<Record<string, MetricsSnapshot>> {
   const out: Record<string, MetricsSnapshot> = {};
   for (const app of APPS) {
+    const url = spec.urls[app];
+    if (!url) continue; // an external side that was given no time= URL
     try {
-      out[app] = await fetchMetrics(spec.urls[app]);
+      out[app] = await fetchMetrics(url);
     } catch {
       // A missing endpoint is itself a finding: with no series, every series the other side has is "missing".
       out[app] = { series: {} };

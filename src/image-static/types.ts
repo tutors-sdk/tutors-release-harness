@@ -6,7 +6,10 @@
  * third state, so a missing SBOM or scanner can never look like a clean diff.
  */
 
-export const IMAGE_APPS = ["reader", "catalogue", "live"] as const;
+import { APPS } from "../image-ref.ts";
+
+/** The same apps as everywhere else: an image artefact is collected for every one. */
+export const IMAGE_APPS = APPS;
 export type ImageApp = (typeof IMAGE_APPS)[number];
 
 /** A value, or the reason there is none. */
@@ -63,7 +66,7 @@ export interface AppImageStatic {
 }
 
 /** Everything collected for one side: per app. */
-export type SideImageStatic = Record<ImageApp, AppImageStatic>;
+export type SideImageStatic = Record<"reader" | "catalogue" | "live", AppImageStatic> & { time?: AppImageStatic };
 
 // ---- what the report says about it ---------------------------------------------------
 
@@ -80,4 +83,4 @@ export interface ImageArtefactStatus {
   summary?: string;
 }
 
-export type SideImageArtefacts = Record<ImageApp, Record<ImageArtefactKind, ImageArtefactStatus>>;
+export type SideImageArtefacts = Record<"reader" | "catalogue" | "live", Record<ImageArtefactKind, ImageArtefactStatus>> & { time?: Record<ImageArtefactKind, ImageArtefactStatus> };

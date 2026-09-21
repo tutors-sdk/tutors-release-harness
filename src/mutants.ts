@@ -8,7 +8,7 @@ import { realExec } from "./images.ts";
 import { osTempFiles } from "./image-static/command.ts";
 import { DEFAULT_ALT_BASE, MUTANT_KINDS, buildMutantImage } from "./mutant-build.ts";
 import { ROOT } from "./stack.ts";
-import { ARTEFACTS } from "./types.ts";
+import { ARTEFACTS, type Hunk } from "./types.ts";
 
 const MutantsFileSchema = z.object({
   mutants: z.array(
@@ -36,6 +36,24 @@ function buildMutant(mutant: { name: string; kind: (typeof MUTANT_KINDS)[number]
   const image = mutantImage(mutant.name);
   log(`building ${image} from ${base} (${mutant.kind})`);
   return buildMutantImage(mutant, base, image, { exec: realExec, files: osTempFiles(), mutantsDir: join(ROOT, "mutants"), altBase: process.env.HARNESS_MUTANT_ALT_BASE || DEFAULT_ALT_BASE, log });
+}
+
+/** The most non-info hunks of an unclean A/A the log carries; the rest is in the report. */
+export const NOISE_HUNK_LOG_CAP = 40;
+
+/**
+ * The log lines that say WHICH differences made an A/A unclean: severity, artefact, scope and summary of every non-info hunk (the
+ * columns of report.md's unclaimed table), capped, then a count of the info hunks. The report lives on the runner that produced it;
+ * without these lines a CI log says only "N diff(s)" and nobody can tell what failed.
+ */
+export function describeNoiseHunks(hunks: Hunk[], cap = NOISE_HUNK_LOG_CAP): string[] {
+  const failing = hunks.filter((h) => h.severity !== "info");
+  const info = hunks.length - failing.length;
+  const lines = failing.slice(0, cap).map((h) => `  ${h.severity.padEnd(4)} ${h.artefact.padEnd(14)} ${h.scope}: ${h.summary.replace(/\s+/g, " ").trim()}`);
+  if (failing.length > cap) lines.push(`  ... and ${failing.length - cap} more`);
+  if (!failing.length) lines.push("  (no non-info hunk: the A/A did not pass for another reason, see the report)");
+  lines.push(`  ${info} info hunk(s) not listed`);
+  return lines;
 }
 
 export interface MutantsOptions extends Omit<RunOptions, "mode" | "a" | "b"> {
@@ -70,6 +88,8 @@ export async function runMutants(options: MutantsOptions): Promise<boolean> {
   const noise = await run({ ...opts, static: staticOpts, sets, mode: "noise", a: baseSpec, b: baseSpec, runs: 1 });
   const noiseStatus = join(noise.outDir, "noise-status.json");
   if (noise.report.verdict !== "pass") {
+    for (const reason of noise.report.reasons) opts.log(`  reason: ${reason}`);
+    for (const line of describeNoiseHunks(noise.report.compare.hunks)) opts.log(line);
     opts.log(`A/A is not clean (${noise.report.compare.hunks.length} diff(s)); the mutant self-test cannot be trusted. Report: ${noise.files.html}`);
     return false;
   }

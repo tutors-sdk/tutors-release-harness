@@ -1,7 +1,7 @@
 # A single-node kind cluster whose NodePorts are published on host ports of
 # their own (the compose stack's plus 1000), so a cluster that stays around
 # between runs never blocks the compose stack:
-#   4100-4102 -> side a reader/catalogue/live, 4200-4202 -> side b.
+#   4100-4103 -> side a reader/catalogue/live/time, 4200-4203 -> side b.
 #
 #   kind create cluster --name <cluster> --config deploy/kind/kind-config.yaml
 #   (`harness kind up` does this, under this checkout's own cluster name: tutors-harness-<8 hex of
@@ -18,6 +18,8 @@ nodes:
       - { containerPort: 30100, hostPort: 4100, protocol: TCP }
       - { containerPort: 30101, hostPort: 4101, protocol: TCP }
       - { containerPort: 30102, hostPort: 4102, protocol: TCP }
+      - { containerPort: 30103, hostPort: 4103, protocol: TCP }
       - { containerPort: 30200, hostPort: 4200, protocol: TCP }
       - { containerPort: 30201, hostPort: 4201, protocol: TCP }
       - { containerPort: 30202, hostPort: 4202, protocol: TCP }
+      - { containerPort: 30203, hostPort: 4203, protocol: TCP }

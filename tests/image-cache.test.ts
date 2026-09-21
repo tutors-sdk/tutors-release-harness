@@ -95,7 +95,7 @@ describe("a night that pulls: the cache is refreshed from what was verified", ()
     expect(manifest.images.map((i) => i.ref).sort()).toEqual(Object.values(IMAGES).sort());
     expect(manifest.images[0]).toMatchObject({ verifiedIdentity: DEFAULT_COSIGN_IDENTITY });
     expect(existsSync(join(dir, CACHE_TAR))).toBe(true);
-    expect(readManifest(dir)?.images).toHaveLength(3);
+    expect(readManifest(dir)?.images).toHaveLength(4);
   });
 
   it("never caches an image that was not verified (--allow-unsigned)", () => {
@@ -127,7 +127,7 @@ describe("a night the registry is down", () => {
     expect(r.ok).toBe(true);
     expect(r.exitCode).toBe(0);
     expect(r.cache).toBe("used");
-    for (const app of ["reader", "catalogue", "live"] as const) {
+    for (const app of ["reader", "catalogue", "live", "time"] as const) {
       expect(r.sides[0]!.provenance!.images[app]).toMatchObject({ provenance: "cached", cachedAt: NOW.toISOString(), digest: expect.stringMatching(/^sha256:/) });
     }
     expect(r.sides[0]!.provenance!.summary).toContain("cached");
@@ -184,7 +184,7 @@ describe("a night the registry is down", () => {
   it("when only some images cannot be pulled, the ones pulled fresh stay fresh and the rest come from the cache", () => {
     const dir = tmp();
     const tarHolds = preparedCache(dir);
-    // The cache holds last night's images; the registry has moved on to new ones for all three.
+    // The cache holds last night's images; the registry has moved on to new ones for all four.
     const w = world({ registry: registryOf(50), down: OUTAGE, tarHolds, failFor: [IMAGES.live] });
     const ledger = memoryLedger();
     const r = ensureImages([{ spec: TAG }], QUAY_IMAGE_TEMPLATE, { exec: w.exec, ledger, policy, cacheDir: dir, log: quiet });
@@ -210,7 +210,7 @@ describe("a night the registry is down", () => {
     const up = world({ registry: registryOf(1) });
     for (const [ref, img] of down.local) up.local.set(ref, img);
     const r = ensureImages([{ spec: TAG }], QUAY_IMAGE_TEMPLATE, { exec: up.exec, ledger, policy, cacheDir: dir, log: quiet });
-    expect(up.calls.filter((c) => c.startsWith("docker pull"))).toHaveLength(3);
+    expect(up.calls.filter((c) => c.startsWith("docker pull"))).toHaveLength(4);
     expect(Object.values(r.sides[0]!.provenance!.images).every((i) => i.provenance === "pulled+verified")).toBe(true);
     expect(r.cache).toBe("refreshed");
   });

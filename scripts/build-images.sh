@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Build the three app images from a monorepo git ref and tag them for the harness.
+# Build the four app images from a monorepo git ref and tag them for the harness.
 #
 #   scripts/build-images.sh <git-ref> [tag] [repo-url]
-#   scripts/build-images.sh v16.2.0            # -> tutors/reader:v16.2.0, tutors/catalogue:v16.2.0, tutors/live:v16.2.0
+#   scripts/build-images.sh v16.2.0            # -> tutors/reader:v16.2.0, tutors/catalogue:v16.2.0, tutors/live:v16.2.0, tutors/time:v16.2.0
 #   scripts/build-images.sh release/16.3.0 rc  # -> tutors/<app>:rc
-#   scripts/build-images.sh --print-images <tag>   # only print the three image names, then exit
+#   scripts/build-images.sh --print-images <tag>   # only print the four image names, then exit
 #
 # HARNESS_IMAGE_PREFIX names the images exactly as src/image-ref.ts does: a bare
 # prefix (tutors -> tutors/reader:TAG) or a template containing {app}
@@ -31,7 +31,7 @@ image_repo() {
 
 if [ "${1:-}" = "--print-images" ]; then
   tag="${2:?tag required}"
-  for app in reader catalogue live; do echo "$app=$(image_repo "$app"):$tag"; done
+  for app in reader catalogue live time; do echo "$app=$(image_repo "$app"):$tag"; done
   exit 0
 fi
 
@@ -56,7 +56,7 @@ git clone --quiet --depth 1 --branch "$ref" "$repo" "$work/src" 2>/dev/null || {
 }
 sha="$(git -C "$work/src" rev-parse HEAD)"
 
-for app in reader catalogue live; do
+for app in reader catalogue live time; do
   image="$(image_repo "$app"):$tag"
   echo "building $image ($sha)"
   # The labels are what the report reads back: which commit this image is.
@@ -68,4 +68,4 @@ for app in reader catalogue live; do
     --label "org.opencontainers.image.version=$tag" \
     -t "$image" "$work/src" >/dev/null
 done
-echo "built $(image_repo reader), $(image_repo catalogue), $(image_repo live) at :$tag from $ref ($sha) — a LOCAL BUILD, not the published image"
+echo "built $(image_repo reader), $(image_repo catalogue), $(image_repo live), $(image_repo time) at :$tag from $ref ($sha) — a LOCAL BUILD, not the published image"

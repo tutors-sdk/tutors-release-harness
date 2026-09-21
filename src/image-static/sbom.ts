@@ -13,6 +13,19 @@ import type { Collected, SbomData, SbomSource } from "./types.ts";
 export type SbomSourcePolicy = "auto" | "attestation" | "generate";
 
 export const DEFAULT_SBOM_CMD = "syft docker:{image} -o spdx-json";
+
+/**
+ * syft cannot read a docker image on a Windows host: it unpacks every layer into a file named `<n>-sha256:<digest>`, and a
+ * colon is not a legal NTFS file name ("unable to place layer cache path=… The filename, directory name, or volume label
+ * syntax is incorrect"). A shorter temp or cache directory does not help, and neither does `docker save` plus
+ * `docker-archive:` or `oci-archive:`: every image source goes through the same unpacking. So on Windows syft runs in its
+ * own Linux container, over the Docker socket, and prints the same SPDX JSON. Linux and macOS are unchanged.
+ */
+export const WINDOWS_SBOM_CMD = "docker run --rm -v /var/run/docker.sock:/var/run/docker.sock anchore/syft:latest docker:{image} -o spdx-json -q";
+
+export function defaultSbomCmd(platform: NodeJS.Platform = process.platform): string {
+  return platform === "win32" ? WINDOWS_SBOM_CMD : DEFAULT_SBOM_CMD;
+}
 const SPDX_PREDICATE = /spdx/i;
 
 // ---- SPDX -> package multiset -------------------------------------------------------

@@ -16,8 +16,8 @@ differ in what produces the hunks.
 ## noise, release, any-two
 
 ```bash
-pnpm harness run --mode noise   --a 16.2.0 --b 16.2.0 --runs 3
-pnpm harness run --mode release --a 16.2.0 --b 16.3.0-rc.1 --claims claims.yaml --noise out/<noise run> --runs 3 --load 20x30s
+pnpm harness run --mode noise   --a 16.2.0 --b 16.2.0 --runs 5
+pnpm harness run --mode release --a 16.2.0 --b 16.3.0-rc.1 --claims claims.yaml --noise out/<noise run> --runs 5 --load 20x30s
 ```
 
 Both stacks come up from `compose.harness.yaml` (or two kind namespaces with
@@ -40,7 +40,7 @@ what the containers *are*. Both need Docker (compose) or kubectl (kind); on a
 live deployment there is nothing to inspect, so post-deploy mode skips them.
 
 **`runtime` — container posture, exact match.** Per app (`reader`,
-`catalogue`, `live`, and the signed-in `reader-auth` under compose):
+`catalogue`, `live`, `time`, and the signed-in `reader-auth` under compose):
 
 - declared: `docker inspect` (compose) or the pod spec (kind) — configured
   user, privileged, read-only root filesystem, capabilities added and dropped,
@@ -77,8 +77,9 @@ noisy run is never retried: raise `--startup-restarts` or, with a reason in
 `masks.yaml`, widen alpha.
 
 **Neither passes silently.** A collector that cannot run — no container, no
-`docker` or `kubectl`, an unreadable probe — leaves `not collected: <reason>`,
-which is a failing, claimable hunk. `--no-runtime` and `--startup-restarts 0`
+`docker` or `kubectl`, an unreadable probe — leaves `NOT COLLECTED: <what> of <app> on side <a|b>: <reason>`,
+which is a failing, claimable hunk (`runtime` and `startup` are required by
+default; [the convention](contract.md#not-collected-one-convention)). `--no-runtime` and `--startup-restarts 0`
 switch an artefact off as information. `upgrade` mode and the `mutants`
 self-test do not sample startup (they are about the rollout, and about the
 many runs of a self-test that would each pay for restarts). Informational `runtime/summary` and `startup/summary` hunks list

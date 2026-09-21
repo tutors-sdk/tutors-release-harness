@@ -44,7 +44,7 @@ describe("masks land in their own PR", () => {
   const noneAdded = diffMasks(base, base);
 
   it("fails a PR that adds a mask and changes anything else", () => {
-    const r = checkMaskPr({ changedFiles: [MASKS_FILE, "src/compare/engines.ts"], diff: added, packageJson: { base: pkg("1.2.0"), head: pkg("1.2.1") } });
+    const r = checkMaskPr({ changedFiles: [MASKS_FILE, "src/compare/engines.ts"], diff: added, packageJson: { base: pkg("1.2.0"), head: pkg("1.3.0") } });
     expect(r.ok).toBe(false);
     expect(r.errors[0]).toContain("added etag");
     expect(r.errors[0]).toContain("src/compare/engines.ts");
@@ -58,13 +58,13 @@ describe("masks land in their own PR", () => {
   });
 
   it("passes a PR that changes masks and only their notes, tests and the version bump", () => {
-    const r = checkMaskPr({ changedFiles: [MASKS_FILE, "docs/noise-burndown.md", "tests/normalise.test.ts", "package.json"], diff: added, packageJson: { base: pkg("1.2.0"), head: pkg("1.2.1") } });
+    const r = checkMaskPr({ changedFiles: [MASKS_FILE, "docs/noise-burndown.md", "tests/normalise.test.ts", "package.json"], diff: added, packageJson: { base: pkg("1.2.0"), head: pkg("1.3.0") } });
     expect(r.errors).toEqual([]);
     expect(r.ok).toBe(true);
   });
 
   it("a package.json change beyond the version does not ride along", () => {
-    const r = checkMaskPr({ changedFiles: [MASKS_FILE, "package.json"], diff: added, packageJson: { base: pkg("1.2.0"), head: pkg("1.2.1", ',"dependencies":{"x":"1"}') } });
+    const r = checkMaskPr({ changedFiles: [MASKS_FILE, "package.json"], diff: added, packageJson: { base: pkg("1.2.0"), head: pkg("1.3.0", ',"dependencies":{"x":"1"}') } });
     expect(r.ok).toBe(false);
     expect(r.errors[0]).toContain("package.json");
   });

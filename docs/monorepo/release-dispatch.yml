@@ -289,7 +289,7 @@ jobs:
             --arg migrations_b "$GITHUB_SHA" \
             --argjson pd "${PRODUCTION_DIGESTS:-null}" \
             --argjson cd "${CANDIDATE_DIGESTS:-null}" \
-            '{event_type: "release-candidate", client_payload: {production: $production, candidate: $candidate, claims_url: $claims_url, runs: 3, migrations_a: $migrations_a, migrations_b: $migrations_b, rules_url: $rules_url, production_digests: $pd, candidate_digests: $cd}} | .client_payload |= with_entries(select(.value != null and .value != {} and .value != ""))' \
+            '{event_type: "release-candidate", client_payload: {production: $production, candidate: $candidate, claims_url: $claims_url, runs: 5, migrations_a: $migrations_a, migrations_b: $migrations_b, rules_url: $rules_url, production_digests: $pd, candidate_digests: $cd}} | .client_payload |= with_entries(select(.value != null and .value != {} and .value != ""))' \
             | tee payload.json
           gh api "repos/$HARNESS_REPO/dispatches" --input payload.json
           {

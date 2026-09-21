@@ -14,9 +14,9 @@ import { parseClaims } from "../src/claims/schema.ts";
 import { compareCaptures } from "../src/compare/index.ts";
 import { diffManifest, diffSbom, diffVulns, imageStatic } from "../src/compare/image-static.ts";
 import { collectImageStatic, staticPolicyFromEnv } from "../src/image-static/collect.ts";
-import { splitCommand, type TempFiles } from "../src/image-static/command.ts";
+import { fillCommand, splitCommand, type TempFiles } from "../src/image-static/command.ts";
 import { collectManifest, runsAsRoot } from "../src/image-static/manifest.ts";
-import { packagesFromSpdx, spdxFromAttestations } from "../src/image-static/sbom.ts";
+import { DEFAULT_SBOM_CMD, WINDOWS_SBOM_CMD, packagesFromSpdx, spdxFromAttestations } from "../src/image-static/sbom.ts";
 import { parseScannerOutput, scannerEnv } from "../src/image-static/vulns.ts";
 import { DEFAULT_MASKS_FILE, loadMasks, normalise } from "../src/normalise/masks.ts";
 import { compareFromCaptures } from "../src/run.ts";
@@ -165,18 +165,19 @@ function memoryFiles(): TempFiles & { store: Map<string, string> } {
 }
 const REF = "quay.io/tutors-sdk/tutors-reader:16.2.0";
 const REPO = "quay.io/tutors-sdk/tutors-reader";
-const images = { reader: REF, catalogue: "quay.io/tutors-sdk/tutors-catalogue:16.2.0", live: "quay.io/tutors-sdk/tutors-live:16.2.0" };
+const images = { reader: REF, catalogue: "quay.io/tutors-sdk/tutors-catalogue:16.2.0", live: "quay.io/tutors-sdk/tutors-live:16.2.0", time: "quay.io/tutors-sdk/tutors-time:16.2.0" };
 const sideProvenance = (over: Partial<ReturnType<typeof provenance>> = {}): SideProvenance => ({
   summary: "pulled+verified",
   images: {
     reader: provenance({ ref: images.reader, digest: D(1), ...over }),
     catalogue: provenance({ ref: images.catalogue, digest: D(2), ...over }),
-    live: provenance({ ref: images.live, digest: D(3), ...over })
+    live: provenance({ ref: images.live, digest: D(3), ...over }),
+    time: provenance({ ref: images.time, digest: D(4), ...over })
   }
 });
-const digestFor = (app: "reader" | "catalogue" | "live") => ({ reader: D(1), catalogue: D(2), live: D(3) })[app];
+const digestFor = (app: "reader" | "catalogue" | "live" | "time") => ({ reader: D(1), catalogue: D(2), live: D(3), time: D(4) })[app];
 const inspectable = Object.fromEntries(Object.values(images).map((ref) => [ref, { config: { User: "1001", ExposedPorts: { "3000/tcp": {} }, Cmd: ["node", "build/index.js"], Labels: { "org.opencontainers.image.revision": "aaaa", "other.label": "x" } }, layers: [D("b"), D("c"), D("d")], size: 5 }]));
-const attestations = Object.fromEntries((["reader", "catalogue", "live"] as const).map((app) => [`quay.io/tutors-sdk/tutors-${app}@${digestFor(app)}`, envelope(digestFor(app), spdx([["express", "4.19.2"], ["openssl", "3.0.14"]], digestFor(app)))]));
+const attestations = Object.fromEntries((["reader", "catalogue", "live", "time"] as const).map((app) => [`quay.io/tutors-sdk/tutors-${app}@${digestFor(app)}`, envelope(digestFor(app), spdx([["express", "4.19.2"], ["openssl", "3.0.14"]], digestFor(app)))]));
 const env = (extra: Record<string, string> = {}) => ({ ...extra }) as NodeJS.ProcessEnv;
 
 describe("collecting the manifest", () => {
@@ -195,7 +196,7 @@ describe("collecting the manifest", () => {
 
 describe("collecting the SBOM from the cosign attestation", () => {
   const collect = (tools: ReturnType<typeof fakeTools>, prov: SideProvenance | undefined, extraEnv: Record<string, string> = {}, files = memoryFiles()) =>
-    collectImageStatic(images, prov, { exec: tools.exec, files, policy: staticPolicyFromEnv(env(extraEnv), trustPolicyFromEnv(env())), log: () => {} });
+    collectImageStatic(images, prov, { exec: tools.exec, files, policy: staticPolicyFromEnv(env(extraEnv), trustPolicyFromEnv(env()), "linux"), log: () => {} });
 
   it("verifies the attestation by digest against the signing identity, and reduces it to the package multiset", () => {
     const tools = fakeTools({ images: inspectable, attestations, scanner: () => grype([["CVE-2026-0001", "High", "openssl@3.0.14"]]) });
@@ -246,7 +247,7 @@ describe("collecting the SBOM from the cosign attestation", () => {
 describe("generating an SBOM instead (HARNESS_SBOM_SOURCE=generate)", () => {
   it("runs the generator command on the image, whatever its provenance, and never touches cosign", () => {
     const tools = fakeTools({ images: inspectable, syft: Object.fromEntries(Object.values(images).map((ref) => [`docker:${ref}`, JSON.stringify(spdx([["express", "4.19.2"]]))])), scanner: "missing" });
-    const got = collectImageStatic(images, sideProvenance({ provenance: "local" }), { exec: tools.exec, files: memoryFiles(), policy: staticPolicyFromEnv(env({ HARNESS_SBOM_SOURCE: "generate" }), trustPolicyFromEnv(env())), log: () => {} });
+    const got = collectImageStatic(images, sideProvenance({ provenance: "local" }), { exec: tools.exec, files: memoryFiles(), policy: staticPolicyFromEnv(env({ HARNESS_SBOM_SOURCE: "generate" }), trustPolicyFromEnv(env()), "linux"), log: () => {} });
     expect(got.reader.sbom).toEqual({ ok: true, source: "generated by syft", data: { source: "generated", packages: { "express@4.19.2": 1 } } });
     expect(tools.calls.some((c) => c.cmd === "cosign")).toBe(false);
     expect(tools.calls.find((c) => c.cmd === "syft")!.args).toEqual([`docker:${REF}`, "-o", "spdx-json"]);
@@ -255,9 +256,22 @@ describe("generating an SBOM instead (HARNESS_SBOM_SOURCE=generate)", () => {
   it("a generator that is not installed, or an unusable HARNESS_SBOM_SOURCE, is a loud reason or an error, never an empty SBOM", () => {
     const tools = fakeTools({ images: inspectable });
     const notInstalled = { ...tools, exec: ((cmd, args, o) => (cmd === "syft" ? { status: null, stdout: "", stderr: "", error: Object.assign(new Error("ENOENT"), { code: "ENOENT" }) } : tools.exec(cmd, args, o))) as typeof tools.exec };
-    const got = collectImageStatic(images, undefined, { exec: notInstalled.exec, files: memoryFiles(), policy: staticPolicyFromEnv(env({ HARNESS_SBOM_SOURCE: "generate" }), trustPolicyFromEnv(env())), log: () => {} });
+    const got = collectImageStatic(images, undefined, { exec: notInstalled.exec, files: memoryFiles(), policy: staticPolicyFromEnv(env({ HARNESS_SBOM_SOURCE: "generate" }), trustPolicyFromEnv(env()), "linux"), log: () => {} });
     expect(got.reader.sbom).toEqual({ ok: false, reason: expect.stringMatching(/could not generate an SBOM.*syft is not installed/) });
     expect(() => staticPolicyFromEnv(env({ HARNESS_SBOM_SOURCE: "guess" }))).toThrow(/must be auto, attestation or generate/);
+  });
+
+  it("runs syft in its own container on a Windows host (colons in layer file names are not legal on NTFS), and unchanged elsewhere", () => {
+    const sbomCmd = (platform: NodeJS.Platform, extra: Record<string, string> = {}) => staticPolicyFromEnv(env(extra), trustPolicyFromEnv(env()), platform).sbomCmd;
+    expect(sbomCmd("linux")).toBe(DEFAULT_SBOM_CMD);
+    expect(sbomCmd("darwin")).toBe(DEFAULT_SBOM_CMD);
+    expect(sbomCmd("win32")).toBe(WINDOWS_SBOM_CMD);
+    // The container form still fills {image} and splits into an argv for `docker`, with no shell.
+    expect(fillCommand(WINDOWS_SBOM_CMD, { image: "tutors-harness/mutant-added-package:latest" })).toEqual([
+      "docker", "run", "--rm", "-v", "/var/run/docker.sock:/var/run/docker.sock", "anchore/syft:latest", "docker:tutors-harness/mutant-added-package:latest", "-o", "spdx-json", "-q"
+    ]);
+    // An explicit HARNESS_SBOM_CMD (CI's downloaded syft) always wins.
+    expect(sbomCmd("win32", { HARNESS_SBOM_CMD: "my-syft {image}" })).toBe("my-syft {image}");
   });
 
   it("splits a command the way a shell would, without being one", () => {
@@ -270,7 +284,7 @@ describe("generating an SBOM instead (HARNESS_SBOM_SOURCE=generate)", () => {
 describe("collecting vulnerabilities", () => {
   const files = memoryFiles();
   const scan = () => fakeTools({ images: inspectable, attestations, scanner: (path) => (files.store.get(path)?.includes("openssl") ? grype([["CVE-2026-0001", "High", "openssl@3.0.14"]]) : "{}") });
-  const run = (tools: ReturnType<typeof fakeTools>, e: Record<string, string> = {}) => collectImageStatic(images, sideProvenance(), { exec: tools.exec, files, policy: staticPolicyFromEnv(env(e), trustPolicyFromEnv(env())), log: () => {} });
+  const run = (tools: ReturnType<typeof fakeTools>, e: Record<string, string> = {}) => collectImageStatic(images, sideProvenance(), { exec: tools.exec, files, policy: staticPolicyFromEnv(env(e), trustPolicyFromEnv(env()), "linux"), log: () => {} });
 
   it("runs the scanner over the image's SBOM with database updates switched off, and reads its findings", () => {
     const tools = scan();
@@ -317,7 +331,7 @@ describe("in a report", () => {
     const b = withStatic("b", staticSide({ packages: { "express@4.19.2": 1, "openssl@3.0.14": 1, "jq@1.7": 1 } }));
     const { report } = run(withStatic("a", staticSide()), b);
     expect(report.verdict).toBe("fail");
-    expect(report.compare.unclaimed.map((h) => `${h.artefact} ${h.scope}`)).toEqual(["sbom reader/jq", "sbom catalogue/jq", "sbom live/jq"]);
+    expect(report.compare.unclaimed.map((h) => `${h.artefact} ${h.scope}`)).toEqual(["sbom reader/jq", "sbom catalogue/jq", "sbom live/jq", "sbom time/jq"]);
     const claimed = run(withStatic("a", staticSide()), b, { claims: 'claims:\n  - artefact: sbom\n    scope: "*/jq"\n    reason: "feat(reader): #1099 adds jq for the export job"\n' });
     expect(claimed.report.verdict).toBe("pass");
     expect(claimed.report.compare.staleClaims).toEqual([]);
@@ -341,9 +355,9 @@ describe("in a report", () => {
 
   const missing = (side: "a" | "b") => {
     const s = staticSide();
-    for (const app of ["reader", "catalogue", "live"] as const) {
-      s[app].sbom = { ok: false, reason: `${app} is local, not a pulled image: there is no cosign attestation to read` };
-      s[app].vulns = { ok: false, reason: "nothing to scan: no SBOM" };
+    for (const app of ["reader", "catalogue", "live", "time"] as const) {
+      s[app]!.sbom = { ok: false, reason: `${app} is local, not a pulled image: there is no cosign attestation to read` };
+      s[app]!.vulns = { ok: false, reason: "nothing to scan: no SBOM" };
     }
     return withStatic(side, s);
   };
@@ -352,8 +366,8 @@ describe("in a report", () => {
     const { report, md, html } = run(withStatic("a", staticSide()), missing("b"));
     expect(report.verdict).toBe("pass"); // informational unless required, but not silent:
     expect(report.reasons.filter((r) => r.startsWith("NOT COLLECTED: sbom of reader on side b"))).toHaveLength(1);
-    expect(report.reasons.some((r) => /NOT COLLECTED: vulns of reader, catalogue, live on side b: nothing to scan/.test(r))).toBe(true);
-    expect(report.compare.hunks.filter((h) => h.scope.endsWith("/not-collected")).map((h) => `${h.artefact}:${h.scope}:${h.severity}`)).toEqual(["sbom:reader/not-collected:info", "vulns:reader/not-collected:info", "sbom:catalogue/not-collected:info", "vulns:catalogue/not-collected:info", "sbom:live/not-collected:info", "vulns:live/not-collected:info"]);
+    expect(report.reasons.some((r) => /NOT COLLECTED: vulns of reader, catalogue, live, time on side b: nothing to scan/.test(r))).toBe(true);
+    expect(report.compare.hunks.filter((h) => h.scope.endsWith("/not-collected")).map((h) => `${h.artefact}:${h.scope}:${h.severity}`)).toEqual(["sbom:reader/not-collected:info", "vulns:reader/not-collected:info", "sbom:catalogue/not-collected:info", "vulns:catalogue/not-collected:info", "sbom:live/not-collected:info", "vulns:live/not-collected:info", "sbom:time/not-collected:info", "vulns:time/not-collected:info"]);
     expect(report.imageArtefacts!.b!.reader.sbom).toEqual({ collected: false, reason: expect.stringContaining("no cosign attestation") });
     expect(md).toContain("**NOT COLLECTED: reader is local");
     expect(html).toContain('class="loud">NOT COLLECTED: reader is local');
@@ -386,7 +400,7 @@ describe("in a report", () => {
 
   it("the captures keep the static artefacts, so `harness compare --dir` reproduces the same hunks", () => {
     const { outcome } = run(withStatic("a", staticSide()), withStatic("b", staticSide({ manifest: manifest({ user: "" }) })));
-    expect(outcome.report.compare.unclaimed.map((h) => h.scope)).toEqual(["reader/user", "catalogue/user", "live/user"]);
+    expect(outcome.report.compare.unclaimed.map((h) => h.scope)).toEqual(["reader/user", "catalogue/user", "live/user", "time/user"]);
     const a = clone(withStatic("a", staticSide()));
     expect(JSON.parse(JSON.stringify(a)).imageStatic.reader.sbom.data.packages).toEqual({ "express@4.19.2": 1, "openssl@3.0.14": 1 });
   });

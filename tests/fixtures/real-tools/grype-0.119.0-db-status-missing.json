@@ -1,0 +1,6 @@
+{
+ "schemaVersion": "",
+ "path": "<db dir>/6/vulnerability.db",
+ "valid": false,
+ "error": "database does not exist"
+}

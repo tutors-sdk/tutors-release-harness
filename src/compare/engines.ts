@@ -6,6 +6,9 @@ import { PNG } from "pngjs";
 import type { EngineConfig } from "../normalise/masks.ts";
 import type { Hunk, SideCapture } from "../types.ts";
 import { hunkId, journeyPairs, pagePairs } from "./pages.ts";
+import { mannWhitney, smallestAttainableP } from "./stats.ts";
+
+export { mannWhitney } from "./stats.ts";
 
 export interface EngineContext {
   config: EngineConfig;
@@ -134,6 +137,8 @@ export const network: Engine = (a, b) => {
         ["response schema", na.schemaHash, nb.schemaHash]
       ];
       for (const [field, va, vb] of fields) {
+        // A body one side never got to read says nothing about the release (src/collectors/browser.ts, SCHEMA_UNREAD).
+        if (field === "response schema" && (va === "unread" || vb === "unread")) continue;
         if (va !== vb) hunks.push({ id: hunkId("network", scope), artefact: "network", scope, path: pair.path, severity: "fail", summary: `${pair.pageKey}: ${scope} ${field} changed: ${va || "∅"} → ${vb || "∅"}` });
       }
     }
@@ -248,38 +253,6 @@ export const logs: Engine = (a, b, ctx) => {
 
 // ---- timing --------------------------------------------------------------------------------------------
 
-/** Two-sided Mann-Whitney U with normal approximation; fine for the small samples the harness produces. */
-export function mannWhitney(x: number[], y: number[]): { u: number; p: number } {
-  const all = [...x.map((v) => ({ v, g: 0 })), ...y.map((v) => ({ v, g: 1 }))].sort((p, q) => p.v - q.v);
-  const ranks = new Array<number>(all.length);
-  for (let i = 0; i < all.length; ) {
-    let j = i;
-    while (j + 1 < all.length && all[j + 1]!.v === all[i]!.v) j += 1;
-    const rank = (i + j) / 2 + 1;
-    for (let k = i; k <= j; k += 1) ranks[k] = rank;
-    i = j + 1;
-  }
-  const r1 = all.reduce((sum, e, i) => (e.g === 0 ? sum + ranks[i]! : sum), 0);
-  const n1 = x.length;
-  const n2 = y.length;
-  const u1 = r1 - (n1 * (n1 + 1)) / 2;
-  const u = Math.min(u1, n1 * n2 - u1);
-  const mu = (n1 * n2) / 2;
-  const sigma = Math.sqrt((n1 * n2 * (n1 + n2 + 1)) / 12);
-  if (sigma === 0) return { u, p: 1 };
-  const z = (Math.abs(u - mu) - 0.5) / sigma;
-  const p = 2 * (1 - normalCdf(Math.max(z, 0)));
-  return { u, p: Math.min(1, Math.max(0, p)) };
-}
-
-function normalCdf(z: number): number {
-  // Abramowitz & Stegun 7.1.26
-  const t = 1 / (1 + 0.3275911 * Math.abs(z));
-  const poly = t * (0.254829592 + t * (-0.284496736 + t * (1.421413741 + t * (-1.453152027 + t * 1.061405429))));
-  const erf = 1 - poly * Math.exp(-z * z);
-  return 0.5 * (1 + (z >= 0 ? erf : -erf));
-}
-
 function median(xs: number[]): number {
   const s = [...xs].sort((p, q) => p - q);
   const mid = Math.floor(s.length / 2);
@@ -315,7 +288,13 @@ export const timing: Engine = (a, b, ctx) => {
     const effect = ma > 0 ? (mb - ma) / ma : 0;
     if (effect < minEffect || mb - ma < minShiftMs) return;
     if (xs.length < minRuns || ys.length < minRuns) {
-      hunks.push({ id: hunkId("timing", scope), artefact: "timing", scope, ...(path ? { path } : {}), severity: "info", summary: `${label} median ${ma}ms → ${mb}ms (+${pct(effect)}); ${Math.max(xs.length, ys.length)} run(s), need ${minRuns} to judge` });
+      hunks.push({ id: hunkId("timing", scope), artefact: "timing", scope, ...(path ? { path } : {}), severity: "info", summary: `${label} median ${ma}ms → ${mb}ms (+${pct(effect)}); ${Math.max(xs.length, ys.length)} run(s), need ${minRuns} to judge. Raise --runs` });
+      return;
+    }
+    // With few samples even a perfectly separated pair cannot reach alpha (3 v 3 gives p=0.081): say so, do not let the engine look quiet.
+    const floor = smallestAttainableP(xs.length, ys.length);
+    if (floor >= alpha) {
+      hunks.push({ id: hunkId("timing", scope), artefact: "timing", scope, ...(path ? { path } : {}), severity: "info", summary: `${label} median ${ma}ms → ${mb}ms (+${pct(effect)}); ${xs.length}/${ys.length} samples cannot reach alpha ${alpha} (best possible p=${floor.toFixed(3)}). Raise --runs` });
       return;
     }
     const { p } = mannWhitney(xs, ys);

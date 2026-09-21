@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { matchClaims } from "../src/claims/matcher.ts";
-import { exitCodeFor, gate } from "../src/gate.ts";
+import { exitCodeFor, gate, rollbackIssueConfigured } from "../src/gate.ts";
 import type { Hunk, NoiseStatus } from "../src/types.ts";
 
 const fail = (scope = "reader:home"): Hunk => ({ id: "h", artefact: "dom", scope, summary: "s", severity: "fail" });
@@ -104,6 +104,37 @@ describe("post-deploy mode", () => {
     expect(out.verdict).toBe("fail");
     expect(out.reasons[0]).toMatch(/rollback/);
     expect(gate({ ...base, mode: "post-deploy", compare: matchClaims([fail("reference:course")], []) }).verdict).toBe("warn");
+  });
+});
+
+describe("post-deploy wording: a rollback issue only where a CI step opens one", () => {
+  const compare = () => matchClaims([fail("reference:course")], []);
+  const first = (rollbackIssue?: boolean) => gate({ ...base, mode: "post-deploy", compare: compare(), ...(rollbackIssue === undefined ? {} : { rollbackIssue }) }).reasons.join(" | ");
+
+  it("keeps the CI wording by default and where a rollback step is configured", () => {
+    expect(first()).toContain("open a rollback issue");
+    expect(first(true)).toContain("open a rollback issue");
+  });
+
+  it("does not promise an issue a local run never opens, in a WARN or a FAIL, and leaves the verdict alone", () => {
+    expect(first(false)).not.toMatch(/rollback issue/);
+    expect(first(false)).toContain("decide whether to roll back");
+    const failing = gate({ ...base, mode: "post-deploy", compare: compare(), noise: clean, rollbackIssue: false });
+    expect(failing.verdict).toBe("fail");
+    expect(failing.reasons[0]).not.toMatch(/rollback issue/);
+  });
+
+  it("release mode is unaffected", () => {
+    expect(gate({ ...base, mode: "release", compare: compare(), noise: clean, rollbackIssue: false }).reasons[0]).toMatch(/1 unclaimed/);
+  });
+
+  it("rollbackIssueConfigured: the explicit variable wins, else GitHub Actions has a step and nothing else does", () => {
+    expect(rollbackIssueConfigured({})).toBe(false);
+    expect(rollbackIssueConfigured({ GITHUB_ACTIONS: "true" })).toBe(true);
+    expect(rollbackIssueConfigured({ HARNESS_ROLLBACK_ISSUE: "1" })).toBe(true);
+    expect(rollbackIssueConfigured({ HARNESS_ROLLBACK_ISSUE: "Yes" })).toBe(true);
+    expect(rollbackIssueConfigured({ HARNESS_ROLLBACK_ISSUE: "0", GITHUB_ACTIONS: "true" })).toBe(false);
+    expect(rollbackIssueConfigured({ HARNESS_ROLLBACK_ISSUE: "false" })).toBe(false);
   });
 });
 

@@ -21,15 +21,12 @@ edge — a dropped header, a 500 on a route, injected HTML, a delay. Nothing
 else about the image changes, so a mutant is a fair stand-in for a release
 that shipped that regression.
 
-Edge mutants cover six of the runway's list. Two need source access and
-belong in the monorepo's own negative fixtures until this project can build
-from a git ref:
-
-- a lab page that writes a row for anonymous users (needs the persistence
-  collector, phase H4)
-- a navigator with a broken focus order (needs a keyboard-order collector; the
-  journeys already press ArrowRight in the lab, so a mutant that breaks that
-  would be caught as a journey failure today)
+Eight mutants are edge faults (`kind: edge`, the default), all built this way:
+`dropped-header`, `route-500`, `console-error`, `dom-note`, `missing-alt`,
+`slow-ssr`, `anon-write` (every page records a learning event for anonymous readers,
+caught by the `persistence` collector) and `focus-order` (navigator links leave
+the tab order, caught by the `focus` collector). All eight are in
+`mutants.yaml` and are built and run; none is waiting on anything.
 
 ## Image-level mutants (R5)
 
@@ -39,7 +36,7 @@ caught by the static image artefacts, not by anything a browser sees:
 
 | Mutant | `kind` | Built as | Must be attributed to |
 | --- | --- | --- | --- |
-| `base-swap` | `base-swap` | the production filesystem copied over another base (`alpine:3.20`, or `HARNESS_MUTANT_ALT_BASE`), with production's user, working directory, environment, ports, entrypoint and command restated from `docker image inspect` | `image-manifest` (`reader/base`: the lowest layer differs) |
+| `base-swap` | `base-swap` | the production filesystem copied over another base (`ubuntu:24.04`, or `HARNESS_MUTANT_ALT_BASE`), with production's user, working directory, environment, ports, entrypoint and command restated from `docker image inspect` | `image-manifest` (`reader/base`: the lowest layer differs) |
 | `added-package` | `planted-package` | `mutants/Dockerfile.planted-package`: the production image plus one npm package (`harness-planted-package@9.9.9`) `COPY`ed into `./node_modules`, so no root, no network and no package manager is needed | `sbom` (`reader/harness-planted-package`) |
 
 Both are built locally, so they have no cosign attestation. `harness mutants`

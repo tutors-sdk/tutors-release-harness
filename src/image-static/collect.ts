@@ -1,8 +1,10 @@
 import { realExec, trustPolicyFromEnv, type Exec, type TrustPolicy } from "../images.ts";
 import type { ImageInfo, SideProvenance, SideSpec } from "../types.ts";
+import { maxAgeDays, vulnDbDirFromEnv } from "../local/vuln-db.ts";
+import { notCollectedText } from "../not-collected.ts";
 import { osTempFiles, type TempFiles } from "./command.ts";
 import { collectManifest } from "./manifest.ts";
-import { DEFAULT_SBOM_CMD, collectSbom, type SbomAcquired, type SbomSourcePolicy } from "./sbom.ts";
+import { collectSbom, defaultSbomCmd, type SbomAcquired, type SbomSourcePolicy } from "./sbom.ts";
 import { IMAGE_APPS, type AppImageStatic, type Collected, type ImageApp, type SbomData, type SideImageStatic } from "./types.ts";
 import { DEFAULT_VULN_CMD, collectVulns } from "./vulns.ts";
 
@@ -13,17 +15,23 @@ export interface StaticPolicy {
   vulnCmd: string;
   /** A pre-fetched, pinned scanner database directory. */
   vulnDbDir?: string;
+  /** The oldest database a scan may read (HARNESS_VULN_DB_MAX_AGE_DAYS), in days; unset, grype's own limit (5 days). */
+  vulnDbMaxAgeDays?: number;
   trust: TrustPolicy;
 }
 
-export function staticPolicyFromEnv(env: NodeJS.ProcessEnv = process.env, trust: TrustPolicy = trustPolicyFromEnv(env)): StaticPolicy {
+export function staticPolicyFromEnv(env: NodeJS.ProcessEnv = process.env, trust: TrustPolicy = trustPolicyFromEnv(env), platform: NodeJS.Platform = process.platform, exists?: (path: string) => boolean): StaticPolicy {
   const source = (env.HARNESS_SBOM_SOURCE || "auto").toLowerCase();
   if (source !== "auto" && source !== "attestation" && source !== "generate") throw new Error(`HARNESS_SBOM_SOURCE must be auto, attestation or generate, not "${env.HARNESS_SBOM_SOURCE}"`);
+  const dbDir = vulnDbDirFromEnv(env, exists);
+  const age = maxAgeDays(env);
   return {
     sbomSource: source,
-    sbomCmd: env.HARNESS_SBOM_CMD || DEFAULT_SBOM_CMD,
+    sbomCmd: env.HARNESS_SBOM_CMD || defaultSbomCmd(platform),
     vulnCmd: env.HARNESS_VULN_CMD || DEFAULT_VULN_CMD,
-    ...(env.HARNESS_VULN_DB_DIR ? { vulnDbDir: env.HARNESS_VULN_DB_DIR } : {}),
+    // HARNESS_VULN_DB_DIR, else <HARNESS_HOME>/vuln-db when `harness vuln-db update` made it: CI and a laptop read the same place.
+    ...(dbDir ? { vulnDbDir: dbDir } : {}),
+    ...(age.explicit ? { vulnDbMaxAgeDays: age.days } : {}),
     trust
   };
 }
@@ -54,11 +62,11 @@ function collectApp(app: ImageApp, ref: string, info: ImageInfo | undefined, dep
   const { exec, files, policy, log } = deps;
   const manifest = collectManifest(exec, ref);
   const sbom = collectSbom({ exec, policy: policy.trust, sbomSource: policy.sbomSource, sbomCmd: policy.sbomCmd }, ref, info);
-  const vulns = collectVulns({ exec, files, vulnCmd: policy.vulnCmd, ...(policy.vulnDbDir ? { dbDir: policy.vulnDbDir } : {}) }, app, sbom.ok ? sbom.spdxText : undefined, sbom.ok ? undefined : sbom.reason);
+  const vulns = collectVulns({ exec, files, vulnCmd: policy.vulnCmd, ...(policy.vulnDbDir ? { dbDir: policy.vulnDbDir } : {}), ...(policy.vulnDbMaxAgeDays ? { dbMaxAgeDays: policy.vulnDbMaxAgeDays } : {}) }, app, sbom.ok ? sbom.spdxText : undefined, sbom.ok ? undefined : sbom.reason);
   // The text was only for the scanner; what is kept is the package multiset.
   const { spdxText: _text, ...keptSbom } = sbom as SbomAcquired;
   for (const [kind, value] of [["manifest", manifest], ["sbom", sbom], ["vulns", vulns]] as const) {
-    if (!value.ok) log(`  ${app}: ${kind} NOT COLLECTED: ${value.reason}`);
+    if (!value.ok) log(`  ${notCollectedText({ what: kind, subject: app, reason: value.reason })}`);
   }
   return { manifest, sbom: keptSbom as Collected<SbomData>, vulns };
 }

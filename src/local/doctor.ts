@@ -1,6 +1,8 @@
 import { parse } from "yaml";
 import type { Exec } from "../images.ts";
+import { requirements } from "../not-collected.ts";
 import { LEGACY_PROJECT, composeProject, kindCluster } from "../project.ts";
+import { GRYPE_DB_FIX, GRYPE_INSTALL, MIN_GRYPE_VERSION, PINNED_GRYPE_VERSION, compareVersions, judgeDb, maxAgeDays, parseGrypeVersion, readDbStatus, vulnDbDirFromEnv } from "./vuln-db.ts";
 
 /**
  * `harness doctor`: what this machine lacks to run the harness, and how to get it.
@@ -87,8 +89,8 @@ const FIX = {
     "download cosign v3+ from https://github.com/sigstore/cosign/releases (or brew install cosign) and put it on PATH"
   ),
   syft: install("scoop install syft, or the syft_*_windows_amd64.zip from https://github.com/anchore/syft/releases on PATH", "brew install syft", "curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b ~/.local/bin"),
-  grype: install("scoop install grype, or the grype_*_windows_amd64.zip from https://github.com/anchore/grype/releases on PATH", "brew install grype", "curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b ~/.local/bin"),
-  grypeDb: install("grype db update (once, online), then point HARNESS_VULN_DB_DIR at a copy you keep", "grype db update (once, online)", "grype db update (once, online)"),
+  grype: install(GRYPE_INSTALL.windows, GRYPE_INSTALL.macos, GRYPE_INSTALL.linux),
+  grypeDb: install(GRYPE_DB_FIX, GRYPE_DB_FIX, GRYPE_DB_FIX),
   kind: install("winget install Kubernetes.kind", "brew install kind", "https://kind.sigs.k8s.io/docs/user/quick-start/#installation"),
   kubectl: install("winget install Kubernetes.kubectl", "brew install kubectl", "https://kubernetes.io/docs/tasks/tools/"),
   chromium: install("pnpm exec playwright install chromium", "pnpm exec playwright install chromium", "pnpm exec playwright install --with-deps chromium"),
@@ -259,21 +261,41 @@ export async function runDoctor(scopes: Scope[], deps: DoctorDeps): Promise<{ ok
   const syftSeverity = severity(selected, ["mutants"], ["nightly", "gate"]);
   if (syftSeverity) {
     const s = exec("syft", ["version"]);
-    checks.push(s.status === 0 ? ok("syft", "syft", (/^Version:\s*(\S+)/m.exec(s.stdout)?.[1] ?? "installed")) : bad(syftSeverity, "syft", "syft", syftSeverity === "fail" ? "not installed: the mutants generate SBOMs with it, and without it the added-package mutant escapes" : "not installed: SBOMs then come only from the registry's attestation, and an image without one is 'not collected'", FIX.syft));
+    // On a Windows host the default generator is syft in its own container (defaultSbomCmd), so no native syft is needed
+    // unless HARNESS_SBOM_CMD names one.
+    const containerSyft = win && !env.HARNESS_SBOM_CMD?.trim();
+    if (s.status !== 0 && containerSyft) checks.push(ok("syft", "syft", "not installed, and not needed: on Windows the default SBOM generator runs syft in its own container (Docker); set HARNESS_SBOM_CMD to use a native one"));
+    else checks.push(s.status === 0 ? ok("syft", "syft", (/^Version:\s*(\S+)/m.exec(s.stdout)?.[1] ?? "installed")) : bad(syftSeverity, "syft", "syft", syftSeverity === "fail" ? "not installed: the mutants generate SBOMs with it, and without it the added-package mutant escapes" : "not installed: SBOMs then come only from the registry's attestation, and an image without one is 'not collected'", FIX.syft));
   }
 
   const grypeSeverity = severity(selected, [], ["nightly", "gate", "mutants"]);
   if (grypeSeverity) {
+    // A scanner that is not there, too old, or without a usable database makes the vulnerability artefact "not collected":
+    // informational, and a failing hunk under HARNESS_REQUIRE_STATIC, so the doctor says fail exactly when a run would.
+    const required = requirements(env).required.has("vulns");
+    const level = required ? "fail" : grypeSeverity;
+    const because = required ? ", and HARNESS_REQUIRE_ARTEFACTS (or HARNESS_REQUIRE_STATIC) makes that a failing hunk" : " (informational)";
     const g = exec("grype", ["version"]);
+    const version = g.status === 0 ? parseGrypeVersion(g.stdout) : undefined;
     if (g.status !== 0) {
-      const required = env.HARNESS_REQUIRE_STATIC && /^(1|true|yes)$/i.test(env.HARNESS_REQUIRE_STATIC);
-      checks.push(bad(required ? "fail" : grypeSeverity, "grype", "grype", `not installed: the vulnerability artefact is 'not collected'${required ? ", and HARNESS_REQUIRE_STATIC makes that a failing hunk" : " (informational)"}`, FIX.grype));
+      checks.push(bad(level, "grype", `grype >= ${MIN_GRYPE_VERSION}`, `not installed: the vulnerability artefact is 'not collected'${because}`, FIX.grype));
+    } else if (version && compareVersions(version, MIN_GRYPE_VERSION) < 0) {
+      checks.push(bad(level, "grype", `grype >= ${MIN_GRYPE_VERSION}`, `grype ${version} is older than ${MIN_GRYPE_VERSION}: its database format is not the one the harness reads, and every scan would be 'not collected'${because}`, FIX.grype));
     } else {
-      checks.push(ok("grype", "grype", /^Version:\s*(\S+)/m.exec(g.stdout)?.[1] ?? "installed"));
-      // The harness switches grype's database updates off so a CVE published mid-run cannot look like a change.
-      if (!env.HARNESS_VULN_DB_DIR) {
-        const db = exec("grype", ["db", "status"], { env: { GRYPE_DB_AUTO_UPDATE: "false", GRYPE_CHECK_FOR_APP_UPDATE: "false" } });
-        checks.push(db.status === 0 ? ok("grype-db", "grype database is present (updates are off during a run)", tail(db.stdout) || "valid") : bad("warn", "grype-db", "grype database is present (updates are off during a run)", `grype has no usable database (${tail(db.stderr + db.stdout) || `exit ${db.status}`}), and the harness never lets it update mid-run: every scan would be 'not collected'`, FIX.grypeDb));
+      const pinned = PINNED_GRYPE_VERSION.replace(/^v/, "");
+      checks.push(ok("grype", `grype >= ${MIN_GRYPE_VERSION}`, version ? `${version}${version === pinned ? " (the version CI pins)" : `; CI pins ${pinned}: another version can list other vulnerabilities`}` : "installed"));
+      // The database: the harness switches grype's updates off during a run, so it must already be there, and fresh enough.
+      const dir = vulnDbDirFromEnv(env, deps.exists, deps.home);
+      const limit = maxAgeDays(env);
+      const title = "grype database is present and recent (updates are off during a run)";
+      if (env.HARNESS_VULN_DB_DIR?.trim() && !deps.exists(env.HARNESS_VULN_DB_DIR.trim())) {
+        checks.push(bad(level, "grype-db", title, `HARNESS_VULN_DB_DIR=${env.HARNESS_VULN_DB_DIR.trim()} does not exist: every scan would be 'not collected'${because}`, FIX.grypeDb));
+      } else {
+        const read = readDbStatus({ exec, env }, dir);
+        const verdict = judgeDb(read.status, read.failure, deps.now(), limit.days);
+        const where = dir ? `in ${dir}` : "in grype's own cache (no HARNESS_VULN_DB_DIR and no HARNESS_HOME/vuln-db)";
+        checks.push(verdict.usable ? ok("grype-db", title, `${where}: ${verdict.detail}`) : bad(level, "grype-db", title, `${where}: ${verdict.detail}${because}`, FIX.grypeDb));
+        if (limit.invalid) checks.push(bad("warn", "grype-db-max-age", "HARNESS_VULN_DB_MAX_AGE_DAYS", `${limit.invalid} is not a positive number of days: using ${limit.days}`));
       }
     }
   }
@@ -290,11 +312,11 @@ export async function runDoctor(scopes: Scope[], deps: DoctorDeps): Promise<{ ok
       if (cluster === LEGACY_PROJECT) {
         checks.push(bad("fail", "kind-cluster", `kind cluster "${cluster}"`, `${source} names the cluster "${LEGACY_PROJECT}", the name every checkout used before 1.3.0. A cluster of that name is not adopted or deleted by any harness command, so \`harness kind up\` refuses it: unset ${source} to use this checkout's own name`, install("Remove-Item Env:" + source, "unset " + source, "unset " + source)));
       } else if (clusters.includes(cluster)) {
-        checks.push(bad("warn", "kind-cluster", `kind cluster "${cluster}"`, `already exists and would be reused (${source}; only the harness-a and harness-b namespaces are created and deleted in it). If it was not made from deploy/kind/kind-config.yaml, the host ports 4100-4202 are not mapped: set HARNESS_KIND_CLUSTER to give the harness its own cluster`, install("$env:HARNESS_KIND_CLUSTER='harness-local'", "export HARNESS_KIND_CLUSTER=harness-local", "export HARNESS_KIND_CLUSTER=harness-local")));
+        checks.push(bad("warn", "kind-cluster", `kind cluster "${cluster}"`, `already exists and would be reused (${source}; only the harness-a and harness-b namespaces are created and deleted in it). If it was not made from deploy/kind/kind-config.yaml, the host ports 4100-4203 are not mapped: set HARNESS_KIND_CLUSTER to give the harness its own cluster`, install("$env:HARNESS_KIND_CLUSTER='harness-local'", "export HARNESS_KIND_CLUSTER=harness-local", "export HARNESS_KIND_CLUSTER=harness-local")));
       } else checks.push(ok("kind-cluster", `kind cluster "${cluster}"`, `not there yet: \`harness kind up\` creates it (name from ${source}; another checkout or worktree gets another name)`));
       // The name every checkout used before 1.3.0 is somebody's cluster, never this one's.
       if (cluster !== LEGACY_PROJECT && clusters.includes(LEGACY_PROJECT)) {
-        checks.push(ok("kind-legacy", `legacy kind cluster "${LEGACY_PROJECT}"`, `exists: legacy cluster, not touched. It is not this checkout's (${cluster}) and no harness command adopts, loads into or deletes it. If it was made from deploy/kind/kind-config.yaml it holds the host ports 4100-4202 that a new cluster maps, and \`harness kind up\` will fail on them: delete it yourself (kind delete cluster --name ${LEGACY_PROJECT}) if it is not needed`));
+        checks.push(ok("kind-legacy", `legacy kind cluster "${LEGACY_PROJECT}"`, `exists: legacy cluster, not touched. It is not this checkout's (${cluster}) and no harness command adopts, loads into or deletes it. If it was made from deploy/kind/kind-config.yaml it holds the host ports 4100-4203 that a new cluster maps, and \`harness kind up\` will fail on them: delete it yourself (kind delete cluster --name ${LEGACY_PROJECT}) if it is not needed`));
       }
     }
   }

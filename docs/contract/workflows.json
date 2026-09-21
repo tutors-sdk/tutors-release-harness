@@ -1,6 +1,6 @@
 {
   "$comment": "What the harness's workflows accept from outside and publish, machine-readable. tests/contract.test.ts fails when this and .github/workflows disagree.",
-  "contractVersion": "1.3.0",
+  "contractVersion": "1.4.0",
   "repositoryDispatch": {
     "release-candidate": {
       "workflow": "release.yml",
@@ -9,7 +9,7 @@
         "candidate": { "required": true, "meaning": "Candidate tag (side b), e.g. 16.3.0-rc.4" },
         "claims_url": { "required": false, "meaning": "URL the runner can GET without credentials for the release's claims.yaml" },
         "rules_url": { "required": false, "since": "1.3.0", "meaning": "URL the runner can GET without credentials for the release's rules.json (docs/contract/rules.schema.json): the Rules a claim may name with rule: \"0031\". Passed to --rules" },
-        "runs": { "required": false, "meaning": "Journey repetitions per side; default 3" },
+        "runs": { "required": false, "meaning": "Journey repetitions per side; default 5 (4 is the least that lets timing reach alpha 0.05; see docs/noise-burndown.md)" },
         "migrations_a": { "required": false, "meaning": "Monorepo git ref for production's migrations; default v<production>" },
         "migrations_b": { "required": false, "meaning": "Monorepo git ref for the candidate's migrations; default v<candidate>" },
         "production_digests": { "required": false, "since": "1.3.0", "meaning": "Object app -> sha256:<64 hex>: the image production runs, per app. Pins side a (harness images ensure / run --a-digests): pulled and verified by digest, refused with exit 2 when the tag now resolves to another digest" },
@@ -41,11 +41,28 @@
     "noise-status": { "workflow": "nightly-noise.yml", "retentionDays": 8 },
     "noise-report": { "workflow": "nightly-noise.yml", "retentionDays": 8 },
     "mutant-reports": { "workflow": "weekly-mutants.yml", "retentionDays": 14 },
+    "mutant-noise-report": { "workflow": "weekly-mutants.yml", "retentionDays": 7 },
     "harness-ci": { "workflow": "ci.yml", "retentionDays": 7 }
   },
   "tools": {
     "$comment": "Installed by every job that runs `harness images ensure`. Verifying the monorepo's signatures needs cosign >= 3.",
-    "cosign": { "action": "sigstore/cosign-installer", "minimumMajor": 3, "usedBy": ["ci.yml", "nightly-noise.yml", "release.yml", "weekly-mutants.yml"] }
+    "cosign": { "action": "sigstore/cosign-installer", "minimumMajor": 3, "usedBy": ["ci.yml", "nightly-noise.yml", "release.yml", "weekly-mutants.yml"] },
+    "grype": {
+      "$comment": "Since 1.4.0. Installed, at one pinned version, by the jobs that judge images: nightly noise job, release job, mutants job. Not ci.yml (a smoke run) or post-deploy.yml (no images), and not the release workflow's migration and upgrade jobs (the release job judges the images).",
+      "action": "anchore/scan-action/download-grype",
+      "version": "v0.119.0",
+      "usedBy": ["nightly-noise.yml", "release.yml", "weekly-mutants.yml"],
+      "requireStatic": { "nightly-noise.yml": true, "release.yml": true, "weekly-mutants.yml": false }
+    },
+    "syft": { "$comment": "Since 1.4.0: pinned. Generates the mutants' SBOMs; the images of a nightly and a release carry an SBOM attestation.", "action": "anchore/sbom-action/download-syft", "version": "v1.52.0", "usedBy": ["weekly-mutants.yml"] }
+  },
+  "vulnerabilityDatabase": {
+    "$comment": "Since 1.4.0. Fetched once per job by `harness vuln-db update`, cached per UTC day and grype version, never updated during a run (docs/images.md). tests/workflows-vuln.test.ts holds the workflows to this.",
+    "dir": ".harness/vuln-db",
+    "env": "HARNESS_VULN_DB_DIR",
+    "cacheKey": "vuln-db-grype-<GRYPE_VERSION>-<UTC day>",
+    "fetch": "pnpm harness vuln-db update, only on a cache miss, continue-on-error",
+    "status": "pnpm harness vuln-db status, after the fetch, before any run"
   },
   "forbiddenPermissions": ["pull-requests", "checks", "statuses", "deployments"],
   "writePermissions": {
@@ -72,6 +89,10 @@
     "readBy": ["post-deploy.yml"],
     "fetch": "gh api -H 'Accept: application/vnd.github.raw' repos/<repo>/contents/releases/<tag>.json?ref=release-records",
     "schema": "release-record.schema.json"
+  },
+  "runNames": {
+    "$comment": "Since 1.4.0. The title of a run (the API's display_title), so the monorepo's release-harness-report workflow can find the run a release-candidate dispatch started. Matched as a whole tag: rc.1 does not match rc.10.",
+    "release.yml": "release ${{ github.event.client_payload.candidate || inputs.candidate }}"
   },
   "dispatchInputs": {
     "$comment": "workflow_dispatch inputs added in 1.2.0. Not repository_dispatch payload fields: a dispatch from another repository cannot override.",

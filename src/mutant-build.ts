@@ -14,8 +14,13 @@ import type { TempFiles } from "./image-static/command.ts";
 export const MUTANT_KINDS = ["edge", "planted-package", "base-swap"] as const;
 export type MutantKind = (typeof MUTANT_KINDS)[number];
 
-/** The base a base-swap mutant is built on. Must not share its lowest layer with the production image. */
-export const DEFAULT_ALT_BASE = "alpine:3.20";
+/**
+ * The base a base-swap mutant is built on. Must not share its lowest layer with the production image, and must lay
+ * its root out the way production does: `COPY --from=production / /` over an image whose /bin is a directory (alpine)
+ * fails in BuildKit ("cannot replace to directory .../bin with file"), because the production image's /bin is a
+ * symlink into /usr. ubuntu is a different distribution with the same merged-/usr layout as the node image's Debian.
+ */
+export const DEFAULT_ALT_BASE = "ubuntu:24.04";
 
 export interface BuildContext {
   exec: Exec;

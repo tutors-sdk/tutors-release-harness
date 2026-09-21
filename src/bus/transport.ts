@@ -28,9 +28,9 @@ export interface BusTransport {
 export type BusTransportFactory = (address: string, side: SideName) => BusTransport;
 
 /** The reason recorded, and logged, when no bus is configured. Loud on purpose: an absent collector must not read as a clean bus. */
-export const NOT_COLLECTED_NO_BUS = "not collected: no bus configured";
+export const NOT_COLLECTED_NO_BUS = "no bus configured";
 /** Post-deploy mode's live side is not a harness stack, so there is no bus recorder to read. */
-export const NOT_COLLECTED_EXTERNAL = "not collected: external deployment";
+export const NOT_COLLECTED_EXTERNAL = "external deployment";
 
 /** Collapse raw publishes to the normal form: one record per topic, messages ≥ 1, sorted by topic. */
 export function normalisePublishes(raw: { topic: string; messages?: number }[]): BusPublish[] {

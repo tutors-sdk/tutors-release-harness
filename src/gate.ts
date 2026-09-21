@@ -15,6 +15,22 @@ export interface GateInput {
    * verified in the run). A clean A/A on weak evidence is a warning, never a pass.
    */
   degraded?: string[];
+  /**
+   * Post-deploy: whether a CI step opens a rollback issue when the verdict is FAIL (post-deploy.yml does; a local run
+   * does not: `harness local watch` writes a note under HARNESS_HOME/rollbacks instead). Decides only the wording of
+   * the reason. Default true, the CI wording, so a caller that says nothing reads as before.
+   */
+  rollbackIssue?: boolean;
+}
+
+/**
+ * Whether this process runs where a rollback-issue step exists: `HARNESS_ROLLBACK_ISSUE` (1, true or yes to say so,
+ * 0, false or no to say not) wins; unset, GitHub Actions (`GITHUB_ACTIONS=true`) has one and anything else does not.
+ */
+export function rollbackIssueConfigured(env: NodeJS.ProcessEnv): boolean {
+  const v = env.HARNESS_ROLLBACK_ISSUE?.trim().toLowerCase();
+  if (v) return ["1", "true", "yes"].includes(v);
+  return env.GITHUB_ACTIONS === "true";
 }
 
 export interface GateOutput {
@@ -59,7 +75,7 @@ export function gate(input: GateInput): GateOutput {
       if (failing === 0 && compare.broadUnapproved.length === 0) {
         return { verdict: "pass", reasons: [mode === "release" ? "every difference is claimed" : "production behaves as the recorded candidate did", ...reasons] };
       }
-      if (failing) reasons.unshift(mode === "release" ? `${failing} unclaimed diff(s)` : `${failing} new difference(s) between production and the recorded candidate: open a rollback issue`);
+      if (failing) reasons.unshift(mode === "release" ? `${failing} unclaimed diff(s)` : `${failing} new difference(s) between production and the recorded candidate: ${input.rollbackIssue === false ? "decide whether to roll back" : "open a rollback issue"}`);
       const trust = trustNoise(input);
       if (trust.ok) return { verdict: "fail", reasons };
       return { verdict: "warn", reasons: [`advisory only: ${trust.why}`, ...reasons] };

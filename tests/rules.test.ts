@@ -69,7 +69,7 @@ describe("the rules file", () => {
     const file = join(tmp("rules"), "rules.json");
     writeFileSync(file, RULES_JSON);
     expect((await loadRules(file)).rules["0044"]!.title).toBe("Presence is polled every 15 seconds");
-    await expect(loadRules(join(tmp("rules"), "nope.json"))).rejects.toThrow(/ENOENT/);
+    await expect(loadRules(join(tmp("rules"), "nope.json"))).rejects.toThrow(/cannot read the rules file .*nope\.json: no such file/);
 
     const seen: string[] = [];
     const fake = async (url: string) => {
@@ -130,13 +130,13 @@ describe("claims that name a rule", () => {
   });
 
   it("planted: a rule that is not in the file is invalid, and names the claim, the rule and the file", () => {
-    expect(() => claims(`  - artefact: dom\n    scope: "reader:*"\n    reason: "Rule 0031: fine"\n  - artefact: dom\n    scope: "reader:x"\n    rule: "0999"\n`)).toThrow(/claims\.yaml is not a valid claims file:\n {2}claims\.1\.rule: rule "0999" is not in the rules file rules\.json/);
+    expect(() => claims(`  - artefact: dom\n    scope: "reader:*"\n    reason: "Rule 0031: fine"\n  - artefact: dom\n    scope: "reader:x"\n    rule: "0999"\n`)).toThrow(/claims\.yaml is not a valid claims file: 1 problem\n\n {2}claim 2 of 2 \(claims\.1\), rule: rule "0999" is not in the rules file rules\.json/);
     // a rule in the file does not excuse a reason that is missing on a claim with no rule
-    expect(() => claims(`  - artefact: dom\n    scope: "reader:x"\n`)).toThrow(/claims\.0\.reason: a claim needs a reason/);
+    expect(() => claims(`  - artefact: dom\n    scope: "reader:x"\n`)).toThrow(/claim 1 of 1 \(claims\.0\), reason: a claim needs a reason/);
   });
 
   it("planted: a rule with no rules file at all is invalid, and says how to fix it", () => {
-    expect(() => claims(`  - artefact: dom\n    scope: "reader:x"\n    rule: "0031"\n`, null)).toThrow(/rule "0031" was named, but no rules file was given: pass --rules <path\|url> \(in the release dispatch, rules_url\), or give a reason instead/);
+    expect(() => claims(`  - artefact: dom\n    scope: "reader:x"\n    rule: "0031"\n`, null)).toThrow(/rule "0031" was named, but no rules file was given\n {6}pass --rules <path\|url> \(in the release dispatch, rules_url\), or give a reason instead/);
   });
 
   it("planted: every claim that names a missing rule is reported, not only the first", () => {
@@ -144,8 +144,8 @@ describe("claims that name a rule", () => {
       claims(`  - artefact: dom\n    scope: "a"\n    rule: "0998"\n  - artefact: dom\n    scope: "b"\n    rule: "0999"\n`);
       throw new Error("should have thrown");
     } catch (e) {
-      expect((e as Error).message).toContain('claims.0.rule: rule "0998"');
-      expect((e as Error).message).toContain('claims.1.rule: rule "0999"');
+      expect((e as Error).message).toContain('claim 1 of 2 (claims.0), rule: rule "0998"');
+      expect((e as Error).message).toContain('claim 2 of 2 (claims.1), rule: rule "0999"');
     }
   });
 
@@ -247,7 +247,8 @@ describe("through the process: an invalid rule stops the run before any stack st
     expect(missing.stderr).toMatch(/rule "0031" is not in the rules file .*rules\.json/);
     const nowhere = cli(...base, "--rules", join(dir, "nope.json"));
     expect(nowhere.status).toBe(2);
-    expect(nowhere.stderr).toMatch(/ENOENT/);
+    expect(nowhere.stderr).toMatch(/cannot read the rules file .*nope\.json: no such file/);
+    expect(nowhere.stderr).not.toContain("    at ");
     // nothing was started: no output directory was made
     expect(() => readFileSync(join(dir, "out"))).toThrow();
   });

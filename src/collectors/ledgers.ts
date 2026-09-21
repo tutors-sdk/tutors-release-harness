@@ -1,5 +1,6 @@
 import { busCollector, type BusCollector } from "../bus/transport.ts";
 import "../bus/http-recorder.ts";
+import { notCollectedText } from "../not-collected.ts";
 import { persistenceBackend, type PersistenceBackend, type WriteRecorder } from "../persistence/recorder.ts";
 import "../persistence/supabase-rest.ts";
 import type { BusStatus, JourneyCapture, SideSpec } from "../types.ts";
@@ -37,6 +38,6 @@ export async function readLedgers(ledgers: Ledgers): Promise<Partial<Pick<Journe
 }
 
 /** The line the run log carries when a side's bus is not collected: loud, because silence would read as a clean bus. */
-export function busStatusLine(side: string, status: BusStatus): string {
-  return status.collected ? `  ${side}: bus traffic collected via ${status.transport}` : `  ${side}: bus traffic ${status.reason} (set HARNESS_BUS to collect it; see docs/bus.md)`;
+export function busStatusLine(side: "a" | "b", status: BusStatus): string {
+  return status.collected ? `  ${side}: bus traffic collected via ${status.transport}` : `  ${notCollectedText({ what: "bus traffic", side, reason: status.reason })} (set HARNESS_BUS to collect it; see docs/bus.md)`;
 }

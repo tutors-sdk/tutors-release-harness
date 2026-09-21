@@ -39,8 +39,13 @@ function mutateHtml(html) {
         `<script>fetch(${JSON.stringify(`${PERSISTENCE}/rest/v1/learning_records`)}, { method: "POST", headers: { "content-type": "application/json", apikey: "mutant" }, body: JSON.stringify({ course_id: "mutant", lo: location.pathname }) }).catch(() => {});</script></body>`
       );
     case "focus-order":
-      // A navigator whose links leave the tab order: keyboard users can no longer reach them.
-      return html.replace("</body>", '<script>addEventListener("load", () => { for (const a of document.querySelectorAll("nav a")) a.tabIndex = -1; });</script></body>');
+      // A navigator whose links leave the tab order: keyboard users can no longer reach them. The reader serves a bare
+      // shell (about 1 KB) and renders every page in the browser, so at `load` there is no <nav> yet, and it re-renders
+      // its navigators on client-side navigation: the fault is applied by an observer, to every <nav> link as it appears.
+      return html.replace(
+        "</body>",
+        `<script>(() => { const plant = () => { for (const a of document.querySelectorAll("nav a")) if (a.tabIndex !== -1) a.tabIndex = -1; }; new MutationObserver(plant).observe(document.documentElement, { childList: true, subtree: true }); plant(); })();</script></body>`
+      );
     default:
       return html;
   }
