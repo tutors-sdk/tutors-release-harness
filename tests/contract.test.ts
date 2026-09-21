@@ -36,7 +36,7 @@ const cli = json("docs/contract/cli.json") as {
 };
 const workflowsContract = json("docs/contract/workflows.json") as {
   contractVersion: string;
-  repositoryDispatch: Record<string, { workflow: string; clientPayload: Record<string, unknown> }>;
+  repositoryDispatch: Record<string, { workflow: string; clientPayload: Record<string, { required?: boolean }> }>;
   repositoryVariables: Record<string, { default: string; usedBy: string[] }>;
   artifacts: Record<string, { workflow: string; retentionDays: number }>;
   forbiddenPermissions: string[];
@@ -392,10 +392,15 @@ describe("workflows", () => {
       for (const field of used) expect(contractMd).toContain(`\`${field}\``);
     }
     const sample = read("docs/monorepo/release-dispatch.yml");
-    const sent = [...sample.matchAll(/client_payload\[([a-z_]+)\]/g)].map((m) => m[1]!);
+    // The sender may spell the payload as `gh -F client_payload[x]=…` flags or as a jq object; both are read.
+    const jqObject = /client_payload:\s*\{([^}]*)\}/.exec(sample)?.[1] ?? "";
+    const sent = [...sample.matchAll(/client_payload\[([a-z_]+)\]/g), ...jqObject.matchAll(/([a-z_]+):\s*\$/g)].map((m) => m[1]!);
     expect(sent.length).toBeGreaterThan(0);
-    for (const field of sent) expect(Object.keys(workflowsContract.repositoryDispatch["release-candidate"]!.clientPayload)).toContain(field);
-    expect(sample).toContain("event_type=release-candidate");
+    const contractPayload = workflowsContract.repositoryDispatch["release-candidate"]!.clientPayload;
+    for (const field of sent) expect(Object.keys(contractPayload)).toContain(field);
+    // Everything the contract requires is sent.
+    for (const [field, spec] of Object.entries(contractPayload)) if (spec.required) expect(sent, field).toContain(field);
+    expect(sample).toMatch(/event_type(=|:\s*")release-candidate/);
   });
 
   it("read exactly the repository variables the contract lists, with the defaults it states", () => {
