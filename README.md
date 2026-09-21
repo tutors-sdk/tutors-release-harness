@@ -49,7 +49,8 @@ Docs: [where the A and B images come from](docs/images.md) ·
 [the integration contract](docs/contract.md) ·
 [modes](docs/modes.md) · [claims](claims/README.md) ·
 [what the monorepo needs to do](docs/monorepo/README.md) ·
-[kind substrate](deploy/kind/README.md) · [testing the harness](TESTING.md).
+[kind substrate](deploy/kind/README.md) · [testing the harness](TESTING.md) ·
+[architecture: C4 diagrams](docs/architecture/README.md).
 
 ## How it works
 
