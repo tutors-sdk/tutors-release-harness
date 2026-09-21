@@ -49,7 +49,7 @@ harness must change with it:
 
 What the harness accepts, writes and promises — event types, payload fields,
 `report.json`, exit codes, what it will never do to a PR — is in
-[the contract](../contract.md). Pin the harness by tag (`v1.1.0`).
+[the contract](../contract.md). Pin the harness by tag (`v1.2.0`).
 
 On the harness side, set the repository variables:
 

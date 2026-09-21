@@ -22,6 +22,17 @@ database migrations against the production schema on a throwaway Postgres:
    assert it equals a's. If it does not, the rollback path is broken and that
    is a failing hunk too.
 
+Everything backend-specific sits behind `SchemaBackend`
+(`src/migration/backend.ts`): open a database with the platform baseline (and
+the optional `--snapshot`), apply migration files, read the catalogue,
+snapshot and restore. `src/migration/supabase-postgres.ts` (Docker,
+`supabase-baseline.sql`) is the first implementation; the file source
+(`fetch-migrations.sh`) is a second seam. The expand/contract rule and the
+rollback check work on catalogues and know neither.
+`tests/migration-seam.test.ts` runs the whole rehearsal on an in-memory
+backend, no Docker. A successor to Supabase is a new `SchemaBackend` (and its
+baseline), not a change to the rule.
+
 Refs can be git refs (`main`, `release/16.3.0`, a sha) or a local directory
 (`dir:tests/fixtures/migrations/b`) for negative fixtures and offline runs.
 

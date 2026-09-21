@@ -20,6 +20,24 @@ The stub is reached from the browser as `http://persistence-<side>.harness.test:
 containers through `extra_hosts` to the host gateway, so `PUBLIC_SUPABASE_URL`
 is one value that works on both sides of the network boundary.
 
+## The seam: backends
+
+The stub above is the first implementation of a small interface
+(`src/persistence/recorder.ts`): a `WriteRecorder` per side that can `reset()`
+and return `writes()`, normalised to `{ kind, method, table, rows }`. The
+collector and the diff engine (`src/compare/ledger.ts`, which also carries
+the anonymous-write rule) see only those records, never HTTP or SQL. The
+backend is `HARNESS_PERSISTENCE_BACKEND` (default `supabase-rest`; an unknown
+name is an error). When the monorepo leaves Supabase, a Postgres-wire recorder
+or another stub is a second `PersistenceBackend`, registered beside
+`src/persistence/supabase-rest.ts`, plus the stub itself; the rule and the
+collector do not change. `method` is the backend's own verb (`POST` here,
+`INSERT` for a SQL recorder): sides are only ever compared with the same
+backend. `tests/persistence-seam.test.ts` proves the seam with an in-memory
+Postgres-wire-shaped fake that drives the same collector and rule.
+
+The same rule, on topics instead of tables, is the [bus collector](../../docs/bus.md).
+
 ## Why a stub and not a database
 
 The apps talk to Supabase through its REST API from the browser and, for the

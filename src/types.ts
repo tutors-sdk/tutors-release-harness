@@ -6,7 +6,7 @@
 export type SideName = "a" | "b";
 
 /** Every kind of thing the harness captures or rehearses. Claims and masks name these. */
-export const ARTEFACTS = ["dom", "screenshot", "network", "console", "headers", "axe", "focus", "metrics", "logs", "timing", "persistence", "migration", "upgrade"] as const;
+export const ARTEFACTS = ["dom", "screenshot", "network", "console", "headers", "axe", "focus", "metrics", "logs", "timing", "persistence", "bus", "migration", "upgrade"] as const;
 export type Artefact = (typeof ARTEFACTS)[number];
 
 export const MODES = ["noise", "release", "any-two", "upgrade", "migration", "post-deploy"] as const;
@@ -135,12 +135,27 @@ export interface PageCapture {
   timing: Timing;
 }
 
+/**
+ * One write a side tried to persist, normalised: the same shape whatever
+ * backend recorded it (see src/persistence/recorder.ts). `table` is the table
+ * or collection; `method` is upper case (`POST`, `PATCH`, `DELETE`, `INSERT`…).
+ */
 export interface PersistenceWrite {
   kind: "write" | "rpc";
   method: string;
   table: string;
   rows: number;
 }
+
+/** One topic a side published to during a journey, normalised (see src/bus/transport.ts). */
+export interface BusPublish {
+  topic: string;
+  /** How many messages were published to the topic. At least 1. */
+  messages: number;
+}
+
+/** Whether a side's bus traffic was collected, and if not, why. Loud by design: recorded even when nothing was collected. */
+export type BusStatus = { collected: true; transport: string } | { collected: false; reason: string };
 
 export interface JourneyCapture {
   journey: string;
@@ -151,6 +166,8 @@ export interface JourneyCapture {
   pages: PageCapture[];
   /** What the side's persistence stub recorded during this journey (empty when the side has no stub). */
   persistence: PersistenceWrite[];
+  /** Topics the side published to during this journey; present only when the side's bus traffic was collected. */
+  bus?: BusPublish[];
   /** Set when the journey did not complete; the pages captured so far are kept. */
   error?: string;
 }
@@ -208,6 +225,8 @@ export interface SideCapture {
   metrics: { before: Record<string, MetricsSnapshot>; after: Record<string, MetricsSnapshot> };
   logs: Record<string, LogSummary>;
   load?: LoadSummary;
+  /** Whether bus traffic was collected on this side; absent in captures written before the bus collector existed. */
+  bus?: BusStatus;
 }
 
 // ---- schema catalogue (migration mode) -------------------------------------------
