@@ -8,6 +8,7 @@
 #
 # Mask kinds, by artefact:
 #   headers:  `header: <name>`               drops that response header
+#             `header: <name>` + `pattern`   drops it only when its value matches (against the CANONICAL value, below)
 #             `pattern: <regex>`             rewrites matches inside every header value
 #   dom | console | network:
 #             `pattern: <regex>`             replaces matches with `replace` (default "{{masked}}")
@@ -22,11 +23,21 @@
 #   metrics:  `series: <regex>`              drops matching series names
 #   logs:     `key: <name>`                  drops that key from the key-set comparison
 # `replace` may keep parts of the match with $1, $2 …; `modes: [post-deploy]`
-# limits a mask to some modes (default: all).
+# limits a mask to some modes (default: all). A network entry records only two
+# response headers, so a `header:` mask with artefact `network` names
+# `content-type` or `cache-control` and clears that field of the matching entries.
 #
 # Structural normalisation that is NOT a mask (and needs no entry here): each
 # side's own origin is replaced by {{origin}} by the collector, because the two
 # sides necessarily answer on different ports.
+#
+# Canonical forms, also NOT masks (src/normalise/canonical.ts): before any mask runs,
+# BOTH sides' `content-type` and `cache-control` (document headers and network entries)
+# are put in one form: cache-control directives lower-cased, whitespace stripped, sorted
+# and de-duplicated; content-type without the default charset (utf-8), with the legacy
+# JavaScript aliases folded into text/javascript. Reordering and re-spelling therefore
+# never differ, while a changed max-age or a lost `immutable` still does. A mask
+# pattern on these two headers is written against the canonical form.
 
 masks:
   - id: response-date

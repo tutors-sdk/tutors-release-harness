@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { journeys, type JourneySet } from "../traffic/journeys/journeys.ts";
 import { loadClaims } from "./claims/schema.ts";
 import { isUrl, loadRules } from "./claims/rules.ts";
+import { InputFileError } from "./claims/input-error.ts";
 import { appendFileSync } from "node:fs";
 import { parseOverride, exitCodeForReport } from "./override.ts";
 import { DigestError, parseDigests, pinImages } from "./digests.ts";
@@ -15,10 +16,15 @@ import { CLUSTER, kindDown, kindRollout, kindSide, kindUp } from "./substrate/ki
 import { refuseLegacyCluster } from "./project.ts";
 import { MODES, SUBSTRATES, type Mode, type Substrate } from "./types.ts";
 import { harnessInfo } from "./version.ts";
-import { UsageError, doctorCommand, guardCommand, localCommand, noiseCommand, overrideCommand, recordAppliedOverride } from "./local/cli.ts";
+import { helpFor } from "./local/usage.ts";
+import { RequirementError, requirements } from "./not-collected.ts";
+import { UsageError, doctorCommand, guardCommand, localCommand, noiseCommand, overrideCommand, pruneCommand, recordAppliedOverride, vulnDbCommand } from "./local/cli.ts";
 import { defaultNoise } from "./local/noise-store.ts";
 
 const USAGE = `tutors-release-harness
+
+  harness --help | -h | help [command]      this text; \`harness <command> --help\` prints that command's part of it
+                                            (exit 0; \`harness\` with no arguments prints it and exits 2)
 
   harness run --mode <mode> --a <ref> --b <ref> [options]
       Start both stacks, capture, compare, claim, gate, report.
@@ -87,6 +93,12 @@ const USAGE = `tutors-release-harness
   harness doctor [--for nightly,gate,mutants,watch,kind] [--port-offset n] [--json]
       What this machine lacks to run the harness, and how to install it (Windows, macOS, Linux). Read-only.
       Exit 0 ready (warnings allowed), 1 something a run needs is missing, 2 usage.
+  harness vuln-db update|status [--json]
+      The pinned vulnerability database (grype's), one directory for CI and this machine: HARNESS_VULN_DB_DIR, else
+      HARNESS_HOME/vuln-db. update fetches it: the only place a database is ever updated, run it BEFORE a run (the scanner is
+      never allowed to update during one). status says which database a scan would read, when it was built, how old it is
+      and its checksum; exit 0 when usable, and, when it is not, 1 when the vulnerability artefact is required
+      (HARNESS_REQUIRE_ARTEFACTS=vulns|static|all, or its alias HARNESS_REQUIRE_STATIC=1) and 0 without it. Not stable.
   harness noise record --status <noise run dir | noise-status.json> [--report f] [--tag T] [--store dir] [--run-url u] [--summary f] [--masks f]
       Append tonight's A/A to the noise store (the local \`noise\` branch): status, history, summary. Exit 1 when the ratchet is broken.
   harness noise status [--store dir] [--noise-max-age-days 7] [--require] [--json]
@@ -98,10 +110,19 @@ const USAGE = `tutors-release-harness
       change needs a version bump. Exit 1 on a violation, 2 when the ref does not exist.
   harness override list [--since <date>] [--json]
       The local, append-only record of every FAIL a person overrode.
+  harness prune [--out dir] [--older-than-days 14] [--keep-last 5] [--image-cache dir] [--image-cache-days 30] [--yes] [--json]
+      Free disk: remove run directories under out/ that are older than --older-than-days AND not among the newest
+      --keep-last of their mode, and an image cache saved more than --image-cache-days ago. A dry run unless --yes.
+      Never touches HARNESS_HOME state (noise store, release records, override log), the newest release run that did
+      not FAIL (what \`local watch\` compares production with), anything from the last 6 hours, or anything while a
+      run or watch holds its lock (exit 2). Exit 1 when something could not be removed (in use).
   harness local nightly [--tag T] [--runs 5] [--load 20x30s] [--image-cache dir] [--store dir] [--no-record]
   harness local gate --a <production tag> --b <candidate tag> [--a-digests d] [--b-digests d] [--claims f] [--rules f] [--runs 5] [--only release|migration|upgrade]
                      [--migrations-a ref] [--migrations-b ref] [--override-reason r --override-by who]
   harness local mutants [--base T]
+  harness local smoke [--tag T] [--only stacks|migration]
+      The two-stacks smoke ci.yml runs: both stacks boot from one tag, one journey A/A, and the migration fixtures (the
+      expanding one passes, the contracting one must be rejected). pnpm smoke is the same command.
   harness local watch [--recorded <release run dir>] [--production reader=URL,catalogue=URL,live=URL] [--deployed <tag> [--deployed-digests d] [--release-record f]] [--interval 15m] [--once]
       Each is what its workflow does, as one command, from the same harness commands (--dry-run prints them).
       All take --port-offset <n> to move the compose stack's host ports beside a stack of your own.
@@ -140,6 +161,11 @@ function startupRestarts(value: string | undefined, fallback: number): number {
 }
 
 async function main(argv: string[]): Promise<number> {
+  const help = helpFor(argv, USAGE);
+  if (help) {
+    (help.code === 0 ? console.log : console.error)(help.text);
+    return help.code;
+  }
   const [command, ...rest] = argv;
   const { values, positionals } = parseArgs({
     args: rest,
@@ -194,6 +220,9 @@ async function main(argv: string[]): Promise<number> {
       for: { type: "string" },
       last: { type: "string" },
       since: { type: "string" },
+      "older-than-days": { type: "string" },
+      "keep-last": { type: "string" },
+      "image-cache-days": { type: "string" },
       screenshots: { type: "boolean", default: true },
       axe: { type: "boolean", default: true },
       focus: { type: "boolean", default: true },
@@ -206,21 +235,21 @@ async function main(argv: string[]): Promise<number> {
       once: { type: "boolean", default: false },
       require: { type: "boolean", default: false },
       record: { type: "boolean", default: true },
+      yes: { type: "boolean", default: false },
       json: { type: "boolean", default: false },
       help: { type: "boolean", short: "h", default: false }
     },
     allowNegative: true
   });
 
-  if (!command || values.help) {
-    console.log(USAGE);
-    return command ? 0 : 2;
-  }
   if (command === "version") {
     const info = harnessInfo();
     console.log(values.json ? JSON.stringify(info) : `harness ${info.version} (${info.gitSha ?? "no git sha"}) · contract ${info.contractVersion}`);
     return 0;
   }
+
+  // An unknown name in HARNESS_REQUIRE_ARTEFACTS would quietly require less than the operator meant: refuse it before anything runs.
+  if (command === "run" || command === "compare" || command === "mutants") requirements(process.env);
 
   const defaults = defaultRunOptions();
   const sets = values.set ? (values.set.split(",").map((s) => s.trim()) as JourneySet[]) : defaults.sets;
@@ -376,12 +405,16 @@ async function main(argv: string[]): Promise<number> {
     }
     case "doctor":
       return doctorCommand(values);
+    case "vuln-db":
+      return vulnDbCommand(positionals[0], values);
     case "noise":
       return noiseCommand(positionals[0], values);
     case "guard":
       return guardCommand(positionals[0], values);
     case "override":
       return overrideCommand(positionals[0], values);
+    case "prune":
+      return pruneCommand(values);
     case "local":
       return localCommand(positionals[0], values);
     case "journeys":
@@ -421,7 +454,8 @@ main(process.argv.slice(2)).then(
       process.exit(EXIT_CANNOT_JUDGE);
     }
     // A usage error of the local commands, or digests that are not digests: the message, not a stack.
-    if (error instanceof UsageError || error instanceof DigestError) {
+    // A claims or rules file that cannot be used: which file, which claim, which field, what is wrong; no stack.
+    if (error instanceof UsageError || error instanceof DigestError || error instanceof InputFileError || error instanceof RequirementError) {
       console.error(error.message);
       process.exit(2);
     }

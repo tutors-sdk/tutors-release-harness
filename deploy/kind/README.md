@@ -69,5 +69,5 @@ git worktrees on one machine get two clusters and never adopt each other's.
 `tutors-harness` is what every checkout used before 1.3.0 and is treated as yours:
 `harness kind up` and `down` refuse that name, and `harness doctor --for kind` reports
 it as "legacy cluster, not touched". Note that every cluster made from
-`kind-config.yaml` maps the same host ports (4100–4202), so two clusters cannot run at
+`kind-config.yaml` maps the same host ports (4100–4203), so two clusters cannot run at
 once; delete the one you are not using.

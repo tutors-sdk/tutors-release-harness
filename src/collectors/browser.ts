@@ -5,6 +5,7 @@ import { AxeBuilder } from "@axe-core/playwright";
 import { chromium, type Browser, type BrowserContext, type Page, type Response } from "playwright";
 import type { Journey } from "../../traffic/journeys/journeys.ts";
 import { reference } from "../../traffic/journeys/reference.ts";
+import { redactSecrets } from "../normalise/redact.ts";
 import { IDENTITY_URL } from "../stack.ts";
 import type { AxeFinding, ConsoleEntry, JourneyCapture, NetworkEntry, PageCapture, SideSpec, Timing } from "../types.ts";
 
@@ -38,6 +39,10 @@ export async function launchBrowser(): Promise<Browser> {
  * ports, and nothing about that is a finding. The course hosts are the same on
  * both sides in a run; they are normalised so a recorded run compares with a
  * later one that pins the course elsewhere.
+ *
+ * Secret-shaped values (an `apikey=` in a logged URL, a bearer token, a JWT) are
+ * redacted here too, so `capture.json` does not hold them; `normalise()` redacts
+ * again for captures recorded before this (src/normalise/redact.ts).
  */
 export function stripOrigins(text: string, spec: SideSpec): string {
   let out = text;
@@ -51,7 +56,7 @@ export function stripOrigins(text: string, spec: SideSpec): string {
   }
   const courseHosts = [...new Set([spec.urls.courseId, reference.host, reference.courseId])].sort((x, y) => y.length - x.length);
   for (const host of courseHosts) for (const scheme of ["http://", "https://"]) out = out.split(`${scheme}${host}`).join("{{course}}");
-  return out;
+  return redactSecrets(out);
 }
 
 /** How long to wait for a JSON response body before recording it as unread. */

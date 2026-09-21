@@ -1,4 +1,5 @@
 import type { ContainerPosture, NotCollected, RuntimeCapture, Substrate } from "../types.ts";
+import { notCollectedText } from "../not-collected.ts";
 import { reasonOf } from "./tool.ts";
 
 /**
@@ -229,7 +230,7 @@ export function collectPosture(target: PostureTarget, log: (m: string) => void =
       containers[app] = { ...declared, effective, readOnlyViolations };
     } catch (e) {
       const reason = reasonOf(e);
-      log(`    runtime posture: ${app} not collected: ${reason}`);
+      log(`    ${notCollectedText({ what: "container posture", subject: app, reason })}`);
       containers[app] = { collected: false, reason } satisfies NotCollected;
     }
   }

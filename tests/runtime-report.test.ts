@@ -52,11 +52,11 @@ describe("runtime artefacts in a whole run", () => {
     expect(readFileSync(outcome.files.md, "utf8")).toContain("median 1805 ms → 3610 ms");
   });
 
-  it("an artefact that could not be collected shows in the PR comment as `not collected: <reason>` and gates until claimed", () => {
+  it("an artefact that could not be collected shows in the PR comment as `NOT COLLECTED: <reason>` and gates until claimed", () => {
     const blind = sideWithRuntime("b", { runtime: { collected: false, reason: "kubectl is not installed or not on PATH" } });
     const { written, outcome } = run("release", blind);
     expect(written.verdict).toBe("fail");
-    expect(readFileSync(outcome.files.md, "utf8")).toContain("not collected: kubectl is not installed or not on PATH (side b)");
+    expect(readFileSync(outcome.files.md, "utf8")).toContain("NOT COLLECTED: container runtime posture on side b: kubectl is not installed or not on PATH");
   });
 
   it("post-deploy mode never asks for either artefact: the live side cannot be inspected", () => {

@@ -26,7 +26,7 @@ export interface StackUrls {
   live: string;
   /**
    * The time app (contract 1.3.0). Absent for an external side that was given no `time=` URL. No journey
-   * drives it (twelve journeys until a real regression escapes); it is here for the app-level collectors
+   * drives it (a journey is added only when a real regression escaped that it would have caught); it is here for the app-level collectors
    * (metrics, logs, startup, runtime, image artefacts) and for the origin every side's URLs are normalised by.
    */
   time?: string;

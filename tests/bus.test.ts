@@ -37,8 +37,8 @@ describe("bus configuration", () => {
     expect(parseBusConfig("  ")).toEqual({ kind: "none" });
     const collector = busCollector("a", { config: { kind: "none" } });
     expect(collector.status).toEqual({ collected: false, reason: NOT_COLLECTED_NO_BUS });
-    expect(NOT_COLLECTED_NO_BUS).toBe("not collected: no bus configured");
-    expect(busStatusLine("a", collector.status)).toContain("not collected: no bus configured");
+    expect(NOT_COLLECTED_NO_BUS).toBe("no bus configured");
+    expect(busStatusLine("a", collector.status)).toContain("NOT COLLECTED: bus traffic on side a: no bus configured");
   });
 
   it("<transport>:<address> parses, anything else is refused", () => {

@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.3.0`
+Contract version: `1.4.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -30,16 +30,16 @@ Three numbers, all stamped where a reader can see them:
 
 ```console
 $ pnpm harness version
-harness 1.3.0 (3f2c…) · contract 1.3.0
+harness 1.4.0 (3f2c…) · contract 1.4.0
 $ pnpm harness version --json
-{"version":"1.3.0","gitSha":"3f2c…","contractVersion":"1.3.0"}
+{"version":"1.4.0","gitSha":"3f2c…","contractVersion":"1.4.0"}
 ```
 
 `gitSha` is `git rev-parse HEAD` of the harness checkout, or the
 `HARNESS_GIT_SHA` environment variable when set, or `null` when neither is
 available (a tarball).
 
-Pin the harness by tag (`v1.3.0`) or by sha, and check `schemaVersion === 1`
+Pin the harness by tag (`v1.4.0`) or by sha, and check `schemaVersion === 1`
 before reading a report.
 
 ## Output directory
@@ -176,9 +176,12 @@ None of that is reported as "no difference". The report carries:
 
 - `imageArtefacts.<side>.<app>.<manifest|sbom|vulns>` = `{ collected: false, reason }`;
 - a line in `reasons` starting `NOT COLLECTED:`;
-- an informational hunk `<app>/not-collected` under the artefact that could not
-  be compared: a failing one when `HARNESS_REQUIRE_STATIC=1`, which is what a
-  release pipeline that must not pass without an SBOM diff sets.
+- a hunk `<app>/not-collected` under the artefact that could not be compared:
+  informational, and failing when the artefact is required
+  (`HARNESS_REQUIRE_ARTEFACTS=sbom`, `=static` for all three, or the older alias
+  `HARNESS_REQUIRE_STATIC=1`), which is what a release pipeline that must not
+  pass without an SBOM diff sets. The convention is the same for every artefact,
+  see [Not collected](#not-collected-one-convention).
 
 The vulnerability scan needs the SBOM; with no SBOM it is not collected either.
 A side without `imageArtefacts` (an external side, migration mode) is not
@@ -186,6 +189,28 @@ compared at all.
 
 Claims name these artefacts like any other, e.g. `artefact: sbom`,
 `scope: "reader/@sveltejs/kit"`; see [`claims/README.md`](../claims/README.md).
+
+### Not collected: one convention
+
+Since 1.4.0, one rule for every artefact whose collector can come up empty
+(`image-manifest`, `sbom`, `vulns`, `runtime`, `startup`, `bus`); it lives in
+`src/not-collected.ts`.
+
+| | |
+| --- | --- |
+| Text | `NOT COLLECTED: <what>[ of <app>][ on side <a or b>, or on both sides]: <reason>`, in a hunk's `summary`, in `reasons` (static artefacts) and in the run log |
+| Hunk | the artefact's own `artefact`; `scope` `<app>/not-collected`, or `<artefact>/not-collected` when the whole artefact is missing (`runtime/not-collected`, `startup/not-collected`, `bus/not-collected`) |
+| Severity | informational, unless the artefact is **required**, and then `fail`; always informational when an operator switched the artefact off (`--no-runtime`, `--startup-restarts 0`) |
+| Required | `runtime` and `startup` always (their collectors run against the stacks the harness started, so a gap is a fault); and what `HARNESS_REQUIRE_ARTEFACTS` lists, with `HARNESS_REQUIRE_STATIC=1` as an alias for `static` |
+
+The artefacts that depend on a tool that may legitimately be absent from a
+developer's machine (`syft`, `grype`, an SBOM attestation, a message bus) are
+therefore informational until a pipeline requires them. `bus` is the one that adds
+no hunk while it is informational: no bus exists yet, and a hunk on every report
+would change every report; it stays a run-log line and a `capture.json` field
+until `HARNESS_REQUIRE_ARTEFACTS` includes it, and is never asked of a live
+deployment. Like any other hunk, a not-collected one is claimed with `artefact` and
+a scope glob (`runtime`, any app, `/not-collected`).
 
 ### Container runtime artefacts
 
@@ -218,7 +243,7 @@ that more restarts are needed.
 `docker` or `kubectl` missing or failing, the in-container probe unreadable,
 a restart that could not be driven — is a `fail` hunk with scope
 `runtime/not-collected`, `startup/not-collected` or `<app>/not-collected` and a
-summary of the form `… not collected: <reason>`. It gates like any unclaimed
+summary of the form `NOT COLLECTED: <what> …: <reason>`. It gates like any unclaimed
 difference, and is claimed like one (`artefact: runtime`, `scope:
 "*/not-collected"`, a reason a reviewer can weigh). An operator's choice
 (`--no-runtime`, `--startup-restarts 0`, and always `--startup-restarts 0` in
@@ -436,7 +461,7 @@ run's output directory (so the `release-report` artifact carries it).
 ```json
 { "schemaVersion": 1, "candidate": "16.3.0-rc.4", "release": "16.3.0", "production": "16.2.0",
   "recordedAt": "2026-09-16T09:10:00.000Z",
-  "harness": { "version": "1.3.0", "gitSha": "3f2c…", "contractVersion": "1.3.0" },
+  "harness": { "version": "1.4.0", "gitSha": "3f2c…", "contractVersion": "1.4.0" },
   "verdict": "pass", "overridden": false, "pinned": true, "verified": true,
   "digests": { "reader": "sha256:…", "catalogue": "sha256:…", "live": "sha256:…", "time": "sha256:…" } }
 ```
@@ -560,14 +585,14 @@ Full list: [`contract/cli.json`](contract/cli.json). Invoke as `pnpm harness
 <command>` from a checkout (Node ≥ 22, `pnpm install`, and for capturing modes
 `pnpm exec playwright install chromium` and Docker). Commands and flags marked
 `stable: true` there are the ones below; the rest (`harness stack`, `harness
-kind`, `harness journeys`, `harness override`, `harness local`, `harness noise
+kind`, `harness journeys`, `harness override`, `harness local`, `harness prune`, `harness noise
 history`, `--substrate`, `--now`, `--masks`, `--snapshot`,
 `--upgrade-*`, `--noise-max-age-days`, `--no-screenshots`, `--no-axe`,
 `--no-focus`, `--no-runtime` and `--startup-restarts` (both since 1.2.0),
 `--keep`, `--no-stack`) are for people at a terminal and may
 change in a minor release.
 
-Which of the 1.3.0 commands are stable: `doctor`, `noise record`, `noise status`
+Which of the 1.3.0 commands are stable (`harness prune` and `harness vuln-db`, new in 1.4.0, are not): `doctor`, `noise record`, `noise status`
 and `guard` are, because workflows and the monorepo call them (the workflows'
 `noise status --store noise`, the nightly's `noise record`, CI's `guard`, and any
 script that asks whether a machine can run the harness). Their flags (`--status`,
@@ -575,9 +600,11 @@ script that asks whether a machine can run the harness). Their flags (`--status`
 `--base`, `--json`) are stable with them. `harness local` (the maintainer wrappers,
 whose steps are planned from the same commands and change with them), `harness
 override list` (a listing for people), `harness noise history` (the ratchet as
-text; the file `noise-history.json` is what a program reads) and the flags only
-they take (`--only`, `--migrations-a`, `--migrations-b`, `--interval`,
-`--port-offset`, `--dry-run`, `--once`, `--record`, `--last`, `--since`) are not.
+text; the file `noise-history.json` is what a program reads), `harness prune` (deletes
+old run directories and an old image cache: a dry run unless `--yes`, and no workflow
+calls it) and the flags only they take (`--only`, `--migrations-a`, `--migrations-b`,
+`--interval`, `--port-offset`, `--dry-run`, `--once`, `--record`, `--last`, `--since`,
+`--older-than-days`, `--keep-last`, `--image-cache-days`, `--yes`) are not.
 
 | Command | Stable flags |
 | --- | --- |
@@ -630,8 +657,11 @@ Environment variables in the contract, all since 1.1.0 unless the row says other
 | `HARNESS_SBOM_SOURCE` | `auto` | since 1.2.0. Where each image's SBOM comes from: `auto` or `attestation` (the cosign SPDX attestation of a pulled image), or `generate` (a local generator, on both sides) |
 | `HARNESS_SBOM_CMD` | `syft docker:{image} -o spdx-json`; on a Windows host `docker run --rm -v /var/run/docker.sock:/var/run/docker.sock anchore/syft:latest docker:{image} -o spdx-json -q`, because native syft cannot unpack an image there (colons in layer file names) | since 1.2.0. The generator for `generate`; `{image}` is the image reference. Split on whitespace and quotes; no shell |
 | `HARNESS_VULN_CMD` | `grype sbom:{sbom} -o json` | since 1.2.0. The scanner; `{sbom}` is the path of the SPDX SBOM; must print grype or trivy JSON. trivy: `trivy sbom --format json {sbom}` |
-| `HARNESS_VULN_DB_DIR` | unset | since 1.2.0. A pre-fetched scanner database directory. Scanner database updates are always switched off, so a scan uses exactly this database |
-| `HARNESS_REQUIRE_STATIC` | unset | `1`, `true` or `yes`, since 1.2.0: a static image artefact that could not be collected is a failing hunk, not an informational one |
+| `HARNESS_VULN_DB_DIR` | unset | since 1.2.0. A pre-fetched scanner database directory. Scanner database updates are always switched off, so a scan uses exactly this database. Since 1.4.0, unset means `<HARNESS_HOME>/vuln-db` when `harness vuln-db update` has created it, else the scanner's own cache |
+| `HARNESS_VULN_DB_MAX_AGE_DAYS` | `5` | since 1.4.0. Days since the vulnerability database was built beyond which `harness doctor` warns; also passed to grype as its own limit (`GRYPE_DB_MAX_ALLOWED_BUILT_AGE`), so a scan and the doctor agree. 5 days is grype's own default |
+| `HARNESS_ROLLBACK_ISSUE` | unset | since 1.4.0. Post-deploy wording only: `1`, `true` or `yes` says a CI step opens a rollback issue on a FAIL (the reason says `open a rollback issue`); `0`, `false` or `no` says none does (`decide whether to roll back`). Unset: GitHub Actions has the step, anything else does not |
+| `HARNESS_REQUIRE_ARTEFACTS` | unset | since 1.4.0. A comma separated list of artefacts (`image-manifest`, `sbom`, `vulns`, `runtime`, `startup`, `bus`), or `static` (the first three), or `all`, whose "not collected" gap is a failing hunk instead of an informational one. It only adds to what is already required (`runtime` and `startup`); a name it does not know is an error (exit 2), so a typo cannot loosen a gate. See [Not collected](#not-collected-one-convention) |
+| `HARNESS_REQUIRE_STATIC` | unset | `1`, `true` or `yes`, since 1.2.0: the same as `HARNESS_REQUIRE_ARTEFACTS=static`, kept as an alias; the two add up |
 
 Stdout is for people, except `harness version --json`. The last lines of
 `run` and `compare` are `verdict: <VERDICT>`, the reasons, and
@@ -674,6 +704,15 @@ Every job that runs `harness images ensure` first installs cosign ≥ 3 with
 `sigstore/cosign-installer`; the images are public, so no registry credentials
 are held.
 
+Since 1.4.0 the jobs that judge images (nightly noise, the release job, weekly
+mutants) also install grype, pinned (`anchore/scan-action/download-grype`), fetch
+its vulnerability database once with `harness vuln-db update` into
+`.harness/vuln-db`, cache it per UTC day and grype version, and never update it
+during a run; the nightly and release jobs set `HARNESS_REQUIRE_STATIC=1`, the
+mutants job does not. See [`contract/workflows.json`](contract/workflows.json)
+(`tools.grype`, `vulnerabilityDatabase`) and
+[images.md](images.md#the-vulnerability-database).
+
 ### Artifacts
 
 Each is the run's whole `out/` directory unless noted, so a report is at
@@ -688,11 +727,15 @@ Each is the run's whole `out/` directory unless noted, so a report is at
 | `noise-status` (only `<timestamp>-noise/noise-status.json`) | `nightly-noise.yml` | 8 days |
 | `noise-report` | `nightly-noise.yml` | 8 days |
 | `mutant-reports` | `weekly-mutants.yml` | 14 days |
+| `mutant-noise-report` | `weekly-mutants.yml` | 7 days (only when the self-test failed: the A/A report of the base, reports and captures only) |
 | `harness-ci` | `ci.yml` | 7 days |
 
 Each job also appends `report.md` to its step summary. A `release.yml` run
 concludes `failure` when any of its three jobs exits non-zero, `success`
-otherwise — including on `warn`.
+otherwise — including on `warn`. Since 1.4.0 the run is titled for the candidate
+(`run-name: release <candidate>`, `workflows.json` `runNames`), so a caller that
+dispatched `release-candidate` can find the run it started by title; a title matches only
+as a whole tag (`16.3.0-rc.1` is not `16.3.0-rc.10`).
 
 ## What the harness does to a pull request
 
@@ -747,6 +790,148 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, cut by a maintainer.
 
 ## Changes
+
+### 1.4.0 (minor; the pinned vulnerability database, one "not collected" convention, housekeeping commands, clean exit 2, post-deploy on an external side)
+
+Follow-ups to 1.3.0, which is merged. Additive for a consumer written against
+1.3.0: no `report.json` or `noise-status.json` field, no exit code meaning, no
+verdict rule, no claims key and no dispatch payload changes. The harness version is
+1.4.0 as well, because the engine, the collectors and the workflows change (the
+engine guard requires it).
+
+What makes this a **minor** release, per [Compatibility](#compatibility):
+
+- new environment variables with defaults (`HARNESS_REQUIRE_ARTEFACTS`,
+  `HARNESS_VULN_DB_MAX_AGE_DAYS`, `HARNESS_ROLLBACK_ISSUE`);
+- new non-stable commands (`harness prune`, `harness vuln-db`, `harness local
+  smoke`) and the flags only they take, and a new artifact (`mutant-noise-report`);
+- reports that say things differently for the same two images: the canonical
+  header forms, redacted secrets and `{{origin}}` on an external side change
+  hunks and hunk summaries, and the `NOT COLLECTED` text is one shape. Two reports
+  from either side of that are not comparable (the harness version, above).
+
+What is **patch-level**, bug fixes that make the code do what this document already
+said: `harness --help`, `-h` and `help` work as documented; a claims or rules file
+that cannot be used is a clean message, not a stack trace; a run that cannot judge
+leaves no empty output directory; `post-deploy.yml` opens its rollback issue on exit
+`1` only; and the post-deploy reason wording.
+A consumer must not match a hunk's summary, only its `artefact`, `scope`, `path`
+and `severity`, which the contract has always said.
+
+**Not collected: one convention** ([details](#not-collected-one-convention); [release note](releases/1.4.0.md#not-collected-one-convention))
+
+- New environment variable `HARNESS_REQUIRE_ARTEFACTS` (a list of artefacts, or
+  `static`, or `all`), which supersedes `HARNESS_REQUIRE_STATIC`; that stays as an
+  alias for `static`. It only adds to the required set, and an unknown name is exit `2`.
+- Severity, hunk scopes and `artefact` values are unchanged: static artefacts
+  are informational unless required, `runtime` and `startup` are failing unless
+  switched off, so no existing gate changes. The text is one shape,
+  `NOT COLLECTED: <what> …: <reason>`, where `runtime` and `startup` said
+  `… not collected: <reason> (side b)` and the static artefacts' summary said
+  `<app>: sbom NOT COLLECTED on side b, so it was not compared`. A consumer that
+  matched a summary's text (the contract only promises `artefact`, `scope`,
+  `path` and `severity`) must match the new one.
+- Decided for 1.4.0: `runtime` and `startup` stay failing when not collected, by default (their collectors run
+  against stacks the harness started, so an empty one is a fault, not a missing tool); `bus` stays informational and
+  adds no hunk until a bus exists (a run with no bus is byte-for-byte what it was), and fails only under
+  `HARNESS_REQUIRE_ARTEFACTS=bus` on a side that has none. `harness doctor` and `harness vuln-db status` read the
+  same requirement for the vulnerability artefact.
+
+**Command stability** ([command line](#cli))
+
+- Not stable, and new: `harness vuln-db update|status` (fetches, or reads, the pinned
+  vulnerability database; the workflows call it, and its output is for people),
+  `harness prune` (removes old run directories under `out/` and an old image cache; a
+  dry run unless `--yes`), `harness local smoke`, and the flags only they take:
+  `--older-than-days`, `--keep-last`, `--image-cache-days`, `--yes`. They may change in a
+  minor release. `smoke` joins `nightly|gate|mutants|watch` as a wrapper planned from the
+  stable commands.
+
+**Exit 2 ("could not judge") is cleaner** (behaviour a consumer sees; no field changes; patch-level)
+
+- `harness --help`, `-h` and `help` print usage and exit `0`, and `harness
+  <command> --help` (or `harness help <command>`) prints that command's usage,
+  as this document always said; they used to answer `unknown command` with exit
+  `2`. `harness` with no arguments still prints usage and exits `2`.
+- A claims file or rules file that cannot be used (missing, unreadable, not
+  YAML or JSON, the wrong version, an unknown artefact, an unquoted `rule`, a
+  missing reason, a rule the file does not have) is a multi-line message naming
+  the file, the claim, the field and what would be right, and exit `2`: no stack
+  trace. The exit code and the "before anything starts" rule are as before.
+- A run that exits `2` before it has images to judge (not present, not
+  verified) no longer leaves an empty `<out>/<timestamp>-<mode>/` behind.
+- `post-deploy.yml` opens the `rollback` issue on exit `1` only. Exit `2` fails
+  the workflow and says "could not judge" in the job summary, without an issue;
+  before, any failure of the step opened one, which said nothing about production.
+
+**Post-deploy on an external side, and secrets in captures** (engine; no `report.json` field changes)
+
+What a production run showed: an external side behind a CDN differs from the recorded stack in ways that are
+spelling, not behaviour, and made a clean post-deploy verdict unreachable. What reports SAY changes, and it can
+change hunks in every mode; two reports from either side of it are not comparable (the harness version, above).
+
+- **Canonical header forms** (engine, every mode). `content-type` and `cache-control` are put in one form on both
+  sides before comparing and before any mask, for the document headers and for each network entry. `cache-control`:
+  directives lower-cased, whitespace stripped, sorted, de-duplicated (`public,immutable,max-age=1` and
+  `max-age=1, public, immutable` are equal). `content-type`: lower-cased media type and parameter names, the default
+  charset (`utf-8`) dropped, the legacy JavaScript aliases (`application/javascript` …) folded into `text/javascript`.
+  A changed `max-age`, a lost `immutable`, another media type or a non-default charset is still a hunk. What changes
+  for a consumer: the values quoted in a hunk summary are the canonical ones (`cache-control changed:
+  immutable,max-age=31536000,public → immutable,max-age=300,public`), and a reordering that used to be a hunk is not.
+  Known blind spot: a document that loses `charset=utf-8` reads as unchanged.
+- **Header masks may carry a pattern** (`normalise/masks.yaml`). `header: cache-control` with `pattern: "^no-cache$"`
+  drops the header only when its canonical value matches, and `artefact: network` on a header mask clears
+  `content-type` or `cache-control` of the network entries. Existing masks are unaffected. Comments only in
+  `masks.yaml`: the CDN-only masks that use this are a masks-only change of their own.
+- **Origins are symmetric on an external side** (engine, post-deploy). The URLs of an external side (from its
+  `external:<url>` images, i.e. `HARNESS_PRODUCTION_URLS`) count as `{{origin}}` in BOTH sides' captures (DOM,
+  network URLs, console, page path), not only in the side that was captured at them. A literal absolute link to
+  production in the recorded side (the reader's "Tutors v16" and "What's New" links, a course link to
+  `https://tutors.dev`) now reads as production's own rewritten one. A link to another host, another port or another
+  path is still a DOM hunk. Nothing changes when neither side is external (release, noise). Consumers see fewer DOM
+  hunks in post-deploy; `{{origin}}` in a hunk may now stand for a literal link to production on the recorded side.
+- **Secret-shaped values are redacted** (engine, every mode; `src/normalise/redact.ts`). Before anything else,
+  `normalise()` replaces, in console messages, network URLs, page paths, the accessibility tree, response header
+  values and a journey's error: the value of `apikey=` (and a `"apikey"` JSON member), an `Authorization` value,
+  a `Bearer` token, a JWT (`eyJ…` in three base64url parts), and `sb_publishable_…` / `sb_secret_…` keys with
+  `<redacted>`, keeping the name (`…&apikey=<redacted>`); the whole value of an `authorization`,
+  `proxy-authorization`, `x-api-key` or `apikey` header goes. It is the same on both sides, so it never causes or hides a
+  hunk, and `report.json`, `report.md`, `report.html` and PR summaries never hold the value. The collector redacts
+  too (a new `capture.json` does not hold it), and post-deploy re-redacts the recorded side it copies into
+  `a/capture.json`. Not covered: captures written before this change keep the value on disk in the run directory
+  that recorded them (delete them or the artifact), logs (the harness keeps keys and counts, never a line), and
+  anything not on the list, which is narrow on purpose.
+- **Post-deploy reason wording** (patch-level). The reason `N new difference(s) between production and the recorded
+  candidate: open a rollback issue` says so only where a CI step opens one (`HARNESS_ROLLBACK_ISSUE`, else
+  `GITHUB_ACTIONS`); a local run says `decide whether to roll back`. Verdicts are unchanged. `harness local watch`
+  stamps each log line with the time it is printed and says `(run started <time>)`.
+- **New environment variable `HARNESS_ROLLBACK_ISSUE`** (post-deploy wording only): `1`, `true` or `yes` says a CI step
+  opens a rollback issue; `0`, `false` or `no` says none does. Unset: GitHub Actions has the step, anything else does not.
+
+**Workflows: the release run has a title, and one more artifact** (no field changes)
+
+- `release.yml` sets `run-name: release <candidate>` (from the dispatch payload's
+  `candidate`, or the manual input), so a caller can find the run a `release-candidate`
+  dispatch started by title (`workflows.json` `runNames`). A title matches only as a whole
+  tag. Before, a repository-dispatched run was titled after a commit message.
+- `weekly-mutants.yml` uploads `mutant-noise-report` (7 days) when its self-test fails: the
+  A/A report of the base, reports and captures only. A new artifact is a minor addition.
+- The nightly, the release job and the weekly mutants install grype, pinned, and cache one
+  vulnerability database; the nightly and the release job set `HARNESS_REQUIRE_STATIC=1`,
+  the mutants job does not (see [Workflows](#workflows-what-the-harness-accepts)).
+
+**The vulnerability database is one pinned directory** ([environment](#cli))
+
+- New command `harness vuln-db update|status` (not stable: see above). `update`
+  fetches grype's database into `HARNESS_VULN_DB_DIR`, else `<HARNESS_HOME>/vuln-db`:
+  the only place a database is ever updated, before a run, never during one.
+  `status` prints the database a scan would read, its build time, age and checksum.
+- `HARNESS_VULN_DB_DIR`, unset, now means `<HARNESS_HOME>/vuln-db` when that
+  directory exists (it did mean grype's own cache before); a machine that never ran
+  `vuln-db update` behaves as before. New environment variable
+  `HARNESS_VULN_DB_MAX_AGE_DAYS` (default `5`, grype's own limit): `harness doctor`
+  warns beyond it and it is passed to grype, so the two agree. Scans and reports are
+  unchanged.
 
 ### 1.3.0 (minor; digests, rules, the local store, the local commands, checkout names, the `time` app, statistics)
 

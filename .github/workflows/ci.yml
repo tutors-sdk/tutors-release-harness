@@ -86,18 +86,11 @@ jobs:
       # The images are signed with cosign 3, and verifying them needs cosign >= 3: installer v4 installs it.
       - uses: sigstore/cosign-installer@v4.1.2
 
-      - name: Pull and verify, or build, the images
-        run: pnpm harness images ensure --a "$TAG" --b "$TAG"
-
-      - name: A/A on one journey
-        run: pnpm harness run --mode noise --a "$TAG" --b "$TAG" --set fixture --journey anonymous-student-reads-course
-
-      - name: Migration rehearsal fixtures (must pass, must fail)
-        run: |
-          pnpm harness run --mode migration --a dir:tests/fixtures/migrations/a --b dir:tests/fixtures/migrations/b-good
-          if pnpm harness run --mode migration --a dir:tests/fixtures/migrations/a --b dir:tests/fixtures/migrations/b-bad; then
-            echo "the contracting fixture was accepted" >&2; exit 1
-          fi
+      # The whole smoke is one command, the one a maintainer runs locally (`pnpm smoke`, docs/local.md): pull and verify
+      # or build the images, boot both stacks and run one journey A/A, then the migration fixtures (the expanding one must
+      # pass, the contracting one must be rejected). the command's --dry-run prints the four steps.
+      - name: Two stacks boot, one journey runs (A/A), migration fixtures pass and fail as they must
+        run: pnpm harness local smoke --tag "$TAG"
 
       - name: Stack logs on failure
         if: failure()

@@ -199,8 +199,8 @@ describe("report.json", () => {
     const cli = json("docs/contract/cli.json");
     for (const flag of cli.flags.filter((f: { since?: string }) => f.since === "1.2.0")) expect(changes, flag.name).toContain(`--${flag.name === "runtime" ? "no-runtime" : flag.name}`);
     for (const [name, v] of Object.entries(cli.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.2.0")) expect(changes, name).toContain(name);
-    expect(CONTRACT_VERSION).toBe("1.3.0");
-    expect(HARNESS_VERSION).toBe("1.3.0");
+    expect(CONTRACT_VERSION).toBe("1.4.0");
+    expect(HARNESS_VERSION).toBe("1.4.0");
     expect(json("package.json").version).toBe(HARNESS_VERSION);
     for (const doc of [cli, json("docs/contract/workflows.json")]) expect(doc.contractVersion).toBe(CONTRACT_VERSION);
   });
@@ -231,6 +231,23 @@ describe("report.json", () => {
     }
     // the non-additive parts are said to be
     for (const caveat of ["was\nignored", "a missing `--noise` no longer", "default name of the compose project", "left alone"]) expect(changes.replaceAll("\n", " ").replaceAll("  ", " "), caveat).toContain(caveat.replaceAll("\n", " "));
+  });
+
+  it("its 1.4.0 changelog says what is patch-level and what is minor, and lists everything that is new in it", () => {
+    const start = contractMd.indexOf("### 1.4.0");
+    const end = contractMd.indexOf("### 1.3.0");
+    expect(start).toBeGreaterThan(0);
+    expect(end).toBeGreaterThan(start);
+    const changes = contractMd.slice(start, end);
+    const flat = changes.replaceAll("\n", " ").replaceAll("  ", " ");
+    for (const item of ["**minor**", "**patch-level**", "HARNESS_REQUIRE_ARTEFACTS", "HARNESS_VULN_DB_MAX_AGE_DAYS", "HARNESS_ROLLBACK_ISSUE", "harness prune", "harness vuln-db", "harness local smoke", "mutant-noise-report", "run-name", "NOT COLLECTED", "--help", "not comparable"]) expect(flat, item).toContain(item);
+    const cliJson = json("docs/contract/cli.json");
+    for (const flag of cliJson.flags.filter((f: { since?: string }) => f.since === "1.4.0")) expect(changes, flag.name).toContain(`--${flag.name}`);
+    for (const command of cliJson.commands.filter((c: { since?: string }) => c.since === "1.4.0")) expect(changes, command.name).toContain(command.name);
+    for (const [name, v] of Object.entries(cliJson.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.4.0")) expect(changes, name).toContain(name);
+    // what 1.3.0 already shipped is not claimed again, and what 1.4.0 adds is not folded into the 1.3.0 entry
+    const old = contractMd.slice(end, contractMd.indexOf("### 1.2.0"));
+    for (const item of ["HARNESS_REQUIRE_ARTEFACTS", "HARNESS_VULN_DB_MAX_AGE_DAYS", "HARNESS_ROLLBACK_ISSUE", "harness prune", "vuln-db", "mutant-noise-report"]) expect(old, item).not.toContain(item);
   });
 
   it("a report written before 1.3.0, with no `time` anywhere, is still valid and still renders (a reader must tolerate its absence)", () => {
@@ -413,6 +430,28 @@ describe("one whole run carrying every 1.3.0 addition at once", () => {
     expect(kindCluster({}, harnessRoot()).name).not.toBe("tutors-harness");
   });
 
+  it("post-deploy against an external side, with a secret in the console, reordered headers and a gap: still one valid report, no schema change, no secret in any file", () => {
+    // Synthetic, assembled at run time: not a credential.
+    const key = ["eyJhbGciOiJIUzI1NiJ9", "eyJyb2xlIjoiWCJ9", "c2lnbmF0dXJlWA"].join(".");
+    const recorded = capture("a");
+    const production = capture("b", { images: { reader: "external:https://tutors.dev", catalogue: "external:https://catalogue.tutors.dev", live: "external:https://live.tutors.dev", time: "external:https://time.tutors.dev" } });
+    // the same headers, spelled the way a CDN spells them
+    recorded.journeys[0]!.pages[0]!.headers["cache-control"] = "public, max-age=300, immutable";
+    production.journeys[0]!.pages[0]!.headers["cache-control"] = "immutable,max-age=300,public";
+    production.journeys[0]!.pages[0]!.console.push({ level: "error", text: `blocked: https://example-project.supabase.co/rest/v1/app_errors?apikey=${key}` });
+    recorded.journeys[0]!.pages[0]!.console.push({ level: "error", text: `blocked: https://example-project.supabase.co/rest/v1/app_errors?apikey=${key}` });
+    const dir = mkdtempSync(join(tmpdir(), "harness-whole-external-"));
+    const result = compareFromCaptures({ mode: "post-deploy", substrate: "compose", captureDir: dir, a: recorded, b: production, claims: [], masksFile: DEFAULT_MASKS_FILE, noiseMaxAgeDays: 7, now: "2026-09-16T09:05:00.000Z", runs: 1, log: () => {} });
+    const written = JSON.parse(readFileSync(result.files.json, "utf8")) as RunReport;
+    expectValid(validateReport, written);
+    expect(written.verdict).toBe("pass");
+    // every file the run wrote to its report directory: none holds the value
+    for (const file of [result.files.json, result.files.md, result.files.html]) expect(readFileSync(file, "utf8"), file).not.toContain(key);
+    expect(JSON.stringify(written)).not.toContain("eyJ");
+    // the four apps, `time` included, are what the report's sides name
+    expect(Object.keys(written.sides.b).sort()).toEqual([...APPS].sort());
+  });
+
   it("a 1.2.0 dispatch, claims file and report are still valid: none of the new fields is required anywhere", () => {
     expect(validateReport(clone(runFixture("release").written))).toBe(true);
     expect(Object.keys(reportSchema.properties.deployment.properties)).not.toContain("required");
@@ -560,9 +599,31 @@ describe("CLI", () => {
   });
 
   it("cli.json lists exactly the commands src/cli.ts dispatches", () => {
-    const commands = [...source.matchAll(/^\s*case "([a-z]+)":/gm), ...source.matchAll(/command === "([a-z]+)"/g)].map((m) => m[1]!);
+    const commands = [...source.matchAll(/^\s*case "([a-z][a-z-]*)":/gm), ...source.matchAll(/command === "([a-z]+)"/g)].map((m) => m[1]!);
     expect(cli.commands.map((c) => c.name).sort()).toEqual([...new Set(commands)].sort());
     for (const c of cli.commands) expect(source, `usage text for ${c.name}`).toContain(`harness ${c.name}`);
+  });
+
+  it("every subcommand cli.json lists is dispatched and has usage, and the dispatch of `local` and `vuln-db` has no subcommand cli.json lacks", () => {
+    const local = read("src/local/cli.ts");
+    const arms = (fn: string) => {
+      const start = local.indexOf(fn);
+      expect(start, fn).toBeGreaterThan(-1);
+      const body = local.slice(start, local.indexOf("\n}\n", start));
+      return [...body.matchAll(/^\s{4}case "([a-z-]+)":/gm)].map((m) => m[1]!);
+    };
+    const byName = Object.fromEntries(cli.commands.map((c) => [c.name, c]));
+    expect(arms("export function vulnDbCommand").sort()).toEqual([...byName["vuln-db"]!.subcommands!].sort());
+    expect(arms("export function buildPlan").sort()).toEqual([...byName.local!.subcommands!].sort());
+    for (const c of cli.commands) {
+      for (const sub of c.subcommands ?? []) {
+        expect(`${source}\n${local}`, `${c.name} ${sub}`).toContain(`"${sub}"`);
+        expect(source, `usage for ${c.name} ${sub}`).toMatch(new RegExp(`harness ${c.name}[^\\n]*\\b${sub}\\b`));
+      }
+    }
+    // the 1.3.0 and 1.4.0 commands are declared, and none of them is stable; a command with no subcommands lists none
+    for (const name of ["prune", "vuln-db", "local"]) expect(byName[name]!.stable, name).toBe(false);
+    expect(byName.prune!.subcommands).toBeUndefined();
   });
 
   it("the enumerated flag values are the code's", () => {
@@ -578,7 +639,7 @@ describe("CLI", () => {
     expect(env.HARNESS_COSIGN_ISSUER!.default).toBe(DEFAULT_COSIGN_ISSUER);
     for (const name of Object.keys(env).filter((k) => !k.startsWith("$"))) {
       expect(contractMd, name).toContain(`\`${name}\``);
-      expect(["src/images.ts", "src/run.ts", "src/claims/hygiene.ts", "src/image-static/collect.ts", "src/compare/image-static.ts", "src/local/home.ts", "src/project.ts"].map((f) => read(f)).join(" "), name).toContain(name);
+      expect(["src/images.ts", "src/run.ts", "src/claims/hygiene.ts", "src/image-static/collect.ts", "src/compare/image-static.ts", "src/local/home.ts", "src/project.ts", "src/not-collected.ts"].map((f) => read(f)).join(" "), name).toContain(name);
     }
     expect(contractMd).toContain(`\`${DEFAULT_COSIGN_IDENTITY}\``);
     // The forms the contract promises, against the one function that expands them.
@@ -634,7 +695,7 @@ describe("CLI", () => {
       const flags = own.includes(file) ? declaredFlags : stableFlags;
       // A call may continue over lines with a trailing backslash.
       const text = read(file).replace(/\\\n/g, " ");
-      for (const m of text.matchAll(/pnpm harness ([a-z]+)([^\n]*)/g)) {
+      for (const m of text.matchAll(/pnpm harness ([a-z][a-z-]*)([^\n]*)/g)) {
         calls += 1;
         expect(commands.has(m[1]!), `${file}: harness ${m[1]}`).toBe(true);
         for (const flag of m[2]!.matchAll(/(?<![\w-])--([a-z][a-z-]*)/g)) expect(flags.has(flag[1]!), `${file}: --${flag[1]}`).toBe(true);
@@ -713,10 +774,12 @@ describe("workflows", () => {
 
   it("install cosign 3 in every job that runs images ensure, and nowhere pass --allow-unsigned", () => {
     const tools = (json("docs/contract/workflows.json") as { tools: { cosign: { action: string; minimumMajor: number; usedBy: string[] } } }).tools.cosign;
-    const using = files.filter((f) => text[f]!.includes("harness images ensure")).sort();
+    // `harness local smoke` runs `images ensure` itself (ci.yml calls it instead of spelling the step out)
+    const ensuring = /harness images ensure|harness local smoke/;
+    const using = files.filter((f) => ensuring.test(text[f]!)).sort();
     expect(using).toEqual(tools.usedBy);
     for (const f of using) {
-      const ensures = [...text[f]!.matchAll(/harness images ensure/g)].length;
+      const ensures = [...text[f]!.matchAll(new RegExp(ensuring, "g"))].length;
       const installs = [...text[f]!.matchAll(new RegExp(`uses: ${tools.action}@v(\\d+)`, "g"))];
       expect(installs.length, f).toBe(ensures);
       // cosign-installer v4 is the first whose default is cosign 3.
@@ -731,7 +794,7 @@ describe("workflows", () => {
   it("publish exactly the artifacts the contract lists", () => {
     const actual: Record<string, { workflow: string; retentionDays: number }> = {};
     for (const f of files) {
-      for (const m of text[f]!.matchAll(/uses: actions\/upload-artifact@[^\n]+\n(?:[^\n]*\n){0,3}?\s+name: ([a-z-]+)\n(?:[^\n]*\n){0,3}?\s+retention-days: (\d+)/g)) actual[m[1]!] = { workflow: f, retentionDays: Number(m[2]) };
+      for (const m of text[f]!.matchAll(/uses: actions\/upload-artifact@[^\n]+\n(?:[^\n]*\n){0,3}?\s+name: ([a-z-]+)\n(?:[^\n]*\n){0,12}?\s+retention-days: (\d+)/g)) actual[m[1]!] = { workflow: f, retentionDays: Number(m[2]) };
     }
     expect(actual).toEqual(workflowsContract.artifacts);
     for (const name of Object.keys(actual)) expect(contractMd).toContain(`\`${name}\``);

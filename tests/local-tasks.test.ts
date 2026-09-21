@@ -4,6 +4,7 @@
  * three small pieces they stand on: the run lock, the override log and the port
  * offset. Nothing here starts Docker or a child process: the executor is a fake.
  */
+import { spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -25,11 +26,14 @@ import {
   planGate,
   planMutants,
   planNightly,
+  planSmoke,
   planWatch,
   portEnv,
   readGateEntry,
   renderGateSummary,
   renderPlan,
+  commandLine,
+  shellQuote,
   watch,
   workflowEnv,
   writeGateSummary,
@@ -92,7 +96,42 @@ describe("the plans", () => {
   it("--dry-run text shows every command", () => {
     const text = renderPlan(planMutants({ tag: "main" }), workflowEnv({}));
     expect(text).toContain("harness mutants --base main");
-    expect(text).toContain("HARNESS_IMAGE_PREFIX=quay.io/tutors-sdk/tutors-{app}");
+    expect(text).toContain("HARNESS_IMAGE_PREFIX='quay.io/tutors-sdk/tutors-{app}'");
+  });
+
+  describe("a printed command line survives being copied (--override-reason, and every argument that needs it)", () => {
+    const reason = String.raw`accepting Bob's "header" change; ticket $42 & \ more`;
+    const gate = planGate({ production: "1", candidate: "2", only: "release", override: { reason, by: "leigh" } });
+    const run = gate.steps.find((s) => s.argv[0] === "run")!;
+
+    it("POSIX: single quotes, an embedded single quote closes, escapes and reopens, plain words are left bare", () => {
+      expect(shellQuote("release", "linux")).toBe("release");
+      expect(shellQuote("a b", "linux")).toBe("'a b'");
+      expect(shellQuote("it's", "linux")).toBe(String.raw`'it'\''s'`);
+      expect(shellQuote("", "linux")).toBe("''");
+      const line = renderPlan(gate, {}, "linux");
+      expect(line).toContain(String.raw`--override-reason 'accepting Bob'\''s "header" change; ticket $42 & \ more' --override-by leigh`);
+    });
+
+    it("PowerShell (win32): single quotes, an embedded single quote doubled, typographic quotes too", () => {
+      expect(shellQuote("a b", "win32")).toBe("'a b'");
+      expect(shellQuote("it's", "win32")).toBe("'it''s'");
+      expect(shellQuote("it’s", "win32")).toBe("'it’’s'");
+      expect(renderPlan(gate, {}, "win32")).toContain(String.raw`--override-reason 'accepting Bob''s "header" change; ticket $42 & \ more' --override-by leigh`);
+    });
+
+    it("the environment line is quoted, and in PowerShell is assignments, not a POSIX prefix", () => {
+      expect(renderPlan(gate, { A: "x y" }, "linux")).toContain("environment: A='x y'");
+      expect(renderPlan(gate, { A: "x y" }, "win32")).toContain("environment: $env:A='x y';");
+    });
+
+    it("read back by a real POSIX shell, every argument is the one it was", () => {
+      const sh = spawnSync("bash", ["-c", "true"], { encoding: "utf8" });
+      if (sh.status !== 0) return; // no bash on this machine: the strings above are the test
+      const argv = [...run.argv, "with space", "it's", "$(touch nope)", "`x`", "", "a\nb"];
+      const back = spawnSync("bash", ["-c", `printf '%s\\0' ${commandLine(argv, "linux")}`], { encoding: "utf8" });
+      expect(back.stdout.split("\0").slice(0, -1)).toEqual(argv);
+    });
   });
 
   it("the CLI turns flags into those plans, with paths made absolute (the child runs in the harness checkout)", () => {
@@ -273,6 +312,26 @@ describe("the watch loop", () => {
     for (const s of h.sleeps) expect(s).toBeGreaterThan(890_000);
   });
 
+  it("stamps a line with the time it is printed and says when the run started", async () => {
+    const h = harness([0]);
+    await watch({ intervalMs: 900_000, max: 1 }, { ...h.deps, runOnce: () => { h.deps.now(); h.deps.now(); return { code: 0, runDir: "/out/pd-1", verdict: "pass" }; } });
+    const line = h.log[0]!;
+    const [printed, started] = [/^(\S+) watch:/.exec(line)![1]!, /run started (\S+)\)/.exec(line)![1]!];
+    expect(Date.parse(printed)).toBeGreaterThan(Date.parse(started));
+    expect(line).toContain("production matches the recorded candidate");
+  });
+
+  it("does not say production matches when exit 0 is an advisory WARN", async () => {
+    const h = harness([0]);
+    await watch({ intervalMs: 900_000, max: 1 }, { ...h.deps, runOnce: () => ({ code: 0, runDir: "/out/pd-1", verdict: "warn" }) });
+    expect(h.log.join("\n")).toContain("verdict WARN, advisory only");
+    expect(h.log.join("\n")).not.toContain("production matches");
+    expect(h.failures).toEqual([]);
+    const p = harness([0]);
+    await watch({ intervalMs: 900_000, max: 1 }, { ...p.deps, runOnce: () => ({ code: 0, runDir: "/out/pd-1", verdict: "pass" }) });
+    expect(p.log.join("\n")).toContain("production matches the recorded candidate");
+  });
+
   it("--once is one iteration and returns its code", async () => {
     const h = harness([1]);
     expect(await watch({ intervalMs: 900_000, max: 1 }, h.deps)).toMatchObject({ iterations: 1, lastCode: 1 });
@@ -395,5 +454,81 @@ describe("where state lives", () => {
     const nightly = readFileSync(join(import.meta.dirname, "..", ".github", "workflows", "nightly-noise.yml"), "utf8");
     expect(nightly).toContain("--image-cache .harness/image-cache");
     expect(parse(nightly)).toBeTruthy();
+  });
+});
+
+describe("harness local smoke: the two-stacks smoke of ci.yml", () => {
+  it("is the four steps CI used to run one by one: ensure, A/A on one journey, the migration fixture that must pass, the one that must be rejected", () => {
+    const plan = planSmoke({ tag: "main" });
+    expect(plan.task).toBe("smoke");
+    expect(argvOf(plan)).toEqual([
+      "images ensure --a main --b main",
+      "run --mode noise --a main --b main --set fixture --journey anonymous-student-reads-course",
+      "run --mode migration --a dir:tests/fixtures/migrations/a --b dir:tests/fixtures/migrations/b-good",
+      "run --mode migration --a dir:tests/fixtures/migrations/a --b dir:tests/fixtures/migrations/b-bad"
+    ]);
+    expect(plan.steps.map((s) => s.expectFailure ?? false)).toEqual([false, false, false, true]);
+  });
+
+  it("--only takes one half", () => {
+    expect(argvOf(planSmoke({ tag: "main", only: "stacks" }))).toHaveLength(2);
+    expect(argvOf(planSmoke({ tag: "main", only: "migration" })).every((a) => a.startsWith("run --mode migration"))).toBe(true);
+    expect(() => buildPlan("smoke", { only: "everything" }, {})).toThrow(/--only takes stacks or migration/);
+    expect(buildPlan("smoke", { only: "migration" }, {}).steps).toHaveLength(2);
+  });
+
+  it("the tag defaults to the production tag, as the workflows' TAG does", () => {
+    expect(buildPlan("smoke", {}, {}).steps[0]!.argv).toEqual(["images", "ensure", "--a", "main", "--b", "main"]);
+    expect(buildPlan("smoke", {}, { HARNESS_PRODUCTION_TAG: "16.2.2" }).steps[0]!.argv).toContain("16.2.2");
+    expect(buildPlan("smoke", { tag: "16.3.0" }, {}).steps[1]!.argv).toContain("16.3.0");
+  });
+
+  /** A fake that answers by the whole command line, since the two migration steps differ only in --b. */
+  const answering = (code: (line: string) => number) => {
+    const ran: string[] = [];
+    const ex: Executor = { harness: (argv) => (ran.push(argv.join(" ")), code(argv.join(" "))), latestRun: () => undefined, latestRecorded: () => undefined, log: () => {} };
+    return { ex, ran };
+  };
+  const smoke = () => planSmoke({ tag: "main" });
+
+  it("passes when the good fixture passes and the bad one is rejected (exit 1)", () => {
+    const f = answering((line) => (line.includes("b-bad") ? 1 : 0));
+    const r = executePlan(smoke(), {}, f.ex);
+    expect(r.code).toBe(0);
+    expect(f.ran).toHaveLength(4);
+    expect(r.results.map((x) => x.code)).toEqual([0, 0, 0, 0]);
+  });
+
+  it("fails when the contracting fixture is accepted, which is what the inversion in ci.yml was for", () => {
+    const f = answering(() => 0);
+    const r = executePlan(smoke(), {}, f.ex);
+    expect(r.code).toBe(1);
+    expect(r.results.at(-1)!.code).toBe(1);
+  });
+
+  it("a harness error (exit 2) is not a rejection: it is not the FAIL verdict the fixture is there to prove", () => {
+    const f = answering((line) => (line.includes("b-bad") ? 2 : 0));
+    expect(executePlan(smoke(), {}, f.ex).code).toBe(2);
+  });
+
+  it("the first step that does not do what it must stops the rest, as `set -e` did", () => {
+    const pull = answering((line) => (line.startsWith("images") ? 1 : 0));
+    const r1 = executePlan(smoke(), {}, pull.ex);
+    expect(pull.ran).toHaveLength(1);
+    expect(r1.results.map((x) => x.code)).toEqual([1, "skipped", "skipped", "skipped"]);
+    const aa = answering((line) => (line.includes("--mode noise") ? 1 : 0));
+    expect(aa.ran).toHaveLength(0);
+    const r2 = executePlan(smoke(), {}, aa.ex);
+    expect(aa.ran).toHaveLength(2);
+    expect(r2.code).toBe(1);
+    expect(r2.results.map((x) => x.code)).toEqual([0, 1, "skipped", "skipped"]);
+    const good = answering((line) => (line.includes("b-good") ? 1 : 0));
+    expect(executePlan(smoke(), {}, good.ex).results.map((x) => x.code)).toEqual([0, 0, 1, "skipped"]);
+  });
+
+  it("--dry-run text shows the four commands", () => {
+    const text = renderPlan(smoke(), workflowEnv({}));
+    expect(text).toContain("harness local smoke: 4 step(s)");
+    expect(text).toContain("harness run --mode migration --a dir:tests/fixtures/migrations/a --b dir:tests/fixtures/migrations/b-bad");
   });
 });

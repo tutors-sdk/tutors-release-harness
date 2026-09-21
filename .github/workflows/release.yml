@@ -16,6 +16,9 @@
 # is the measure of whether the harness is trusted or merely tolerated
 # (docs/noise-burndown.md, "Overrides").
 name: Release harness
+# The run is titled for the candidate ("release 16.3.0-rc.4"), so the monorepo's release-harness-report workflow can
+# find the run its dispatch started and put the verdict on the release pull request (docs/monorepo/README.md).
+run-name: release ${{ github.event.client_payload.candidate || inputs.candidate }}
 
 on:
   workflow_dispatch:
@@ -74,6 +77,15 @@ jobs:
     # The runner image the nightly A/A calibrated the noise floor on (nightly-noise.yml pins the same one).
     runs-on: ubuntu-24.04
     timeout-minutes: 60
+    env:
+      # grype, pinned: the version download-grype installs, and part of the database cache key.
+      GRYPE_VERSION: v0.119.0
+      # The one directory every scan reads: the default of a local run is HARNESS_HOME/vuln-db, the same place (docs/local.md).
+      HARNESS_VULN_DB_DIR: ${{ github.workspace }}/.harness/vuln-db
+      # Required: a release is not judged on an SBOM and vulnerability diff that could not be produced. The nightly runs the same
+      # collection on the production tag every night, so a broken scanner is known before a release needs it; a FAIL a person
+      # accepts anyway goes through override_reason. Rationale: docs/images.md, "The vulnerability database".
+      HARNESS_REQUIRE_STATIC: "1"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -89,6 +101,46 @@ jobs:
       # `images ensure` verifies the cosign signature of every image it pulls (docs/images.md).
       # The images are signed with cosign 3, and verifying them needs cosign >= 3: installer v4 installs it.
       - uses: sigstore/cosign-installer@v4.1.2
+
+      # The `vulns` artefact: each image's SBOM, scanned by grype (HARNESS_REQUIRE_STATIC=1: no database, no scan, no pass).
+      # Grype is pinned, and so is its database: fetched ONCE, here, into HARNESS_VULN_DB_DIR, restored from a cache with one
+      # entry per UTC day and grype version, and never updated during the run (the harness switches every scanner update off).
+      # Both sides of every comparison are scanned with the same database (docs/images.md, "The vulnerability database").
+      # download-grype takes the tag with its `v` and prints the absolute path of the binary as `cmd`; it is not on PATH.
+      - uses: anchore/scan-action/download-grype@v7.4.2
+        id: grype
+        with:
+          grype-version: ${{ env.GRYPE_VERSION }}
+      - name: Put the pinned grype on PATH
+        run: dirname "${{ steps.grype.outputs.cmd }}" >> "$GITHUB_PATH"
+
+      - name: Which day's vulnerability database
+        id: vulndb
+        run: echo "day=$(date -u +%F)" >> "$GITHUB_OUTPUT"
+      # An earlier day's entry (restore-keys) is still one database for the whole run, and better than none when grype's
+      # servers are down; grype itself refuses one older than HARNESS_VULN_DB_MAX_AGE_DAYS (default 5).
+      - name: Restore the vulnerability database
+        id: vulndb-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .harness/vuln-db
+          key: vuln-db-grype-${{ env.GRYPE_VERSION }}-${{ steps.vulndb.outputs.day }}
+          restore-keys: |
+            vuln-db-grype-${{ env.GRYPE_VERSION }}-
+      - name: Fetch the vulnerability database once (a cache miss only)
+        id: vulndb-fetch
+        if: steps.vulndb-cache.outputs.cache-hit != 'true'
+        continue-on-error: true
+        run: pnpm harness vuln-db update
+      - name: Keep today's vulnerability database for the other runs
+        if: steps.vulndb-fetch.outcome == 'success'
+        uses: actions/cache/save@v4
+        with:
+          path: .harness/vuln-db
+          key: vuln-db-grype-${{ env.GRYPE_VERSION }}-${{ steps.vulndb.outputs.day }}
+      # The database this run judges with: schema, build time, age, checksum. Exit 1 when it is unusable, because HARNESS_REQUIRE_STATIC is set.
+      - name: The vulnerability database this run judges with
+        run: pnpm harness vuln-db status
 
       - name: Pull and verify, or build, both sides
         run: pnpm harness images ensure --a "$PRODUCTION" --b "$CANDIDATE" ${PRODUCTION_DIGESTS:+--a-digests "$PRODUCTION_DIGESTS"} ${CANDIDATE_DIGESTS:+--b-digests "$CANDIDATE_DIGESTS"}
@@ -127,7 +179,8 @@ jobs:
 
       - name: Show the PR comment
         if: always()
-        run: cat out/*-release/report.md >> "$GITHUB_STEP_SUMMARY"
+        run: |
+          if ls out/*-release/report.md > /dev/null 2>&1; then cat out/*-release/report.md >> "$GITHUB_STEP_SUMMARY"; else echo "### Release mode: could not judge (no report: the run stopped before a verdict, see the step log)" >> "$GITHUB_STEP_SUMMARY"; fi
 
   migration:
     name: Migration rehearsal
@@ -157,7 +210,8 @@ jobs:
           path: out/
           retention-days: 30
       - if: always()
-        run: cat out/*-migration/report.md >> "$GITHUB_STEP_SUMMARY"
+        run: |
+          if ls out/*-migration/report.md > /dev/null 2>&1; then cat out/*-migration/report.md >> "$GITHUB_STEP_SUMMARY"; else echo "### Migration rehearsal: could not judge (no report: the run stopped before a verdict, see the step log)" >> "$GITHUB_STEP_SUMMARY"; fi
 
   upgrade:
     name: Upgrade rehearsal (rollout under load)
@@ -192,7 +246,8 @@ jobs:
           path: out/
           retention-days: 30
       - if: always()
-        run: cat out/*-upgrade/report.md >> "$GITHUB_STEP_SUMMARY"
+        run: |
+          if ls out/*-upgrade/report.md > /dev/null 2>&1; then cat out/*-upgrade/report.md >> "$GITHUB_STEP_SUMMARY"; else echo "### Upgrade rehearsal: could not judge (no report: the run stopped before a verdict, see the step log)" >> "$GITHUB_STEP_SUMMARY"; fi
 
   # What release mode judged, for post-deploy mode to check a deployment against (docs/contract.md, "The release record").
   # Release mode wrote `release-record.json` into its output directory, so the release-report artifact carries it. This

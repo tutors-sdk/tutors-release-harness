@@ -13,7 +13,7 @@ import { reference } from "./reference.ts";
  * something by role, that is an accessibility finding, not a reason to reach
  * for CSS.
  *
- * Twelve journeys, not a hundred: the harness's power is breadth of capture
+ * Six journeys in three sets (fixture 4, auth 1, reference 1), not a hundred: the harness's power is breadth of capture
  * per page, not the number of pages. Add one only when a real regression
  * escaped that a journey would have caught.
  */

@@ -1,0 +1,8 @@
+{
+ "schemaVersion": "v6.1.9",
+ "from": "https://grype.anchore.io/databases/v6/vulnerability-db_v6.1.9_2026-09-21T00:35:57Z_1789972764.tar.zst?checksum=sha256%3A3fac8f6fb69bb80a7956703caa7fed5d66ee0c936ca0a2c8fa127e4fe7835c7a",
+ "built": "2026-09-21T06:39:24Z",
+ "path": "<db dir>/6/vulnerability.db",
+ "valid": false,
+ "error": "the vulnerability database was built 4 hours ago (max allowed age is 1 hour)"
+}
