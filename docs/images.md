@@ -356,7 +356,7 @@ without an SBOM diff sets. The same convention covers every artefact:
 
 ### The vulnerability database
 
-Since 1.3.0 the workflows that judge images install grype and fetch its database,
+Since 1.4.0 the workflows that judge images install grype and fetch its database,
 and a laptop does the same with one command. This is the whole mechanism, and the
 reasons.
 

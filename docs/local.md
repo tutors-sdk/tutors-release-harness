@@ -457,8 +457,8 @@ Still open, and not ours to edit:
 
 Contract 1.3.0 made these commands part of the contract (`docs/contract.md`, "CLI"
 and the changelog): `doctor`, `noise record`, `noise status` and `guard` are
-**stable**, because workflows and the monorepo depend on them; `local` (with `smoke`),
-`prune`, `vuln-db`, `override list` and `noise history` are not. The default it documents is the one
+**stable**, because workflows and the monorepo depend on them; `local`, `override list` and
+`noise history` are not, and neither are `local smoke`, `prune` and `vuln-db`, which came in 1.4.0. The default it documents is the one
 described above: without `--noise`, release and post-deploy mode read
 `<HARNESS_HOME>/noise` (explicit `--noise`, then the store, then none; a missing
 status still only warns). `tests/contract.test.ts` lets this repository's own

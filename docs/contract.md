@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.3.0`
+Contract version: `1.4.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -30,16 +30,16 @@ Three numbers, all stamped where a reader can see them:
 
 ```console
 $ pnpm harness version
-harness 1.3.0 (3f2c…) · contract 1.3.0
+harness 1.4.0 (3f2c…) · contract 1.4.0
 $ pnpm harness version --json
-{"version":"1.3.0","gitSha":"3f2c…","contractVersion":"1.3.0"}
+{"version":"1.4.0","gitSha":"3f2c…","contractVersion":"1.4.0"}
 ```
 
 `gitSha` is `git rev-parse HEAD` of the harness checkout, or the
 `HARNESS_GIT_SHA` environment variable when set, or `null` when neither is
 available (a tarball).
 
-Pin the harness by tag (`v1.3.0`) or by sha, and check `schemaVersion === 1`
+Pin the harness by tag (`v1.4.0`) or by sha, and check `schemaVersion === 1`
 before reading a report.
 
 ## Output directory
@@ -192,7 +192,7 @@ Claims name these artefacts like any other, e.g. `artefact: sbom`,
 
 ### Not collected: one convention
 
-Since 1.3.0, one rule for every artefact whose collector can come up empty
+Since 1.4.0, one rule for every artefact whose collector can come up empty
 (`image-manifest`, `sbom`, `vulns`, `runtime`, `startup`, `bus`); it lives in
 `src/not-collected.ts`.
 
@@ -461,7 +461,7 @@ run's output directory (so the `release-report` artifact carries it).
 ```json
 { "schemaVersion": 1, "candidate": "16.3.0-rc.4", "release": "16.3.0", "production": "16.2.0",
   "recordedAt": "2026-09-16T09:10:00.000Z",
-  "harness": { "version": "1.3.0", "gitSha": "3f2c…", "contractVersion": "1.3.0" },
+  "harness": { "version": "1.4.0", "gitSha": "3f2c…", "contractVersion": "1.4.0" },
   "verdict": "pass", "overridden": false, "pinned": true, "verified": true,
   "digests": { "reader": "sha256:…", "catalogue": "sha256:…", "live": "sha256:…", "time": "sha256:…" } }
 ```
@@ -592,7 +592,7 @@ history`, `--substrate`, `--now`, `--masks`, `--snapshot`,
 `--keep`, `--no-stack`) are for people at a terminal and may
 change in a minor release.
 
-Which of the 1.3.0 commands are stable: `doctor`, `noise record`, `noise status`
+Which of the 1.3.0 commands are stable (`harness prune` and `harness vuln-db`, new in 1.4.0, are not): `doctor`, `noise record`, `noise status`
 and `guard` are, because workflows and the monorepo call them (the workflows'
 `noise status --store noise`, the nightly's `noise record`, CI's `guard`, and any
 script that asks whether a machine can run the harness). Their flags (`--status`,
@@ -657,11 +657,10 @@ Environment variables in the contract, all since 1.1.0 unless the row says other
 | `HARNESS_SBOM_SOURCE` | `auto` | since 1.2.0. Where each image's SBOM comes from: `auto` or `attestation` (the cosign SPDX attestation of a pulled image), or `generate` (a local generator, on both sides) |
 | `HARNESS_SBOM_CMD` | `syft docker:{image} -o spdx-json`; on a Windows host `docker run --rm -v /var/run/docker.sock:/var/run/docker.sock anchore/syft:latest docker:{image} -o spdx-json -q`, because native syft cannot unpack an image there (colons in layer file names) | since 1.2.0. The generator for `generate`; `{image}` is the image reference. Split on whitespace and quotes; no shell |
 | `HARNESS_VULN_CMD` | `grype sbom:{sbom} -o json` | since 1.2.0. The scanner; `{sbom}` is the path of the SPDX SBOM; must print grype or trivy JSON. trivy: `trivy sbom --format json {sbom}` |
-| `HARNESS_VULN_DB_DIR` | unset | since 1.2.0. A pre-fetched scanner database directory. Scanner database updates are always switched off, so a scan uses exactly this database. Since 1.3.0, unset means `<HARNESS_HOME>/vuln-db` when `harness vuln-db update` has created it, else the scanner's own cache |
-| `HARNESS_VULN_DB_MAX_AGE_DAYS` | `5` | since 1.3.0. Days since the vulnerability database was built beyond which `harness doctor` warns; also passed to grype as its own limit (`GRYPE_DB_MAX_ALLOWED_BUILT_AGE`), so a scan and the doctor agree. 5 days is grype's own default |
-| `HARNESS_ROLLBACK_ISSUE` | unset | since 1.3.0. Post-deploy wording only: `1`, `true` or `yes` says a CI step opens a rollback issue on a FAIL (the reason says `open a rollback issue`); `0`, `false` or `no` says none does (`decide whether to roll back`). Unset: GitHub Actions has the step, anything else does not |
-| `HARNESS_REQUIRE_ARTEFACTS` | unset | since 1.3.0. A comma separated list of artefacts (`image-manifest`, `sbom`, `vulns`, `runtime`, `startup`, `bus`), or `static` (the first three), or `all`, whose "not collected" gap is a failing hunk instead of an informational one. It only adds to what is already required (`runtime` and `startup`); a name it does not know is an error (exit 2), so a typo cannot loosen a gate. See [Not collected](#not-collected-one-convention) |
-| `HARNESS_REQUIRE_STATIC` | unset | `1`, `true` or `yes`, since 1.2.0: the same as `HARNESS_REQUIRE_ARTEFACTS=static`, kept as an alias; the two add up |
+| `HARNESS_VULN_DB_DIR` | unset | since 1.2.0. A pre-fetched scanner database directory. Scanner database updates are always switched off, so a scan uses exactly this database. Since 1.4.0, unset means `<HARNESS_HOME>/vuln-db` when `harness vuln-db update` has created it, else the scanner's own cache |
+| `HARNESS_VULN_DB_MAX_AGE_DAYS` | `5` | since 1.4.0. Days since the vulnerability database was built beyond which `harness doctor` warns; also passed to grype as its own limit (`GRYPE_DB_MAX_ALLOWED_BUILT_AGE`), so a scan and the doctor agree. 5 days is grype's own default |
+| `HARNESS_ROLLBACK_ISSUE` | unset | since 1.4.0. Post-deploy wording only: `1`, `true` or `yes` says a CI step opens a rollback issue on a FAIL (the reason says `open a rollback issue`); `0`, `false` or `no` says none does (`decide whether to roll back`). Unset: GitHub Actions has the step, anything else does not |
+| `HARNESS_REQUIRE_ARTEFACTS` | unset | since 1.4.0. A comma separated list of artefacts (`image-manifest`, `sbom`, `vulns`, `runtime`, `startup`, `bus`), or `static` (the first three), or `all`, whose "not collected" gap is a failing hunk instead of an informational one. It only adds to what is already required (`runtime` and `startup`); a name it does not know is an error (exit 2), so a typo cannot loosen a gate. See [Not collected](#not-collected-one-convention) |
 | `HARNESS_REQUIRE_STATIC` | unset | `1`, `true` or `yes`, since 1.2.0: the same as `HARNESS_REQUIRE_ARTEFACTS=static`, kept as an alias; the two add up |
 
 Stdout is for people, except `harness version --json`. The last lines of
@@ -705,7 +704,7 @@ Every job that runs `harness images ensure` first installs cosign ≥ 3 with
 `sigstore/cosign-installer`; the images are public, so no registry credentials
 are held.
 
-Since 1.3.0 the jobs that judge images (nightly noise, the release job, weekly
+Since 1.4.0 the jobs that judge images (nightly noise, the release job, weekly
 mutants) also install grype, pinned (`anchore/scan-action/download-grype`), fetch
 its vulnerability database once with `harness vuln-db update` into
 `.harness/vuln-db`, cache it per UTC day and grype version, and never update it
@@ -733,7 +732,7 @@ Each is the run's whole `out/` directory unless noted, so a report is at
 
 Each job also appends `report.md` to its step summary. A `release.yml` run
 concludes `failure` when any of its three jobs exits non-zero, `success`
-otherwise — including on `warn`. Since 1.3.0 the run is titled for the candidate
+otherwise — including on `warn`. Since 1.4.0 the run is titled for the candidate
 (`run-name: release <candidate>`, `workflows.json` `runNames`), so a caller that
 dispatched `release-candidate` can find the run it started by title; a title matches only
 as a whole tag (`16.3.0-rc.1` is not `16.3.0-rc.10`).
@@ -792,109 +791,34 @@ Releases are git tags `v<harness version>` on `main`, cut by a maintainer.
 
 ## Changes
 
-### 1.3.0 (minor; digests, rules, the local store, the local commands, checkout names, the `time` app, statistics)
+### 1.4.0 (minor; the pinned vulnerability database, one "not collected" convention, housekeeping commands, clean exit 2, post-deploy on an external side)
 
-`main` is at 1.1.0 and this is its next release: 1.2.0 (below) was never
-released on its own, so 1.3.0 carries everything of 1.2.0 as well, and its entry
-stays as the history of that part. One bump carrying every contract-visible change
-of the local-first work, of the release-gate follow-ups and of the `time` app.
-Additive for a consumer written against 1.2.0 (or 1.1.0, plus the additions
-listed under 1.2.0): a dispatch payload without the new fields, a claims file
-without `rule`, a workflow that passes `--noise`, a checkout with one stack and a
-`--a`/`--b` spec without `time=` all behave as they did. The harness version is
-1.3.0 as well. Five things are not purely additive and are called out where they
-occur: a `rule` key in a claim was ignored before and is now checked; a missing
-`--noise` no longer means "no status" on a machine that has a local noise store;
-the default name of the compose project and kind cluster changed; a stack under
-the old name is left alone; and the `runs` default of `release-candidate` is now
-`5`, not `3`.
-Reports also say some things differently without a field changing (the `NOT COLLECTED`
-text, canonical header forms, redacted secrets, `{{origin}}` for production's own URLs on an
-external side); a consumer must not match a hunk's summary, only its `artefact`, `scope`, `path` and `severity`.
+Follow-ups to 1.3.0, which is merged. Additive for a consumer written against
+1.3.0: no `report.json` or `noise-status.json` field, no exit code meaning, no
+verdict rule, no claims key and no dispatch payload changes. The harness version is
+1.4.0 as well, because the engine, the collectors and the workflows change (the
+engine guard requires it).
 
-**Image digests in the dispatch, the release record, the deployment check**
-([details](#image-digests-and-the-release-record))
+What makes this a **minor** release, per [Compatibility](#compatibility):
 
-- `release-candidate` payload: optional `production_digests` and
-  `candidate_digests` (objects `app -> sha256:<64 hex>`, any app the harness
-  stacks). `deployed` payload: optional `production` (tag) and `digests`.
-- CLI, all stable: `--a-digests` and `--b-digests` (`run`, `images ensure`),
-  which pin the references as `repo:tag@sha256:…`, pull and verify by digest, and
-  refuse with **exit `2`, cannot judge**, a digest that disagrees with what the
-  tag resolves to now (or a tag that cannot be resolved); a pinned image is never
-  built from source. For post-deploy mode: `--deployed`, `--deployed-digests`,
-  `--release-record`.
-- Release mode writes a **release record**
-  ([`release-record.schema.json`](contract/release-record.schema.json)):
-  `releases/<candidate>.json` (and `releases/<release>.json` for a candidate that
-  could ship) in `HARNESS_HOME`, and `release-record.json` in its output
-  directory. `release.yml`'s new `publish-record` job publishes it, never forced,
-  to the `release-records` branch of this repository: **a fourth `contents: write`
-  scope**, in `release.yml` only, named in `workflows.json` and enforced by the
-  tests.
-- `report.json`: optional `deployment` (post-deploy mode only). Post-deploy mode
-  compares what the deploy reported with the record and **warns** (exit `0`, a
-  `pass` becomes `warn`, a `fail` is untouched) on a difference, an app with a
-  digest on one side only, no record, or no digests reported.
-- Without any of the new fields every run is exactly what it was in 1.2.0.
+- new environment variables with defaults (`HARNESS_REQUIRE_ARTEFACTS`,
+  `HARNESS_VULN_DB_MAX_AGE_DAYS`, `HARNESS_ROLLBACK_ISSUE`);
+- new non-stable commands (`harness prune`, `harness vuln-db`, `harness local
+  smoke`) and the flags only they take, and a new artifact (`mutant-noise-report`);
+- reports that say things differently for the same two images: the canonical
+  header forms, redacted secrets and `{{origin}}` on an external side change
+  hunks and hunk summaries, and the `NOT COLLECTED` text is one shape. Two reports
+  from either side of that are not comparable (the harness version, above).
 
-**`rule` on claims** ([the rules file](#the-rules-file))
+What is **patch-level**, bug fixes that make the code do what this document already
+said: `harness --help`, `-h` and `help` work as documented; a claims or rules file
+that cannot be used is a clean message, not a stack trace; a run that cannot judge
+leaves no empty output directory; `post-deploy.yml` opens its rollback issue on exit
+`1` only; and the post-deploy reason wording.
+A consumer must not match a hunk's summary, only its `artefact`, `scope`, `path`
+and `severity`, which the contract has always said.
 
-- Claims: optional `rule: "NNNN"` (four digits, quoted). With a rule `reason`
-  becomes optional free text and the report shows `Rule NNNN: <title>`. A `rule`
-  key was an ignored unknown key before 1.3.0; a claims file that carried one now
-  has it checked, and a malformed or unknown one is invalid (exit `2`).
-- New stable input `--rules <path or url>`, dispatch field and workflow input
-  `rules_url`, and [`rules.schema.json`](contract/rules.schema.json)
-  (`{ "version": 1, "rules": { "0031": { "title": "…", "digest": "…" } } }`). A
-  claim whose rule is not in the file, or that names one with no file, is invalid
-  before any stack starts; nothing else about the file gates anything.
-- `report.json`: a claim gains optional `rule` and `ruleTitle`; `reason` stays
-  always present.
-- `reason: "Rule 0031: …"` free-text claims, matching, stale claims and the
-  broad-claim rule are unchanged.
-
-**The local noise store is the default source of `--noise`**
-([where a run looks](#noise-statusjson-and-the-7-day-rule))
-
-- In `release` and `post-deploy` mode, `--noise` omitted now means the latest
-  status in `<HARNESS_HOME>/noise` (written by `harness noise record` and
-  `harness local nightly`). The lookup order is exactly: an explicit `--noise`
-  (file, directory, `skip`, or the new `none`, which does not look), then the local
-  store, then none. A missing status (or an unusable one in the store) still
-  **warns**; the store goes through the same gate, so the 7-day / clean / verified
-  rule is unchanged. The workflows pass `--noise` and are unaffected.
-- New environment variable `HARNESS_HOME`.
-
-**Commands: which are stable, and why**
-([the CLI](#cli))
-
-- **Stable since 1.3.0:** `harness doctor`, `harness noise record`, `harness noise
-  status` and `harness guard masks|engine|all`, with the flags they take
-  (`--status`, `--report`, `--tag`, `--store`, `--run-url`, `--summary`,
-  `--require`, `--for`; `--base` and `--json` already were). Reason: the workflows
-  and the monorepo depend on them (the nightly's `noise record`, the release and
-  post-deploy `noise status`, CI's `guard`, and any script that asks whether a
-  machine can run the harness), and each has a small, checkable contract (files it
-  writes, exit codes).
-- **Not stable:** `harness local nightly|gate|mutants|watch|smoke` (wrappers planned
-  from the stable commands, which change with the workflows), `harness override
-  list` (a listing for people), `harness noise history` (the ratchet as text; the
-  file `noise-history.json` is what a program reads), `harness vuln-db
-  update|status` (fetches, or reads, the pinned vulnerability database; the
-  workflows call it, and its output is for people), `harness prune` (removes old
-  run directories under `out/` and an old image cache; a dry run unless `--yes`),
-  and the flags only they take: `--only`, `--migrations-a`, `--migrations-b`,
-  `--interval`, `--port-offset`, `--dry-run`, `--once`, `--record`, `--last`,
-  `--since`, `--older-than-days`, `--keep-last`, `--image-cache-days`, `--yes`. They
-  may change in a minor release.
-- Exit code `1` also covers `doctor` finding a tool a run needs missing, `noise
-  record` finding the ratchet broken, `noise status --require` finding a status
-  that does not license a FAIL, and `guard` finding a violation.
-- This repository's own workflows may call any command `cli.json` declares; the
-  copies handed to the monorepo (`docs/monorepo/`) may call only stable ones.
-
-**Not collected: one convention** ([details](#not-collected-one-convention); [release note](releases/1.3.0.md#not-collected-one-convention))
+**Not collected: one convention** ([details](#not-collected-one-convention); [release note](releases/1.4.0.md#not-collected-one-convention))
 
 - New environment variable `HARNESS_REQUIRE_ARTEFACTS` (a list of artefacts, or
   `static`, or `all`), which supersedes `HARNESS_REQUIRE_STATIC`; that stays as an
@@ -907,69 +831,23 @@ external side); a consumer must not match a hunk's summary, only its `artefact`,
   `<app>: sbom NOT COLLECTED on side b, so it was not compared`. A consumer that
   matched a summary's text (the contract only promises `artefact`, `scope`,
   `path` and `severity`) must match the new one.
-- Decided for 1.3.0: `runtime` and `startup` stay failing when not collected, by default (their collectors run
+- Decided for 1.4.0: `runtime` and `startup` stay failing when not collected, by default (their collectors run
   against stacks the harness started, so an empty one is a fault, not a missing tool); `bus` stays informational and
   adds no hunk until a bus exists (a run with no bus is byte-for-byte what it was), and fails only under
   `HARNESS_REQUIRE_ARTEFACTS=bus` on a side that has none. `harness doctor` and `harness vuln-db status` read the
   same requirement for the vulnerability artefact.
 
-**Checkout names** ([environment](#cli))
+**Command stability** ([command line](#cli))
 
-- The default compose project and kind cluster name is now
-  `tutors-harness-<first 8 hex of sha256 of the checkout's real path>` (lowercased
-  on Windows), so two checkouts or git worktrees never share a stack. New
-  environment variable `HARNESS_PROJECT`; `HARNESS_COMPOSE_PROJECT` and
-  `HARNESS_KIND_CLUSTER` (which already existed) are now contract and win over it.
-- A stack under the old default name `tutors-harness` is reported by `harness
-  doctor` as a legacy stack, not touched, and never removed. A kind cluster called
-  `tutors-harness` is never adopted or deleted: `harness kind` refuses that name.
+- Not stable, and new: `harness vuln-db update|status` (fetches, or reads, the pinned
+  vulnerability database; the workflows call it, and its output is for people),
+  `harness prune` (removes old run directories under `out/` and an old image cache; a
+  dry run unless `--yes`), `harness local smoke`, and the flags only they take:
+  `--older-than-days`, `--keep-last`, `--image-cache-days`, `--yes`. They may change in a
+  minor release. `smoke` joins `nightly|gate|mutants|watch` as a wrapper planned from the
+  stable commands.
 
-**Statistics: the Mann-Whitney p-value, and `runs` defaults to `5`**
-(no field, flag, artefact or verdict rule changes)
-
-- **Bug fix: the Mann-Whitney p-value was too small.** The normal CDF behind
-  the `timing` (page TTFB, journey duration, load) and `startup` artefacts
-  passed z where it needed z / sqrt 2: a perfectly separated 5 v 5 reported
-  p = 0.0004 (correct: 0.0122), 3 v 3 reported 0.014 (correct: 0.081). Reports
-  of 1.2.0 and earlier judged those artefacts on the wrong p, so they are not
-  comparable with 1.3.0 reports (harness version, above).
-- **Three samples a side cannot reach alpha 0.05.** The `timing` engine (as
-  `startup` already did) now says so, as information: `n/n samples cannot reach
-  alpha 0.05 (best possible p=0.081). Raise --runs`, for a shift that clears
-  `minEffect` and `minShiftMs`. Load says the same when k6 left too few samples.
-  Nothing new fails, and nothing that failed before for a reason other than
-  the wrong p stops failing.
-- **Workflow default: `release-candidate` `runs` is `5` (was `3`)**, and the
-  nightly A/A runs `--runs 5`, so both can judge timing at all. A dispatch that
-  passes `runs` is unaffected; one that omits it runs two more passes of the
-  journeys per side. `weekly-mutants.yml`'s `slow-ssr` mutant runs five, and
-  `harness local nightly|gate` default to five as well.
-
-**The `time` app joins the stack**
-
-- The monorepo ships four apps (reader, catalogue, live, time) and the harness
-  knew three. `time` is now built into both sides of the compose stack (`time-a`,
-  `time-b`, host ports `3104` and `3204`; kind NodePorts `30103` and `30203`,
-  published on `4103` and `4203`) and gets the app-level artefacts: `metrics`,
-  `logs`, `runtime`, `startup`, and the static image artefacts (`image-manifest`,
-  `sbom`, `vulns`). No journey drives it (a journey is added only when a real regression
-  escaped that it would have caught), so it has no `dom`, `network`, `screenshot`, `headers`, `axe`, `focus`
-  or `timing` artefacts of its own.
-- `report.json`: an optional `time` beside `reader`, `catalogue` and `live` in
-  `sides.{a,b}`, in `provenance.{a,b}.images` and in `imageArtefacts.{a,b}`. A
-  report written before 1.3.0 has none, and a reader of one must tolerate that.
-  Hunks for `time` use the app name as the first part of their scope, as for the
-  others (`time/user`, `time/root`, `time/ready`).
-- CLI: `--a` / `--b` accept `time=REF` in the spelled-out form, optional; left
-  out it takes the reader's tag. `--production` and `HARNESS_PRODUCTION_URLS`
-  accept `time=URL`, optional. `scripts/build-images.sh` builds four apps.
-- Compatibility that is not free: a base tag must now exist for `time` as well
-  (`harness images ensure` fails, loudly, if the registry has none), and a kind
-  cluster created before 1.3.0 must be recreated (it never published the time
-  ports). Reports of 1.2.x are not comparable with 1.3.0 reports (the harness
-  version, above): there are more artefacts to differ.
-
-**Exit 2 ("could not judge") is cleaner** (behaviour a consumer sees; no field changes)
+**Exit 2 ("could not judge") is cleaner** (behaviour a consumer sees; no field changes; patch-level)
 
 - `harness --help`, `-h` and `help` print usage and exit `0`, and `harness
   <command> --help` (or `harness help <command>`) prints that command's usage,
@@ -1038,6 +916,9 @@ change hunks in every mode; two reports from either side of it are not comparabl
   tag. Before, a repository-dispatched run was titled after a commit message.
 - `weekly-mutants.yml` uploads `mutant-noise-report` (7 days) when its self-test fails: the
   A/A report of the base, reports and captures only. A new artifact is a minor addition.
+- The nightly, the release job and the weekly mutants install grype, pinned, and cache one
+  vulnerability database; the nightly and the release job set `HARNESS_REQUIRE_STATIC=1`,
+  the mutants job does not (see [Workflows](#workflows-what-the-harness-accepts)).
 
 **The vulnerability database is one pinned directory** ([environment](#cli))
 
@@ -1051,6 +932,156 @@ change hunks in every mode; two reports from either side of it are not comparabl
   `HARNESS_VULN_DB_MAX_AGE_DAYS` (default `5`, grype's own limit): `harness doctor`
   warns beyond it and it is passed to grype, so the two agree. Scans and reports are
   unchanged.
+
+### 1.3.0 (minor; digests, rules, the local store, the local commands, checkout names, the `time` app, statistics)
+
+`main` is at 1.1.0 and this is its next release: 1.2.0 (below) was never
+released on its own, so 1.3.0 carries everything of 1.2.0 as well, and its entry
+stays as the history of that part. One bump carrying every contract-visible change
+of the local-first work, of the release-gate follow-ups and of the `time` app.
+Additive for a consumer written against 1.2.0 (or 1.1.0, plus the additions
+listed under 1.2.0): a dispatch payload without the new fields, a claims file
+without `rule`, a workflow that passes `--noise`, a checkout with one stack and a
+`--a`/`--b` spec without `time=` all behave as they did. The harness version is
+1.3.0 as well. Five things are not purely additive and are called out where they
+occur: a `rule` key in a claim was ignored before and is now checked; a missing
+`--noise` no longer means "no status" on a machine that has a local noise store;
+the default name of the compose project and kind cluster changed; a stack under
+the old name is left alone; and the `runs` default of `release-candidate` is now
+`5`, not `3`.
+
+**Image digests in the dispatch, the release record, the deployment check**
+([details](#image-digests-and-the-release-record))
+
+- `release-candidate` payload: optional `production_digests` and
+  `candidate_digests` (objects `app -> sha256:<64 hex>`, any app the harness
+  stacks). `deployed` payload: optional `production` (tag) and `digests`.
+- CLI, all stable: `--a-digests` and `--b-digests` (`run`, `images ensure`),
+  which pin the references as `repo:tag@sha256:…`, pull and verify by digest, and
+  refuse with **exit `2`, cannot judge**, a digest that disagrees with what the
+  tag resolves to now (or a tag that cannot be resolved); a pinned image is never
+  built from source. For post-deploy mode: `--deployed`, `--deployed-digests`,
+  `--release-record`.
+- Release mode writes a **release record**
+  ([`release-record.schema.json`](contract/release-record.schema.json)):
+  `releases/<candidate>.json` (and `releases/<release>.json` for a candidate that
+  could ship) in `HARNESS_HOME`, and `release-record.json` in its output
+  directory. `release.yml`'s new `publish-record` job publishes it, never forced,
+  to the `release-records` branch of this repository: **a fourth `contents: write`
+  scope**, in `release.yml` only, named in `workflows.json` and enforced by the
+  tests.
+- `report.json`: optional `deployment` (post-deploy mode only). Post-deploy mode
+  compares what the deploy reported with the record and **warns** (exit `0`, a
+  `pass` becomes `warn`, a `fail` is untouched) on a difference, an app with a
+  digest on one side only, no record, or no digests reported.
+- Without any of the new fields every run is exactly what it was in 1.2.0.
+
+**`rule` on claims** ([the rules file](#the-rules-file))
+
+- Claims: optional `rule: "NNNN"` (four digits, quoted). With a rule `reason`
+  becomes optional free text and the report shows `Rule NNNN: <title>`. A `rule`
+  key was an ignored unknown key before 1.3.0; a claims file that carried one now
+  has it checked, and a malformed or unknown one is invalid (exit `2`).
+- New stable input `--rules <path or url>`, dispatch field and workflow input
+  `rules_url`, and [`rules.schema.json`](contract/rules.schema.json)
+  (`{ "version": 1, "rules": { "0031": { "title": "…", "digest": "…" } } }`). A
+  claim whose rule is not in the file, or that names one with no file, is invalid
+  before any stack starts; nothing else about the file gates anything.
+- `report.json`: a claim gains optional `rule` and `ruleTitle`; `reason` stays
+  always present.
+- `reason: "Rule 0031: …"` free-text claims, matching, stale claims and the
+  broad-claim rule are unchanged.
+
+**The local noise store is the default source of `--noise`**
+([where a run looks](#noise-statusjson-and-the-7-day-rule))
+
+- In `release` and `post-deploy` mode, `--noise` omitted now means the latest
+  status in `<HARNESS_HOME>/noise` (written by `harness noise record` and
+  `harness local nightly`). The lookup order is exactly: an explicit `--noise`
+  (file, directory, `skip`, or the new `none`, which does not look), then the local
+  store, then none. A missing status (or an unusable one in the store) still
+  **warns**; the store goes through the same gate, so the 7-day / clean / verified
+  rule is unchanged. The workflows pass `--noise` and are unaffected.
+- New environment variable `HARNESS_HOME`.
+
+**Commands: which are stable, and why**
+([the CLI](#cli))
+
+- **Stable since 1.3.0:** `harness doctor`, `harness noise record`, `harness noise
+  status` and `harness guard masks|engine|all`, with the flags they take
+  (`--status`, `--report`, `--tag`, `--store`, `--run-url`, `--summary`,
+  `--require`, `--for`; `--base` and `--json` already were). Reason: the workflows
+  and the monorepo depend on them (the nightly's `noise record`, the release and
+  post-deploy `noise status`, CI's `guard`, and any script that asks whether a
+  machine can run the harness), and each has a small, checkable contract (files it
+  writes, exit codes).
+- **Not stable:** `harness local nightly|gate|mutants|watch` (wrappers planned
+  from the stable commands, which change with the workflows), `harness override
+  list` (a listing for people), `harness noise history` (the ratchet as text; the
+  file `noise-history.json` is what a program reads), and the flags only they
+  take: `--only`, `--migrations-a`, `--migrations-b`, `--interval`,
+  `--port-offset`, `--dry-run`, `--once`, `--record`, `--last`, `--since`. They may
+  change in a minor release.
+- Exit code `1` also covers `doctor` finding a tool a run needs missing, `noise
+  record` finding the ratchet broken, `noise status --require` finding a status
+  that does not license a FAIL, and `guard` finding a violation.
+- This repository's own workflows may call any command `cli.json` declares; the
+  copies handed to the monorepo (`docs/monorepo/`) may call only stable ones.
+
+**Checkout names** ([environment](#cli))
+
+- The default compose project and kind cluster name is now
+  `tutors-harness-<first 8 hex of sha256 of the checkout's real path>` (lowercased
+  on Windows), so two checkouts or git worktrees never share a stack. New
+  environment variable `HARNESS_PROJECT`; `HARNESS_COMPOSE_PROJECT` and
+  `HARNESS_KIND_CLUSTER` (which already existed) are now contract and win over it.
+- A stack under the old default name `tutors-harness` is reported by `harness
+  doctor` as a legacy stack, not touched, and never removed. A kind cluster called
+  `tutors-harness` is never adopted or deleted: `harness kind` refuses that name.
+**Statistics: the Mann-Whitney p-value, and `runs` defaults to `5`**
+(no field, flag, artefact or verdict rule changes)
+
+- **Bug fix: the Mann-Whitney p-value was too small.** The normal CDF behind
+  the `timing` (page TTFB, journey duration, load) and `startup` artefacts
+  passed z where it needed z / sqrt 2: a perfectly separated 5 v 5 reported
+  p = 0.0004 (correct: 0.0122), 3 v 3 reported 0.014 (correct: 0.081). Reports
+  of 1.2.0 and earlier judged those artefacts on the wrong p, so they are not
+  comparable with 1.3.0 reports (harness version, above).
+- **Three samples a side cannot reach alpha 0.05.** The `timing` engine (as
+  `startup` already did) now says so, as information: `n/n samples cannot reach
+  alpha 0.05 (best possible p=0.081). Raise --runs`, for a shift that clears
+  `minEffect` and `minShiftMs`. Load says the same when k6 left too few samples.
+  Nothing new fails, and nothing that failed before for a reason other than
+  the wrong p stops failing.
+- **Workflow default: `release-candidate` `runs` is `5` (was `3`)**, and the
+  nightly A/A runs `--runs 5`, so both can judge timing at all. A dispatch that
+  passes `runs` is unaffected; one that omits it runs two more passes of the
+  journeys per side. `weekly-mutants.yml`'s `slow-ssr` mutant runs five, and
+  `harness local nightly|gate` default to five as well.
+
+**The `time` app joins the stack**
+
+- The monorepo ships four apps (reader, catalogue, live, time) and the harness
+  knew three. `time` is now built into both sides of the compose stack (`time-a`,
+  `time-b`, host ports `3104` and `3204`; kind NodePorts `30103` and `30203`,
+  published on `4103` and `4203`) and gets the app-level artefacts: `metrics`,
+  `logs`, `runtime`, `startup`, and the static image artefacts (`image-manifest`,
+  `sbom`, `vulns`). No journey drives it (twelve until a real regression
+  escapes), so it has no `dom`, `network`, `screenshot`, `headers`, `axe`, `focus`
+  or `timing` artefacts of its own.
+- `report.json`: an optional `time` beside `reader`, `catalogue` and `live` in
+  `sides.{a,b}`, in `provenance.{a,b}.images` and in `imageArtefacts.{a,b}`. A
+  report written before 1.3.0 has none, and a reader of one must tolerate that.
+  Hunks for `time` use the app name as the first part of their scope, as for the
+  others (`time/user`, `time/root`, `time/ready`).
+- CLI: `--a` / `--b` accept `time=REF` in the spelled-out form, optional; left
+  out it takes the reader's tag. `--production` and `HARNESS_PRODUCTION_URLS`
+  accept `time=URL`, optional. `scripts/build-images.sh` builds four apps.
+- Compatibility that is not free: a base tag must now exist for `time` as well
+  (`harness images ensure` fails, loudly, if the registry has none), and a kind
+  cluster created before 1.3.0 must be recreated (it never published the time
+  ports). Reports of 1.2.x are not comparable with 1.3.0 reports (the harness
+  version, above): there are more artefacts to differ.
 
 ### 1.2.0 (minor; R3, R5 and R7)
 
