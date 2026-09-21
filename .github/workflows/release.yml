@@ -127,7 +127,8 @@ jobs:
 
       - name: Show the PR comment
         if: always()
-        run: cat out/*-release/report.md >> "$GITHUB_STEP_SUMMARY"
+        run: |
+          if ls out/*-release/report.md > /dev/null 2>&1; then cat out/*-release/report.md >> "$GITHUB_STEP_SUMMARY"; else echo "### Release mode: could not judge (no report: the run stopped before a verdict, see the step log)" >> "$GITHUB_STEP_SUMMARY"; fi
 
   migration:
     name: Migration rehearsal
@@ -157,7 +158,8 @@ jobs:
           path: out/
           retention-days: 30
       - if: always()
-        run: cat out/*-migration/report.md >> "$GITHUB_STEP_SUMMARY"
+        run: |
+          if ls out/*-migration/report.md > /dev/null 2>&1; then cat out/*-migration/report.md >> "$GITHUB_STEP_SUMMARY"; else echo "### Migration rehearsal: could not judge (no report: the run stopped before a verdict, see the step log)" >> "$GITHUB_STEP_SUMMARY"; fi
 
   upgrade:
     name: Upgrade rehearsal (rollout under load)
@@ -192,7 +194,8 @@ jobs:
           path: out/
           retention-days: 30
       - if: always()
-        run: cat out/*-upgrade/report.md >> "$GITHUB_STEP_SUMMARY"
+        run: |
+          if ls out/*-upgrade/report.md > /dev/null 2>&1; then cat out/*-upgrade/report.md >> "$GITHUB_STEP_SUMMARY"; else echo "### Upgrade rehearsal: could not judge (no report: the run stopped before a verdict, see the step log)" >> "$GITHUB_STEP_SUMMARY"; fi
 
   # What release mode judged, for post-deploy mode to check a deployment against (docs/contract.md, "The release record").
   # Release mode wrote `release-record.json` into its output directory, so the release-report artifact carries it. This
