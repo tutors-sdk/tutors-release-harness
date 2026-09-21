@@ -1,4 +1,5 @@
 import type { Hunk, RunReport } from "../types.ts";
+import { loudProvenance } from "./provenance.ts";
 
 const esc = (s: string) => s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
 
@@ -13,7 +14,6 @@ const short = (v: string | undefined) => (v ? v.replace(/^sha256:/, "").slice(0,
 function provenanceBlock(report: RunReport): string {
   const p = report.provenance;
   if (!p?.a && !p?.b) return "";
-  const loud = (["a", "b"] as const).filter((side) => Object.values(p[side]?.images ?? {}).some((info) => info.provenance === "pulled-unverified" || info.provenance === "built-from-ref"));
   const cell = (side: "a" | "b", app: "reader" | "catalogue" | "live") => {
     const info = p[side]?.images[app];
     if (!info) return "<td>—</td>";
@@ -23,13 +23,13 @@ function provenanceBlock(report: RunReport): string {
   return `<table class="provenance">
 <thead><tr><th>provenance</th><th>a — ${esc(p.a?.summary ?? "not recorded")}</th><th>b — ${esc(p.b?.summary ?? "not recorded")}</th></tr></thead>
 <tbody>${(["reader", "catalogue", "live"] as const).map((app) => `<tr><td>${app}</td>${cell("a", app)}${cell("b", app)}</tr>`).join("")}</tbody>
-</table>
-${loud.length ? `<p class="loud">Side ${loud.join(" and ")} did not run signature-verified registry images (${loud.map((side) => esc(p[side]!.summary)).join("; ")}). This run is not evidence about the images that ship.</p>` : ""}`;
+</table>`;
 }
 
 /** One self-contained HTML file per run: verdict, sides, every hunk with its claim, masks that fired. */
 export function renderHtml(report: RunReport): string {
   const { compare } = report;
+  const loud = loudProvenance(report);
   const rows = compare.matches.map((m) => hunkRow(m.hunk, m.claim?.reason)).join("\n");
   const fired = Object.entries(report.masksApplied).filter(([, n]) => n > 0);
   const silent = Object.entries(report.masksApplied).filter(([, n]) => n === 0);
@@ -62,6 +62,7 @@ export function renderHtml(report: RunReport): string {
 <body>
 <h1>Tutors release harness — <code>${esc(report.mode)}</code> <span class="verdict ${report.verdict}">${report.verdict}</span></h1>
 <p><small>${esc(report.ranAt)} · clock ${esc(report.now)} · ${report.runs} run(s) per side · harness ${esc(report.harnessVersion)}</small></p>
+${loud ? `<p class="loud">${esc(loud.text)}</p>` : ""}
 <ul>${report.reasons.map((r) => `<li>${esc(r)}</li>`).join("")}${report.noise ? `<li>A/A consulted: ${report.noise.clean ? "clean" : `${report.noise.hunks} diff(s)`} at ${esc(report.noise.ranAt)}</li>` : ""}</ul>
 
 <table>

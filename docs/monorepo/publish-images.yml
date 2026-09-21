@@ -35,6 +35,12 @@
 #
 # The release harness pulls these by tag: --a 16.2.0 --b 16.3.0-rc.1
 # with HARNESS_IMAGE_PREFIX=quay.io/tutors-sdk/tutors-{app}.
+# What the monorepo's real file does beyond this copy (none of it changes what
+# the harness verifies): a `workflow_dispatch` trigger, which release-dispatch.yml
+# uses to build a candidate tag it created with GITHUB_TOKEN (whose pushes
+# start no workflow); pushes to `rc/**` branches; a pull_request build with a
+# Trivy scan (CRITICAL/HIGH with a fix stop it); and the `release_tag` backfill
+# above. It also scans the amd64 image before anything is pushed.
 name: Image build
 
 on:

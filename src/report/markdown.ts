@@ -1,4 +1,5 @@
 import type { RunReport } from "../types.ts";
+import { loudProvenance } from "./provenance.ts";
 
 const ICON = { pass: "✅", warn: "⚠️", fail: "❌" } as const;
 
@@ -8,6 +9,11 @@ export function renderMarkdown(report: RunReport): string {
   const lines: string[] = [];
   lines.push(`## ${ICON[report.verdict]} Release harness — ${report.mode} — ${report.verdict.toUpperCase()}`);
   lines.push("");
+  const loud = loudProvenance(report);
+  if (loud) {
+    lines.push(`> ⚠️ **${loud.text}**`);
+    lines.push("");
+  }
   lines.push(`| | a | b |`);
   lines.push(`|---|---|---|`);
   for (const app of ["reader", "catalogue", "live"] as const) lines.push(`| ${app} | \`${report.sides.a[app]}\` | \`${report.sides.b[app]}\` |`);

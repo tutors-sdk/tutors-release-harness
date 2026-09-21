@@ -13,7 +13,9 @@
 # (`docker compose build` -> tutors/<app>:local) and only exist so the file can
 # be started by hand, which skips that check:
 #
-#   READER_IMAGE_A=quay.io/tutors-sdk/tutors-reader:16.2.0 #   READER_IMAGE_B=quay.io/tutors-sdk/tutors-reader:16.3.0-rc.1 #     docker compose -p tutors-harness -f compose.harness.yaml up -d --wait
+#   READER_IMAGE_A=quay.io/tutors-sdk/tutors-reader:16.2.0 \
+#   READER_IMAGE_B=quay.io/tutors-sdk/tutors-reader:16.3.0-rc.1 \
+#     docker compose -p tutors-harness -f compose.harness.yaml up -d --wait
 #
 # The apps run exactly as the monorepo's e2e stack runs them: anonymous mode,
 # read-only root filesystem, no capabilities, JSON logs. Each side also runs a

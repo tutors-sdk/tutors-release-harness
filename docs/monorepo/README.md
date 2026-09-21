@@ -6,8 +6,17 @@ automatic. Each file here is ready to copy.
 | File | Purpose | Trigger |
 | --- | --- | --- |
 | `publish-images.yml` | build (amd64 + arm64), push to Quay.io, cosign-sign and SBOM-attest the four images. **In the monorepo the real file is `.github/workflows/image-build.yml`** (its PR #143); this is a reference copy of the contract | push to `main`, `v*` tags |
-| `release-dispatch.yml` | tag the release candidate (`v16.3.0-rc.N`) and dispatch the harness with production tag, candidate tag, claims URL and migration refs | push to `release/**` |
+| `release-dispatch.yml` | tag the release candidate (`v16.3.0-rc.N`, next free N), have `image-build.yml` build it and wait until the registry serves the images, then dispatch the harness with production tag, candidate tag, claims URL and migration refs. **Again the monorepo's file is the source of truth**; this is a reference copy | push to `release/**` |
 | `release/claims.yaml` | the release's claims (see `../../claims/README.md`) | written by the release author |
+
+The monorepo also checks `release/claims.yaml` on the push and on the release PR
+(`pnpm check:release-claims`, `release-claims.yml`), so a bad file fails in
+minutes instead of in the harness run. That check mirrors
+`src/claims/schema.ts`, and the harness's parse is the authority: both must
+accept the same artefact names (the thirteen in [the contract](../contract.md)),
+accept the optional `version: 1`, and ignore unknown keys. A mirror that is
+stricter rejects a file the harness would take; one that is looser lets
+through a file that stops the run with exit 2.
 
 Repository secrets in the monorepo:
 

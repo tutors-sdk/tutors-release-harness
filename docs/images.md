@@ -212,9 +212,10 @@ the console says `BUILDING FROM SOURCE`, the side is recorded as
 reasons say the side "was built here … not pulled from the registry". A
 release decision should rest on `pulled+verified` on both sides.
 
-The monorepo today has no `v16.x` git tags (its milestones are tagged, its
-releases are branches merged to `main`), which is why the fallback tries the
-`release/<version>` branch too.
+The monorepo tags its releases now (`v16.2.0`, `v16.2.2`, and a
+`v<version>-rc.N` for each candidate), so `v<tag>` is normally the ref that
+resolves. Older releases exist only as a retained `release/<version>` branch,
+which is why the fallback still tries that too.
 
 ## 6. Local development
 
