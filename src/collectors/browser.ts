@@ -54,6 +54,9 @@ export function stripOrigins(text: string, spec: SideSpec): string {
   return out;
 }
 
+/** How long to wait for a JSON response body before recording it as unread. */
+const BODY_READ_MS = 3_000;
+
 /** `NetworkEntry.schemaHash` of a JSON response whose body could not be read; never equal to a real hash. */
 export const SCHEMA_UNREAD = "unread";
 
@@ -79,14 +82,20 @@ async function entryFor(response: Response, spec: SideSpec): Promise<NetworkEntr
   const contentType = headers["content-type"] ?? "";
   let hash = "";
   if (/json/.test(contentType) && response.status() < 300) {
+    let timer: NodeJS.Timeout | undefined;
     try {
-      const text = await response.text();
+      // Bounded: the browser only finishes a body that someone reads. A page that fires a request and never reads its
+      // response (the anon-write mutant's fetch, or a beacon) can leave `text()` pending until the context closes, and an
+      // unbounded await here stalled the whole run for as long as anyone was willing to wait.
+      const text = await Promise.race([response.text(), new Promise<never>((_, reject) => (timer = setTimeout(() => reject(new Error("body not read")), BODY_READ_MS)))]);
       if (text.length <= MAX_HASHED_BODY) hash = schemaHash(JSON.parse(text));
     } catch {
       // The browser dropped the body (the page navigated away while an invalidation request was in flight) or it was not
       // valid JSON: say that this side's body was not read, rather than that it had no shape. The engine does not compare
       // a shape against "not read" (that is timing, not the release), and still compares status and content type.
       hash = SCHEMA_UNREAD;
+    } finally {
+      clearTimeout(timer);
     }
   }
   return {
