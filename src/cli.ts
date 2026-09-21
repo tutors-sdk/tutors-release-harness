@@ -11,6 +11,8 @@ import { imagesFor, sideSpec, stackDown, stackUp } from "./stack.ts";
 import { kindDown, kindRollout, kindSide, kindUp } from "./substrate/kind.ts";
 import { MODES, SUBSTRATES, type Mode, type Substrate } from "./types.ts";
 import { harnessInfo } from "./version.ts";
+import { UsageError, doctorCommand, guardCommand, localCommand, noiseCommand, overrideCommand, recordAppliedOverride } from "./local/cli.ts";
+import { defaultNoise } from "./local/noise-store.ts";
 
 const USAGE = `tutors-release-harness
 
@@ -28,7 +30,9 @@ const USAGE = `tutors-release-harness
                     (or HARNESS_ALLOW_UNSIGNED=1). Local work only; the report records it.
       --claims      claims.yaml for release mode
       --claim-max-hunks  flag a claim that covers more than this many hunks (default 10, or HARNESS_CLAIM_MAX_HUNKS); reported, never gates
-      --noise       noise-status.json (or its directory) from a recent A/A run; "skip" waives it, loudly
+      --noise       noise-status.json (or its directory) from a recent A/A run; "skip" waives it, loudly;
+                    "none" does not look. Release and post-deploy mode without it read the latest status from the
+                    local noise store (HARNESS_HOME/noise, see harness noise)
       --require-verified  noise mode: write the status DEGRADED unless every image on both sides was pulled and
                     signature-verified in this run (the nightly sets it); the gate never trusts a degraded status
       --override-reason, --override-by  accept a FAIL and say so: the verdict stays FAIL, the run exits 0, and the
@@ -64,6 +68,29 @@ const USAGE = `tutors-release-harness
   harness journeys
   harness version [--json]
       Harness version, git sha and the contract version (docs/contract.md).
+
+  harness doctor [--for nightly,gate,mutants,watch,kind] [--port-offset n] [--json]
+      What this machine lacks to run the harness, and how to install it (Windows, macOS, Linux). Read-only.
+      Exit 0 ready (warnings allowed), 1 something a run needs is missing, 2 usage.
+  harness noise record --status <noise run dir | noise-status.json> [--report f] [--tag T] [--store dir] [--run-url u] [--summary f] [--masks f]
+      Append tonight's A/A to the noise store (the local \`noise\` branch): status, history, summary. Exit 1 when the ratchet is broken.
+  harness noise status [--store dir] [--noise-max-age-days 7] [--require] [--json]
+      Does the latest status license a FAIL (clean, verified, fresh)? --require exits 1 when it does not.
+  harness noise history [--store dir] [--last n] [--json]
+      The ratchet, the clean streak and the last nights.
+  harness guard masks|engine|all --base <ref>
+      The PR guards of CI against a local ref: masks land in their own PR; an engine, mask, journey, gate or mutant
+      change needs a version bump. Exit 1 on a violation, 2 when the ref does not exist.
+  harness override list [--since <date>] [--json]
+      The local, append-only record of every FAIL a person overrode.
+  harness local nightly [--tag T] [--runs 3] [--load 20x30s] [--image-cache dir] [--store dir] [--no-record]
+  harness local gate --a <production tag> --b <candidate tag> [--claims f] [--runs 3] [--only release|migration|upgrade]
+                     [--migrations-a ref] [--migrations-b ref] [--override-reason r --override-by who]
+  harness local mutants [--base T]
+  harness local watch [--recorded <release run dir>] [--production reader=URL,catalogue=URL,live=URL] [--interval 15m] [--once]
+      Each is what its workflow does, as one command, from the same harness commands (--dry-run prints them).
+      All take --port-offset <n> to move the compose stack's host ports beside a stack of your own.
+      A run holds a lock: one per machine at a time.
 `;
 
 function fail(message: string): never {
@@ -132,6 +159,20 @@ async function main(argv: string[]): Promise<number> {
       "override-by": { type: "string" },
       "image-cache": { type: "string" },
       "startup-restarts": { type: "string" },
+      tag: { type: "string" },
+      only: { type: "string" },
+      "migrations-a": { type: "string" },
+      "migrations-b": { type: "string" },
+      store: { type: "string" },
+      status: { type: "string" },
+      report: { type: "string" },
+      "run-url": { type: "string" },
+      summary: { type: "string" },
+      interval: { type: "string" },
+      "port-offset": { type: "string" },
+      for: { type: "string" },
+      last: { type: "string" },
+      since: { type: "string" },
       screenshots: { type: "boolean", default: true },
       axe: { type: "boolean", default: true },
       focus: { type: "boolean", default: true },
@@ -140,6 +181,10 @@ async function main(argv: string[]): Promise<number> {
       stack: { type: "boolean", default: true },
       "allow-unsigned": { type: "boolean", default: false },
       "require-verified": { type: "boolean", default: false },
+      "dry-run": { type: "boolean", default: false },
+      once: { type: "boolean", default: false },
+      require: { type: "boolean", default: false },
+      record: { type: "boolean", default: true },
       json: { type: "boolean", default: false },
       help: { type: "boolean", short: "h", default: false }
     },
@@ -197,6 +242,9 @@ async function main(argv: string[]): Promise<number> {
     allowUnsigned: values["allow-unsigned"]
   };
 
+  /** --noise, or the latest status in the local store for the modes that consult one (release, post-deploy). */
+  const noise = (m: Mode) => defaultNoise(m, values.noise, common.log);
+
   /** A side for the hand-driven commands, under the same rule as `run`: no unverified registry image is started. */
   const trustedSide = (name: "a" | "b", spec: string) => {
     const side = sideSpec(name, imagesFor(spec, common.imagePrefix));
@@ -214,9 +262,10 @@ async function main(argv: string[]): Promise<number> {
         a: values.a ?? "recorded",
         b: values.b ?? "production",
         ...(values.claims ? { claimsFile: resolve(values.claims) } : {}),
-        ...(values.noise ? { noise: values.noise } : {})
+        ...(noise(m) ? { noise: noise(m)! } : {})
       });
       printOutcome(outcome.report.verdict, outcome.report.reasons, outcome.files);
+      recordAppliedOverride(outcome.report, outcome.outDir);
       return exitCodeForReport(outcome.report);
     }
     case "compare": {
@@ -237,9 +286,10 @@ async function main(argv: string[]): Promise<number> {
         now: common.now,
         runs: common.runs,
         log: common.log,
-        ...(values.noise ? { noise: values.noise } : {})
+        ...(noise(mode(values.mode)) ? { noise: noise(mode(values.mode))! } : {})
       });
       printOutcome(outcome.report.verdict, outcome.report.reasons, outcome.files);
+      recordAppliedOverride(outcome.report, outcome.outDir);
       return exitCodeForReport(outcome.report);
     }
     case "images": {
@@ -290,6 +340,16 @@ async function main(argv: string[]): Promise<number> {
       const ok = await runMutants({ ...common, base: values.base });
       return ok ? 0 : 1;
     }
+    case "doctor":
+      return doctorCommand(values);
+    case "noise":
+      return noiseCommand(positionals[0], values);
+    case "guard":
+      return guardCommand(positionals[0], values);
+    case "override":
+      return overrideCommand(positionals[0], values);
+    case "local":
+      return localCommand(positionals[0], values);
     case "journeys":
       for (const j of journeys) console.log(`${j.name.padEnd(34)} set=${j.set.padEnd(9)} ${j.anonymous ? "anonymous" : "signed-in"}`);
       return 0;
@@ -312,6 +372,11 @@ main(process.argv.slice(2)).then(
     if (error instanceof ImageTrustError) {
       console.error(`cannot judge: ${error.message}`);
       process.exit(EXIT_CANNOT_JUDGE);
+    }
+    // A usage error of the local commands: the message, not a stack.
+    if (error instanceof UsageError) {
+      console.error(error.message);
+      process.exit(2);
     }
     console.error(error instanceof Error ? error.stack ?? error.message : error);
     process.exit(2);
