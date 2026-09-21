@@ -898,6 +898,23 @@ the old name is left alone; and the `runs` default of `release-candidate` is now
   ports). Reports of 1.2.x are not comparable with 1.3.0 reports (the harness
   version, above): there are more artefacts to differ.
 
+**Exit 2 ("could not judge") is cleaner** (behaviour a consumer sees; no field changes)
+
+- `harness --help`, `-h` and `help` print usage and exit `0`, and `harness
+  <command> --help` (or `harness help <command>`) prints that command's usage,
+  as this document always said; they used to answer `unknown command` with exit
+  `2`. `harness` with no arguments still prints usage and exits `2`.
+- A claims file or rules file that cannot be used (missing, unreadable, not
+  YAML or JSON, the wrong version, an unknown artefact, an unquoted `rule`, a
+  missing reason, a rule the file does not have) is a multi-line message naming
+  the file, the claim, the field and what would be right, and exit `2`: no stack
+  trace. The exit code and the "before anything starts" rule are as before.
+- A run that exits `2` before it has images to judge (not present, not
+  verified) no longer leaves an empty `<out>/<timestamp>-<mode>/` behind.
+- `post-deploy.yml` opens the `rollback` issue on exit `1` only. Exit `2` fails
+  the workflow and says "could not judge" in the job summary, without an issue;
+  before, any failure of the step opened one, which said nothing about production.
+
 ### 1.2.0 (minor; R3, R5 and R7)
 
 All additive: a consumer written against 1.1.0 keeps working. The harness
