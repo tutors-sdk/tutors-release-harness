@@ -145,7 +145,7 @@ Expect the hygiene section to flag this claim as covering many hunks (more than 
 
 ### 5. A network call changes
 
-Presence is now polled every 15 seconds instead of 10. You will see `GET /api/presence requested 3x on a, 4x on b` or a status change; all have the same scope, so one claim covers them:
+Presence is now polled every 15 seconds instead of 10. You will see `reader:course: GET /api/presence requested 3× on a, 4× on b` or a status change; all have the same scope, so one claim covers them:
 
 ```yaml
   - artefact: network

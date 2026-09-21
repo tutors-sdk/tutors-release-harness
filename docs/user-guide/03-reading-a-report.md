@@ -151,7 +151,7 @@ What the summaries look like, per artefact:
 | `dom` | `reader:course: semantic DOM differs (+1 −1 lines at line 2)` | a diff of the accessibility snapshot: `-  - link "Topic 1"` then `+  - link "Topic 1 (4 min read)"` |
 | `dom` | `journey "student-signs-in" completed on a but failed on b` | the error b hit. Not a claim: a journey that breaks is a bug |
 | `screenshot` | `reader:home: 0.42% of pixels differ (threshold 0.10%)` | `diff image: diff/<file>.png` |
-| `network` | `reader:course: new request on b: GET /api/presence` / `request no longer made on b` / `requested 1x on a, 2x on b` / `... status changed: 200 → 304` | |
+| `network` | `reader:course: new request on b: GET /api/presence` / `request no longer made on b` / `requested 1× on a, 2× on b` / `... status changed: 200 → 304` | |
 | `console` | `reader:course: new console message on b` | `error: Failed to load resource: 404 /assets/logo.svg` |
 | `headers` | `reader:course: header added on b: content-security-policy: ...` | |
 | `axe` | `reader:topic: new axe violation on b: color-contrast (serious)` | the CSS target |

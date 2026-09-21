@@ -16,7 +16,7 @@ Terms as this guide uses them. Where a term has a chapter, it is linked.
 
 **blind spot.** Anything the harness does not compare: a mask, a threshold, an artefact that could not be collected. A mask is a blind spot someone chose.
 
-**broad claim.** A claim whose artefact is `*`, or whose scope is `*`, `**` or only stars. It needs `approvedBy` or it fails the run. [04](04-writing-claims.md#broad-claims)
+**broad claim.** A claim whose artefact is `*`, or whose scope is `*`, `**` or only stars. It needs `approvedBy` or it fails the run. [04](04-writing-claims.md#broad-claims-and-hygiene)
 
 **built-from-ref.** Provenance of an image built on this machine from a monorepo git ref because the registry had no such tag. It is not the image that ships and is not evidence for a release. [02](02-running-locally.md#where-the-images-come-from)
 
@@ -82,7 +82,7 @@ Terms as this guide uses them. Where a term has a chapter, it is linked.
 
 **normalise.** Make the two captures comparable before diffing: replace each side's origin, apply the masks.
 
-**override.** Accepting a FAIL on the record: `--override-reason` and `--override-by`. The verdict stays FAIL, the exit code is 0, the report and an override log record who and why. [06](06-ci-integration.md#overrides)
+**override.** Accepting a FAIL on the record: `--override-reason` and `--override-by`. The verdict stays FAIL, the exit code is 0, the report and an override log record who and why. [06](06-ci-integration.md#overrides-and-the-record-they-leave)
 
 **page key.** The name of a page in a journey, such as `reader:lab-step`, used in scopes.
 
