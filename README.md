@@ -219,6 +219,16 @@ monorepo ref when the registry lacks the tag, in which case the report header
 says `built-from-ref` — [docs/images.md](docs/images.md).
 The two workflows the monorepo needs are in [docs/monorepo](docs/monorepo/README.md).
 
+**Everything runs locally; the workflows are an optional convenience.** On a
+laptop (Windows, macOS or Linux, with Docker): `pnpm harness doctor` says what is
+missing and how to install it, and `pnpm harness local nightly | gate | mutants |
+watch` each do what its workflow does, from the same harness commands
+(`--dry-run` prints them), keeping the noise status, the override record and the
+image cache under `HARNESS_HOME` instead of the `noise` branch, issues and
+`actions/cache`. `harness guard masks|engine --base <ref>` runs the PR guards
+against a local ref. The step-by-step parity with the workflows, Windows notes,
+scheduling and what stays GitHub-only are in [docs/local.md](docs/local.md).
+
 ## Determinism
 
 Both sides get the same frozen clock (`HARNESS_NOW`, default
