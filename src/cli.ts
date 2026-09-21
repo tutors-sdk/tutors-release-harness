@@ -34,6 +34,9 @@ const USAGE = `tutors-release-harness
       --now         frozen clock, ISO instant (default ${defaultRunOptions().now})
       --out         output root (default ./out)
       --no-screenshots, --no-axe, --no-focus, --keep, --no-stack
+      --no-runtime  do not collect container posture (identity, capabilities, read-only root, limits)
+      --startup-restarts  restarts per app to sample startup time from (default 5; 0 switches it off).
+                    Fewer than timing.minRuns (normalise/masks.yaml) is reported, not judged; raise it, never retry.
       post-deploy:  --recorded <release run dir> --production reader=URL,catalogue=URL,live=URL
       migration:    --snapshot <pg_dump file>
       upgrade:      --upgrade-seconds 45 --upgrade-rate 20
@@ -78,6 +81,14 @@ function parseLoad(value: string | undefined): { rate: number; duration: string 
   return { rate: Number(m[1]), duration: m[2]! };
 }
 
+/** --startup-restarts <n>: restarts per app to sample startup time from; 0 switches it off. */
+function startupRestarts(value: string | undefined, fallback: number): number {
+  if (value === undefined) return fallback;
+  const n = Number(value);
+  if (!Number.isInteger(n) || n < 0) fail("--startup-restarts takes a whole number, 0 or more (0 switches startup time off)");
+  return n;
+}
+
 async function main(argv: string[]): Promise<number> {
   const [command, ...rest] = argv;
   const { values, positionals } = parseArgs({
@@ -108,9 +119,11 @@ async function main(argv: string[]): Promise<number> {
       "upgrade-seconds": { type: "string" },
       "upgrade-rate": { type: "string" },
       "noise-max-age-days": { type: "string" },
+      "startup-restarts": { type: "string" },
       screenshots: { type: "boolean", default: true },
       axe: { type: "boolean", default: true },
       focus: { type: "boolean", default: true },
+      runtime: { type: "boolean", default: true },
       keep: { type: "boolean", default: false },
       stack: { type: "boolean", default: true },
       "allow-unsigned": { type: "boolean", default: false },
@@ -153,6 +166,8 @@ async function main(argv: string[]): Promise<number> {
     screenshots: values.screenshots,
     axe: values.axe,
     focusStops: values.focus ? defaults.focusStops : 0,
+    runtime: values.runtime,
+    startupRestarts: startupRestarts(values["startup-restarts"], defaults.startupRestarts),
     keep: values.keep,
     noStack: !values.stack,
     allowUnsigned: values["allow-unsigned"]

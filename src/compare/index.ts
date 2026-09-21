@@ -3,6 +3,7 @@ import type { Hunk, SideCapture } from "../types.ts";
 import { ENGINES, type EngineContext } from "./engines.ts";
 import { EXTRA_ENGINES } from "./extra.ts";
 import { resetHunkIds } from "./pages.ts";
+import { RUNTIME_ENGINES } from "./runtime.ts";
 
 /** Run every diff engine over two normalised captures. Deterministic: same inputs, same hunks in the same order. */
 export function compareCaptures(a: SideCapture, b: SideCapture, config: EngineConfig, captureDir?: string): Hunk[] {
@@ -11,6 +12,8 @@ export function compareCaptures(a: SideCapture, b: SideCapture, config: EngineCo
   const hunks: Hunk[] = [];
   for (const engine of Object.values(ENGINES)) hunks.push(...engine(a, b, ctx));
   for (const engine of Object.values(EXTRA_ENGINES)) hunks.push(...engine(a, b, ctx));
+  // R5 runtime artefacts (contract 1.2.0)
+  for (const engine of Object.values(RUNTIME_ENGINES)) hunks.push(...engine(a, b, ctx));
   return hunks;
 }
 

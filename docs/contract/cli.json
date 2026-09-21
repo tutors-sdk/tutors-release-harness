@@ -1,6 +1,6 @@
 {
   "$comment": "The harness CLI, machine-readable. tests/contract.test.ts fails when this list and src/cli.ts disagree, when a workflow uses a command or flag not marked stable, or when docs/contract.md omits a stable one. stable: true is covered by the compatibility promise in docs/contract.md; stable: false may change in a minor release.",
-  "contractVersion": "1.1.0",
+  "contractVersion": "1.2.0",
   "commands": [
     { "name": "run", "stable": true, "summary": "Start both stacks, capture, compare, claim, gate, report." },
     { "name": "compare", "stable": true, "summary": "Re-run normalise/compare/claim/gate on captures already on disk." },
@@ -36,9 +36,11 @@
     { "name": "upgrade-seconds", "type": "string", "stable": false },
     { "name": "upgrade-rate", "type": "string", "stable": false },
     { "name": "noise-max-age-days", "type": "string", "stable": false },
+    { "name": "startup-restarts", "type": "string", "stable": false, "since": "1.2.0" },
     { "name": "screenshots", "type": "boolean", "stable": false },
     { "name": "axe", "type": "boolean", "stable": false },
     { "name": "focus", "type": "boolean", "stable": false },
+    { "name": "runtime", "type": "boolean", "stable": false, "since": "1.2.0" },
     { "name": "keep", "type": "boolean", "stable": false },
     { "name": "stack", "type": "boolean", "stable": false },
     { "name": "allow-unsigned", "type": "boolean", "stable": true, "since": "1.1.0" },

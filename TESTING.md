@@ -18,6 +18,8 @@ fail, and ratchets. This is the runway for the runway.
 | An image is named wrongly | the Quay template expands to `quay.io/…/tutors/reader`; the shell script and the CLI disagree | Unit on `src/image-ref.ts`, with `build-images.sh --print-images` held to the same answers |
 | An untrusted image is judged | an unsigned or wrongly-signed pull passes; a missing cosign is skipped; a stale verification vouches for new content | Unit on `src/images.ts` with the process runner injected (a fake docker, registry and cosign) |
 | A report hides where its images came from | a side built from source reads like a published one | Unit on the report header and on capture → report flow |
+| A container's posture drifts, or an artefact silently stops being collected | a candidate whose image runs as root, adds a capability or a `VOLUME`, or writes outside `/tmp`; docker missing on the runner and the report saying nothing | Unit on the `runtime` engine, on the posture parsers and on the collectors with the process runner injected (a fake docker and kubectl); "not collected" is a failing hunk |
+| Startup time regresses, or the sample cannot judge | a candidate that boots twice as slowly; three restarts a side reported as if judged | Unit on the `startup` engine (Mann-Whitney, the shift floor, "cannot reach alpha") and on the restart sampler with a fake clock |
 | The stacks are not identical | side b has an env var side a lacks | Unit on `compose.harness.yaml` and the kind manifests |
 | The whole thing cannot boot | compose or kind fails on a laptop or in CI | Smoke: A/A on one journey (CI, every PR) |
 | The harness cannot fail | a planted regression passes release mode | Mutants (weekly, and in CI on any PR that changes an engine, a mask, a journey, the gate or a mutant) |
@@ -38,6 +40,17 @@ Anything that would run `docker`, `cosign` or `bash` takes its process runner
 as a parameter (`Exec` in `src/images.ts`); the tests pass a fake and assert on
 the exact commands, so the ensure flow — local, pull, verify by digest, build,
 refuse — is covered without Docker.
+
+Container posture and startup time (`src/runtime/`, `src/compare/runtime.ts`)
+are collected through docker and kubectl behind the same injected `Exec`:
+`tests/runtime-collectors.test.ts` feeds them what the real tools print and
+asserts on every command line, `tests/runtime-engines.test.ts` has the three
+tests per engine, and `tests/runtime-report.test.ts` runs a whole comparison
+and checks the report against the schema. What they cannot prove is that the
+assumptions about a real container hold (`node` on the PATH inside every app
+image, `/proc/self/mountinfo`, the health status format): the first
+`--mode noise` run on a machine with Docker is that proof, and it must be
+clean before the harness gates on these artefacts.
 
 Rules for a new engine or rule: it does not merge without (1) the A/A test,
 (2) a planted change it catches, (3) a change it must *not* flag.
@@ -123,6 +136,7 @@ must fail with failures attributed to `b`.
 | Masks in `normalise/masks.yaml` | grow only with review | CODEOWNERS |
 | Masks that never fire | → 0 | listed in every report as "silent" |
 | Engines without a planted-change test | 0 | review |
+| Artefacts that could not be collected in a nightly A/A | 0 | `not collected` is a failing hunk, so a dirty A/A |
 | Retries anywhere in the harness | 0 | `vitest.config.ts`, no Playwright retries |
 
 ## What is deliberately not tested here

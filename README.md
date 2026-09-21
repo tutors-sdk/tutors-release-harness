@@ -65,6 +65,7 @@ traffic/
   load/                       the k6 script (timing under load, upgrade rollout)
 src/
   collectors/                 what is captured per side, per journey step (+ metrics, logs, persistence, k6)
+  runtime/                    container posture and startup time (docker/kubectl through an injected runner)
   normalise/                  applies normalise/masks.yaml (the list of blind spots)
   compare/                    one diff engine per artefact + Mann–Whitney for timing
   claims/                     claim schema and matcher
@@ -96,6 +97,8 @@ docs/monorepo/                workflows to drop into the monorepo (publish image
 | Structured logs: JSON-ness, level counts, field set, request-id propagation | aggregate | Log shape or volume changed |
 | Persistence: every write the side attempted, by table and method, per journey | multiset + the anonymous rule | Data written differently — and *any* write during an anonymous journey |
 | Load (`--load`): k6 at a fixed rate, every request's duration | Mann–Whitney U on samples, failure rate | Latency or error rate regressed under load |
+| Container runtime posture (`runtime`): declared (`docker inspect` / pod spec) and measured (a probe inside the container): UID/GID, capabilities, read-only root, no-new-privileges, seccomp, writable mounts, requests/limits; EROFS errors in the log | exact, per field | A changed `USER`, a capability, a writable root or `VOLUME`, a root process, a write outside `/tmp` |
+| Startup time (`startup`): first healthy `GET /` and the orchestrator's ready verdict, over `--startup-restarts` restarts | Mann–Whitney U | A slower boot; an app that stops coming up; `/` answers differently after a restart |
 | Journey outcome | — | A journey that completes on a and fails on b is the loudest diff there is |
 
 Rehearsals, in their own modes: **migration** (expand/contract on a throwaway
@@ -159,7 +162,7 @@ mutants has no business gating a release.
 harness run --mode <mode> --a <ref> --b <ref> [--substrate compose|kind] [--claims f] [--noise f|skip]
             [--runs n] [--set fixture,auth,reference] [--journey name]... [--load 20x30s]
             [--now iso] [--out dir] [--image-prefix p|template-with-{app}] [--allow-unsigned]
-            [--no-screenshots] [--no-axe] [--no-focus] [--keep] [--no-stack]
+            [--no-screenshots] [--no-axe] [--no-focus] [--no-runtime] [--startup-restarts n] [--keep] [--no-stack]
             post-deploy: --recorded <release run dir> --production reader=URL,catalogue=URL,live=URL
             migration:   --snapshot <pg_dump>      upgrade: --upgrade-seconds 45 --upgrade-rate 20
 harness compare --dir <run dir> --mode <mode> [--claims f] [--noise f]

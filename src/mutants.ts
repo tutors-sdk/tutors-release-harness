@@ -54,7 +54,10 @@ export interface MutantsOptions extends Omit<RunOptions, "mode" | "a" | "b"> {
  * is not clean cannot fail anything), then release mode against each mutant,
  * asserting FAIL and the expected artefact.
  */
-export async function runMutants(opts: MutantsOptions): Promise<boolean> {
+export async function runMutants(options: MutantsOptions): Promise<boolean> {
+  // R5: startup time restarts every app N times per side. The self-test would pay that on 9 runs for no signal (no
+  // mutant plants a slow boot); nightly noise and real release runs sample it. Posture is cheap and stays on.
+  const opts: MutantsOptions = { ...options, startupRestarts: 0 };
   const mutants = loadMutants();
   const baseImages = imagesFor(opts.base, opts.imagePrefix);
   const baseSpec = specFor(baseImages);

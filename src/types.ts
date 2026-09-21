@@ -6,7 +6,7 @@
 export type SideName = "a" | "b";
 
 /** Every kind of thing the harness captures or rehearses. Claims and masks name these. */
-export const ARTEFACTS = ["dom", "screenshot", "network", "console", "headers", "axe", "focus", "metrics", "logs", "timing", "persistence", "migration", "upgrade"] as const;
+export const ARTEFACTS = ["dom", "screenshot", "network", "console", "headers", "axe", "focus", "metrics", "logs", "timing", "persistence", "migration", "upgrade", "runtime", "startup"] as const;
 export type Artefact = (typeof ARTEFACTS)[number];
 
 export const MODES = ["noise", "release", "any-two", "upgrade", "migration", "post-deploy"] as const;
@@ -204,6 +204,11 @@ export interface SideCapture {
   metrics: { before: Record<string, MetricsSnapshot>; after: Record<string, MetricsSnapshot> };
   logs: Record<string, LogSummary>;
   load?: LoadSummary;
+  // ---- R5 runtime artefacts (contract 1.2.0): src/runtime/*, src/compare/runtime.ts
+  /** What the side's containers are: identity, capabilities, filesystem, limits. Absent for an external side or a capture recorded before 1.2.0. */
+  runtime?: RuntimeCapture | NotCollected;
+  /** How long the side's apps take to come up after a restart. Same absence rules as `runtime`. */
+  startup?: StartupCapture | NotCollected;
 }
 
 // ---- schema catalogue (migration mode) -------------------------------------------
@@ -319,4 +324,83 @@ export interface RunReport {
   migration?: MigrationResult;
   upgrade?: UpgradeResult;
   load?: { a: Omit<LoadSummary, "samples">; b: Omit<LoadSummary, "samples"> };
+}
+
+// ---- R5 runtime artefacts: container posture and startup (contract 1.2.0) --------------
+// Logic lives in src/runtime/ (collect) and src/compare/runtime.ts (compare).
+
+/**
+ * A collector that could not, or was told not to, produce its artefact. It is
+ * kept in the capture and turned into a hunk: an artefact that silently goes
+ * missing is a gate that quietly stops gating.
+ */
+export interface NotCollected {
+  collected: false;
+  /** Why, for people: "docker inspect exited 1: no such container". The report says `not collected: <reason>`. */
+  reason: string;
+  /** True when an operator asked for this (--no-runtime, --startup-restarts 0): informational, not a failure. */
+  disabled?: boolean;
+}
+
+/** What a container is declared to be, and what it measurably is from inside. */
+export interface ContainerPosture {
+  // -- declared: docker inspect (compose) or the pod spec (kind) --
+  /** `Config.User` / `securityContext.runAsUser`; "" when the image decides. */
+  user: string;
+  /** kind only: `runAsNonRoot`; null under compose. */
+  runAsNonRoot: boolean | null;
+  privileged: boolean;
+  readOnlyRootfs: boolean;
+  capAdd: string[];
+  capDrop: string[];
+  /** compose: `HostConfig.SecurityOpt`; kind: `no-new-privileges:true` / `seccomp=<type>` derived from the security context. Sorted. */
+  securityOpt: string[];
+  /** Mount points the container may write to, other than the root filesystem (tmpfs, emptyDir, volumes). Sorted. */
+  writablePaths: string[];
+  /** Resource requests and limits: bytes for memory, millicores for cpu; null when unset. */
+  resources: { memoryRequest: number | null; memoryLimit: number | null; cpuRequest: number | null; cpuLimit: number | null; pidsLimit: number | null };
+  // -- measured: a process started inside the container (node reading /proc) --
+  effective: {
+    uid: number;
+    gid: number;
+    /** Effective and bounding capability sets, as names (CAP_ prefix dropped), sorted; unknown bits as `CAP_<n>`. */
+    capEff: string[];
+    capBnd: string[];
+    noNewPrivs: boolean;
+    seccomp: "disabled" | "strict" | "filter" | "unknown";
+    /** `/proc/self/mountinfo` says the root filesystem is mounted `ro`. */
+    rootfsReadOnly: boolean;
+    /** A file could be created and removed in /tmp. */
+    tmpWritable: boolean;
+    /** A file could be created in the process's working directory (where the app's own files are). Expected false. */
+    cwdWritable: boolean;
+  };
+  /** Log lines saying a write hit a read-only filesystem (EROFS): the app wrote outside /tmp. */
+  readOnlyViolations: number;
+}
+
+export interface RuntimeCapture {
+  collected: true;
+  substrate: Substrate;
+  /** By app (`reader`, `catalogue`, `live`, and `reader-auth` under compose). */
+  containers: Record<string, ContainerPosture | NotCollected>;
+}
+
+/** One restart: milliseconds from the start command to the first healthy answer; null when it never came. */
+export interface StartupSample {
+  /** First response to GET / with a status below 500. */
+  rootMs: number | null;
+  /** The status of that response. */
+  rootStatus: number | null;
+  /** The orchestrator's own verdict: compose's healthcheck reports healthy, or the pod's Ready condition is true. */
+  readyMs: number | null;
+}
+
+export interface StartupCapture {
+  collected: true;
+  substrate: Substrate;
+  restarts: number;
+  /** The give-up time for one restart, in ms; a sample that hit it has null fields. */
+  timeoutMs: number;
+  apps: Record<string, { samples: StartupSample[] } | NotCollected>;
 }

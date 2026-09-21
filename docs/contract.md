@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.1.0`
+Contract version: `1.2.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -28,16 +28,16 @@ Three numbers, all stamped where a reader can see them:
 
 ```console
 $ pnpm harness version
-harness 1.1.0 (3f2c…) · contract 1.1.0
+harness 1.2.0 (3f2c…) · contract 1.2.0
 $ pnpm harness version --json
-{"version":"1.1.0","gitSha":"3f2c…","contractVersion":"1.1.0"}
+{"version":"1.2.0","gitSha":"3f2c…","contractVersion":"1.2.0"}
 ```
 
 `gitSha` is `git rev-parse HEAD` of the harness checkout, or the
 `HARNESS_GIT_SHA` environment variable when set, or `null` when neither is
 available (a tarball).
 
-Pin the harness by tag (`v1.1.0`) or by sha, and check `schemaVersion === 1`
+Pin the harness by tag (`v1.2.0`) or by sha, and check `schemaVersion === 1`
 before reading a report.
 
 ## Output directory
@@ -90,7 +90,9 @@ written). Source of truth: `RunReport` in `src/types.ts`.
 **Hunk**: `{ id, artefact, scope, path?, summary, detail?, severity }`.
 `artefact` is one of `dom`, `screenshot`, `network`, `console`, `headers`,
 `axe`, `focus`, `metrics`, `logs`, `timing`, `persistence`, `migration`,
-`upgrade`. `severity` is `fail` (gates unless claimed) or `info` (reported,
+`upgrade`, `runtime`, `startup`. The last two are since 1.2.0 (see
+[Container runtime artefacts](#container-runtime-artefacts)); a consumer must
+tolerate an artefact name it does not know. `severity` is `fail` (gates unless claimed) or `info` (reported,
 never gates). `scope` and `path` are what a claim's glob is matched against.
 `id` is stable for the same difference within a run; do not rely on it across
 harness versions. `summary` and `detail` are for people.
@@ -134,6 +136,49 @@ What a consumer can rely on: `verdict`, `provenance.*.images.*.provenance` and
 `compare.broadUnapproved.length`, `compare.staleClaims`, the `artefact`,
 `scope`, `path` and `severity` of each hunk, `sides`, `harness`, and the
 numbers under `migration`, `upgrade` and `load`.
+
+### Container runtime artefacts
+
+Since 1.2.0. Two artefacts describe what the containers *are* rather than what
+the apps do. They add no field to `report.json`: their findings are hunks with
+`artefact` `runtime` or `startup`, claimable like any other, and what was captured is
+recorded in each `capture.json` (not part of the contract).
+Both are collected after everything else on each side that the harness started
+(never on a live deployment, so never in post-deploy mode), on the compose
+and the kind substrate.
+
+| Artefact | Scope of a hunk | What is compared |
+| --- | --- | --- |
+| `runtime` | `<app>/<field>`, `app` being `reader`, `catalogue`, `live` (and `reader-auth` under compose) | exact match of each container's declared posture (configured user, privileged, read-only root filesystem, capabilities added and dropped, security options, writable mounts, memory/cpu/pids requests and limits — `docker inspect` under compose, the pod spec under kind) and measured posture (effective UID and GID, effective and bounding capabilities, no-new-privileges, seccomp mode, root filesystem mounted `ro`, /tmp and the working directory writable — a process started inside the container reading /proc). Fields: `user`, `run-as-non-root`, `privileged`, `read-only-rootfs`, `cap-add`, `cap-drop`, `security-opt`, `writable-paths`, `memory-request`, `memory-limit`, `cpu-request`, `cpu-limit`, `pids-limit`, `uid`, `gid`, `cap-effective`, `cap-bounding`, `no-new-privileges`, `seccomp`, `rootfs-mounted-ro`, `tmp-writable`, `cwd-writable` |
+| `runtime` | `<app>/writes-outside-tmp` | the app logged a read-only filesystem error (`EROFS`) on b and not on a: with a read-only root and a tmpfs /tmp, that is a write outside /tmp |
+| `startup` | `<app>/root`, `<app>/ready` | time from the start command to the first response to `GET /` with a status below 500, and to the orchestrator's ready verdict (compose healthcheck healthy; pod Ready), over `--startup-restarts` restarts of the same container (kind: scale to zero and back, so no old pod answers), Mann-Whitney U like `timing` (`timing.minRuns`, `timing.alpha`, `timing.minEffect`, and `startup.minShiftMs` in `normalise/masks.yaml`) |
+| `startup` | `<app>/boot`, `<app>/root-status` | b failed to become healthy within the timeout in more restarts than a; `GET /` answers a different status after a restart |
+
+Severity. A difference is `fail`, except that a change which only *tightens*
+the posture (root to non-root, a writable root filesystem to a read-only one,
+fewer capabilities, privileged to unprivileged, an EROFS error fixed, a faster
+startup) is `info`. Two absolute rules apply as the anonymous-write rule does
+for persistence: b running as root, with a writable root filesystem, or unable
+to write /tmp is called out in the hunk; the same fault on both sides is an
+`info` hunk (a product finding, not a release diff). A startup that cannot be
+judged, because the samples are too few to ever reach alpha, is `info` and says
+that more restarts are needed.
+
+**Never silent.** An artefact that could not be collected — no such container,
+`docker` or `kubectl` missing or failing, the in-container probe unreadable,
+a restart that could not be driven — is a `fail` hunk with scope
+`runtime/not-collected`, `startup/not-collected` or `<app>/not-collected` and a
+summary of the form `… not collected: <reason>`. It gates like any unclaimed
+difference, and is claimed like one (`artefact: runtime`, `scope:
+"*/not-collected"`, a reason a reviewer can weigh). An operator's choice
+(`--no-runtime`, `--startup-restarts 0`, and always `--startup-restarts 0` in
+`upgrade` mode and in the `mutants` self-test) is `info` and says so. A capture
+recorded by a harness older than 1.2.0 has neither field; against a capture that
+has them it counts as not collected.
+
+Informational `runtime/summary` and `startup/summary` hunks list what was
+collected (per app, both sides), so a report that found nothing still shows what
+it looked at. The startup restarts leave every app running.
 
 ## Verdicts and exit codes
 
@@ -225,7 +270,7 @@ claims:
     approvedBy: "a-maintainer"                          # optional; required for a broad claim to count
 ```
 
-- `artefact`: one of the thirteen artefact names above, or `*`.
+- `artefact`: one of the fifteen artefact names above, or `*`.
 - `scope`: matched with picomatch (`dot: true`, case-insensitive) against the
   hunk's `scope` **or** its `path`.
 - `reason`: at least 8 characters, and must not start with `see pr`,
@@ -248,7 +293,8 @@ Full list: [`contract/cli.json`](contract/cli.json). Invoke as `pnpm harness
 `stable: true` there are the ones below; the rest (`harness stack`, `harness
 kind`, `harness journeys`, `--substrate`, `--now`, `--masks`, `--snapshot`,
 `--upgrade-*`, `--noise-max-age-days`, `--no-screenshots`, `--no-axe`,
-`--no-focus`, `--keep`, `--no-stack`) are for people at a terminal and may
+`--no-focus`, `--no-runtime` and `--startup-restarts` (both since 1.2.0),
+`--keep`, `--no-stack`) are for people at a terminal and may
 change in a minor release.
 
 | Command | Stable flags |
