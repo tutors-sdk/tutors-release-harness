@@ -533,7 +533,7 @@ describe("CLI", () => {
   });
 
   it("cli.json lists exactly the commands src/cli.ts dispatches", () => {
-    const commands = [...source.matchAll(/^\s*case "([a-z]+)":/gm), ...source.matchAll(/command === "([a-z]+)"/g)].map((m) => m[1]!);
+    const commands = [...source.matchAll(/^\s*case "([a-z][a-z-]*)":/gm), ...source.matchAll(/command === "([a-z]+)"/g)].map((m) => m[1]!);
     expect(cli.commands.map((c) => c.name).sort()).toEqual([...new Set(commands)].sort());
     for (const c of cli.commands) expect(source, `usage text for ${c.name}`).toContain(`harness ${c.name}`);
   });
@@ -607,7 +607,7 @@ describe("CLI", () => {
       const flags = own.includes(file) ? declaredFlags : stableFlags;
       // A call may continue over lines with a trailing backslash.
       const text = read(file).replace(/\\\n/g, " ");
-      for (const m of text.matchAll(/pnpm harness ([a-z]+)([^\n]*)/g)) {
+      for (const m of text.matchAll(/pnpm harness ([a-z][a-z-]*)([^\n]*)/g)) {
         calls += 1;
         expect(commands.has(m[1]!), `${file}: harness ${m[1]}`).toBe(true);
         for (const flag of m[2]!.matchAll(/(?<![\w-])--([a-z][a-z-]*)/g)) expect(flags.has(flag[1]!), `${file}: --${flag[1]}`).toBe(true);

@@ -10,6 +10,8 @@ import { realDoctorDeps } from "./doctor-real.ts";
 import { GUARDS, realGit, realScript, runGuard, type GuardKind } from "./guard.ts";
 import { harnessHome, imageCacheDir, locksDir, noiseDir, overridesFile, rollbacksDir } from "./home.ts";
 import { LockHeldError, acquireLock } from "./lock.ts";
+import { realExec } from "../images.ts";
+import { realVulnDbDeps, vulnDbStatus, vulnDbUpdate } from "./vuln-db.ts";
 import { noiseHistoryCommand, noiseStatusCommand, recordNight } from "./noise-store.ts";
 import { appendOverride, overrideFromReport, readOverrides } from "./override-log.ts";
 import {
@@ -75,6 +77,20 @@ export async function doctorCommand(v: Values): Promise<number> {
   const result = await runDoctor(scopes as Scope[], realDoctorDeps(env));
   console.log(flag(v, "json") ? JSON.stringify(result, null, 2) : renderDoctor(result, process.platform));
   return result.ok ? 0 : 1;
+}
+
+// ---- harness vuln-db ----------------------------------------------------------------------------------
+
+export function vulnDbCommand(sub: string | undefined, v: Values): number {
+  const deps = realVulnDbDeps(process.env, realExec);
+  switch (sub) {
+    case "update":
+      return vulnDbUpdate(deps);
+    case "status":
+      return vulnDbStatus(deps, { json: flag(v, "json") });
+    default:
+      throw new UsageError("vuln-db update|status [--json]");
+  }
 }
 
 // ---- harness noise ------------------------------------------------------------------------------------
