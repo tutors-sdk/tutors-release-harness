@@ -11,7 +11,7 @@ Complete tables. Stable means covered by the compatibility promise in [`docs/con
 - [Artefacts](#artefacts)
 - [Contract version compatibility](#contract-version-compatibility)
 
-Invoke as `pnpm harness <command>` from a checkout (Node 22 or newer, `pnpm install`, and for capturing modes `pnpm exec playwright install chromium` and Docker). Flags are parsed globally: a flag is accepted after any command, and an unknown flag stops with `Unknown option '--x'` (exit 2, with a stack trace). `pnpm harness <command> --help` prints the usage and exits 0.
+Invoke as `pnpm harness <command>` from a checkout (Node 22 or newer, `pnpm install`, and for capturing modes `pnpm exec playwright install chromium` and Docker). Flags are parsed globally: a flag is accepted after any command, and an unknown flag stops with `Unknown option '--x'` (exit 2, still with a stack trace). `pnpm harness --help`, `-h` and `help` print the usage and exit 0; `pnpm harness <command> --help` (or `pnpm harness help <command>`) prints that command's part of it. A bare `pnpm harness` prints the usage and exits 2.
 
 ## Commands
 
@@ -21,14 +21,17 @@ Invoke as `pnpm harness <command>` from a checkout (Node 22 or newer, `pnpm inst
 | `harness compare --dir <run dir> --mode <mode>` | yes | | Re-run normalise, compare, claim and gate on captures already on disk; rewrites the reports in place. No Docker. |
 | `harness images ensure --a <ref> --b <ref>` | yes | | Per image: use it if local, else pull it and verify its cosign signature by digest, else (bare tag) build it from the monorepo ref. |
 | `harness mutants --base <ref>` | yes | | Build every mutant from the base reader image and prove the harness catches each. |
-| `harness version [--json]` | yes | | Harness version, git sha and contract version. |
+| `harness version [--json]` | yes | | Harness version, git sha and contract version (they differ: this checkout is harness 1.4.1 on contract 1.4.0). |
 | `harness doctor` | yes | 1.3.0 | What this machine lacks to run the harness, and how to install it. Read-only. |
 | `harness noise record` | yes | 1.3.0 | Append tonight's A/A to the noise store; keep the ratchet. |
 | `harness noise status` | yes | 1.3.0 | Does the latest status license a FAIL? |
 | `harness noise history` | **no** | 1.3.0 | The ratchet, the clean streak and the last nights. |
 | `harness guard masks\|engine\|all --base <ref>` | yes | 1.3.0 | The CI guards against a local ref. |
 | `harness override list` | **no** | 1.3.0 | The local, append-only record of overridden FAILs. |
-| `harness local nightly\|gate\|mutants\|watch` | **no** | 1.3.0 | One command per maintainer task, planned from the same commands the workflows run; `--dry-run` prints the plan. |
+| `harness local nightly\|gate\|mutants\|watch\|smoke` | **no** | 1.3.0 (`smoke` 1.4.0) | One command per maintainer task, planned from the same commands the workflows run; `--dry-run` prints the plan. `smoke` is the two-stacks smoke `ci.yml` runs (`pnpm smoke`). |
+| `harness vuln-db update\|status` | **no** | 1.4.0 | The pinned vulnerability database: `update` fetches it into `HARNESS_VULN_DB_DIR`, else `<HARNESS_HOME>/vuln-db`; `status` says which database a scan would read, its build time, age and checksum. |
+| `harness prune` | **no** | 1.4.0 | Free `out/` and the image cache. A dry run unless `--yes`. |
+| `harness help [command]`, `--help`, `-h` | yes | | The usage; exit 0. |
 | `harness stack up\|down --a <ref> --b <ref>` | **no** | | Start or stop both compose stacks. |
 | `harness kind up\|down\|rollout --a <ref> --b <ref>` | **no** | | The kind substrate. `down` deletes the namespaces; the cluster stays. |
 | `harness journeys` | **no** | | List the journeys: name, set, anonymous or signed-in. |
@@ -77,6 +80,14 @@ The last lines are `verdict: <VERDICT>`, the reasons, and `report: <path to repo
 
 `masks`, `engine` or `all`, with `--base <ref>` (else `HARNESS_BASE_REF`, else `origin/main`, else `main`). Compares `<base>...HEAD`. Exit `0`, `1` a violation, `2` when the ref does not exist or shares no history with `HEAD`.
 
+### `harness vuln-db`
+
+`update` runs `grype db update` into one directory (`HARNESS_VULN_DB_DIR`, else `<HARNESS_HOME>/vuln-db`) and then checks it: exit 0 when the database is usable, 1 when grype is missing, the fetch failed or the result is unusable. `status [--json]` exit 0 when a scan can use it; when it cannot, 1 if the vulnerability artefact is required (`HARNESS_REQUIRE_ARTEFACTS` naming `vulns`, `static` or `all`, or `HARNESS_REQUIRE_STATIC=1`) and 0 otherwise. `--json` prints `{ usable, dir, limitDays, detail, ... }`.
+
+### `harness prune`
+
+`--out <dir>` (default `./out`), `--older-than-days <n>` (default 14), `--keep-last <n>` (default 5), `--image-cache <dir>` (default `<HARNESS_HOME>/image-cache`), `--image-cache-days <n>` (default 30), `--yes` (delete; otherwise a dry run, and `--dry-run` wins over `--yes`), `--json`. Never removes state under `HARNESS_HOME`, the newest release run that did not FAIL, or anything from the last six hours. Exit 0, 1 when something could not be removed (in use), 2 usage or while a `harness local` task or watch holds its lock.
+
 ### `harness override list`
 
 `--since <ISO date>`, `--json` (`{ file, count, chainIntact, problems, entries }`). Reads `<HARNESS_HOME>/overrides.jsonl`; a broken hash chain prints a warning per problem.
@@ -85,9 +96,10 @@ The last lines are `verdict: <VERDICT>`, the reasons, and `report: <path to repo
 
 | Task | Flags |
 | --- | --- |
-| `nightly` | `--tag`, `--runs`, `--load`, `--image-cache`, `--store`, `--no-record`, `--dry-run`, `--port-offset` |
-| `gate` | `--a`, `--b` (required), `--a-digests`, `--b-digests`, `--claims`, `--rules`, `--runs`, `--only release\|migration\|upgrade`, `--migrations-a`, `--migrations-b`, `--override-reason`, `--override-by`, `--dry-run`, `--port-offset` |
+| `nightly` | `--tag`, `--runs` (default 5), `--load`, `--image-cache`, `--store`, `--no-record`, `--dry-run`, `--port-offset` |
+| `gate` | `--a`, `--b` (required), `--a-digests`, `--b-digests`, `--claims`, `--rules`, `--runs` (default 5), `--only release\|migration\|upgrade`, `--migrations-a`, `--migrations-b`, `--override-reason`, `--override-by`, `--dry-run`, `--port-offset` |
 | `mutants` | `--base`, `--dry-run`, `--port-offset` |
+| `smoke` | `--tag`, `--only stacks\|migration`, `--dry-run`, `--port-offset` |
 | `watch` | `--recorded`, `--production`, `--deployed`, `--deployed-digests`, `--release-record`, `--interval` (default `15m`, at least `10s`), `--once`, `--dry-run`, `--port-offset` |
 
 A run holds a lock (`locks/run.lock`; the watch holds `locks/watch.lock`): one per machine at a time. The exit code is the worst of the steps.
@@ -119,7 +131,7 @@ Every flag, alphabetically. Types: strings unless noted. "Stable" is from `cli.j
 | `--image-prefix` | yes | | Where bare tags live: a prefix (`tutors`) or a template with `{app}` |
 | `--interval` | no | 1.3.0 | `local watch`: `<n>s`, `<n>m` or `<n>h` |
 | `--journey` (repeatable) | yes | | Run only this journey |
-| `--json` (boolean) | yes | | `version`, `doctor`, `noise status`, `noise history`, `override list`: print data |
+| `--json` (boolean) | yes | | `version`, `doctor`, `noise status`, `noise history`, `override list`, `prune`, `vuln-db status`: print data |
 | `--keep` (boolean) | no | | Leave the stack running afterwards (`pnpm stack:down` stops it) |
 | `--last` | no | 1.3.0 | `noise history`: how many nights to show |
 | `--load` | yes | | k6 after the journeys on each side: `<rate>x<duration>`, e.g. `20x30s` (the duration is `<n>s`, `<n>m` or `<n>h`) |
@@ -131,8 +143,9 @@ Every flag, alphabetically. Types: strings unless noted. "Stable" is from `cli.j
 | `--no-stack` (`--stack`, boolean) | no | | Do not start or stop the stack; assume it is up |
 | `--now` | no | | The frozen clock, an ISO instant (default `HARNESS_NOW`, else `2026-09-16T09:05:00.000Z`) |
 | `--once` (boolean) | no | 1.3.0 | `local watch`: one comparison and exit |
-| `--only` | no | 1.3.0 | `local gate`: `release`, `migration` or `upgrade` |
-| `--out` | yes | | Output root (default `./out`) |
+| `--older-than-days`, `--keep-last`, `--image-cache-days` | no | 1.4.0 | `prune`: age, newest-per-mode and image-cache thresholds (14, 5, 30) |
+| `--only` | no | 1.3.0 | `local gate`: `release`, `migration` or `upgrade`; `local smoke`: `stacks` or `migration` |
+| `--out` | yes | | Output root (default `./out`); `prune` uses it as the directory to clean |
 | `--override-by` | yes | 1.2.0 | Who accepted the FAIL: a person, not a bot |
 | `--override-reason` | yes | 1.2.0 | Accept a FAIL and say why: 20 or more characters, not a rubber stamp. Both override flags are required together |
 | `--port-offset` | no | 1.3.0 | `local` and `doctor`: move the compose stack's host ports by this many. A variable you set yourself wins |
@@ -156,6 +169,7 @@ Every flag, alphabetically. Types: strings unless noted. "Stable" is from `cli.j
 | `--substrate` | no | | `compose` (default) or `kind` |
 | `--summary` | yes | 1.3.0 | `noise record`: a file the summary is appended to |
 | `--tag` | yes | 1.3.0 | `noise record`, `local nightly`: the production tag |
+| `--yes` (boolean) | no | 1.4.0 | `prune`: delete (the default is a dry run) |
 | `--upgrade-rate`, `--upgrade-seconds` | no | | Upgrade mode: requests per second (default 20) and seconds (default 45) |
 
 ## Image specs
@@ -188,10 +202,13 @@ The image prefix is `--image-prefix`, else `HARNESS_IMAGE_PREFIX`, else `tutors`
 | `HARNESS_KIND_CLUSTER` | derived | the kind cluster; wins over `HARNESS_PROJECT`. `tutors-harness` is refused |
 | `HARNESS_CLAIM_MAX_HUNKS` | `10` | a positive integer, else the default; `--claim-max-hunks` overrides |
 | `HARNESS_SBOM_SOURCE` | `auto` | `auto` or `attestation` (the cosign SPDX attestation of a pulled image) or `generate` (a local generator, on both sides) |
-| `HARNESS_SBOM_CMD` | `syft docker:{image} -o spdx-json` | the generator for `generate`; `{image}` is the image reference. Split on whitespace and quotes; no shell |
+| `HARNESS_SBOM_CMD` | `syft docker:{image} -o spdx-json`; on a Windows host the same syft in its `anchore/syft` container over the Docker socket | the generator for `generate`; `{image}` is the image reference. Split on whitespace and quotes; no shell |
 | `HARNESS_VULN_CMD` | `grype sbom:{sbom} -o json` | the scanner; `{sbom}` is the path of the SPDX SBOM; must print grype or trivy JSON. For trivy: `trivy sbom --format json {sbom}` |
-| `HARNESS_VULN_DB_DIR` | unset | a pre-fetched scanner database directory. Database updates are always switched off, so a scan uses exactly this database |
-| `HARNESS_REQUIRE_STATIC` | unset | `1`, `true` or `yes`: an image artefact that could not be collected is a failing hunk |
+| `HARNESS_VULN_DB_DIR` | unset | a pre-fetched scanner database directory. Database updates are always switched off, so a scan uses exactly this database. Unset means `<HARNESS_HOME>/vuln-db` when `harness vuln-db update` has made it, else the scanner's own cache |
+| `HARNESS_VULN_DB_MAX_AGE_DAYS` | `5` | how old (days since built) the vulnerability database may be: `harness doctor` warns beyond it, and it is passed to grype as its own limit |
+| `HARNESS_REQUIRE_ARTEFACTS` | unset | comma separated artefacts (`image-manifest`, `sbom`, `vulns`, `runtime`, `startup`, `bus`), or `static`, or `all`, whose `NOT COLLECTED` gap is a failing hunk. It only adds to what is already required (`runtime`, `startup`); an unknown name is exit 2 |
+| `HARNESS_ROLLBACK_ISSUE` | unset | post-deploy wording only: `1`, `true`, `yes` says a CI step opens a rollback issue; `0`, `false`, `no` says none does (`decide whether to roll back`). Unset: GitHub Actions has the step, anything else does not |
+| `HARNESS_REQUIRE_STATIC` | unset | `1`, `true` or `yes`: the alias for `HARNESS_REQUIRE_ARTEFACTS=static`; the two add up |
 
 **Not in the contract** (may change in a minor release):
 
@@ -230,9 +247,12 @@ By command:
 
 | Command | 0 | 1 | 2 |
 | --- | --- | --- | --- |
-| `run`, `compare` | pass, warn, or an overridden fail | fail, not overridden | usage; invalid claims or rules; a bad digest; an image may not be judged (`cannot judge:` on stderr); an invalid override; any harness error |
+| `run`, `compare` | pass, warn, or an overridden fail | fail, not overridden | usage; invalid claims or rules (a clean multi-line message, no stack trace); a bad digest; an image may not be judged (`cannot judge:` on stderr, and no output directory is left behind); an invalid override; any harness error |
 | `images ensure` | every image may be judged | an image could not be obtained | an image may not be judged (`ERROR:` in the output); 2 wins over 1 |
 | `mutants` | all ten caught and attributed | a mutant escaped, or the A/A was not clean | usage |
+| `prune` | done (or a dry run) | something could not be removed (in use) | usage; a run or watch holds the lock |
+| `vuln-db update` | fetched and usable | grype missing, the fetch failed, or the result is unusable | |
+| `vuln-db status` | usable, or unusable but not required | unusable and the vulnerability artefact is required | |
 | `kind rollout` | the rollout completed without failed requests | it did not | usage |
 | `doctor` | ready (warnings allowed) | a needed tool is missing | an unknown `--for` scope |
 | `noise record` | recorded | the ratchet is broken (files still written) | usage, or no status |
@@ -242,7 +262,7 @@ By command:
 | `local watch` | (loop: never exits on a difference); `--once`: the comparison passed, or the previous watch was still running | `--once`: production differs | usage; the lock is held (without `--once`) |
 | `version`, `journeys`, `override list`, `noise history` | success | | usage |
 
-`warn` exits `0` on purpose. `harness` with no command prints the usage and exits `2`; `--help` after a command prints it and exits `0`. On exit `2` there may be no `report.json`.
+`warn` exits `0` on purpose. `harness` with no command prints the usage and exits `2`; `--help`, `-h` and `help` print it and exit `0`. On exit `2` there may be no `report.json`.
 
 ## Files and directories
 
@@ -263,6 +283,7 @@ By command:
 | `<HARNESS_HOME>/image-cache/images.tar`, `manifest.json` | `images ensure --image-cache` | the last verified production images |
 | `<HARNESS_HOME>/locks/run.lock`, `watch.lock` | `local` | one heavy run, one watch |
 | `<HARNESS_HOME>/image-provenance.json` | `images ensure` | the ledger `run` reads |
+| `<HARNESS_HOME>/vuln-db/` | `harness vuln-db update` | the pinned vulnerability database (about 2.1 GB) |
 | `normalise/masks.yaml` | people | the masks and thresholds |
 | `mutants/mutants.yaml` | people | the ten mutants and what each must be attributed to |
 | `claims/example.claims.yaml` | people | an example claims file (real ones live in the monorepo) |
@@ -295,7 +316,7 @@ Nineteen. Scopes and meanings are in [chapter 1](01-concepts.md#artefacts) and [
 | `runtime` | 1.2.0 | container posture, declared and measured |
 | `startup` | 1.2.0 | time to healthy over restarts |
 
-A consumer of `report.json` must tolerate an artefact name it does not know.
+A consumer of `report.json` must tolerate an artefact name it does not know. A `NOT COLLECTED` gap has one shape for every artefact (`NOT COLLECTED: <what> of <app> on side <a|b>: <reason>`, hunk scope `<app>/not-collected` or `<artefact>/not-collected`).
 
 Provenance values, likewise: `local`, `pulled+verified`, `pulled-unverified`, `built-from-ref`, `cached` (since 1.2.0). Verdicts: `pass`, `warn`, `fail`. Severities: `fail`, `info`. Modes: `noise`, `release`, `any-two`, `upgrade`, `migration`, `post-deploy`. Substrates: `compose`, `kind`.
 
@@ -311,9 +332,9 @@ Three numbers, stamped where a reader can see them:
 
 ```console
 $ pnpm harness version
-harness 1.3.0 (164963a0b8cf45d4718c3c93555ec9b98bb95f94) · contract 1.3.0
+harness 1.4.1 (9513b145e26c871a9b1785fb7a2f752f258407aa) · contract 1.4.0
 $ pnpm harness version --json
-{"version":"1.3.0","gitSha":"164963a0b8cf45d4718c3c93555ec9b98bb95f94","contractVersion":"1.3.0"}
+{"version":"1.4.1","gitSha":"9513b145e26c871a9b1785fb7a2f752f258407aa","contractVersion":"1.4.0"}
 ```
 
 `gitSha` is `git rev-parse HEAD` of the checkout, or `HARNESS_GIT_SHA` when set, or `null`.
@@ -324,9 +345,9 @@ What bumps what:
 | --- | --- | --- |
 | major (`schemaVersion` changes too) | a consumer written against the contract could break or be misled | removing or renaming a `report.json` field; changing an exit code's meaning or the verdicts a mode can return; changing the A/A rule's default; a valid claims file becoming invalid; removing or renaming a stable command, flag, payload field, variable or artifact; making an optional payload field required; the harness starting to write to pull requests |
 | minor | additions a careful consumer survives | a new optional report field; a new artefact name; a new mode, command, stable flag, optional payload field, event type, variable with a default, or artifact; a new optional claims key; any change to non-stable commands and flags |
-| patch | nothing above changes | the wording of reasons, summaries, `report.md`, `report.html`; documentation; fixes that make the code match the contract; the workflows' default `runs` |
+| patch | nothing above changes | the wording of reasons, summaries, `report.md`, `report.html`; documentation; fixes that make the code match the contract (for example `--help` exiting 0, a claims error without a stack trace) |
 
-The harness version moves at least as far as the contract; a contract major is a harness major. Independently, the harness version must be bumped by any pull request that changes what the harness compares or gates on ([chapter 5](05-noise-and-self-test.md#an-engine-change-needs-a-version-bump-and-the-mutants)).
+The harness version moves at least as far as the contract (this checkout is harness 1.4.1 on contract 1.4.0: 1.4.1 added masks for the CDN in front of production and changed nothing in the contract); a contract major is a harness major. Independently, the harness version must be bumped by any pull request that changes what the harness compares or gates on ([chapter 5](05-noise-and-self-test.md#an-engine-change-needs-a-version-bump-and-the-mutants)).
 
 What each contract version added, for a consumer written against an earlier one:
 
@@ -335,6 +356,7 @@ What each contract version added, for a consumer written against an earlier one:
 | 1.0.0 | the contract: `report.json`, `noise-status.json`, the CLI, the dispatch, the claims file |
 | 1.1.0 | Quay images by template, cosign verification by digest, `provenance` in every report, `--image-prefix` template, `--allow-unsigned`, the `HARNESS_COSIGN_*` variables |
 | 1.2.0 | six artefacts (`bus`, `image-manifest`, `sbom`, `vulns`, `runtime`, `startup`); `claimHygiene`, `override`, `imageArtefacts`, `provenance: cached`, `noise.degraded`; `--image-cache`, `--require-verified`, `--override-*`; the `noise` branch; the SBOM and scanner variables |
+| 1.4.0 | the pinned vulnerability database (`harness vuln-db`), one `NOT COLLECTED` convention and `HARNESS_REQUIRE_ARTEFACTS`, `harness prune`, `harness local smoke`, `--help` and clean exit 2 messages, canonical `content-type` and `cache-control`, symmetric origins and secret redaction for post-deploy, `HARNESS_ROLLBACK_ISSUE`, the `mutant-noise-report` artifact, the `release <candidate>` run title. No `report.json` field, exit code meaning, claims key or payload changes |
 | 1.3.0 | digests in the dispatch (`--a-digests`, `--b-digests`), the release record and the deployment check (`--deployed`, `--deployed-digests`, `--release-record`, `report.json` `deployment`), `rule` claims and `--rules` (`rules_url`), the local noise store as the default source of `--noise`, the stable commands `doctor`, `noise record`, `noise status`, `guard`, and checkout-derived project and cluster names (`HARNESS_HOME`, `HARNESS_PROJECT`) |
 
 A run against a dispatch without any 1.3.0 field behaves exactly as under 1.2.0. Four things are not purely additive: a `rule` key in a claim was ignored before and is now checked; a missing `--noise` no longer means "no status" on a machine that has a local noise store; the default name of the compose project and kind cluster changed; and a stack under the old name `tutors-harness` is left alone.
