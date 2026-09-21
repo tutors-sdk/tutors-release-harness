@@ -3,7 +3,9 @@
 # between runs never blocks the compose stack:
 #   4100-4102 -> side a reader/catalogue/live, 4200-4202 -> side b.
 #
-#   kind create cluster --name tutors-harness --config deploy/kind/kind-config.yaml
+#   kind create cluster --name <cluster> --config deploy/kind/kind-config.yaml
+#   (`harness kind up` does this, under this checkout's own cluster name: tutors-harness-<8 hex of
+#   the checkout's path>, or HARNESS_KIND_CLUSTER. A cluster called plain `tutors-harness` is never touched.)
 #
 # Pod Security Admission is enforced per namespace (see src/substrate/kind.ts):
 # both harness namespaces carry pod-security.kubernetes.io/enforce=restricted,

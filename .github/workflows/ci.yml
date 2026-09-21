@@ -31,7 +31,7 @@ jobs:
       - run: pnpm lint
       - run: pnpm test
 
-  # A mask is a blind spot you chose: a PR that adds or loosens one changes nothing else (src/ci/mask-change.ts),
+  # A mask is a blind spot you chose: a PR that adds or loosens one changes nothing else (`harness guard masks`, src/ci/mask-change.ts),
   # and a mask list past ~40 is flagged. Always reports on a pull request, so it can be a required check.
   masks:
     name: Masks land in their own PR (required)
@@ -52,7 +52,7 @@ jobs:
       - name: Masks added or loosened, and nothing else changed
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: pnpm exec tsx src/ci/mask-change.ts --base "$BASE_SHA"
+        run: pnpm harness guard masks --base "$BASE_SHA"
 
   # Phase H0 exit criterion, kept running: any two tags boot side by side and
   # one journey runs against both. Images are pulled from Quay and their
@@ -67,6 +67,9 @@ jobs:
       # Who must have signed a pulled image: the monorepo's image-build.yml workflow (docs/contract.md).
       HARNESS_COSIGN_IDENTITY: ${{ vars.HARNESS_COSIGN_IDENTITY || '^https://github.com/tutors-sdk/tutors-mono-repo/\.github/workflows/image-build\.yml@' }}
       TAG: ${{ vars.HARNESS_PRODUCTION_TAG || 'main' }}
+      # The compose project is otherwise derived from the checkout's path (src/project.ts). A runner has one checkout, so it
+      # is pinned, and the logs step below can name it.
+      HARNESS_COMPOSE_PROJECT: tutors-harness
     steps:
       - uses: actions/checkout@v4
         with:
@@ -98,7 +101,7 @@ jobs:
 
       - name: Stack logs on failure
         if: failure()
-        run: docker compose -p tutors-harness -f compose.harness.yaml --profile upgrade logs --no-color || true
+        run: docker compose -p "$HARNESS_COMPOSE_PROJECT" -f compose.harness.yaml --profile upgrade logs --no-color || true
 
       - uses: actions/upload-artifact@v4
         if: always()

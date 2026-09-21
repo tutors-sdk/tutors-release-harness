@@ -39,7 +39,11 @@ ref="${1:?git ref (tag, branch or sha) required}"
 tag="${2:-$ref}"
 repo="${3:-${TUTORS_REPO:-https://github.com/tutors-sdk/tutors-mono-repo.git}}"
 
-work="$(mktemp -d)"
+# Under Git Bash on Windows, mktemp gives /tmp/tmp.XXXX, a path only MSYS understands, while git.exe and docker.exe are native.
+# The harness runs this script with MSYS_NO_PATHCONV=1 (so it can pass /paths to docker untouched), which switches off
+# MSYS's own conversion of arguments: hand the native tools the Windows form (C:/Users/.../tmp.XXXX) instead.
+native_path() { if command -v cygpath >/dev/null 2>&1; then cygpath -m "$1"; else printf '%s' "$1"; fi; }
+work="$(native_path "$(mktemp -d)")"
 trap 'rm -rf "$work"' EXIT
 
 echo "cloning $repo @ $ref"

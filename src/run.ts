@@ -5,6 +5,7 @@ import { reference } from "../traffic/journeys/reference.ts";
 import { matchClaims } from "./claims/matcher.ts";
 import { DEFAULT_CLAIM_MAX_HUNKS, claimHygiene, claimMaxHunksFromEnv } from "./claims/hygiene.ts";
 import { loadClaims } from "./claims/schema.ts";
+import { loadRules } from "./claims/rules.ts";
 import { captureSide } from "./collectors/index.ts";
 import { compareCaptures } from "./compare/index.ts";
 import { gate } from "./gate.ts";
@@ -13,10 +14,12 @@ import { runUpgrade } from "./modes/upgrade.ts";
 import { DEFAULT_MASKS_FILE, loadMasks, normalise, type MaskHits } from "./normalise/masks.ts";
 import { writeReports } from "./report/index.ts";
 import { fileLedger, realExec, resolveSideProvenance, trustPolicyFromEnv } from "./images.ts";
+import { pinImages, type Digests } from "./digests.ts";
+import { deploymentReason, findReleaseRecord, judgeDeployment, releaseRecordOf, writeReleaseRecord } from "./release-record.ts";
 import { ROOT, externalSide, imagesFor, sideSpec, stackDown, stackUp } from "./stack.ts";
 import { kindDown, kindSide, kindUp } from "./substrate/kind.ts";
 import { overrideLine, recordOverride, type OverrideRequest } from "./override.ts";
-import type { Claim, Hunk, Mode, NoiseStatus, RunReport, SideCapture, SideSpec, Substrate } from "./types.ts";
+import type { Claim, Deployment, Hunk, Mode, NoiseStatus, RunReport, SideCapture, SideSpec, Substrate } from "./types.ts";
 
 import { HARNESS_VERSION, SCHEMA_VERSION, harnessInfo } from "./version.ts";
 import { DEFAULT_RESTARTS } from "./runtime/startup.ts";
@@ -39,6 +42,8 @@ export interface RunOptions {
   sets: JourneySet[];
   journeys: string[];
   claimsFile?: string;
+  /** Since 1.3.0: the release's rules.json, a path or an http(s) URL (`--rules`). A claim's `rule` must be in it. */
+  rules?: string;
   masksFile: string;
   /** Path to a noise-status.json, or "skip" to waive (logged in the report). */
   noise?: string;
@@ -75,6 +80,16 @@ export interface RunOptions {
   recorded?: string;
   /** post-deploy: live URLs, reader=...,catalogue=...,live=... */
   production?: string;
+  /** Since 1.3.0. The digest of each side's images, from the release dispatch (`--a-digests`, `--b-digests`): the references are pinned with them. */
+  aDigests?: Digests;
+  bDigests?: Digests;
+  /**
+   * Since 1.3.0, post-deploy: what the deploy says it deployed (`--deployed <tag>`, `--deployed-digests`), and where the
+   * release record is (`--release-record`; default the store under HARNESS_HOME). Compared with the record; a difference warns.
+   */
+  deployed?: { production?: string; digests: Digests; record?: string };
+  /** Since 1.3.0. Release mode leaves a release record (default true). The mutants run release mode on planted faults: they must not leave one. */
+  recordRelease?: boolean;
   /** migration: a pg_dump to restore before applying the candidate's migrations. */
   snapshot?: string;
   /** upgrade: seconds of load and requests per second. */
@@ -117,6 +132,8 @@ interface CompareInput {
   override?: OverrideRequest;
   now: string;
   runs: number;
+  /** Since 1.3.0: post-deploy's comparison of what was deployed with what release mode recorded. Never changes a FAIL; a PASS becomes a WARN. */
+  deployment?: Deployment;
   /** Hunks produced by a rehearsal mode rather than by capture comparison. */
   extraHunks?: Hunk[];
   extras?: Pick<RunReport, "migration" | "upgrade">;
@@ -139,7 +156,10 @@ export function compareFromCaptures(input: CompareInput): RunOutcome {
   const ranAt = new Date();
   const noise = readNoise(input.noise, input.log);
   const degraded = input.mode === "noise" && input.requireVerified ? evidenceGaps(input.a, input.b) : [];
-  const verdict = gate({ mode: input.mode, compare, noiseWaived: noise.waived, noiseMaxAgeDays: input.noiseMaxAgeDays, ranAt, ...(degraded.length ? { degraded } : {}), ...(noise.status ? { noise: noise.status } : {}) });
+  const gated = gate({ mode: input.mode, compare, noiseWaived: noise.waived, noiseMaxAgeDays: input.noiseMaxAgeDays, ranAt, ...(degraded.length ? { degraded } : {}), ...(noise.status ? { noise: noise.status } : {}) });
+  // Deployed images that are not the ones judged: loud, advisory. A FAIL stays a FAIL, and a PASS is not a clean one.
+  const deploymentLine = input.deployment ? deploymentReason(input.deployment) : undefined;
+  const verdict = deploymentLine && gated.verdict === "pass" ? { ...gated, verdict: "warn" as const } : gated;
   const override = input.override ? recordOverride(input.override, verdict.verdict, ranAt) : undefined;
   const hygiene = input.claims.length ? claimHygiene(compare, input.claimMaxHunks ?? DEFAULT_CLAIM_MAX_HUNKS) : undefined;
 
@@ -160,7 +180,7 @@ export function compareFromCaptures(input: CompareInput): RunOutcome {
     sides: { a: input.a.images, b: input.b.images },
     ...(input.a.provenance || input.b.provenance ? { provenance: { ...(input.a.provenance ? { a: input.a.provenance } : {}), ...(input.b.provenance ? { b: input.b.provenance } : {}) } } : {}),
     verdict: verdict.verdict,
-    reasons: [...(override ? [overrideLine(override)] : []), ...verdict.reasons, ...provenanceReasons(input.a, input.b), ...imageStaticReasons(input.a, input.b)],
+    reasons: [...(override ? [overrideLine(override)] : []), ...(deploymentLine ? [deploymentLine] : []), ...verdict.reasons, ...provenanceReasons(input.a, input.b), ...imageStaticReasons(input.a, input.b)],
     ...(noise.status ? { noise: noise.status } : {}),
     compare,
     masksApplied,
@@ -168,7 +188,8 @@ export function compareFromCaptures(input: CompareInput): RunOutcome {
     ...(input.a.load && input.b.load ? { load: { a: strip(input.a.load), b: strip(input.b.load) } } : {}),
     ...(hygiene ? { claimHygiene: hygiene } : {}),
     ...(override ? { override } : {}),
-    ...(imageArtefacts ? { imageArtefacts } : {})
+    ...(imageArtefacts ? { imageArtefacts } : {}),
+    ...(input.deployment ? { deployment: input.deployment } : {})
   };
 
   const files = writeReports(input.captureDir, report);
@@ -226,7 +247,9 @@ function emptyCapture(spec: SideSpec): SideCapture {
 
 /** The whole thing: stack up, capture both sides, normalise, compare, claim, gate, report, stack down. */
 export async function run(opts: RunOptions): Promise<RunOutcome> {
-  const claims = opts.claimsFile ? loadClaims(opts.claimsFile) : [];
+  // Before anything starts: an unreadable rules file, or a claim naming a rule it does not hold, is exit 2 with no stack up.
+  const rules = opts.rules ? await loadRules(opts.rules) : undefined;
+  const claims = opts.claimsFile ? loadClaims(opts.claimsFile, rules) : [];
   const outDir = resolve(opts.outDir, timestampDir(opts.mode));
   mkdirSync(outDir, { recursive: true });
   opts.log(`harness ${HARNESS_VERSION} · mode ${opts.mode} · substrate ${opts.substrate} · clock ${opts.now} · ${opts.runs} run(s) · out ${outDir}`);
@@ -256,11 +279,11 @@ export async function run(opts: RunOptions): Promise<RunOutcome> {
     mkdirSync(join(outDir, "a"), { recursive: true });
     writeFileSync(join(outDir, "a", "capture.json"), JSON.stringify(recordedRef, null, 2));
     if (!recordedRef.journeys.length) opts.log("  warning: the recorded run has no reference journeys; run release mode with --set reference included");
-    return compareFromCaptures({ ...common, mode: "post-deploy", a: recordedRef, b: captureB });
+    return compareFromCaptures({ ...common, mode: "post-deploy", a: recordedRef, b: captureB, ...(opts.deployed ? { deployment: checkDeployment(opts.deployed, opts.log) } : {}) });
   }
 
-  const a: SideSpec = sideSpec("a", imagesFor(opts.a, opts.imagePrefix));
-  const b: SideSpec = sideSpec("b", imagesFor(opts.b, opts.imagePrefix));
+  const a: SideSpec = sideSpec("a", pinImages(imagesFor(opts.a, opts.imagePrefix), opts.aDigests, "--a-digests"));
+  const b: SideSpec = sideSpec("b", pinImages(imagesFor(opts.b, opts.imagePrefix), opts.bDigests, "--b-digests"));
   if (opts.substrate === "kind") {
     // Kind publishes on its own host ports; the signed-in reader and the stubs are compose-only (deploy/kind/README.md).
     Object.assign(a, kindSide(a));
@@ -330,7 +353,22 @@ export async function run(opts: RunOptions): Promise<RunOutcome> {
   }
 
   opts.log("comparing…");
-  return compareFromCaptures({ ...common, mode: opts.mode, a: captureA, b: captureB, extraHunks, ...(upgrade ? { extras: { upgrade } } : {}) });
+  const outcome = compareFromCaptures({ ...common, mode: opts.mode, a: captureA, b: captureB, extraHunks, ...(upgrade ? { extras: { upgrade } } : {}) });
+  // Release mode leaves the record post-deploy mode checks a deployment against (docs/contract.md, "The release record").
+  if (opts.mode === "release" && opts.recordRelease !== false) {
+    const made = releaseRecordOf(outcome.report, { pinned: opts.bDigests !== undefined });
+    if ("record" in made) writeReleaseRecord(made.record, { outDir: outcome.outDir, log: opts.log });
+    else opts.log(made.skipped);
+  }
+  return outcome;
+}
+
+/** Post-deploy: what the deploy says it deployed, against the release record; logs what it found. */
+function checkDeployment(deployed: NonNullable<RunOptions["deployed"]>, log: (m: string) => void): Deployment {
+  const found = deployed.production ? findReleaseRecord(deployed.production, deployed.record) : undefined;
+  const deployment = judgeDeployment({ ...(deployed.production ? { production: deployed.production } : {}), digests: deployed.digests, ...(found ? { found } : {}) });
+  log(deployment.status === "match" ? `  deployed images match the release record of ${deployment.record?.candidate} (${found?.file})` : `  WARNING: ${deploymentReason(deployment)}`);
+  return deployment;
 }
 
 export const defaultRunOptions = (): Omit<RunOptions, "mode" | "a" | "b"> => ({

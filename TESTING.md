@@ -24,16 +24,23 @@ fail, and ratchets. This is the runway for the runway.
 | The app ignores the frozen clock | a stat rendered from the wall clock differs run to run | Unit on `probeClock` (`tests/clock-probe.test.ts`); the decision is `docs/harness-now.md` |
 | A container's posture drifts, or an artefact silently stops being collected | a candidate whose image runs as root, adds a capability or a `VOLUME`, or writes outside `/tmp`; docker missing on the runner and the report saying nothing | Unit on the `runtime` engine, on the posture parsers and on the collectors with the process runner injected (a fake docker and kubectl); "not collected" is a failing hunk |
 | Startup time regresses, or the sample cannot judge | a candidate that boots twice as slowly; three restarts a side reported as if judged | Unit on the `startup` engine (Mann-Whitney, the shift floor, "cannot reach alpha") and on the restart sampler with a fake clock |
+| A claim names a Rule that is not there, or that nobody can check | `rule: "0999"` with no such Rule; `rule` with no rules file; an unquoted `rule: 0031` read as 31; the claims that spell a Rule out in `reason` broken by the new key | Unit (`tests/rules.test.ts`): the A/A (a claims file with no `rule` reads exactly as before), the planted missing rule / missing file / malformed id, and the must-not-flag (free-text `Rule 0031:` claims, an unused Rule, extra keys in `rules.json`); through the process, exit 2 before any output directory exists |
+| Two checkouts share a stack, or the harness touches one that is not its own | two worktrees on one machine replacing each other's compose stack; a kind cluster called `tutors-harness` adopted or deleted; a doctor that hides the old stack | Unit on `src/project.ts` (`tests/project-name.test.ts`: the same path, the same name, two paths two names, Windows case, overrides, the refusal through the process) and on `harness doctor` with a fake Docker and kind (`tests/local-doctor.test.ts`: a legacy stack and a legacy cluster are reported as not touched, and nothing that changes a container is ever run) |
 | The stacks are not identical | side b has an env var side a lacks | Unit on `compose.harness.yaml` and the kind manifests |
 | The whole thing cannot boot | compose or kind fails on a laptop or in CI | Smoke: A/A on one journey (CI, every PR) |
 | The harness cannot fail | a planted regression passes release mode | Mutants (weekly, and in CI on any PR that changes an engine, a mask, a journey, the gate or a mutant) |
 | The contract drifts | `report.json` gains a field the schema does not know; a workflow uses an undocumented flag | Unit (`tests/contract.test.ts`) |
 | The harness is noisy | A/A on the production tag is not clean | Nightly noise; the gate degrades to warn automatically |
 | The harness FAILs on weak evidence | release FAILs with no status, a stale, dirty or degraded one; a cache or a local build passes as a clean A/A | Unit, end to end (`tests/release-gate.test.ts`) and on the gate |
+| A pinned image is not the one judged | a tag that moved after the dispatch took its digests; a source rebuild standing in for a pinned digest; a digest nobody signed; a digest that contradicts the spec | Unit on `ensureImages` with digests (`tests/images.test.ts`, a fake registry that says what each tag resolves to) and on `src/digests.ts` (`tests/digests.test.ts`): the A/A, the planted moved tag, the must-not-flag of a dispatch with no digests |
+| A deployment runs something other than what was judged | a digest that differs, an app with a digest on one side only, no release record, a deploy that reports none; a FAIL softened or a PASS left clean | Unit on `src/release-record.ts` and, through the real pipeline, on post-deploy mode (`tests/release-record.test.ts`): the verdict becomes WARN, never FAIL, and the reports are loud |
 | The registry is down and the night is green | the nightly used last night's cached image and reported clean | Unit on `images ensure` with a fake registry (`tests/image-cache.test.ts`); the status is `degraded` and the gate refuses it |
 | The ratchet loosens | the noise count reaches 0 and creeps back without anyone noticing | Unit on the history (`tests/noise-history.test.ts`); the nightly's publish job fails |
 | A mask hides the change that needs it | a mask added in the same PR as the engine change it makes pass | Unit (`tests/mask-change.test.ts`) and the CI job "Masks land in their own PR (required)" |
 | Claims become a checkbox | one claim swallows a dozen hunks; `scope: "**"` with `approvedBy` on every release | Unit (`tests/claim-hygiene.test.ts`); reported, never gates |
+| Local and CI diverge | a workflow step changes and the local wrapper does not; logic that lives only in workflow YAML; a masks guard that only CI can run | Unit (`tests/local-parity.test.ts`): every `pnpm harness` line in a workflow is held to the plan of `harness local nightly\|gate\|mutants\|watch`, and no workflow may run `src/ci/*.ts` directly |
+| The machine cannot run the harness | cosign 2, WSL's `bash` first on a Windows PATH, CRLF in a shell script, a port or the compose subnet already taken, a Docker VM clock adrift | Unit on fake machines (`tests/local-doctor.test.ts`); `harness doctor` on the real one |
+| The local noise store loosens the gate | a stale, dirty or degraded local status licenses a FAIL; the default store is ignored | Unit, end to end through the real pipeline (`tests/local-noise-store.test.ts`) |
 | A FAIL is bypassed and nobody knows | an admin merges past the check | The recorded override (`--override-reason`), unit-tested; the quarterly count in `docs/noise-burndown.md` |
 
 ## Tiers
@@ -150,6 +157,17 @@ pnpm harness run --mode migration --a dir:tests/fixtures/migrations/a --b dir:te
 Upgrade mode's negative fixture is the `route-500` mutant rolled in through
 the edge: `pnpm harness run --mode upgrade --a local --b tutors-harness/mutant-route-500:latest`
 must fail with failures attributed to `b`.
+
+### Local-first (`pnpm test`, seconds)
+
+`tests/local-*.test.ts`: the doctor on fake machines, the noise store and the
+guards, the plans of `harness local ...` and how a plan runs (a fake executor:
+which failure stops which stream), the watch loop with a fake clock, the run
+lock, the override log, and the CLI through a real process for exit codes and
+`--dry-run`. Nothing starts Docker: the one thing they cannot prove is that the
+Windows paths in `scripts/*.sh` and the tools' install locations hold on a real
+machine, which is what `harness doctor` and the first `harness local nightly` are
+for. Setup, scheduling and the parity matrix are in [docs/local.md](docs/local.md).
 
 ## Ratchets
 

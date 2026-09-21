@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/tutors-sdk/tutors-release-harness/blob/main/docs/contract/release-record.schema.json",
+  "title": "release record (contract 1.x)",
+  "description": "What release mode judged, for post-deploy mode to check a deployment against. Written to releases/<candidate>.json in the harness state directory (HARNESS_HOME) and to release-record.json in the run's output directory; release.yml publishes it to the release-records branch. Derived from ReleaseRecordSchema in src/release-record.ts.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "candidate", "release", "recordedAt", "harness", "verdict", "overridden", "pinned", "verified", "digests"],
+  "properties": {
+    "schemaVersion": { "const": 1, "description": "Major version of the contract." },
+    "candidate": { "type": "string", "pattern": "^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$", "description": "The candidate tag that was judged (side b), e.g. 16.3.0-rc.4." },
+    "release": { "type": "string", "pattern": "^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$", "description": "The release it belongs to: the candidate without its prerelease suffix (16.3.0). A tag that is not a version is its own release." },
+    "production": { "type": "string", "pattern": "^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$", "description": "The production tag it was judged against (side a), when that had one." },
+    "recordedAt": { "type": "string", "format": "date-time" },
+    "harness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "gitSha", "contractVersion"],
+      "properties": { "version": { "type": "string" }, "gitSha": { "type": ["string", "null"] }, "contractVersion": { "type": "string" } }
+    },
+    "verdict": { "enum": ["pass", "fail", "warn"], "description": "The verdict of the release-mode run." },
+    "overridden": { "type": "boolean", "description": "A FAIL was accepted with --override-reason." },
+    "pinned": { "type": "boolean", "description": "The candidate's images were pinned by the dispatch's candidate_digests (--b-digests)." },
+    "verified": { "type": "boolean", "description": "Every candidate image was pulled from a registry and its signature verified in the run. Only then are the digests evidence of what was judged." },
+    "digests": {
+      "type": "object",
+      "description": "app -> the registry digest of each candidate image that had one. Empty when the candidate was not pulled from a registry (built from a git ref, or local).",
+      "propertyNames": { "enum": ["reader", "catalogue", "live"] },
+      "additionalProperties": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+    }
+  }
+}

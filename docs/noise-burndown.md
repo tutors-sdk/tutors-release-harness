@@ -373,6 +373,12 @@ cannot override). Every job then passes
   this repository with the report as its body. An override on a run that did not
   fail is recorded with `applied: false` and opens no issue.
 
+On a machine, `harness local gate --override-reason … [--override-by <who>]`
+does the same, and every applied override is appended to the local record
+`<HARNESS_HOME>/overrides.jsonl` (the issue's equivalent, hash-chained; see
+[docs/local.md](local.md)): `harness override list --since 2026-07-01` is the
+count.
+
 The reason must be 20+ characters and not a rubber stamp; name the difference
 and the decision (`Rule 0044: payments hotfix, frame options restored in
 16.3.1`).

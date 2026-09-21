@@ -2,9 +2,15 @@
 # journeys against production and compare with the candidate's recorded
 # release-mode capture. A new difference opens a rollback issue with the report.
 #
-# Dispatched by the monorepo's deploy job (repository_dispatch "deployed"; no
-# payload field is read) and scheduled as the synthetic monitor. The recorded
-# run is the release-report artifact of the latest successful release run.
+# Dispatched by the monorepo's deploy job (repository_dispatch "deployed") and
+# scheduled as the synthetic monitor. The recorded run is the release-report
+# artifact of the latest successful release run.
+#
+# Since 1.3.0 the "deployed" payload may say what was deployed: `production` (the
+# tag) and `digests` (app -> sha256:...). They are compared with the release record
+# release mode left on the `release-records` branch, and a difference, or no record,
+# is a WARNING (docs/contract.md, "Checking a deployment"). Without them, as in 1.2.0,
+# nothing is compared.
 name: Post-deploy and synthetic monitor
 
 on:
@@ -33,6 +39,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
+      DEPLOYED: ${{ github.event.client_payload.production }}
+      DEPLOYED_DIGESTS: ${{ github.event.client_payload.digests && toJSON(github.event.client_payload.digests) || '' }}
       PRODUCTION_URLS: ${{ vars.HARNESS_PRODUCTION_URLS || 'reader=https://tutors.dev,catalogue=https://catalogue.tutors.dev,live=https://live.tutors.dev' }}
     steps:
       - uses: actions/checkout@v4
@@ -63,7 +71,18 @@ jobs:
         run: |
           mkdir -p noise
           gh api -H "Accept: application/vnd.github.raw" "repos/${GITHUB_REPOSITORY}/contents/noise-status.json?ref=noise" > noise/noise-status.json 2>/dev/null || rm -f noise/noise-status.json
-          pnpm exec tsx src/ci/noise-history.ts vet --status noise/noise-status.json
+          pnpm harness noise status --store noise
+
+      # The release record of what was deployed, from the `release-records` branch. Missing is not an error: the run
+      # then says so, loudly, as a warning. The tag is checked before it names a file.
+      - name: Fetch the release record
+        if: env.DEPLOYED != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          case "$DEPLOYED" in *[!A-Za-z0-9._-]*|"") echo "the deployed tag is not a tag: not fetching a record" >&2; exit 1;; esac
+          mkdir -p releases
+          gh api -H "Accept: application/vnd.github.raw" "repos/${GITHUB_REPOSITORY}/contents/releases/${DEPLOYED}.json?ref=release-records" > "releases/${DEPLOYED}.json" 2>/dev/null || rm -f "releases/${DEPLOYED}.json"
 
       - name: Post-deploy mode
         id: run
@@ -71,7 +90,8 @@ jobs:
           NOISE_FILE: ${{ steps.noise.outputs.noise_file }}
         run: |
           recorded="$(ls -d recorded/*-release | head -1)"
-          pnpm harness run --mode post-deploy --recorded "$recorded" --production "$PRODUCTION_URLS" ${NOISE_FILE:+--noise "$NOISE_FILE"}
+          pnpm harness run --mode post-deploy --recorded "$recorded" --production "$PRODUCTION_URLS" ${NOISE_FILE:+--noise "$NOISE_FILE"} \
+            ${DEPLOYED:+--deployed "$DEPLOYED" --release-record releases} ${DEPLOYED_DIGESTS:+--deployed-digests "$DEPLOYED_DIGESTS"}
 
       - uses: actions/upload-artifact@v4
         if: always()

@@ -11,9 +11,9 @@ import { ToolError, mustRun, mustRunBoth } from "./tool.ts";
  */
 
 export interface StackNames {
-  /** The compose project (`tutors-harness`). */
+  /** The compose project (`tutors-harness-<8 hex>`, src/project.ts). */
   composeProject: string;
-  /** The kind cluster's kubectl context (`kind-tutors-harness`). */
+  /** The kind cluster's kubectl context (`kind-tutors-harness-<8 hex>`). */
   kubeContext: string;
   /** The namespace a side lives in under kind (`harness-a`). */
   namespace: (side: SideName) => string;

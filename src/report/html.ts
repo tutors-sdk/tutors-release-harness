@@ -1,5 +1,7 @@
 import type { Hunk, RunReport } from "../types.ts";
+import { claimLabel } from "../claims/rules.ts";
 import { loudProvenance } from "./provenance.ts";
+import { deploymentHtml, loudDeployment } from "./deployment.ts";
 import { imageArtefactsHtml } from "./image-static.ts";
 
 const esc = (s: string) => s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
@@ -31,7 +33,7 @@ function provenanceBlock(report: RunReport): string {
 export function renderHtml(report: RunReport): string {
   const { compare } = report;
   const loud = loudProvenance(report);
-  const rows = compare.matches.map((m) => hunkRow(m.hunk, m.claim?.reason)).join("\n");
+  const rows = compare.matches.map((m) => hunkRow(m.hunk, m.claim ? claimLabel(m.claim) : undefined)).join("\n");
   const fired = Object.entries(report.masksApplied).filter(([, n]) => n > 0);
   const silent = Object.entries(report.masksApplied).filter(([, n]) => n === 0);
   return `<!doctype html>
@@ -64,6 +66,7 @@ export function renderHtml(report: RunReport): string {
 <h1>Tutors release harness — <code>${esc(report.mode)}</code> <span class="verdict ${report.verdict}">${report.verdict}</span></h1>
 <p><small>${esc(report.ranAt)} · clock ${esc(report.now)} · ${report.runs} run(s) per side · harness ${esc(report.harnessVersion)}</small></p>
 ${loud ? `<p class="loud">${esc(loud.text)}</p>` : ""}
+${loudDeployment(report) ? `<p class="loud">${esc(loudDeployment(report)!)}</p>` : ""}
 <ul>${report.reasons.map((r) => `<li>${esc(r)}</li>`).join("")}${report.noise ? `<li>A/A consulted: ${report.noise.clean ? "clean" : `${report.noise.hunks} diff(s)`}${report.noise.degraded?.length ? " but DEGRADED (does not count)" : ""} at ${esc(report.noise.ranAt)}</li>` : ""}</ul>
 
 <table>
@@ -71,6 +74,7 @@ ${loud ? `<p class="loud">${esc(loud.text)}</p>` : ""}
 <tbody>${(["reader", "catalogue", "live"] as const).map((app) => `<tr><td>${app}</td><td><code>${esc(report.sides.a[app])}</code></td><td><code>${esc(report.sides.b[app])}</code></td></tr>`).join("")}</tbody>
 </table>
 ${provenanceBlock(report)}
+${deploymentHtml(report, esc)}
 ${imageArtefactsHtml(report)}
 
 ${
@@ -96,8 +100,8 @@ ${
 <h2>Differences (${compare.hunks.length}; ${compare.unclaimed.length} unclaimed)</h2>
 ${compare.hunks.length ? `<table><thead><tr><th>artefact</th><th>scope</th><th>what changed</th><th>claimed by</th></tr></thead><tbody>${rows}</tbody></table>` : "<p>None. The two sides are observably identical after normalisation.</p>"}
 
-${compare.staleClaims.length ? `<h2>Stale claims (${compare.staleClaims.length})</h2><ul>${compare.staleClaims.map((c) => `<li><code>${c.artefact}</code> <code>${esc(c.scope)}</code> — ${esc(c.reason)}</li>`).join("")}</ul>` : ""}
-${compare.broadUnapproved.length ? `<h2>Broad claims without approval (${compare.broadUnapproved.length})</h2><ul>${compare.broadUnapproved.map((c) => `<li><code>${c.artefact}</code> <code>${esc(c.scope)}</code> — ${esc(c.reason)}</li>`).join("")}</ul>` : ""}
+${compare.staleClaims.length ? `<h2>Stale claims (${compare.staleClaims.length})</h2><ul>${compare.staleClaims.map((c) => `<li><code>${c.artefact}</code> <code>${esc(c.scope)}</code> — ${esc(claimLabel(c))}</li>`).join("")}</ul>` : ""}
+${compare.broadUnapproved.length ? `<h2>Broad claims without approval (${compare.broadUnapproved.length})</h2><ul>${compare.broadUnapproved.map((c) => `<li><code>${c.artefact}</code> <code>${esc(c.scope)}</code> — ${esc(claimLabel(c))}</li>`).join("")}</ul>` : ""}
 
 ${
   report.override

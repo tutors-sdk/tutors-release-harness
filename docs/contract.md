@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.2.0`
+Contract version: `1.3.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -13,6 +13,8 @@ The machine-readable half lives in [`docs/contract/`](contract/):
 | --- | --- |
 | [`report.schema.json`](contract/report.schema.json) | `report.json` (JSON Schema, draft-07) |
 | [`noise-status.schema.json`](contract/noise-status.schema.json) | `noise-status.json` |
+| [`release-record.schema.json`](contract/release-record.schema.json) | the release record (since 1.3.0) |
+| [`rules.schema.json`](contract/rules.schema.json) | `rules.json`, the Rules a claim may name (since 1.3.0) |
 | [`cli.json`](contract/cli.json) | every command and flag, which are stable, the exit codes |
 | [`workflows.json`](contract/workflows.json) | dispatch events and payloads, repository variables, artifacts, permissions the workflows never hold |
 
@@ -28,16 +30,16 @@ Three numbers, all stamped where a reader can see them:
 
 ```console
 $ pnpm harness version
-harness 1.2.0 (3f2c…) · contract 1.2.0
+harness 1.3.0 (3f2c…) · contract 1.3.0
 $ pnpm harness version --json
-{"version":"1.2.0","gitSha":"3f2c…","contractVersion":"1.2.0"}
+{"version":"1.3.0","gitSha":"3f2c…","contractVersion":"1.3.0"}
 ```
 
 `gitSha` is `git rev-parse HEAD` of the harness checkout, or the
 `HARNESS_GIT_SHA` environment variable when set, or `null` when neither is
 available (a tarball).
 
-Pin the harness by tag (`v1.2.0`) or by sha, and check `schemaVersion === 1`
+Pin the harness by tag (`v1.3.0`) or by sha, and check `schemaVersion === 1`
 before reading a report.
 
 ## Output directory
@@ -51,6 +53,7 @@ before reading a report.
 | `report.md` | every mode | the file exists and is GitHub-flavoured Markdown starting with a `##` heading that carries the mode and the verdict; its wording and layout are for people and may change in a patch |
 | `report.html` | every mode | the file exists and is self-contained (no scripts, no external requests); its content is for people |
 | `noise-status.json` | `noise` mode only | yes — below |
+| `release-record.json` | `release` mode only (since 1.3.0) | yes — [the release record](#the-release-record) |
 | `a/capture.json`, `b/capture.json`, screenshots, `a/load/`, `b/load/` | capturing modes | no. The harness reads its own captures back (`harness compare`, `--recorded`); nobody else should. Each `capture.json` carries the same `harness` stamp as the report |
 
 `harness compare --dir <run dir>` rewrites the three reports (and, in noise
@@ -89,6 +92,7 @@ written). Source of truth: `RunReport` in `src/types.ts`.
 | `load` | optional | when `--load` ran on both sides: `{ a, b }`, each `{ requests, failed, serverErrors, p50, p95, rate, duration }` |
 | `claimHygiene` | optional — since 1.2.0 | present when the claims file had claims; see [Claim hygiene](#claim-hygiene). Informational: never changes the verdict |
 | `override` | optional — since 1.2.0 | present only when an override of a FAIL was requested; see [Overriding a FAIL](#overriding-a-fail) |
+| `deployment` | optional — since 1.3.0 | post-deploy mode, when the deploy reported what it deployed: `{ production?, status, digests, recorded?, record?, problems[] }`, the deployed digests against the release record; see [Checking a deployment](#checking-a-deployment). Advisory: a `status` other than `match` turns a `pass` into a `warn` and never touches a `fail` |
 
 **Hunk**: `{ id, artefact, scope, path?, summary, detail?, severity }`.
 `artefact` is one of `dom`, `screenshot`, `network`, `console`, `headers`,
@@ -108,8 +112,11 @@ bus traffic was collected on both sides, which needs a bus and
 [bus.md](bus.md). The environment variables `HARNESS_BUS` and
 `HARNESS_PERSISTENCE_BACKEND` are not part of the contract.
 
-**Claim**: `{ artefact, scope, reason, approvedBy? }`, exactly as parsed from
-the claims file.
+**Claim**: `{ artefact, scope, reason, approvedBy?, rule?, ruleTitle? }`, as parsed from
+the claims file. `reason` is always a string: for a claim that named a `rule` and
+gave no reason, the harness writes `Rule NNNN: <title>`. `rule` and `ruleTitle`
+(since 1.3.0) are present exactly when the claim named a Rule; see
+[Claims file](#claims-file).
 
 ### Image provenance
 
@@ -228,7 +235,7 @@ it looked at. The startup restarts leave every app running.
 | Exit code | Meaning |
 | --- | --- |
 | `0` | Verdict pass or warn, or a fail overridden with --override-reason; or the command succeeded |
-| `1` | Verdict fail that was not overridden; or images ensure could not obtain an image, or mutants or kind rollout did not succeed |
+| `1` | Verdict fail that was not overridden; or images ensure could not obtain an image, or mutants or kind rollout did not succeed; or doctor found a tool a run needs missing, noise record found the ratchet broken, noise status --require found a status that does not license a FAIL, or guard found a violation |
 | `2` | Usage error, the harness itself failed (an uncaught error), or an image may not be judged; no verdict was reached |
 
 "An image may not be judged" (since 1.1.0) is: at `run`, an image that is not
@@ -280,6 +287,31 @@ Written next to `report.json` by `noise` mode only:
 `--noise <path>` takes the file, or a directory containing it (the noise run's
 output directory). A file that is not exactly this shape stops the run with
 exit `2` — it is never read generously.
+
+**Where a run looks for a status** (since 1.3.0: the default source is the local
+store). `release` and `post-deploy` mode resolve `--noise` in exactly this order,
+first match wins, and look nowhere else:
+
+1. **`--noise <file or dir>`** as given. It is used as it is: a status that is dirty,
+   stale or unreadable there is never replaced by a better one from the store.
+   `--noise skip` waives the requirement, loudly (below). `--noise none` says do
+   not look: no store is read and the run has no status.
+2. **`--noise` omitted: the latest status in the local store**,
+   `<HARNESS_HOME>/noise/noise-status.json` (`HARNESS_HOME` defaults to
+   `<checkout>/.harness`), which `harness noise record` and `harness local
+   nightly` write. A file there that is not a valid status is ignored with a
+   logged warning, as the workflows' fetch ignores one, and the run goes on as if
+   there were none.
+3. **none**: no status was supplied.
+
+Every other mode never reads a status. The store is not a second rule: whatever it
+yields goes to the same gate, so a status from it licenses a `fail` only when it
+is clean, without `degraded`, and no more than 7 days old, exactly like one from
+the `noise` branch. A **missing** status (step 3, or an unusable one in step 2) still
+**warns**, as before: same findings, `warn`, exit `0`, first reason
+`advisory only: no A/A …`. The workflows are unchanged by this: they fetch the
+`noise` branch into `noise/` and pass `--noise <file>` when it is usable, so step 1
+applies on a runner and the store under `.harness` is never consulted there.
 
 **The A/A rule.** `release` and `post-deploy` may return `fail` only when one
 of these holds:
@@ -352,6 +384,103 @@ $ pnpm harness run --mode release … --override-reason "Rule 0044: payments hot
   measure of whether the harness is trusted or tolerated
   ([`noise-burndown.md`](noise-burndown.md#overrides)).
 
+## Image digests and the release record
+
+Since 1.3.0. A tag can move between the moment the monorepo builds an image and
+the moment the harness pulls it, and a deployment can run something other than
+what release mode judged. Three additions close both gaps, and every one of
+them is optional: a dispatch without them behaves exactly as in 1.2.0.
+
+### Digests in the dispatch
+
+`release-candidate` may carry `production_digests` and `candidate_digests`:
+objects `app -> "sha256:<64 hex>"`, for any of the harness's apps (`reader`,
+`catalogue`, `live`; the harness accepts every app it stacks and names no other).
+
+```json
+{ "production_digests": { "reader": "sha256:…", "catalogue": "sha256:…", "live": "sha256:…" },
+  "candidate_digests":  { "reader": "sha256:…", "catalogue": "sha256:…", "live": "sha256:…" } }
+```
+
+`release.yml` hands them to `harness images ensure` and `harness run` as
+`--a-digests` (production) and `--b-digests` (candidate). Each flag takes a JSON
+object or `reader=sha256:…,catalogue=sha256:…,live=sha256:…`; an empty value,
+`{}` and `null` mean none. What changes when they are given:
+
+- the references become `repo:tag@sha256:…` (the form `--a`/`--b` already read,
+  since 1.1.0) and `report.json` says so in `sides`;
+- the pull is **by digest**, and the cosign signature is verified **on that
+  digest** — by the same rule as an unpinned image, which is already by digest;
+- a digest that disagrees with what the tag resolves to now is **exit `2`,
+  "cannot judge"**, with the reason stated: the harness asks the registry
+  (`docker buildx imagetools inspect <repo>:<tag>`) which digest the tag has
+  today, and refuses to judge when it is another one (the tag moved after the
+  digests were taken, or the digest belongs to another image). A tag that cannot
+  be resolved at all is refused the same way: a pinned image is only judged when
+  its tag and its digest are known to agree;
+- a pinned image that cannot be pulled is exit `1` (not obtainable), and is
+  **never built from source**: a rebuild is not the image the digest names;
+- a digest for an app the harness does not know, one that is not
+  `sha256:` and 64 lowercase hex, or one that contradicts a digest already in
+  `--a`/`--b`, is exit `2`;
+- an app with no digest is not pinned; a side may be pinned in part.
+
+### The release record
+
+Release mode writes what it judged, as `releases/<candidate>.json` in the
+harness's state directory (`HARNESS_HOME`, default `<checkout>/.harness`, beside
+the noise store; see [local.md](local.md)) and as `release-record.json` in the
+run's output directory (so the `release-report` artifact carries it).
+[`contract/release-record.schema.json`](contract/release-record.schema.json):
+
+```json
+{ "schemaVersion": 1, "candidate": "16.3.0-rc.4", "release": "16.3.0", "production": "16.2.0",
+  "recordedAt": "2026-09-16T09:10:00.000Z",
+  "harness": { "version": "1.3.0", "gitSha": "3f2c…", "contractVersion": "1.3.0" },
+  "verdict": "pass", "overridden": false, "pinned": true, "verified": true,
+  "digests": { "reader": "sha256:…", "catalogue": "sha256:…", "live": "sha256:…" } }
+```
+
+`digests` are the registry digests of the candidate images that ran, and are
+evidence only when `verified` is `true` (every image pulled and signature-verified
+in the run). A candidate built from a git ref, or found locally, has none.
+Alongside `<candidate>.json`, the store keeps `<release>.json` (`16.3.0` for
+`16.3.0-rc.4`): the newest candidate of that release that could ship, that is one
+whose verdict is not `fail` unless the FAIL was overridden. That is the file
+`--deployed 16.3.0` finds.
+
+CI publishes it the way it publishes the noise status: `release.yml`'s
+`publish-record` job pushes `releases/<candidate>.json` (and `<release>.json`)
+to this repository's `release-records` branch, and nothing else.
+
+### Checking a deployment
+
+The `deployed` dispatch may carry `production` (string: the tag that was
+deployed) and `digests` (an object like the above: what runs). Post-deploy mode
+compares them with the release record and **warns**:
+
+| `deployment.status` | Meaning |
+| --- | --- |
+| `match` | every reported digest is the recorded one, and no app is missing on either side |
+| `differs` | an app is deployed at another digest than the one release mode judged |
+| `incomplete` | nothing differs, but an app has a digest on one side only (the record has none for it, or the deploy reported none) |
+| `no-record` | no release record was found for the release |
+| `not-reported` | the deploy named a tag but sent no digests |
+
+Anything but `match` is **advisory, exit `0`**: `report.json` gets `deployment`
+(see the schema), the first `reasons` entry says `DEPLOYED IMAGES DIFFER` or
+`DEPLOYED IMAGES NOT CONFIRMED`, a `pass` verdict becomes `warn`, and the
+step summary carries it. It never turns anything into a `fail`, and never
+softens one. A `deployed` payload without `production` and `digests` (every
+1.2.0 dispatch, and the 15-minute schedule) is not checked at all.
+
+The record is looked up in this order, and nowhere else: `--release-record`
+(a file, or a directory holding `<tag>.json`); otherwise
+`<HARNESS_HOME>/releases/<tag>.json`. `post-deploy.yml` fetches
+`releases/<production>.json` from the `release-records` branch into a directory
+and passes it as `--release-record`. `<tag>` is the `--deployed` value, which
+must be a registry tag (`[A-Za-z0-9_][A-Za-z0-9_.-]*`): it names a file.
+
 ## Claims file
 
 Claims format version: `1`
@@ -366,22 +495,64 @@ claims:
     scope: "reader:*/content-security-policy"           # picomatch glob, non-empty
     reason: "fix(reader): #270 CSP allows the new host" # ≥ 8 characters, not a rubber stamp
     approvedBy: "a-maintainer"                          # optional; required for a broad claim to count
+  - artefact: dom                                       # since 1.3.0: a claim may name a Rule instead
+    scope: "reader:lab-step*"
+    rule: "0031"                                        # four digits, quoted; must be in the rules file (--rules)
 ```
 
 - `artefact`: one of the nineteen artefact names above, or `*`.
 - `scope`: matched with picomatch (`dot: true`, case-insensitive) against the
   hunk's `scope` **or** its `path`.
 - `reason`: at least 8 characters, and must not start with `see pr`,
-  `approved`, `all`, `ok` or `misc`.
+  `approved`, `all`, `ok` or `misc`. Required unless the claim has a `rule`.
+- `rule` (since 1.3.0): a Rule's four digits, **quoted** (`"0031"`: unquoted, YAML
+  reads `0031` as the number 31, which is refused with that hint). When it is
+  present `reason` becomes optional free text, and the report shows
+  `Rule 0031: <title>` (then the reason, when there is one) in place of the
+  reason. The title comes from the rules file, below. `reason: "Rule 0031: ..."`
+  free-text claims keep working unchanged, with or without a rules file.
 - A claim is *broad* when `artefact` is `*` or `scope` is `*`, `**` or a
   pattern of only stars (`*/*`, `**/**`). A broad claim without `approvedBy`
   is listed in `compare.broadUnapproved` and gates.
-- Unknown keys are ignored. An empty file is no claims. An invalid file stops
-  the run with exit `2`.
+- Unknown keys are ignored (before 1.3.0 that included `rule`). An empty file is
+  no claims. An invalid file stops the run with exit `2`, before any stack starts.
 - Each failing hunk is assigned to at most one claim; `info` hunks need none.
 
 The claims file lives with the release (the monorepo's `release/claims.yaml`),
 never in this repository.
+
+### The rules file
+
+Since 1.3.0. The monorepo publishes `rules.json` at the candidate tag
+([`contract/rules.schema.json`](contract/rules.schema.json)):
+
+```json
+{ "version": 1,
+  "rules": {
+    "0031": { "title": "Lab steps show their estimated reading time", "digest": "sha256:…" },
+    "0044": { "title": "Presence is polled every 15 seconds" } } }
+```
+
+`--rules <path or url>` takes it (`release.yml`: the `rules_url` of the
+dispatch, or the workflow input of that name; a URL the runner can GET without
+credentials). What the harness does with it, and nothing more:
+
+- a claim whose `rule` is not in the file is **invalid**, the same class as any
+  other invalid claim: exit `2`, before any stack starts, naming the claim and
+  the rule;
+- a claim that names a `rule` when no rules file was given is invalid, with a
+  message that says to pass `--rules` (in the dispatch, `rules_url`) or to give a
+  `reason`;
+- a rules file that cannot be read or fetched (an HTTP status other than 2xx, a
+  timeout), or that is not valid, is exit `2` too. `--rules` given with no claims
+  file, or with claims that name no rule, is still read and checked;
+- the Rule's `title` is shown in the report (`Claim.ruleTitle`, the Markdown
+  comment, the HTML report). `digest` is optional and never read; keys the
+  harness does not know in a Rule are ignored;
+- **a claim never gates on the file's contents beyond the Rule's existence**: the
+  harness does not read what a Rule says, and does not judge whether the change
+  is what it intends. Matching, the stale-claim report and the broad-claim rule
+  are exactly as before.
 
 ## CLI
 
@@ -389,19 +560,36 @@ Full list: [`contract/cli.json`](contract/cli.json). Invoke as `pnpm harness
 <command>` from a checkout (Node ≥ 22, `pnpm install`, and for capturing modes
 `pnpm exec playwright install chromium` and Docker). Commands and flags marked
 `stable: true` there are the ones below; the rest (`harness stack`, `harness
-kind`, `harness journeys`, `--substrate`, `--now`, `--masks`, `--snapshot`,
+kind`, `harness journeys`, `harness override`, `harness local`, `harness noise
+history`, `--substrate`, `--now`, `--masks`, `--snapshot`,
 `--upgrade-*`, `--noise-max-age-days`, `--no-screenshots`, `--no-axe`,
 `--no-focus`, `--no-runtime` and `--startup-restarts` (both since 1.2.0),
 `--keep`, `--no-stack`) are for people at a terminal and may
 change in a minor release.
 
+Which of the 1.3.0 commands are stable: `doctor`, `noise record`, `noise status`
+and `guard` are, because workflows and the monorepo call them (the workflows'
+`noise status --store noise`, the nightly's `noise record`, CI's `guard`, and any
+script that asks whether a machine can run the harness). Their flags (`--status`,
+`--report`, `--tag`, `--store`, `--run-url`, `--summary`, `--require`, `--for`,
+`--base`, `--json`) are stable with them. `harness local` (the maintainer wrappers,
+whose steps are planned from the same commands and change with them), `harness
+override list` (a listing for people), `harness noise history` (the ratchet as
+text; the file `noise-history.json` is what a program reads) and the flags only
+they take (`--only`, `--migrations-a`, `--migrations-b`, `--interval`,
+`--port-offset`, `--dry-run`, `--once`, `--record`, `--last`, `--since`) are not.
+
 | Command | Stable flags |
 | --- | --- |
-| `harness run` | `--mode` (required), `--a`, `--b` (required except in post-deploy), `--claims <file>`, `--noise <file\|dir\|skip>`, `--runs <n>`, `--set <fixture,auth,reference>`, `--journey <name>` (repeatable), `--load <rate>x<duration>`, `--out <dir>`, `--image-prefix <prefix or {app} template>`, `--allow-unsigned`, `--require-verified` (noise mode: write the status `degraded` unless every image on both sides was pulled and verified in this run), `--override-reason <text>` and `--override-by <who>` (see [Overriding a FAIL](#overriding-a-fail)); post-deploy: `--recorded <release run dir>`, `--production reader=URL,catalogue=URL,live=URL` |
-| `harness compare` | `--dir <run dir>` (required), `--mode` (required), `--claims`, `--noise` |
-| `harness images ensure` | `--a`, `--b` (required), `--ref-a`, `--ref-b` (monorepo git refs to build from when the pull fails), `--image-prefix`, `--allow-unsigned`, `--image-cache <dir>` (since 1.2.0: refreshed from images pulled and verified in this run; used, as provenance `cached`, only when the registry cannot be reached, and never for a tag the registry says does not exist). With `GITHUB_OUTPUT` set it writes `image_cache=none\|used\|refreshed` |
+| `harness run` | `--mode` (required), `--a`, `--b` (required except in post-deploy), `--claims <file>`, `--rules <path\|url>` (since 1.3.0: the Rules a claim may name, see [The rules file](#the-rules-file)), `--noise <file\|dir\|skip\|none>` (omitted: the latest status in the local store, see [`noise-status.json`](#noise-statusjson-and-the-7-day-rule)), `--runs <n>`, `--set <fixture,auth,reference>`, `--journey <name>` (repeatable), `--load <rate>x<duration>`, `--out <dir>`, `--image-prefix <prefix or {app} template>`, `--allow-unsigned`, `--require-verified` (noise mode: write the status `degraded` unless every image on both sides was pulled and verified in this run), `--override-reason <text>` and `--override-by <who>` (see [Overriding a FAIL](#overriding-a-fail)), `--a-digests <digests>` and `--b-digests <digests>` (since 1.3.0: pin a side's images, see [Image digests](#image-digests-and-the-release-record)); post-deploy: `--recorded <release run dir>`, `--production reader=URL,catalogue=URL,live=URL`, and since 1.3.0 `--deployed <tag>`, `--deployed-digests <digests>` and `--release-record <file\|dir>` (see [Checking a deployment](#checking-a-deployment)) |
+| `harness compare` | `--dir <run dir>` (required), `--mode` (required), `--claims`, `--rules`, `--noise` |
+| `harness images ensure` | `--a`, `--b` (required), `--a-digests`, `--b-digests` (since 1.3.0: pull by digest, verify on it, refuse a tag that has moved; a pinned image is never built), `--ref-a`, `--ref-b` (monorepo git refs to build from when the pull fails), `--image-prefix`, `--allow-unsigned`, `--image-cache <dir>` (since 1.2.0: refreshed from images pulled and verified in this run; used, as provenance `cached`, only when the registry cannot be reached, and never for a tag the registry says does not exist). With `GITHUB_OUTPUT` set it writes `image_cache=none\|used\|refreshed` |
 | `harness mutants` | `--base <tag or reader image>` (required), `--out`, `--image-prefix`, `--allow-unsigned` |
 | `harness version` | `--json` |
+| `harness doctor` (since 1.3.0) | `--for <nightly,gate,mutants,watch,kind>` (comma separated; default the first four), `--json`. Read-only: what this machine lacks to run the harness, and how to install it. Exit `0` ready (warnings allowed), `1` something a run needs is missing, `2` usage. `--json` prints `{ ok, scopes, platform, checks: [{ id, title, status: ok\|warn\|fail, detail }] }`; a check id may be added in a minor release |
+| `harness noise record` (since 1.3.0) | `--status <noise run dir\|noise-status.json>` (required), `--report <report.json>`, `--tag <tag>`, `--store <dir>` (default `<HARNESS_HOME>/noise`), `--run-url <url>`, `--summary <file>`. Appends a night to the store and rewrites its three files, exactly as the nightly publishes them to the `noise` branch: `noise-status.json` (a copy of the status), `noise-history.json`, `noise-summary.md`. Exit `0`, `1` when the ratchet is broken (the count had reached 0 and is not 0 tonight; the files are still written), `2` usage or no status |
+| `harness noise status` (since 1.3.0) | `--store <dir>`, `--require`, `--json`. Says whether the latest status licenses a FAIL (clean, without `degraded`, fresh); exit `0`, or `1` with `--require` when it does not. With `GITHUB_OUTPUT` set and a usable status it writes `noise_file=<path>` |
+| `harness guard masks\|engine\|all` (since 1.3.0) | `--base <ref>`. The PR guards of CI against a local ref: masks land in their own PR (`masks`); an engine, mask, journey, gate or mutant change needs a harness version bump (`engine`). Compares `<base>...HEAD`. Exit `0`, `1` a violation, `2` when the ref does not exist |
 | any | `--help` |
 
 `--a` / `--b` take a bare tag (`16.2.0`), one app's image reference (the other
@@ -424,7 +612,7 @@ environment variable, else `tutors`. It is either a bare prefix
 signature could not be verified be judged anyway; the report records it
 (`pulled-unverified`, `allowedUnsigned`). The workflows never pass it.
 
-Environment variables in the contract, all since 1.1.0 except the first and the last six (since 1.2.0):
+Environment variables in the contract, all since 1.1.0 unless the row says otherwise:
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
@@ -432,6 +620,10 @@ Environment variables in the contract, all since 1.1.0 except the first and the 
 | `HARNESS_COSIGN_IDENTITY` | `^https://github.com/tutors-sdk/tutors-mono-repo/\.github/workflows/image-build\.yml@` | regular expression the signing certificate's identity must match; empty means the default |
 | `HARNESS_COSIGN_ISSUER` | `https://token.actions.githubusercontent.com` | the certificate's OIDC issuer; empty means the default |
 | `HARNESS_ALLOW_UNSIGNED` | unset | `1`, `true` or `yes`: the same as `--allow-unsigned` |
+| `HARNESS_HOME` | `<checkout>/.harness` | since 1.3.0. Where the harness keeps what outlives a run on this machine: the noise store (`noise/`, the default source of `--noise`), the release records (`releases/`), the override log, the image cache. See [local.md](local.md) |
+| `HARNESS_PROJECT` | `tutors-harness-<8 hex>` | since 1.3.0. The name of this checkout's compose project and kind cluster when the next two do not say. Unset, it is `tutors-harness-` and the first 8 hex characters of the SHA-256 of the checkout's real path (lowercased on Windows): two checkouts or git worktrees never share a stack, and one checkout always gets the same name. `harness doctor` prints the names this checkout uses |
+| `HARNESS_COMPOSE_PROJECT` | derived | since 1.3.0 (an override that already existed). The compose project of the stack; wins over `HARNESS_PROJECT` |
+| `HARNESS_KIND_CLUSTER` | derived | since 1.3.0 (an override that already existed). The kind cluster; wins over `HARNESS_PROJECT`. `tutors-harness` is refused: it is the pre-1.3.0 default name, and a cluster of that name is never adopted or deleted |
 | `HARNESS_CLAIM_MAX_HUNKS` | `10` | since 1.2.0: a claim covering more failing hunks than this is flagged in `claimHygiene`; a positive integer, else the default. `--claim-max-hunks` overrides |
 | `HARNESS_SBOM_SOURCE` | `auto` | since 1.2.0. Where each image's SBOM comes from: `auto` or `attestation` (the cosign SPDX attestation of a pulled image), or `generate` (a local generator, on both sides) |
 | `HARNESS_SBOM_CMD` | `syft docker:{image} -o spdx-json` | since 1.2.0. The generator for `generate`; `{image}` is the image reference. Split on whitespace and quotes; no shell |
@@ -455,15 +647,15 @@ fine-grained PAT, or a GitHub App installation token); sample sender:
 
 | `event_type` | Workflow | `client_payload` |
 | --- | --- | --- |
-| `release-candidate` | `release.yml` — release mode (3 runs, k6 `20x30s`), migration rehearsal, upgrade rehearsal, as three jobs | `production` (required): production tag, side a. `candidate` (required): candidate tag, side b. `claims_url`: a URL the runner can `curl` without credentials; omitted means no claims. `runs`: default `3`. `migrations_a`, `migrations_b`: monorepo git refs for migration mode; default `v<production>` and `v<candidate>` |
-| `deployed` | `post-deploy.yml` — post-deploy mode against `HARNESS_PRODUCTION_URLS` | none read. The recorded side is the `release-report` artifact of the latest successful `release.yml` run; the payload cannot choose it (by hand, `workflow_dispatch` with `recorded_run_id` can) |
+| `release-candidate` | `release.yml` — release mode (3 runs, k6 `20x30s`), migration rehearsal, upgrade rehearsal, as three jobs; then the release record is published | `production` (required): production tag, side a. `candidate` (required): candidate tag, side b. `claims_url`: a URL the runner can `curl` without credentials; omitted means no claims. `rules_url` (since 1.3.0): a URL the runner can GET without credentials for `rules.json` ([The rules file](#the-rules-file)); a claim that names a `rule` needs it. `runs`: default `3`. `migrations_a`, `migrations_b`: monorepo git refs for migration mode; default `v<production>` and `v<candidate>`. Since 1.3.0: `production_digests`, `candidate_digests`: objects `app -> sha256:<64 hex>` ([Image digests](#image-digests-and-the-release-record)) |
+| `deployed` | `post-deploy.yml` — post-deploy mode against `HARNESS_PRODUCTION_URLS` | Since 1.3.0, both optional: `production` (the tag that was deployed) and `digests` (an object `app -> sha256:<64 hex>`: the images that run), compared with the release record ([Checking a deployment](#checking-a-deployment)). Without them (every 1.2.0 payload) nothing is compared. The recorded side is the `release-report` artifact of the latest successful `release.yml` run; the payload cannot choose it (by hand, `workflow_dispatch` with `recorded_run_id` can) |
 
 Any other event type is ignored. Unknown payload fields are ignored. A missing
 required field fails the run at its first harness step (exit `2`).
 
 `release.yml` also takes the same values as `workflow_dispatch` inputs
-(`production`, `candidate`, `claims_url`, `migrations_a`, `migrations_b`,
-`runs`) and, since 1.2.0, `override_reason` (a `workflow_dispatch` input only:
+(`production`, `candidate`, `claims_url`, `rules_url` (since 1.3.0), `migrations_a`,
+`migrations_b`, `runs`) and, since 1.2.0, `override_reason` (a `workflow_dispatch` input only:
 see [Overriding a FAIL](#overriding-a-fail)); `nightly-noise.yml` and
 `weekly-mutants.yml` take `tag`.
 
@@ -521,9 +713,12 @@ What it does instead:
   `harness-override` for each FAIL a person overrode;
 - since 1.2.0, in `nightly-noise.yml` only, the `publish` job, with
   `contents: write` on **this** repository: force-pushes the `noise` branch
-  (the latest A/A status, its history and summary). No other branch, no tag, no
-  release, no other repository. A test lists these three write scopes and fails
-  on any other.
+  (the latest A/A status, its history and summary);
+- since 1.3.0, in `release.yml` only, the `publish-record` job, with
+  `contents: write` on **this** repository: pushes the `release-records` branch
+  (`releases/<candidate>.json` and `releases/<release>.json`, see [the release
+  record](#the-release-record)). No other branch, no tag, no release, no other
+  repository. A test lists these four write scopes and fails on any other.
 
 Post-deploy mode sends anonymous, read-only requests for the published
 reference course to the production URLs. It never signs in and never writes.
@@ -550,6 +745,107 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, cut by a maintainer.
 
 ## Changes
+
+### 1.3.0 (minor; digests, rules, the local store, the local commands, checkout names)
+
+One bump carrying every contract-visible change of the local-first work and of
+the release-gate follow-ups. Additive for a consumer written against 1.2.0: a
+dispatch payload without the new fields, a claims file without `rule`, a
+workflow that passes `--noise`, and a checkout with one stack all behave as they
+did. The harness version is 1.3.0 as well. Four things are not purely additive and
+are called out where they occur: a `rule` key in a claim was ignored before and is
+now checked; a missing `--noise` no longer means "no status" on a machine that has
+a local noise store; the default name of the compose project and kind cluster
+changed; and a stack under the old name is left alone.
+
+**Image digests in the dispatch, the release record, the deployment check**
+([details](#image-digests-and-the-release-record))
+
+- `release-candidate` payload: optional `production_digests` and
+  `candidate_digests` (objects `app -> sha256:<64 hex>`, any app the harness
+  stacks). `deployed` payload: optional `production` (tag) and `digests`.
+- CLI, all stable: `--a-digests` and `--b-digests` (`run`, `images ensure`),
+  which pin the references as `repo:tag@sha256:…`, pull and verify by digest, and
+  refuse with **exit `2`, cannot judge**, a digest that disagrees with what the
+  tag resolves to now (or a tag that cannot be resolved); a pinned image is never
+  built from source. For post-deploy mode: `--deployed`, `--deployed-digests`,
+  `--release-record`.
+- Release mode writes a **release record**
+  ([`release-record.schema.json`](contract/release-record.schema.json)):
+  `releases/<candidate>.json` (and `releases/<release>.json` for a candidate that
+  could ship) in `HARNESS_HOME`, and `release-record.json` in its output
+  directory. `release.yml`'s new `publish-record` job publishes it, never forced,
+  to the `release-records` branch of this repository: **a fourth `contents: write`
+  scope**, in `release.yml` only, named in `workflows.json` and enforced by the
+  tests.
+- `report.json`: optional `deployment` (post-deploy mode only). Post-deploy mode
+  compares what the deploy reported with the record and **warns** (exit `0`, a
+  `pass` becomes `warn`, a `fail` is untouched) on a difference, an app with a
+  digest on one side only, no record, or no digests reported.
+- Without any of the new fields every run is exactly what it was in 1.2.0.
+
+**`rule` on claims** ([the rules file](#the-rules-file))
+
+- Claims: optional `rule: "NNNN"` (four digits, quoted). With a rule `reason`
+  becomes optional free text and the report shows `Rule NNNN: <title>`. A `rule`
+  key was an ignored unknown key before 1.3.0; a claims file that carried one now
+  has it checked, and a malformed or unknown one is invalid (exit `2`).
+- New stable input `--rules <path or url>`, dispatch field and workflow input
+  `rules_url`, and [`rules.schema.json`](contract/rules.schema.json)
+  (`{ "version": 1, "rules": { "0031": { "title": "…", "digest": "…" } } }`). A
+  claim whose rule is not in the file, or that names one with no file, is invalid
+  before any stack starts; nothing else about the file gates anything.
+- `report.json`: a claim gains optional `rule` and `ruleTitle`; `reason` stays
+  always present.
+- `reason: "Rule 0031: …"` free-text claims, matching, stale claims and the
+  broad-claim rule are unchanged.
+
+**The local noise store is the default source of `--noise`**
+([where a run looks](#noise-statusjson-and-the-7-day-rule))
+
+- In `release` and `post-deploy` mode, `--noise` omitted now means the latest
+  status in `<HARNESS_HOME>/noise` (written by `harness noise record` and
+  `harness local nightly`). The lookup order is exactly: an explicit `--noise`
+  (file, directory, `skip`, or the new `none`, which does not look), then the local
+  store, then none. A missing status (or an unusable one in the store) still
+  **warns**; the store goes through the same gate, so the 7-day / clean / verified
+  rule is unchanged. The workflows pass `--noise` and are unaffected.
+- New environment variable `HARNESS_HOME`.
+
+**Commands: which are stable, and why**
+([the CLI](#cli))
+
+- **Stable since 1.3.0:** `harness doctor`, `harness noise record`, `harness noise
+  status` and `harness guard masks|engine|all`, with the flags they take
+  (`--status`, `--report`, `--tag`, `--store`, `--run-url`, `--summary`,
+  `--require`, `--for`; `--base` and `--json` already were). Reason: the workflows
+  and the monorepo depend on them (the nightly's `noise record`, the release and
+  post-deploy `noise status`, CI's `guard`, and any script that asks whether a
+  machine can run the harness), and each has a small, checkable contract (files it
+  writes, exit codes).
+- **Not stable:** `harness local nightly|gate|mutants|watch` (wrappers planned
+  from the stable commands, which change with the workflows), `harness override
+  list` (a listing for people), `harness noise history` (the ratchet as text; the
+  file `noise-history.json` is what a program reads), and the flags only they
+  take: `--only`, `--migrations-a`, `--migrations-b`, `--interval`,
+  `--port-offset`, `--dry-run`, `--once`, `--record`, `--last`, `--since`. They may
+  change in a minor release.
+- Exit code `1` also covers `doctor` finding a tool a run needs missing, `noise
+  record` finding the ratchet broken, `noise status --require` finding a status
+  that does not license a FAIL, and `guard` finding a violation.
+- This repository's own workflows may call any command `cli.json` declares; the
+  copies handed to the monorepo (`docs/monorepo/`) may call only stable ones.
+
+**Checkout names** ([environment](#cli))
+
+- The default compose project and kind cluster name is now
+  `tutors-harness-<first 8 hex of sha256 of the checkout's real path>` (lowercased
+  on Windows), so two checkouts or git worktrees never share a stack. New
+  environment variable `HARNESS_PROJECT`; `HARNESS_COMPOSE_PROJECT` and
+  `HARNESS_KIND_CLUSTER` (which already existed) are now contract and win over it.
+- A stack under the old default name `tutors-harness` is reported by `harness
+  doctor` as a legacy stack, not touched, and never removed. A kind cluster called
+  `tutors-harness` is never adopted or deleted: `harness kind` refuses that name.
 
 ### 1.2.0 (minor; R3, R5 and R7)
 

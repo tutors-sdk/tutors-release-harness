@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { ROOT, docker } from "../stack.ts";
+import { COMPOSE_PROJECT, ROOT, docker } from "../stack.ts";
 import type { SchemaCatalog } from "../types.ts";
 import type { SchemaBackend, SchemaSession } from "./backend.ts";
 
@@ -31,7 +31,7 @@ interface Pg {
 }
 
 function startPostgres(log: (m: string) => void): Pg {
-  const container = `tutors-harness-pg-${Date.now()}`;
+  const container = `${COMPOSE_PROJECT}-pg-${Date.now()}`;
   log(`starting ${PG_IMAGE} as ${container}`);
   docker(["run", "-d", "--rm", "--name", container, "-e", "POSTGRES_PASSWORD=harness", "-e", `POSTGRES_DB=${DB}`, PG_IMAGE], { quiet: true });
   const psql = (sql: string, opts: { db?: string } = {}) => docker(["exec", "-i", container, "psql", "-v", "ON_ERROR_STOP=1", "-q", "-A", "-t", "-U", "postgres", "-d", opts.db ?? DB], { input: sql, quiet: true });

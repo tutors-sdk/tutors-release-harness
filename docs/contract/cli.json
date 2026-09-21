@@ -1,6 +1,6 @@
 {
   "$comment": "The harness CLI, machine-readable. tests/contract.test.ts fails when this list and src/cli.ts disagree, when a workflow uses a command or flag not marked stable, or when docs/contract.md omits a stable one. stable: true is covered by the compatibility promise in docs/contract.md; stable: false may change in a minor release.",
-  "contractVersion": "1.2.0",
+  "contractVersion": "1.3.0",
   "commands": [
     { "name": "run", "stable": true, "summary": "Start both stacks, capture, compare, claim, gate, report." },
     { "name": "compare", "stable": true, "summary": "Re-run normalise/compare/claim/gate on captures already on disk." },
@@ -9,7 +9,12 @@
     { "name": "version", "stable": true, "summary": "Harness version, git sha, contract version." },
     { "name": "journeys", "stable": false, "summary": "List the journeys." },
     { "name": "stack", "stable": false, "subcommands": ["up", "down"], "summary": "Start or stop both compose stacks." },
-    { "name": "kind", "stable": false, "subcommands": ["up", "down", "rollout"], "summary": "The kind substrate." }
+    { "name": "kind", "stable": false, "subcommands": ["up", "down", "rollout"], "summary": "The kind substrate." },
+    { "name": "doctor", "stable": true, "since": "1.3.0", "summary": "What this machine lacks to run the harness, and how to install it. Exit 0 ready, 1 a needed tool is missing, 2 usage." },
+    { "name": "noise", "stable": true, "since": "1.3.0", "subcommands": ["record", "status", "history"], "unstableSubcommands": ["history"], "summary": "The local noise store: the noise branch as a directory. record appends a night and keeps the ratchet; status says whether the latest status licenses a FAIL; history (not stable) prints the ratchet and the streak." },
+    { "name": "guard", "stable": true, "since": "1.3.0", "subcommands": ["masks", "engine", "all"], "summary": "The CI guards (masks land in their own PR; an engine change needs a version bump) against a local ref." },
+    { "name": "override", "stable": false, "since": "1.3.0", "subcommands": ["list"], "summary": "The local, append-only record of overridden FAILs (the harness-override issues, locally)." },
+    { "name": "local", "stable": false, "since": "1.3.0", "subcommands": ["nightly", "gate", "mutants", "watch"], "summary": "One command per maintainer task, planned from the same harness commands the workflows run; --dry-run prints the plan." }
   ],
   "flags": [
     { "name": "mode", "type": "string", "stable": true, "values": ["noise", "release", "any-two", "upgrade", "migration", "post-deploy"] },
@@ -37,10 +42,30 @@
     { "name": "upgrade-rate", "type": "string", "stable": false },
     { "name": "noise-max-age-days", "type": "string", "stable": false },
     { "name": "claim-max-hunks", "type": "string", "stable": false, "since": "1.2.0" },
+    { "name": "rules", "type": "string", "stable": true, "since": "1.3.0" },
+    { "name": "a-digests", "type": "string", "stable": true, "since": "1.3.0" },
+    { "name": "b-digests", "type": "string", "stable": true, "since": "1.3.0" },
+    { "name": "deployed", "type": "string", "stable": true, "since": "1.3.0" },
+    { "name": "deployed-digests", "type": "string", "stable": true, "since": "1.3.0" },
+    { "name": "release-record", "type": "string", "stable": true, "since": "1.3.0" },
     { "name": "override-reason", "type": "string", "stable": true, "since": "1.2.0" },
     { "name": "override-by", "type": "string", "stable": true, "since": "1.2.0" },
     { "name": "image-cache", "type": "string", "stable": true, "since": "1.2.0" },
     { "name": "startup-restarts", "type": "string", "stable": false, "since": "1.2.0" },
+    { "name": "tag", "type": "string", "stable": true, "since": "1.3.0" },
+    { "name": "only", "type": "string", "stable": false, "since": "1.3.0", "values": ["release", "migration", "upgrade"] },
+    { "name": "migrations-a", "type": "string", "stable": false, "since": "1.3.0" },
+    { "name": "migrations-b", "type": "string", "stable": false, "since": "1.3.0" },
+    { "name": "store", "type": "string", "stable": true, "since": "1.3.0" },
+    { "name": "status", "type": "string", "stable": true, "since": "1.3.0" },
+    { "name": "report", "type": "string", "stable": true, "since": "1.3.0" },
+    { "name": "run-url", "type": "string", "stable": true, "since": "1.3.0" },
+    { "name": "summary", "type": "string", "stable": true, "since": "1.3.0" },
+    { "name": "interval", "type": "string", "stable": false, "since": "1.3.0" },
+    { "name": "port-offset", "type": "string", "stable": false, "since": "1.3.0" },
+    { "name": "for", "type": "string", "stable": true, "since": "1.3.0", "values": ["nightly", "gate", "mutants", "watch", "kind"] },
+    { "name": "last", "type": "string", "stable": false, "since": "1.3.0" },
+    { "name": "since", "type": "string", "stable": false, "since": "1.3.0" },
     { "name": "screenshots", "type": "boolean", "stable": false },
     { "name": "axe", "type": "boolean", "stable": false },
     { "name": "focus", "type": "boolean", "stable": false },
@@ -49,6 +74,10 @@
     { "name": "stack", "type": "boolean", "stable": false },
     { "name": "allow-unsigned", "type": "boolean", "stable": true, "since": "1.1.0" },
     { "name": "require-verified", "type": "boolean", "stable": true, "since": "1.2.0" },
+    { "name": "dry-run", "type": "boolean", "stable": false, "since": "1.3.0" },
+    { "name": "once", "type": "boolean", "stable": false, "since": "1.3.0" },
+    { "name": "require", "type": "boolean", "stable": true, "since": "1.3.0" },
+    { "name": "record", "type": "boolean", "stable": false, "since": "1.3.0" },
     { "name": "json", "type": "boolean", "stable": true },
     { "name": "help", "type": "boolean", "stable": true }
   ],
@@ -65,7 +94,7 @@
     ]
   },
   "environment": {
-    "$comment": "Environment variables that are part of the contract. Since 1.1.0, except HARNESS_IMAGE_PREFIX (whose {app} template form is since 1.1.0) and the SBOM, vulnerability and static-artefact variables (since 1.2.0).",
+    "$comment": "Environment variables that are part of the contract. Since 1.1.0, except HARNESS_IMAGE_PREFIX (whose {app} template form is since 1.1.0), the SBOM, vulnerability and static-artefact variables (since 1.2.0) and HARNESS_HOME, HARNESS_PROJECT, HARNESS_COMPOSE_PROJECT and HARNESS_KIND_CLUSTER (since 1.3.0).",
     "HARNESS_IMAGE_PREFIX": {
       "default": "tutors",
       "meaning": "prefix (<prefix>/<app>:<tag>) or template containing {app}, for bare tags; --image-prefix overrides"
@@ -81,6 +110,22 @@
     "HARNESS_ALLOW_UNSIGNED": {
       "default": "",
       "meaning": "1 | true | yes: the same as --allow-unsigned"
+    },
+    "HARNESS_PROJECT": {
+      "default": "tutors-harness-<8 hex>",
+      "meaning": "since 1.3.0. The name of this checkout's docker compose project and kind cluster, when HARNESS_COMPOSE_PROJECT / HARNESS_KIND_CLUSTER do not say. Unset, the name is tutors-harness-<the first 8 hex of sha256 of the checkout's real path, lowercased on Windows>, so two checkouts or worktrees never share a stack"
+    },
+    "HARNESS_COMPOSE_PROJECT": {
+      "default": "",
+      "meaning": "since 1.3.0 (an override that existed before it). The docker compose project this checkout's stack runs under; wins over HARNESS_PROJECT. Empty means the derived name. It is never the machine owner's own project, which the harness never touches"
+    },
+    "HARNESS_KIND_CLUSTER": {
+      "default": "",
+      "meaning": "since 1.3.0 (an override that existed before it). The kind cluster name; wins over HARNESS_PROJECT. Empty means the derived name. The name tutors-harness, which every checkout used before 1.3.0, is refused: a cluster of that name is not adopted or deleted by any harness command"
+    },
+    "HARNESS_HOME": {
+      "default": "<checkout>/.harness",
+      "meaning": "since 1.3.0. Where the harness keeps what outlives a run on this machine: noise/ (the default source of --noise in release and post-deploy mode, when --noise is omitted), releases/ (the release records), overrides.jsonl, image-cache/"
     },
     "HARNESS_CLAIM_MAX_HUNKS": {
       "default": "10",
@@ -109,7 +154,7 @@
   },
   "exitCodes": {
     "0": "verdict pass or warn, or a fail overridden with --override-reason; or the command succeeded",
-    "1": "verdict fail that was not overridden; or images ensure could not obtain an image, or mutants or kind rollout did not succeed",
+    "1": "verdict fail that was not overridden; or images ensure could not obtain an image, or mutants or kind rollout did not succeed; or doctor found a tool a run needs missing, noise record found the ratchet broken, noise status --require found a status that does not license a FAIL, or guard found a violation",
     "2": "usage error, the harness itself failed (an uncaught error), or an image may not be judged; no verdict was reached"
   }
 }

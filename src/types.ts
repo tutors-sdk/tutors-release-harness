@@ -4,6 +4,7 @@
  */
 
 import type { ImageArtefactKind, ImageArtefactStatus, SideImageArtefacts, SideImageStatic } from "./image-static/types.ts";
+import type { Digests } from "./digests.ts";
 
 export type SideName = "a" | "b";
 
@@ -300,6 +301,10 @@ export interface Claim {
   reason: string;
   /** Required for broad claims; set by a human, never generated. */
   approvedBy?: string;
+  /** Since 1.3.0. The Rule that intends the difference (`"0031"`), checked to exist in the rules file (`--rules`). */
+  rule?: string;
+  /** Since 1.3.0. That Rule's title in the rules file, which the report shows. Present exactly when `rule` is. */
+  ruleTitle?: string;
 }
 
 export interface ClaimMatch {
@@ -366,6 +371,25 @@ export interface RunReport {
   override?: OverrideRecord;
   /** Since contract 1.2.0. Per side, per app: which static image artefacts were collected and, for those that were not, why. */
   imageArtefacts?: { a?: SideImageArtefacts; b?: SideImageArtefacts };
+  /** Since contract 1.3.0. Post-deploy mode only, and only when the deploy said what it deployed: does it match what release mode judged? */
+  deployment?: Deployment;
+}
+
+/** How what was deployed compares with the release record of the candidate that was judged. */
+export type DeploymentStatus = "match" | "differs" | "incomplete" | "no-record" | "not-reported";
+
+export interface Deployment {
+  /** The production tag the deploy reported (`--deployed`, the `deployed` dispatch's `production`). */
+  production?: string;
+  status: DeploymentStatus;
+  /** The digest of each deployed image, as the deploy reported it. */
+  digests: Digests;
+  /** The digests recorded when the candidate was judged; absent without a record. */
+  recorded?: Digests;
+  /** The release record consulted; absent when none was found. */
+  record?: { candidate: string; judgedAt: string; verdict: Verdict };
+  /** One line per disagreement or gap. Empty exactly when `status` is `match`. */
+  problems: string[];
 }
 
 /** Why a claim was flagged for review. */

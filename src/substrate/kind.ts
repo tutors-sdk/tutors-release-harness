@@ -3,6 +3,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { judgeUpgrade, summariseUpgrade } from "../modes/upgrade.ts";
 import { APPS, dockerRef, kindImageName } from "../image-ref.ts";
+import { kindCluster, orExit, refuseLegacyCluster } from "../project.ts";
 import { ROOT, docker } from "../stack.ts";
 import type { SideName, SideSpec } from "../types.ts";
 
@@ -19,7 +20,12 @@ import type { SideName, SideSpec } from "../types.ts";
  * reader and its stubs are compose-only for now (see deploy/kind/README.md).
  */
 
-export const CLUSTER = process.env.HARNESS_KIND_CLUSTER ?? "tutors-harness";
+/**
+ * This checkout's kind cluster (src/project.ts): `tutors-harness-<8 hex of the checkout's path>`; HARNESS_KIND_CLUSTER,
+ * then HARNESS_PROJECT, win. A cluster called plain `tutors-harness` is the machine owner's (the name every checkout used
+ * before 1.3.0) and is never created in, loaded into or deleted: see `refuseLegacyCluster`.
+ */
+export const CLUSTER = orExit(() => kindCluster().name);
 const KIND_CONFIG = resolve(ROOT, "deploy", "kind", "kind-config.yaml");
 
 /**
@@ -188,11 +194,12 @@ function waitHealthy(url: string, timeoutMs: number) {
 
 /** Create the cluster if needed, load the images, apply both namespaces, wait for rollouts. */
 export function kindUp(a: SideSpec, b: SideSpec, now: string, log: (m: string) => void): void {
+  refuseLegacyCluster(CLUSTER);
   if (!clusterExists()) {
     log(`  creating kind cluster ${CLUSTER}`);
     sh("kind", ["create", "cluster", "--name", CLUSTER, "--config", KIND_CONFIG, "--wait", "120s"]);
   } else {
-    log(`  kind cluster ${CLUSTER} already exists`);
+    log(`  kind cluster ${CLUSTER} already exists (this checkout's own: it was made by an earlier run here)`);
   }
   const images = [...new Set([...Object.values(a.images), ...Object.values(b.images)])];
   for (const image of images) {
@@ -215,6 +222,7 @@ export function kindUp(a: SideSpec, b: SideSpec, now: string, log: (m: string) =
 
 /** Delete the namespaces (the cluster stays for the next run; `kind delete cluster` removes it). */
 export function kindDown(log: (m: string) => void): void {
+  refuseLegacyCluster(CLUSTER);
   stopCourseServer();
   if (!clusterExists()) return;
   for (const side of ["a", "b"] as const) kubectl(["delete", "namespace", namespaceFor(side), "--ignore-not-found", "--wait=false"], { quiet: true });
@@ -238,7 +246,7 @@ export async function kindRollout(a: SideSpec, b: SideSpec, now: string, opts: R
   kindUp(a, b, now, opts.log);
   const outDir = join(opts.outDir, `${new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)}-kind-rollout`);
   mkdirSync(outDir, { recursive: true });
-  const name = "tutors-harness-k6-rollout";
+  const name = `${CLUSTER}-k6-rollout`;
   docker(["rm", "-f", name], { quiet: true });
   docker(
     [

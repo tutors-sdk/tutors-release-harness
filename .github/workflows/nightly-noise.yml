@@ -145,9 +145,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          mkdir -p current
-          gh api -H "Accept: application/vnd.github.raw" "repos/${GITHUB_REPOSITORY}/contents/noise-history.json?ref=noise" > current/noise-history.json 2>/dev/null \
-            || { echo "no noise branch yet: starting the history"; rm -f current/noise-history.json; }
+          mkdir -p publish
+          gh api -H "Accept: application/vnd.github.raw" "repos/${GITHUB_REPOSITORY}/contents/noise-history.json?ref=noise" > publish/noise-history.json 2>/dev/null \
+            || { echo "no noise branch yet: starting the history"; rm -f publish/noise-history.json; }
 
       # Exit 1 means the ratchet is broken. It is reported after publishing, so the status that says so still reaches the branch.
       - name: Record tonight and check the ratchet
@@ -158,9 +158,9 @@ jobs:
         run: |
           status="$(ls tonight/*/noise-status.json | head -1)"
           report="$(ls tonight/*/report.json | head -1)"
-          pnpm exec tsx src/ci/noise-history.ts record \
-            --status "$status" --report "$report" --history current/noise-history.json \
-            --out publish --tag "$TAG" --run-url "$RUN_URL" --summary "$GITHUB_STEP_SUMMARY"
+          pnpm harness noise record \
+            --status "$status" --report "$report" --store publish \
+            --tag "$TAG" --run-url "$RUN_URL" --summary "$GITHUB_STEP_SUMMARY"
 
       # One commit, forced, every night: the history lives in noise-history.json, not in git, so the branch never grows
       # and nothing can conflict. Release runs read noise-status.json from here (docs/noise-burndown.md).

@@ -94,6 +94,23 @@ Get the digests from the production overlay, from `docker buildx imagetools
 inspect quay.io/tutors-sdk/tutors-reader:16.2.0`, or from an earlier report:
 every report prints them.
 
+#### Digests from the dispatch (since 1.3.0)
+
+The release dispatch can carry a digest per app instead of a spelled-out
+reference: `production_digests` and `candidate_digests`, which `release.yml`
+passes as `--a-digests` and `--b-digests` (a JSON object, or
+`reader=sha256:…,catalogue=sha256:…,live=sha256:…`) beside the bare tags. The
+references become `repo:tag@sha256:…`, and on top of everything above:
+
+- before anything is pulled, `images ensure` asks the registry what each tag
+  resolves to now (`docker buildx imagetools inspect <repo>:<tag> --format
+  '{{.Manifest.Digest}}'`); a tag that has moved to another digest, or that
+  cannot be resolved, is **exit 2, cannot judge**, with the reason stated;
+- an app given no digest is not pinned, and a dispatch with no digests at all is
+  handled exactly as before.
+
+`docs/contract.md`, "Image digests and the release record", is the contract.
+
 ## 2. Signature verification
 
 A registry image is not judged until its signature has been checked:
