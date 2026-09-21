@@ -123,6 +123,22 @@ have said. A watch that finds the previous one still running does nothing
 (`--once` exits 0), as the workflow's concurrency group does. It needs no
 Docker.
 
+**A fresh checkout or worktree has no recorded run.** The recorded candidate is a
+release run under *this* checkout's `out/` (the run directories; `.harness/` holds
+the noise store, locks and rollback notes), and a new `git worktree` has its own,
+empty `out/` and `.harness/`. Until `harness local gate` has produced
+a release run there, or you pass `--recorded <dir>` (a release run directory from
+another checkout, or a downloaded `release-report` artifact), `harness local watch`
+runs nothing and exits **2** ("no recorded release run to compare production
+with"). It is not a failure of production.
+
+Each log line is stamped with the time it is printed, which is when the comparison
+ended (a run takes tens of seconds), followed by `(run started <time>)`. The schedule
+still counts from the start. A local WARN or FAIL says `decide whether to roll
+back`, not `open a rollback issue`: nothing here opens an issue (the note under
+`rollbacks/` is written on a FAIL only), whereas the workflow's reason keeps the CI
+wording (`HARNESS_ROLLBACK_ISSUE`, or GitHub Actions).
+
 ## Parity matrix
 
 Where each step runs today, and what runs it locally. **CLI** is a harness

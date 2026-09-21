@@ -311,6 +311,15 @@ describe("the watch loop", () => {
     for (const s of h.sleeps) expect(s).toBeGreaterThan(890_000);
   });
 
+  it("stamps a line with the time it is printed and says when the run started", async () => {
+    const h = harness([0]);
+    await watch({ intervalMs: 900_000, max: 1 }, { ...h.deps, runOnce: () => { h.deps.now(); h.deps.now(); return { code: 0, runDir: "/out/pd-1", verdict: "pass" }; } });
+    const line = h.log[0]!;
+    const [printed, started] = [/^(\S+) watch:/.exec(line)![1]!, /run started (\S+)\)/.exec(line)![1]!];
+    expect(Date.parse(printed)).toBeGreaterThan(Date.parse(started));
+    expect(line).toContain("production matches the recorded candidate");
+  });
+
   it("does not say production matches when exit 0 is an advisory WARN", async () => {
     const h = harness([0]);
     await watch({ intervalMs: 900_000, max: 1 }, { ...h.deps, runOnce: () => ({ code: 0, runDir: "/out/pd-1", verdict: "warn" }) });

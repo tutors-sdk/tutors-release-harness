@@ -382,15 +382,17 @@ export async function watch(o: { intervalMs: number; max?: number }, deps: Watch
     const { code, runDir, verdict } = deps.runOnce();
     iterations += 1;
     lastCode = code;
+    // The line is printed when the run ENDS (about twenty seconds after it started): stamp it with that time and say when the run started.
+    const at = `${deps.now().toISOString()} watch: (run started ${started.toISOString()})`;
     if (code === 1) {
       failures += 1;
       deps.onFailure({ at: started, ...(runDir ? { runDir } : {}) });
-      deps.log(`${started.toISOString()} watch: production DIFFERS from the recorded candidate${runDir ? ` (${runDir})` : ""}`);
+      deps.log(`${at} production DIFFERS from the recorded candidate${runDir ? ` (${runDir})` : ""}`);
     } else if (code === 0 && verdict === "warn") {
       // Exit 0 is also an advisory WARN (no clean A/A, or the deployed images not confirmed): it found differences and may not call them a FAIL.
-      deps.log(`${started.toISOString()} watch: verdict WARN, advisory only: production may differ from the recorded candidate${runDir ? `; read ${runDir}` : ""}`);
-    } else if (code === 0) deps.log(`${started.toISOString()} watch: production matches the recorded candidate`);
-    else deps.log(`${started.toISOString()} watch: could not judge (exit ${code}); trying again next time`);
+      deps.log(`${at} verdict WARN, advisory only: production may differ from the recorded candidate${runDir ? `; read ${runDir}` : ""}`);
+    } else if (code === 0) deps.log(`${at} production matches the recorded candidate`);
+    else deps.log(`${at} could not judge (exit ${code}); trying again next time`);
     if (o.max !== undefined && iterations >= o.max) break;
     // Keep the schedule: the next run is one interval after this one STARTED.
     const wait = Math.max(0, o.intervalMs - (deps.now().getTime() - started.getTime()));

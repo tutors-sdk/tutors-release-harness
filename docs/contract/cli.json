@@ -147,6 +147,10 @@
       "default": "",
       "meaning": "since 1.2.0. A pre-fetched scanner database directory (GRYPE_DB_CACHE_DIR / TRIVY_CACHE_DIR). Scanner database updates are always switched off, so this is what pins the scan"
     },
+    "HARNESS_ROLLBACK_ISSUE": {
+      "default": "",
+      "meaning": "unreleased. Post-deploy wording only: 1 | true | yes says a CI step opens a rollback issue on a FAIL (the reason says 'open a rollback issue'); 0 | false | no says none does (the reason says 'decide whether to roll back'). Unset: GitHub Actions (GITHUB_ACTIONS=true) has the step, anything else does not"
+    },
     "HARNESS_REQUIRE_STATIC": {
       "default": "",
       "meaning": "1 | true | yes (since 1.2.0): a static image artefact that could not be collected is a failing hunk instead of an informational one"

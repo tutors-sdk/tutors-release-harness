@@ -8,7 +8,7 @@ import { loadClaims } from "./claims/schema.ts";
 import { loadRules } from "./claims/rules.ts";
 import { captureSide } from "./collectors/index.ts";
 import { compareCaptures } from "./compare/index.ts";
-import { gate } from "./gate.ts";
+import { gate, rollbackIssueConfigured } from "./gate.ts";
 import { runMigration } from "./modes/migration.ts";
 import { runUpgrade } from "./modes/upgrade.ts";
 import { DEFAULT_MASKS_FILE, loadMasks, normalise, type MaskHits } from "./normalise/masks.ts";
@@ -162,7 +162,8 @@ export function compareFromCaptures(input: CompareInput): RunOutcome {
   const ranAt = new Date();
   const noise = readNoise(input.noise, input.log);
   const degraded = input.mode === "noise" && input.requireVerified ? evidenceGaps(input.a, input.b) : [];
-  const gated = gate({ mode: input.mode, compare, noiseWaived: noise.waived, noiseMaxAgeDays: input.noiseMaxAgeDays, ranAt, ...(degraded.length ? { degraded } : {}), ...(noise.status ? { noise: noise.status } : {}) });
+  // rollbackIssue only words the reason: HARNESS_ROLLBACK_ISSUE (or GitHub Actions) says a CI step opens the issue; a local run has none.
+  const gated = gate({ mode: input.mode, compare, noiseWaived: noise.waived, noiseMaxAgeDays: input.noiseMaxAgeDays, ranAt, rollbackIssue: rollbackIssueConfigured(process.env), ...(degraded.length ? { degraded } : {}), ...(noise.status ? { noise: noise.status } : {}) });
   // Deployed images that are not the ones judged: loud, advisory. A FAIL stays a FAIL, and a PASS is not a clean one.
   const deploymentLine = input.deployment ? deploymentReason(input.deployment) : undefined;
   const verdict = deploymentLine && gated.verdict === "pass" ? { ...gated, verdict: "warn" as const } : gated;

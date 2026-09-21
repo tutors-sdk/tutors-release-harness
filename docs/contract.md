@@ -631,6 +631,7 @@ Environment variables in the contract, all since 1.1.0 unless the row says other
 | `HARNESS_SBOM_CMD` | `syft docker:{image} -o spdx-json`; on a Windows host `docker run --rm -v /var/run/docker.sock:/var/run/docker.sock anchore/syft:latest docker:{image} -o spdx-json -q`, because native syft cannot unpack an image there (colons in layer file names) | since 1.2.0. The generator for `generate`; `{image}` is the image reference. Split on whitespace and quotes; no shell |
 | `HARNESS_VULN_CMD` | `grype sbom:{sbom} -o json` | since 1.2.0. The scanner; `{sbom}` is the path of the SPDX SBOM; must print grype or trivy JSON. trivy: `trivy sbom --format json {sbom}` |
 | `HARNESS_VULN_DB_DIR` | unset | since 1.2.0. A pre-fetched scanner database directory. Scanner database updates are always switched off, so a scan uses exactly this database |
+| `HARNESS_ROLLBACK_ISSUE` | unset | unreleased. Post-deploy wording only: `1`, `true` or `yes` says a CI step opens a rollback issue on a FAIL (the reason says `open a rollback issue`); `0`, `false` or `no` says none does (`decide whether to roll back`). Unset: GitHub Actions has the step, anything else does not |
 | `HARNESS_REQUIRE_STATIC` | unset | `1`, `true` or `yes`, since 1.2.0: a static image artefact that could not be collected is a failing hunk, not an informational one |
 
 Stdout is for people, except `harness version --json`. The last lines of
@@ -787,6 +788,11 @@ reports SAY changes, and it can change hunks in every mode, so a harness version
   `a/capture.json`. Not covered: captures written before this change keep the value on disk in the run directory
   that recorded them (delete them or the artifact), logs (the harness keeps keys and counts, never a line), and
   anything not on the list, which is narrow on purpose.
+
+- **Post-deploy reason wording** (patch-level). The reason `N new difference(s) between production and the recorded
+  candidate: open a rollback issue` says so only where a CI step opens one (`HARNESS_ROLLBACK_ISSUE`, else
+  `GITHUB_ACTIONS`); a local run says `decide whether to roll back`. Verdicts are unchanged. `harness local watch`
+  stamps each log line with the time it is printed and says `(run started <time>)`.
 
 ### 1.3.0 (minor; digests, rules, the local store, the local commands, checkout names, the `time` app, statistics)
 
