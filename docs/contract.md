@@ -768,6 +768,14 @@ reports SAY changes, and it can change hunks in every mode, so a harness version
   drops the header only when its canonical value matches, and `artefact: network` on a header mask clears
   `content-type` or `cache-control` of the network entries. Existing masks are unaffected.
 
+- **Origins are symmetric on an external side** (engine, post-deploy). The URLs of an external side (from its
+  `external:<url>` images, i.e. `HARNESS_PRODUCTION_URLS`) count as `{{origin}}` in BOTH sides' captures (DOM,
+  network URLs, console, page path), not only in the side that was captured at them. A literal absolute link to
+  production in the recorded side (the reader's "Tutors v16" and "What's New" links, a course link to
+  `https://tutors.dev`) now reads as production's own rewritten one. A link to another host, another port or another
+  path is still a DOM hunk. Nothing changes when neither side is external (release, noise). Consumers see fewer DOM
+  hunks in post-deploy; `{{origin}}` in a hunk may now stand for a literal link to production on the recorded side.
+
 ### 1.3.0 (minor; digests, rules, the local store, the local commands, checkout names, the `time` app, statistics)
 
 `main` is at 1.1.0 and this is its next release: 1.2.0 (below) was never

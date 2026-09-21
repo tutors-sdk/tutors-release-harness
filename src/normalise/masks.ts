@@ -5,6 +5,7 @@ import { z } from "zod";
 import { ROOT } from "../stack.ts";
 import { ARTEFACTS, MODES, type Mode, type NetworkEntry, type PageCapture, type SideCapture } from "../types.ts";
 import { canonicalHeaderValue } from "./canonical.ts";
+import { rewriteOrigins } from "./origins.ts";
 
 const artefactList = z.union([z.enum(ARTEFACTS), z.array(z.enum(ARTEFACTS)).min(1)]).transform((v) => (Array.isArray(v) ? v : [v]));
 
@@ -95,12 +96,22 @@ function canonicalNetworkEntry(n: NetworkEntry): NetworkEntry {
   return { ...n, contentType: canonicalHeaderValue("content-type", n.contentType), cacheControl: canonicalHeaderValue("cache-control", n.cacheControl) };
 }
 
-function normalisePage(page: PageCapture, masks: Mask[], hits: MaskHits): PageCapture {
-  let aria = page.aria;
+/** What normalisation is given besides the masks. */
+export interface NormaliseOptions {
+  /**
+   * Origins of the system under test that count as `{{origin}}` on THIS side as well as on their own
+   * (`externalOrigins()`); see src/normalise/origins.ts. Not a mask: structural, like the collector's own rewrite.
+   */
+  origins?: readonly string[];
+}
+
+function normalisePage(page: PageCapture, masks: Mask[], hits: MaskHits, origins: readonly string[]): PageCapture {
+  const own = (text: string) => rewriteOrigins(text, origins).text;
+  let aria = own(page.aria);
   const headers: Record<string, string> = {};
   for (const [k, v] of Object.entries(page.headers)) headers[k.toLowerCase()] = canonicalHeaderValue(k, v);
-  let network = page.network.map(canonicalNetworkEntry);
-  let consoleEntries = page.console.map((c) => ({ ...c }));
+  let network = page.network.map((n) => canonicalNetworkEntry({ ...n, url: own(n.url) }));
+  let consoleEntries = page.console.map((c) => ({ ...c, text: own(c.text) }));
 
   for (const mask of masks) {
     for (const artefact of mask.artefact) {
@@ -136,16 +147,17 @@ function normalisePage(page: PageCapture, masks: Mask[], hits: MaskHits): PageCa
       if (artefact === "console" && mask.pattern) consoleEntries = consoleEntries.map((c) => ({ ...c, text: applyPattern(c.text, mask, hits) }));
     }
   }
-  return { ...page, aria, headers, network, console: consoleEntries };
+  return { ...page, path: own(page.path), aria, headers, network, console: consoleEntries };
 }
 
 /** Apply every mask that applies in `mode` to a capture. Pure: returns a new capture and the hit counts. */
-export function normalise(capture: SideCapture, file: MasksFile, mode?: Mode): { capture: SideCapture; hits: MaskHits } {
+export function normalise(capture: SideCapture, file: MasksFile, mode?: Mode, options: NormaliseOptions = {}): { capture: SideCapture; hits: MaskHits } {
+  const origins = options.origins ?? [];
   const hits: MaskHits = {};
   const masks = file.masks.filter((m) => !m.modes || (mode !== undefined && m.modes.includes(mode)));
   for (const m of masks) hits[m.id] = 0;
 
-  const journeys = capture.journeys.map((j) => ({ ...j, pages: j.pages.map((p) => normalisePage(p, masks, hits)) }));
+  const journeys = capture.journeys.map((j) => ({ ...j, pages: j.pages.map((p) => normalisePage(p, masks, hits, origins)), ...(j.error !== undefined ? { error: rewriteOrigins(j.error, origins).text } : {}) }));
 
   const seriesMasks = masks.filter((m) => m.series && m.artefact.includes("metrics")).map((m) => ({ id: m.id, re: new RegExp(m.series!) }));
   const dropSeries = (snapshot: SideCapture["metrics"]["before"]) =>

@@ -12,6 +12,7 @@ import { gate } from "./gate.ts";
 import { runMigration } from "./modes/migration.ts";
 import { runUpgrade } from "./modes/upgrade.ts";
 import { DEFAULT_MASKS_FILE, loadMasks, normalise, type MaskHits } from "./normalise/masks.ts";
+import { externalOrigins } from "./normalise/origins.ts";
 import { writeReports } from "./report/index.ts";
 import { APPS } from "./image-ref.ts";
 import { fileLedger, realExec, resolveSideProvenance, trustPolicyFromEnv } from "./images.ts";
@@ -147,8 +148,11 @@ interface CompareInput {
  */
 export function compareFromCaptures(input: CompareInput): RunOutcome {
   const masks = loadMasks(input.masksFile);
-  const na = normalise(input.a, masks, input.mode);
-  const nb = normalise(input.b, masks, input.mode);
+  // An external side's URL is the system's own origin on both sides (src/normalise/origins.ts): post-deploy's recorded side
+  // was captured at another origin, so a literal link to production must read the same as production's own rewritten one.
+  const origins = externalOrigins(input.a, input.b);
+  const na = normalise(input.a, masks, input.mode, { origins });
+  const nb = normalise(input.b, masks, input.mode, { origins });
   const masksApplied: MaskHits = {};
   for (const id of Object.keys(na.hits)) masksApplied[id] = (na.hits[id] ?? 0) + (nb.hits[id] ?? 0);
 
