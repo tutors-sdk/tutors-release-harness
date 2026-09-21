@@ -1,14 +1,16 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Journey } from "../../traffic/journeys/journeys.ts";
+import { APPS } from "../image-ref.ts";
 import { serviceLogs, serviceName } from "../stack.ts";
 import { harnessInfo } from "../version.ts";
-import type { JourneyCapture, LogSummary, MetricsSnapshot, SideCapture, SideSpec } from "../types.ts";
+import type { JourneyCapture, LogSummary, MetricsSnapshot, SideCapture, SideSpec, Substrate } from "../types.ts";
 import { captureJourney, launchBrowser } from "./browser.ts";
 import { runLoad } from "./load.ts";
 import { summariseLogs } from "./logs.ts";
 import { fetchMetrics } from "./metrics.ts";
-import { fetchWrites, resetWrites } from "./persistence.ts";
+import { busStatusLine, ledgersFor, readLedgers, resetLedgers } from "./ledgers.ts";
+import { captureRuntime } from "../runtime/index.ts"; // R5 runtime artefacts
 
 export interface CaptureOptions {
   outDir: string;
@@ -21,16 +23,19 @@ export interface CaptureOptions {
   logsFrom?: { a: SideSpec; b: SideSpec };
   /** k6 against the side's reader after the journeys. */
   load?: { rate: number; duration: string };
+  /** R5 (contract 1.2.0): container posture and startup time, after everything else; absent for a stack the harness did not start. */
+  runtime?: { substrate: Substrate; posture: boolean; startupRestarts: number };
   log: (message: string) => void;
 }
 
-const APPS = ["reader", "catalogue", "live"] as const;
 
 async function metricsFor(spec: SideSpec): Promise<Record<string, MetricsSnapshot>> {
   const out: Record<string, MetricsSnapshot> = {};
   for (const app of APPS) {
+    const url = spec.urls[app];
+    if (!url) continue; // an external side that was given no time= URL
     try {
-      out[app] = await fetchMetrics(spec.urls[app]);
+      out[app] = await fetchMetrics(url);
     } catch {
       // A missing endpoint is itself a finding: with no series, every series the other side has is "missing".
       out[app] = { series: {} };
@@ -51,6 +56,8 @@ export async function captureSide(spec: SideSpec, journeys: Journey[], opts: Cap
 
   const startedAt = new Date().toISOString();
   const before = spec.external ? {} : await metricsFor(spec);
+  const ledgers = ledgersFor(spec);
+  opts.log(busStatusLine(spec.name, ledgers.bus.status));
   const browser = await launchBrowser();
   const captured: JourneyCapture[] = [];
   try {
@@ -61,8 +68,7 @@ export async function captureSide(spec: SideSpec, journeys: Journey[], opts: Cap
           continue;
         }
         opts.log(`  ${spec.name}: ${journey.name} (run ${run}/${opts.runs})`);
-        const stub = spec.urls.persistence;
-        if (stub) await resetWrites(stub);
+        await resetLedgers(ledgers);
         const result = await captureJourney(browser, spec, journey, run, {
           outDir: sideDir,
           now: opts.now,
@@ -70,7 +76,7 @@ export async function captureSide(spec: SideSpec, journeys: Journey[], opts: Cap
           axe: opts.axe && run === 1,
           focusStops: run === 1 ? opts.focusStops : 0
         });
-        if (stub) result.persistence = await fetchWrites(stub);
+        Object.assign(result, await readLedgers(ledgers));
         if (result.error) opts.log(`    failed: ${result.error}`);
         captured.push(result);
       }
@@ -91,7 +97,7 @@ export async function captureSide(spec: SideSpec, journeys: Journey[], opts: Cap
     }
   }
 
-  const capture: SideCapture = { side: spec.name, harness: harnessInfo(), images: spec.images, ...(spec.provenance ? { provenance: spec.provenance } : {}), capturedAt: new Date().toISOString(), journeys: captured, metrics: { before, after }, logs, ...(spec.external ? { external: true } : {}) };
+  const capture: SideCapture = { side: spec.name, harness: harnessInfo(), images: spec.images, ...(spec.provenance ? { provenance: spec.provenance } : {}), capturedAt: new Date().toISOString(), journeys: captured, metrics: { before, after }, logs, ...(spec.external ? { external: true } : {}), bus: ledgers.bus.status, ...(spec.imageStatic ? { imageStatic: spec.imageStatic } : {}) };
   if (opts.load) {
     capture.load = runLoad({
       base: spec.external ? spec.urls.reader : `http://reader-${spec.name}:3000`,
@@ -102,6 +108,11 @@ export async function captureSide(spec: SideSpec, journeys: Journey[], opts: Cap
       onNetwork: !spec.external,
       log: opts.log
     });
+  }
+  if (opts.runtime && !spec.external) {
+    const { runtime, startup } = await captureRuntime(spec, { ...opts.runtime, log: opts.log });
+    capture.runtime = runtime;
+    capture.startup = startup;
   }
   writeFileSync(join(sideDir, "capture.json"), JSON.stringify(capture, null, 2));
   return capture;

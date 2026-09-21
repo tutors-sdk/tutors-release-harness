@@ -86,6 +86,25 @@ describe("image provenance in the report header", () => {
     expect(html.indexOf("provenance")).toBeLessThan(html.indexOf("<h2>Differences"));
   });
 
+  it("a locally built side is announced before anything else in both reports: above the reasons and the tables, not just in a table cell", () => {
+    const md = renderMarkdown(withProvenance);
+    expect(md).toContain("> ⚠️ **Side b did not run signature-verified registry images (built-from-ref release/16.3.0@0123456789ab). This run is not evidence about the images that ship.**");
+    expect(md.indexOf("> ⚠️ **Side b")).toBeLessThan(md.indexOf("| | a | b |"));
+    const html = renderHtml(withProvenance);
+    expect(html.indexOf("class=\"loud\"")).toBeLessThan(html.indexOf("<ul>"));
+    expect(html.indexOf("class=\"loud\"")).toBeLessThan(html.indexOf("<table>"));
+    // Two verified sides, or sides that were never inspected, are not announced.
+    expect(renderMarkdown({ ...report, provenance: { a: verified, b: verified } })).not.toContain("not evidence");
+    expect(renderHtml({ ...report, provenance: { a: verified } })).not.toContain("not evidence");
+  });
+
+  it("a side restored from the runner's image cache is announced as loudly as a locally built one (R3 provenance `cached`, R1 banner)", () => {
+    const cached = side("cached 2026-09-15T02:30:00.000Z (registry unreachable; tag freshness unconfirmed)", (app, i) => ({ ref: `quay.io/tutors-sdk/tutors-${app}:main`, id: `sha256:c${i}`, digest: digest(i), provenance: "cached", cachedAt: "2026-09-15T02:30:00.000Z" }));
+    const r: RunReport = { ...report, provenance: { a: verified, b: cached } };
+    expect(renderMarkdown(r)).toContain("> ⚠️ **Side b did not run signature-verified registry images (cached 2026-09-15T02:30:00.000Z");
+    expect(renderHtml(r)).toContain('<p class="loud">Side b did not run signature-verified registry images (cached');
+  });
+
   it("an unverified pull shows why, and an unlabelled image says so rather than showing nothing", () => {
     const unverified = side("pulled-unverified", (app, i) => ({ ref: `quay.io/x/tutors-${app}:1`, digest: digest(i), provenance: "pulled-unverified", unverifiedReason: "no valid signature <for this>" }), { allowedUnsigned: true });
     const html = renderHtml({ ...report, provenance: { a: verified, b: unverified } });

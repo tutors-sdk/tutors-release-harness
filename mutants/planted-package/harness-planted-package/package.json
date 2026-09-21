@@ -1,0 +1,7 @@
+{
+  "name": "harness-planted-package",
+  "version": "9.9.9",
+  "description": "Planted by the harness's added-package mutant. Nothing loads it; a package inventory of the image finds it.",
+  "license": "MIT",
+  "main": "index.js"
+}

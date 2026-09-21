@@ -1,9 +1,9 @@
 # Where the A and B images come from
 
 The harness compares **images**, never checkouts. Side **a** is what runs in
-production; side **b** is the candidate. Both are three images — `reader`,
-`catalogue`, `live` — and a verdict is only worth something if those are the
-images that ship. So the harness cares where they came from, checks what it
+production; side **b** is the candidate. Both are four images — `reader`,
+`catalogue`, `live` and `time`, the monorepo's four apps — and a verdict is
+only worth something if those are the images that ship. So the harness cares where they came from, checks what it
 can, and writes the answer at the top of every report.
 
 The monorepo publishes to **Quay.io**: `quay.io/tutors-sdk/tutors-<app>`,
@@ -61,8 +61,8 @@ Other forms `--a` accepts:
 
 | Form | Meaning |
 | --- | --- |
-| `quay.io/tutors-sdk/tutors-reader:16.2.0`, `tutors/reader:16.2.0` | that image for its app; the other two take the prefix and the same tag |
-| `reader=REF,catalogue=REF,live=REF` | every image spelled out (mutant runs use this); each `REF` may be pinned by digest |
+| `quay.io/tutors-sdk/tutors-reader:16.2.0`, `tutors/reader:16.2.0` | that image for its app; the others take the prefix and the same tag |
+| `reader=REF,catalogue=REF,live=REF,time=REF` | every image spelled out (mutant runs use this); each `REF` may be pinned by digest. `time=` may be left out (a spec written before the time app joined the stack): it then takes the prefix's `time` image at the reader's tag, else at the first tag among the others |
 | `main`, `release/16.3.0`, a sha (migration mode only) | a git ref of the monorepo to fetch migrations from |
 | `dir:path` (migration mode only) | a local directory of `.sql` files |
 
@@ -73,18 +73,18 @@ deployed, pin each image:
 
 ```bash
 pnpm harness images ensure \
-  --a "reader=quay.io/tutors-sdk/tutors-reader:16.2.0@sha256:…,catalogue=quay.io/tutors-sdk/tutors-catalogue@sha256:…,live=quay.io/tutors-sdk/tutors-live@sha256:…" \
+  --a "reader=quay.io/tutors-sdk/tutors-reader:16.2.0@sha256:…,catalogue=quay.io/tutors-sdk/tutors-catalogue@sha256:…,live=quay.io/tutors-sdk/tutors-live@sha256:…,time=quay.io/tutors-sdk/tutors-time@sha256:…" \
   --b 16.3.0-rc.1
 ```
 
-- A digest names one image and the three apps have three digests, so a digest
+- A digest names one image and the four apps have four digests, so a digest
   only appears in a full reference. `--a 16.2.0@sha256:…` is refused with
   that explanation rather than guessed at.
 - `repo:tag@sha256:…` and `repo@sha256:…` are both accepted. The tag is kept
   in the report for the reader; docker, compose and kubectl are given
   `repo@sha256:…`, so the digest alone decides what runs.
 - One pinned image with a tag (`--a quay.io/tutors-sdk/tutors-reader:16.2.0@sha256:…`)
-  pins that app; the other two take the prefix and the tag, unpinned.
+  pins that app; the others take the prefix and the tag, unpinned.
 - A pinned side cannot fall back to a build: there is no way to build a digest.
 - On the kind substrate, `kind load docker-image` carries tags, not digests, so
   a pinned image is given a local tag derived from its digest
@@ -93,6 +93,23 @@ pnpm harness images ensure \
 Get the digests from the production overlay, from `docker buildx imagetools
 inspect quay.io/tutors-sdk/tutors-reader:16.2.0`, or from an earlier report:
 every report prints them.
+
+#### Digests from the dispatch (since 1.3.0)
+
+The release dispatch can carry a digest per app instead of a spelled-out
+reference: `production_digests` and `candidate_digests`, which `release.yml`
+passes as `--a-digests` and `--b-digests` (a JSON object, or
+`reader=sha256:…,catalogue=sha256:…,live=sha256:…[,time=sha256:…]`) beside the bare tags. The
+references become `repo:tag@sha256:…`, and on top of everything above:
+
+- before anything is pulled, `images ensure` asks the registry what each tag
+  resolves to now (`docker buildx imagetools inspect <repo>:<tag> --format
+  '{{.Manifest.Digest}}'`); a tag that has moved to another digest, or that
+  cannot be resolved, is **exit 2, cannot judge**, with the reason stated;
+- an app given no digest is not pinned, and a dispatch with no digests at all is
+  handled exactly as before.
+
+`docs/contract.md`, "Image digests and the release record", is the contract.
 
 ## 2. Signature verification
 
@@ -125,8 +142,8 @@ cosign verify \
   Names without a registry host (`tutors/reader:16.2.0`) are never pulled:
   Docker would resolve them to whoever owns that namespace on Docker Hub.
 - The SBOM attestation can be checked by hand with
-  `cosign verify-attestation --type spdxjson` and the same identity flags; the
-  harness does not gate on it.
+  `cosign verify-attestation --type spdxjson` and the same identity flags. Since
+  1.2.0 the harness reads it itself, to diff the two sides' packages (section 8).
 
 cosign **3 or newer** must be on `PATH` — the monorepo signs with cosign 3,
 whose signatures an older cosign cannot read; when verification fails under an
@@ -153,7 +170,7 @@ release". The CI workflows never pass it.
 The monorepo's `.github/workflows/image-build.yml` (its PR #143; a reference
 copy of the contract is in [`monorepo/publish-images.yml`](monorepo/publish-images.yml)):
 
-- builds `reader`, `catalogue`, `live` (and `time`) from the root `Dockerfile`,
+- builds `reader`, `catalogue`, `live` and `time` from the root `Dockerfile`,
   multi-arch (`linux/amd64`, `linux/arm64`), on every push to `main` and every
   `v*` tag;
 - pushes to `quay.io/tutors-sdk/tutors-<app>` with a Quay robot account
@@ -184,24 +201,39 @@ the nightly noise run and the weekly mutants use it. Update it when a release
 is deployed (the monorepo's deploy workflow can do this with
 `gh variable set HARNESS_PRODUCTION_TAG --repo tutors-sdk/tutors-release-harness`).
 
+### A registry outage, and the runner cache
+
+`harness images ensure --image-cache <dir>` (the nightly passes it) always asks
+the registry first. When the pull fails because the registry **cannot answer**
+(rate limit, timeout, 5xx), it loads last night's images from `<dir>` (a
+`docker save` tar and a manifest of ids, digests and the identity they were
+verified against) and records them as provenance `cached` — not re-verified,
+because the registry that holds the signatures is the one that is down. A tag
+the registry says **does not exist** never borrows another night's cache. The
+cache is refreshed only from images pulled **and** verified in the same run,
+so an unverified or locally built image can never enter it. A noise run that
+used a cached image is **degraded**: it neither counts as a clean night nor
+licenses a release FAIL (`docs/noise-burndown.md`). The workflow keeps `<dir>`
+between nights with `actions/cache`.
+
 ## 5. Building from a git ref (the loud fallback)
 
 `scripts/build-images.sh <ref> [tag]` clones the monorepo at `<ref>` into a
-temporary directory and runs its own `Dockerfile` three times with
+temporary directory and runs its own `Dockerfile` four times (one per app) with
 `--build-arg APP_NAME=<app>`, naming the images by `HARNESS_IMAGE_PREFIX`
 (prefix or template, as above; tag defaults to the ref) and labelling them with
 the commit (`org.opencontainers.image.revision`) and the tag (`.version`).
 
 ```bash
-scripts/build-images.sh v16.2.0                 # tutors/{reader,catalogue,live}:v16.2.0
-scripts/build-images.sh release/16.3.0 rc       # tutors/{reader,catalogue,live}:rc
+scripts/build-images.sh v16.2.0                 # tutors/{reader,catalogue,live,time}:v16.2.0
+scripts/build-images.sh release/16.3.0 rc       # tutors/{reader,catalogue,live,time}:rc
 TUTORS_REPO=git@github.com:me/fork.git scripts/build-images.sh my-branch
 scripts/build-images.sh --print-images 16.2.0   # just the names, no git, no docker
 ```
 
 `harness images ensure` calls this when a bare tag cannot be pulled, trying
 `v<tag>`, `<tag>` and `release/<tag>` as refs; pass `--ref-a`/`--ref-b` to name
-the ref explicitly. The script tags all three apps, so a side is either wholly
+the ref explicitly. The script tags all four apps, so a side is either wholly
 pulled or wholly built, never a mixture under one tag.
 
 The fallback is kept because a registry can lack a tag (an old release, a
@@ -212,9 +244,10 @@ the console says `BUILDING FROM SOURCE`, the side is recorded as
 reasons say the side "was built here … not pulled from the registry". A
 release decision should rest on `pulled+verified` on both sides.
 
-The monorepo today has no `v16.x` git tags (its milestones are tagged, its
-releases are branches merged to `main`), which is why the fallback tries the
-`release/<version>` branch too.
+The monorepo tags its releases now (`v16.2.0`, `v16.2.2`, and a
+`v<version>-rc.N` for each candidate), so `v<tag>` is normally the ref that
+resolves. Older releases exist only as a retained `release/<version>` branch,
+which is why the fallback still tries that too.
 
 ## 6. Local development
 
@@ -231,13 +264,15 @@ published production images, verified, beside your local build:
 
 ```bash
 export HARNESS_IMAGE_PREFIX='quay.io/tutors-sdk/tutors-{app}'
-pnpm harness images ensure --a 16.2.0 --b "reader=tutors/reader:local,catalogue=tutors/catalogue:local,live=tutors/live:local"
-pnpm harness run --mode any-two --a 16.2.0 --b "reader=tutors/reader:local,catalogue=tutors/catalogue:local,live=tutors/live:local"
+pnpm harness images ensure --a 16.2.0 --b "reader=tutors/reader:local,catalogue=tutors/catalogue:local,live=tutors/live:local,time=tutors/time:local"
+pnpm harness run --mode any-two --a 16.2.0 --b "reader=tutors/reader:local,catalogue=tutors/catalogue:local,live=tutors/live:local,time=tutors/time:local"
 ```
 
 Mutants are built `FROM` the base reader image, whatever `--base` resolves to:
 with the Quay template that is the pulled, verified production image, so a
-mutant is production plus exactly one planted fault.
+mutant is production plus exactly one planted fault. Only the reader is
+mutated; catalogue, live and time are the base's own on both sides, so the
+base tag must exist for all four apps.
 
 ## 7. What the harness records about the images
 
@@ -258,3 +293,62 @@ never vouch for different content.
 Because captures carry their provenance, a capture can be re-compared later
 (`harness compare`) or used as the recorded side of post-deploy mode and the
 report still says what was actually run.
+
+## 8. Static artefacts: manifest, SBOM, vulnerabilities
+
+Since contract 1.2.0 the harness also compares what each image *is*, read from
+the image before any stack starts (`src/image-static/`, engine in
+`src/compare/image-static.ts`; the report shape is in
+[contract.md](contract.md#static-image-artefacts)):
+
+| Artefact | From | Needs |
+| --- | --- | --- |
+| `image-manifest` | `docker image inspect`: base, platform, USER, exposed ports, entrypoint, cmd, layer count, size, OCI labels | Docker only |
+| `sbom` | the SPDX SBOM the monorepo's publish workflow attests to each image (`cosign attest --type spdxjson`), read with `cosign verify-attestation` by digest against the same identity and issuer as the signature check; a package multiset (`name@version`) diffed as a set, one hunk per package added, removed or bumped | cosign 3, a pulled image |
+| `vulns` | a scanner run over that SBOM; a set diff by advisory id | grype (or trivy), a pinned database |
+
+**Base image.** A build does not have to record its base, so the harness uses
+two signals: the `org.opencontainers.image.base.digest` label when the build
+sets it (worth adding to the monorepo's Dockerfile if you want the base's name
+and digest in reports), and always the diffID of the image's lowest layer,
+which changes whenever the base's operating-system layer does.
+
+**Where an SBOM comes from.** `HARNESS_SBOM_SOURCE`:
+
+- `auto` (default) and `attestation`: the cosign attestation, for an image
+  that was pulled (`pulled+verified`, or `pulled-unverified` under
+  `--allow-unsigned`, which uses `cosign download attestation` and labels the
+  SBOM as not verified). An attestation whose subject is not this image's
+  digest, that is not SPDX, or that lists no packages is refused.
+- `generate`: a local generator over the image itself, on both sides
+  (`HARNESS_SBOM_CMD`, default `syft docker:{image} -o spdx-json`, run in syft's own container on a Windows host). This is
+  what the mutants use, and the way to get an SBOM for a locally built image.
+  Do not mix it with attestations in one comparison: two different tools do not
+  catalogue an image identically.
+
+**The scanner is a command**, `HARNESS_VULN_CMD`, default
+`grype sbom:{sbom} -o json`; `{sbom}` is the path of the SBOM the scan reads,
+and grype's or trivy's JSON is read from stdout (trivy:
+`trivy sbom --format json {sbom}`). No shell is involved.
+
+**Pinning the vulnerability database.** A CVE published between the two sides'
+scans would otherwise look like a change in the release. So the harness never
+lets the scanner update: it sets `GRYPE_DB_AUTO_UPDATE=false`,
+`GRYPE_CHECK_FOR_APP_UPDATE=false`, `TRIVY_SKIP_DB_UPDATE=true` and
+`TRIVY_OFFLINE_SCAN=true` on every scan, and points the scanner at
+`HARNESS_VULN_DB_DIR` (`GRYPE_DB_CACHE_DIR` / `TRIVY_CACHE_DIR`). Whoever owns
+the runner fetches the database once, into that directory, and versions it: for
+grype, `GRYPE_DB_CACHE_DIR=$dir grype db update` in a setup step, cached by date
+(nightly) or by a checksum recorded next to the release. Both sides of a run are
+scanned with that one database; the scanner's version and the database's build
+time are read from its output and, if the two sides ever differ, that is a
+failing `<app>/db` hunk rather than a silent mismatch. A new advisory on b
+fails the release; one that was on a and is gone on b is noted informationally.
+
+**Loud, never silent.** A locally built image has no attestation, `syft` or
+`grype` may not be installed, the database may be absent: each is reported as
+`NOT COLLECTED: <reason>` (a line in `reasons`, a cell in the report's Image
+artefacts table, an informational `<app>/not-collected` hunk) and that artefact
+is not compared. `HARNESS_REQUIRE_STATIC=1` turns those hunks into failures,
+which is what a release pipeline that must never pass without an SBOM diff
+sets.

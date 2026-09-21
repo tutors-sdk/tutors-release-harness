@@ -39,7 +39,9 @@ export const MasksFileSchema = z.object({
   screenshot: z.object({ maxDiffRatio: z.number().min(0).max(1), pixelThreshold: z.number().min(0).max(1) }),
   metrics: z.object({ deltaTolerance: z.number().min(0), deltaAbsolute: z.number().min(0) }),
   logs: z.object({ levelTolerance: z.number().min(0), requestIdDrop: z.number().min(0).max(1) }),
-  timing: z.object({ minRuns: z.number().int().min(2), alpha: z.number().gt(0).lt(1), minEffect: z.number().min(0), minShiftMs: z.number().min(0) })
+  timing: z.object({ minRuns: z.number().int().min(2), alpha: z.number().gt(0).lt(1), minEffect: z.number().min(0), minShiftMs: z.number().min(0) }),
+  // R5 (contract 1.2.0): startup time reuses timing's minRuns, alpha and minEffect; only the shift floor is its own.
+  startup: z.object({ minShiftMs: z.number().min(0) }).default({ minShiftMs: 250 })
 });
 
 export type Mask = z.infer<typeof MaskSchema>;

@@ -9,20 +9,41 @@ fail, and ratchets. This is the runway for the runway.
 | Failure class | Example | Owning tier |
 | --- | --- | --- |
 | An engine misses a diff | a dropped header produces no hunk | Unit, with a planted change per engine |
+| A p-value is wrong, or the sample cannot judge | the normal CDF fed z where it needs z/sqrt 2 (5 v 5 separated reported p = 0.0004, not 0.0122); three runs a side reported as if they could reach alpha 0.05 (they cannot: best possible p = 0.081) | Unit on `src/compare/stats.ts` against hand-derived values (`tests/stats.test.ts`), and on the timing, load and startup engines saying "samples cannot reach alpha" as information; the `slow-ssr` mutant runs five |
 | An engine invents a diff | identical captures produce a hunk | Unit A/A |
 | A mask hides too much or too little | a mask with no reason; a pattern that never fires | Unit (schema), report (silent masks), nightly A/A |
 | The claim matcher is too generous | a `dom` claim covers a `headers` hunk; `scope: "**"` passes without a human | Unit |
 | The gate fails without the right to | release FAILS with no clean A/A | Unit |
 | A rehearsal rule is wrong | expand/contract accepts a dropped column; a rollout with 5xx passes | Unit on catalogues and k6 output |
 | A fixture stub misbehaves | persistence stub sends a Date header; identity stub mints a token for a bad code; edge drops in-flight requests | Fixture tests (in-process servers) |
+| A static image artefact is missed or invented | a new package is not a hunk; an SBOM for another digest is read; a changed `revision` label flags every release; a missing scanner reads as "no vulnerabilities" | Unit on `src/compare/image-static.ts` and `src/image-static/*` with the process runner injected (a fake docker, cosign, syft and grype): A/A, planted change and must-not-flag per artefact; not-collected is asserted loud |
 | An image is named wrongly | the Quay template expands to `quay.io/…/tutors/reader`; the shell script and the CLI disagree | Unit on `src/image-ref.ts`, with `build-images.sh --print-images` held to the same answers |
 | An untrusted image is judged | an unsigned or wrongly-signed pull passes; a missing cosign is skipped; a stale verification vouches for new content | Unit on `src/images.ts` with the process runner injected (a fake docker, registry and cosign) |
 | A report hides where its images came from | a side built from source reads like a published one | Unit on the report header and on capture → report flow |
+| A backend leaks into a rule | the anonymous-write rule only works on Supabase REST; migration mode only on the Docker Postgres | Unit: a second, in-memory backend behind each seam (`tests/persistence-seam.test.ts`, `tests/migration-seam.test.ts`) drives the same collector, rule and rehearsal |
+| The bus collector is silent when absent, or fails a run it cannot judge | no bus configured reads as a clean bus; a live side with no recorder fails | Unit on the collector and engine with an in-memory transport (`tests/bus.test.ts`) |
+| The app ignores the frozen clock | a stat rendered from the wall clock differs run to run | Unit on `probeClock` (`tests/clock-probe.test.ts`); the decision is `docs/harness-now.md` |
+| A container's posture drifts, or an artefact silently stops being collected | a candidate whose image runs as root, adds a capability or a `VOLUME`, or writes outside `/tmp`; docker missing on the runner and the report saying nothing | Unit on the `runtime` engine, on the posture parsers and on the collectors with the process runner injected (a fake docker and kubectl); "not collected" is a failing hunk |
+| Startup time regresses, or the sample cannot judge | a candidate that boots twice as slowly; three restarts a side reported as if judged | Unit on the `startup` engine (Mann-Whitney, the shift floor, "cannot reach alpha") and on the restart sampler with a fake clock |
+| A claim names a Rule that is not there, or that nobody can check | `rule: "0999"` with no such Rule; `rule` with no rules file; an unquoted `rule: 0031` read as 31; the claims that spell a Rule out in `reason` broken by the new key | Unit (`tests/rules.test.ts`): the A/A (a claims file with no `rule` reads exactly as before), the planted missing rule / missing file / malformed id, and the must-not-flag (free-text `Rule 0031:` claims, an unused Rule, extra keys in `rules.json`); through the process, exit 2 before any output directory exists |
+| Two checkouts share a stack, or the harness touches one that is not its own | two worktrees on one machine replacing each other's compose stack; a kind cluster called `tutors-harness` adopted or deleted; a doctor that hides the old stack | Unit on `src/project.ts` (`tests/project-name.test.ts`: the same path, the same name, two paths two names, Windows case, overrides, the refusal through the process) and on `harness doctor` with a fake Docker and kind (`tests/local-doctor.test.ts`: a legacy stack and a legacy cluster are reported as not touched, and nothing that changes a container is ever run) |
 | The stacks are not identical | side b has an env var side a lacks | Unit on `compose.harness.yaml` and the kind manifests |
+| An app the monorepo ships is missing from the stack | `time` was in the monorepo's compose and image build, and in none of the harness's stacks or artefacts | Unit (`tests/stack.test.ts`): `APPS` (`src/image-ref.ts`), `compose.harness.yaml` (both sides), the kind manifests and `kind-config.yaml` agree, `time` is configured as `catalogue` and `live` are, and no host port is published twice |
 | The whole thing cannot boot | compose or kind fails on a laptop or in CI | Smoke: A/A on one journey (CI, every PR) |
-| The harness cannot fail | a planted regression passes release mode | Mutants (weekly, and in CI on any PR that changes an engine, a mask, a journey, the gate or a mutant) |
+| The harness cannot fail | a planted regression passes release mode | Mutants (weekly, and in CI on any PR that changes an engine, a collector, a mask, a journey, a fixture, a stack, the gate or a mutant) |
 | The contract drifts | `report.json` gains a field the schema does not know; a workflow uses an undocumented flag | Unit (`tests/contract.test.ts`) |
 | The harness is noisy | A/A on the production tag is not clean | Nightly noise; the gate degrades to warn automatically |
+| The harness FAILs on weak evidence | release FAILs with no status, a stale, dirty or degraded one; a cache or a local build passes as a clean A/A | Unit, end to end (`tests/release-gate.test.ts`) and on the gate |
+| A pinned image is not the one judged | a tag that moved after the dispatch took its digests; a source rebuild standing in for a pinned digest; a digest nobody signed; a digest that contradicts the spec | Unit on `ensureImages` with digests (`tests/images.test.ts`, a fake registry that says what each tag resolves to) and on `src/digests.ts` (`tests/digests.test.ts`): the A/A, the planted moved tag, the must-not-flag of a dispatch with no digests |
+| A deployment runs something other than what was judged | a digest that differs, an app with a digest on one side only, no release record, a deploy that reports none; a FAIL softened or a PASS left clean | Unit on `src/release-record.ts` and, through the real pipeline, on post-deploy mode (`tests/release-record.test.ts`): the verdict becomes WARN, never FAIL, and the reports are loud |
+| The registry is down and the night is green | the nightly used last night's cached image and reported clean | Unit on `images ensure` with a fake registry (`tests/image-cache.test.ts`); the status is `degraded` and the gate refuses it |
+| The ratchet loosens | the noise count reaches 0 and creeps back without anyone noticing | Unit on the history (`tests/noise-history.test.ts`); the nightly's publish job fails |
+| A mask hides the change that needs it | a mask added in the same PR as the engine change it makes pass | Unit (`tests/mask-change.test.ts`) and the CI job "Masks land in their own PR (required)" |
+| Claims become a checkbox | one claim swallows a dozen hunks; `scope: "**"` with `approvedBy` on every release | Unit (`tests/claim-hygiene.test.ts`); reported, never gates |
+| Local and CI diverge | a workflow step changes and the local wrapper does not; logic that lives only in workflow YAML; a masks guard that only CI can run | Unit (`tests/local-parity.test.ts`): every `pnpm harness` line in a workflow is held to the plan of `harness local nightly\|gate\|mutants\|watch`, and no workflow may run `src/ci/*.ts` directly |
+| The machine cannot run the harness | cosign 2, WSL's `bash` first on a Windows PATH, CRLF in a shell script, a port or the compose subnet already taken, a Docker VM clock adrift | Unit on fake machines (`tests/local-doctor.test.ts`); `harness doctor` on the real one |
+| The local noise store loosens the gate | a stale, dirty or degraded local status licenses a FAIL; the default store is ignored | Unit, end to end through the real pipeline (`tests/local-noise-store.test.ts`) |
+| A FAIL is bypassed and nobody knows | an admin merges past the check | The recorded override (`--override-reason`), unit-tested; the quarterly count in `docs/noise-burndown.md` |
 
 ## Tiers
 
@@ -38,6 +59,17 @@ Anything that would run `docker`, `cosign` or `bash` takes its process runner
 as a parameter (`Exec` in `src/images.ts`); the tests pass a fake and assert on
 the exact commands, so the ensure flow — local, pull, verify by digest, build,
 refuse — is covered without Docker.
+
+Container posture and startup time (`src/runtime/`, `src/compare/runtime.ts`)
+are collected through docker and kubectl behind the same injected `Exec`:
+`tests/runtime-collectors.test.ts` feeds them what the real tools print and
+asserts on every command line, `tests/runtime-engines.test.ts` has the three
+tests per engine, and `tests/runtime-report.test.ts` runs a whole comparison
+and checks the report against the schema. What they cannot prove is that the
+assumptions about a real container hold (`node` on the PATH inside every app
+image, `/proc/self/mountinfo`, the health status format): the first
+`--mode noise` run on a machine with Docker is that proof, and it must be
+clean before the harness gates on these artefacts.
 
 Rules for a new engine or rule: it does not merge without (1) the A/A test,
 (2) a planted change it catches, (3) a change it must *not* flag.
@@ -60,22 +92,45 @@ running.
 
 ### Mutants (`pnpm harness mutants`, ~15 minutes, weekly and on demand)
 
-The harness's own negative fixtures: eight planted regressions
+The harness's own negative fixtures: ten planted regressions
 (`mutants/mutants.yaml`), each of which must produce a FAIL verdict
-attributed to the expected artefact. A/A runs first, so the mutants are
+attributed to the expected artefact. Eight plant a fault at the HTTP edge;
+two (`base-swap`, `added-package`) change what the image *is*, and are caught
+by the static image artefacts (`image-manifest`, `sbom`). They are built
+locally, so `harness mutants` generates their SBOMs with a local `syft` on both
+sides (`HARNESS_SBOM_SOURCE=generate`); without `syft`, `added-package` escapes
+and the run says why. A/A runs first, so the mutants are
 caught by a harness that has the right to gate.
 
-**A re-run is required when an engine, a mask, a journey, the gate or a mutant
-changes, and CI enforces it.** `weekly-mutants.yml` also runs on every pull
+**A re-run is required when an engine, a collector, a mask, a journey, a fixture, a stack, the gate
+or a mutant changes, and CI enforces it.** `weekly-mutants.yml` also runs on every pull
 request. Its first job (`src/ci/engine-change.ts`) looks at the files the PR
 touches:
 
 | Paths | |
 | --- | --- |
-| `src/compare/**`, `src/gate.ts` | engines and the gate |
+| `src/compare/**`, `src/gate.ts`, `src/claims/**` | engines, the gate, and the matcher that decides what is claimed |
 | `normalise/**`, `src/normalise/**` | masks and how they are applied |
-| `traffic/journeys/**` | journeys |
-| `mutants/**` | the mutants themselves |
+| `src/collectors/**`, `src/runtime/**`, `src/image-static/**`, `src/persistence/**`, `src/migration/**`, `src/bus/**`, `src/clock-probe.ts` | what is captured: a report can change with no engine touched |
+| `src/run.ts`, `src/modes/**`, `src/noise.ts`, `src/stack.ts`, `src/substrate/**` | how a run, a mode and a stack are put together, and the noise rule the gate consults |
+| `src/images.ts`, `src/image-ref.ts`, `src/image-cache.ts`, `src/digests.ts`, `src/release-record.ts` | which images are judged (pinned by digest, or not), whether they are trusted, and what a deployment is compared with |
+| `compose.harness.yaml`, `deploy/**`, `fixtures/**`, `scripts/**` | what the two stacks are made of |
+| `traffic/**` | journeys, and the k6 load |
+| `mutants/**`, `src/mutants.ts`, `src/mutant-build.ts` | the mutants themselves, and the code that builds and runs them |
+| `pnpm-lock.yaml` | a dependency bump (Playwright, axe-core, pixelmatch) changes what is captured and compared |
+
+**Deliberately not engine** (each with its reason in `NON_ENGINE_PATHS`, `src/ci/engine-change.ts`):
+`src/ci` and `src/report` (the guards themselves; rendering, whose wording is a contract patch and which
+the mutants, asserting on the verdict, cannot exercise), `src/cli.ts` (parses and dispatches; behaviour
+lives in `src/run.ts`), `src/local` (the maintainer's wrappers and `harness doctor`; they run the stable commands, which are engine code), `src/project.ts` (names the compose project and kind cluster after the checkout), `src/override.ts` (records an override, never changes a verdict), `src/types.ts`,
+`src/version.ts`, `tests`, `docs`, `claims`, `bin`, `package.json` (the version bump is the required change;
+dependencies are covered through the lock file), `README.md`, `TESTING.md`, `LICENSE`,
+`eslint.config.mjs`, `tsconfig.json` and `vitest.config.ts`. Workflows under `.github` are held to the
+contract by `tests/contract.test.ts` instead.
+
+**This list is enforced.** `tests/engine-change.test.ts` fails when a file or directory appears directly
+under `src/` or at the repository root that is neither an engine path nor listed as non-engine, so the list
+cannot go stale as the tree grows: whoever adds `src/foo/` must say which it is.
 
 If none is touched, the mutants are skipped and the check passes in a minute.
 If any is, the PR must
@@ -93,9 +148,20 @@ tested in `tests/engine-change.test.ts`.
 
 ### Noise (nightly)
 
-A/A on the production tag, three runs. Zero diffs, or the harness is advisory
-until the normaliser is fixed. The status it writes is what release mode
-consults; a release run without it warns instead of failing.
+A/A on the production tag pulled from the registry, five runs with the same
+k6 load a release run uses, on a pinned runner image. Zero diffs, or the
+harness is advisory until the normaliser is fixed. The status it writes is what
+release mode consults, from the `noise` branch; a release run without a fresh,
+clean, **verified** one warns instead of failing. A night that could not pull
+(the registry is down or rate-limiting) falls back to the runner's cache of the
+last verified images and is **degraded**: it neither counts as clean nor
+licenses a FAIL. The burn-down playbook is [docs/noise-burndown.md](docs/noise-burndown.md).
+
+The tests around it never touch Docker or the network:
+`tests/release-gate.test.ts` (WARN without a fresh clean verified status, FAIL
+with one, per case, through the real pipeline), `tests/image-cache.test.ts`
+(the outage fallback, with a fake docker and registry),
+`tests/noise-history.test.ts` (the ratchet, the streak, publishing, fetching).
 
 ### Rehearsal fixtures (on demand, ~1 minute each)
 
@@ -112,18 +178,32 @@ Upgrade mode's negative fixture is the `route-500` mutant rolled in through
 the edge: `pnpm harness run --mode upgrade --a local --b tutors-harness/mutant-route-500:latest`
 must fail with failures attributed to `b`.
 
+### Local-first (`pnpm test`, seconds)
+
+`tests/local-*.test.ts`: the doctor on fake machines, the noise store and the
+guards, the plans of `harness local ...` and how a plan runs (a fake executor:
+which failure stops which stream), the watch loop with a fake clock, the run
+lock, the override log, and the CLI through a real process for exit codes and
+`--dry-run`. Nothing starts Docker: the one thing they cannot prove is that the
+Windows paths in `scripts/*.sh` and the tools' install locations hold on a real
+machine, which is what `harness doctor` and the first `harness local nightly` are
+for. Setup, scheduling and the parity matrix are in [docs/local.md](docs/local.md).
+
 ## Ratchets
 
 | Metric | Direction | Enforced where |
 | --- | --- | --- |
-| A/A diff count on the production tag | stays 0 | nightly noise → gate degrades |
-| Mutants caught and attributed | 8 of 8 | weekly mutants; required on PRs that change an engine, mask, journey, gate or mutant |
+| A/A diff count on the production tag | stays 0 once it reaches 0 | nightly `publish` job fails on a regression; gate degrades |
+| Consecutive clean, verified nightly A/As | reaches 7 (R3 exit) | the nightly summary |
+| Mutants caught and attributed | 10 of 10 | weekly mutants; required on PRs that change an engine, mask, journey, gate or mutant |
 | Harness version on such PRs | goes up | `src/ci/engine-change.ts` in the same workflow |
 | `report.json`, `noise-status.json`, CLI, dispatch payloads vs `docs/contract.md` | no drift | `tests/contract.test.ts` |
-| Masks in `normalise/masks.yaml` | grow only with review | CODEOWNERS |
+| Masks in `normalise/masks.yaml` | grow only with review, in their own PR, and stay under ~40 | CODEOWNERS; CI "Masks land in their own PR (required)" |
 | Masks that never fire | → 0 | listed in every report as "silent" |
 | Engines without a planted-change test | 0 | review |
+| Artefacts that could not be collected in a nightly A/A | 0 | `not collected` is a failing hunk, so a dirty A/A |
 | Retries anywhere in the harness | 0 | `vitest.config.ts`, no Playwright retries |
+| Overrides of a harness FAIL | → 0 per quarter | `harness-override` issues; `docs/noise-burndown.md` |
 
 ## What is deliberately not tested here
 

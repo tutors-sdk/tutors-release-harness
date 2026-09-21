@@ -3,6 +3,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { judgeUpgrade, summariseUpgrade } from "../modes/upgrade.ts";
 import { APPS, dockerRef, kindImageName } from "../image-ref.ts";
+import { kindCluster, orExit, refuseLegacyCluster } from "../project.ts";
 import { ROOT, docker } from "../stack.ts";
 import type { SideName, SideSpec } from "../types.ts";
 
@@ -12,14 +13,19 @@ import type { SideName, SideSpec } from "../types.ts";
  * `restricted` enforced on both — instead of compose. The journeys, ports and
  * collectors are unchanged; only how the stacks come up differs.
  *
- * What runs in the cluster: the three anonymous apps per side, from the same
+ * What runs in the cluster: the four anonymous apps per side, from the same
  * manifest shape as the monorepo's deploy/k8s base (probes, security context,
  * resources). What stays on the host: the fixture course server, because the
  * browser fetches the course directly and the apps never do. The signed-in
  * reader and its stubs are compose-only for now (see deploy/kind/README.md).
  */
 
-export const CLUSTER = process.env.HARNESS_KIND_CLUSTER ?? "tutors-harness";
+/**
+ * This checkout's kind cluster (src/project.ts): `tutors-harness-<8 hex of the checkout's path>`; HARNESS_KIND_CLUSTER,
+ * then HARNESS_PROJECT, win. A cluster called plain `tutors-harness` is the machine owner's (the name every checkout used
+ * before 1.3.0) and is never created in, loaded into or deleted: see `refuseLegacyCluster`.
+ */
+export const CLUSTER = orExit(() => kindCluster().name);
 const KIND_CONFIG = resolve(ROOT, "deploy", "kind", "kind-config.yaml");
 
 /**
@@ -28,14 +34,14 @@ const KIND_CONFIG = resolve(ROOT, "deploy", "kind", "kind-config.yaml");
  * never holds the ports compose needs.
  */
 const NODE_PORT: Record<SideName, Record<(typeof APPS)[number], { host: number; node: number }>> = {
-  a: { reader: { host: 4100, node: 30100 }, catalogue: { host: 4101, node: 30101 }, live: { host: 4102, node: 30102 } },
-  b: { reader: { host: 4200, node: 30200 }, catalogue: { host: 4201, node: 30201 }, live: { host: 4202, node: 30202 } }
+  a: { reader: { host: 4100, node: 30100 }, catalogue: { host: 4101, node: 30101 }, live: { host: 4102, node: 30102 }, time: { host: 4103, node: 30103 } },
+  b: { reader: { host: 4200, node: 30200 }, catalogue: { host: 4201, node: 30201 }, live: { host: 4202, node: 30202 }, time: { host: 4203, node: 30203 } }
 };
 
 /** Point a side at the kind cluster's host ports; the signed-in reader and stubs are compose-only. */
 export function kindSide(spec: SideSpec): SideSpec {
   const p = NODE_PORT[spec.name];
-  return { ...spec, urls: { reader: `http://localhost:${p.reader.host}`, catalogue: `http://localhost:${p.catalogue.host}`, live: `http://localhost:${p.live.host}`, courseId: spec.urls.courseId } };
+  return { ...spec, urls: { reader: `http://localhost:${p.reader.host}`, catalogue: `http://localhost:${p.catalogue.host}`, live: `http://localhost:${p.live.host}`, time: `http://localhost:${p.time.host}`, courseId: spec.urls.courseId } };
 }
 
 function sh(cmd: string, args: string[], opts: { input?: string; quiet?: boolean } = {}): string {
@@ -188,11 +194,12 @@ function waitHealthy(url: string, timeoutMs: number) {
 
 /** Create the cluster if needed, load the images, apply both namespaces, wait for rollouts. */
 export function kindUp(a: SideSpec, b: SideSpec, now: string, log: (m: string) => void): void {
+  refuseLegacyCluster(CLUSTER);
   if (!clusterExists()) {
     log(`  creating kind cluster ${CLUSTER}`);
     sh("kind", ["create", "cluster", "--name", CLUSTER, "--config", KIND_CONFIG, "--wait", "120s"]);
   } else {
-    log(`  kind cluster ${CLUSTER} already exists`);
+    log(`  kind cluster ${CLUSTER} already exists (this checkout's own: it was made by an earlier run here)`);
   }
   const images = [...new Set([...Object.values(a.images), ...Object.values(b.images)])];
   for (const image of images) {
@@ -209,12 +216,23 @@ export function kindUp(a: SideSpec, b: SideSpec, now: string, log: (m: string) =
     for (const app of APPS) kubectl(["-n", namespaceFor(side), "rollout", "status", `deployment/${app}`, "--timeout=180s"], { quiet: true });
   }
   startCourseServer(log);
-  for (const side of ["a", "b"] as const) for (const app of APPS) waitHealthy(`http://localhost:${NODE_PORT[side][app].host}/healthz/live`, 60_000);
+  for (const side of ["a", "b"] as const) {
+    for (const app of APPS) {
+      try {
+        waitHealthy(`http://localhost:${NODE_PORT[side][app].host}/healthz/live`, 60_000);
+      } catch (e) {
+        // A cluster made before the time app joined never published its NodePorts on the host.
+        const hint = app === "time" ? `; a cluster created before the time app was added does not publish ${NODE_PORT.a.time.host} and ${NODE_PORT.b.time.host}: recreate it with kind delete cluster --name ${CLUSTER}` : "";
+        throw new Error(`${e instanceof Error ? e.message : e}${hint}`);
+      }
+    }
+  }
   log("  both namespaces are up under the restricted pod security standard");
 }
 
 /** Delete the namespaces (the cluster stays for the next run; `kind delete cluster` removes it). */
 export function kindDown(log: (m: string) => void): void {
+  refuseLegacyCluster(CLUSTER);
   stopCourseServer();
   if (!clusterExists()) return;
   for (const side of ["a", "b"] as const) kubectl(["delete", "namespace", namespaceFor(side), "--ignore-not-found", "--wait=false"], { quiet: true });
@@ -238,7 +256,7 @@ export async function kindRollout(a: SideSpec, b: SideSpec, now: string, opts: R
   kindUp(a, b, now, opts.log);
   const outDir = join(opts.outDir, `${new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)}-kind-rollout`);
   mkdirSync(outDir, { recursive: true });
-  const name = "tutors-harness-k6-rollout";
+  const name = `${CLUSTER}-k6-rollout`;
   docker(["rm", "-f", name], { quiet: true });
   docker(
     [

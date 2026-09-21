@@ -1,62 +1,14 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { ROOT, docker } from "../stack.ts";
-import type { ColumnInfo, Hunk, MigrationResult, SchemaCatalog } from "../types.ts";
+import { bashCommand } from "../local/bash.ts";
+import { ROOT } from "../stack.ts";
+import type { Hunk, MigrationResult, ColumnInfo, SchemaCatalog } from "../types.ts";
 import { hunkId, resetHunkIds } from "../compare/pages.ts";
+import type { MigrationSource, SchemaBackend } from "../migration/backend.ts";
+import { supabasePostgres } from "../migration/supabase-postgres.ts";
 
-const PG_IMAGE = process.env.HARNESS_POSTGRES_IMAGE ?? "postgres:16-alpine";
-const DB = "tutors";
-
-// ---- catalogue -------------------------------------------------------------------------
-
-/** One query per catalogue facet, all against information_schema / pg_catalog, all ordered. */
-const CATALOG_SQL = `
-select json_build_object(
-  'tables', (
-    select coalesce(json_object_agg(t.table_name, t.cols), '{}'::json) from (
-      select c.table_name, json_object_agg(c.column_name, json_build_object('type', c.data_type, 'nullable', c.is_nullable = 'YES', 'default', c.column_default) order by c.ordinal_position) as cols
-      from information_schema.columns c
-      where c.table_schema = 'public'
-      group by c.table_name
-    ) t
-  ),
-  'indexes', (select coalesce(json_agg(indexname order by indexname), '[]'::json) from pg_indexes where schemaname = 'public'),
-  'functions', (select coalesce(json_agg(p.proname || '/' || p.pronargs order by p.proname, p.pronargs), '[]'::json) from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public'),
-  'policies', (select coalesce(json_agg(tablename || ':' || policyname order by tablename, policyname), '[]'::json) from pg_policies where schemaname = 'public')
-);`;
-
-interface Pg {
-  container: string;
-  psql: (sql: string, opts?: { db?: string }) => string;
-  stop: () => void;
-}
-
-function startPostgres(log: (m: string) => void): Pg {
-  const container = `tutors-harness-pg-${Date.now()}`;
-  log(`starting ${PG_IMAGE} as ${container}`);
-  docker(["run", "-d", "--rm", "--name", container, "-e", "POSTGRES_PASSWORD=harness", "-e", `POSTGRES_DB=${DB}`, PG_IMAGE], { quiet: true });
-  const psql = (sql: string, opts: { db?: string } = {}) => docker(["exec", "-i", container, "psql", "-v", "ON_ERROR_STOP=1", "-q", "-A", "-t", "-U", "postgres", "-d", opts.db ?? DB], { input: sql, quiet: true });
-  for (let i = 0; i < 60; i += 1) {
-    const ready = spawnSync("docker", ["exec", container, "pg_isready", "-U", "postgres", "-d", DB], { encoding: "utf8" });
-    if (ready.status === 0) break;
-    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 500);
-  }
-  // pg_isready can answer before the init scripts finish restarting the server; a real query settles it.
-  for (let i = 0; i < 20; i += 1) {
-    try {
-      psql("select 1;");
-      break;
-    } catch {
-      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 500);
-    }
-  }
-  return { container, psql, stop: () => spawnSync("docker", ["stop", "-t", "2", container], { encoding: "utf8" }) };
-}
-
-function catalog(pg: Pg, db = DB): SchemaCatalog {
-  return JSON.parse(pg.psql(CATALOG_SQL, { db }).trim()) as SchemaCatalog;
-}
+// ---- migration files ---------------------------------------------------------------------
 
 function migrationFiles(dir: string): string[] {
   if (!existsSync(dir)) return [];
@@ -65,22 +17,15 @@ function migrationFiles(dir: string): string[] {
     .sort();
 }
 
-function apply(pg: Pg, dir: string, files: string[], log: (m: string) => void) {
-  for (const file of files) {
-    log(`  applying ${file}`);
-    pg.psql(readFileSync(join(dir, file), "utf8"));
-  }
-}
-
 /** Fetch migrations for a ref into `<work>/<label>` via scripts/fetch-migrations.sh. */
-function fetchMigrations(ref: string, dest: string, log: (m: string) => void): string[] {
+export const fetchMigrations: MigrationSource = (ref, dest, log) => {
   mkdirSync(dest, { recursive: true });
   const script = resolve(ROOT, "scripts", "fetch-migrations.sh");
-  const result = spawnSync("bash", [script, ref, dest], { cwd: ROOT, encoding: "utf8" });
+  const result = spawnSync(bashCommand(), [script, ref, dest], { cwd: ROOT, encoding: "utf8" });
   if (result.status !== 0) throw new Error(`fetch-migrations ${ref}: ${result.stderr || result.stdout}`);
   log(`  ${result.stdout.trim()}`);
   return migrationFiles(dest);
-}
+};
 
 // ---- expand/contract --------------------------------------------------------------------------
 
@@ -143,46 +88,50 @@ export interface MigrationOptions {
   log: (m: string) => void;
 }
 
+/** The two seams of migration mode: where migration files come from, and what database they run on. */
+export interface MigrationDeps {
+  backend: SchemaBackend;
+  source: MigrationSource;
+}
+
 /**
  * Rehearse b's migrations on a's schema: apply a, snapshot, apply what b adds,
- * check expand/contract, restore the snapshot and check the rollback.
+ * check expand/contract, restore the snapshot and check the rollback. Runs
+ * against the Supabase-flavoured Postgres in Docker; `rehearseMigrations`
+ * takes the backend and the file source as parameters.
  */
 export function runMigration(opts: MigrationOptions): { result: MigrationResult; hunks: Hunk[] } {
+  return rehearseMigrations({ backend: supabasePostgres, source: fetchMigrations }, opts);
+}
+
+export function rehearseMigrations(deps: MigrationDeps, opts: MigrationOptions): { result: MigrationResult; hunks: Hunk[] } {
   resetHunkIds();
   const dirA = join(opts.workDir, "migrations-a");
   const dirB = join(opts.workDir, "migrations-b");
   opts.log(`migrations for a (${opts.a})`);
-  const filesA = fetchMigrations(opts.a, dirA, opts.log);
+  const filesA = deps.source(opts.a, dirA, opts.log);
   opts.log(`migrations for b (${opts.b})`);
-  const filesB = fetchMigrations(opts.b, dirB, opts.log);
+  const filesB = deps.source(opts.b, dirB, opts.log);
 
-  const pg = startPostgres(opts.log);
+  const session = deps.backend.open({ ...(opts.snapshot ? { snapshot: opts.snapshot } : {}), log: opts.log });
   try {
-    // Supabase provisions roles and schemas the migrations take for granted.
-    pg.psql(readFileSync(resolve(ROOT, "fixtures", "migrations", "supabase-baseline.sql"), "utf8"));
-    if (opts.snapshot) {
-      opts.log(`restoring snapshot ${opts.snapshot}`);
-      pg.psql(readFileSync(opts.snapshot, "utf8"));
-    }
-    apply(pg, dirA, filesA, opts.log);
-    const catalogA = catalog(pg);
-    const dump = docker(["exec", pg.container, "pg_dump", "-U", "postgres", "--no-owner", DB], { quiet: true });
+    session.applyMigrations(dirA, filesA, opts.log);
+    const catalogA = session.catalog();
+    const dump = session.snapshot();
 
     const onlyB = filesB.filter((f) => !filesA.includes(f));
     if (!onlyB.length) opts.log("  b adds no migrations");
-    apply(pg, dirB, onlyB, opts.log);
-    const catalogB = catalog(pg);
+    session.applyMigrations(dirB, onlyB, opts.log);
+    const catalogB = session.catalog();
     const hunks = expandContract(catalogA, catalogB);
 
     // Rollback rehearsal: a fresh database from the snapshot must equal a.
     opts.log("  rehearsing rollback from the snapshot");
-    pg.psql(`drop database if exists rollback; create database rollback;`, { db: "postgres" });
-    pg.psql(dump, { db: "rollback" });
-    const rolledBack = catalog(pg, "rollback");
+    const rolledBack = session.restoreAndCatalog(dump);
     hunks.push(...rollbackCheck(catalogA, rolledBack));
 
     return { result: { a: { ref: opts.a, files: filesA, catalog: catalogA }, b: { ref: opts.b, files: filesB, catalog: catalogB }, rolledBack }, hunks };
   } finally {
-    pg.stop();
+    session.close();
   }
 }

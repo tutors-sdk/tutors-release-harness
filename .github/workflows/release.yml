@@ -3,10 +3,18 @@
 # or run by hand.
 #
 # Three jobs, all against the same two tags:
-#   release   — A/B with claims, 3 runs, k6; FAILS on an unclaimed diff only
-#               when a clean nightly A/A from the last week exists
+#   release   — A/B with claims, 5 runs, k6; FAILS on an unclaimed diff only
+#               when the latest nightly A/A (the `noise` branch, written by
+#               nightly-noise.yml) is clean, verified and under seven days old;
+#               with none, or a dirty, stale or degraded one, it WARNS
 #   migration — the candidate's migrations on the production schema
 #   upgrade   — the candidate rolled in under load through the edge
+#
+# Overriding a FAIL: dispatch by hand with override_reason. The verdict stays
+# FAIL and the jobs exit 0, the report records the actor and the reason, and
+# override-record opens a `harness-override` issue: the quarterly count of those
+# is the measure of whether the harness is trusted or merely tolerated
+# (docs/noise-burndown.md, "Overrides").
 name: Release harness
 
 on:
@@ -21,6 +29,9 @@ on:
       claims_url:
         description: "Raw URL of the release's claims.yaml (optional)"
         required: false
+      rules_url:
+        description: "Raw URL of the release's rules.json, the Rules a claim may name (optional; a claim that names a rule needs it)"
+        required: false
       migrations_a:
         description: "Monorepo git ref for production's migrations (default v<production>)"
         required: false
@@ -28,9 +39,12 @@ on:
         description: "Monorepo git ref for the candidate's migrations (default v<candidate>)"
         required: false
       runs:
-        description: "Journey repetitions per side"
+        description: "Journey repetitions per side (at least 4 for timing to be judgeable at alpha 0.05; default 5)"
         required: false
-        default: "3"
+        default: "5"
+      override_reason:
+        description: "Accept a harness FAIL, and say why (20+ characters). Recorded in the report and in a harness-override issue"
+        required: false
   repository_dispatch:
     types: [release-candidate]
 
@@ -45,12 +59,20 @@ env:
   PRODUCTION: ${{ inputs.production || github.event.client_payload.production }}
   CANDIDATE: ${{ inputs.candidate || github.event.client_payload.candidate }}
   CLAIMS_URL: ${{ inputs.claims_url || github.event.client_payload.claims_url }}
-  RUNS: ${{ inputs.runs || github.event.client_payload.runs || '3' }}
+  RULES_URL: ${{ inputs.rules_url || github.event.client_payload.rules_url }}
+  # Since 1.3.0, optional: the digest of each app's image, as JSON objects (app -> sha256:...). Empty for a dispatch without them.
+  PRODUCTION_DIGESTS: ${{ github.event.client_payload.production_digests && toJSON(github.event.client_payload.production_digests) || '' }}
+  CANDIDATE_DIGESTS: ${{ github.event.client_payload.candidate_digests && toJSON(github.event.client_payload.candidate_digests) || '' }}
+  RUNS: ${{ inputs.runs || github.event.client_payload.runs || '5' }}
+  # Only a person dispatching by hand can override; a repository_dispatch payload cannot.
+  OVERRIDE_REASON: ${{ inputs.override_reason }}
+  OVERRIDE_BY: ${{ github.triggering_actor }}
 
 jobs:
   release:
     name: Release mode (A/B, claims, k6)
-    runs-on: ubuntu-latest
+    # The runner image the nightly A/A calibrated the noise floor on (nightly-noise.yml pins the same one).
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
@@ -69,26 +91,32 @@ jobs:
       - uses: sigstore/cosign-installer@v4.1.2
 
       - name: Pull and verify, or build, both sides
-        run: pnpm harness images ensure --a "$PRODUCTION" --b "$CANDIDATE"
+        run: pnpm harness images ensure --a "$PRODUCTION" --b "$CANDIDATE" ${PRODUCTION_DIGESTS:+--a-digests "$PRODUCTION_DIGESTS"} ${CANDIDATE_DIGESTS:+--b-digests "$CANDIDATE_DIGESTS"}
 
       - name: Fetch the release's claims
         if: env.CLAIMS_URL != ''
         run: curl -fsSL "$CLAIMS_URL" -o claims.yaml
 
-      - name: Fetch the latest nightly noise status
-        uses: dawidd6/action-download-artifact@v6
-        continue-on-error: true
-        with:
-          workflow: nightly-noise.yml
-          name: noise-status
-          path: noise
-          if_no_artifact_found: warn
+      # The latest status the nightly published to the `noise` branch: the newest night, clean or not, never an older
+      # clean one that a dirty night has since superseded. A missing or unusable file is dropped with a warning and the
+      # run degrades to WARN; whether a present one is fresh, clean and verified enough to FAIL is decided by the gate.
+      - name: Fetch the latest noise status
+        id: noise
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p noise
+          gh api -H "Accept: application/vnd.github.raw" "repos/${GITHUB_REPOSITORY}/contents/noise-status.json?ref=noise" > noise/noise-status.json 2>/dev/null || rm -f noise/noise-status.json
+          pnpm harness noise status --store noise
 
       - name: Release mode
+        env:
+          NOISE_FILE: ${{ steps.noise.outputs.noise_file }}
         run: |
-          noise="$(ls noise/*/noise-status.json 2>/dev/null | head -1 || true)"
           pnpm harness run --mode release --a "$PRODUCTION" --b "$CANDIDATE" --runs "$RUNS" --load 20x30s \
-            ${CLAIMS_URL:+--claims claims.yaml} ${noise:+--noise "$noise"}
+            ${PRODUCTION_DIGESTS:+--a-digests "$PRODUCTION_DIGESTS"} ${CANDIDATE_DIGESTS:+--b-digests "$CANDIDATE_DIGESTS"} \
+            ${CLAIMS_URL:+--claims claims.yaml} ${RULES_URL:+--rules "$RULES_URL"} ${NOISE_FILE:+--noise "$NOISE_FILE"} \
+            ${OVERRIDE_REASON:+--override-reason "$OVERRIDE_REASON" --override-by "$OVERRIDE_BY"}
 
       - uses: actions/upload-artifact@v4
         if: always()
@@ -119,7 +147,9 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Migration mode
-        run: pnpm harness run --mode migration --a "${MIGRATIONS_A:-v$PRODUCTION}" --b "${MIGRATIONS_B:-v$CANDIDATE}"
+        run: |
+          pnpm harness run --mode migration --a "${MIGRATIONS_A:-v$PRODUCTION}" --b "${MIGRATIONS_B:-v$CANDIDATE}" \
+            ${OVERRIDE_REASON:+--override-reason "$OVERRIDE_REASON" --override-by "$OVERRIDE_BY"}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -149,9 +179,12 @@ jobs:
       - uses: sigstore/cosign-installer@v4.1.2
 
       - name: Pull and verify, or build, both sides
-        run: pnpm harness images ensure --a "$PRODUCTION" --b "$CANDIDATE"
+        run: pnpm harness images ensure --a "$PRODUCTION" --b "$CANDIDATE" ${PRODUCTION_DIGESTS:+--a-digests "$PRODUCTION_DIGESTS"} ${CANDIDATE_DIGESTS:+--b-digests "$CANDIDATE_DIGESTS"}
       - name: Upgrade mode
-        run: pnpm harness run --mode upgrade --a "$PRODUCTION" --b "$CANDIDATE" --set fixture --journey anonymous-student-reads-course
+        run: |
+          pnpm harness run --mode upgrade --a "$PRODUCTION" --b "$CANDIDATE" --set fixture --journey anonymous-student-reads-course \
+            ${PRODUCTION_DIGESTS:+--a-digests "$PRODUCTION_DIGESTS"} ${CANDIDATE_DIGESTS:+--b-digests "$CANDIDATE_DIGESTS"} \
+            ${OVERRIDE_REASON:+--override-reason "$OVERRIDE_REASON" --override-by "$OVERRIDE_BY"}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -160,3 +193,100 @@ jobs:
           retention-days: 30
       - if: always()
         run: cat out/*-upgrade/report.md >> "$GITHUB_STEP_SUMMARY"
+
+  # What release mode judged, for post-deploy mode to check a deployment against (docs/contract.md, "The release record").
+  # Release mode wrote `release-record.json` into its output directory, so the release-report artifact carries it. This
+  # pushes it to the `release-records` branch of THIS repository as releases/<candidate>.json and, when the candidate
+  # could ship (not a FAIL, unless overridden), releases/<release>.json: what `--deployed <release>` finds. One commit
+  # per candidate, never forced, so no record is lost; nothing else writes the branch.
+  publish-record:
+    name: Publish the release record
+    needs: release
+    # A run that never reached a verdict left no record: there is nothing to publish, and that is not an error.
+    if: always() && needs.release.result != 'skipped'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      # Pushes this repository's `release-records` branch and nothing else. None of the pull-request, check, status or
+      # deployment permissions the contract rules out.
+      contents: write
+    concurrency:
+      group: release-records-branch
+      cancel-in-progress: false
+    steps:
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: release-report
+          path: reports
+      - name: Push the record to the release-records branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          record="$(find reports -name release-record.json 2>/dev/null | head -1)"
+          if [ -z "$record" ]; then echo "no release record was written (release mode did not reach a verdict): nothing to publish"; exit 0; fi
+          candidate="$(jq -r .candidate "$record")"
+          release="$(jq -r .release "$record")"
+          shippable="$(jq -r 'if .verdict != "fail" or .overridden then "yes" else "no" end' "$record")"
+          case "$candidate$release" in *[!A-Za-z0-9._-]*) echo "unsafe tag in the record: refusing to publish" >&2; exit 1;; esac
+          remote="https://github.com/${GITHUB_REPOSITORY}.git"
+          auth="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          if git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth}" ls-remote --exit-code --heads "$remote" release-records > /dev/null 2>&1; then
+            git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth}" clone -q --depth 1 --branch release-records "$remote" publish
+          else
+            git init -q -b release-records publish
+          fi
+          mkdir -p publish/releases
+          cp "$record" "publish/releases/${candidate}.json"
+          if [ "$shippable" = yes ] && [ "$release" != "$candidate" ]; then cp "$record" "publish/releases/${release}.json"; fi
+          cat > publish/README.md <<'README'
+          # release-records
+
+          Written by the `publish-record` job of `.github/workflows/release.yml`, one commit per judged candidate. Do not edit.
+
+          - `releases/<candidate>.json`: what release mode judged for that candidate (`docs/contract/release-record.schema.json`).
+          - `releases/<release>.json`: the newest candidate of that release that could ship. `post-deploy.yml` reads this one.
+
+          See `docs/contract.md`, "The release record", on the default branch.
+          README
+          cd publish
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md releases
+          if git diff --cached --quiet; then echo "the record is already published"; exit 0; fi
+          git commit -q -m "release record: ${candidate} (${release})"
+          git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth}" push "https://github.com/${GITHUB_REPOSITORY}.git" release-records
+
+  # An override is a recorded event. The reports carry it (override.applied); this opens one issue per applied
+  # override in THIS repository, so the quarterly count is `gh issue list --label harness-override`.
+  override-record:
+    name: Record a harness override
+    needs: [release, migration, upgrade]
+    if: always() && inputs.override_reason != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: "*-report"
+          path: reports
+      - name: Open an issue for each override that was applied
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh label create harness-override --color D93F0B --description "A harness FAIL was overridden" 2>/dev/null || true
+          found=0
+          while IFS= read -r report; do
+            [ "$(jq -r '.override.applied // false' "$report")" = "true" ] || continue
+            found=1
+            mode="$(jq -r '.mode' "$report")"
+            by="$(jq -r '.override.by' "$report")"
+            { cat "$(dirname "$report")/report.md"; printf '\nRun: %s\n' "$RUN_URL"; } > body.md
+            gh issue create --title "Harness FAIL overridden (${mode}) by ${by}, $(date -u +%Y-%m-%d)" --label harness-override --body-file body.md
+          done < <(find reports -name report.json)
+          [ "$found" = 1 ] || echo "override_reason was given but no FAIL needed overriding: nothing to record"

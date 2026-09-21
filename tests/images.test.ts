@@ -14,7 +14,7 @@ interface FakeImage {
 
 const digestOf = (n: number) => `sha256:${String(n).repeat(64).slice(0, 64)}`;
 
-function world(init: { local?: Record<string, FakeImage>; registry?: Record<string, FakeImage>; signed?: string[]; cosign?: "installed" | "missing"; refs?: Record<string, string>; containerdStore?: boolean; cosignVersion?: string } = {}) {
+function world(init: { local?: Record<string, FakeImage>; registry?: Record<string, FakeImage>; signed?: string[]; cosign?: "installed" | "missing"; refs?: Record<string, string>; containerdStore?: boolean; cosignVersion?: string; tags?: Record<string, string> } = {}) {
   const local = new Map(Object.entries(init.local ?? {}));
   const registry = new Map(Object.entries(init.registry ?? {}));
   const signed = new Set(init.signed ?? []);
@@ -34,6 +34,12 @@ function world(init: { local?: Record<string, FakeImage>; registry?: Record<stri
       if (!image) return no(`manifest for ${ref} not found: manifest unknown`);
       local.set(ref, image);
       return ok();
+    }
+    if (cmd === "docker" && args[0] === "buildx" && args[1] === "imagetools" && args[2] === "inspect") {
+      // What the registry says a tag is today (`repo:tag` -> digest).
+      expect(args.slice(4)).toEqual(["--format", "{{.Manifest.Digest}}"]);
+      const digest = init.tags?.[args[3]!];
+      return digest ? ok(digest + "\n") : no(`ERROR: ${args[3]}: not found`);
     }
     if (cmd === "cosign") {
       if (init.cosign === "missing") return { status: null, stdout: "", stderr: "", error: Object.assign(new Error("spawnSync cosign ENOENT"), { code: "ENOENT" }) };
@@ -59,7 +65,7 @@ GitCommit:     abc
 const policy: TrustPolicy = { identity: DEFAULT_COSIGN_IDENTITY, issuer: DEFAULT_COSIGN_ISSUER, allowUnsigned: false };
 const signature = (repo: string, digest: string, p: TrustPolicy = policy) => `${p.identity}|${p.issuer}|${repo}@${digest}`;
 
-/** The three Quay images at one tag, as the monorepo's image-build workflow publishes them. */
+/** The four Quay images at one tag, as the monorepo's image-build workflow publishes them. */
 function published(tag: string, base: number, revision = "1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b") {
   const images = imagesFor(tag, QUAY_IMAGE_TEMPLATE);
   const registry: Record<string, FakeImage> = {};
@@ -88,7 +94,7 @@ describe("images ensure", () => {
     expect(reader).toMatchObject({ provenance: "pulled+verified", digest: digestOf(1), revision: "1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b", version: "16.2.0", verifiedIdentity: DEFAULT_COSIGN_IDENTITY });
 
     const verifies = w.calls.filter((c) => c.startsWith("cosign verify"));
-    expect(verifies).toHaveLength(3);
+    expect(verifies).toHaveLength(4); // reader, catalogue, live and time
     // By digest, never by tag; the identity and the GitHub OIDC issuer are pinned.
     expect(verifies[0]).toBe(`cosign verify --certificate-identity-regexp ${DEFAULT_COSIGN_IDENTITY} --certificate-oidc-issuer https://token.actions.githubusercontent.com quay.io/tutors-sdk/tutors-reader@${digestOf(1)}`);
     expect(ledger.read()["quay.io/tutors-sdk/tutors-reader:16.2.0"]).toMatchObject({ provenance: "pulled+verified", digest: digestOf(1) });
@@ -223,9 +229,9 @@ describe("images ensure", () => {
   });
 
   it("digest-pinned per-app references are pulled by digest, verified, and cannot fall back to a build", () => {
-    const repos = ["reader", "catalogue", "live"].map((app) => `quay.io/tutors-sdk/tutors-${app}`);
+    const repos = ["reader", "catalogue", "live", "time"].map((app) => `quay.io/tutors-sdk/tutors-${app}`);
     const registry = Object.fromEntries(repos.map((repo, i) => [`${repo}@${digestOf(i + 4)}`, { id: `sha256:p${i}`, repoDigests: [`${repo}@${digestOf(i + 4)}`], labels: { "org.opencontainers.image.version": "16.2.0" } }]));
-    const spec = `reader=${repos[0]}:16.2.0@${digestOf(4)},catalogue=${repos[1]}@${digestOf(5)},live=${repos[2]}@${digestOf(6)}`;
+    const spec = `reader=${repos[0]}:16.2.0@${digestOf(4)},catalogue=${repos[1]}@${digestOf(5)},live=${repos[2]}@${digestOf(6)},time=${repos[3]}@${digestOf(7)}`;
     const w = world({ registry, signed: repos.map((repo, i) => signature(repo, digestOf(i + 4))) });
     const result = ensureImages([{ spec }], "tutors", { exec: w.exec, ledger: memoryLedger(), policy, log: quiet });
     expect(result.exitCode).toBe(0);
@@ -237,10 +243,21 @@ describe("images ensure", () => {
     expect(absent.problems[0]).toMatch(/not a bare tag, so it cannot be built/);
   });
 
+  it("a spelled-out spec written before time existed asks for time at the reader's tag, and says so when the registry has none", () => {
+    const pub = published("16.2.0", 1);
+    const { [Object.keys(pub.registry).find((r) => r.includes("tutors-time"))!]: _time, ...withoutTime } = pub.registry;
+    const w = world({ registry: withoutTime, signed: pub.signed });
+    const spec = `reader=quay.io/tutors-sdk/tutors-reader:16.2.0,catalogue=quay.io/tutors-sdk/tutors-catalogue:16.2.0,live=quay.io/tutors-sdk/tutors-live:16.2.0`;
+    const result = ensureImages([{ spec }], QUAY_IMAGE_TEMPLATE, { exec: w.exec, ledger: memoryLedger(), policy, log: quiet });
+    expect(result.exitCode).toBe(1);
+    expect(result.problems.join("\n")).toContain("quay.io/tutors-sdk/tutors-time:16.2.0");
+    expect(w.calls).toContain("docker pull --quiet quay.io/tutors-sdk/tutors-time:16.2.0");
+  });
+
   it("a malformed spec is a problem with exit 2, not a crash", () => {
     const result = ensureImages([{ spec: `16.2.0@${digestOf(1)}` }], QUAY_IMAGE_TEMPLATE, { exec: world().exec, ledger: memoryLedger(), policy, log: quiet });
     expect(result.exitCode).toBe(2);
-    expect(result.problems[0]).toMatch(/three digests/);
+    expect(result.problems[0]).toMatch(/one digest each/);
   });
 });
 
@@ -284,7 +301,7 @@ describe("what run does before a stack starts", () => {
     const mutant = "tutors-harness/mutant-route-500:latest";
     const w = world({ local: { ...pub.registry, [mutant]: { id: "sha256:m", repoDigests: [], labels: { "org.opencontainers.image.revision": "1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b" } } }, signed: pub.signed });
     const side = resolveSideProvenance({ ...pub.images, reader: mutant }, { exec: w.exec, ledger: memoryLedger(), policy, log: quiet });
-    expect(side.summary).toBe("reader: local (unverified); catalogue: pulled+verified; live: pulled+verified");
+    expect(side.summary).toBe("reader: local (unverified); catalogue: pulled+verified; live: pulled+verified; time: pulled+verified");
     expect(side.images.reader.revision).toBe("1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b");
   });
 
@@ -292,5 +309,115 @@ describe("what run does before a stack starts", () => {
     expect(registryDigest("quay.io/a/b:1", [`quay.io/other/b@${digestOf(1)}`, `quay.io/a/b@${digestOf(2)}`])).toBe(digestOf(2));
     expect(registryDigest("quay.io/a/b:1", [`quay.io/other/b@${digestOf(1)}`])).toBeUndefined();
     expect(registryDigest(`quay.io/a/b@${digestOf(3)}`, [`quay.io/a/b@${digestOf(2)}`])).toBeUndefined();
+  });
+});
+
+/**
+ * Since 1.3.0 the dispatch may pin each app's image by digest (`--a-digests`, `--b-digests`). Every case is the real
+ * ensure flow over a fake registry; the ones that matter are the three the TESTING.md asks of a new rule: the A/A
+ * (what agrees is judged), a planted change it catches, and a change it must not flag.
+ */
+describe("images ensure with digests from the dispatch", () => {
+  const APP_NAMES = ["reader", "catalogue", "live", "time"] as const;
+  /** The registry as the monorepo left it: each tag resolves to the digest the dispatch will carry. */
+  function pinned(tag: string, base: number) {
+    const repos = APP_NAMES.map((app) => `quay.io/tutors-sdk/tutors-${app}`);
+    const digests = Object.fromEntries(APP_NAMES.map((app, i) => [app, digestOf(base + i)])) as Record<(typeof APP_NAMES)[number], string>;
+    const registry: Record<string, FakeImage> = {};
+    const tags: Record<string, string> = {};
+    const signed: string[] = [];
+    APP_NAMES.forEach((app, i) => {
+      const repo = repos[i]!;
+      registry[`${repo}@${digests[app]}`] = { id: `sha256:pin-${base + i}`, repoDigests: [`${repo}@${digests[app]}`], labels: { "org.opencontainers.image.version": tag } };
+      tags[`${repo}:${tag}`] = digests[app];
+      signed.push(signature(repo, digests[app]));
+    });
+    return { repos, digests, registry, tags, signed };
+  }
+
+  it("A/A: digests that the tag still resolves to are pulled by digest, verified on that digest, and judged as pinned refs", () => {
+    const p = pinned("16.2.0", 1);
+    const w = world({ registry: p.registry, tags: p.tags, signed: p.signed });
+    const result = ensureImages([{ spec: "16.2.0", digests: p.digests }], QUAY_IMAGE_TEMPLATE, { exec: w.exec, ledger: memoryLedger(), policy, log: quiet });
+    expect(result).toMatchObject({ ok: true, exitCode: 0, problems: [] });
+    // by digest, never by tag
+    for (const [i, app] of APP_NAMES.entries()) {
+      expect(w.calls).toContain(`docker pull --quiet ${p.repos[i]}@${p.digests[app]}`);
+      expect(w.calls).not.toContain(`docker pull --quiet ${p.repos[i]}:16.2.0`);
+      expect(w.calls).toContain(`cosign verify --certificate-identity-regexp ${DEFAULT_COSIGN_IDENTITY} --certificate-oidc-issuer https://token.actions.githubusercontent.com ${p.repos[i]}@${p.digests[app]}`);
+    }
+    const reader = result.sides[0]!.provenance!.images.reader;
+    expect(reader).toMatchObject({ ref: `quay.io/tutors-sdk/tutors-reader:16.2.0@${p.digests.reader}`, digest: p.digests.reader, provenance: "pulled+verified" });
+  });
+
+  it("planted: a tag that has moved since the digests were taken is exit 2, with the reason, before anything is pulled", () => {
+    const p = pinned("16.2.0", 1);
+    const moved = { ...p.tags, "quay.io/tutors-sdk/tutors-catalogue:16.2.0": digestOf(9) };
+    const w = world({ registry: p.registry, tags: moved, signed: p.signed });
+    const result = ensureImages([{ spec: "16.2.0", digests: p.digests }], QUAY_IMAGE_TEMPLATE, { exec: w.exec, ledger: memoryLedger(), policy, log: quiet });
+    expect(result.ok).toBe(false);
+    expect(result.exitCode).toBe(EXIT_CANNOT_JUDGE);
+    expect(result.problems).toHaveLength(1);
+    expect(result.problems[0]).toContain(`the dispatch pins ${p.digests.catalogue}, but quay.io/tutors-sdk/tutors-catalogue:16.2.0 resolves to ${digestOf(9)} now`);
+    expect(w.calls.some((c) => c.startsWith("docker pull") || c.startsWith("cosign"))).toBe(false);
+  });
+
+  it("planted: a tag the registry cannot resolve is refused the same way, and says why", () => {
+    const p = pinned("16.2.0", 1);
+    const w = world({ registry: p.registry, tags: {}, signed: p.signed });
+    const result = ensureImages([{ spec: "16.2.0", digests: p.digests }], QUAY_IMAGE_TEMPLATE, { exec: w.exec, ledger: memoryLedger(), policy, log: quiet });
+    expect(result.exitCode).toBe(EXIT_CANNOT_JUDGE);
+    expect(result.problems[0]).toMatch(/cannot check that quay\.io\/tutors-sdk\/tutors-reader:16\.2\.0 still resolves to the pinned digest \(ERROR: .*not found\)/);
+  });
+
+  it("planted: a digest whose signature is not valid is exit 2 on that digest, though the tag agrees", () => {
+    const p = pinned("16.2.0", 1);
+    const w = world({ registry: p.registry, tags: p.tags, signed: p.signed.slice(1) });
+    const result = ensureImages([{ spec: "16.2.0", digests: p.digests }], QUAY_IMAGE_TEMPLATE, { exec: w.exec, ledger: memoryLedger(), policy, log: quiet });
+    expect(result.exitCode).toBe(EXIT_CANNOT_JUDGE);
+    expect(result.problems.join("\n")).toContain(`no valid signature for quay.io/tutors-sdk/tutors-reader@${p.digests.reader}`);
+  });
+
+  it("planted: a pinned image the registry does not have is exit 1 and is never built from source, though the spec is a bare tag", () => {
+    const p = pinned("16.2.0", 1);
+    const w = world({ registry: {}, tags: p.tags, signed: p.signed, refs: { "v16.2.0": "1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b" } });
+    const result = ensureImages([{ spec: "16.2.0", digests: p.digests }], QUAY_IMAGE_TEMPLATE, { exec: w.exec, ledger: memoryLedger(), policy, log: quiet });
+    expect(result.exitCode).toBe(1);
+    expect(result.problems[0]).toMatch(/never built from source/);
+    expect(w.calls.some((c) => c.startsWith("bash"))).toBe(false);
+  });
+
+  it("planted: a digest that contradicts the one already in --a/--b is exit 2", () => {
+    const p = pinned("16.2.0", 1);
+    const spec = `reader=quay.io/tutors-sdk/tutors-reader:16.2.0@${digestOf(8)},catalogue=quay.io/tutors-sdk/tutors-catalogue:16.2.0,live=quay.io/tutors-sdk/tutors-live:16.2.0`;
+    const result = ensureImages([{ spec, digests: p.digests }], QUAY_IMAGE_TEMPLATE, { exec: world().exec, ledger: memoryLedger(), policy, log: quiet });
+    expect(result.exitCode).toBe(EXIT_CANNOT_JUDGE);
+    expect(result.problems[0]).toMatch(/they name different images/);
+  });
+
+  it("must not flag: no digests is exactly 1.2.0 (the registry is never asked what a tag is), and a partial pin pins only its apps", () => {
+    const pub = published("16.2.0", 1);
+    const plain = world({ registry: pub.registry, signed: pub.signed });
+    expect(ensureImages([{ spec: "16.2.0" }], QUAY_IMAGE_TEMPLATE, { exec: plain.exec, ledger: memoryLedger(), policy, log: quiet }).exitCode).toBe(0);
+    expect(plain.calls.some((c) => c.includes("buildx"))).toBe(false);
+    expect(plain.calls).toContain("docker pull --quiet quay.io/tutors-sdk/tutors-reader:16.2.0");
+
+    const p = pinned("16.2.0", 1);
+    const mixed = world({ registry: { ...p.registry, ...pub.registry }, tags: p.tags, signed: [...p.signed, ...pub.signed] });
+    const result = ensureImages([{ spec: "16.2.0", digests: { reader: p.digests.reader } }], QUAY_IMAGE_TEMPLATE, { exec: mixed.exec, ledger: memoryLedger(), policy, log: quiet });
+    expect(result.exitCode).toBe(0);
+    expect(mixed.calls).toContain(`docker pull --quiet quay.io/tutors-sdk/tutors-reader@${p.digests.reader}`);
+    expect(mixed.calls).toContain("docker pull --quiet quay.io/tutors-sdk/tutors-catalogue:16.2.0");
+    // only the pinned app's tag was asked about
+    expect(mixed.calls.filter((c) => c.includes("imagetools"))).toEqual(["docker buildx imagetools inspect quay.io/tutors-sdk/tutors-reader:16.2.0 --format {{.Manifest.Digest}}"]);
+  });
+
+  it("must not flag: a name that is not a registry name has no registry to disagree with", () => {
+    const local = { id: "sha256:l", repoDigests: [], labels: {} };
+    const w = world({ local: { "tutors/reader:local": local, "tutors/catalogue:local": local, "tutors/live:local": local } });
+    // nothing is asked of a registry for a local name; a digest that no local image has is simply refused
+    const result = ensureImages([{ spec: "local", digests: { reader: digestOf(1) } }], "tutors", { exec: w.exec, ledger: memoryLedger(), policy, log: quiet });
+    expect(w.calls.some((c) => c.includes("imagetools"))).toBe(false);
+    expect(result.ok).toBe(false);
   });
 });

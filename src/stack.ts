@@ -1,22 +1,29 @@
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
-import { dockerRef } from "./image-ref.ts";
+import { dockerRef, type App } from "./image-ref.ts";
+import { composeProject, orExit } from "./project.ts";
 import type { SideName, SideSpec, StackUrls } from "./types.ts";
 
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 export const COMPOSE_FILE = resolve(ROOT, "compose.harness.yaml");
-export const COMPOSE_PROJECT = process.env.HARNESS_COMPOSE_PROJECT ?? "tutors-harness";
+/**
+ * This checkout's compose project (src/project.ts): `tutors-harness-<8 hex of the checkout's path>`, so two checkouts or
+ * worktrees never share a stack. HARNESS_COMPOSE_PROJECT, then HARNESS_PROJECT, win. `-p` always overrides the `name:`
+ * in compose.harness.yaml, which is only what a hand-typed `docker compose` without `-p` would use.
+ */
+export const COMPOSE_PROJECT = orExit(() => composeProject().name);
 /** The compose network the k6 container joins to reach the sides by service name. */
 export const COMPOSE_NETWORK = `${COMPOSE_PROJECT}_default`;
 
 /** Host ports per side; the compose file's defaults, overridable through the environment. */
-const PORTS: Record<SideName, { reader: number; catalogue: number; live: number; readerAuth: number; persistence: number }> = {
+const PORTS: Record<SideName, Record<App, number> & { readerAuth: number; persistence: number }> = {
   a: {
     reader: Number(process.env.READER_PORT_A ?? 3100),
     catalogue: Number(process.env.CATALOGUE_PORT_A ?? 3101),
     live: Number(process.env.LIVE_PORT_A ?? 3102),
     readerAuth: Number(process.env.READER_AUTH_PORT_A ?? 3103),
+    time: Number(process.env.TIME_PORT_A ?? 3104),
     persistence: Number(process.env.PERSISTENCE_PORT_A ?? 8090)
   },
   b: {
@@ -24,6 +31,7 @@ const PORTS: Record<SideName, { reader: number; catalogue: number; live: number;
     catalogue: Number(process.env.CATALOGUE_PORT_B ?? 3201),
     live: Number(process.env.LIVE_PORT_B ?? 3202),
     readerAuth: Number(process.env.READER_AUTH_PORT_B ?? 3203),
+    time: Number(process.env.TIME_PORT_B ?? 3204),
     persistence: Number(process.env.PERSISTENCE_PORT_B ?? 8091)
   }
 };
@@ -38,6 +46,7 @@ export function urlsFor(side: SideName): StackUrls {
     reader: `http://localhost:${p.reader}`,
     catalogue: `http://localhost:${p.catalogue}`,
     live: `http://localhost:${p.live}`,
+    time: `http://localhost:${p.time}`,
     readerAuth: `http://localhost:${p.readerAuth}`,
     persistence: `http://persistence-${side}.harness.test:${p.persistence}`,
     courseId: COURSE_ID
@@ -51,16 +60,20 @@ export function sideSpec(name: SideName, images: SideSpec["images"]): SideSpec {
   return { name, images, urls: urlsFor(name) };
 }
 
-/** A live deployment the harness did not start: `reader=https://tutors.dev,catalogue=...,live=...`. */
+/**
+ * A live deployment the harness did not start: `reader=https://tutors.dev,catalogue=...,live=...[,time=...]`.
+ * `time` is optional (contract 1.3.0), so a `HARNESS_PRODUCTION_URLS` written for 1.2 keeps working; no journey
+ * drives the time app, so the only effect of naming it is that the report says where it is.
+ */
 export function externalSide(name: SideName, spec: string, courseId: string): SideSpec {
   const parts = Object.fromEntries(spec.split(",").map((kv) => kv.split("=") as [string, string]));
   const missing = ["reader", "catalogue", "live"].filter((app) => !parts[app]);
-  if (missing.length) throw new Error(`an external side needs reader=,catalogue=,live= URLs; missing ${missing.join(", ")}`);
+  if (missing.length) throw new Error(`an external side needs reader=,catalogue=,live= URLs (time= is optional); missing ${missing.join(", ")}`);
   const strip = (u: string) => u.replace(/\/+$/, "");
   return {
     name,
-    images: { reader: `external:${parts.reader}`, catalogue: `external:${parts.catalogue}`, live: `external:${parts.live}` },
-    urls: { reader: strip(parts.reader!), catalogue: strip(parts.catalogue!), live: strip(parts.live!), courseId },
+    images: { reader: `external:${parts.reader}`, catalogue: `external:${parts.catalogue}`, live: `external:${parts.live}`, time: parts.time ? `external:${parts.time}` : "-" },
+    urls: { reader: strip(parts.reader!), catalogue: strip(parts.catalogue!), live: strip(parts.live!), ...(parts.time ? { time: strip(parts.time) } : {}), courseId },
     external: true
   };
 }
@@ -72,9 +85,11 @@ function composeEnv(a: SideSpec, b: SideSpec, now: string): NodeJS.ProcessEnv {
     READER_IMAGE_A: dockerRef(a.images.reader),
     CATALOGUE_IMAGE_A: dockerRef(a.images.catalogue),
     LIVE_IMAGE_A: dockerRef(a.images.live),
+    TIME_IMAGE_A: dockerRef(a.images.time),
     READER_IMAGE_B: dockerRef(b.images.reader),
     CATALOGUE_IMAGE_B: dockerRef(b.images.catalogue),
-    LIVE_IMAGE_B: dockerRef(b.images.live)
+    LIVE_IMAGE_B: dockerRef(b.images.live),
+    TIME_IMAGE_B: dockerRef(b.images.time)
   };
 }
 
@@ -121,7 +136,7 @@ export function serviceLogs(service: string, since: string, a: SideSpec, b: Side
   return compose(["logs", "--no-color", "--no-log-prefix", "--since", since, service], composeEnv(a, b, now), { capture: true });
 }
 
-export function serviceName(side: SideName, app: "reader" | "catalogue" | "live" | "reader-auth"): string {
+export function serviceName(side: SideName, app: App | "reader-auth"): string {
   return `${app}-${side}`;
 }
 

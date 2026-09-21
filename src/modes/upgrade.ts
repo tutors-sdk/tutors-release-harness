@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, rmSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { hunkId, resetHunkIds } from "../compare/pages.ts";
-import { COMPOSE_NETWORK, EDGE_URL, ROOT, docker, stackStop } from "../stack.ts";
+import { COMPOSE_NETWORK, COMPOSE_PROJECT, EDGE_URL, ROOT, docker, stackStop } from "../stack.ts";
 import type { Hunk, SideSpec, UpgradeResult } from "../types.ts";
 
 export interface UpgradeOptions {
@@ -42,7 +42,7 @@ export async function runUpgrade(opts: UpgradeOptions): Promise<{ result: Upgrad
 
   const started = Date.now();
   // k6 in the background, against the edge by service name.
-  const name = `tutors-harness-k6-upgrade`;
+  const name = `${COMPOSE_PROJECT}-k6-upgrade`;
   docker(["rm", "-f", name], { quiet: true });
   docker(
     [

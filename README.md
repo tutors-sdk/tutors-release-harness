@@ -29,14 +29,14 @@ pnpm exec playwright install chromium
 pnpm harness run --mode noise   --a local --b local            # A/A: is the harness itself clean?
 pnpm harness run --mode release --a 16.2.0 --b 16.3.0-rc.1 \
   --claims ../tutors-mono-repo/release/claims.yaml \
-  --noise out/<the noise run> --runs 3 --load 20x30s          # A/B: gate the candidate
+  --noise out/<the noise run> --runs 5 --load 20x30s          # A/B: gate the candidate
 
 # Published images: pull from Quay, verify the cosign signature, or (loudly) build from the monorepo ref
 export HARNESS_IMAGE_PREFIX='quay.io/tutors-sdk/tutors-{app}'  # default is `tutors` -> tutors/<app>:<tag>, the local build
 pnpm harness images ensure --a 16.2.0 --b 16.3.0-rc.1          # needs cosign >= 3 on PATH for pulled images
 pnpm harness run --mode migration --a v16.2.0 --b release/16.3.0
 pnpm harness run --mode upgrade   --a 16.2.0 --b 16.3.0-rc.1
-pnpm harness mutants --base local                              # eight planted regressions, all caught
+pnpm harness mutants --base local                              # ten planted regressions, all caught
 ```
 
 Every run writes `out/<timestamp>-<mode>/` with `a/` and `b/` captures
@@ -52,7 +52,7 @@ Docs: [where the A and B images come from](docs/images.md) ·
 ## How it works
 
 ```
-compose.harness.yaml          two app stacks (a, b), a signed-in reader per side, shared fixtures
+compose.harness.yaml          two app stacks (a, b) of the four apps (reader, catalogue, live, time), a signed-in reader per side, shared fixtures
 fixtures/
   course-server/              static server for the pinned fixture course
   identity/                   GitHub-OAuth-shaped issuer with fixed users per role (TLS, test CA)
@@ -65,6 +65,8 @@ traffic/
   load/                       the k6 script (timing under load, upgrade rollout)
 src/
   collectors/                 what is captured per side, per journey step (+ metrics, logs, persistence, k6)
+  runtime/                    container posture and startup time (docker/kubectl through an injected runner)
+  image-static/               image manifest, SBOM and vulnerability collectors (docker, cosign, syft, grype through an injected runner)
   normalise/                  applies normalise/masks.yaml (the list of blind spots)
   compare/                    one diff engine per artefact + Mann–Whitney for timing
   claims/                     claim schema and matcher
@@ -91,11 +93,17 @@ docs/monorepo/                workflows to drop into the monorepo (publish image
 | Document response headers | exact, per header | Any change is a finding — security headers live here |
 | axe (WCAG 2.1 A/AA) violations by rule and node | set diff | New violations fail; fixed ones are noted |
 | Keyboard order: what each successive Tab focuses | sequence diff | A focus stop lost or reordered |
-| Timing: document TTFB per page, journey duration | Mann–Whitney U over ≥3 runs | Regression beyond noise |
+| Timing: document TTFB per page, journey duration | Mann–Whitney U over ≥4 runs (5 recommended); fewer is said out loud, not judged | Regression beyond noise |
 | `/metrics` before and after the journeys | series presence + counter deltas | Missing or new series; a counter that moved differently |
 | Structured logs: JSON-ness, level counts, field set, request-id propagation | aggregate | Log shape or volume changed |
 | Persistence: every write the side attempted, by table and method, per journey | multiset + the anonymous rule | Data written differently — and *any* write during an anonymous journey |
+| Bus (`bus`, only when a bus is configured; docs/bus.md): every topic the side published to, per journey | multiset + the anonymous rule | Messages published differently — and *any* publish during an anonymous journey |
+| Image manifest (`image-manifest`): base, platform, USER, ports, entrypoint, cmd, layers, size, OCI labels, read from the image | exact per field, size with a tolerance | A different base, a root user, a port or command change |
+| SBOM (`sbom`): the SPDX SBOM of each image (cosign attestation, or generated locally) | set diff on `name@version` | A package added, removed or bumped |
+| Vulnerabilities (`vulns`): the SBOM scanned with a pinned database | set diff by advisory | A vulnerability new on b (fixes are informational) |
 | Load (`--load`): k6 at a fixed rate, every request's duration | Mann–Whitney U on samples, failure rate | Latency or error rate regressed under load |
+| Container runtime posture (`runtime`): declared (`docker inspect` / pod spec) and measured (a probe inside the container): UID/GID, capabilities, read-only root, no-new-privileges, seccomp, writable mounts, requests/limits; EROFS errors in the log | exact, per field | A changed `USER`, a capability, a writable root or `VOLUME`, a root process, a write outside `/tmp` |
+| Startup time (`startup`): first healthy `GET /` and the orchestrator's ready verdict, over `--startup-restarts` restarts | Mann–Whitney U | A slower boot; an app that stops coming up; `/` answers differently after a restart |
 | Journey outcome | — | A journey that completes on a and fails on b is the loudest diff there is |
 
 Rehearsals, in their own modes: **migration** (expand/contract on a throwaway
@@ -109,7 +117,7 @@ journeys against production and compares with the recorded candidate.
    differs is noise, and the normaliser must mask it — or the run is not yet
    trustworthy. Nightly. Its `noise-status.json` is what release mode consults.
 2. **Then A/B** (`--mode release`). Deterministic artefacts are compared once;
-   anything statistical wants `--runs 3` and `--load`.
+   anything statistical wants `--runs 5` (at alpha 0.05 four is the least that can ever call a difference significant) and `--load`.
 
 Release and post-deploy modes may **fail** on captured differences only while
 a clean A/A from the last seven days is supplied with `--noise`. Without one,
@@ -144,11 +152,12 @@ Three sets, all role-and-name selectors, all parameterised by base URL:
 
 ### The harness's own signal
 
-[`mutants/`](mutants/README.md) holds eight planted regressions built from the
+[`mutants/`](mutants/README.md) holds ten planted regressions built from the
 base reader image: a dropped security header, a 500 on a route, a console
 error, an extra landmark, an image with no alt text, a 400 ms slower SSR path,
 a page that writes a row for anonymous readers, navigator links that leave the
-tab order. `pnpm harness mutants --base <tag>` runs A/A first, then release
+tab order, a candidate built FROM a different base image, and a candidate that
+adds one package. `pnpm harness mutants --base <tag>` runs A/A first, then release
 mode against each, and passes only when every mutant produces a FAIL attributed
 to the expected artefact. Weekly in CI. A harness that cannot catch its own
 mutants has no business gating a release.
@@ -159,8 +168,8 @@ mutants has no business gating a release.
 harness run --mode <mode> --a <ref> --b <ref> [--substrate compose|kind] [--claims f] [--noise f|skip]
             [--runs n] [--set fixture,auth,reference] [--journey name]... [--load 20x30s]
             [--now iso] [--out dir] [--image-prefix p|template-with-{app}] [--allow-unsigned]
-            [--no-screenshots] [--no-axe] [--no-focus] [--keep] [--no-stack]
-            post-deploy: --recorded <release run dir> --production reader=URL,catalogue=URL,live=URL
+            [--no-screenshots] [--no-axe] [--no-focus] [--no-runtime] [--startup-restarts n] [--keep] [--no-stack]
+            post-deploy: --recorded <release run dir> --production reader=URL,catalogue=URL,live=URL[,time=URL]
             migration:   --snapshot <pg_dump>      upgrade: --upgrade-seconds 45 --upgrade-rate 20
 harness compare --dir <run dir> --mode <mode> [--claims f] [--noise f]
 harness images ensure --a <ref> --b <ref> [--ref-a git-ref] [--ref-b git-ref] [--allow-unsigned]
@@ -183,8 +192,11 @@ Environment: `HARNESS_IMAGE_PREFIX` (a prefix, `tutors`, or a template,
 `HARNESS_COSIGN_ISSUER` (who must have signed a pulled image; default the
 monorepo's `image-build.yml` workflow via GitHub OIDC), `HARNESS_ALLOW_UNSIGNED`,
 `HARNESS_PROVENANCE_FILE`. `--a`/`--b` also take
-`reader=REF,catalogue=REF,live=REF` with each `REF` pinned as `repo@sha256:…` —
-[docs/images.md](docs/images.md).
+`reader=REF,catalogue=REF,live=REF[,time=REF]` with each `REF` pinned as `repo@sha256:…` —
+[docs/images.md](docs/images.md). The monorepo's four apps are all in the stack; `time` is
+client-rendered and no journey drives it (twelve until a real regression escapes), so it is
+judged by the app-level artefacts only: `metrics`, `logs`, `runtime`, `startup` and the
+image artefacts.
 
 Which commands, flags, report fields and workflow inputs are stable, and what bumps the
 version, is in [docs/contract.md](docs/contract.md).
@@ -197,11 +209,11 @@ prints the same), and the HTML and Markdown reports name it in their footer.
 
 | Workflow | When | Does |
 | --- | --- | --- |
-| `ci.yml` | every PR | unit and fixture tests; two stacks boot, one journey A/A; migration fixtures pass and fail as they must |
-| `nightly-noise.yml` | nightly | A/A on the production tag, three runs; publishes `noise-status.json` |
-| `release.yml` | monorepo dispatch on a release branch, or by hand | release mode with claims, 3 runs, k6; migration rehearsal; upgrade rehearsal |
+| `ci.yml` | every PR | unit and fixture tests; masks land in their own PR; two stacks boot, one journey A/A; migration fixtures pass and fail as they must |
+| `nightly-noise.yml` | nightly | A/A on the production tag pulled from Quay (five runs, with load; last night's verified images as the outage fallback, a degraded night); publishes `noise-status.json` as an artifact and to the `noise` branch, and keeps the ratchet — [docs/noise-burndown.md](docs/noise-burndown.md) |
+| `release.yml` | monorepo dispatch on a release branch, or by hand | release mode with claims, 5 runs, k6; migration rehearsal; upgrade rehearsal |
 | `post-deploy.yml` | monorepo dispatch after deploy, then every 15 minutes | reference journeys against production vs the recorded candidate; opens a rollback issue on a new difference |
-| `weekly-mutants.yml` | weekly, and on every PR | the eight mutants; on a PR only when it touches an engine, a mask, a journey, the gate or a mutant, which also needs a version bump |
+| `weekly-mutants.yml` | weekly, and on every PR | the ten mutants; on a PR only when it touches an engine, a collector, a mask, a journey, a fixture, a stack, the gate or a mutant (`src/ci/engine-change.ts`), which also needs a version bump |
 
 Images are pulled from Quay (`HARNESS_IMAGE_PREFIX`, default in CI
 `quay.io/tutors-sdk/tutors-{app}`) and their cosign signatures verified — the
@@ -209,6 +221,16 @@ workflows install cosign 3 with `sigstore/cosign-installer@v4` — or built from
 monorepo ref when the registry lacks the tag, in which case the report header
 says `built-from-ref` — [docs/images.md](docs/images.md).
 The two workflows the monorepo needs are in [docs/monorepo](docs/monorepo/README.md).
+
+**Everything runs locally; the workflows are an optional convenience.** On a
+laptop (Windows, macOS or Linux, with Docker): `pnpm harness doctor` says what is
+missing and how to install it, and `pnpm harness local nightly | gate | mutants |
+watch` each do what its workflow does, from the same harness commands
+(`--dry-run` prints them), keeping the noise status, the override record and the
+image cache under `HARNESS_HOME` instead of the `noise` branch, issues and
+`actions/cache`. `harness guard masks|engine --base <ref>` runs the PR guards
+against a local ref. The step-by-step parity with the workflows, Windows notes,
+scheduling and what stays GitHub-only are in [docs/local.md](docs/local.md).
 
 ## Determinism
 
@@ -228,7 +250,7 @@ noise mode is for.
 | H0 — Two stacks | compose file, one journey against both | ✅ |
 | H1 — Capture and A/A | collectors, normaliser, noise mode | ✅ |
 | H2 — Claims and gating | claim schema, matcher, reports, release mode, PR comment | ✅ |
-| H3 — Mutants | planted images, weekly self-test | ✅ eight |
+| H3 — Mutants | planted images, weekly self-test | ✅ ten (eight edge faults, two image-level; R5) |
 | H4 — Statistical and data | repeated runs, k6, metrics and log collectors, persistence diff, migration mode | ✅ |
 | H5 — Upgrade and post-deploy | rollout under load, post-deploy mode, synthetic monitor | ✅ (compose edge rollout; kind rolling update) |
 | H6 — OpenShift | two namespaces in a local cluster under restricted policy | ✅ kind with restricted PSA (`--substrate kind`); the auth set stays on compose |
@@ -252,7 +274,7 @@ migration fixtures under `tests/fixtures/migrations`. See [TESTING.md](TESTING.m
 
 ## Where to stop
 
-Twelve journeys, not a hundred; eight mutants, not thirty. The harness
+Twelve journeys, not a hundred; ten mutants, not thirty. The harness
 compares artefacts, so its power comes from breadth of *capture* per journey,
 not from the number of journeys. Add a journey only when a real regression
 escaped that a journey would have caught.

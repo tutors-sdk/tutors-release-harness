@@ -1,6 +1,6 @@
 {
   "$comment": "What the harness's workflows accept from outside and publish, machine-readable. tests/contract.test.ts fails when this and .github/workflows disagree.",
-  "contractVersion": "1.1.0",
+  "contractVersion": "1.3.0",
   "repositoryDispatch": {
     "release-candidate": {
       "workflow": "release.yml",
@@ -8,14 +8,20 @@
         "production": { "required": true, "meaning": "Production tag (side a), e.g. 16.2.0" },
         "candidate": { "required": true, "meaning": "Candidate tag (side b), e.g. 16.3.0-rc.4" },
         "claims_url": { "required": false, "meaning": "URL the runner can GET without credentials for the release's claims.yaml" },
-        "runs": { "required": false, "meaning": "Journey repetitions per side; default 3" },
+        "rules_url": { "required": false, "since": "1.3.0", "meaning": "URL the runner can GET without credentials for the release's rules.json (docs/contract/rules.schema.json): the Rules a claim may name with rule: \"0031\". Passed to --rules" },
+        "runs": { "required": false, "meaning": "Journey repetitions per side; default 5 (4 is the least that lets timing reach alpha 0.05; see docs/noise-burndown.md)" },
         "migrations_a": { "required": false, "meaning": "Monorepo git ref for production's migrations; default v<production>" },
-        "migrations_b": { "required": false, "meaning": "Monorepo git ref for the candidate's migrations; default v<candidate>" }
+        "migrations_b": { "required": false, "meaning": "Monorepo git ref for the candidate's migrations; default v<candidate>" },
+        "production_digests": { "required": false, "since": "1.3.0", "meaning": "Object app -> sha256:<64 hex>: the image production runs, per app. Pins side a (harness images ensure / run --a-digests): pulled and verified by digest, refused with exit 2 when the tag now resolves to another digest" },
+        "candidate_digests": { "required": false, "since": "1.3.0", "meaning": "Object app -> sha256:<64 hex>: the candidate image, per app. Pins side b (--b-digests), and is what the release record keeps" }
       }
     },
     "deployed": {
       "workflow": "post-deploy.yml",
-      "clientPayload": {}
+      "clientPayload": {
+        "production": { "required": false, "since": "1.3.0", "meaning": "The tag that was deployed, e.g. 16.3.0; names the release record to compare with" },
+        "digests": { "required": false, "since": "1.3.0", "meaning": "Object app -> sha256:<64 hex>: the images that run. Compared with the release record; a difference or no record is a warning, never a failure" }
+      }
     }
   },
   "repositoryVariables": {
@@ -41,5 +47,34 @@
     "$comment": "Installed by every job that runs `harness images ensure`. Verifying the monorepo's signatures needs cosign >= 3.",
     "cosign": { "action": "sigstore/cosign-installer", "minimumMajor": 3, "usedBy": ["ci.yml", "nightly-noise.yml", "release.yml", "weekly-mutants.yml"] }
   },
-  "forbiddenPermissions": ["pull-requests", "checks", "statuses", "deployments"]
+  "forbiddenPermissions": ["pull-requests", "checks", "statuses", "deployments"],
+  "writePermissions": {
+    "$comment": "The only `write` scopes any workflow or job holds, all on THIS repository (since 1.2.0 for nightly-noise.yml and release.yml). the key <workflow> means the workflow-level permissions. tests/contract.test.ts fails on any other.",
+    "nightly-noise.yml": { "publish": ["contents"], "why": "force-pushes the `noise` branch: noise-status.json, noise-history.json, noise-summary.md" },
+    "post-deploy.yml": { "<workflow>": ["issues"], "why": "opens the `rollback` issue when post-deploy mode exits 1" },
+    "release.yml": { "override-record": ["issues"], "publish-record": ["contents"], "why": "override-record opens a `harness-override` issue for each FAIL that a person overrode with override_reason; publish-record (since 1.3.0) pushes the release record to the `release-records` branch" }
+  },
+  "noiseBranch": {
+    "$comment": "Since 1.2.0. The stable home of the latest A/A status, so release.yml and post-deploy.yml can find it after the artifact has expired.",
+    "branch": "noise",
+    "writtenBy": "nightly-noise.yml",
+    "files": ["noise-status.json", "noise-history.json", "noise-summary.md", "README.md"],
+    "readBy": ["release.yml", "post-deploy.yml"],
+    "fetch": "gh api -H 'Accept: application/vnd.github.raw' repos/<repo>/contents/noise-status.json?ref=noise",
+    "freshness": "the gate, not the fetch: a status is trusted only while clean, without degraded, and no more than 7 days old"
+  },
+  "releaseRecordsBranch": {
+    "$comment": "Since 1.3.0. What release mode judged, kept where post-deploy.yml can find it after the artifact has expired. Not force-pushed: one commit per candidate.",
+    "branch": "release-records",
+    "writtenBy": "release.yml",
+    "job": "publish-record",
+    "files": ["releases/<candidate>.json", "releases/<release>.json", "README.md"],
+    "readBy": ["post-deploy.yml"],
+    "fetch": "gh api -H 'Accept: application/vnd.github.raw' repos/<repo>/contents/releases/<tag>.json?ref=release-records",
+    "schema": "release-record.schema.json"
+  },
+  "dispatchInputs": {
+    "$comment": "workflow_dispatch inputs added in 1.2.0. Not repository_dispatch payload fields: a dispatch from another repository cannot override.",
+    "release.yml": { "override_reason": "Accept a harness FAIL and say why; recorded in report.json (override) and in a harness-override issue" }
+  }
 }

@@ -27,6 +27,32 @@
       "description": "Since contract 1.1.0. Where each side's images came from, their registry digests and OCI labels. A side is absent when it was not inspected: migration mode, the live side of post-deploy mode, a capture recorded before 1.1.0.",
       "properties": { "a": { "$ref": "#/definitions/sideProvenance" }, "b": { "$ref": "#/definitions/sideProvenance" } }
     },
+    "imageArtefacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Since contract 1.2.0. For each side, and each app, whether the static image artefacts (manifest, sbom, vulns) were collected from the image and, for those that were not, why. A side is absent when its images were not inspected: migration mode, the live side of post-deploy mode, a capture recorded before 1.2.0. What was found is in compare.hunks under the artefacts image-manifest, sbom and vulns.",
+      "properties": { "a": { "$ref": "#/definitions/sideImageArtefacts" }, "b": { "$ref": "#/definitions/sideImageArtefacts" } }
+    },
+    "deployment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "digests", "problems"],
+      "description": "Since contract 1.3.0. Post-deploy mode, when the deploy said what it deployed (--deployed, --deployed-digests, or the `deployed` dispatch's `production` and `digests`): the digests it reported against the release record of the candidate release mode judged. Advisory: a status other than match adds a reason and turns a PASS into a WARN; it never turns anything into a FAIL and never turns a FAIL into anything.",
+      "properties": {
+        "production": { "type": "string", "description": "The production tag the deploy reported." },
+        "status": { "enum": ["match", "differs", "incomplete", "no-record", "not-reported"], "description": "match: every digest the deploy reported is the one recorded, and no app is missing on either side. differs: at least one app is deployed at another digest than the one judged. incomplete: nothing differs, but an app has a digest on one side only. no-record: no release record was found for the release. not-reported: the deploy named a tag but gave no digests." },
+        "digests": { "$ref": "#/definitions/digests", "description": "As the deploy reported them." },
+        "recorded": { "$ref": "#/definitions/digests", "description": "As recorded when the candidate was judged. Absent without a record." },
+        "record": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["candidate", "judgedAt", "verdict"],
+          "description": "The release record consulted.",
+          "properties": { "candidate": { "type": "string" }, "judgedAt": { "type": "string", "format": "date-time" }, "verdict": { "enum": ["pass", "fail", "warn"] } }
+        },
+        "problems": { "type": "array", "items": { "type": "string" }, "description": "One line per disagreement or gap; empty exactly when status is match. For people." }
+      }
+    },
     "verdict": { "enum": ["pass", "fail", "warn"] },
     "reasons": { "type": "array", "items": { "type": "string" }, "description": "Why the verdict is what it is, one line each. For people; the wording is not part of the contract." },
     "noise": { "$ref": "#/definitions/noiseStatus" },
@@ -92,9 +118,54 @@
       "additionalProperties": false,
       "required": ["a", "b"],
       "properties": { "a": { "$ref": "#/definitions/load" }, "b": { "$ref": "#/definitions/load" } }
+    },
+    "claimHygiene": {
+      "type": "object",
+      "description": "Since 1.2.0. Present whenever the claims file had claims. Informational: never changes the verdict.",
+      "additionalProperties": false,
+      "required": ["claims", "claimedHunks", "hunksPerClaim", "maxHunksPerClaim", "threshold", "flagged"],
+      "properties": {
+        "claims": { "type": "integer", "minimum": 0, "description": "Claims in the file, stale ones included." },
+        "claimedHunks": { "type": "integer", "minimum": 0, "description": "Failing hunks covered by some claim." },
+        "hunksPerClaim": { "type": "number", "minimum": 0, "description": "claimedHunks / claims to two decimals; 0 without claims." },
+        "maxHunksPerClaim": { "type": "integer", "minimum": 0, "description": "The most failing hunks any one claim covers." },
+        "threshold": { "type": "integer", "minimum": 1, "description": "N: a claim covering more failing hunks than this is flagged (--claim-max-hunks, HARNESS_CLAIM_MAX_HUNKS; default 10)." },
+        "flagged": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["claim", "hunks", "flags"],
+            "properties": {
+              "claim": { "$ref": "#/definitions/claim" },
+              "hunks": { "type": "integer", "minimum": 0 },
+              "flags": { "type": "array", "items": { "enum": ["covers-many-hunks", "broad-with-approval"] }, "minItems": 1, "description": "covers-many-hunks: more than threshold hunks. broad-with-approval: a broad claim (artefact * or scope **) that a human approved; allowed, but routine use means claims have become a checkbox." }
+            }
+          }
+        }
+      }
+    },
+    "override": {
+      "type": "object",
+      "description": "Since 1.2.0. Present only when an override of a harness FAIL was requested (--override-reason, --override-by): a recorded event, not a verdict. The verdict stays what the harness decided.",
+      "additionalProperties": false,
+      "required": ["reason", "by", "verdict", "applied", "at"],
+      "properties": {
+        "reason": { "type": "string", "minLength": 20, "description": "Why the FAIL was accepted." },
+        "by": { "type": "string", "minLength": 1, "description": "Who decided (in the workflows, the actor who dispatched the run)." },
+        "verdict": { "enum": ["pass", "fail", "warn"], "description": "The verdict the harness reached before the override." },
+        "applied": { "type": "boolean", "description": "True when the verdict was fail, so the override changed the exit code from 1 to 0; false when it was not needed." },
+        "at": { "type": "string", "format": "date-time" }
+      }
     }
   },
   "definitions": {
+    "digests": {
+      "type": "object",
+      "description": "app -> image digest. The apps are the harness's (reader, catalogue, live, time).",
+      "propertyNames": { "enum": ["reader", "catalogue", "live", "time"] },
+      "additionalProperties": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+    },
     "harness": {
       "type": "object",
       "additionalProperties": false,
@@ -114,14 +185,15 @@
         "schemaVersion": { "const": 1 },
         "ranAt": { "type": "string", "format": "date-time" },
         "clean": { "type": "boolean" },
-        "hunks": { "type": "integer", "minimum": 0 }
+        "hunks": { "type": "integer", "minimum": 0 },
+        "degraded": { "type": "array", "items": { "type": "string", "minLength": 1 } }
       }
     },
     "images": {
       "type": "object",
       "additionalProperties": false,
       "required": ["reader", "catalogue", "live"],
-      "properties": { "reader": { "type": "string" }, "catalogue": { "type": "string" }, "live": { "type": "string" } }
+      "properties": { "reader": { "type": "string" }, "catalogue": { "type": "string" }, "live": { "type": "string" }, "time": { "type": "string", "description": "Since 1.3.0. The time app's image reference; \"-\" when the side has none (migration mode, a live deployment given no time URL). Absent from a report written before 1.3.0." } }
     },
     "sideProvenance": {
       "type": "object",
@@ -134,7 +206,7 @@
           "type": "object",
           "additionalProperties": false,
           "required": ["reader", "catalogue", "live"],
-          "properties": { "reader": { "$ref": "#/definitions/imageInfo" }, "catalogue": { "$ref": "#/definitions/imageInfo" }, "live": { "$ref": "#/definitions/imageInfo" } }
+          "properties": { "reader": { "$ref": "#/definitions/imageInfo" }, "catalogue": { "$ref": "#/definitions/imageInfo" }, "live": { "$ref": "#/definitions/imageInfo" }, "time": { "$ref": "#/definitions/imageInfo", "description": "Since 1.3.0." } }
         }
       }
     },
@@ -149,7 +221,7 @@
         "revision": { "type": "string", "description": "org.opencontainers.image.revision label: the monorepo commit, as the image states it." },
         "version": { "type": "string", "description": "org.opencontainers.image.version label." },
         "created": { "type": "string", "description": "org.opencontainers.image.created label." },
-        "provenance": { "enum": ["local", "pulled+verified", "pulled-unverified", "built-from-ref"], "description": "local: present and never pulled, not verified. pulled+verified: pulled and its cosign signature verified by digest against verifiedIdentity. pulled-unverified: pulled, not verified, judged only because of --allow-unsigned. built-from-ref: built on this machine from a monorepo git ref; not the published image." },
+        "provenance": { "enum": ["local", "pulled+verified", "pulled-unverified", "built-from-ref", "cached"], "description": "local: present and never pulled, not verified. pulled+verified: pulled and its cosign signature verified by digest against verifiedIdentity. pulled-unverified: pulled, not verified, judged only because of --allow-unsigned. built-from-ref: built on this machine from a monorepo git ref; not the published image. cached (since 1.2.0): restored from the runner's image cache because the registry could not be reached; pulled and verified on the earlier run named by cachedAt, but the tag's freshness is unconfirmed." },
         "verifiedIdentity": { "type": "string", "description": "pulled+verified: the certificate identity regular expression the signature was checked against." },
         "unverifiedReason": { "type": "string", "description": "pulled-unverified: why verification failed. For people." },
         "builtFrom": {
@@ -157,10 +229,34 @@
           "additionalProperties": false,
           "required": ["ref"],
           "properties": { "ref": { "type": "string", "description": "The monorepo git ref." }, "sha": { "type": "string", "description": "The commit it resolved to." } }
-        }
+        },
+        "cachedAt": { "type": "string", "format": "date-time", "description": "cached: when the cache entry was saved, i.e. the earlier run that pulled and verified the image." }
       }
     },
-    "artefact": { "enum": ["dom", "screenshot", "network", "console", "headers", "axe", "focus", "metrics", "logs", "timing", "persistence", "migration", "upgrade"] },
+    "sideImageArtefacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reader", "catalogue", "live"],
+      "properties": { "reader": { "$ref": "#/definitions/appImageArtefacts" }, "catalogue": { "$ref": "#/definitions/appImageArtefacts" }, "live": { "$ref": "#/definitions/appImageArtefacts" }, "time": { "$ref": "#/definitions/appImageArtefacts", "description": "Since 1.3.0." } }
+    },
+    "appImageArtefacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["manifest", "sbom", "vulns"],
+      "properties": { "manifest": { "$ref": "#/definitions/imageArtefactStatus" }, "sbom": { "$ref": "#/definitions/imageArtefactStatus" }, "vulns": { "$ref": "#/definitions/imageArtefactStatus" } }
+    },
+    "imageArtefactStatus": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["collected"],
+      "properties": {
+        "collected": { "type": "boolean", "description": "False means the artefact was NOT compared: the run says so rather than reporting it clean." },
+        "source": { "type": "string", "description": "Collected: where it came from (e.g. cosign attestation, generated by syft, grype 0.9.1). For people." },
+        "reason": { "type": "string", "description": "Not collected: why. For people." },
+        "summary": { "type": "string", "description": "Collected: one line of what was found. For people." }
+      }
+    },
+    "artefact": { "enum": ["dom", "screenshot", "network", "console", "headers", "axe", "focus", "metrics", "logs", "timing", "persistence", "bus", "migration", "upgrade", "image-manifest", "sbom", "vulns", "runtime", "startup"], "description": "\"bus\", \"image-manifest\", \"sbom\", \"vulns\", \"runtime\" and \"startup\" since contract 1.2.0. A consumer must tolerate an artefact name it does not know." },
     "hunk": {
       "type": "object",
       "additionalProperties": false,
@@ -182,8 +278,10 @@
       "properties": {
         "artefact": { "anyOf": [{ "$ref": "#/definitions/artefact" }, { "const": "*" }] },
         "scope": { "type": "string" },
-        "reason": { "type": "string" },
-        "approvedBy": { "type": "string" }
+        "reason": { "type": "string", "description": "Always present. For a claim that named a rule and gave no reason, the harness writes `Rule NNNN: <title>`." },
+        "approvedBy": { "type": "string" },
+        "rule": { "type": "string", "pattern": "^\\d{4}$", "description": "Since 1.3.0. The Rule the claim named; it was in the rules file." },
+        "ruleTitle": { "type": "string", "description": "Since 1.3.0. That Rule's title in the rules file; present exactly when `rule` is." }
       }
     },
     "schemaCatalog": {

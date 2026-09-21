@@ -13,7 +13,9 @@
 # (`docker compose build` -> tutors/<app>:local) and only exist so the file can
 # be started by hand, which skips that check:
 #
-#   READER_IMAGE_A=quay.io/tutors-sdk/tutors-reader:16.2.0 #   READER_IMAGE_B=quay.io/tutors-sdk/tutors-reader:16.3.0-rc.1 #     docker compose -p tutors-harness -f compose.harness.yaml up -d --wait
+#   READER_IMAGE_A=quay.io/tutors-sdk/tutors-reader:16.2.0 \
+#   READER_IMAGE_B=quay.io/tutors-sdk/tutors-reader:16.3.0-rc.1 \
+#     docker compose -p tutors-harness -f compose.harness.yaml up -d --wait
 #
 # The apps run exactly as the monorepo's e2e stack runs them: anonymous mode,
 # read-only root filesystem, no capabilities, JSON logs. Each side also runs a
@@ -177,6 +179,18 @@ services:
       <<: *env
       ORIGIN: http://localhost:${LIVE_PORT_A:-3102}
 
+  # The time app: student activity and time tracking (apps/time in the monorepo: port 3000, /healthz/live and
+  # /metrics like the others). It is client-rendered and no journey drives it (twelve until a real regression
+  # escapes), so it gets the app-level collectors: metrics, logs, posture, startup and the image artefacts.
+  time-a:
+    <<: *app
+    image: ${TIME_IMAGE_A:-tutors/time:local}
+    ports:
+      - "${TIME_PORT_A:-3104}:3000"
+    environment:
+      <<: *env
+      ORIGIN: http://localhost:${TIME_PORT_A:-3104}
+
   reader-auth-a:
     <<: *app
     image: ${READER_IMAGE_A:-tutors/reader:local}
@@ -239,6 +253,15 @@ services:
     environment:
       <<: *env
       ORIGIN: http://localhost:${LIVE_PORT_B:-3202}
+
+  time-b:
+    <<: *app
+    image: ${TIME_IMAGE_B:-tutors/time:local}
+    ports:
+      - "${TIME_PORT_B:-3204}:3000"
+    environment:
+      <<: *env
+      ORIGIN: http://localhost:${TIME_PORT_B:-3204}
 
   reader-auth-b:
     <<: *app

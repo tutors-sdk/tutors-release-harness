@@ -195,9 +195,24 @@ logs:
 timing:
   # Timing is compared with Mann-Whitney U only with at least this many runs per side;
   # with fewer, a large median shift is reported as info, never as a failure.
+  # This is a floor on the sample, not a promise that the sample can judge: at alpha
+  # 0.05 the test cannot reach significance from fewer than 4 samples a side (3 v 3,
+  # perfectly separated, is p = 0.081), and the engine says so, as information, when
+  # the runs it was given cannot ("samples cannot reach alpha ... Raise --runs").
+  # Widen alpha or raise --runs, never retry. 5 runs is what the nightly and release use.
   minRuns: 3
   alpha: 0.05
   # Side b's median must exceed side a's by at least this fraction AND this
   # many milliseconds to count: a 3 ms → 4 ms TTFB is +33% and means nothing.
   minEffect: 0.2
   minShiftMs: 20
+
+# startup:
+#   minShiftMs: 250
+#
+# Startup time (harness restarts each app N times; see docs/modes.md) is judged with the timing block's
+# minRuns, alpha and minEffect. Its own floor is in milliseconds: startups are seconds long, the harness
+# polls every 100 ms, and compose's healthcheck only ticks every 2 s, so a 20 ms shift is measurement noise.
+# The default (250) is in src/normalise/masks.ts. The block is commented out on purpose: an uncommented
+# `startup:` is a threshold change, and a PR that changes a threshold may change nothing else (src/ci/mask-change.ts).
+# Never retry a noisy startup run: raise --startup-restarts, or widen timing.alpha here with a reason.

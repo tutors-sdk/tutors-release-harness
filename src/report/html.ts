@@ -1,4 +1,9 @@
+import { APPS, type App } from "../image-ref.ts";
 import type { Hunk, RunReport } from "../types.ts";
+import { claimLabel } from "../claims/rules.ts";
+import { loudProvenance } from "./provenance.ts";
+import { deploymentHtml, loudDeployment } from "./deployment.ts";
+import { imageArtefactsHtml } from "./image-static.ts";
 
 const esc = (s: string) => s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
 
@@ -13,8 +18,7 @@ const short = (v: string | undefined) => (v ? v.replace(/^sha256:/, "").slice(0,
 function provenanceBlock(report: RunReport): string {
   const p = report.provenance;
   if (!p?.a && !p?.b) return "";
-  const loud = (["a", "b"] as const).filter((side) => Object.values(p[side]?.images ?? {}).some((info) => info.provenance === "pulled-unverified" || info.provenance === "built-from-ref"));
-  const cell = (side: "a" | "b", app: "reader" | "catalogue" | "live") => {
+  const cell = (side: "a" | "b", app: App) => {
     const info = p[side]?.images[app];
     if (!info) return "<td>—</td>";
     const bits = [info.digest ? `digest <code>${esc(info.digest)}</code>` : info.id ? `id <code>${esc(short(info.id))}</code> (no registry digest)` : "", info.revision ? `revision <code>${esc(short(info.revision))}</code>` : "revision <em>unlabelled</em>", info.version ? `version <code>${esc(info.version)}</code>` : "version <em>unlabelled</em>", info.unverifiedReason ? `<strong>not verified:</strong> ${esc(info.unverifiedReason)}` : ""].filter(Boolean);
@@ -22,15 +26,15 @@ function provenanceBlock(report: RunReport): string {
   };
   return `<table class="provenance">
 <thead><tr><th>provenance</th><th>a — ${esc(p.a?.summary ?? "not recorded")}</th><th>b — ${esc(p.b?.summary ?? "not recorded")}</th></tr></thead>
-<tbody>${(["reader", "catalogue", "live"] as const).map((app) => `<tr><td>${app}</td>${cell("a", app)}${cell("b", app)}</tr>`).join("")}</tbody>
-</table>
-${loud.length ? `<p class="loud">Side ${loud.join(" and ")} did not run signature-verified registry images (${loud.map((side) => esc(p[side]!.summary)).join("; ")}). This run is not evidence about the images that ship.</p>` : ""}`;
+<tbody>${APPS.map((app) => `<tr><td>${app}</td>${cell("a", app)}${cell("b", app)}</tr>`).join("")}</tbody>
+</table>`;
 }
 
 /** One self-contained HTML file per run: verdict, sides, every hunk with its claim, masks that fired. */
 export function renderHtml(report: RunReport): string {
   const { compare } = report;
-  const rows = compare.matches.map((m) => hunkRow(m.hunk, m.claim?.reason)).join("\n");
+  const loud = loudProvenance(report);
+  const rows = compare.matches.map((m) => hunkRow(m.hunk, m.claim ? claimLabel(m.claim) : undefined)).join("\n");
   const fired = Object.entries(report.masksApplied).filter(([, n]) => n > 0);
   const silent = Object.entries(report.masksApplied).filter(([, n]) => n === 0);
   return `<!doctype html>
@@ -62,13 +66,17 @@ export function renderHtml(report: RunReport): string {
 <body>
 <h1>Tutors release harness — <code>${esc(report.mode)}</code> <span class="verdict ${report.verdict}">${report.verdict}</span></h1>
 <p><small>${esc(report.ranAt)} · clock ${esc(report.now)} · ${report.runs} run(s) per side · harness ${esc(report.harnessVersion)}</small></p>
-<ul>${report.reasons.map((r) => `<li>${esc(r)}</li>`).join("")}${report.noise ? `<li>A/A consulted: ${report.noise.clean ? "clean" : `${report.noise.hunks} diff(s)`} at ${esc(report.noise.ranAt)}</li>` : ""}</ul>
+${loud ? `<p class="loud">${esc(loud.text)}</p>` : ""}
+${loudDeployment(report) ? `<p class="loud">${esc(loudDeployment(report)!)}</p>` : ""}
+<ul>${report.reasons.map((r) => `<li>${esc(r)}</li>`).join("")}${report.noise ? `<li>A/A consulted: ${report.noise.clean ? "clean" : `${report.noise.hunks} diff(s)`}${report.noise.degraded?.length ? " but DEGRADED (does not count)" : ""} at ${esc(report.noise.ranAt)}</li>` : ""}</ul>
 
 <table>
 <thead><tr><th></th><th>a</th><th>b</th></tr></thead>
-<tbody>${(["reader", "catalogue", "live"] as const).map((app) => `<tr><td>${app}</td><td><code>${esc(report.sides.a[app])}</code></td><td><code>${esc(report.sides.b[app])}</code></td></tr>`).join("")}</tbody>
+<tbody>${APPS.map((app) => `<tr><td>${app}</td><td><code>${esc(report.sides.a[app] ?? "—")}</code></td><td><code>${esc(report.sides.b[app] ?? "—")}</code></td></tr>`).join("")}</tbody>
 </table>
 ${provenanceBlock(report)}
+${deploymentHtml(report, esc)}
+${imageArtefactsHtml(report)}
 
 ${
   report.migration
@@ -93,8 +101,19 @@ ${
 <h2>Differences (${compare.hunks.length}; ${compare.unclaimed.length} unclaimed)</h2>
 ${compare.hunks.length ? `<table><thead><tr><th>artefact</th><th>scope</th><th>what changed</th><th>claimed by</th></tr></thead><tbody>${rows}</tbody></table>` : "<p>None. The two sides are observably identical after normalisation.</p>"}
 
-${compare.staleClaims.length ? `<h2>Stale claims (${compare.staleClaims.length})</h2><ul>${compare.staleClaims.map((c) => `<li><code>${c.artefact}</code> <code>${esc(c.scope)}</code> — ${esc(c.reason)}</li>`).join("")}</ul>` : ""}
-${compare.broadUnapproved.length ? `<h2>Broad claims without approval (${compare.broadUnapproved.length})</h2><ul>${compare.broadUnapproved.map((c) => `<li><code>${c.artefact}</code> <code>${esc(c.scope)}</code> — ${esc(c.reason)}</li>`).join("")}</ul>` : ""}
+${compare.staleClaims.length ? `<h2>Stale claims (${compare.staleClaims.length})</h2><ul>${compare.staleClaims.map((c) => `<li><code>${c.artefact}</code> <code>${esc(c.scope)}</code> — ${esc(claimLabel(c))}</li>`).join("")}</ul>` : ""}
+${compare.broadUnapproved.length ? `<h2>Broad claims without approval (${compare.broadUnapproved.length})</h2><ul>${compare.broadUnapproved.map((c) => `<li><code>${c.artefact}</code> <code>${esc(c.scope)}</code> — ${esc(claimLabel(c))}</li>`).join("")}</ul>` : ""}
+
+${
+  report.override
+    ? `<h2>${report.override.applied ? "Harness FAIL overridden" : "Override recorded, not needed"}</h2><p class="loud">By <code>${esc(report.override.by)}</code> at ${esc(report.override.at)}; verdict before the override: ${report.override.verdict.toUpperCase()}.<br>Reason: ${esc(report.override.reason)}</p>`
+    : ""
+}
+${
+  report.claimHygiene
+    ? `<h2>Claim hygiene</h2><p>${report.claimHygiene.claims} claim(s) cover ${report.claimHygiene.claimedHunks} failing hunk(s): ${report.claimHygiene.hunksPerClaim} per claim, at most ${report.claimHygiene.maxHunksPerClaim} under one (flagged above ${report.claimHygiene.threshold}).</p>${report.claimHygiene.flagged.length ? `<ul>${report.claimHygiene.flagged.map((f) => `<li><code>${f.claim.artefact}</code> <code>${esc(f.claim.scope)}</code> — ${f.hunks} hunk(s): ${f.flags.map((x) => (x === "covers-many-hunks" ? "covers many hunks" : `broad claim approved by ${esc(f.claim.approvedBy ?? "")}`)).join("; ")}</li>`).join("")}</ul>` : ""}`
+    : ""
+}
 
 <h2>Masks</h2>
 <p>Fired: ${fired.length ? fired.map(([id, n]) => `<code>${esc(id)}</code>×${n}`).join(", ") : "none"}.<br>
