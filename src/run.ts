@@ -251,14 +251,17 @@ export async function run(opts: RunOptions): Promise<RunOutcome> {
   // Before anything starts: an unreadable rules file, or a claim naming a rule it does not hold, is exit 2 with no stack up.
   const rules = opts.rules ? await loadRules(opts.rules) : undefined;
   const claims = opts.claimsFile ? loadClaims(opts.claimsFile, rules) : [];
+  // The directory is named now and made once the run has something to put in it (`makeOutDir`): a run that cannot judge (an image
+  // that is not there, or is not verified: exit 2) leaves nothing behind, not an empty directory.
   const outDir = resolve(opts.outDir, timestampDir(opts.mode));
-  mkdirSync(outDir, { recursive: true });
+  const makeOutDir = () => mkdirSync(outDir, { recursive: true });
   opts.log(`harness ${HARNESS_VERSION} · mode ${opts.mode} · substrate ${opts.substrate} · clock ${opts.now} · ${opts.runs} run(s) · out ${outDir}`);
 
   const common = { substrate: opts.substrate, captureDir: outDir, claims, masksFile: opts.masksFile, noiseMaxAgeDays: opts.noiseMaxAgeDays, claimMaxHunks: opts.claimMaxHunks, requireVerified: opts.requireVerified, ...(opts.override ? { override: opts.override } : {}), now: opts.now, runs: opts.runs, log: opts.log, ...(opts.noise ? { noise: opts.noise } : {}) };
 
   // ---- migration: no stacks, a throwaway Postgres and two sets of migrations.
   if (opts.mode === "migration") {
+    makeOutDir();
     const a = sideSpec("a", { reader: `migrations:${opts.a}`, catalogue: "-", live: "-", time: "-" });
     const b = sideSpec("b", { reader: `migrations:${opts.b}`, catalogue: "-", live: "-", time: "-" });
     const { result, hunks } = runMigration({ a: opts.a, b: opts.b, workDir: outDir, log: opts.log, ...(opts.snapshot ? { snapshot: opts.snapshot } : {}) });
@@ -269,6 +272,7 @@ export async function run(opts: RunOptions): Promise<RunOutcome> {
   if (opts.mode === "post-deploy") {
     if (!opts.recorded || !opts.production) throw new Error("post-deploy needs --recorded <release run dir> and --production reader=..,catalogue=..,live=..[,time=..]");
     const recorded = loadCapture(opts.recorded, "b");
+    makeOutDir();
     const b = externalSide("b", opts.production, reference.courseId);
     const journeys = selectJourneys(["reference"], opts.journeys);
     opts.log(`  a: recorded ${recorded.images.reader} from ${opts.recorded}`);
@@ -299,6 +303,7 @@ export async function run(opts: RunOptions): Promise<RunOutcome> {
   const trust = { exec: realExec, ledger: fileLedger(), policy: trustPolicyFromEnv(process.env, opts.allowUnsigned), log: opts.log };
   a.provenance = resolveSideProvenance(a.images, trust);
   b.provenance = resolveSideProvenance(b.images, trust);
+  makeOutDir();
   opts.log(`  a: ${APPS.map((app) => a.images[app]).join(", ")} — ${a.provenance.summary}`);
   opts.log(`  b: ${APPS.map((app) => b.images[app]).join(", ")} — ${b.provenance.summary}`);
   // R5: what the images are (manifest, SBOM, vulnerabilities), read from the images before anything runs.
