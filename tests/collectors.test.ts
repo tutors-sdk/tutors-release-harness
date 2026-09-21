@@ -49,7 +49,8 @@ describe("origin stripping", () => {
     const b = sideSpec("b", { reader: "r", catalogue: "c", live: "l", time: "t" });
     const message = (spec: typeof a) => `WebSocket connection to '${spec.urls.persistence!.replace(/^http/, "ws")}/realtime/v1/websocket?apikey=k' failed: 404`;
     expect(message(a)).not.toBe(message(b));
-    expect(stripOrigins(message(a), a)).toBe("WebSocket connection to '{{origin}}/realtime/v1/websocket?apikey=k' failed: 404");
+    // The collector also redacts (src/normalise/redact.ts): the origin is the point here, the key goes as well.
+    expect(stripOrigins(message(a), a)).toBe("WebSocket connection to '{{origin}}/realtime/v1/websocket?apikey=<redacted>' failed: 404");
     expect(stripOrigins(message(a), a)).toBe(stripOrigins(message(b), b));
   });
 

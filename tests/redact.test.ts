@@ -137,7 +137,7 @@ describe("redaction through normalise and compare", () => {
   });
 
   it("the collector redacts too, so a new capture.json does not hold the value", () => {
-    const spec = { name: "b" as const, images: { reader: "external:https://tutors.dev", catalogue: "external:https://c.tutors.dev", live: "external:https://l.tutors.dev" }, urls: { reader: "https://tutors.dev", catalogue: "https://c.tutors.dev", live: "https://l.tutors.dev", courseId: "reference-course" }, external: true };
+    const spec = { name: "b" as const, images: { reader: "external:https://tutors.dev", catalogue: "external:https://c.tutors.dev", live: "external:https://l.tutors.dev", time: "external:https://t.tutors.dev" }, urls: { reader: "https://tutors.dev", catalogue: "https://c.tutors.dev", live: "https://l.tutors.dev", courseId: "reference-course" }, external: true };
     expect(stripOrigins(`from origin 'https://tutors.dev' apikey=${jwt("T")}`, spec)).toBe(`from origin '{{origin}}' apikey=${REDACTED}`);
   });
 

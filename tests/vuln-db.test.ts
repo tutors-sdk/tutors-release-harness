@@ -124,7 +124,7 @@ describe("where a scan looks for the database", () => {
   });
 
   it("collecting hands the scanner the directory and the age limit, updates off, and nothing else about the database", () => {
-    const images = { reader: "quay.io/x/r:1", catalogue: "quay.io/x/c:1", live: "quay.io/x/l:1" } as never;
+    const images = { reader: "quay.io/x/r:1", catalogue: "quay.io/x/c:1", live: "quay.io/x/l:1", time: "quay.io/x/t:1" } as never;
     const envs: NodeJS.ProcessEnv[] = [];
     const exec: Exec = (cmd, _args, opts) => {
       if (cmd === "grype") envs.push(opts?.env ?? {});
@@ -133,12 +133,12 @@ describe("where a scan looks for the database", () => {
     const policy = { ...staticPolicyFromEnv({ HARNESS_SBOM_SOURCE: "generate", HARNESS_VULN_DB_MAX_AGE_DAYS: "2" }, trustPolicyFromEnv({}), "linux", () => false), vulnDbDir: "/db", vulnDbMaxAgeDays: 2 };
     const got = collectImageStatic(images, undefined, { exec, files: { write: (n: string) => `/tmp/${n}` }, policy, log: () => {} });
     expect(got.reader.vulns).toMatchObject({ ok: true });
-    expect(envs).toHaveLength(3);
+    expect(envs).toHaveLength(4);
     for (const env of envs) expect(env).toMatchObject({ GRYPE_DB_CACHE_DIR: "/db", GRYPE_DB_AUTO_UPDATE: "false", GRYPE_DB_MAX_ALLOWED_BUILT_AGE: "48h" });
   });
 
   it("a scan that fails on the database says how to fetch it, in grype's own words plus the command; one that fails otherwise does not", () => {
-    const images = { reader: "quay.io/x/r:1", catalogue: "quay.io/x/c:1", live: "quay.io/x/l:1" } as never;
+    const images = { reader: "quay.io/x/r:1", catalogue: "quay.io/x/c:1", live: "quay.io/x/l:1", time: "quay.io/x/t:1" } as never;
     const scan = (stderr: string) => {
       const exec: Exec = (cmd) => (cmd === "syft" ? done(JSON.stringify(spdx([["bash", "5.2.15"]]))) : cmd === "grype" ? done("", 1, stderr) : done("{}"));
       const files = { write: (name: string) => `/tmp/${name}` };
