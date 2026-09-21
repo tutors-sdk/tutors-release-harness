@@ -288,6 +288,31 @@ Written next to `report.json` by `noise` mode only:
 output directory). A file that is not exactly this shape stops the run with
 exit `2` — it is never read generously.
 
+**Where a run looks for a status** (since 1.3.0: the default source is the local
+store). `release` and `post-deploy` mode resolve `--noise` in exactly this order,
+first match wins, and look nowhere else:
+
+1. **`--noise <file or dir>`** as given. It is used as it is: a status that is dirty,
+   stale or unreadable there is never replaced by a better one from the store.
+   `--noise skip` waives the requirement, loudly (below). `--noise none` says do
+   not look: no store is read and the run has no status.
+2. **`--noise` omitted: the latest status in the local store**,
+   `<HARNESS_HOME>/noise/noise-status.json` (`HARNESS_HOME` defaults to
+   `<checkout>/.harness`), which `harness noise record` and `harness local
+   nightly` write. A file there that is not a valid status is ignored with a
+   logged warning, as the workflows' fetch ignores one, and the run goes on as if
+   there were none.
+3. **none**: no status was supplied.
+
+Every other mode never reads a status. The store is not a second rule: whatever it
+yields goes to the same gate, so a status from it licenses a `fail` only when it
+is clean, without `degraded`, and no more than 7 days old, exactly like one from
+the `noise` branch. A **missing** status (step 3, or an unusable one in step 2) still
+**warns**, as before: same findings, `warn`, exit `0`, first reason
+`advisory only: no A/A …`. The workflows are unchanged by this: they fetch the
+`noise` branch into `noise/` and pass `--noise <file>` when it is usable, so step 1
+applies on a runner and the store under `.harness` is never consulted there.
+
 **The A/A rule.** `release` and `post-deploy` may return `fail` only when one
 of these holds:
 
@@ -543,7 +568,7 @@ change in a minor release.
 
 | Command | Stable flags |
 | --- | --- |
-| `harness run` | `--mode` (required), `--a`, `--b` (required except in post-deploy), `--claims <file>`, `--rules <path\|url>` (since 1.3.0: the Rules a claim may name, see [The rules file](#the-rules-file)), `--noise <file\|dir\|skip>`, `--runs <n>`, `--set <fixture,auth,reference>`, `--journey <name>` (repeatable), `--load <rate>x<duration>`, `--out <dir>`, `--image-prefix <prefix or {app} template>`, `--allow-unsigned`, `--require-verified` (noise mode: write the status `degraded` unless every image on both sides was pulled and verified in this run), `--override-reason <text>` and `--override-by <who>` (see [Overriding a FAIL](#overriding-a-fail)), `--a-digests <digests>` and `--b-digests <digests>` (since 1.3.0: pin a side's images, see [Image digests](#image-digests-and-the-release-record)); post-deploy: `--recorded <release run dir>`, `--production reader=URL,catalogue=URL,live=URL`, and since 1.3.0 `--deployed <tag>`, `--deployed-digests <digests>` and `--release-record <file\|dir>` (see [Checking a deployment](#checking-a-deployment)) |
+| `harness run` | `--mode` (required), `--a`, `--b` (required except in post-deploy), `--claims <file>`, `--rules <path\|url>` (since 1.3.0: the Rules a claim may name, see [The rules file](#the-rules-file)), `--noise <file\|dir\|skip\|none>` (omitted: the latest status in the local store, see [`noise-status.json`](#noise-statusjson-and-the-7-day-rule)), `--runs <n>`, `--set <fixture,auth,reference>`, `--journey <name>` (repeatable), `--load <rate>x<duration>`, `--out <dir>`, `--image-prefix <prefix or {app} template>`, `--allow-unsigned`, `--require-verified` (noise mode: write the status `degraded` unless every image on both sides was pulled and verified in this run), `--override-reason <text>` and `--override-by <who>` (see [Overriding a FAIL](#overriding-a-fail)), `--a-digests <digests>` and `--b-digests <digests>` (since 1.3.0: pin a side's images, see [Image digests](#image-digests-and-the-release-record)); post-deploy: `--recorded <release run dir>`, `--production reader=URL,catalogue=URL,live=URL`, and since 1.3.0 `--deployed <tag>`, `--deployed-digests <digests>` and `--release-record <file\|dir>` (see [Checking a deployment](#checking-a-deployment)) |
 | `harness compare` | `--dir <run dir>` (required), `--mode` (required), `--claims`, `--rules`, `--noise` |
 | `harness images ensure` | `--a`, `--b` (required), `--a-digests`, `--b-digests` (since 1.3.0: pull by digest, verify on it, refuse a tag that has moved; a pinned image is never built), `--ref-a`, `--ref-b` (monorepo git refs to build from when the pull fails), `--image-prefix`, `--allow-unsigned`, `--image-cache <dir>` (since 1.2.0: refreshed from images pulled and verified in this run; used, as provenance `cached`, only when the registry cannot be reached, and never for a tag the registry says does not exist). With `GITHUB_OUTPUT` set it writes `image_cache=none\|used\|refreshed` |
 | `harness mutants` | `--base <tag or reader image>` (required), `--out`, `--image-prefix`, `--allow-unsigned` |
@@ -570,7 +595,7 @@ environment variable, else `tutors`. It is either a bare prefix
 signature could not be verified be judged anyway; the report records it
 (`pulled-unverified`, `allowedUnsigned`). The workflows never pass it.
 
-Environment variables in the contract, all since 1.1.0 except the first and the last six (since 1.2.0):
+Environment variables in the contract, all since 1.1.0 except the first, the last six (since 1.2.0) and `HARNESS_HOME` (since 1.3.0):
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
@@ -578,6 +603,7 @@ Environment variables in the contract, all since 1.1.0 except the first and the 
 | `HARNESS_COSIGN_IDENTITY` | `^https://github.com/tutors-sdk/tutors-mono-repo/\.github/workflows/image-build\.yml@` | regular expression the signing certificate's identity must match; empty means the default |
 | `HARNESS_COSIGN_ISSUER` | `https://token.actions.githubusercontent.com` | the certificate's OIDC issuer; empty means the default |
 | `HARNESS_ALLOW_UNSIGNED` | unset | `1`, `true` or `yes`: the same as `--allow-unsigned` |
+| `HARNESS_HOME` | `<checkout>/.harness` | since 1.3.0. Where the harness keeps what outlives a run on this machine: the noise store (`noise/`, the default source of `--noise`), the release records (`releases/`), the override log, the image cache. See [local.md](local.md) |
 | `HARNESS_CLAIM_MAX_HUNKS` | `10` | since 1.2.0: a claim covering more failing hunks than this is flagged in `claimHygiene`; a positive integer, else the default. `--claim-max-hunks` overrides |
 | `HARNESS_SBOM_SOURCE` | `auto` | since 1.2.0. Where each image's SBOM comes from: `auto` or `attestation` (the cosign SPDX attestation of a pulled image), or `generate` (a local generator, on both sides) |
 | `HARNESS_SBOM_CMD` | `syft docker:{image} -o spdx-json` | since 1.2.0. The generator for `generate`; `{image}` is the image reference. Split on whitespace and quotes; no shell |

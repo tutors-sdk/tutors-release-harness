@@ -12,7 +12,7 @@ import { DEFAULT_MASKS_FILE } from "../src/normalise/masks.ts";
 import { exitCodeForReport } from "../src/override.ts";
 import { compareFromCaptures } from "../src/run.ts";
 import type { NoiseStatus } from "../src/types.ts";
-import { noiseDir } from "../src/local/home.ts";
+import { harnessHome, noiseDir } from "../src/local/home.ts";
 import { HISTORY_FILE, STATUS_FILE, SUMMARY_FILE, defaultNoise, describeStatus, noiseHistoryCommand, noiseStatusCommand, readStatus, recordNight, statusFileOf } from "../src/local/noise-store.ts";
 import { capture, clone } from "./support/captures.ts";
 
@@ -113,6 +113,83 @@ describe("the gate reads the local store by default, and applies the 7-day / cle
     expect(defaultNoise("noise", undefined, () => {}, home)).toBeUndefined();
     expect(defaultNoise("migration", undefined, () => {}, home)).toBeUndefined();
     expect(defaultNoise("post-deploy", undefined, () => {}, home)).toBe(join(noiseDir(home), STATUS_FILE));
+  });
+});
+
+describe("where a release run looks for a status: --noise, then the HARNESS_HOME store, then none (docs/contract.md)", () => {
+  /** Release mode over a planted change, given the `--noise` a person typed (undefined: omitted) and a store in `home`. */
+  function release(explicit: string | undefined, home: string) {
+    const log = quiet();
+    try {
+      const noise = defaultNoise("release", explicit, () => {}, home);
+      const b = clone(capture("b"));
+      delete b.journeys[0]!.pages[0]!.headers["x-frame-options"];
+      const outcome = compareFromCaptures({ mode: "release", substrate: "compose", captureDir: tmp("order"), a: capture("a"), b, claims: [], masksFile: DEFAULT_MASKS_FILE, noiseMaxAgeDays: 7, now: "2026-09-16T09:05:00.000Z", runs: 1, log: () => {}, ...(noise ? { noise } : {}) });
+      return { verdict: outcome.report.verdict, noise: outcome.report.noise };
+    } finally {
+      log.mockRestore();
+    }
+  }
+  const status = (s: Partial<NoiseStatus> & { ranAt: string }) => {
+    const dir = tmp("explicit");
+    writeFileSync(join(dir, STATUS_FILE), JSON.stringify({ schemaVersion: 1, clean: true, hunks: 0, ...s }));
+    return dir;
+  };
+  const cleanStore = () => {
+    const home = tmp("home");
+    const log = quiet();
+    recordNight({ status: noiseRun({ ranAt: ago(1) }), store: noiseDir(home) });
+    log.mockRestore();
+    return home;
+  };
+
+  it("A/A: with the same clean status in both places, omitting --noise and passing it give the same verdict", () => {
+    const home = cleanStore();
+    expect(release(undefined, home).verdict).toBe("fail");
+    expect(release(noiseDir(home), home).verdict).toBe("fail");
+  });
+
+  it("planted: an explicit --noise that is dirty wins over a clean store (the store is not a fallback for a bad file), and the reverse", () => {
+    const home = cleanStore();
+    const dirty = status({ ranAt: ago(1), clean: false, hunks: 3 });
+    const viaFlag = release(dirty, home);
+    expect(viaFlag.verdict).toBe("warn");
+    expect(viaFlag.noise).toMatchObject({ clean: false, hunks: 3 });
+    // and a clean explicit status licenses a FAIL although the store holds a dirty one
+    const dirtyHome = tmp("home");
+    const log = quiet();
+    recordNight({ status: noiseRun({ ranAt: ago(1), clean: false, hunks: 2 }), store: noiseDir(dirtyHome) });
+    log.mockRestore();
+    expect(release(undefined, dirtyHome).verdict).toBe("warn");
+    expect(release(status({ ranAt: ago(1) }), dirtyHome).verdict).toBe("fail");
+  });
+
+  it("planted: an explicit path that does not exist is exit 2 material (a thrown error), never a quiet fall back to the store", () => {
+    const home = cleanStore();
+    expect(() => release(join(tmp("nowhere"), "noise-status.json"), home)).toThrow(/ENOENT/);
+  });
+
+  it("must not flag: --noise none ignores a clean store (WARN), --noise skip waives (FAIL, no status in the report), and an empty store warns", () => {
+    const home = cleanStore();
+    expect(release("none", home)).toEqual({ verdict: "warn", noise: undefined });
+    expect(release("skip", home)).toEqual({ verdict: "fail", noise: undefined });
+    expect(release(undefined, tmp("empty-home"))).toEqual({ verdict: "warn", noise: undefined });
+  });
+
+  it("HARNESS_HOME is what says where the store is, and the default is `<checkout>/.harness`", () => {
+    const home = cleanStore();
+    const before = process.env.HARNESS_HOME;
+    process.env.HARNESS_HOME = home;
+    try {
+      expect(defaultNoise("release", undefined, () => {})).toBe(join(noiseDir(home), STATUS_FILE));
+      expect(noiseDir()).toBe(join(home, "noise"));
+    } finally {
+      if (before === undefined) delete process.env.HARNESS_HOME;
+      else process.env.HARNESS_HOME = before;
+    }
+    delete process.env.HARNESS_HOME;
+    expect(harnessHome().replaceAll("\\", "/")).toMatch(/\/\.harness$/);
+    if (before !== undefined) process.env.HARNESS_HOME = before;
   });
 });
 

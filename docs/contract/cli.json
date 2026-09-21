@@ -94,7 +94,7 @@
     ]
   },
   "environment": {
-    "$comment": "Environment variables that are part of the contract. Since 1.1.0, except HARNESS_IMAGE_PREFIX (whose {app} template form is since 1.1.0) and the SBOM, vulnerability and static-artefact variables (since 1.2.0).",
+    "$comment": "Environment variables that are part of the contract. Since 1.1.0, except HARNESS_IMAGE_PREFIX (whose {app} template form is since 1.1.0), the SBOM, vulnerability and static-artefact variables (since 1.2.0) and HARNESS_HOME (since 1.3.0).",
     "HARNESS_IMAGE_PREFIX": {
       "default": "tutors",
       "meaning": "prefix (<prefix>/<app>:<tag>) or template containing {app}, for bare tags; --image-prefix overrides"
@@ -110,6 +110,10 @@
     "HARNESS_ALLOW_UNSIGNED": {
       "default": "",
       "meaning": "1 | true | yes: the same as --allow-unsigned"
+    },
+    "HARNESS_HOME": {
+      "default": "<checkout>/.harness",
+      "meaning": "since 1.3.0. Where the harness keeps what outlives a run on this machine: noise/ (the default source of --noise in release and post-deploy mode, when --noise is omitted), releases/ (the release records), overrides.jsonl, image-cache/"
     },
     "HARNESS_CLAIM_MAX_HUNKS": {
       "default": "10",
