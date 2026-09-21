@@ -53,7 +53,7 @@ export interface MutantsOptions extends Omit<RunOptions, "mode" | "a" | "b"> {
  * asserting FAIL and the expected artefact.
  */
 export async function runMutants(options: MutantsOptions): Promise<boolean> {
-  // R5: startup time restarts every app N times per side. The self-test would pay that on 9 runs for no signal (no
+  // R5: startup time restarts every app N times per side. The self-test would pay that on every one of its runs (A/A plus one per mutant) for no signal (no
   // mutant plants a slow boot); nightly noise and real release runs sample it. Posture is cheap and stays on.
   const opts: MutantsOptions = { ...options, startupRestarts: 0 };
   const mutants = loadMutants();

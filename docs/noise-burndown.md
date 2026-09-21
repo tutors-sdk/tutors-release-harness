@@ -10,7 +10,7 @@ The exit criterion, from the development plan:
 
 1. **seven consecutive clean nightly A/As** on the production tag, from Quay,
    on verified images;
-2. **8 of 8 mutants** caught and attributed against that same tag;
+2. **10 of 10 mutants** caught and attributed against that same tag;
 3. `release.yml` produces a **FAIL** (not a warn) on an unclaimed change.
 
 The ratchet that measures 1: the count of failing hunks in the nightly A/A
@@ -197,7 +197,7 @@ Rules that apply to every mask (`normalise/masks.yaml` says the same at the top)
   a change should never also review the blind spot that hides it. The PR may
   carry this document, the mask's tests, and the version bump.
 - **A mask is a version bump and a mutants re-run** (`src/ci/engine-change.ts`).
-  The mutants proving the harness still catches its eight planted faults is the
+  The mutants proving the harness still catches its ten planted faults is the
   cost of narrowing what it looks at.
 - **Thresholds are masks.** `screenshot.maxDiffRatio`, `pixelThreshold`,
   `metrics.deltaTolerance`, `logs.*`, `timing.*` in `masks.yaml` are noise

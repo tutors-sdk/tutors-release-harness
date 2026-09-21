@@ -66,6 +66,7 @@ traffic/
 src/
   collectors/                 what is captured per side, per journey step (+ metrics, logs, persistence, k6)
   runtime/                    container posture and startup time (docker/kubectl through an injected runner)
+  image-static/               image manifest, SBOM and vulnerability collectors (docker, cosign, syft, grype through an injected runner)
   normalise/                  applies normalise/masks.yaml (the list of blind spots)
   compare/                    one diff engine per artefact + Mann–Whitney for timing
   claims/                     claim schema and matcher
@@ -96,6 +97,10 @@ docs/monorepo/                workflows to drop into the monorepo (publish image
 | `/metrics` before and after the journeys | series presence + counter deltas | Missing or new series; a counter that moved differently |
 | Structured logs: JSON-ness, level counts, field set, request-id propagation | aggregate | Log shape or volume changed |
 | Persistence: every write the side attempted, by table and method, per journey | multiset + the anonymous rule | Data written differently — and *any* write during an anonymous journey |
+| Bus (`bus`, only when a bus is configured; docs/bus.md): every topic the side published to, per journey | multiset + the anonymous rule | Messages published differently — and *any* publish during an anonymous journey |
+| Image manifest (`image-manifest`): base, platform, USER, ports, entrypoint, cmd, layers, size, OCI labels, read from the image | exact per field, size with a tolerance | A different base, a root user, a port or command change |
+| SBOM (`sbom`): the SPDX SBOM of each image (cosign attestation, or generated locally) | set diff on `name@version` | A package added, removed or bumped |
+| Vulnerabilities (`vulns`): the SBOM scanned with a pinned database | set diff by advisory | A vulnerability new on b (fixes are informational) |
 | Load (`--load`): k6 at a fixed rate, every request's duration | Mann–Whitney U on samples, failure rate | Latency or error rate regressed under load |
 | Container runtime posture (`runtime`): declared (`docker inspect` / pod spec) and measured (a probe inside the container): UID/GID, capabilities, read-only root, no-new-privileges, seccomp, writable mounts, requests/limits; EROFS errors in the log | exact, per field | A changed `USER`, a capability, a writable root or `VOLUME`, a root process, a write outside `/tmp` |
 | Startup time (`startup`): first healthy `GET /` and the orchestrator's ready verdict, over `--startup-restarts` restarts | Mann–Whitney U | A slower boot; an app that stops coming up; `/` answers differently after a restart |

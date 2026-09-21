@@ -80,8 +80,8 @@ noisy run is never retried: raise `--startup-restarts` or, with a reason in
 `docker` or `kubectl`, an unreadable probe — leaves `not collected: <reason>`,
 which is a failing, claimable hunk. `--no-runtime` and `--startup-restarts 0`
 switch an artefact off as information. `upgrade` mode and the `mutants`
-self-test do not sample startup (they are about the rollout, and about nine runs
-of restarts). Informational `runtime/summary` and `startup/summary` hunks list
+self-test do not sample startup (they are about the rollout, and about the
+many runs of a self-test that would each pay for restarts). Informational `runtime/summary` and `startup/summary` hunks list
 what was collected.
 
 ## migration

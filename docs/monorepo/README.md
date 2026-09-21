@@ -13,7 +13,7 @@ The monorepo also checks `release/claims.yaml` on the push and on the release PR
 (`pnpm check:release-claims`, `release-claims.yml`), so a bad file fails in
 minutes instead of in the harness run. That check mirrors
 `src/claims/schema.ts`, and the harness's parse is the authority: both must
-accept the same artefact names (the thirteen in [the contract](../contract.md)),
+accept the same artefact names (the nineteen in [the contract](../contract.md)),
 accept the optional `version: 1`, and ignore unknown keys. A mirror that is
 stricter rejects a file the harness would take; one that is looser lets
 through a file that stops the run with exit 2.

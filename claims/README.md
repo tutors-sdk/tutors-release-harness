@@ -28,7 +28,7 @@ The format is part of [the contract](../docs/contract.md#claims-file).
 
 | field | meaning |
 | --- | --- |
-| `artefact` | `dom`, `screenshot`, `network`, `console`, `headers`, `axe`, `focus`, `metrics`, `logs`, `timing`, `persistence`, `migration`, `upgrade`, `image-manifest`, `sbom`, `vulns`, or `*` |
+| `artefact` | `dom`, `screenshot`, `network`, `console`, `headers`, `axe`, `focus`, `metrics`, `logs`, `timing`, `persistence`, `bus`, `migration`, `upgrade`, `image-manifest`, `sbom`, `vulns`, `runtime`, `startup`, or `*` |
 | `scope` | a glob matched against the hunk's scope **or** its route (see below) |
 | `reason` | the Rule id or changelog entry. "see PR" and "approved" are rejected by the schema |
 | `approvedBy` | required for a broad claim; a person, never a bot |
@@ -43,6 +43,9 @@ The format is part of [the contract](../docs/contract.md#claims-file).
 | metrics | `<app>/<series>` | — |
 | logs | `<app>/<field or level>` | — |
 | dom (journey failed) | the journey name | — |
+| bus | `<journey>/<topic>` (docs/bus.md) | — |
+| runtime | `<app>/<field>` (`user`, `privileged`, `read-only-rootfs`, `cap-add`, `uid`, ...), `<app>/writes-outside-tmp`, `<app>/not-collected` | — |
+| startup | `<app>/root`, `<app>/ready`, `<app>/boot`, `<app>/root-status`, `<app>/not-collected` | — |
 | image-manifest | `<app>/<field>`: `base`, `platform`, `user`, `ports/<port>`, `entrypoint`, `cmd`, `layers`, `size`, `label/<key>` | — |
 | sbom | `<app>/<package name>`, one hunk per package added, removed or bumped | — |
 | vulns | `<app>/<advisory id>`, e.g. `reader/CVE-2026-1234` | — |

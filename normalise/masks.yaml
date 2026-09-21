@@ -153,9 +153,12 @@ timing:
   minEffect: 0.2
   minShiftMs: 20
 
-startup:
-  # Startup time (harness restarts each app N times; see docs/modes.md) is judged with the timing block's
-  # minRuns, alpha and minEffect. Its own floor is in milliseconds: startups are seconds long, the harness
-  # polls every 100 ms, and compose's healthcheck only ticks every 2 s, so a 20 ms shift is measurement noise.
-  # Never retry a noisy startup run: raise --startup-restarts, or widen timing.alpha here with a reason.
-  minShiftMs: 250
+# startup:
+#   minShiftMs: 250
+#
+# Startup time (harness restarts each app N times; see docs/modes.md) is judged with the timing block's
+# minRuns, alpha and minEffect. Its own floor is in milliseconds: startups are seconds long, the harness
+# polls every 100 ms, and compose's healthcheck only ticks every 2 s, so a 20 ms shift is measurement noise.
+# The default (250) is in src/normalise/masks.ts. The block is commented out on purpose: an uncommented
+# `startup:` is a threshold change, and a PR that changes a threshold may change nothing else (src/ci/mask-change.ts).
+# Never retry a noisy startup run: raise --startup-restarts, or widen timing.alpha here with a reason.

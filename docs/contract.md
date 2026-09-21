@@ -551,12 +551,20 @@ Releases are git tags `v<harness version>` on `main`, cut by a maintainer.
 
 ## Changes
 
-### 1.2.0 (minor; phase R3)
+### 1.2.0 (minor; R3, R5 and R7)
 
-All additive: a consumer written against 1.1.0 keeps working.
+All additive: a consumer written against 1.1.0 keeps working. The harness
+version is 1.2.0 as well.
 
-- `report.json`: optional `claimHygiene` and `override`; a new `provenance`
-  value `cached` with an optional `cachedAt` on an image; `noise.degraded`.
+- Artefact names (a consumer must tolerate one it does not know): `bus`
+  (topics published during a journey; produced only when a bus is configured),
+  `image-manifest`, `sbom`, `vulns` (static image artefacts) and `runtime`,
+  `startup` (container posture and startup time). Nineteen in all. See
+  [Static image artefacts](#static-image-artefacts) and
+  [Container runtime artefacts](#container-runtime-artefacts).
+- `report.json`: optional `claimHygiene`, `override` and `imageArtefacts`; a
+  new `provenance` value `cached` with an optional `cachedAt` on an image;
+  `noise.degraded`.
   Consumers must tolerate a `provenance` value they do not know, as they
   tolerate an unknown artefact.
 - `noise-status.json`: optional `degraded`. `clean` keeps its meaning. The gate
@@ -564,9 +572,16 @@ All additive: a consumer written against 1.1.0 keeps working.
   none and is trusted as before.
 - CLI: stable flags `--image-cache` (`images ensure`), `--require-verified`,
   `--override-reason`, `--override-by` (`run`, `compare`); non-stable
-  `--claim-max-hunks`; `HARNESS_CLAIM_MAX_HUNKS`. A run without them behaves as
-  in 1.1.0. Exit code `0` for a FAIL now also covers one overridden with
+  `--claim-max-hunks`, `--no-runtime` and `--startup-restarts`. Environment
+  variables `HARNESS_CLAIM_MAX_HUNKS`, `HARNESS_SBOM_SOURCE`,
+  `HARNESS_SBOM_CMD`, `HARNESS_VULN_CMD`, `HARNESS_VULN_DB_DIR` and
+  `HARNESS_REQUIRE_STATIC`. A run without them behaves as in 1.1.0, except
+  that the new artefacts are collected by default (`runtime`, `startup` and the
+  three static ones), and a `runtime` or `startup` artefact that could not be
+  collected is a failing hunk. Exit code `0` for a FAIL now also covers one overridden with
   `--override-reason`; without the flag, `1` as before.
+- `normalise/masks.yaml`: an optional `startup:` block (`minShiftMs`, default
+  250). Absent, the default applies.
 - Workflows: the latest noise status is read from the `noise` branch
   (`nightly-noise.yml` writes it; `release.yml` and `post-deploy.yml` read it)
   instead of the expiring artifact; `release.yml` takes `override_reason` and

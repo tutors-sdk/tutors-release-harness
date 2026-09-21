@@ -16,6 +16,8 @@ import { exitCodeFor, gate } from "../src/gate.ts";
 import { parseNoiseStatus } from "../src/noise.ts";
 import { DEFAULT_MASKS_FILE } from "../src/normalise/masks.ts";
 import { compareFromCaptures, defaultRunOptions } from "../src/run.ts";
+import { renderHtml } from "../src/report/html.ts";
+import { renderMarkdown } from "../src/report/markdown.ts";
 import { DEFAULT_COSIGN_IDENTITY, DEFAULT_COSIGN_ISSUER, EXIT_CANNOT_JUDGE, EXIT_UNAVAILABLE } from "../src/images.ts";
 import { DEFAULT_IMAGE_PREFIX, QUAY_IMAGE_TEMPLATE, imagesFor } from "../src/image-ref.ts";
 import { ARTEFACTS, MODES, PROVENANCES, SUBSTRATES, type CompareResult, type Mode, type RunReport, type SchemaCatalog } from "../src/types.ts";
@@ -148,6 +150,41 @@ function runFixture(mode: Mode, opts: { mutate?: boolean; claims?: string; noise
 describe("report.json", () => {
   it("the schema accepts a report carrying every field the types allow", () => {
     expectValid(validateReport, full);
+  });
+
+  it("one whole-run report carrying every 1.2.0 addition at once is valid and renders", () => {
+    // Every artefact name (the bus, static image and runtime ones included), both sides' provenance at its loudest
+    // (cached, with static image artefacts recorded beside it), a degraded noise status, hygiene and an override.
+    const hunks = ARTEFACTS.map((artefact, i) => ({ id: String(i + 1), artefact, scope: `reader/${artefact}`, summary: `${artefact} differs`, severity: i % 2 ? ("info" as const) : ("fail" as const) }));
+    const cached = { ...sideProvenance, summary: "cached 2026-09-15T02:30:00.000Z (registry unreachable; tag freshness unconfirmed)", images: { reader: { ...imageInfo("reader", 1), provenance: "cached" as const }, catalogue: imageInfo("catalogue", 2), live: imageInfo("live", 3) } };
+    const report: RunReport = { ...full, provenance: { a: cached, b: sideProvenance }, compare: { ...full.compare, hunks, matches: hunks.map((hunk) => ({ hunk })), unclaimed: hunks.filter((h) => h.severity === "fail") } };
+    expectValid(validateReport, report);
+    for (const artefact of ARTEFACTS) expect(validateReport({ ...report, compare: { ...report.compare, hunks: [{ ...hunks[0], artefact }] } }), artefact).toBe(true);
+    expect(validateReport({ ...report, compare: { ...report.compare, hunks: [{ ...hunks[0], artefact: "not-an-artefact" }] } })).toBe(false);
+    const md = renderMarkdown(report);
+    const html = renderHtml(report);
+    for (const text of ["Claim hygiene", "Harness FAIL overridden", "Image artefacts", "DEGRADED", "cached"]) {
+      expect(md, text).toContain(text);
+      expect(html.toLowerCase(), text).toContain(text.toLowerCase());
+    }
+  });
+
+  it("the contract counts the artefacts truthfully and its 1.2.0 changelog lists every addition", () => {
+    const words = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty", "twenty-one", "twenty-two"];
+    expect(contractMd).toContain(`one of the ${words[ARTEFACTS.length]} artefact names above`);
+    for (const stale of words.slice(1, 25).filter((w) => w !== words[ARTEFACTS.length])) expect(contractMd, stale).not.toContain(`one of the ${stale} artefact names`);
+    const changes = contractMd.slice(contractMd.indexOf("### 1.2.0"));
+    const since = new Set(["bus", "image-manifest", "sbom", "vulns", "runtime", "startup"]);
+    for (const artefact of since) expect(ARTEFACTS as readonly string[]).toContain(artefact);
+    const additions = [...since, "claimHygiene", "override", "imageArtefacts", "cached", "cachedAt", "degraded", "--image-cache", "--require-verified", "--override-reason", "--override-by", "--claim-max-hunks", "--no-runtime", "--startup-restarts", "HARNESS_CLAIM_MAX_HUNKS", "HARNESS_SBOM_SOURCE", "HARNESS_SBOM_CMD", "HARNESS_VULN_CMD", "HARNESS_VULN_DB_DIR", "HARNESS_REQUIRE_STATIC"];
+    for (const item of additions) expect(changes, item).toContain(item);
+    const cli = json("docs/contract/cli.json");
+    for (const flag of cli.flags.filter((f: { since?: string }) => f.since === "1.2.0")) expect(changes, flag.name).toContain(`--${flag.name === "runtime" ? "no-runtime" : flag.name}`);
+    for (const [name, v] of Object.entries(cli.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.2.0")) expect(changes, name).toContain(name);
+    expect(CONTRACT_VERSION).toBe("1.2.0");
+    expect(HARNESS_VERSION).toBe("1.2.0");
+    expect(json("package.json").version).toBe(HARNESS_VERSION);
+    for (const doc of [cli, json("docs/contract/workflows.json")]) expect(doc.contractVersion).toBe(CONTRACT_VERSION);
   });
 
   it("the schema and RunReport name the same top-level fields", () => {

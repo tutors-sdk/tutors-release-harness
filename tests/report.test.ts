@@ -98,6 +98,13 @@ describe("image provenance in the report header", () => {
     expect(renderHtml({ ...report, provenance: { a: verified } })).not.toContain("not evidence");
   });
 
+  it("a side restored from the runner's image cache is announced as loudly as a locally built one (R3 provenance `cached`, R1 banner)", () => {
+    const cached = side("cached 2026-09-15T02:30:00.000Z (registry unreachable; tag freshness unconfirmed)", (app, i) => ({ ref: `quay.io/tutors-sdk/tutors-${app}:main`, id: `sha256:c${i}`, digest: digest(i), provenance: "cached", cachedAt: "2026-09-15T02:30:00.000Z" }));
+    const r: RunReport = { ...report, provenance: { a: verified, b: cached } };
+    expect(renderMarkdown(r)).toContain("> ⚠️ **Side b did not run signature-verified registry images (cached 2026-09-15T02:30:00.000Z");
+    expect(renderHtml(r)).toContain('<p class="loud">Side b did not run signature-verified registry images (cached');
+  });
+
   it("an unverified pull shows why, and an unlabelled image says so rather than showing nothing", () => {
     const unverified = side("pulled-unverified", (app, i) => ({ ref: `quay.io/x/tutors-${app}:1`, digest: digest(i), provenance: "pulled-unverified", unverifiedReason: "no valid signature <for this>" }), { allowedUnsigned: true });
     const html = renderHtml({ ...report, provenance: { a: verified, b: unverified } });
