@@ -91,6 +91,8 @@ export interface GateOptions {
   candidate: string;
   /** Absolute path of the release's claims.yaml. */
   claims?: string;
+  /** Since 1.3.0: the release's rules.json, a path or a URL (`--rules`). */
+  rules?: string;
   runs?: number;
   migrationsA?: string;
   migrationsB?: string;
@@ -114,7 +116,7 @@ export function planGate(o: GateOptions): Plan {
     steps.push({
       id: "release",
       title: "release mode: A/B, claims, k6",
-      argv: ["run", "--mode", "release", "--a", o.production, "--b", o.candidate, "--runs", String(o.runs ?? WORKFLOW_DEFAULTS.runs), "--load", WORKFLOW_DEFAULTS.load, ...pins, ...(o.claims ? ["--claims", o.claims] : []), ...override],
+      argv: ["run", "--mode", "release", "--a", o.production, "--b", o.candidate, "--runs", String(o.runs ?? WORKFLOW_DEFAULTS.runs), "--load", WORKFLOW_DEFAULTS.load, ...pins, ...(o.claims ? ["--claims", o.claims] : []), ...(o.rules ? ["--rules", o.rules] : []), ...override],
       stream: "release",
       gatesStream: false
     });

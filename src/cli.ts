@@ -2,6 +2,7 @@ import { parseArgs } from "node:util";
 import { resolve } from "node:path";
 import { journeys, type JourneySet } from "../traffic/journeys/journeys.ts";
 import { loadClaims } from "./claims/schema.ts";
+import { isUrl, loadRules } from "./claims/rules.ts";
 import { appendFileSync } from "node:fs";
 import { parseOverride, exitCodeForReport } from "./override.ts";
 import { DigestError, parseDigests, pinImages } from "./digests.ts";
@@ -34,6 +35,8 @@ const USAGE = `tutors-release-harness
                     a JSON object or reader=sha256:…,catalogue=sha256:…,live=sha256:… — the refs become repo:tag@sha256:…,
                     the pull is by digest, the signature is verified on it. Optional; without them a run is as in 1.2.0
       --claims      claims.yaml for release mode
+      --rules       rules.json (a path, or a URL the runner can GET without credentials): the Rules a claim may name with
+                    rule: "0031". A claim naming a rule that is not in it, or naming one with no --rules, is invalid (exit 2).
       --claim-max-hunks  flag a claim that covers more than this many hunks (default 10, or HARNESS_CLAIM_MAX_HUNKS); reported, never gates
       --noise       noise-status.json (or its directory) from a recent A/A run; "skip" waives it, loudly;
                     "none" does not look. Release and post-deploy mode without it read the latest status from the
@@ -59,7 +62,7 @@ const USAGE = `tutors-release-harness
       migration:    --snapshot <pg_dump file>
       upgrade:      --upgrade-seconds 45 --upgrade-rate 20
 
-  harness compare --dir <run dir> --mode <mode> [--claims f] [--noise f]
+  harness compare --dir <run dir> --mode <mode> [--claims f] [--rules f] [--noise f]
       Re-run normalise/compare/claim/gate on captures already on disk.
 
   harness images ensure --a <ref> --b <ref> [--a-digests d] [--b-digests d] [--ref-a git-ref] [--ref-b git-ref] [--allow-unsigned] [--image-cache dir]
@@ -94,7 +97,7 @@ const USAGE = `tutors-release-harness
   harness override list [--since <date>] [--json]
       The local, append-only record of every FAIL a person overrode.
   harness local nightly [--tag T] [--runs 3] [--load 20x30s] [--image-cache dir] [--store dir] [--no-record]
-  harness local gate --a <production tag> --b <candidate tag> [--a-digests d] [--b-digests d] [--claims f] [--runs 3] [--only release|migration|upgrade]
+  harness local gate --a <production tag> --b <candidate tag> [--a-digests d] [--b-digests d] [--claims f] [--rules f] [--runs 3] [--only release|migration|upgrade]
                      [--migrations-a ref] [--migrations-b ref] [--override-reason r --override-by who]
   harness local mutants [--base T]
   harness local watch [--recorded <release run dir>] [--production reader=URL,catalogue=URL,live=URL] [--deployed <tag> [--deployed-digests d] [--release-record f]] [--interval 15m] [--once]
@@ -165,6 +168,7 @@ async function main(argv: string[]): Promise<number> {
       "upgrade-rate": { type: "string" },
       "noise-max-age-days": { type: "string" },
       "claim-max-hunks": { type: "string" },
+      rules: { type: "string" },
       "a-digests": { type: "string" },
       "b-digests": { type: "string" },
       deployed: { type: "string" },
@@ -283,6 +287,7 @@ async function main(argv: string[]): Promise<number> {
         a: values.a ?? "recorded",
         b: values.b ?? "production",
         ...(values.claims ? { claimsFile: resolve(values.claims) } : {}),
+        ...(values.rules ? { rules: rulesWhere(values.rules) } : {}),
         ...(noise(m) ? { noise: noise(m)! } : {})
       });
       printOutcome(outcome.report.verdict, outcome.report.reasons, outcome.files);
@@ -298,7 +303,7 @@ async function main(argv: string[]): Promise<number> {
         captureDir: dir,
         a: loadCapture(dir, "a"),
         b: loadCapture(dir, "b"),
-        claims: values.claims ? loadClaims(resolve(values.claims)) : [],
+        claims: values.claims ? loadClaims(resolve(values.claims), values.rules ? await loadRules(rulesWhere(values.rules)) : undefined) : [],
         masksFile: common.masksFile,
         noiseMaxAgeDays: common.noiseMaxAgeDays,
         claimMaxHunks: common.claimMaxHunks,
@@ -378,6 +383,9 @@ async function main(argv: string[]): Promise<number> {
       fail(`unknown command "${command}"\n${USAGE}`);
   }
 }
+
+/** `--rules` is a URL as given, or a path from where the command was run. */
+const rulesWhere = (where: string) => (isUrl(where) ? where : resolve(where));
 
 /** `--deployed`, `--deployed-digests`, `--release-record`: post-deploy only. A tag names a file in the store, so it must be a tag and nothing else. */
 function parseDeployed(tag: string | undefined, digests: string | undefined, record: string | undefined, m: Mode) {

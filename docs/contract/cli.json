@@ -42,6 +42,7 @@
     { "name": "upgrade-rate", "type": "string", "stable": false },
     { "name": "noise-max-age-days", "type": "string", "stable": false },
     { "name": "claim-max-hunks", "type": "string", "stable": false, "since": "1.2.0" },
+    { "name": "rules", "type": "string", "stable": true, "since": "1.3.0" },
     { "name": "a-digests", "type": "string", "stable": true, "since": "1.3.0" },
     { "name": "b-digests", "type": "string", "stable": true, "since": "1.3.0" },
     { "name": "deployed", "type": "string", "stable": true, "since": "1.3.0" },

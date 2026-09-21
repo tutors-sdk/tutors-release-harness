@@ -6,7 +6,7 @@ automatic. Each file here is ready to copy.
 | File | Purpose | Trigger |
 | --- | --- | --- |
 | `publish-images.yml` | build (amd64 + arm64), push to Quay.io, cosign-sign and SBOM-attest the four images. **In the monorepo the real file is `.github/workflows/image-build.yml`** (its PR #143); this is a reference copy of the contract | push to `main`, `v*` tags |
-| `release-dispatch.yml` | tag the release candidate (`v16.3.0-rc.N`, next free N), have `image-build.yml` build it and wait until the registry serves the images, then dispatch the harness with production tag, candidate tag, claims URL, migration refs and, since 1.3.0, the digest of every image. **Again the monorepo's file is the source of truth**; this is a reference copy | push to `release/**` |
+| `release-dispatch.yml` | tag the release candidate (`v16.3.0-rc.N`, next free N), have `image-build.yml` build it and wait until the registry serves the images, then dispatch the harness with production tag, candidate tag, claims URL, migration refs and, since 1.3.0, the rules URL and the digest of every image. **Again the monorepo's file is the source of truth**; this is a reference copy | push to `release/**` |
 | `release/claims.yaml` | the release's claims (see `../../claims/README.md`) | written by the release author |
 
 The monorepo also checks `release/claims.yaml` on the push and on the release PR
@@ -18,12 +18,33 @@ accept the optional `version: 1`, and ignore unknown keys. A mirror that is
 stricter rejects a file the harness would take; one that is looser lets
 through a file that stops the run with exit 2.
 
-## Since 1.3.0: send digests, and say what was deployed
+## Since 1.3.0: rules, digests, and what was deployed
 
-Both are optional; a dispatch without them behaves exactly as in 1.2.0.
+All of it is optional; a dispatch without it behaves exactly as in 1.2.0.
 
-**`release-candidate`** gains `production_digests` and `candidate_digests`:
-objects `app -> "sha256:<64 hex>"` (`reader`, `catalogue`, `live`). Send the
+**Rules in claims.** A claim may say `rule: "0031"` instead of pasting the Rule's
+wording into `reason`, provided the release publishes a `rules.json` and the
+dispatch carries its URL as `rules_url` (a URL the runner can GET without
+credentials; where the monorepo keeps the file is its choice, the reference copy
+of `release-dispatch.yml` looks for `release/rules.json` at the pushed commit).
+The harness checks one thing: that the Rule is in the file. A claim naming a Rule
+that is not, or naming one when no `rules_url` was sent, is invalid and stops the
+run with exit `2` before any stack starts, so `pnpm check:release-claims` should
+apply the same rule. `reason: "Rule 0031: ..."` free-text claims are unchanged.
+The report shows `Rule 0031: <title>`.
+
+```json
+{ "version": 1,
+  "rules": {
+    "0031": { "title": "Lab steps show their estimated reading time", "digest": "sha256:<64 hex>" },
+    "0044": { "title": "Presence is polled every 15 seconds", "digest": "sha256:<64 hex>" } } }
+```
+
+(`digest` is optional and never read; extra keys in a Rule are ignored;
+[`docs/contract/rules.schema.json`](../contract/rules.schema.json).)
+
+**Digests, and what was deployed.** `release-candidate` gains, besides `rules_url`
+(above), `production_digests` and `candidate_digests`: objects `app -> "sha256:<64 hex>"` (`reader`, `catalogue`, `live`). Send the
 digest of the manifest the tag points at, as `docker buildx imagetools inspect
 <image> --format '{{.Manifest.Digest}}'` prints it (that is the digest cosign
 signed). The harness then pulls and verifies by digest, and exits `2`, "cannot
@@ -34,6 +55,7 @@ reference copy of `release-dispatch.yml` reads them in its `images` job.
 { "event_type": "release-candidate",
   "client_payload": {
     "production": "16.2.0", "candidate": "16.3.0-rc.4", "claims_url": "https://raw.githubusercontent.com/tutors-sdk/tutors-mono-repo/<sha>/release/claims.yaml",
+    "rules_url": "https://raw.githubusercontent.com/tutors-sdk/tutors-mono-repo/<sha>/release/rules.json",
     "runs": 3, "migrations_a": "v16.2.0", "migrations_b": "<sha>",
     "production_digests": { "reader": "sha256:<64 hex>", "catalogue": "sha256:<64 hex>", "live": "sha256:<64 hex>" },
     "candidate_digests":  { "reader": "sha256:<64 hex>", "catalogue": "sha256:<64 hex>", "live": "sha256:<64 hex>" } } }

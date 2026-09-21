@@ -38,7 +38,7 @@ export function harnessCalls(yaml: string, env: Record<string, string>): string[
 /** Flags that carry a value the local plan decides differently (a path, a person) or that CI supplies from the fetched noise status. */
 const D1 = `sha256:${"1".repeat(64)}`;
 const D2 = `sha256:${"2".repeat(64)}`;
-const VALUE_FLAGS = new Set(["claims", "override-reason", "override-by", "image-cache", "noise", "recorded", "status", "store", "production", "release-record"]);
+const VALUE_FLAGS = new Set(["claims", "override-reason", "override-by", "image-cache", "noise", "recorded", "status", "store", "production", "release-record", "rules"]);
 
 /** The command and its flags as a comparable list: positionals in order, then the flags sorted, their site-specific values masked. */
 export function canon(tokens: string[], drop: string[] = []): string[] {
@@ -104,8 +104,8 @@ describe("nightly-noise.yml is `harness local nightly`", () => {
 });
 
 describe("release.yml is `harness local gate`", () => {
-  const env = { PRODUCTION: "16.2.0", CANDIDATE: "16.3.0-rc.1", RUNS: String(WORKFLOW_DEFAULTS.runs), MIGRATIONS_A: "", MIGRATIONS_B: "", CLAIMS_URL: "u", NOISE_FILE: "f", OVERRIDE_REASON: "why", OVERRIDE_BY: "me", PRODUCTION_DIGESTS: `reader=${D1}`, CANDIDATE_DIGESTS: `reader=${D2}` };
-  const withOverride = planGate({ production: "16.2.0", candidate: "16.3.0-rc.1", claims: "/c.yaml", override: { reason: "why", by: "me" }, productionDigests: `reader=${D1}`, candidateDigests: `reader=${D2}` });
+  const env = { PRODUCTION: "16.2.0", CANDIDATE: "16.3.0-rc.1", RUNS: String(WORKFLOW_DEFAULTS.runs), MIGRATIONS_A: "", MIGRATIONS_B: "", CLAIMS_URL: "u", RULES_URL: "https://example.test/rules.json", NOISE_FILE: "f", OVERRIDE_REASON: "why", OVERRIDE_BY: "me", PRODUCTION_DIGESTS: `reader=${D1}`, CANDIDATE_DIGESTS: `reader=${D2}` };
+  const withOverride = planGate({ production: "16.2.0", candidate: "16.3.0-rc.1", claims: "/c.yaml", override: { reason: "why", by: "me" }, productionDigests: `reader=${D1}`, candidateDigests: `reader=${D2}`, rules: "https://example.test/rules.json" });
   const calls = harnessCalls(workflow("release.yml"), { ...env, MIGRATIONS_A: undefined as never, MIGRATIONS_B: undefined as never });
 
   it("release mode: the same A/B, claims, k6 and override flags", () => {

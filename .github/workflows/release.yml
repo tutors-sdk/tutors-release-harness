@@ -29,6 +29,9 @@ on:
       claims_url:
         description: "Raw URL of the release's claims.yaml (optional)"
         required: false
+      rules_url:
+        description: "Raw URL of the release's rules.json, the Rules a claim may name (optional; a claim that names a rule needs it)"
+        required: false
       migrations_a:
         description: "Monorepo git ref for production's migrations (default v<production>)"
         required: false
@@ -56,6 +59,7 @@ env:
   PRODUCTION: ${{ inputs.production || github.event.client_payload.production }}
   CANDIDATE: ${{ inputs.candidate || github.event.client_payload.candidate }}
   CLAIMS_URL: ${{ inputs.claims_url || github.event.client_payload.claims_url }}
+  RULES_URL: ${{ inputs.rules_url || github.event.client_payload.rules_url }}
   # Since 1.3.0, optional: the digest of each app's image, as JSON objects (app -> sha256:...). Empty for a dispatch without them.
   PRODUCTION_DIGESTS: ${{ github.event.client_payload.production_digests && toJSON(github.event.client_payload.production_digests) || '' }}
   CANDIDATE_DIGESTS: ${{ github.event.client_payload.candidate_digests && toJSON(github.event.client_payload.candidate_digests) || '' }}
@@ -111,7 +115,7 @@ jobs:
         run: |
           pnpm harness run --mode release --a "$PRODUCTION" --b "$CANDIDATE" --runs "$RUNS" --load 20x30s \
             ${PRODUCTION_DIGESTS:+--a-digests "$PRODUCTION_DIGESTS"} ${CANDIDATE_DIGESTS:+--b-digests "$CANDIDATE_DIGESTS"} \
-            ${CLAIMS_URL:+--claims claims.yaml} ${NOISE_FILE:+--noise "$NOISE_FILE"} \
+            ${CLAIMS_URL:+--claims claims.yaml} ${RULES_URL:+--rules "$RULES_URL"} ${NOISE_FILE:+--noise "$NOISE_FILE"} \
             ${OVERRIDE_REASON:+--override-reason "$OVERRIDE_REASON" --override-by "$OVERRIDE_BY"}
 
       - uses: actions/upload-artifact@v4

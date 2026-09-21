@@ -278,8 +278,10 @@
       "properties": {
         "artefact": { "anyOf": [{ "$ref": "#/definitions/artefact" }, { "const": "*" }] },
         "scope": { "type": "string" },
-        "reason": { "type": "string" },
-        "approvedBy": { "type": "string" }
+        "reason": { "type": "string", "description": "Always present. For a claim that named a rule and gave no reason, the harness writes `Rule NNNN: <title>`." },
+        "approvedBy": { "type": "string" },
+        "rule": { "type": "string", "pattern": "^\\d{4}$", "description": "Since 1.3.0. The Rule the claim named; it was in the rules file." },
+        "ruleTitle": { "type": "string", "description": "Since 1.3.0. That Rule's title in the rules file; present exactly when `rule` is." }
       }
     },
     "schemaCatalog": {

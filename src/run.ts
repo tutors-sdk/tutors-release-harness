@@ -5,6 +5,7 @@ import { reference } from "../traffic/journeys/reference.ts";
 import { matchClaims } from "./claims/matcher.ts";
 import { DEFAULT_CLAIM_MAX_HUNKS, claimHygiene, claimMaxHunksFromEnv } from "./claims/hygiene.ts";
 import { loadClaims } from "./claims/schema.ts";
+import { loadRules } from "./claims/rules.ts";
 import { captureSide } from "./collectors/index.ts";
 import { compareCaptures } from "./compare/index.ts";
 import { gate } from "./gate.ts";
@@ -41,6 +42,8 @@ export interface RunOptions {
   sets: JourneySet[];
   journeys: string[];
   claimsFile?: string;
+  /** Since 1.3.0: the release's rules.json, a path or an http(s) URL (`--rules`). A claim's `rule` must be in it. */
+  rules?: string;
   masksFile: string;
   /** Path to a noise-status.json, or "skip" to waive (logged in the report). */
   noise?: string;
@@ -242,7 +245,9 @@ function emptyCapture(spec: SideSpec): SideCapture {
 
 /** The whole thing: stack up, capture both sides, normalise, compare, claim, gate, report, stack down. */
 export async function run(opts: RunOptions): Promise<RunOutcome> {
-  const claims = opts.claimsFile ? loadClaims(opts.claimsFile) : [];
+  // Before anything starts: an unreadable rules file, or a claim naming a rule it does not hold, is exit 2 with no stack up.
+  const rules = opts.rules ? await loadRules(opts.rules) : undefined;
+  const claims = opts.claimsFile ? loadClaims(opts.claimsFile, rules) : [];
   const outDir = resolve(opts.outDir, timestampDir(opts.mode));
   mkdirSync(outDir, { recursive: true });
   opts.log(`harness ${HARNESS_VERSION} · mode ${opts.mode} · substrate ${opts.substrate} · clock ${opts.now} · ${opts.runs} run(s) · out ${outDir}`);

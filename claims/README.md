@@ -21,6 +21,25 @@ claims:
     reason: "fix(reader): #270 CSP allows the new video host"
 ```
 
+A claim may name a Rule instead of pasting its wording (contract 1.3.0):
+
+```yaml
+claims:
+  - artefact: dom
+    scope: "/course/*/lab/*"
+    rule: "0031"          # quoted: it must be in the release's rules.json (--rules)
+  - artefact: network
+    scope: "GET /api/presence"
+    rule: "0044"
+    reason: "polled every 15s, was 10s (#1071)"   # optional free text beside a rule
+```
+
+The report then shows `Rule 0031: <the title from rules.json>`. A `rule` that is
+not in the rules file, or is named when no rules file was given, makes the file
+invalid before anything starts. Claims that spell the Rule out in `reason`
+(`reason: "Rule 0031: ..."`) work as they always have. The harness checks only
+that the Rule exists; it does not read what it says.
+
 The file may start with `version: 1` (optional; any other value is refused).
 The format is part of [the contract](../docs/contract.md#claims-file).
 
@@ -30,7 +49,8 @@ The format is part of [the contract](../docs/contract.md#claims-file).
 | --- | --- |
 | `artefact` | `dom`, `screenshot`, `network`, `console`, `headers`, `axe`, `focus`, `metrics`, `logs`, `timing`, `persistence`, `bus`, `migration`, `upgrade`, `image-manifest`, `sbom`, `vulns`, `runtime`, `startup`, or `*` |
 | `scope` | a glob matched against the hunk's scope **or** its route (see below) |
-| `reason` | the Rule id or changelog entry. "see PR" and "approved" are rejected by the schema |
+| `reason` | the Rule id or changelog entry. "see PR" and "approved" are rejected by the schema. Required, unless the claim has a `rule` (then it is optional free text) |
+| `rule` | since 1.3.0: a Rule's four digits, quoted (`"0031"`), which must be in the rules file given with `--rules`. The report shows its title |
 | `approvedBy` | required for a broad claim; a person, never a bot |
 
 ## What a scope matches

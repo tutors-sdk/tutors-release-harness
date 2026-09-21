@@ -14,6 +14,7 @@ The machine-readable half lives in [`docs/contract/`](contract/):
 | [`report.schema.json`](contract/report.schema.json) | `report.json` (JSON Schema, draft-07) |
 | [`noise-status.schema.json`](contract/noise-status.schema.json) | `noise-status.json` |
 | [`release-record.schema.json`](contract/release-record.schema.json) | the release record (since 1.3.0) |
+| [`rules.schema.json`](contract/rules.schema.json) | `rules.json`, the Rules a claim may name (since 1.3.0) |
 | [`cli.json`](contract/cli.json) | every command and flag, which are stable, the exit codes |
 | [`workflows.json`](contract/workflows.json) | dispatch events and payloads, repository variables, artifacts, permissions the workflows never hold |
 
@@ -111,8 +112,11 @@ bus traffic was collected on both sides, which needs a bus and
 [bus.md](bus.md). The environment variables `HARNESS_BUS` and
 `HARNESS_PERSISTENCE_BACKEND` are not part of the contract.
 
-**Claim**: `{ artefact, scope, reason, approvedBy? }`, exactly as parsed from
-the claims file.
+**Claim**: `{ artefact, scope, reason, approvedBy?, rule?, ruleTitle? }`, as parsed from
+the claims file. `reason` is always a string: for a claim that named a `rule` and
+gave no reason, the harness writes `Rule NNNN: <title>`. `rule` and `ruleTitle`
+(since 1.3.0) are present exactly when the claim named a Rule; see
+[Claims file](#claims-file).
 
 ### Image provenance
 
@@ -466,22 +470,64 @@ claims:
     scope: "reader:*/content-security-policy"           # picomatch glob, non-empty
     reason: "fix(reader): #270 CSP allows the new host" # ≥ 8 characters, not a rubber stamp
     approvedBy: "a-maintainer"                          # optional; required for a broad claim to count
+  - artefact: dom                                       # since 1.3.0: a claim may name a Rule instead
+    scope: "reader:lab-step*"
+    rule: "0031"                                        # four digits, quoted; must be in the rules file (--rules)
 ```
 
 - `artefact`: one of the nineteen artefact names above, or `*`.
 - `scope`: matched with picomatch (`dot: true`, case-insensitive) against the
   hunk's `scope` **or** its `path`.
 - `reason`: at least 8 characters, and must not start with `see pr`,
-  `approved`, `all`, `ok` or `misc`.
+  `approved`, `all`, `ok` or `misc`. Required unless the claim has a `rule`.
+- `rule` (since 1.3.0): a Rule's four digits, **quoted** (`"0031"`: unquoted, YAML
+  reads `0031` as the number 31, which is refused with that hint). When it is
+  present `reason` becomes optional free text, and the report shows
+  `Rule 0031: <title>` (then the reason, when there is one) in place of the
+  reason. The title comes from the rules file, below. `reason: "Rule 0031: ..."`
+  free-text claims keep working unchanged, with or without a rules file.
 - A claim is *broad* when `artefact` is `*` or `scope` is `*`, `**` or a
   pattern of only stars (`*/*`, `**/**`). A broad claim without `approvedBy`
   is listed in `compare.broadUnapproved` and gates.
-- Unknown keys are ignored. An empty file is no claims. An invalid file stops
-  the run with exit `2`.
+- Unknown keys are ignored (before 1.3.0 that included `rule`). An empty file is
+  no claims. An invalid file stops the run with exit `2`, before any stack starts.
 - Each failing hunk is assigned to at most one claim; `info` hunks need none.
 
 The claims file lives with the release (the monorepo's `release/claims.yaml`),
 never in this repository.
+
+### The rules file
+
+Since 1.3.0. The monorepo publishes `rules.json` at the candidate tag
+([`contract/rules.schema.json`](contract/rules.schema.json)):
+
+```json
+{ "version": 1,
+  "rules": {
+    "0031": { "title": "Lab steps show their estimated reading time", "digest": "sha256:…" },
+    "0044": { "title": "Presence is polled every 15 seconds" } } }
+```
+
+`--rules <path or url>` takes it (`release.yml`: the `rules_url` of the
+dispatch, or the workflow input of that name; a URL the runner can GET without
+credentials). What the harness does with it, and nothing more:
+
+- a claim whose `rule` is not in the file is **invalid**, the same class as any
+  other invalid claim: exit `2`, before any stack starts, naming the claim and
+  the rule;
+- a claim that names a `rule` when no rules file was given is invalid, with a
+  message that says to pass `--rules` (in the dispatch, `rules_url`) or to give a
+  `reason`;
+- a rules file that cannot be read or fetched (an HTTP status other than 2xx, a
+  timeout), or that is not valid, is exit `2` too. `--rules` given with no claims
+  file, or with claims that name no rule, is still read and checked;
+- the Rule's `title` is shown in the report (`Claim.ruleTitle`, the Markdown
+  comment, the HTML report). `digest` is optional and never read; keys the
+  harness does not know in a Rule are ignored;
+- **a claim never gates on the file's contents beyond the Rule's existence**: the
+  harness does not read what a Rule says, and does not judge whether the change
+  is what it intends. Matching, the stale-claim report and the broad-claim rule
+  are exactly as before.
 
 ## CLI
 
@@ -497,8 +543,8 @@ change in a minor release.
 
 | Command | Stable flags |
 | --- | --- |
-| `harness run` | `--mode` (required), `--a`, `--b` (required except in post-deploy), `--claims <file>`, `--noise <file\|dir\|skip>`, `--runs <n>`, `--set <fixture,auth,reference>`, `--journey <name>` (repeatable), `--load <rate>x<duration>`, `--out <dir>`, `--image-prefix <prefix or {app} template>`, `--allow-unsigned`, `--require-verified` (noise mode: write the status `degraded` unless every image on both sides was pulled and verified in this run), `--override-reason <text>` and `--override-by <who>` (see [Overriding a FAIL](#overriding-a-fail)), `--a-digests <digests>` and `--b-digests <digests>` (since 1.3.0: pin a side's images, see [Image digests](#image-digests-and-the-release-record)); post-deploy: `--recorded <release run dir>`, `--production reader=URL,catalogue=URL,live=URL`, and since 1.3.0 `--deployed <tag>`, `--deployed-digests <digests>` and `--release-record <file\|dir>` (see [Checking a deployment](#checking-a-deployment)) |
-| `harness compare` | `--dir <run dir>` (required), `--mode` (required), `--claims`, `--noise` |
+| `harness run` | `--mode` (required), `--a`, `--b` (required except in post-deploy), `--claims <file>`, `--rules <path\|url>` (since 1.3.0: the Rules a claim may name, see [The rules file](#the-rules-file)), `--noise <file\|dir\|skip>`, `--runs <n>`, `--set <fixture,auth,reference>`, `--journey <name>` (repeatable), `--load <rate>x<duration>`, `--out <dir>`, `--image-prefix <prefix or {app} template>`, `--allow-unsigned`, `--require-verified` (noise mode: write the status `degraded` unless every image on both sides was pulled and verified in this run), `--override-reason <text>` and `--override-by <who>` (see [Overriding a FAIL](#overriding-a-fail)), `--a-digests <digests>` and `--b-digests <digests>` (since 1.3.0: pin a side's images, see [Image digests](#image-digests-and-the-release-record)); post-deploy: `--recorded <release run dir>`, `--production reader=URL,catalogue=URL,live=URL`, and since 1.3.0 `--deployed <tag>`, `--deployed-digests <digests>` and `--release-record <file\|dir>` (see [Checking a deployment](#checking-a-deployment)) |
+| `harness compare` | `--dir <run dir>` (required), `--mode` (required), `--claims`, `--rules`, `--noise` |
 | `harness images ensure` | `--a`, `--b` (required), `--a-digests`, `--b-digests` (since 1.3.0: pull by digest, verify on it, refuse a tag that has moved; a pinned image is never built), `--ref-a`, `--ref-b` (monorepo git refs to build from when the pull fails), `--image-prefix`, `--allow-unsigned`, `--image-cache <dir>` (since 1.2.0: refreshed from images pulled and verified in this run; used, as provenance `cached`, only when the registry cannot be reached, and never for a tag the registry says does not exist). With `GITHUB_OUTPUT` set it writes `image_cache=none\|used\|refreshed` |
 | `harness mutants` | `--base <tag or reader image>` (required), `--out`, `--image-prefix`, `--allow-unsigned` |
 | `harness version` | `--json` |
@@ -555,15 +601,15 @@ fine-grained PAT, or a GitHub App installation token); sample sender:
 
 | `event_type` | Workflow | `client_payload` |
 | --- | --- | --- |
-| `release-candidate` | `release.yml` — release mode (3 runs, k6 `20x30s`), migration rehearsal, upgrade rehearsal, as three jobs; then the release record is published | `production` (required): production tag, side a. `candidate` (required): candidate tag, side b. `claims_url`: a URL the runner can `curl` without credentials; omitted means no claims. `runs`: default `3`. `migrations_a`, `migrations_b`: monorepo git refs for migration mode; default `v<production>` and `v<candidate>`. Since 1.3.0: `production_digests`, `candidate_digests`: objects `app -> sha256:<64 hex>` ([Image digests](#image-digests-and-the-release-record)) |
+| `release-candidate` | `release.yml` — release mode (3 runs, k6 `20x30s`), migration rehearsal, upgrade rehearsal, as three jobs; then the release record is published | `production` (required): production tag, side a. `candidate` (required): candidate tag, side b. `claims_url`: a URL the runner can `curl` without credentials; omitted means no claims. `rules_url` (since 1.3.0): a URL the runner can GET without credentials for `rules.json` ([The rules file](#the-rules-file)); a claim that names a `rule` needs it. `runs`: default `3`. `migrations_a`, `migrations_b`: monorepo git refs for migration mode; default `v<production>` and `v<candidate>`. Since 1.3.0: `production_digests`, `candidate_digests`: objects `app -> sha256:<64 hex>` ([Image digests](#image-digests-and-the-release-record)) |
 | `deployed` | `post-deploy.yml` — post-deploy mode against `HARNESS_PRODUCTION_URLS` | Since 1.3.0, both optional: `production` (the tag that was deployed) and `digests` (an object `app -> sha256:<64 hex>`: the images that run), compared with the release record ([Checking a deployment](#checking-a-deployment)). Without them (every 1.2.0 payload) nothing is compared. The recorded side is the `release-report` artifact of the latest successful `release.yml` run; the payload cannot choose it (by hand, `workflow_dispatch` with `recorded_run_id` can) |
 
 Any other event type is ignored. Unknown payload fields are ignored. A missing
 required field fails the run at its first harness step (exit `2`).
 
 `release.yml` also takes the same values as `workflow_dispatch` inputs
-(`production`, `candidate`, `claims_url`, `migrations_a`, `migrations_b`,
-`runs`) and, since 1.2.0, `override_reason` (a `workflow_dispatch` input only:
+(`production`, `candidate`, `claims_url`, `rules_url` (since 1.3.0), `migrations_a`,
+`migrations_b`, `runs`) and, since 1.2.0, `override_reason` (a `workflow_dispatch` input only:
 see [Overriding a FAIL](#overriding-a-fail)); `nightly-noise.yml` and
 `weekly-mutants.yml` take `tag`.
 

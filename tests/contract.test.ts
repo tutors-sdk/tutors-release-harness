@@ -105,10 +105,10 @@ const full: DeepRequired<RunReport> = {
   noise: { schemaVersion: SCHEMA_VERSION, ranAt: "2026-09-16T02:00:00.000Z", clean: true, hunks: 0, degraded: ["side a did not run pulled+verified images (cached)"] },
   compare: {
     hunks: [{ id: "1", artefact: "dom", scope: "reader:lab-step", path: "/lab/x", summary: "semantic DOM differs", detail: "+ x", severity: "fail" }],
-    matches: [{ hunk: { id: "1", artefact: "dom", scope: "reader:lab-step", path: "/lab/x", summary: "semantic DOM differs", detail: "+ x", severity: "fail" }, claim: { artefact: "*", scope: "**", reason: "Rule 0031: reading time", approvedBy: "a-maintainer" } }],
+    matches: [{ hunk: { id: "1", artefact: "dom", scope: "reader:lab-step", path: "/lab/x", summary: "semantic DOM differs", detail: "+ x", severity: "fail" }, claim: { artefact: "*", scope: "**", reason: "Rule 0031: Lab steps show estimated reading time", approvedBy: "a-maintainer", rule: "0031", ruleTitle: "Lab steps show estimated reading time" } }],
     unclaimed: [{ id: "2", artefact: "headers", scope: "reader:home/x-frame-options", path: "/", summary: "header dropped", detail: "-", severity: "fail" }],
-    staleClaims: [{ artefact: "network", scope: "GET /gone", reason: "Rule 0002: stale", approvedBy: "a-maintainer" }],
-    broadUnapproved: [{ artefact: "*", scope: "**", reason: "everything changed in this one", approvedBy: "" }]
+    staleClaims: [{ artefact: "network", scope: "GET /gone", reason: "Rule 0002: Nothing here is cached", approvedBy: "a-maintainer", rule: "0002", ruleTitle: "Nothing here is cached" }],
+    broadUnapproved: [{ artefact: "*", scope: "**", reason: "everything changed in this one", approvedBy: "", rule: "0003", ruleTitle: "Everything may change" }]
   },
   masksApplied: { "response-date": 4, etag: 0 },
   migration: { a: { ref: "v16.2.0", files: ["0001.sql"], catalog }, b: { ref: "release/16.3.0", files: ["0001.sql", "0002.sql"], catalog }, rolledBack: catalog },
@@ -120,7 +120,7 @@ const full: DeepRequired<RunReport> = {
     hunksPerClaim: 6.5,
     maxHunksPerClaim: 12,
     threshold: 10,
-    flagged: [{ claim: { artefact: "*", scope: "**", reason: "Rule 0031: reading time", approvedBy: "a-maintainer" }, hunks: 12, flags: ["covers-many-hunks", "broad-with-approval"] }]
+    flagged: [{ claim: { artefact: "*", scope: "**", reason: "Rule 0031: Lab steps show estimated reading time", approvedBy: "a-maintainer", rule: "0031", ruleTitle: "Lab steps show estimated reading time" }, hunks: 12, flags: ["covers-many-hunks", "broad-with-approval"] }]
   },
   override: { reason: "Rule 0044: payments hotfix, frame options restored in 16.3.1", by: "a-maintainer", verdict: "fail", applied: true, at: "2026-09-16T09:20:00.000Z" },
   imageArtefacts: { a: sideArtefacts, b: sideArtefacts },

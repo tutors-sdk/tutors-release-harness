@@ -1,4 +1,5 @@
 import type { RunReport } from "../types.ts";
+import { claimLabel } from "../claims/rules.ts";
 import { loudProvenance } from "./provenance.ts";
 import { imageArtefactsMarkdown } from "./image-static.ts";
 import { deploymentMarkdown, loudDeployment } from "./deployment.ts";
@@ -68,7 +69,7 @@ export function renderMarkdown(report: RunReport): string {
     lines.push("");
     lines.push("| artefact | scope | claimed by |");
     lines.push("|---|---|---|");
-    for (const m of claimed) lines.push(`| \`${m.hunk.artefact}\` | \`${m.hunk.scope}\` | ${escape(m.claim!.reason)} |`);
+    for (const m of claimed) lines.push(`| \`${m.hunk.artefact}\` | \`${m.hunk.scope}\` | ${escape(claimLabel(m.claim!))} |`);
     lines.push("");
   }
 
@@ -136,7 +137,7 @@ export function renderMarkdown(report: RunReport): string {
   if (compare.staleClaims.length) {
     lines.push(`<details><summary>Stale claims (${compare.staleClaims.length})</summary>`);
     lines.push("");
-    for (const c of compare.staleClaims) lines.push(`- \`${c.artefact}\` \`${c.scope}\` — ${escape(c.reason)}`);
+    for (const c of compare.staleClaims) lines.push(`- \`${c.artefact}\` \`${c.scope}\` — ${escape(claimLabel(c))}`);
     lines.push("");
     lines.push("</details>");
     lines.push("");

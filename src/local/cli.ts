@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { userInfo } from "node:os";
 import { join, resolve } from "node:path";
+import { isUrl } from "../claims/rules.ts";
 import { ROOT } from "../stack.ts";
 import type { RunReport } from "../types.ts";
 import { DEFAULT_SCOPES, SCOPES, renderDoctor, runDoctor, type Scope } from "./doctor.ts";
@@ -167,6 +168,7 @@ export function buildPlan(task: string | undefined, v: Values, env: NodeJS.Proce
         production: a,
         candidate: b,
         ...(str(v, "claims") ? { claims: resolve(str(v, "claims")!) } : {}),
+        ...(str(v, "rules") ? { rules: isUrl(str(v, "rules")!) ? str(v, "rules")! : resolve(str(v, "rules")!) } : {}),
         ...(str(v, "runs") ? { runs: integer(v, "runs", 3, 1) } : {}),
         ...(str(v, "migrations-a") ? { migrationsA: str(v, "migrations-a")! } : {}),
         ...(str(v, "migrations-b") ? { migrationsB: str(v, "migrations-b")! } : {}),

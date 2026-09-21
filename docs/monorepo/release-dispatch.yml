@@ -8,7 +8,7 @@
 #
 #   - event_type release-candidate, client_payload production / candidate /
 #     claims_url / runs / migrations_a / migrations_b, and since 1.3.0 the optional
-#     production_digests / candidate_digests (docs/contract.md);
+#     rules_url / production_digests / candidate_digests (docs/contract.md);
 #   - the candidate is a bare version tag (16.3.0-rc.1) whose images exist at
 #     quay.io/tutors-sdk/tutors-<app>:<tag> by the time the dispatch is sent;
 #   - HARNESS_TOKEN: a fine-grained PAT with contents: write on the harness.
@@ -259,7 +259,7 @@ jobs:
     steps:
       # client_payload is the contract of .github/workflows/release.yml in the
       # harness: production, candidate, claims_url, runs, migrations_a, migrations_b,
-      # and (since 1.3.0, optional) production_digests, candidate_digests.
+      # and (since 1.3.0, optional) rules_url, production_digests, candidate_digests.
       - name: Send release-candidate
         env:
           GH_TOKEN: ${{ secrets.HARNESS_TOKEN }}
@@ -275,15 +275,21 @@ jobs:
             exit 1
           fi
           claims_url="https://raw.githubusercontent.com/$GITHUB_REPOSITORY/$GITHUB_SHA/release/claims.yaml"
+          # Since 1.3.0: the release's rules.json (docs/contract/rules.schema.json), the Rules a claim may name with
+          # rule: "0031". Where the monorepo publishes it is the monorepo's choice; the harness only needs a URL it can GET
+          # without credentials. Sent only when it exists, so a release whose claims all spell their reason out is unchanged.
+          rules_url="https://raw.githubusercontent.com/$GITHUB_REPOSITORY/$GITHUB_SHA/release/rules.json"
+          curl -fsSI "$rules_url" > /dev/null 2>&1 || rules_url=""
           jq -n \
             --arg production "$PRODUCTION" \
             --arg candidate "$CANDIDATE" \
             --arg claims_url "$claims_url" \
+            --arg rules_url "$rules_url" \
             --arg migrations_a "$MIGRATIONS_A" \
             --arg migrations_b "$GITHUB_SHA" \
             --argjson pd "${PRODUCTION_DIGESTS:-null}" \
             --argjson cd "${CANDIDATE_DIGESTS:-null}" \
-            '{event_type: "release-candidate", client_payload: {production: $production, candidate: $candidate, claims_url: $claims_url, runs: 3, migrations_a: $migrations_a, migrations_b: $migrations_b, production_digests: $pd, candidate_digests: $cd}} | .client_payload |= with_entries(select(.value != null and .value != {}))' \
+            '{event_type: "release-candidate", client_payload: {production: $production, candidate: $candidate, claims_url: $claims_url, runs: 3, migrations_a: $migrations_a, migrations_b: $migrations_b, rules_url: $rules_url, production_digests: $pd, candidate_digests: $cd}} | .client_payload |= with_entries(select(.value != null and .value != {} and .value != ""))' \
             | tee payload.json
           gh api "repos/$HARNESS_REPO/dispatches" --input payload.json
           {

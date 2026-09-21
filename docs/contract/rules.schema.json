@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/tutors-sdk/tutors-release-harness/blob/main/docs/contract/rules.schema.json",
+  "title": "rules.json (contract 1.x)",
+  "description": "The Rules a claim may name with `rule: \"0031\"`. Published by the monorepo at the candidate tag and handed to the harness with --rules (release dispatch: rules_url). The harness only checks that a named Rule exists in it, and shows its title in the report; it never reads what a Rule says. Derived from RulesFileSchema in src/claims/rules.ts.",
+  "type": "object",
+  "required": ["version", "rules"],
+  "properties": {
+    "version": { "const": 1, "description": "The format of this file. Any other value is refused." },
+    "rules": {
+      "type": "object",
+      "description": "Rule id -> the Rule. An id is four digits.",
+      "propertyNames": { "pattern": "^\\d{4}$" },
+      "additionalProperties": {
+        "type": "object",
+        "required": ["title"],
+        "description": "Unknown keys are ignored, so the monorepo can publish more about a Rule than the harness reads.",
+        "properties": {
+          "title": { "type": "string", "minLength": 1, "description": "What the report shows beside the Rule's number." },
+          "digest": { "type": "string", "minLength": 1, "description": "A digest of the Rule's text, for whoever audits a release. The harness records nothing about it and never compares it." }
+        }
+      }
+    }
+  }
+}

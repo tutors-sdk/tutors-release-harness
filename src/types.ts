@@ -301,6 +301,10 @@ export interface Claim {
   reason: string;
   /** Required for broad claims; set by a human, never generated. */
   approvedBy?: string;
+  /** Since 1.3.0. The Rule that intends the difference (`"0031"`), checked to exist in the rules file (`--rules`). */
+  rule?: string;
+  /** Since 1.3.0. That Rule's title in the rules file, which the report shows. Present exactly when `rule` is. */
+  ruleTitle?: string;
 }
 
 export interface ClaimMatch {
