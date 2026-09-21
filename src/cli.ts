@@ -4,6 +4,8 @@ import { journeys, type JourneySet } from "../traffic/journeys/journeys.ts";
 import { loadClaims } from "./claims/schema.ts";
 import { appendFileSync } from "node:fs";
 import { parseOverride, exitCodeForReport } from "./override.ts";
+import { DigestError, parseDigests, pinImages } from "./digests.ts";
+import { isTag } from "./release-record.ts";
 import { EXIT_CANNOT_JUDGE, ImageTrustError, ensureImages, fileLedger, realExec, resolveSideProvenance, trustPolicyFromEnv } from "./images.ts";
 import { runMutants } from "./mutants.ts";
 import { compareFromCaptures, defaultRunOptions, loadCapture, run } from "./run.ts";
@@ -28,6 +30,9 @@ const USAGE = `tutors-release-harness
                     (quay.io/tutors-sdk/tutors-{app} -> quay.io/tutors-sdk/tutors-reader:TAG)
       --allow-unsigned  judge registry images whose cosign signature could not be verified
                     (or HARNESS_ALLOW_UNSIGNED=1). Local work only; the report records it.
+      --a-digests, --b-digests  pin a side's images by digest (release dispatch: production_digests, candidate_digests):
+                    a JSON object or reader=sha256:…,catalogue=sha256:…,live=sha256:… — the refs become repo:tag@sha256:…,
+                    the pull is by digest, the signature is verified on it. Optional; without them a run is as in 1.2.0
       --claims      claims.yaml for release mode
       --claim-max-hunks  flag a claim that covers more than this many hunks (default 10, or HARNESS_CLAIM_MAX_HUNKS); reported, never gates
       --noise       noise-status.json (or its directory) from a recent A/A run; "skip" waives it, loudly;
@@ -48,17 +53,22 @@ const USAGE = `tutors-release-harness
       --startup-restarts  restarts per app to sample startup time from (default 5; 0 switches it off).
                     Fewer than timing.minRuns (normalise/masks.yaml) is reported, not judged; raise it, never retry.
       post-deploy:  --recorded <release run dir> --production reader=URL,catalogue=URL,live=URL
+                    [--deployed <tag> --deployed-digests <digests> --release-record <file|dir>]  what the deploy says it
+                    deployed, compared with the release record of the judged candidate (HARNESS_HOME/releases without
+                    --release-record); a difference, or no record, WARNS
       migration:    --snapshot <pg_dump file>
       upgrade:      --upgrade-seconds 45 --upgrade-rate 20
 
   harness compare --dir <run dir> --mode <mode> [--claims f] [--noise f]
       Re-run normalise/compare/claim/gate on captures already on disk.
 
-  harness images ensure --a <ref> --b <ref> [--ref-a git-ref] [--ref-b git-ref] [--allow-unsigned] [--image-cache dir]
+  harness images ensure --a <ref> --b <ref> [--a-digests d] [--b-digests d] [--ref-a git-ref] [--ref-b git-ref] [--allow-unsigned] [--image-cache dir]
       Per image: use it if local; else pull it and verify its cosign signature by digest
       (HARNESS_COSIGN_IDENTITY, HARNESS_COSIGN_ISSUER override who must have signed it);
       else, for a bare tag, build it from the monorepo ref. Exit 1 when an image cannot be
       obtained; exit 2 when a registry image is unsigned, wrongly signed, or cosign is missing.
+      --a-digests, --b-digests  pin by digest: pulled by digest, verified on it, and refused (exit 2) when the tag now resolves to
+                    another digest; a pinned image is never built from source.
       --image-cache  a directory kept between runs: refreshed from images pulled and verified in this run,
                     and used (recorded as provenance "cached", a degraded run) only when the registry cannot be reached.
   harness stack up|down --a <ref> --b <ref>
@@ -84,10 +94,10 @@ const USAGE = `tutors-release-harness
   harness override list [--since <date>] [--json]
       The local, append-only record of every FAIL a person overrode.
   harness local nightly [--tag T] [--runs 3] [--load 20x30s] [--image-cache dir] [--store dir] [--no-record]
-  harness local gate --a <production tag> --b <candidate tag> [--claims f] [--runs 3] [--only release|migration|upgrade]
+  harness local gate --a <production tag> --b <candidate tag> [--a-digests d] [--b-digests d] [--claims f] [--runs 3] [--only release|migration|upgrade]
                      [--migrations-a ref] [--migrations-b ref] [--override-reason r --override-by who]
   harness local mutants [--base T]
-  harness local watch [--recorded <release run dir>] [--production reader=URL,catalogue=URL,live=URL] [--interval 15m] [--once]
+  harness local watch [--recorded <release run dir>] [--production reader=URL,catalogue=URL,live=URL] [--deployed <tag> [--deployed-digests d] [--release-record f]] [--interval 15m] [--once]
       Each is what its workflow does, as one command, from the same harness commands (--dry-run prints them).
       All take --port-offset <n> to move the compose stack's host ports beside a stack of your own.
       A run holds a lock: one per machine at a time.
@@ -155,6 +165,11 @@ async function main(argv: string[]): Promise<number> {
       "upgrade-rate": { type: "string" },
       "noise-max-age-days": { type: "string" },
       "claim-max-hunks": { type: "string" },
+      "a-digests": { type: "string" },
+      "b-digests": { type: "string" },
+      deployed: { type: "string" },
+      "deployed-digests": { type: "string" },
+      "release-record": { type: "string" },
       "override-reason": { type: "string" },
       "override-by": { type: "string" },
       "image-cache": { type: "string" },
@@ -213,8 +228,12 @@ async function main(argv: string[]): Promise<number> {
   }
   const claimMaxHunks = values["claim-max-hunks"] === undefined ? defaults.claimMaxHunks : Number(values["claim-max-hunks"]);
   if (!Number.isInteger(claimMaxHunks) || claimMaxHunks < 1) fail("--claim-max-hunks takes a positive integer");
+  const aDigests = parseDigests(values["a-digests"], "--a-digests");
+  const bDigests = parseDigests(values["b-digests"], "--b-digests");
   const common = {
     ...defaults,
+    ...(aDigests ? { aDigests } : {}),
+    ...(bDigests ? { bDigests } : {}),
     substrate: substrate(values.substrate),
     ...(values["image-prefix"] ? { imagePrefix: values["image-prefix"] } : {}),
     ...(values.out ? { outDir: resolve(values.out) } : {}),
@@ -247,7 +266,7 @@ async function main(argv: string[]): Promise<number> {
 
   /** A side for the hand-driven commands, under the same rule as `run`: no unverified registry image is started. */
   const trustedSide = (name: "a" | "b", spec: string) => {
-    const side = sideSpec(name, imagesFor(spec, common.imagePrefix));
+    const side = sideSpec(name, pinImages(imagesFor(spec, common.imagePrefix), name === "a" ? aDigests : bDigests, `--${name}-digests`));
     side.provenance = resolveSideProvenance(side.images, { exec: realExec, ledger: fileLedger(), policy: trustPolicyFromEnv(process.env, common.allowUnsigned), log: common.log });
     return side;
   };
@@ -256,8 +275,10 @@ async function main(argv: string[]): Promise<number> {
     case "run": {
       const m = mode(values.mode);
       if (m !== "post-deploy" && (!values.a || !values.b)) fail("run needs --a and --b");
+      const deployed = parseDeployed(values.deployed, values["deployed-digests"], values["release-record"], m);
       const outcome = await run({
         ...common,
+        ...(deployed ? { deployed } : {}),
         mode: m,
         a: values.a ?? "recorded",
         b: values.b ?? "production",
@@ -297,8 +318,8 @@ async function main(argv: string[]): Promise<number> {
       if (!values.a || !values.b) fail("images ensure needs --a and --b");
       const result = ensureImages(
         [
-          { spec: values.a, ...(values["ref-a"] ? { ref: values["ref-a"] } : {}) },
-          { spec: values.b, ...(values["ref-b"] ? { ref: values["ref-b"] } : {}) }
+          { spec: values.a, ...(aDigests ? { digests: aDigests } : {}), ...(values["ref-a"] ? { ref: values["ref-a"] } : {}) },
+          { spec: values.b, ...(bDigests ? { digests: bDigests } : {}), ...(values["ref-b"] ? { ref: values["ref-b"] } : {}) }
         ],
         common.imagePrefix,
         { log: common.log, policy: trustPolicyFromEnv(process.env, common.allowUnsigned), ...(values["image-cache"] ? { cacheDir: resolve(values["image-cache"]) } : {}) }
@@ -358,6 +379,16 @@ async function main(argv: string[]): Promise<number> {
   }
 }
 
+/** `--deployed`, `--deployed-digests`, `--release-record`: post-deploy only. A tag names a file in the store, so it must be a tag and nothing else. */
+function parseDeployed(tag: string | undefined, digests: string | undefined, record: string | undefined, m: Mode) {
+  const production = tag?.trim() || undefined;
+  const reported = parseDigests(digests, "--deployed-digests") ?? {};
+  if (!production && !Object.keys(reported).length && !record) return undefined;
+  if (m !== "post-deploy") fail("--deployed, --deployed-digests and --release-record belong to --mode post-deploy");
+  if (production && !isTag(production)) fail(`--deployed takes the tag that was deployed (e.g. 16.3.0), not "${production}"`);
+  return { ...(production ? { production } : {}), digests: reported, ...(record ? { record } : {}) };
+}
+
 function printOutcome(verdict: string, reasons: string[], files: { json: string; html: string; md: string }) {
   console.log("");
   console.log(`verdict: ${verdict.toUpperCase()}`);
@@ -373,8 +404,8 @@ main(process.argv.slice(2)).then(
       console.error(`cannot judge: ${error.message}`);
       process.exit(EXIT_CANNOT_JUDGE);
     }
-    // A usage error of the local commands: the message, not a stack.
-    if (error instanceof UsageError) {
+    // A usage error of the local commands, or digests that are not digests: the message, not a stack.
+    if (error instanceof UsageError || error instanceof DigestError) {
       console.error(error.message);
       process.exit(2);
     }

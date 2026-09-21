@@ -1,6 +1,7 @@
 import type { RunReport } from "../types.ts";
 import { loudProvenance } from "./provenance.ts";
 import { imageArtefactsMarkdown } from "./image-static.ts";
+import { deploymentMarkdown, loudDeployment } from "./deployment.ts";
 
 const ICON = { pass: "✅", warn: "⚠️", fail: "❌" } as const;
 
@@ -13,6 +14,11 @@ export function renderMarkdown(report: RunReport): string {
   const loud = loudProvenance(report);
   if (loud) {
     lines.push(`> ⚠️ **${loud.text}**`);
+    lines.push("");
+  }
+  const loudDeploy = loudDeployment(report);
+  if (loudDeploy) {
+    lines.push(`> ⚠️ **${loudDeploy}**`);
     lines.push("");
   }
   lines.push(`| | a | b |`);
@@ -84,6 +90,7 @@ export function renderMarkdown(report: RunReport): string {
     }
     lines.push("");
   }
+  lines.push(...deploymentMarkdown(report)); // 1.3.0
   lines.push(...imageArtefactsMarkdown(report)); // R5 static image artefacts
 
   if (report.migration) {

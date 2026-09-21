@@ -6,7 +6,7 @@ automatic. Each file here is ready to copy.
 | File | Purpose | Trigger |
 | --- | --- | --- |
 | `publish-images.yml` | build (amd64 + arm64), push to Quay.io, cosign-sign and SBOM-attest the four images. **In the monorepo the real file is `.github/workflows/image-build.yml`** (its PR #143); this is a reference copy of the contract | push to `main`, `v*` tags |
-| `release-dispatch.yml` | tag the release candidate (`v16.3.0-rc.N`, next free N), have `image-build.yml` build it and wait until the registry serves the images, then dispatch the harness with production tag, candidate tag, claims URL and migration refs. **Again the monorepo's file is the source of truth**; this is a reference copy | push to `release/**` |
+| `release-dispatch.yml` | tag the release candidate (`v16.3.0-rc.N`, next free N), have `image-build.yml` build it and wait until the registry serves the images, then dispatch the harness with production tag, candidate tag, claims URL, migration refs and, since 1.3.0, the digest of every image. **Again the monorepo's file is the source of truth**; this is a reference copy | push to `release/**` |
 | `release/claims.yaml` | the release's claims (see `../../claims/README.md`) | written by the release author |
 
 The monorepo also checks `release/claims.yaml` on the push and on the release PR
@@ -17,6 +17,45 @@ accept the same artefact names (the nineteen in [the contract](../contract.md)),
 accept the optional `version: 1`, and ignore unknown keys. A mirror that is
 stricter rejects a file the harness would take; one that is looser lets
 through a file that stops the run with exit 2.
+
+## Since 1.3.0: send digests, and say what was deployed
+
+Both are optional; a dispatch without them behaves exactly as in 1.2.0.
+
+**`release-candidate`** gains `production_digests` and `candidate_digests`:
+objects `app -> "sha256:<64 hex>"` (`reader`, `catalogue`, `live`). Send the
+digest of the manifest the tag points at, as `docker buildx imagetools inspect
+<image> --format '{{.Manifest.Digest}}'` prints it (that is the digest cosign
+signed). The harness then pulls and verifies by digest, and exits `2`, "cannot
+judge", when a tag has moved to another digest by the time it looks. The
+reference copy of `release-dispatch.yml` reads them in its `images` job.
+
+```json
+{ "event_type": "release-candidate",
+  "client_payload": {
+    "production": "16.2.0", "candidate": "16.3.0-rc.4", "claims_url": "https://raw.githubusercontent.com/tutors-sdk/tutors-mono-repo/<sha>/release/claims.yaml",
+    "runs": 3, "migrations_a": "v16.2.0", "migrations_b": "<sha>",
+    "production_digests": { "reader": "sha256:<64 hex>", "catalogue": "sha256:<64 hex>", "live": "sha256:<64 hex>" },
+    "candidate_digests":  { "reader": "sha256:<64 hex>", "catalogue": "sha256:<64 hex>", "live": "sha256:<64 hex>" } } }
+```
+
+**`deployed`** (sent by the deploy job) gains `production`, the tag that was
+deployed (`16.3.0`), and `digests`, the images that run:
+
+```json
+{ "event_type": "deployed",
+  "client_payload": { "production": "16.3.0", "digests": { "reader": "sha256:<64 hex>", "catalogue": "sha256:<64 hex>", "live": "sha256:<64 hex>" } } }
+```
+
+The harness compares them with what release mode judged, which it kept on its
+`release-records` branch (`releases/<release>.json`, the newest candidate of
+release `16.3.0` that could ship), and **warns** when they differ, when there is
+no record, or when no digests were sent: the report and the step summary say
+`DEPLOYED IMAGES DIFFER` or `DEPLOYED IMAGES NOT CONFIRMED`. That check can only
+pass if the deployed image *is* the judged one: **promote the candidate's image
+to the release tag** (`docker buildx imagetools create -t <image>:16.3.0
+<image>:16.3.0-rc.4`, which keeps the digest) rather than rebuilding it from the
+release tag, which produces a different digest and a warning on every release.
 
 Repository secrets in the monorepo:
 
@@ -106,9 +145,10 @@ Then the sequence for a release is:
    is in the workflow summary and the report is an artifact.
 2. Tag / deploy → the monorepo updates `HARNESS_PRODUCTION_TAG` (by hand until
    it has a deploy job) and dispatches
-   `deployed`: the harness runs the reference-course journeys against
-   production and compares with the recorded candidate run; a new difference
-   opens a rollback issue with the report attached.
+   `deployed` (with `production` and `digests`, since 1.3.0): the harness runs
+   the reference-course journeys against production and compares with the
+   recorded candidate run; a new difference opens a rollback issue with the
+   report attached, and images that are not the ones judged are a warning.
 3. Every 15 minutes → the synthetic workflow repeats the post-deploy
    comparison against the last recorded run.
 4. Nightly → A/A on the production tag (the harness's right to gate).

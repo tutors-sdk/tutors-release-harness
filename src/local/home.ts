@@ -11,6 +11,7 @@ import { ROOT } from "../stack.ts";
  *   <home>/noise/               noise-status.json, noise-history.json, noise-summary.md (the `noise` branch)
  *   <home>/image-cache/         the last verified production images (the runner's actions/cache)
  *   <home>/overrides.jsonl      every applied override, append-only (the `harness-override` issues)
+ *   <home>/releases/            what release mode judged, one file per candidate (the `release-records` branch)
  *   <home>/rollbacks/           what a failing post-deploy watch leaves (the `rollback` issue)
  *   <home>/locks/               one run at a time per machine
  *   <home>/image-provenance.json  the ledger `images ensure` leaves for `run` (HARNESS_PROVENANCE_FILE moves it)
@@ -24,6 +25,7 @@ export function harnessHome(env: NodeJS.ProcessEnv = process.env): string {
 
 export const noiseDir = (home = harnessHome()) => join(home, "noise");
 export const imageCacheDir = (home = harnessHome()) => join(home, "image-cache");
+export const releasesDir = (home = harnessHome()) => join(home, "releases");
 export const overridesFile = (home = harnessHome()) => join(home, "overrides.jsonl");
 export const rollbacksDir = (home = harnessHome()) => join(home, "rollbacks");
 export const locksDir = (home = harnessHome()) => join(home, "locks");

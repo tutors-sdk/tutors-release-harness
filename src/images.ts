@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
+import { DIGEST_PATTERN, pinImages, type Digests } from "./digests.ts";
 import { APPS, dockerRef, imagesFor, isBuildable, isRegistryRef, parseRef, type App, type AppImages } from "./image-ref.ts";
 import { bashCommand } from "./local/bash.ts";
 import { harnessHome } from "./local/home.ts";
@@ -279,6 +280,12 @@ function settle(ref: string, inspected: Inspected, digest: string, deps: { exec:
 export interface ImageRequest {
   /** What --a / --b was given. */
   spec: string;
+  /**
+   * Since 1.3.0: the digest of each app's image, from the release dispatch (`--a-digests` / `--b-digests`). The
+   * references become `repo:tag@sha256:…`, the pull is by digest, the signature is verified on that digest, and a
+   * digest that disagrees with what the tag resolves to now is refused (exit 2). A pinned image is never built from source.
+   */
+  digests?: Digests;
   /** The monorepo git ref to build from when the registry has no such tag; defaults to `v<tag>`, `<tag>`, `release/<tag>`. */
   ref?: string;
 }
@@ -304,6 +311,26 @@ export interface EnsureResult {
   sides: { spec: string; provenance?: SideProvenance }[];
   /** What happened to the image cache: `used` (a registry outage was survived from it: the run is degraded), `refreshed`, or `none`. */
   cache: "none" | "used" | "refreshed";
+}
+
+/**
+ * A reference pinned as `repo:tag@sha256:…` says two things, and they must agree: the tag is what the dispatch calls
+ * the image, the digest is which bytes it means. Asks the registry what the tag resolves to now. Only registry names
+ * are asked; a name that is not one (a local build) has no registry to disagree with.
+ */
+export function tagAgreesWithDigest(exec: Exec, ref: string): { ok: true } | { ok: false; reason: string } {
+  const { repo, tag, digest } = parseRef(ref);
+  if (!digest || !tag || !isRegistryRef(ref)) return { ok: true };
+  const name = `${repo}:${tag}`;
+  const resolved = exec("docker", ["buildx", "imagetools", "inspect", name, "--format", "{{.Manifest.Digest}}"]);
+  if (resolved.error || resolved.status !== 0) {
+    const why = resolved.error ? resolved.error.message : (resolved.stderr.trim().split(/\r?\n/).filter(Boolean).pop() ?? `docker buildx exited ${resolved.status}`);
+    return { ok: false, reason: `${ref}: cannot check that ${name} still resolves to the pinned digest (${why}); a pinned image is not judged unless the tag and the digest are known to agree` };
+  }
+  const current = resolved.stdout.trim();
+  if (!DIGEST_PATTERN.test(current)) return { ok: false, reason: `${ref}: the registry answered "${current.slice(0, 80)}" for ${name}, not a digest, so the tag and the pinned digest cannot be compared` };
+  if (current !== digest) return { ok: false, reason: `${ref}: the dispatch pins ${digest}, but ${name} resolves to ${current} now. The tag moved after the digests were taken, or the digest belongs to another image; nothing is judged on a guess` };
+  return { ok: true };
 }
 
 function build(exec: Exec, ref: string, tag: string, prefix: string, log: (m: string) => void): boolean {
@@ -340,17 +367,28 @@ export function ensureImages(requests: ImageRequest[], prefix: string, deps: Ens
   let cacheUsed = false;
   const seen = new Set<string>();
   for (const request of requests) {
-    if (seen.has(request.spec)) continue;
-    seen.add(request.spec);
+    const key = `${request.spec}|${JSON.stringify(request.digests ?? {})}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
     let images: AppImages;
     try {
-      images = imagesFor(request.spec, prefix);
+      images = pinImages(imagesFor(request.spec, prefix), request.digests, `${request.spec} digests`);
     } catch (e) {
       problem(e instanceof Error ? e.message : String(e), EXIT_CANNOT_JUDGE);
       sides.push({ spec: request.spec });
       continue;
     }
-    log(`${request.spec}:`);
+    log(`${request.spec}${request.digests ? " (pinned by digest)" : ""}:`);
+
+    // Pinned: the tag and the digest must name the same image before anything is pulled, and nothing is built in its place.
+    if (request.digests) {
+      const disagreements = [...new Set(Object.values(images))].map((ref) => tagAgreesWithDigest(exec, ref)).flatMap((r) => (r.ok ? [] : [r.reason]));
+      if (disagreements.length) {
+        for (const d of disagreements) problem(d, EXIT_CANNOT_JUDGE);
+        sides.push({ spec: request.spec });
+        continue;
+      }
+    }
 
     // 1 and 2: local, else pull. Names without a registry host are never pulled.
     const missing: string[] = [];
@@ -409,6 +447,11 @@ export function ensureImages(requests: ImageRequest[], prefix: string, deps: Ens
     // 3: the loud fallback.
     let builtFrom: string | undefined;
     if (missing.length) {
+      if (request.digests) {
+        problem(`${missing.join(", ")}: not available by digest, and an image pinned by digest is never built from source (a rebuild is not the image the digest names)`);
+        sides.push({ spec: request.spec });
+        continue;
+      }
       if (!isBuildable(request.spec)) {
         problem(`${missing.join(", ")}: not available, and "${request.spec}" is not a bare tag, so it cannot be built from a monorepo ref`);
         sides.push({ spec: request.spec });

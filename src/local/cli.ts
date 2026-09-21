@@ -170,6 +170,8 @@ export function buildPlan(task: string | undefined, v: Values, env: NodeJS.Proce
         ...(str(v, "runs") ? { runs: integer(v, "runs", 3, 1) } : {}),
         ...(str(v, "migrations-a") ? { migrationsA: str(v, "migrations-a")! } : {}),
         ...(str(v, "migrations-b") ? { migrationsB: str(v, "migrations-b")! } : {}),
+        ...(str(v, "a-digests") ? { productionDigests: str(v, "a-digests")! } : {}),
+        ...(str(v, "b-digests") ? { candidateDigests: str(v, "b-digests")! } : {}),
         ...(only ? { only: only as GateStream } : {}),
         ...(override ? { override } : {})
       });
@@ -177,7 +179,11 @@ export function buildPlan(task: string | undefined, v: Values, env: NodeJS.Proce
     case "mutants":
       return planMutants({ tag: str(v, "base") ?? PRODUCTION_DEFAULT_TAG(env) });
     case "watch":
-      return planWatch({ production: str(v, "production") ?? PRODUCTION_URLS(env), ...(str(v, "recorded") ? { recorded: resolve(str(v, "recorded")!) } : {}) });
+      return planWatch({
+        production: str(v, "production") ?? PRODUCTION_URLS(env),
+        ...(str(v, "recorded") ? { recorded: resolve(str(v, "recorded")!) } : {}),
+        ...(str(v, "deployed") ? { deployed: { tag: str(v, "deployed")!, ...(str(v, "deployed-digests") ? { digests: str(v, "deployed-digests")! } : {}), ...(str(v, "release-record") ? { record: resolve(str(v, "release-record")!) } : {}) } } : {})
+      });
     default:
       throw new UsageError("local nightly|gate|mutants|watch [--dry-run]");
   }

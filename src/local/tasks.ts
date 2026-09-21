@@ -94,6 +94,9 @@ export interface GateOptions {
   runs?: number;
   migrationsA?: string;
   migrationsB?: string;
+  /** Since 1.3.0: the dispatch's production_digests / candidate_digests, as `--a-digests` / `--b-digests` take them. */
+  productionDigests?: string;
+  candidateDigests?: string;
   only?: GateStream;
   override?: { reason: string; by: string };
 }
@@ -101,16 +104,17 @@ export interface GateOptions {
 export function planGate(o: GateOptions): Plan {
   const want = (s: GateStream) => !o.only || o.only === s;
   const override = o.override ? ["--override-reason", o.override.reason, "--override-by", o.override.by] : [];
+  const pins = [...(o.productionDigests ? ["--a-digests", o.productionDigests] : []), ...(o.candidateDigests ? ["--b-digests", o.candidateDigests] : [])];
   const steps: Step[] = [];
   steps.push({ id: "noise-status", title: "the local noise status (does the gate have the right to FAIL?)", argv: ["noise", "status"], stream: "info", gatesStream: false, informational: true });
   if (want("release") || want("upgrade")) {
-    steps.push({ id: "ensure", title: "pull and verify, or build, both sides", argv: ["images", "ensure", "--a", o.production, "--b", o.candidate], stream: "images", gatesStream: true });
+    steps.push({ id: "ensure", title: "pull and verify, or build, both sides", argv: ["images", "ensure", "--a", o.production, "--b", o.candidate, ...pins], stream: "images", gatesStream: true });
   }
   if (want("release")) {
     steps.push({
       id: "release",
       title: "release mode: A/B, claims, k6",
-      argv: ["run", "--mode", "release", "--a", o.production, "--b", o.candidate, "--runs", String(o.runs ?? WORKFLOW_DEFAULTS.runs), "--load", WORKFLOW_DEFAULTS.load, ...(o.claims ? ["--claims", o.claims] : []), ...override],
+      argv: ["run", "--mode", "release", "--a", o.production, "--b", o.candidate, "--runs", String(o.runs ?? WORKFLOW_DEFAULTS.runs), "--load", WORKFLOW_DEFAULTS.load, ...pins, ...(o.claims ? ["--claims", o.claims] : []), ...override],
       stream: "release",
       gatesStream: false
     });
@@ -119,7 +123,7 @@ export function planGate(o: GateOptions): Plan {
     steps.push({ id: "migration", title: "migration rehearsal", argv: ["run", "--mode", "migration", "--a", o.migrationsA ?? `v${o.production}`, "--b", o.migrationsB ?? `v${o.candidate}`, ...override], stream: "migration", gatesStream: false });
   }
   if (want("upgrade")) {
-    steps.push({ id: "upgrade", title: "upgrade rehearsal: rollout under load", argv: ["run", "--mode", "upgrade", "--a", o.production, "--b", o.candidate, "--set", "fixture", "--journey", WORKFLOW_DEFAULTS.upgradeJourney, ...override], stream: "upgrade", gatesStream: false });
+    steps.push({ id: "upgrade", title: "upgrade rehearsal: rollout under load", argv: ["run", "--mode", "upgrade", "--a", o.production, "--b", o.candidate, "--set", "fixture", "--journey", WORKFLOW_DEFAULTS.upgradeJourney, ...pins, ...override], stream: "upgrade", gatesStream: false });
   }
   return { task: "gate", steps };
 }
@@ -134,12 +138,19 @@ export function planMutants(o: { tag: string }): Plan {
   };
 }
 
-export function planWatch(o: { recorded?: string; production: string }): Plan {
+/** Since 1.3.0: what the deploy says it deployed (`--deployed`, `--deployed-digests`), and where the release record is (`--release-record`; default the local store). */
+export interface Deployed {
+  tag: string;
+  digests?: string;
+  record?: string;
+}
+
+export function planWatch(o: { recorded?: string; production: string; deployed?: Deployed }): Plan {
   return {
     task: "watch",
     steps: [
       { id: "noise-status", title: "the local noise status", argv: ["noise", "status"], stream: "info", gatesStream: false, informational: true },
-      { id: "post-deploy", title: "reference journeys against production vs the recorded candidate", argv: ["run", "--mode", "post-deploy", "--recorded", o.recorded ?? LATEST_RECORDED, "--production", o.production], stream: "post-deploy", gatesStream: false }
+      { id: "post-deploy", title: "reference journeys against production vs the recorded candidate", argv: ["run", "--mode", "post-deploy", "--recorded", o.recorded ?? LATEST_RECORDED, "--production", o.production, ...(o.deployed ? ["--deployed", o.deployed.tag, ...(o.deployed.record ? ["--release-record", o.deployed.record] : []), ...(o.deployed.digests ? ["--deployed-digests", o.deployed.digests] : [])] : [])], stream: "post-deploy", gatesStream: false }
     ]
   };
 }

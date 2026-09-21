@@ -13,6 +13,7 @@ The machine-readable half lives in [`docs/contract/`](contract/):
 | --- | --- |
 | [`report.schema.json`](contract/report.schema.json) | `report.json` (JSON Schema, draft-07) |
 | [`noise-status.schema.json`](contract/noise-status.schema.json) | `noise-status.json` |
+| [`release-record.schema.json`](contract/release-record.schema.json) | the release record (since 1.3.0) |
 | [`cli.json`](contract/cli.json) | every command and flag, which are stable, the exit codes |
 | [`workflows.json`](contract/workflows.json) | dispatch events and payloads, repository variables, artifacts, permissions the workflows never hold |
 
@@ -51,6 +52,7 @@ before reading a report.
 | `report.md` | every mode | the file exists and is GitHub-flavoured Markdown starting with a `##` heading that carries the mode and the verdict; its wording and layout are for people and may change in a patch |
 | `report.html` | every mode | the file exists and is self-contained (no scripts, no external requests); its content is for people |
 | `noise-status.json` | `noise` mode only | yes — below |
+| `release-record.json` | `release` mode only (since 1.3.0) | yes — [the release record](#the-release-record) |
 | `a/capture.json`, `b/capture.json`, screenshots, `a/load/`, `b/load/` | capturing modes | no. The harness reads its own captures back (`harness compare`, `--recorded`); nobody else should. Each `capture.json` carries the same `harness` stamp as the report |
 
 `harness compare --dir <run dir>` rewrites the three reports (and, in noise
@@ -89,6 +91,7 @@ written). Source of truth: `RunReport` in `src/types.ts`.
 | `load` | optional | when `--load` ran on both sides: `{ a, b }`, each `{ requests, failed, serverErrors, p50, p95, rate, duration }` |
 | `claimHygiene` | optional — since 1.2.0 | present when the claims file had claims; see [Claim hygiene](#claim-hygiene). Informational: never changes the verdict |
 | `override` | optional — since 1.2.0 | present only when an override of a FAIL was requested; see [Overriding a FAIL](#overriding-a-fail) |
+| `deployment` | optional — since 1.3.0 | post-deploy mode, when the deploy reported what it deployed: `{ production?, status, digests, recorded?, record?, problems[] }`, the deployed digests against the release record; see [Checking a deployment](#checking-a-deployment). Advisory: a `status` other than `match` turns a `pass` into a `warn` and never touches a `fail` |
 
 **Hunk**: `{ id, artefact, scope, path?, summary, detail?, severity }`.
 `artefact` is one of `dom`, `screenshot`, `network`, `console`, `headers`,
@@ -352,6 +355,103 @@ $ pnpm harness run --mode release … --override-reason "Rule 0044: payments hot
   measure of whether the harness is trusted or tolerated
   ([`noise-burndown.md`](noise-burndown.md#overrides)).
 
+## Image digests and the release record
+
+Since 1.3.0. A tag can move between the moment the monorepo builds an image and
+the moment the harness pulls it, and a deployment can run something other than
+what release mode judged. Three additions close both gaps, and every one of
+them is optional: a dispatch without them behaves exactly as in 1.2.0.
+
+### Digests in the dispatch
+
+`release-candidate` may carry `production_digests` and `candidate_digests`:
+objects `app -> "sha256:<64 hex>"`, for any of the harness's apps (`reader`,
+`catalogue`, `live`; the harness accepts every app it stacks and names no other).
+
+```json
+{ "production_digests": { "reader": "sha256:…", "catalogue": "sha256:…", "live": "sha256:…" },
+  "candidate_digests":  { "reader": "sha256:…", "catalogue": "sha256:…", "live": "sha256:…" } }
+```
+
+`release.yml` hands them to `harness images ensure` and `harness run` as
+`--a-digests` (production) and `--b-digests` (candidate). Each flag takes a JSON
+object or `reader=sha256:…,catalogue=sha256:…,live=sha256:…`; an empty value,
+`{}` and `null` mean none. What changes when they are given:
+
+- the references become `repo:tag@sha256:…` (the form `--a`/`--b` already read,
+  since 1.1.0) and `report.json` says so in `sides`;
+- the pull is **by digest**, and the cosign signature is verified **on that
+  digest** — by the same rule as an unpinned image, which is already by digest;
+- a digest that disagrees with what the tag resolves to now is **exit `2`,
+  "cannot judge"**, with the reason stated: the harness asks the registry
+  (`docker buildx imagetools inspect <repo>:<tag>`) which digest the tag has
+  today, and refuses to judge when it is another one (the tag moved after the
+  digests were taken, or the digest belongs to another image). A tag that cannot
+  be resolved at all is refused the same way: a pinned image is only judged when
+  its tag and its digest are known to agree;
+- a pinned image that cannot be pulled is exit `1` (not obtainable), and is
+  **never built from source**: a rebuild is not the image the digest names;
+- a digest for an app the harness does not know, one that is not
+  `sha256:` and 64 lowercase hex, or one that contradicts a digest already in
+  `--a`/`--b`, is exit `2`;
+- an app with no digest is not pinned; a side may be pinned in part.
+
+### The release record
+
+Release mode writes what it judged, as `releases/<candidate>.json` in the
+harness's state directory (`HARNESS_HOME`, default `<checkout>/.harness`, beside
+the noise store; see [local.md](local.md)) and as `release-record.json` in the
+run's output directory (so the `release-report` artifact carries it).
+[`contract/release-record.schema.json`](contract/release-record.schema.json):
+
+```json
+{ "schemaVersion": 1, "candidate": "16.3.0-rc.4", "release": "16.3.0", "production": "16.2.0",
+  "recordedAt": "2026-09-16T09:10:00.000Z",
+  "harness": { "version": "1.3.0", "gitSha": "3f2c…", "contractVersion": "1.3.0" },
+  "verdict": "pass", "overridden": false, "pinned": true, "verified": true,
+  "digests": { "reader": "sha256:…", "catalogue": "sha256:…", "live": "sha256:…" } }
+```
+
+`digests` are the registry digests of the candidate images that ran, and are
+evidence only when `verified` is `true` (every image pulled and signature-verified
+in the run). A candidate built from a git ref, or found locally, has none.
+Alongside `<candidate>.json`, the store keeps `<release>.json` (`16.3.0` for
+`16.3.0-rc.4`): the newest candidate of that release that could ship, that is one
+whose verdict is not `fail` unless the FAIL was overridden. That is the file
+`--deployed 16.3.0` finds.
+
+CI publishes it the way it publishes the noise status: `release.yml`'s
+`publish-record` job pushes `releases/<candidate>.json` (and `<release>.json`)
+to this repository's `release-records` branch, and nothing else.
+
+### Checking a deployment
+
+The `deployed` dispatch may carry `production` (string: the tag that was
+deployed) and `digests` (an object like the above: what runs). Post-deploy mode
+compares them with the release record and **warns**:
+
+| `deployment.status` | Meaning |
+| --- | --- |
+| `match` | every reported digest is the recorded one, and no app is missing on either side |
+| `differs` | an app is deployed at another digest than the one release mode judged |
+| `incomplete` | nothing differs, but an app has a digest on one side only (the record has none for it, or the deploy reported none) |
+| `no-record` | no release record was found for the release |
+| `not-reported` | the deploy named a tag but sent no digests |
+
+Anything but `match` is **advisory, exit `0`**: `report.json` gets `deployment`
+(see the schema), the first `reasons` entry says `DEPLOYED IMAGES DIFFER` or
+`DEPLOYED IMAGES NOT CONFIRMED`, a `pass` verdict becomes `warn`, and the
+step summary carries it. It never turns anything into a `fail`, and never
+softens one. A `deployed` payload without `production` and `digests` (every
+1.2.0 dispatch, and the 15-minute schedule) is not checked at all.
+
+The record is looked up in this order, and nowhere else: `--release-record`
+(a file, or a directory holding `<tag>.json`); otherwise
+`<HARNESS_HOME>/releases/<tag>.json`. `post-deploy.yml` fetches
+`releases/<production>.json` from the `release-records` branch into a directory
+and passes it as `--release-record`. `<tag>` is the `--deployed` value, which
+must be a registry tag (`[A-Za-z0-9_][A-Za-z0-9_.-]*`): it names a file.
+
 ## Claims file
 
 Claims format version: `1`
@@ -397,9 +497,9 @@ change in a minor release.
 
 | Command | Stable flags |
 | --- | --- |
-| `harness run` | `--mode` (required), `--a`, `--b` (required except in post-deploy), `--claims <file>`, `--noise <file\|dir\|skip>`, `--runs <n>`, `--set <fixture,auth,reference>`, `--journey <name>` (repeatable), `--load <rate>x<duration>`, `--out <dir>`, `--image-prefix <prefix or {app} template>`, `--allow-unsigned`, `--require-verified` (noise mode: write the status `degraded` unless every image on both sides was pulled and verified in this run), `--override-reason <text>` and `--override-by <who>` (see [Overriding a FAIL](#overriding-a-fail)); post-deploy: `--recorded <release run dir>`, `--production reader=URL,catalogue=URL,live=URL` |
+| `harness run` | `--mode` (required), `--a`, `--b` (required except in post-deploy), `--claims <file>`, `--noise <file\|dir\|skip>`, `--runs <n>`, `--set <fixture,auth,reference>`, `--journey <name>` (repeatable), `--load <rate>x<duration>`, `--out <dir>`, `--image-prefix <prefix or {app} template>`, `--allow-unsigned`, `--require-verified` (noise mode: write the status `degraded` unless every image on both sides was pulled and verified in this run), `--override-reason <text>` and `--override-by <who>` (see [Overriding a FAIL](#overriding-a-fail)), `--a-digests <digests>` and `--b-digests <digests>` (since 1.3.0: pin a side's images, see [Image digests](#image-digests-and-the-release-record)); post-deploy: `--recorded <release run dir>`, `--production reader=URL,catalogue=URL,live=URL`, and since 1.3.0 `--deployed <tag>`, `--deployed-digests <digests>` and `--release-record <file\|dir>` (see [Checking a deployment](#checking-a-deployment)) |
 | `harness compare` | `--dir <run dir>` (required), `--mode` (required), `--claims`, `--noise` |
-| `harness images ensure` | `--a`, `--b` (required), `--ref-a`, `--ref-b` (monorepo git refs to build from when the pull fails), `--image-prefix`, `--allow-unsigned`, `--image-cache <dir>` (since 1.2.0: refreshed from images pulled and verified in this run; used, as provenance `cached`, only when the registry cannot be reached, and never for a tag the registry says does not exist). With `GITHUB_OUTPUT` set it writes `image_cache=none\|used\|refreshed` |
+| `harness images ensure` | `--a`, `--b` (required), `--a-digests`, `--b-digests` (since 1.3.0: pull by digest, verify on it, refuse a tag that has moved; a pinned image is never built), `--ref-a`, `--ref-b` (monorepo git refs to build from when the pull fails), `--image-prefix`, `--allow-unsigned`, `--image-cache <dir>` (since 1.2.0: refreshed from images pulled and verified in this run; used, as provenance `cached`, only when the registry cannot be reached, and never for a tag the registry says does not exist). With `GITHUB_OUTPUT` set it writes `image_cache=none\|used\|refreshed` |
 | `harness mutants` | `--base <tag or reader image>` (required), `--out`, `--image-prefix`, `--allow-unsigned` |
 | `harness version` | `--json` |
 | any | `--help` |
@@ -455,8 +555,8 @@ fine-grained PAT, or a GitHub App installation token); sample sender:
 
 | `event_type` | Workflow | `client_payload` |
 | --- | --- | --- |
-| `release-candidate` | `release.yml` — release mode (3 runs, k6 `20x30s`), migration rehearsal, upgrade rehearsal, as three jobs | `production` (required): production tag, side a. `candidate` (required): candidate tag, side b. `claims_url`: a URL the runner can `curl` without credentials; omitted means no claims. `runs`: default `3`. `migrations_a`, `migrations_b`: monorepo git refs for migration mode; default `v<production>` and `v<candidate>` |
-| `deployed` | `post-deploy.yml` — post-deploy mode against `HARNESS_PRODUCTION_URLS` | none read. The recorded side is the `release-report` artifact of the latest successful `release.yml` run; the payload cannot choose it (by hand, `workflow_dispatch` with `recorded_run_id` can) |
+| `release-candidate` | `release.yml` — release mode (3 runs, k6 `20x30s`), migration rehearsal, upgrade rehearsal, as three jobs; then the release record is published | `production` (required): production tag, side a. `candidate` (required): candidate tag, side b. `claims_url`: a URL the runner can `curl` without credentials; omitted means no claims. `runs`: default `3`. `migrations_a`, `migrations_b`: monorepo git refs for migration mode; default `v<production>` and `v<candidate>`. Since 1.3.0: `production_digests`, `candidate_digests`: objects `app -> sha256:<64 hex>` ([Image digests](#image-digests-and-the-release-record)) |
+| `deployed` | `post-deploy.yml` — post-deploy mode against `HARNESS_PRODUCTION_URLS` | Since 1.3.0, both optional: `production` (the tag that was deployed) and `digests` (an object `app -> sha256:<64 hex>`: the images that run), compared with the release record ([Checking a deployment](#checking-a-deployment)). Without them (every 1.2.0 payload) nothing is compared. The recorded side is the `release-report` artifact of the latest successful `release.yml` run; the payload cannot choose it (by hand, `workflow_dispatch` with `recorded_run_id` can) |
 
 Any other event type is ignored. Unknown payload fields are ignored. A missing
 required field fails the run at its first harness step (exit `2`).
@@ -521,9 +621,12 @@ What it does instead:
   `harness-override` for each FAIL a person overrode;
 - since 1.2.0, in `nightly-noise.yml` only, the `publish` job, with
   `contents: write` on **this** repository: force-pushes the `noise` branch
-  (the latest A/A status, its history and summary). No other branch, no tag, no
-  release, no other repository. A test lists these three write scopes and fails
-  on any other.
+  (the latest A/A status, its history and summary);
+- since 1.3.0, in `release.yml` only, the `publish-record` job, with
+  `contents: write` on **this** repository: pushes the `release-records` branch
+  (`releases/<candidate>.json` and `releases/<release>.json`, see [the release
+  record](#the-release-record)). No other branch, no tag, no release, no other
+  repository. A test lists these four write scopes and fails on any other.
 
 Post-deploy mode sends anonymous, read-only requests for the published
 reference course to the production URLs. It never signs in and never writes.

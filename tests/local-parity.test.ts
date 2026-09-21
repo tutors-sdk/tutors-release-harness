@@ -36,7 +36,9 @@ export function harnessCalls(yaml: string, env: Record<string, string>): string[
 }
 
 /** Flags that carry a value the local plan decides differently (a path, a person) or that CI supplies from the fetched noise status. */
-const VALUE_FLAGS = new Set(["claims", "override-reason", "override-by", "image-cache", "noise", "recorded", "status", "store", "production"]);
+const D1 = `sha256:${"1".repeat(64)}`;
+const D2 = `sha256:${"2".repeat(64)}`;
+const VALUE_FLAGS = new Set(["claims", "override-reason", "override-by", "image-cache", "noise", "recorded", "status", "store", "production", "release-record"]);
 
 /** The command and its flags as a comparable list: positionals in order, then the flags sorted, their site-specific values masked. */
 export function canon(tokens: string[], drop: string[] = []): string[] {
@@ -102,8 +104,8 @@ describe("nightly-noise.yml is `harness local nightly`", () => {
 });
 
 describe("release.yml is `harness local gate`", () => {
-  const env = { PRODUCTION: "16.2.0", CANDIDATE: "16.3.0-rc.1", RUNS: String(WORKFLOW_DEFAULTS.runs), MIGRATIONS_A: "", MIGRATIONS_B: "", CLAIMS_URL: "u", NOISE_FILE: "f", OVERRIDE_REASON: "why", OVERRIDE_BY: "me" };
-  const withOverride = planGate({ production: "16.2.0", candidate: "16.3.0-rc.1", claims: "/c.yaml", override: { reason: "why", by: "me" } });
+  const env = { PRODUCTION: "16.2.0", CANDIDATE: "16.3.0-rc.1", RUNS: String(WORKFLOW_DEFAULTS.runs), MIGRATIONS_A: "", MIGRATIONS_B: "", CLAIMS_URL: "u", NOISE_FILE: "f", OVERRIDE_REASON: "why", OVERRIDE_BY: "me", PRODUCTION_DIGESTS: `reader=${D1}`, CANDIDATE_DIGESTS: `reader=${D2}` };
+  const withOverride = planGate({ production: "16.2.0", candidate: "16.3.0-rc.1", claims: "/c.yaml", override: { reason: "why", by: "me" }, productionDigests: `reader=${D1}`, candidateDigests: `reader=${D2}` });
   const calls = harnessCalls(workflow("release.yml"), { ...env, MIGRATIONS_A: undefined as never, MIGRATIONS_B: undefined as never });
 
   it("release mode: the same A/B, claims, k6 and override flags", () => {
@@ -140,8 +142,8 @@ describe("weekly-mutants.yml is `harness local mutants`", () => {
 });
 
 describe("post-deploy.yml is `harness local watch`", () => {
-  const plan = planWatch({ recorded: "recorded/x-release", production: WORKFLOW_DEFAULTS.productionUrls });
-  const calls = harnessCalls(workflow("post-deploy.yml"), { recorded: "recorded/x-release", PRODUCTION_URLS: WORKFLOW_DEFAULTS.productionUrls, NOISE_FILE: "f" });
+  const plan = planWatch({ recorded: "recorded/x-release", production: WORKFLOW_DEFAULTS.productionUrls, deployed: { tag: "16.3.0", digests: `reader=${D1}`, record: "releases" } });
+  const calls = harnessCalls(workflow("post-deploy.yml"), { recorded: "recorded/x-release", PRODUCTION_URLS: WORKFLOW_DEFAULTS.productionUrls, NOISE_FILE: "f", DEPLOYED: "16.3.0", DEPLOYED_DIGESTS: `reader=${D1}` });
   it("compares production with the recorded release run, the same way", () => {
     expect(canon(called(calls, "run", "--mode", "post-deploy"), ["noise"])).toEqual(planned(plan, "post-deploy"));
   });

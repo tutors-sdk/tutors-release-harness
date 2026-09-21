@@ -1,5 +1,6 @@
 import type { Hunk, RunReport } from "../types.ts";
 import { loudProvenance } from "./provenance.ts";
+import { deploymentHtml, loudDeployment } from "./deployment.ts";
 import { imageArtefactsHtml } from "./image-static.ts";
 
 const esc = (s: string) => s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
@@ -64,6 +65,7 @@ export function renderHtml(report: RunReport): string {
 <h1>Tutors release harness — <code>${esc(report.mode)}</code> <span class="verdict ${report.verdict}">${report.verdict}</span></h1>
 <p><small>${esc(report.ranAt)} · clock ${esc(report.now)} · ${report.runs} run(s) per side · harness ${esc(report.harnessVersion)}</small></p>
 ${loud ? `<p class="loud">${esc(loud.text)}</p>` : ""}
+${loudDeployment(report) ? `<p class="loud">${esc(loudDeployment(report)!)}</p>` : ""}
 <ul>${report.reasons.map((r) => `<li>${esc(r)}</li>`).join("")}${report.noise ? `<li>A/A consulted: ${report.noise.clean ? "clean" : `${report.noise.hunks} diff(s)`}${report.noise.degraded?.length ? " but DEGRADED (does not count)" : ""} at ${esc(report.noise.ranAt)}</li>` : ""}</ul>
 
 <table>
@@ -71,6 +73,7 @@ ${loud ? `<p class="loud">${esc(loud.text)}</p>` : ""}
 <tbody>${(["reader", "catalogue", "live"] as const).map((app) => `<tr><td>${app}</td><td><code>${esc(report.sides.a[app])}</code></td><td><code>${esc(report.sides.b[app])}</code></td></tr>`).join("")}</tbody>
 </table>
 ${provenanceBlock(report)}
+${deploymentHtml(report, esc)}
 ${imageArtefactsHtml(report)}
 
 ${

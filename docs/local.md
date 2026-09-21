@@ -218,6 +218,7 @@ for example to a backed-up folder.
 | `noise/noise-status.json`, `noise-history.json`, `noise-summary.md` | the latest night, the ratchet's history, tonight's summary | the `noise` branch |
 | `image-cache/` | `docker save` of the last verified production images | `actions/cache` |
 | `overrides.jsonl` | every applied override, one JSON line each, hash-chained | `harness-override` issues |
+| `releases/<candidate>.json`, `releases/<release>.json` | what release mode judged: the digests of the candidate's images, and the verdict. Written by every release-mode run; `--deployed <release>` in post-deploy mode checks a deployment against it | the `release-records` branch |
 | `rollbacks/` | what a failing watch would have opened as an issue | `rollback` issues |
 | `locks/run.lock`, `locks/watch.lock` | one heavy run per machine; one watch | `concurrency:` groups |
 | `image-provenance.json` | the ledger `images ensure` leaves for `run` (`HARNESS_PROVENANCE_FILE` still moves it) | a file on the runner |

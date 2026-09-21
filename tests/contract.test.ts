@@ -19,7 +19,7 @@ import { compareFromCaptures, defaultRunOptions } from "../src/run.ts";
 import { renderHtml } from "../src/report/html.ts";
 import { renderMarkdown } from "../src/report/markdown.ts";
 import { DEFAULT_COSIGN_IDENTITY, DEFAULT_COSIGN_ISSUER, EXIT_CANNOT_JUDGE, EXIT_UNAVAILABLE } from "../src/images.ts";
-import { DEFAULT_IMAGE_PREFIX, QUAY_IMAGE_TEMPLATE, imagesFor } from "../src/image-ref.ts";
+import { APPS, DEFAULT_IMAGE_PREFIX, QUAY_IMAGE_TEMPLATE, imagesFor } from "../src/image-ref.ts";
 import { ARTEFACTS, MODES, PROVENANCES, SUBSTRATES, type CompareResult, type Mode, type RunReport, type SchemaCatalog } from "../src/types.ts";
 import { CLAIMS_VERSION, CONTRACT_VERSION, HARNESS_VERSION, SCHEMA_VERSION, harnessInfo } from "../src/version.ts";
 import { capture, clone } from "./support/captures.ts";
@@ -123,7 +123,15 @@ const full: DeepRequired<RunReport> = {
     flagged: [{ claim: { artefact: "*", scope: "**", reason: "Rule 0031: reading time", approvedBy: "a-maintainer" }, hunks: 12, flags: ["covers-many-hunks", "broad-with-approval"] }]
   },
   override: { reason: "Rule 0044: payments hotfix, frame options restored in 16.3.1", by: "a-maintainer", verdict: "fail", applied: true, at: "2026-09-16T09:20:00.000Z" },
-  imageArtefacts: { a: sideArtefacts, b: sideArtefacts }
+  imageArtefacts: { a: sideArtefacts, b: sideArtefacts },
+  deployment: {
+    production: "16.3.0",
+    status: "differs",
+    digests: { reader: D(4), catalogue: D(5), live: D(6) },
+    recorded: { reader: D(4), catalogue: D(5), live: D(7) },
+    record: { candidate: "16.3.0-rc.4", judgedAt: "2026-09-16T09:10:00.000Z", verdict: "pass" },
+    problems: [`live: deployed ${D(6)}, but release mode judged ${D(7)} (16.3.0-rc.4)`]
+  }
 };
 
 function runFixture(mode: Mode, opts: { mutate?: boolean; claims?: string; noise?: string } = {}) {
@@ -260,6 +268,35 @@ describe("report.json", () => {
       expect(text).toContain(`harness ${HARNESS_VERSION}`);
       expect(text).toContain(`contract ${CONTRACT_VERSION}`);
     }
+  });
+});
+
+describe("digests and the release record (1.3.0)", () => {
+  const recordSchema = json("docs/contract/release-record.schema.json");
+
+  it("the schemas name the harness's apps, whatever they are, for every digest", () => {
+    expect(reportSchema.definitions.digests.propertyNames.enum).toEqual([...APPS]);
+    expect(recordSchema.properties.digests.propertyNames.enum).toEqual([...APPS]);
+    expect(reportSchema.definitions.digests.additionalProperties.pattern).toBe(recordSchema.properties.digests.additionalProperties.pattern);
+    expect(new RegExp(reportSchema.definitions.digests.additionalProperties.pattern).test(`sha256:${"a".repeat(64)}`)).toBe(true);
+  });
+
+  it("the dispatch payload fields are optional, documented, and named in the release and deployed sections of the contract", () => {
+    const { repositoryDispatch } = workflowsContract;
+    for (const field of ["production_digests", "candidate_digests"]) expect(repositoryDispatch["release-candidate"]!.clientPayload[field], field).toEqual(expect.objectContaining({ required: false }));
+    for (const field of ["production", "digests"]) expect(repositoryDispatch.deployed!.clientPayload[field], field).toEqual(expect.objectContaining({ required: false }));
+    for (const heading of ["## Image digests and the release record", "### Digests in the dispatch", "### The release record", "### Checking a deployment"]) expect(contractMd, heading).toContain(heading);
+    for (const status of reportSchema.properties.deployment.properties.status.enum) expect(contractMd, status).toContain(`| \`${status}\` |`);
+  });
+
+  it("the release records branch is written by one job of release.yml and read by post-deploy.yml", () => {
+    const branch = (workflowsContract as unknown as { releaseRecordsBranch: { branch: string; writtenBy: string; job: string; readBy: string[] } }).releaseRecordsBranch;
+    const release = read(`.github/workflows/${branch.writtenBy}`);
+    expect(branch).toMatchObject({ branch: "release-records", writtenBy: "release.yml", job: "publish-record", readBy: ["post-deploy.yml"] });
+    expect(release).toContain(`  ${branch.job}:`);
+    expect(workflowsContract.writePermissions["release.yml"]![branch.job]).toEqual(["contents"]);
+    for (const f of branch.readBy) expect(read(`.github/workflows/${f}`)).toContain(`?ref=${branch.branch}`);
+    expect(contractMd).toContain("`release-records` branch");
   });
 });
 
@@ -550,15 +587,21 @@ describe("workflows", () => {
     expect(actual).toEqual(declared);
   });
 
-  it("nothing pushes, tags or releases anywhere but the noise branch of this repository", () => {
+  it("nothing pushes, tags or releases anywhere but the noise and release-records branches of this repository, each from its own workflow", () => {
+    const branchOf: Record<string, string> = { "nightly-noise.yml": "noise", "release.yml": "release-records" };
+    let pushes = 0;
     for (const f of files) {
       for (const m of text[f]!.matchAll(/git (?:-c [^\n]*?)?push[^\n]*/g)) {
-        expect(f, m[0]).toBe("nightly-noise.yml");
+        pushes += 1;
+        expect(Object.keys(branchOf), m[0]).toContain(f);
         expect(m[0]).toContain("${GITHUB_REPOSITORY}");
-        expect(m[0]).toMatch(/ noise$/);
+        expect(m[0]).toMatch(new RegExp(` ${branchOf[f]}$`));
+        // the noise branch is forced every night; the release records are never forced: no record is lost
+        expect(/--force/.test(m[0]), m[0]).toBe(f === "nightly-noise.yml");
       }
       expect(text[f], f).not.toMatch(/git tag|gh release|gh pr |gh api [^\n]*-X (?:POST|PUT|PATCH|DELETE)/);
     }
+    expect(pushes).toBe(Object.keys(branchOf).length);
   });
 
   it("the latest noise status comes from the noise branch, vetted, not from an expiring artifact", () => {
