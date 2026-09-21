@@ -48,6 +48,25 @@ describe("normalise", () => {
     expect(hits["third-party-requests"]).toBe(1);
   });
 
+  it("drops the signed-in reader's timer-driven calls to the persistence stub, and nothing the reader itself serves", () => {
+    const input = capture("a");
+    const entry = (url: string) => ({ method: "POST", url, status: 201, contentType: "application/json", cacheControl: "", schemaHash: "abc" });
+    input.journeys[0]!.pages[0]!.network.push(
+      entry("{{origin}}/rest/v1/rpc/get_count_learning_records"),
+      entry("{{origin}}/rest/v1/tutors-connect-latest?on_conflict=course_id%2Cstudent_id"),
+      entry("{{origin}}/realtime/v1/websocket?apikey=k"),
+      entry("{{origin}}/auth/v1/user"),
+      entry("{{origin}}/auth/localhost:8080/__data.json?x-sveltekit-invalidated=10"),
+      entry("{{origin}}/course/restaurant/v1/notes")
+    );
+    const { capture: out, hits } = normalise(input, masks);
+    const urls = out.journeys[0]!.pages[0]!.network.map((n) => n.url);
+    expect(urls).toContain("{{origin}}/auth/localhost:8080/__data.json?x-sveltekit-invalidated=10");
+    expect(urls).toContain("{{origin}}/course/restaurant/v1/notes");
+    expect(urls.filter((u) => /\/(rest|realtime|auth)\/v1\//.test(u))).toEqual([]);
+    expect(hits["persistence-stub-requests"]).toBe(4);
+  });
+
   it("removes log keys named by a mask from the key set", () => {
     const withKey = { ...masks, masks: [{ id: "log-time", artefact: ["logs" as const], key: "time", reason: "test-only mask to prove log key masking works" }] };
     const { capture: out, hits } = normalise(capture("a"), withKey);
