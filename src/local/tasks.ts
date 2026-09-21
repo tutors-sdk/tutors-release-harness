@@ -7,7 +7,7 @@ export { DEFAULT_PORTS, portEnv } from "./ports.ts";
  * The four things a maintainer does, each as one command, planned as a list of
  * harness CLI invocations.
  *
- *   harness local nightly   A/A on the production tag, pulled and verified, three runs with load, recorded in the local noise store
+ *   harness local nightly   A/A on the production tag, pulled and verified, five runs with load, recorded in the local noise store
  *   harness local gate      the release gate for a candidate: release (A/B, claims, k6), migration and upgrade rehearsals
  *   harness local mutants   the harness's own signal
  *   harness local watch     post-deploy comparison against production, once or every 15 minutes
@@ -23,7 +23,7 @@ export const WORKFLOW_DEFAULTS = {
   imagePrefix: QUAY_IMAGE_TEMPLATE,
   productionTag: "main",
   productionUrls: "reader=https://tutors.dev,catalogue=https://catalogue.tutors.dev,live=https://live.tutors.dev",
-  runs: 3,
+  runs: 5,
   load: "20x30s",
   upgradeJourney: "anonymous-student-reads-course",
   watchIntervalMinutes: 15

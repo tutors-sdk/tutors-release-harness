@@ -113,7 +113,7 @@ touches:
 | `normalise/**`, `src/normalise/**` | masks and how they are applied |
 | `src/collectors/**`, `src/runtime/**`, `src/image-static/**`, `src/persistence/**`, `src/migration/**`, `src/bus/**`, `src/clock-probe.ts` | what is captured: a report can change with no engine touched |
 | `src/run.ts`, `src/modes/**`, `src/noise.ts`, `src/stack.ts`, `src/substrate/**` | how a run, a mode and a stack are put together, and the noise rule the gate consults |
-| `src/images.ts`, `src/image-ref.ts`, `src/image-cache.ts` | which images are judged, and whether they are trusted |
+| `src/images.ts`, `src/image-ref.ts`, `src/image-cache.ts`, `src/digests.ts`, `src/release-record.ts` | which images are judged (pinned by digest, or not), whether they are trusted, and what a deployment is compared with |
 | `compose.harness.yaml`, `deploy/**`, `fixtures/**`, `scripts/**` | what the two stacks are made of |
 | `traffic/**` | journeys, and the k6 load |
 | `mutants/**`, `src/mutants.ts`, `src/mutant-build.ts` | the mutants themselves, and the code that builds and runs them |
@@ -122,7 +122,7 @@ touches:
 **Deliberately not engine** (each with its reason in `NON_ENGINE_PATHS`, `src/ci/engine-change.ts`):
 `src/ci` and `src/report` (the guards themselves; rendering, whose wording is a contract patch and which
 the mutants, asserting on the verdict, cannot exercise), `src/cli.ts` (parses and dispatches; behaviour
-lives in `src/run.ts`), `src/override.ts` (records an override, never changes a verdict), `src/types.ts`,
+lives in `src/run.ts`), `src/local` (the maintainer's wrappers and `harness doctor`; they run the stable commands, which are engine code), `src/project.ts` (names the compose project and kind cluster after the checkout), `src/override.ts` (records an override, never changes a verdict), `src/types.ts`,
 `src/version.ts`, `tests`, `docs`, `claims`, `bin`, `package.json` (the version bump is the required change;
 dependencies are covered through the lock file), `README.md`, `TESTING.md`, `LICENSE`,
 `eslint.config.mjs`, `tsconfig.json` and `vitest.config.ts`. Workflows under `.github` are held to the

@@ -64,11 +64,11 @@ or `main`). Runs land in `<checkout>/out/`.
 ### Nightly A/A: `harness local nightly`
 
 ```console
-pnpm harness local nightly [--tag 16.2.2] [--runs 3] [--load 20x30s] [--no-record] [--dry-run]
+pnpm harness local nightly [--tag 16.2.2] [--runs 5] [--load 20x30s] [--no-record] [--dry-run]
 ```
 
 1. `images ensure --a T --b T --image-cache <HARNESS_HOME>/image-cache`: pull the production images from Quay and verify their signatures; with the registry down, last night's verified images come back from the cache and the night is *degraded*.
-2. `run --mode noise --a T --b T --runs 3 --load 20x30s --require-verified`.
+2. `run --mode noise --a T --b T --runs 5 --load 20x30s --require-verified`.
 3. `noise record --status <that run> --tag T`: append the night to the [noise store](#the-noise-store-is-this-machines-calibration), keep the ratchet, write the summary. Exit `1` when the ratchet is broken (the count had reached 0 and is not 0 tonight).
 
 The exit code is the worst of the steps.
@@ -76,7 +76,7 @@ The exit code is the worst of the steps.
 ### Release gate for a candidate: `harness local gate`
 
 ```console
-pnpm harness local gate --a 16.2.0 --b 16.3.0-rc.1 [--claims path\to\claims.yaml] [--runs 3] \
+pnpm harness local gate --a 16.2.0 --b 16.3.0-rc.1 [--claims path\to\claims.yaml] [--runs 5] \
     [--migrations-a v16.2.0 --migrations-b <sha>] [--only release|migration|upgrade] \
     [--override-reason "why, 20+ characters" --override-by leigh] [--dry-run]
 ```
@@ -135,7 +135,7 @@ commits that came with this document.
 | N2 | Restore last verified images (`actions/cache/restore`) | GH | `--image-cache <HARNESS_HOME>/image-cache`, the default of `local nightly` (same relative path as the workflow: `.harness/image-cache`) | keeps the last save only, which is what `restore-keys` picked. **Closed** |
 | N3 | Pull from Quay, `cosign verify` by digest | CLI | same | `cosign verify` needs the network (Sigstore TUF and Rekor): no offline verification. Inherent; the cache is the outage path and is degraded. **Documented** |
 | N4 | Save the cache if refreshed (`actions/cache/save`, `image_cache=` output) | GH | `images ensure` refreshes the directory itself | none. **Closed** |
-| N5 | A/A, 3 runs, `--load 20x30s --require-verified` | CLI | same | none. **Closed** |
+| N5 | A/A, 5 runs, `--load 20x30s --require-verified` | CLI | same | none. **Closed** |
 | N6 | Report in the job summary | GH | `out/<time>-noise/report.md` and `report.html` | none |
 | N7 | Upload `noise-status` and `noise-report` (8 days) | GH | `out/` | no retention and no pruning: `out/` grows with screenshots. **Open, low**: delete old run directories by hand |
 | N8 | History from the `noise` branch (`gh api`) | GH | `<HARNESS_HOME>/noise/noise-history.json` | none. **Closed** |

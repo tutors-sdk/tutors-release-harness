@@ -98,8 +98,8 @@ const USAGE = `tutors-release-harness
       change needs a version bump. Exit 1 on a violation, 2 when the ref does not exist.
   harness override list [--since <date>] [--json]
       The local, append-only record of every FAIL a person overrode.
-  harness local nightly [--tag T] [--runs 3] [--load 20x30s] [--image-cache dir] [--store dir] [--no-record]
-  harness local gate --a <production tag> --b <candidate tag> [--a-digests d] [--b-digests d] [--claims f] [--rules f] [--runs 3] [--only release|migration|upgrade]
+  harness local nightly [--tag T] [--runs 5] [--load 20x30s] [--image-cache dir] [--store dir] [--no-record]
+  harness local gate --a <production tag> --b <candidate tag> [--a-digests d] [--b-digests d] [--claims f] [--rules f] [--runs 5] [--only release|migration|upgrade]
                      [--migrations-a ref] [--migrations-b ref] [--override-reason r --override-by who]
   harness local mutants [--base T]
   harness local watch [--recorded <release run dir>] [--production reader=URL,catalogue=URL,live=URL] [--deployed <tag> [--deployed-digests d] [--release-record f]] [--interval 15m] [--once]

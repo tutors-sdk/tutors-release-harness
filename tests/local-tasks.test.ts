@@ -43,10 +43,10 @@ const tmp = (name: string) => mkdtempSync(join(tmpdir(), `harness-${name}-`));
 const argvOf = (plan: Plan) => plan.steps.map((s) => s.argv.join(" "));
 
 describe("the plans", () => {
-  it("nightly: pull and verify with the cache, A/A three runs with load and --require-verified, record the night", () => {
+  it("nightly: pull and verify with the cache, A/A five runs with load and --require-verified, record the night", () => {
     expect(argvOf(planNightly({ tag: "16.2.0", imageCache: "/c", record: true }))).toEqual([
       "images ensure --a 16.2.0 --b 16.2.0 --image-cache /c",
-      "run --mode noise --a 16.2.0 --b 16.2.0 --runs 3 --load 20x30s --require-verified",
+      "run --mode noise --a 16.2.0 --b 16.2.0 --runs 5 --load 20x30s --require-verified",
       `noise record --status ${LATEST_NOISE} --tag 16.2.0`
     ]);
     expect(argvOf(planNightly({ tag: "main", imageCache: "/c", record: false }))).toHaveLength(2);

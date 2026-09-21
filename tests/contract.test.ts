@@ -136,8 +136,8 @@ const full: DeepRequired<RunReport> = {
   deployment: {
     production: "16.3.0",
     status: "differs",
-    digests: { reader: D(4), catalogue: D(5), live: D(6) },
-    recorded: { reader: D(4), catalogue: D(5), live: D(7) },
+    digests: { reader: D(4), catalogue: D(5), live: D(6), time: D(8) },
+    recorded: { reader: D(4), catalogue: D(5), live: D(7), time: D(8) },
     record: { candidate: "16.3.0-rc.4", judgedAt: "2026-09-16T09:10:00.000Z", verdict: "pass" },
     problems: [`live: deployed ${D(6)}, but release mode judged ${D(7)} (16.3.0-rc.4)`]
   }

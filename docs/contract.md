@@ -398,8 +398,8 @@ objects `app -> "sha256:<64 hex>"`, for any of the harness's apps (`reader`,
 `catalogue`, `live`; the harness accepts every app it stacks and names no other).
 
 ```json
-{ "production_digests": { "reader": "sha256:…", "catalogue": "sha256:…", "live": "sha256:…" },
-  "candidate_digests":  { "reader": "sha256:…", "catalogue": "sha256:…", "live": "sha256:…" } }
+{ "production_digests": { "reader": "sha256:…", "catalogue": "sha256:…", "live": "sha256:…", "time": "sha256:…" },
+  "candidate_digests":  { "reader": "sha256:…", "catalogue": "sha256:…", "live": "sha256:…", "time": "sha256:…" } }
 ```
 
 `release.yml` hands them to `harness images ensure` and `harness run` as
@@ -438,7 +438,7 @@ run's output directory (so the `release-report` artifact carries it).
   "recordedAt": "2026-09-16T09:10:00.000Z",
   "harness": { "version": "1.3.0", "gitSha": "3f2c…", "contractVersion": "1.3.0" },
   "verdict": "pass", "overridden": false, "pinned": true, "verified": true,
-  "digests": { "reader": "sha256:…", "catalogue": "sha256:…", "live": "sha256:…" } }
+  "digests": { "reader": "sha256:…", "catalogue": "sha256:…", "live": "sha256:…", "time": "sha256:…" } }
 ```
 
 `digests` are the registry digests of the candidate images that ran, and are

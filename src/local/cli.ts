@@ -157,7 +157,7 @@ export function buildPlan(task: string | undefined, v: Values, env: NodeJS.Proce
   const override = reason || str(v, "override-by") ? { reason: reason ?? "", by: str(v, "override-by") ?? whoAmI() } : undefined;
   switch (task) {
     case "nightly":
-      return planNightly({ tag: str(v, "tag") ?? PRODUCTION_DEFAULT_TAG(env), imageCache: resolve(str(v, "image-cache") ?? imageCacheDir()), record: v.record !== false, ...(str(v, "runs") ? { runs: integer(v, "runs", 3, 1) } : {}), ...(str(v, "load") ? { load: str(v, "load")! } : {}), ...(str(v, "store") ? { store: resolve(str(v, "store")!) } : {}) });
+      return planNightly({ tag: str(v, "tag") ?? PRODUCTION_DEFAULT_TAG(env), imageCache: resolve(str(v, "image-cache") ?? imageCacheDir()), record: v.record !== false, ...(str(v, "runs") ? { runs: integer(v, "runs", WORKFLOW_DEFAULTS.runs, 1) } : {}), ...(str(v, "load") ? { load: str(v, "load")! } : {}), ...(str(v, "store") ? { store: resolve(str(v, "store")!) } : {}) });
     case "gate": {
       const a = str(v, "a");
       const b = str(v, "b");
@@ -169,7 +169,7 @@ export function buildPlan(task: string | undefined, v: Values, env: NodeJS.Proce
         candidate: b,
         ...(str(v, "claims") ? { claims: resolve(str(v, "claims")!) } : {}),
         ...(str(v, "rules") ? { rules: isUrl(str(v, "rules")!) ? str(v, "rules")! : resolve(str(v, "rules")!) } : {}),
-        ...(str(v, "runs") ? { runs: integer(v, "runs", 3, 1) } : {}),
+        ...(str(v, "runs") ? { runs: integer(v, "runs", WORKFLOW_DEFAULTS.runs, 1) } : {}),
         ...(str(v, "migrations-a") ? { migrationsA: str(v, "migrations-a")! } : {}),
         ...(str(v, "migrations-b") ? { migrationsB: str(v, "migrations-b")! } : {}),
         ...(str(v, "a-digests") ? { productionDigests: str(v, "a-digests")! } : {}),

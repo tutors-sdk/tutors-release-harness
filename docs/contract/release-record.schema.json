@@ -25,7 +25,7 @@
     "digests": {
       "type": "object",
       "description": "app -> the registry digest of each candidate image that had one. Empty when the candidate was not pulled from a registry (built from a git ref, or local).",
-      "propertyNames": { "enum": ["reader", "catalogue", "live"] },
+      "propertyNames": { "enum": ["reader", "catalogue", "live", "time"] },
       "additionalProperties": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
     }
   }

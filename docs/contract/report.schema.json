@@ -162,8 +162,8 @@
   "definitions": {
     "digests": {
       "type": "object",
-      "description": "app -> image digest. The apps are the harness's (reader, catalogue, live).",
-      "propertyNames": { "enum": ["reader", "catalogue", "live"] },
+      "description": "app -> image digest. The apps are the harness's (reader, catalogue, live, time).",
+      "propertyNames": { "enum": ["reader", "catalogue", "live", "time"] },
       "additionalProperties": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
     },
     "harness": {

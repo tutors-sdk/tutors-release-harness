@@ -318,7 +318,7 @@ describe("what run does before a stack starts", () => {
  * (what agrees is judged), a planted change it catches, and a change it must not flag.
  */
 describe("images ensure with digests from the dispatch", () => {
-  const APP_NAMES = ["reader", "catalogue", "live"] as const;
+  const APP_NAMES = ["reader", "catalogue", "live", "time"] as const;
   /** The registry as the monorepo left it: each tag resolves to the digest the dispatch will carry. */
   function pinned(tag: string, base: number) {
     const repos = APP_NAMES.map((app) => `quay.io/tutors-sdk/tutors-${app}`);

@@ -30,7 +30,7 @@ calendar does.
 
 | Piece | Where | What it guarantees |
 | --- | --- | --- |
-| Nightly A/A on the production tag, from the registry, on the CI runner | `.github/workflows/nightly-noise.yml` | Three runs, with the same `--load 20x30s` a release run uses, on `HARNESS_PRODUCTION_TAG` pulled from Quay and signature-verified. Never image-against-itself on a laptop |
+| Nightly A/A on the production tag, from the registry, on the CI runner | `.github/workflows/nightly-noise.yml` | Five runs (three cannot reach alpha, see below), with the same `--load 20x30s` a release run uses, on `HARNESS_PRODUCTION_TAG` pulled from Quay and signature-verified. Never image-against-itself on a laptop |
 | Registry-outage fallback | `harness images ensure --image-cache`, `src/image-cache.ts` | The registry is always asked first. If it cannot answer (rate limit, outage, timeout), last night's verified images come back from the runner cache. That night is **degraded**: it counts as neither clean nor dirty, and licenses nothing |
 | The ratchet and the streak | `src/ci/noise-history.ts` | Tonight's count is appended to `noise-history.json`; the job **fails** if the count had reached 0 on verified evidence and is not 0 tonight; the run summary shows count, ratchet, streak (of 7), evidence, masks |
 | A stable home for the latest status | the `noise` branch of this repository | `noise-status.json` (and the history) force-pushed by the nightly's `publish` job. `release.yml` and `post-deploy.yml` fetch the latest from there; the 8-day artifact is no longer the only copy |

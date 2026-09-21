@@ -57,7 +57,7 @@ reference copy of `release-dispatch.yml` reads them in its `images` job.
   "client_payload": {
     "production": "16.2.0", "candidate": "16.3.0-rc.4", "claims_url": "https://raw.githubusercontent.com/tutors-sdk/tutors-mono-repo/<sha>/release/claims.yaml",
     "rules_url": "https://raw.githubusercontent.com/tutors-sdk/tutors-mono-repo/<sha>/release/rules.json",
-    "runs": 3, "migrations_a": "v16.2.0", "migrations_b": "<sha>",
+    "runs": 5, "migrations_a": "v16.2.0", "migrations_b": "<sha>",
     "production_digests": { "reader": "sha256:<64 hex>", "catalogue": "sha256:<64 hex>", "live": "sha256:<64 hex>" },
     "candidate_digests":  { "reader": "sha256:<64 hex>", "catalogue": "sha256:<64 hex>", "live": "sha256:<64 hex>" } } }
 ```
