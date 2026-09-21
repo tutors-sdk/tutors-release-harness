@@ -180,8 +180,8 @@ services:
       ORIGIN: http://localhost:${LIVE_PORT_A:-3102}
 
   # The time app: student activity and time tracking (apps/time in the monorepo: port 3000, /healthz/live and
-  # /metrics like the others). It is client-rendered and no journey drives it (twelve until a real regression
-  # escapes), so it gets the app-level collectors: metrics, logs, posture, startup and the image artefacts.
+  # /metrics like the others). It is client-rendered and no journey drives it (a journey is added only when a real regression
+  # escaped that it would have caught), so it gets the app-level collectors: metrics, logs, posture, startup and the image artefacts.
   time-a:
     <<: *app
     image: ${TIME_IMAGE_A:-tutors/time:local}

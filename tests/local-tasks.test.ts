@@ -4,6 +4,7 @@
  * three small pieces they stand on: the run lock, the override log and the port
  * offset. Nothing here starts Docker or a child process: the executor is a fake.
  */
+import { spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -30,6 +31,8 @@ import {
   readGateEntry,
   renderGateSummary,
   renderPlan,
+  commandLine,
+  shellQuote,
   watch,
   workflowEnv,
   writeGateSummary,
@@ -92,7 +95,42 @@ describe("the plans", () => {
   it("--dry-run text shows every command", () => {
     const text = renderPlan(planMutants({ tag: "main" }), workflowEnv({}));
     expect(text).toContain("harness mutants --base main");
-    expect(text).toContain("HARNESS_IMAGE_PREFIX=quay.io/tutors-sdk/tutors-{app}");
+    expect(text).toContain("HARNESS_IMAGE_PREFIX='quay.io/tutors-sdk/tutors-{app}'");
+  });
+
+  describe("a printed command line survives being copied (--override-reason, and every argument that needs it)", () => {
+    const reason = String.raw`accepting Bob's "header" change; ticket $42 & \ more`;
+    const gate = planGate({ production: "1", candidate: "2", only: "release", override: { reason, by: "leigh" } });
+    const run = gate.steps.find((s) => s.argv[0] === "run")!;
+
+    it("POSIX: single quotes, an embedded single quote closes, escapes and reopens, plain words are left bare", () => {
+      expect(shellQuote("release", "linux")).toBe("release");
+      expect(shellQuote("a b", "linux")).toBe("'a b'");
+      expect(shellQuote("it's", "linux")).toBe(String.raw`'it'\''s'`);
+      expect(shellQuote("", "linux")).toBe("''");
+      const line = renderPlan(gate, {}, "linux");
+      expect(line).toContain(String.raw`--override-reason 'accepting Bob'\''s "header" change; ticket $42 & \ more' --override-by leigh`);
+    });
+
+    it("PowerShell (win32): single quotes, an embedded single quote doubled, typographic quotes too", () => {
+      expect(shellQuote("a b", "win32")).toBe("'a b'");
+      expect(shellQuote("it's", "win32")).toBe("'it''s'");
+      expect(shellQuote("it’s", "win32")).toBe("'it’’s'");
+      expect(renderPlan(gate, {}, "win32")).toContain(String.raw`--override-reason 'accepting Bob''s "header" change; ticket $42 & \ more' --override-by leigh`);
+    });
+
+    it("the environment line is quoted, and in PowerShell is assignments, not a POSIX prefix", () => {
+      expect(renderPlan(gate, { A: "x y" }, "linux")).toContain("environment: A='x y'");
+      expect(renderPlan(gate, { A: "x y" }, "win32")).toContain("environment: $env:A='x y';");
+    });
+
+    it("read back by a real POSIX shell, every argument is the one it was", () => {
+      const sh = spawnSync("bash", ["-c", "true"], { encoding: "utf8" });
+      if (sh.status !== 0) return; // no bash on this machine: the strings above are the test
+      const argv = [...run.argv, "with space", "it's", "$(touch nope)", "`x`", "", "a\nb"];
+      const back = spawnSync("bash", ["-c", `printf '%s\\0' ${commandLine(argv, "linux")}`], { encoding: "utf8" });
+      expect(back.stdout.split("\0").slice(0, -1)).toEqual(argv);
+    });
   });
 
   it("the CLI turns flags into those plans, with paths made absolute (the child runs in the harness checkout)", () => {

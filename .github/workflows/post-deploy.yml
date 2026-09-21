@@ -1,6 +1,10 @@
 # After a deploy, and every fifteen minutes after that: run the reference-course
 # journeys against production and compare with the candidate's recorded
-# release-mode capture. A new difference opens a rollback issue with the report.
+# release-mode capture. A new difference (exit 1) opens a rollback issue with the report.
+# Exit 2 is "could not judge" (an unusable input, an image that cannot be trusted, a run that
+# stopped before a verdict): the workflow fails so it is seen and the summary says so, but no
+# rollback issue is opened, because nothing was found that says production is worse
+# (docs/contract.md, "Exit codes").
 #
 # Dispatched by the monorepo's deploy job (repository_dispatch "deployed") and
 # scheduled as the synthetic monitor. The recorded run is the release-report
@@ -88,10 +92,16 @@ jobs:
         id: run
         env:
           NOISE_FILE: ${{ steps.noise.outputs.noise_file }}
+        # The exit code is kept for the steps below: 1 is a difference (a rollback issue), 2 is "could not judge" (no issue).
         run: |
           recorded="$(ls -d recorded/*-release | head -1)"
+          set +e
           pnpm harness run --mode post-deploy --recorded "$recorded" --production "$PRODUCTION_URLS" ${NOISE_FILE:+--noise "$NOISE_FILE"} \
             ${DEPLOYED:+--deployed "$DEPLOYED" --release-record releases} ${DEPLOYED_DIGESTS:+--deployed-digests "$DEPLOYED_DIGESTS"}
+          code=$?
+          set -e
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          exit "$code"
 
       - uses: actions/upload-artifact@v4
         if: always()
@@ -100,8 +110,21 @@ jobs:
           path: out/
           retention-days: 14
 
+      # Exit 2: no verdict. The run step has already failed the job; this makes it say why, in the run's summary.
+      - name: Say that the harness could not judge
+        if: failure() && steps.run.outputs.exit_code == '2'
+        run: |
+          {
+            echo "### Post-deploy: could not judge"
+            echo
+            echo "The harness exited 2: it could not judge production against the recorded candidate (see the step log for why)."
+            echo "This is not a finding about production, so no rollback issue was opened. The run is marked failed so that it is seen."
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "::error title=Post-deploy could not judge::the harness exited 2 (no verdict); no rollback issue was opened"
+
+      # Exit 1 only: a difference the claims and the A/A rule did not excuse.
       - name: Open a rollback issue
-        if: failure() && steps.run.outcome == 'failure'
+        if: failure() && steps.run.outputs.exit_code == '1'
         env:
           GH_TOKEN: ${{ github.token }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

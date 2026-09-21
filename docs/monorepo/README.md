@@ -70,6 +70,10 @@ deployed (`16.3.0`), and `digests`, the images that run:
   "client_payload": { "production": "16.3.0", "digests": { "reader": "sha256:<64 hex>", "catalogue": "sha256:<64 hex>", "live": "sha256:<64 hex>", "time": "sha256:<64 hex>" } } }
 ```
 
+Today the monorepo's `deploy.yml` sends `production` and three digests (`reader`,
+`catalogue`, `live`); with the record's fourth (`time`) missing the check says
+`incomplete`, a warning, until `time` is added to the object.
+
 The harness compares them with what release mode judged, which it kept on its
 `release-records` branch (`releases/<release>.json`, the newest candidate of
 release `16.3.0` that could ship), and **warns** when they differ, when there is
@@ -119,7 +123,7 @@ On the harness side, set the repository variables:
 | --- | --- |
 | `HARNESS_IMAGE_PREFIX` | `quay.io/tutors-sdk/tutors-{app}` — already the workflows' default; set it only to point somewhere else (a fork's namespace, or `tutors` to force local builds) |
 | `HARNESS_COSIGN_IDENTITY` | only if the signing workflow is not `tutors-sdk/tutors-mono-repo/.github/workflows/image-build.yml` (the workflows pass it through; empty means the default) |
-| `HARNESS_PRODUCTION_TAG` | the deployed version, e.g. `16.2.0`; the deploy job updates it |
+| `HARNESS_PRODUCTION_TAG` | the deployed version, e.g. `16.2.0`; the monorepo's `deploy.yml` sets it (`gh variable set`, with `HARNESS_TOKEN`) before it dispatches `deployed`, so every run that starts after that already sees it. Set it by hand once, for the first nightly |
 | `HARNESS_PRODUCTION_URLS` | `reader=https://tutors.dev,catalogue=https://catalogue.tutors.dev,live=https://live.tutors.dev` (`,time=https://time.tutors.dev` may be added; the harness only records it: no journey drives `time`) |
 
 ## First day on Quay
@@ -155,8 +159,9 @@ existed, so its tag push published nothing.
    ```
 
 5. Set `HARNESS_PRODUCTION_TAG=16.2.2` here and dispatch **Nightly noise** once
-   by hand. Until the monorepo has a deploy job (plan items M11/M12), this
-   variable is updated by hand after every release.
+   by hand. From then on you do not touch it: the monorepo's `deploy.yml` (its
+   PR #298) sets it to the verified overlay version each time a release is
+   deployed, just before it dispatches `deployed`.
 6. Add `HARNESS_TOKEN` to the monorepo. The next `release/**` push is the
    first end-to-end candidate.
 
@@ -166,9 +171,9 @@ Then the sequence for a release is:
    mode (A/B with claims, 5 runs, k6), **migration** mode (production ref vs
    candidate sha), **upgrade** mode (edge rollout under load). The PR comment
    is in the workflow summary and the report is an artifact.
-2. Tag / deploy → the monorepo updates `HARNESS_PRODUCTION_TAG` (by hand until
-   it has a deploy job) and dispatches
-   `deployed` (with `production` and `digests`, since 1.3.0): the harness runs
+2. Tag / deploy → the monorepo's `deploy.yml` updates `HARNESS_PRODUCTION_TAG` and
+   dispatches `deployed` (with `production` and `digests`, since 1.3.0) once the
+   pins are on `main` and the `production` environment is approved: the harness runs
    the reference-course journeys against production and compares with the
    recorded candidate run; a new difference opens a rollback issue with the
    report attached, and images that are not the ones judged are a warning.

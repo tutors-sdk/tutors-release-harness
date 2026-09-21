@@ -194,7 +194,7 @@ monorepo's `image-build.yml` workflow via GitHub OIDC), `HARNESS_ALLOW_UNSIGNED`
 `HARNESS_PROVENANCE_FILE`. `--a`/`--b` also take
 `reader=REF,catalogue=REF,live=REF[,time=REF]` with each `REF` pinned as `repo@sha256:…` —
 [docs/images.md](docs/images.md). The monorepo's four apps are all in the stack; `time` is
-client-rendered and no journey drives it (twelve until a real regression escapes), so it is
+client-rendered and no journey drives it (a journey is added only when a real regression escaped that it would have caught), so it is
 judged by the app-level artefacts only: `metrics`, `logs`, `runtime`, `startup` and the
 image artefacts.
 
@@ -274,7 +274,7 @@ migration fixtures under `tests/fixtures/migrations`. See [TESTING.md](TESTING.m
 
 ## Where to stop
 
-Twelve journeys, not a hundred; ten mutants, not thirty. The harness
+Six journeys in three sets, not a hundred; ten mutants, not thirty. The harness
 compares artefacts, so its power comes from breadth of *capture* per journey,
 not from the number of journeys. Add a journey only when a real regression
 escaped that a journey would have caught.

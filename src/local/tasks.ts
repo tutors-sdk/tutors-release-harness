@@ -215,7 +215,7 @@ export function executePlan(plan: Plan, env: Record<string, string>, ex: Executo
       if (!step.informational) worst = Math.max(worst, 2);
       continue;
     }
-    ex.log(`   harness ${filled.argv.join(" ")}`);
+    ex.log(`   harness ${commandLine(filled.argv)}`);
     const code = ex.harness(filled.argv, env);
     const mode = MODE_OF_STEP[step.id];
     const runDir = mode && step.argv[0] === "run" ? ex.latestRun(mode, started) : undefined;
@@ -230,12 +230,37 @@ export function executePlan(plan: Plan, env: Record<string, string>, ex: Executo
   return { code: worst, results };
 }
 
-/** A plan as text, for `--dry-run`. */
-export function renderPlan(plan: Plan, env: Record<string, string>): string {
+/**
+ * One argument as the shell the person copies it into will read it back as the same one argument.
+ *
+ * - POSIX shells (bash, zsh, sh; also Git Bash on Windows): bare when it is only letters, digits and
+ *   `_ @ % + = : , . / -`, otherwise in single quotes, a single quote inside written `'\''`.
+ * - PowerShell (the platform "win32", where the harness's docs run it): the same bare set, otherwise in
+ *   single quotes, a single quote inside doubled (`''`). cmd.exe is not catered for: it does not read
+ *   single quotes, so paste into PowerShell or Git Bash.
+ *
+ * The empty string is `''` in both. Nothing inside single quotes is expanded by either shell.
+ */
+export function shellQuote(arg: string, platform: NodeJS.Platform = process.platform): string {
+  if (arg !== "" && /^[A-Za-z0-9_@%+=:,./-]+$/.test(arg)) return arg;
+  // PowerShell also reads the typographic single quotes as quote characters, so each is doubled too.
+  return platform === "win32" ? `'${arg.replace(/['‘’‚‛]/g, (q) => q + q)}'` : `'${arg.replaceAll("'", "'\\''")}'`;
+}
+
+/** The arguments of a harness command, each quoted for the shell of `platform`, joined by spaces. */
+export function commandLine(argv: string[], platform: NodeJS.Platform = process.platform): string {
+  return argv.map((a) => shellQuote(a, platform)).join(" ");
+}
+
+/** A plan as text, for `--dry-run`: every command line is safe to copy into a shell of `platform` (see {@link shellQuote}). */
+export function renderPlan(plan: Plan, env: Record<string, string>, platform: NodeJS.Platform = process.platform): string {
   const lines = [`harness local ${plan.task}: ${plan.steps.length} step(s)`, ""];
   const set = Object.entries(env);
-  if (set.length) lines.push(`environment: ${set.map(([k, v]) => `${k}=${v}`).join(" ")}`, "");
-  plan.steps.forEach((s, i) => lines.push(`  ${i + 1}. ${s.title}`, `       harness ${s.argv.join(" ")}`));
+  if (set.length) {
+    const assigned = set.map(([k, v]) => (platform === "win32" ? `$env:${k}=${shellQuote(v, platform)};` : `${k}=${shellQuote(v, platform)}`));
+    lines.push(`environment: ${assigned.join(" ")}`, "");
+  }
+  plan.steps.forEach((s, i) => lines.push(`  ${i + 1}. ${s.title}`, `       harness ${commandLine(s.argv, platform)}`));
   return lines.join("\n");
 }
 

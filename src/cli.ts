@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { journeys, type JourneySet } from "../traffic/journeys/journeys.ts";
 import { loadClaims } from "./claims/schema.ts";
 import { isUrl, loadRules } from "./claims/rules.ts";
+import { InputFileError } from "./claims/input-error.ts";
 import { appendFileSync } from "node:fs";
 import { parseOverride, exitCodeForReport } from "./override.ts";
 import { DigestError, parseDigests, pinImages } from "./digests.ts";
@@ -15,10 +16,14 @@ import { CLUSTER, kindDown, kindRollout, kindSide, kindUp } from "./substrate/ki
 import { refuseLegacyCluster } from "./project.ts";
 import { MODES, SUBSTRATES, type Mode, type Substrate } from "./types.ts";
 import { harnessInfo } from "./version.ts";
+import { helpFor } from "./local/usage.ts";
 import { UsageError, doctorCommand, guardCommand, localCommand, noiseCommand, overrideCommand, recordAppliedOverride } from "./local/cli.ts";
 import { defaultNoise } from "./local/noise-store.ts";
 
 const USAGE = `tutors-release-harness
+
+  harness --help | -h | help [command]      this text; \`harness <command> --help\` prints that command's part of it
+                                            (exit 0; \`harness\` with no arguments prints it and exits 2)
 
   harness run --mode <mode> --a <ref> --b <ref> [options]
       Start both stacks, capture, compare, claim, gate, report.
@@ -140,6 +145,11 @@ function startupRestarts(value: string | undefined, fallback: number): number {
 }
 
 async function main(argv: string[]): Promise<number> {
+  const help = helpFor(argv, USAGE);
+  if (help) {
+    (help.code === 0 ? console.log : console.error)(help.text);
+    return help.code;
+  }
   const [command, ...rest] = argv;
   const { values, positionals } = parseArgs({
     args: rest,
@@ -212,10 +222,6 @@ async function main(argv: string[]): Promise<number> {
     allowNegative: true
   });
 
-  if (!command || values.help) {
-    console.log(USAGE);
-    return command ? 0 : 2;
-  }
   if (command === "version") {
     const info = harnessInfo();
     console.log(values.json ? JSON.stringify(info) : `harness ${info.version} (${info.gitSha ?? "no git sha"}) · contract ${info.contractVersion}`);
@@ -421,7 +427,8 @@ main(process.argv.slice(2)).then(
       process.exit(EXIT_CANNOT_JUDGE);
     }
     // A usage error of the local commands, or digests that are not digests: the message, not a stack.
-    if (error instanceof UsageError || error instanceof DigestError) {
+    // A claims or rules file that cannot be used: which file, which claim, which field, what is wrong; no stack.
+    if (error instanceof UsageError || error instanceof DigestError || error instanceof InputFileError) {
       console.error(error.message);
       process.exit(2);
     }

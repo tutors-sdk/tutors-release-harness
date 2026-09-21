@@ -92,7 +92,8 @@ jobs:
 
       - name: Show the A/A report
         if: always()
-        run: cat out/*-noise/report.md >> "$GITHUB_STEP_SUMMARY" || true
+        run: |
+          if ls out/*-noise/report.md > /dev/null 2>&1; then cat out/*-noise/report.md >> "$GITHUB_STEP_SUMMARY"; else echo "### A/A: could not judge (no report: the run stopped before a verdict, see the step log)" >> "$GITHUB_STEP_SUMMARY"; fi
 
       - name: Publish the noise status for release runs
         uses: actions/upload-artifact@v4

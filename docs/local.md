@@ -21,7 +21,7 @@ OpenShift is out of scope. The compose and kind substrates are what runs.
 - [Windows notes](#windows-notes)
 - [Running beside your own stack](#running-beside-your-own-stack)
 - [Still GitHub-only, and optional](#still-github-only-and-optional)
-- [What the monorepo would need to change](#what-the-monorepo-would-need-to-change)
+- [What the monorepo needed to change](#what-the-monorepo-needed-to-change)
 
 ## Start here
 
@@ -46,7 +46,7 @@ run needs is missing, `2` is a usage error. `--json` prints the same as data;
 | Playwright's Chromium | every journey, including the post-deploy watch |
 | helper images already local: k6, `postgres:16-alpine`, the fixture stubs' `node:22-bookworm-slim` | a run that has to work offline |
 | free disk, `HARNESS_HOME` writable | images, SBOMs and captures |
-| the 13 host ports the stack publishes | a developer's own service on 8080 or 3100 |
+| the 15 host ports the stack publishes | a developer's own service on 8080 or 3100 |
 | the fixed subnet `172.29.0.0/24` against every other Docker network | `docker compose up` fails with "Pool overlaps" otherwise |
 | a leftover compose project of this checkout (`tutors-harness-<8 hex>`) | a run replaces it, `--remove-orphans` included. A stack under the old default name `tutors-harness` is reported by `harness doctor` as "legacy stack, not touched" and never removed |
 | Windows: WSL's `bash` first on PATH, CRLF in `scripts/*.sh`, long paths off | see [Windows notes](#windows-notes) |
@@ -54,7 +54,10 @@ run needs is missing, `2` is a usage error. `--json` prints the same as data;
 ## The four tasks
 
 Each is one command, planned as the list of `harness` commands the workflow
-runs. `--dry-run` prints the plan and starts nothing. All of them take
+runs. `--dry-run` prints the plan and starts nothing; each printed command line and the
+environment line are quoted for the shell you are in, so they can be pasted back (single
+quotes, a quote inside doubled in PowerShell and written `'\''` in bash, zsh and Git Bash;
+cmd.exe does not read single quotes). All of them take
 `--port-offset <n>` ([below](#running-beside-your-own-stack)); nightly, gate and
 mutants hold a lock so only one runs on the machine at a time; the environment
 defaults are the workflows' (`HARNESS_IMAGE_PREFIX` defaults to
@@ -149,8 +152,8 @@ commits that came with this document.
 
 | # | Step | Today | Local equivalent | Gap, status |
 | --- | --- | --- | --- | --- |
-| R1 | `repository_dispatch: release-candidate` from the monorepo | GH | `harness local gate --a --b` | the monorepo has no local trigger ([monorepo](#what-the-monorepo-would-need-to-change)). **Open (monorepo)** |
-| R2 | Production tag and migration refs derived by `gh api` in the monorepo's workflow | GH | `--a`, `--migrations-a` by hand | no command reads them from a checkout. **Open (monorepo)** |
+| R1 | `repository_dispatch: release-candidate` from the monorepo | GH | `harness local gate --a --b` | the monorepo's `pnpm release:harness --run` (its PR #307, on `main`) builds the same `client_payload` from a clone, with git alone, and hands it to `harness local gate`; `--print` shows it. Needs the harness cloned beside the monorepo (or `HARNESS_DIR`). **Closed** |
+| R2 | Production tag and migration refs derived by `gh api` in the monorepo's workflow | GH | `--a`, `--migrations-a` by hand | `pnpm release:harness` reads the production tag from the reader overlay and probes `migrations_a` (`v<tag>`, then `release/<tag>`) with git, and passes them to `harness local gate`. **Closed** |
 | R3 | Fetch `claims.yaml` (`curl`) | WF | `--claims <file>` | none. **Closed** |
 | R4 | Fetch the latest noise status (`gh api`) and vet it | GH + WF | the default store; `harness noise status` | none. **Closed** |
 | R5 | Release mode (A/B, claims, k6) | CLI | same | none. **Closed** |
@@ -164,7 +167,7 @@ commits that came with this document.
 
 | # | Step | Today | Local equivalent | Gap, status |
 | --- | --- | --- | --- | --- |
-| P1 | `repository_dispatch: deployed` after a deploy | GH | `harness local watch --once` | the monorepo's deploy job has no local hook. **Open (monorepo)** |
+| P1 | `repository_dispatch: deployed` after a deploy | GH | `harness local watch --once` | the monorepo's `deploy.yml` (its PR #298) sets `HARNESS_PRODUCTION_TAG` on this repository and dispatches `deployed` with `production` and `digests` once the pins are on `main` and the `production` environment is approved. Locally, `pnpm release:harness --deployed --run` in the monorepo runs `harness local watch --once` with `HARNESS_PRODUCTION_TAG` set. **Closed** |
 | P2 | Recorded run: the `release-report` artifact of the latest successful release run | GH | the newest local `*-release` run that did not FAIL, or `--recorded` | a CI release run's artifact is not visible locally: download it and pass `--recorded`. **Closed** |
 | P3 | Every 15 minutes | GH | `local watch` loop, or `--once` under Task Scheduler or cron | none. **Closed** |
 | P4 | Rollback issue (`gh issue create`, label `rollback`) | GH | `<HARNESS_HOME>/rollbacks/*.md` | nothing notifies you: watch the folder, or wrap the command. **Closed** |
@@ -196,17 +199,17 @@ commits that came with this document.
 | X6 | k6 image | `grafana/k6:latest`, unpinned | `harness doctor` warns; pin with `HARNESS_K6_IMAGE` |
 | X7 | Time zone, `HARNESS_NOW` | no verdict depends on the host zone: the browser is pinned to Europe/Dublin, the frozen clock is a UTC instant, run directories and the noise status are UTC. `HARNESS_NOW` is read from the environment (PowerShell `$env:HARNESS_NOW = "..."`, cmd `set`), or `--now`. The **Docker VM's clock** is what drifts | `harness doctor` checks the skew and the value. **Closed** |
 | X8 | Parallel runs and a developer's own stack | see [below](#running-beside-your-own-stack) | project name and ports **configurable**; the subnet is **not**. **Open (compose file)** |
-| X9 | kind | cluster name: `HARNESS_KIND_CLUSTER`, then `HARNESS_PROJECT`, else `tutors-harness-<8 hex of the checkout's path>`: two checkouts get two clusters, and a cluster called plain `tutors-harness` (the pre-1.3.0 default, which may be yours) is refused by `harness kind up` and `down`, never adopted or deleted. Host ports 4100-4202 are fixed in `deploy/kind/kind-config.yaml`, so two clusters of two checkouts cannot run at once | `harness doctor --for kind` names the cluster, warns when it already exists, and reports a legacy `tutors-harness` cluster as not touched. **Closed** (names), ports **open, low** |
+| X9 | kind | cluster name: `HARNESS_KIND_CLUSTER`, then `HARNESS_PROJECT`, else `tutors-harness-<8 hex of the checkout's path>`: two checkouts get two clusters, and a cluster called plain `tutors-harness` (the pre-1.3.0 default, which may be yours) is refused by `harness kind up` and `down`, never adopted or deleted. Host ports 4100-4203 are fixed in `deploy/kind/kind-config.yaml`, so two clusters of two checkouts cannot run at once | `harness doctor --for kind` names the cluster, warns when it already exists, and reports a legacy `tutors-harness` cluster as not touched. **Closed** (names), ports **open, low** |
 | X10 | Playwright's Chromium | the host's Chromium takes the screenshots, not a container's, so fonts and anti-aliasing are the host's | [calibration](#the-noise-store-is-this-machines-calibration) |
 | X11 | CI-only environment assumptions in the code | none: `GITHUB_OUTPUT` is the only `GITHUB_*` variable read, and only to write to it when set | none |
 
 Counts. Of the 37 steps in the four workflows, 7 were already a harness command
 (**CLI**), 7 were **workflow-only logic**, 23 were **GitHub-only services**; the 11
-platform rows (X) are not steps. Across all 48 rows after this change: 31 closed or
+platform rows (X) are not steps. Across all 48 rows after this change: 34 closed or
 fixed, 7 documented as a limit that stays (N3, N12, N13, C4, X4, X5, X10), 2 not
-applicable (M4, X11), and 8 open: N7 and R10 (no pruning of `out/`), C3 (no smoke
-wrapper), X8 (the fixed subnet), X9 (kind's fixed ports), and R1, R2, P1 (the
-monorepo's).
+applicable (M4, X11), and 5 open: N7 and R10 (no pruning of `out/`), C3 (no smoke
+wrapper), X8 (the fixed subnet), X9 (kind's fixed ports). R1, R2 and P1 were the
+monorepo's; its `release:harness` script and `deploy.yml` closed them.
 
 ## Where state lives
 
@@ -298,7 +301,7 @@ and survives sleep better than cron.
 | --- | --- | --- |
 | Compose project name | yes | `HARNESS_COMPOSE_PROJECT`, then `HARNESS_PROJECT`, else `tutors-harness-<first 8 hex of sha256(real path of the harness checkout, lowercased on Windows)>`: never `tutors`, so a developer's own project is not touched, and **two checkouts or git worktrees of the harness on one machine get two names** (the same checkout always gets the same one; `harness doctor` prints it). Host ports and the compose subnet are still fixed: use `--port-offset` and stop one stack before starting the other |
 | Container names | not set anywhere | compose derives them from the project name |
-| Host ports (13) | yes | one variable each (`READER_PORT_A`, `COURSE_PORT`, `IDENTITY_PORT`, `EDGE_PORT`, ...), or all at once with `--port-offset 1000` on `harness local ...` and `harness doctor` (a variable you set yourself wins). `COURSE_PORT` also changes the course id, identically on both sides |
+| Host ports (15) | yes | one variable each (`READER_PORT_A`, `COURSE_PORT`, `IDENTITY_PORT`, `EDGE_PORT`, ...), or all at once with `--port-offset 1000` on `harness local ...` and `harness doctor` (a variable you set yourself wins). `COURSE_PORT` also changes the course id, identically on both sides |
 | The network subnet `172.29.0.0/24` and the identity stub's address `172.29.0.10` | **no**, fixed in `compose.harness.yaml` | two harness stacks, or any other Docker network on that range, cannot coexist. The run lock serialises harness runs; `harness doctor` names the network that clashes |
 | kind cluster | name yes (derived from the checkout, `HARNESS_KIND_CLUSTER`, `HARNESS_PROJECT`), ports no | see X9 |
 
@@ -307,29 +310,23 @@ A run never stops, removes or prunes anything outside its own compose project
 
 ## Still GitHub-only, and optional
 
-- Dispatch from the monorepo and the `deployed` event (no local trigger; run the task by hand).
+- The monorepo's dispatches, as GitHub events (`release-candidate`, `deployed`). Locally the monorepo's `pnpm release:harness --run` and `--deployed --run` do what they carry: they run `harness local gate` and `harness local watch --once` with the same values.
 - The `noise` branch as a published, browsable page, `gh issue` records, the job summaries, artifact retention.
 - Branch protection and the required checks named in the workflows.
 - Posting a report to a pull request (the contract forbids the workflows every PR permission).
 
-## What the monorepo would need to change
+## What the monorepo needed to change
 
-Not edited here. Listed so they can be raised there:
+Raised here first, and since done in the monorepo (both on its `main`):
 
-1. **`release-dispatch.yml` has no local equivalent.** Tagging `vX.Y.Z-rc.N` with the GitHub API, waiting for `image-build.yml`, and dispatching are all GitHub. Locally `harness local gate --a P --b C` needs the two tags; a candidate the registry lacks is built from the git ref (unsigned, not evidence). A script in the monorepo that prints the production tag, the migration refs and the claims path for a checkout would make the local gate one line.
-2. **The production tag is read from `deploy/k8s/overlays/reader/kustomization.yaml` on `main` through `gh api`,** and `migrations_a` by probing tags and branches through `gh api`. Both are plain git lookups a local script could do (`git show main:...`, `git rev-parse --verify`).
-3. **`release/claims.yaml` is checked by the monorepo's `pnpm check:release-claims`,** a mirror of the harness's parser; the harness has no validate-only command, so a local check runs a whole `harness run`, which reads the claims file first and stops with exit 2 on a bad one before any stack starts.
-Contract 1.3.0 made these commands part of the contract (`docs/contract.md`, "CLI"
-and the changelog): `doctor`, `noise record`, `noise status` and `guard` are
-**stable**, because workflows and the monorepo depend on them; `local`,
-`override list` and `noise history` are not. The default it documents is the one
-described above: without `--noise`, release and post-deploy mode read
-`<HARNESS_HOME>/noise` (explicit `--noise`, then the store, then none; a missing
-status still only warns). `tests/contract.test.ts` lets this repository's own
-workflows call any command `cli.json` declares; what the monorepo copies may use
-only stable ones.
+- **A local trigger for the release gate** (its PR #307). `pnpm release:harness` builds the `release-candidate` payload (production tag from the reader overlay, `migrations_a` by probing `v<tag>` then `release/<tag>`, claims path, digests when the overlays carry them) from a clone with git alone; `--print` shows it and `--run` hands it to `harness local gate`. `release-dispatch.yml` itself is unchanged (it tags and dispatches through the API), and a conformance test holds its payload to the script's. Closes R1 and R2.
+- **The deploy job** (its PR #298, `deploy.yml`). After the overlays are verified against the registry, and the `production` environment approved, it sets `HARNESS_PRODUCTION_TAG` on this repository and dispatches `deployed` with `production` and `digests`. `pnpm release:harness --deployed --run` is the local equivalent (`harness local watch --once`, with the tag set). Closes P1.
 
-5. **`image-build.yml` signs with GitHub OIDC keyless.** Every image a local run verifies was signed by that workflow; a locally built image cannot be signed the same way, so it is `built-from-ref` and refused as evidence. That is intended.
+Still open, and not ours to edit:
+
+1. **`deploy.yml` reports three digests, not four.** Its `digests` object is `{reader, catalogue, live}`, though the overlays pin `time` too and the harness stacks four apps. Release mode records a digest for each app it verified, so a deployment check against a four-digest record says `incomplete` (a warning: "the release record has a digest for `time`, but the deploy did not report one"). Adding `time` to the `jq` object in its `verify` job clears it.
+2. **`release/claims.yaml` is checked by the monorepo's `pnpm check:release-claims`,** a mirror of the harness's parser; the harness has no validate-only command, so a local check runs a whole `harness run`, which reads the claims file first and stops with exit 2 on a bad one before any stack starts.
+3. **`image-build.yml` signs with GitHub OIDC keyless.** Every image a local run verifies was signed by that workflow; a locally built image cannot be signed the same way, so it is `built-from-ref` and refused as evidence. That is intended.
 
 ## Contract notes
 

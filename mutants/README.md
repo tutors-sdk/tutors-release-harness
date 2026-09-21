@@ -21,15 +21,12 @@ edge — a dropped header, a 500 on a route, injected HTML, a delay. Nothing
 else about the image changes, so a mutant is a fair stand-in for a release
 that shipped that regression.
 
-Edge mutants cover six of the runway's list. Two need source access and
-belong in the monorepo's own negative fixtures until this project can build
-from a git ref:
-
-- a lab page that writes a row for anonymous users (needs the persistence
-  collector, phase H4)
-- a navigator with a broken focus order (needs a keyboard-order collector; the
-  journeys already press ArrowRight in the lab, so a mutant that breaks that
-  would be caught as a journey failure today)
+Eight mutants are edge faults (`kind: edge`, the default), all built this way:
+`dropped-header`, `route-500`, `console-error`, `dom-note`, `missing-alt`,
+`slow-ssr`, `anon-write` (every page records a learning event for anonymous readers,
+caught by the `persistence` collector) and `focus-order` (navigator links leave
+the tab order, caught by the `focus` collector). All eight are in
+`mutants.yaml` and are built and run; none is waiting on anything.
 
 ## Image-level mutants (R5)
 
