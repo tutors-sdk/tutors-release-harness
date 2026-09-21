@@ -1,4 +1,4 @@
-# The harness's own negative fixtures: eight planted regressions the release
+# The harness's own negative fixtures: ten planted regressions the release
 # gate must catch, each attributed to the right artefact. `harness mutants`
 # builds each one from the base reader image, runs release mode (base vs
 # mutant) and asserts the verdict is FAIL with at least one unclaimed hunk of
@@ -7,6 +7,11 @@
 #
 # `runs` is the number of journey repetitions the mutant needs to be caught;
 # only the timing mutant needs more than one.
+#
+# `kind` is how the mutant is made (src/mutant-build.ts): `edge` (default) is
+# the wrapper in wrap.mjs planting a fault at the HTTP edge; `planted-package`
+# and `base-swap` change what the image IS, and are caught by the static image
+# artefacts (image-manifest, sbom) rather than by anything a browser sees.
 mutants:
   - name: dropped-header
     plants: the X-Content-Type-Options header is no longer sent
@@ -40,3 +45,13 @@ mutants:
   - name: focus-order
     plants: navigator links leave the tab order
     expect: [focus]
+
+  - name: base-swap
+    kind: base-swap
+    plants: the candidate is built FROM a different base image (the production filesystem over another distribution)
+    expect: [image-manifest]
+
+  - name: added-package
+    kind: planted-package
+    plants: the candidate carries one package the production image does not
+    expect: [sbom]

@@ -1,0 +1,12 @@
+# The "added-package" mutant: the production image plus one npm package on disk.
+#
+#   docker build -f mutants/Dockerfile.planted-package --build-arg BASE=tutors/reader:16.2.0 \
+#     -t tutors-harness/mutant-added-package mutants
+#
+# The package is COPYed into ./node_modules (relative to the base image's
+# WORKDIR), so this needs no root, no network and no package manager, and the
+# image's USER, command and environment are exactly production's. Nothing
+# requires the package: only an inventory of what is in the image finds it.
+ARG BASE
+FROM ${BASE}
+COPY --chown=1001:0 planted-package/ ./node_modules/

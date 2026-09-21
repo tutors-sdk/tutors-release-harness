@@ -63,7 +63,7 @@
     ]
   },
   "environment": {
-    "$comment": "Environment variables that are part of the contract. Since 1.1.0, except HARNESS_IMAGE_PREFIX (whose {app} template form is since 1.1.0).",
+    "$comment": "Environment variables that are part of the contract. Since 1.1.0, except HARNESS_IMAGE_PREFIX (whose {app} template form is since 1.1.0) and the SBOM, vulnerability and static-artefact variables (since 1.2.0).",
     "HARNESS_IMAGE_PREFIX": {
       "default": "tutors",
       "meaning": "prefix (<prefix>/<app>:<tag>) or template containing {app}, for bare tags; --image-prefix overrides"
@@ -83,6 +83,26 @@
     "HARNESS_CLAIM_MAX_HUNKS": {
       "default": "10",
       "meaning": "since 1.2.0: a claim covering more failing hunks than this is flagged in claimHygiene; a positive integer, else the default; --claim-max-hunks overrides"
+    },
+    "HARNESS_SBOM_SOURCE": {
+      "default": "auto",
+      "meaning": "since 1.2.0. Where the SBOM of each image comes from: auto or attestation (the SPDX attestation cosign attached to a pulled image), or generate (a local generator run over the image on both sides)"
+    },
+    "HARNESS_SBOM_CMD": {
+      "default": "syft docker:{image} -o spdx-json",
+      "meaning": "since 1.2.0. The SBOM generator for HARNESS_SBOM_SOURCE=generate; {image} is the image reference; prints SPDX JSON on stdout. Split on whitespace and quotes, run without a shell"
+    },
+    "HARNESS_VULN_CMD": {
+      "default": "grype sbom:{sbom} -o json",
+      "meaning": "since 1.2.0. The vulnerability scanner; {sbom} is the path of the image's SPDX SBOM; prints grype or trivy JSON on stdout"
+    },
+    "HARNESS_VULN_DB_DIR": {
+      "default": "",
+      "meaning": "since 1.2.0. A pre-fetched scanner database directory (GRYPE_DB_CACHE_DIR / TRIVY_CACHE_DIR). Scanner database updates are always switched off, so this is what pins the scan"
+    },
+    "HARNESS_REQUIRE_STATIC": {
+      "default": "",
+      "meaning": "1 | true | yes (since 1.2.0): a static image artefact that could not be collected is a failing hunk instead of an informational one"
     }
   },
   "exitCodes": {

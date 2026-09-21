@@ -15,6 +15,7 @@ fail, and ratchets. This is the runway for the runway.
 | The gate fails without the right to | release FAILS with no clean A/A | Unit |
 | A rehearsal rule is wrong | expand/contract accepts a dropped column; a rollout with 5xx passes | Unit on catalogues and k6 output |
 | A fixture stub misbehaves | persistence stub sends a Date header; identity stub mints a token for a bad code; edge drops in-flight requests | Fixture tests (in-process servers) |
+| A static image artefact is missed or invented | a new package is not a hunk; an SBOM for another digest is read; a changed `revision` label flags every release; a missing scanner reads as "no vulnerabilities" | Unit on `src/compare/image-static.ts` and `src/image-static/*` with the process runner injected (a fake docker, cosign, syft and grype): A/A, planted change and must-not-flag per artefact; not-collected is asserted loud |
 | An image is named wrongly | the Quay template expands to `quay.io/…/tutors/reader`; the shell script and the CLI disagree | Unit on `src/image-ref.ts`, with `build-images.sh --print-images` held to the same answers |
 | An untrusted image is judged | an unsigned or wrongly-signed pull passes; a missing cosign is skipped; a stale verification vouches for new content | Unit on `src/images.ts` with the process runner injected (a fake docker, registry and cosign) |
 | A report hides where its images came from | a side built from source reads like a published one | Unit on the report header and on capture → report flow |
@@ -69,9 +70,14 @@ running.
 
 ### Mutants (`pnpm harness mutants`, ~15 minutes, weekly and on demand)
 
-The harness's own negative fixtures: eight planted regressions
+The harness's own negative fixtures: ten planted regressions
 (`mutants/mutants.yaml`), each of which must produce a FAIL verdict
-attributed to the expected artefact. A/A runs first, so the mutants are
+attributed to the expected artefact. Eight plant a fault at the HTTP edge;
+two (`base-swap`, `added-package`) change what the image *is*, and are caught
+by the static image artefacts (`image-manifest`, `sbom`). They are built
+locally, so `harness mutants` generates their SBOMs with a local `syft` on both
+sides (`HARNESS_SBOM_SOURCE=generate`); without `syft`, `added-package` escapes
+and the run says why. A/A runs first, so the mutants are
 caught by a harness that has the right to gate.
 
 **A re-run is required when an engine, a mask, a journey, the gate or a mutant
@@ -138,7 +144,7 @@ must fail with failures attributed to `b`.
 | --- | --- | --- |
 | A/A diff count on the production tag | stays 0 once it reaches 0 | nightly `publish` job fails on a regression; gate degrades |
 | Consecutive clean, verified nightly A/As | reaches 7 (R3 exit) | the nightly summary |
-| Mutants caught and attributed | 8 of 8 | weekly mutants; required on PRs that change an engine, mask, journey, gate or mutant |
+| Mutants caught and attributed | 10 of 10 | weekly mutants; required on PRs that change an engine, mask, journey, gate or mutant |
 | Harness version on such PRs | goes up | `src/ci/engine-change.ts` in the same workflow |
 | `report.json`, `noise-status.json`, CLI, dispatch payloads vs `docs/contract.md` | no drift | `tests/contract.test.ts` |
 | Masks in `normalise/masks.yaml` | grow only with review, in their own PR, and stay under ~40 | CODEOWNERS; CI "Masks land in their own PR (required)" |

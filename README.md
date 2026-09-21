@@ -36,7 +36,7 @@ export HARNESS_IMAGE_PREFIX='quay.io/tutors-sdk/tutors-{app}'  # default is `tut
 pnpm harness images ensure --a 16.2.0 --b 16.3.0-rc.1          # needs cosign >= 3 on PATH for pulled images
 pnpm harness run --mode migration --a v16.2.0 --b release/16.3.0
 pnpm harness run --mode upgrade   --a 16.2.0 --b 16.3.0-rc.1
-pnpm harness mutants --base local                              # eight planted regressions, all caught
+pnpm harness mutants --base local                              # ten planted regressions, all caught
 ```
 
 Every run writes `out/<timestamp>-<mode>/` with `a/` and `b/` captures
@@ -144,11 +144,12 @@ Three sets, all role-and-name selectors, all parameterised by base URL:
 
 ### The harness's own signal
 
-[`mutants/`](mutants/README.md) holds eight planted regressions built from the
+[`mutants/`](mutants/README.md) holds ten planted regressions built from the
 base reader image: a dropped security header, a 500 on a route, a console
 error, an extra landmark, an image with no alt text, a 400 ms slower SSR path,
 a page that writes a row for anonymous readers, navigator links that leave the
-tab order. `pnpm harness mutants --base <tag>` runs A/A first, then release
+tab order, a candidate built FROM a different base image, and a candidate that
+adds one package. `pnpm harness mutants --base <tag>` runs A/A first, then release
 mode against each, and passes only when every mutant produces a FAIL attributed
 to the expected artefact. Weekly in CI. A harness that cannot catch its own
 mutants has no business gating a release.
@@ -201,7 +202,7 @@ prints the same), and the HTML and Markdown reports name it in their footer.
 | `nightly-noise.yml` | nightly | A/A on the production tag pulled from Quay (three runs, with load; last night's verified images as the outage fallback, a degraded night); publishes `noise-status.json` as an artifact and to the `noise` branch, and keeps the ratchet — [docs/noise-burndown.md](docs/noise-burndown.md) |
 | `release.yml` | monorepo dispatch on a release branch, or by hand | release mode with claims, 3 runs, k6; migration rehearsal; upgrade rehearsal |
 | `post-deploy.yml` | monorepo dispatch after deploy, then every 15 minutes | reference journeys against production vs the recorded candidate; opens a rollback issue on a new difference |
-| `weekly-mutants.yml` | weekly, and on every PR | the eight mutants; on a PR only when it touches an engine, a mask, a journey, the gate or a mutant, which also needs a version bump |
+| `weekly-mutants.yml` | weekly, and on every PR | the ten mutants; on a PR only when it touches an engine, a mask, a journey, the gate or a mutant, which also needs a version bump |
 
 Images are pulled from Quay (`HARNESS_IMAGE_PREFIX`, default in CI
 `quay.io/tutors-sdk/tutors-{app}`) and their cosign signatures verified — the
@@ -228,7 +229,7 @@ noise mode is for.
 | H0 — Two stacks | compose file, one journey against both | ✅ |
 | H1 — Capture and A/A | collectors, normaliser, noise mode | ✅ |
 | H2 — Claims and gating | claim schema, matcher, reports, release mode, PR comment | ✅ |
-| H3 — Mutants | planted images, weekly self-test | ✅ eight |
+| H3 — Mutants | planted images, weekly self-test | ✅ ten (eight edge faults, two image-level; R5) |
 | H4 — Statistical and data | repeated runs, k6, metrics and log collectors, persistence diff, migration mode | ✅ |
 | H5 — Upgrade and post-deploy | rollout under load, post-deploy mode, synthetic monitor | ✅ (compose edge rollout; kind rolling update) |
 | H6 — OpenShift | two namespaces in a local cluster under restricted policy | ✅ kind with restricted PSA (`--substrate kind`); the auth set stays on compose |
@@ -252,7 +253,7 @@ migration fixtures under `tests/fixtures/migrations`. See [TESTING.md](TESTING.m
 
 ## Where to stop
 
-Twelve journeys, not a hundred; eight mutants, not thirty. The harness
+Twelve journeys, not a hundred; ten mutants, not thirty. The harness
 compares artefacts, so its power comes from breadth of *capture* per journey,
 not from the number of journeys. Add a journey only when a real regression
 escaped that a journey would have caught.

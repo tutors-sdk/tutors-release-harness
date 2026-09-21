@@ -125,8 +125,8 @@ cosign verify \
   Names without a registry host (`tutors/reader:16.2.0`) are never pulled:
   Docker would resolve them to whoever owns that namespace on Docker Hub.
 - The SBOM attestation can be checked by hand with
-  `cosign verify-attestation --type spdxjson` and the same identity flags; the
-  harness does not gate on it.
+  `cosign verify-attestation --type spdxjson` and the same identity flags. Since
+  1.2.0 the harness reads it itself, to diff the two sides' packages (section 8).
 
 cosign **3 or newer** must be on `PATH` — the monorepo signs with cosign 3,
 whose signatures an older cosign cannot read; when verification fails under an
@@ -274,3 +274,62 @@ never vouch for different content.
 Because captures carry their provenance, a capture can be re-compared later
 (`harness compare`) or used as the recorded side of post-deploy mode and the
 report still says what was actually run.
+
+## 8. Static artefacts: manifest, SBOM, vulnerabilities
+
+Since contract 1.2.0 the harness also compares what each image *is*, read from
+the image before any stack starts (`src/image-static/`, engine in
+`src/compare/image-static.ts`; the report shape is in
+[contract.md](contract.md#static-image-artefacts)):
+
+| Artefact | From | Needs |
+| --- | --- | --- |
+| `image-manifest` | `docker image inspect`: base, platform, USER, exposed ports, entrypoint, cmd, layer count, size, OCI labels | Docker only |
+| `sbom` | the SPDX SBOM the monorepo's publish workflow attests to each image (`cosign attest --type spdxjson`), read with `cosign verify-attestation` by digest against the same identity and issuer as the signature check; a package multiset (`name@version`) diffed as a set, one hunk per package added, removed or bumped | cosign 3, a pulled image |
+| `vulns` | a scanner run over that SBOM; a set diff by advisory id | grype (or trivy), a pinned database |
+
+**Base image.** A build does not have to record its base, so the harness uses
+two signals: the `org.opencontainers.image.base.digest` label when the build
+sets it (worth adding to the monorepo's Dockerfile if you want the base's name
+and digest in reports), and always the diffID of the image's lowest layer,
+which changes whenever the base's operating-system layer does.
+
+**Where an SBOM comes from.** `HARNESS_SBOM_SOURCE`:
+
+- `auto` (default) and `attestation`: the cosign attestation, for an image
+  that was pulled (`pulled+verified`, or `pulled-unverified` under
+  `--allow-unsigned`, which uses `cosign download attestation` and labels the
+  SBOM as not verified). An attestation whose subject is not this image's
+  digest, that is not SPDX, or that lists no packages is refused.
+- `generate`: a local generator over the image itself, on both sides
+  (`HARNESS_SBOM_CMD`, default `syft docker:{image} -o spdx-json`). This is
+  what the mutants use, and the way to get an SBOM for a locally built image.
+  Do not mix it with attestations in one comparison: two different tools do not
+  catalogue an image identically.
+
+**The scanner is a command**, `HARNESS_VULN_CMD`, default
+`grype sbom:{sbom} -o json`; `{sbom}` is the path of the SBOM the scan reads,
+and grype's or trivy's JSON is read from stdout (trivy:
+`trivy sbom --format json {sbom}`). No shell is involved.
+
+**Pinning the vulnerability database.** A CVE published between the two sides'
+scans would otherwise look like a change in the release. So the harness never
+lets the scanner update: it sets `GRYPE_DB_AUTO_UPDATE=false`,
+`GRYPE_CHECK_FOR_APP_UPDATE=false`, `TRIVY_SKIP_DB_UPDATE=true` and
+`TRIVY_OFFLINE_SCAN=true` on every scan, and points the scanner at
+`HARNESS_VULN_DB_DIR` (`GRYPE_DB_CACHE_DIR` / `TRIVY_CACHE_DIR`). Whoever owns
+the runner fetches the database once, into that directory, and versions it: for
+grype, `GRYPE_DB_CACHE_DIR=$dir grype db update` in a setup step, cached by date
+(nightly) or by a checksum recorded next to the release. Both sides of a run are
+scanned with that one database; the scanner's version and the database's build
+time are read from its output and, if the two sides ever differ, that is a
+failing `<app>/db` hunk rather than a silent mismatch. A new advisory on b
+fails the release; one that was on a and is gone on b is noted informationally.
+
+**Loud, never silent.** A locally built image has no attestation, `syft` or
+`grype` may not be installed, the database may be absent: each is reported as
+`NOT COLLECTED: <reason>` (a line in `reasons`, a cell in the report's Image
+artefacts table, an informational `<app>/not-collected` hunk) and that artefact
+is not compared. `HARNESS_REQUIRE_STATIC=1` turns those hunks into failures,
+which is what a release pipeline that must never pass without an SBOM diff
+sets.

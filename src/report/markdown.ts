@@ -1,5 +1,6 @@
 import type { RunReport } from "../types.ts";
 import { loudProvenance } from "./provenance.ts";
+import { imageArtefactsMarkdown } from "./image-static.ts";
 
 const ICON = { pass: "✅", warn: "⚠️", fail: "❌" } as const;
 
@@ -83,6 +84,7 @@ export function renderMarkdown(report: RunReport): string {
     }
     lines.push("");
   }
+  lines.push(...imageArtefactsMarkdown(report)); // R5 static image artefacts
 
   if (report.migration) {
     const m = report.migration;

@@ -20,6 +20,8 @@ import type { Claim, Hunk, Mode, NoiseStatus, RunReport, SideCapture, SideSpec, 
 
 import { HARNESS_VERSION, SCHEMA_VERSION, harnessInfo } from "./version.ts";
 import { parseNoiseStatus } from "./noise.ts";
+import { collectImageStatic, staticPolicyFromEnv } from "./image-static/collect.ts"; // R5
+import { imageArtefactsSection, imageStaticReasons } from "./image-static/report.ts"; // R5
 
 export { HARNESS_VERSION };
 export const DEFAULT_NOW = "2026-09-16T09:05:00.000Z";
@@ -62,6 +64,8 @@ export interface RunOptions {
   noStack: boolean;
   /** Judge registry images whose signature could not be verified. Loud, and recorded in the report. */
   allowUnsigned: boolean;
+  /** R5: overrides for how static image artefacts are collected (the mutants force a local SBOM generator). */
+  static?: Partial<import("./image-static/collect.ts").StaticPolicy>;
   /** post-deploy: the release-mode run directory whose b capture is the recorded side. */
   recorded?: string;
   /** post-deploy: live URLs, reader=...,catalogue=...,live=... */
@@ -138,6 +142,7 @@ export function compareFromCaptures(input: CompareInput): RunOutcome {
     const { samples: _s, ...rest } = l;
     return rest;
   };
+  const imageArtefacts = imageArtefactsSection(input.a, input.b); // R5
   const report: RunReport = {
     schemaVersion: SCHEMA_VERSION,
     harness: harnessInfo(),
@@ -150,14 +155,15 @@ export function compareFromCaptures(input: CompareInput): RunOutcome {
     sides: { a: input.a.images, b: input.b.images },
     ...(input.a.provenance || input.b.provenance ? { provenance: { ...(input.a.provenance ? { a: input.a.provenance } : {}), ...(input.b.provenance ? { b: input.b.provenance } : {}) } } : {}),
     verdict: verdict.verdict,
-    reasons: [...(override ? [overrideLine(override)] : []), ...verdict.reasons, ...provenanceReasons(input.a, input.b)],
+    reasons: [...(override ? [overrideLine(override)] : []), ...verdict.reasons, ...provenanceReasons(input.a, input.b), ...imageStaticReasons(input.a, input.b)],
     ...(noise.status ? { noise: noise.status } : {}),
     compare,
     masksApplied,
     ...(input.extras ?? {}),
     ...(input.a.load && input.b.load ? { load: { a: strip(input.a.load), b: strip(input.b.load) } } : {}),
     ...(hygiene ? { claimHygiene: hygiene } : {}),
-    ...(override ? { override } : {})
+    ...(override ? { override } : {}),
+    ...(imageArtefacts ? { imageArtefacts } : {})
   };
 
   const files = writeReports(input.captureDir, report);
@@ -266,6 +272,11 @@ export async function run(opts: RunOptions): Promise<RunOutcome> {
   b.provenance = resolveSideProvenance(b.images, trust);
   opts.log(`  a: ${a.images.reader}, ${a.images.catalogue}, ${a.images.live} — ${a.provenance.summary}`);
   opts.log(`  b: ${b.images.reader}, ${b.images.catalogue}, ${b.images.live} — ${b.provenance.summary}`);
+  // R5: what the images are (manifest, SBOM, vulnerabilities), read from the images before anything runs.
+  const staticPolicy = { ...staticPolicyFromEnv(process.env, trust.policy), ...opts.static };
+  opts.log("collecting static image artefacts (manifest, SBOM, vulnerabilities)…");
+  a.imageStatic = collectImageStatic(a.images, a.provenance, { exec: realExec, policy: staticPolicy, log: opts.log });
+  b.imageStatic = collectImageStatic(b.images, b.provenance, { exec: realExec, policy: staticPolicy, log: opts.log });
   opts.log(`  journeys: ${selected.map((j) => j.name).join(", ")}`);
 
   const up = () => {
