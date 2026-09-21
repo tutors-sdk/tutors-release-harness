@@ -39,13 +39,13 @@ describe("schema hash", () => {
 
 describe("origin stripping", () => {
   it("replaces each of the side's origins and the course host, and nothing else", () => {
-    const spec = sideSpec("a", { reader: "r", catalogue: "c", live: "l" });
-    const text = `${spec.urls.reader}/course/x ${spec.urls.live}/ ${spec.urls.readerAuth}/auth ${spec.urls.persistence}/rest/v1/t http://localhost:8080/tutors.json https://cdn.example/x`;
-    expect(stripOrigins(text, spec)).toBe("{{origin}}/course/x {{origin}}/ {{origin}}/auth {{origin}}/rest/v1/t {{course}}/tutors.json https://cdn.example/x");
+    const spec = sideSpec("a", { reader: "r", catalogue: "c", live: "l", time: "t" });
+    const text = `${spec.urls.reader}/course/x ${spec.urls.live}/ ${spec.urls.time}/1234/medians ${spec.urls.readerAuth}/auth ${spec.urls.persistence}/rest/v1/t http://localhost:8080/tutors.json https://cdn.example/x`;
+    expect(stripOrigins(text, spec)).toBe("{{origin}}/course/x {{origin}}/ {{origin}}/1234/medians {{origin}}/auth {{origin}}/rest/v1/t {{course}}/tutors.json https://cdn.example/x");
   });
 
   it("normalises the reference course host the same way on a harness side and an external side", () => {
-    const local = sideSpec("a", { reader: "r", catalogue: "c", live: "l" });
+    const local = sideSpec("a", { reader: "r", catalogue: "c", live: "l", time: "t" });
     const live = externalSide("b", "reader=https://tutors.dev,catalogue=https://c,live=https://l", "reference-course");
     const url = "https://reference-course.netlify.app/topic-01/topic.png";
     expect(stripOrigins(url, local)).toBe("{{course}}/topic-01/topic.png");

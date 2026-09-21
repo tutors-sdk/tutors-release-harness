@@ -41,7 +41,7 @@ export async function launchBrowser(): Promise<Browser> {
  */
 export function stripOrigins(text: string, spec: SideSpec): string {
   let out = text;
-  const origins = [spec.urls.reader, spec.urls.catalogue, spec.urls.live, spec.urls.readerAuth, spec.urls.persistence].filter((o): o is string => !!o);
+  const origins = [spec.urls.reader, spec.urls.catalogue, spec.urls.live, spec.urls.time, spec.urls.readerAuth, spec.urls.persistence].filter((o): o is string => !!o);
   for (const origin of origins) out = out.split(origin).join("{{origin}}");
   const courseHosts = [...new Set([spec.urls.courseId, reference.host, reference.courseId])].sort((x, y) => y.length - x.length);
   for (const host of courseHosts) for (const scheme of ["http://", "https://"]) out = out.split(`${scheme}${host}`).join("{{course}}");

@@ -165,18 +165,19 @@ function memoryFiles(): TempFiles & { store: Map<string, string> } {
 }
 const REF = "quay.io/tutors-sdk/tutors-reader:16.2.0";
 const REPO = "quay.io/tutors-sdk/tutors-reader";
-const images = { reader: REF, catalogue: "quay.io/tutors-sdk/tutors-catalogue:16.2.0", live: "quay.io/tutors-sdk/tutors-live:16.2.0" };
+const images = { reader: REF, catalogue: "quay.io/tutors-sdk/tutors-catalogue:16.2.0", live: "quay.io/tutors-sdk/tutors-live:16.2.0", time: "quay.io/tutors-sdk/tutors-time:16.2.0" };
 const sideProvenance = (over: Partial<ReturnType<typeof provenance>> = {}): SideProvenance => ({
   summary: "pulled+verified",
   images: {
     reader: provenance({ ref: images.reader, digest: D(1), ...over }),
     catalogue: provenance({ ref: images.catalogue, digest: D(2), ...over }),
-    live: provenance({ ref: images.live, digest: D(3), ...over })
+    live: provenance({ ref: images.live, digest: D(3), ...over }),
+    time: provenance({ ref: images.time, digest: D(4), ...over })
   }
 });
-const digestFor = (app: "reader" | "catalogue" | "live") => ({ reader: D(1), catalogue: D(2), live: D(3) })[app];
+const digestFor = (app: "reader" | "catalogue" | "live" | "time") => ({ reader: D(1), catalogue: D(2), live: D(3), time: D(4) })[app];
 const inspectable = Object.fromEntries(Object.values(images).map((ref) => [ref, { config: { User: "1001", ExposedPorts: { "3000/tcp": {} }, Cmd: ["node", "build/index.js"], Labels: { "org.opencontainers.image.revision": "aaaa", "other.label": "x" } }, layers: [D("b"), D("c"), D("d")], size: 5 }]));
-const attestations = Object.fromEntries((["reader", "catalogue", "live"] as const).map((app) => [`quay.io/tutors-sdk/tutors-${app}@${digestFor(app)}`, envelope(digestFor(app), spdx([["express", "4.19.2"], ["openssl", "3.0.14"]], digestFor(app)))]));
+const attestations = Object.fromEntries((["reader", "catalogue", "live", "time"] as const).map((app) => [`quay.io/tutors-sdk/tutors-${app}@${digestFor(app)}`, envelope(digestFor(app), spdx([["express", "4.19.2"], ["openssl", "3.0.14"]], digestFor(app)))]));
 const env = (extra: Record<string, string> = {}) => ({ ...extra }) as NodeJS.ProcessEnv;
 
 describe("collecting the manifest", () => {
@@ -317,7 +318,7 @@ describe("in a report", () => {
     const b = withStatic("b", staticSide({ packages: { "express@4.19.2": 1, "openssl@3.0.14": 1, "jq@1.7": 1 } }));
     const { report } = run(withStatic("a", staticSide()), b);
     expect(report.verdict).toBe("fail");
-    expect(report.compare.unclaimed.map((h) => `${h.artefact} ${h.scope}`)).toEqual(["sbom reader/jq", "sbom catalogue/jq", "sbom live/jq"]);
+    expect(report.compare.unclaimed.map((h) => `${h.artefact} ${h.scope}`)).toEqual(["sbom reader/jq", "sbom catalogue/jq", "sbom live/jq", "sbom time/jq"]);
     const claimed = run(withStatic("a", staticSide()), b, { claims: 'claims:\n  - artefact: sbom\n    scope: "*/jq"\n    reason: "feat(reader): #1099 adds jq for the export job"\n' });
     expect(claimed.report.verdict).toBe("pass");
     expect(claimed.report.compare.staleClaims).toEqual([]);
@@ -341,9 +342,9 @@ describe("in a report", () => {
 
   const missing = (side: "a" | "b") => {
     const s = staticSide();
-    for (const app of ["reader", "catalogue", "live"] as const) {
-      s[app].sbom = { ok: false, reason: `${app} is local, not a pulled image: there is no cosign attestation to read` };
-      s[app].vulns = { ok: false, reason: "nothing to scan: no SBOM" };
+    for (const app of ["reader", "catalogue", "live", "time"] as const) {
+      s[app]!.sbom = { ok: false, reason: `${app} is local, not a pulled image: there is no cosign attestation to read` };
+      s[app]!.vulns = { ok: false, reason: "nothing to scan: no SBOM" };
     }
     return withStatic(side, s);
   };
@@ -352,8 +353,8 @@ describe("in a report", () => {
     const { report, md, html } = run(withStatic("a", staticSide()), missing("b"));
     expect(report.verdict).toBe("pass"); // informational unless required, but not silent:
     expect(report.reasons.filter((r) => r.startsWith("NOT COLLECTED: sbom of reader on side b"))).toHaveLength(1);
-    expect(report.reasons.some((r) => /NOT COLLECTED: vulns of reader, catalogue, live on side b: nothing to scan/.test(r))).toBe(true);
-    expect(report.compare.hunks.filter((h) => h.scope.endsWith("/not-collected")).map((h) => `${h.artefact}:${h.scope}:${h.severity}`)).toEqual(["sbom:reader/not-collected:info", "vulns:reader/not-collected:info", "sbom:catalogue/not-collected:info", "vulns:catalogue/not-collected:info", "sbom:live/not-collected:info", "vulns:live/not-collected:info"]);
+    expect(report.reasons.some((r) => /NOT COLLECTED: vulns of reader, catalogue, live, time on side b: nothing to scan/.test(r))).toBe(true);
+    expect(report.compare.hunks.filter((h) => h.scope.endsWith("/not-collected")).map((h) => `${h.artefact}:${h.scope}:${h.severity}`)).toEqual(["sbom:reader/not-collected:info", "vulns:reader/not-collected:info", "sbom:catalogue/not-collected:info", "vulns:catalogue/not-collected:info", "sbom:live/not-collected:info", "vulns:live/not-collected:info", "sbom:time/not-collected:info", "vulns:time/not-collected:info"]);
     expect(report.imageArtefacts!.b!.reader.sbom).toEqual({ collected: false, reason: expect.stringContaining("no cosign attestation") });
     expect(md).toContain("**NOT COLLECTED: reader is local");
     expect(html).toContain('class="loud">NOT COLLECTED: reader is local');
@@ -386,7 +387,7 @@ describe("in a report", () => {
 
   it("the captures keep the static artefacts, so `harness compare --dir` reproduces the same hunks", () => {
     const { outcome } = run(withStatic("a", staticSide()), withStatic("b", staticSide({ manifest: manifest({ user: "" }) })));
-    expect(outcome.report.compare.unclaimed.map((h) => h.scope)).toEqual(["reader/user", "catalogue/user", "live/user"]);
+    expect(outcome.report.compare.unclaimed.map((h) => h.scope)).toEqual(["reader/user", "catalogue/user", "live/user", "time/user"]);
     const a = clone(withStatic("a", staticSide()));
     expect(JSON.parse(JSON.stringify(a)).imageStatic.reader.sbom.data.packages).toEqual({ "express@4.19.2": 1, "openssl@3.0.14": 1 });
   });

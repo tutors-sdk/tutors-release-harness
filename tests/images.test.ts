@@ -65,7 +65,7 @@ GitCommit:     abc
 const policy: TrustPolicy = { identity: DEFAULT_COSIGN_IDENTITY, issuer: DEFAULT_COSIGN_ISSUER, allowUnsigned: false };
 const signature = (repo: string, digest: string, p: TrustPolicy = policy) => `${p.identity}|${p.issuer}|${repo}@${digest}`;
 
-/** The three Quay images at one tag, as the monorepo's image-build workflow publishes them. */
+/** The four Quay images at one tag, as the monorepo's image-build workflow publishes them. */
 function published(tag: string, base: number, revision = "1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b") {
   const images = imagesFor(tag, QUAY_IMAGE_TEMPLATE);
   const registry: Record<string, FakeImage> = {};
@@ -94,7 +94,7 @@ describe("images ensure", () => {
     expect(reader).toMatchObject({ provenance: "pulled+verified", digest: digestOf(1), revision: "1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b", version: "16.2.0", verifiedIdentity: DEFAULT_COSIGN_IDENTITY });
 
     const verifies = w.calls.filter((c) => c.startsWith("cosign verify"));
-    expect(verifies).toHaveLength(3);
+    expect(verifies).toHaveLength(4); // reader, catalogue, live and time
     // By digest, never by tag; the identity and the GitHub OIDC issuer are pinned.
     expect(verifies[0]).toBe(`cosign verify --certificate-identity-regexp ${DEFAULT_COSIGN_IDENTITY} --certificate-oidc-issuer https://token.actions.githubusercontent.com quay.io/tutors-sdk/tutors-reader@${digestOf(1)}`);
     expect(ledger.read()["quay.io/tutors-sdk/tutors-reader:16.2.0"]).toMatchObject({ provenance: "pulled+verified", digest: digestOf(1) });
@@ -229,9 +229,9 @@ describe("images ensure", () => {
   });
 
   it("digest-pinned per-app references are pulled by digest, verified, and cannot fall back to a build", () => {
-    const repos = ["reader", "catalogue", "live"].map((app) => `quay.io/tutors-sdk/tutors-${app}`);
+    const repos = ["reader", "catalogue", "live", "time"].map((app) => `quay.io/tutors-sdk/tutors-${app}`);
     const registry = Object.fromEntries(repos.map((repo, i) => [`${repo}@${digestOf(i + 4)}`, { id: `sha256:p${i}`, repoDigests: [`${repo}@${digestOf(i + 4)}`], labels: { "org.opencontainers.image.version": "16.2.0" } }]));
-    const spec = `reader=${repos[0]}:16.2.0@${digestOf(4)},catalogue=${repos[1]}@${digestOf(5)},live=${repos[2]}@${digestOf(6)}`;
+    const spec = `reader=${repos[0]}:16.2.0@${digestOf(4)},catalogue=${repos[1]}@${digestOf(5)},live=${repos[2]}@${digestOf(6)},time=${repos[3]}@${digestOf(7)}`;
     const w = world({ registry, signed: repos.map((repo, i) => signature(repo, digestOf(i + 4))) });
     const result = ensureImages([{ spec }], "tutors", { exec: w.exec, ledger: memoryLedger(), policy, log: quiet });
     expect(result.exitCode).toBe(0);
@@ -243,10 +243,21 @@ describe("images ensure", () => {
     expect(absent.problems[0]).toMatch(/not a bare tag, so it cannot be built/);
   });
 
+  it("a spelled-out spec written before time existed asks for time at the reader's tag, and says so when the registry has none", () => {
+    const pub = published("16.2.0", 1);
+    const { [Object.keys(pub.registry).find((r) => r.includes("tutors-time"))!]: _time, ...withoutTime } = pub.registry;
+    const w = world({ registry: withoutTime, signed: pub.signed });
+    const spec = `reader=quay.io/tutors-sdk/tutors-reader:16.2.0,catalogue=quay.io/tutors-sdk/tutors-catalogue:16.2.0,live=quay.io/tutors-sdk/tutors-live:16.2.0`;
+    const result = ensureImages([{ spec }], QUAY_IMAGE_TEMPLATE, { exec: w.exec, ledger: memoryLedger(), policy, log: quiet });
+    expect(result.exitCode).toBe(1);
+    expect(result.problems.join("\n")).toContain("quay.io/tutors-sdk/tutors-time:16.2.0");
+    expect(w.calls).toContain("docker pull --quiet quay.io/tutors-sdk/tutors-time:16.2.0");
+  });
+
   it("a malformed spec is a problem with exit 2, not a crash", () => {
     const result = ensureImages([{ spec: `16.2.0@${digestOf(1)}` }], QUAY_IMAGE_TEMPLATE, { exec: world().exec, ledger: memoryLedger(), policy, log: quiet });
     expect(result.exitCode).toBe(2);
-    expect(result.problems[0]).toMatch(/three digests/);
+    expect(result.problems[0]).toMatch(/one digest each/);
   });
 });
 
@@ -290,7 +301,7 @@ describe("what run does before a stack starts", () => {
     const mutant = "tutors-harness/mutant-route-500:latest";
     const w = world({ local: { ...pub.registry, [mutant]: { id: "sha256:m", repoDigests: [], labels: { "org.opencontainers.image.revision": "1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b" } } }, signed: pub.signed });
     const side = resolveSideProvenance({ ...pub.images, reader: mutant }, { exec: w.exec, ledger: memoryLedger(), policy, log: quiet });
-    expect(side.summary).toBe("reader: local (unverified); catalogue: pulled+verified; live: pulled+verified");
+    expect(side.summary).toBe("reader: local (unverified); catalogue: pulled+verified; live: pulled+verified; time: pulled+verified");
     expect(side.images.reader.revision).toBe("1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b");
   });
 

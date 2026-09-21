@@ -59,6 +59,9 @@ ajv.addFormat("date-time", /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/);
 const validateReport = ajv.compile(reportSchema);
 const validateNoise = ajv.compile(noiseSchema);
 
+/** How many places the schema names `time` (the sides, provenance images and image artefacts). */
+const schemaTime = (schema: unknown): number => JSON.stringify(schema).split('"time":').length - 1;
+
 function expectValid(validate: ValidateFunction, value: unknown) {
   validate(value);
   expect(validate.errors ?? []).toEqual([]);
@@ -82,11 +85,11 @@ const imageInfo = (app: string, n: number) => ({
   builtFrom: { ref: "v16.2.0", sha: "1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b" },
   cachedAt: "2026-09-15T02:30:00.000Z"
 });
-const sideProvenance = { summary: "pulled+verified", allowedUnsigned: true as const, images: { reader: imageInfo("reader", 1), catalogue: imageInfo("catalogue", 2), live: imageInfo("live", 3) } };
+const sideProvenance = { summary: "pulled+verified", allowedUnsigned: true as const, images: { reader: imageInfo("reader", 1), catalogue: imageInfo("catalogue", 2), live: imageInfo("live", 3), time: imageInfo("time", 4) } };
 /** One static image artefact carrying every field the report allows (a real one carries either `reason` or `summary`, not both). */
 const artefactStatus = { collected: true, source: "cosign attestation (signature verified)", reason: "no SBOM attestation", summary: "312 distinct package(s)" };
 const appArtefacts = { manifest: artefactStatus, sbom: artefactStatus, vulns: artefactStatus };
-const sideArtefacts = { reader: appArtefacts, catalogue: appArtefacts, live: appArtefacts };
+const sideArtefacts = { reader: appArtefacts, catalogue: appArtefacts, live: appArtefacts, time: appArtefacts };
 const load = { requests: 600, failed: 0, serverErrors: 0, p50: 12, p95: 40, rate: 20, duration: "30s" };
 
 /**
@@ -104,7 +107,7 @@ const full: DeepRequired<RunReport> = {
   ranAt: "2026-09-16T09:10:00.000Z",
   now: "2026-09-16T09:05:00.000Z",
   runs: 3,
-  sides: { a: { reader: "tutors/reader:16.2.0", catalogue: "tutors/catalogue:16.2.0", live: "tutors/live:16.2.0" }, b: { reader: "tutors/reader:rc", catalogue: "tutors/catalogue:rc", live: "tutors/live:rc" } },
+  sides: { a: { reader: "tutors/reader:16.2.0", catalogue: "tutors/catalogue:16.2.0", live: "tutors/live:16.2.0", time: "tutors/time:16.2.0" }, b: { reader: "tutors/reader:rc", catalogue: "tutors/catalogue:rc", live: "tutors/live:rc", time: "tutors/time:rc" } },
   provenance: { a: sideProvenance, b: sideProvenance },
   verdict: "fail",
   reasons: ["1 unclaimed diff(s)"],
@@ -228,6 +231,30 @@ describe("report.json", () => {
     }
     // the non-additive parts are said to be
     for (const caveat of ["was\nignored", "a missing `--noise` no longer", "default name of the compose project", "left alone"]) expect(changes.replaceAll("\n", " ").replaceAll("  ", " "), caveat).toContain(caveat.replaceAll("\n", " "));
+  });
+
+  it("a report written before 1.3.0, with no `time` anywhere, is still valid and still renders (a reader must tolerate its absence)", () => {
+    const { time: _a, ...a } = full.sides.a;
+    const { time: _b, ...b } = full.sides.b;
+    const strip = <T extends { time?: unknown }>(x: T) => {
+      const { time: _t, ...rest } = x;
+      return rest;
+    };
+    const old = {
+      ...full,
+      sides: { a, b },
+      provenance: { a: { ...sideProvenance, images: strip(sideProvenance.images) }, b: { ...sideProvenance, images: strip(sideProvenance.images) } },
+      imageArtefacts: { a: strip(sideArtefacts), b: strip(sideArtefacts) }
+    } as unknown as RunReport;
+    expectValid(validateReport, old);
+    expect(renderMarkdown(old)).toContain("| time | `—` | `—` |");
+    expect(renderHtml(old)).toContain("<td>time</td>");
+  });
+
+  it("the 1.3.0 changelog lists everything the time app added", () => {
+    const changes = contractMd.slice(contractMd.indexOf("### 1.3.0"), contractMd.indexOf("### 1.2.0"));
+    for (const item of ["time", "time-a", "3104", "30103", "4103", "sides", "provenance", "imageArtefacts", "time=REF", "time=URL", "--production", "build-images.sh", "recreated"]) expect(changes, item).toContain(item);
+    expect(schemaTime(reportSchema)).toBe(3);
   });
 
   it("the schema and RunReport name the same top-level fields", () => {

@@ -1,3 +1,4 @@
+import { APPS, type App } from "../image-ref.ts";
 import type { Hunk, RunReport } from "../types.ts";
 import { claimLabel } from "../claims/rules.ts";
 import { loudProvenance } from "./provenance.ts";
@@ -17,7 +18,7 @@ const short = (v: string | undefined) => (v ? v.replace(/^sha256:/, "").slice(0,
 function provenanceBlock(report: RunReport): string {
   const p = report.provenance;
   if (!p?.a && !p?.b) return "";
-  const cell = (side: "a" | "b", app: "reader" | "catalogue" | "live") => {
+  const cell = (side: "a" | "b", app: App) => {
     const info = p[side]?.images[app];
     if (!info) return "<td>—</td>";
     const bits = [info.digest ? `digest <code>${esc(info.digest)}</code>` : info.id ? `id <code>${esc(short(info.id))}</code> (no registry digest)` : "", info.revision ? `revision <code>${esc(short(info.revision))}</code>` : "revision <em>unlabelled</em>", info.version ? `version <code>${esc(info.version)}</code>` : "version <em>unlabelled</em>", info.unverifiedReason ? `<strong>not verified:</strong> ${esc(info.unverifiedReason)}` : ""].filter(Boolean);
@@ -25,7 +26,7 @@ function provenanceBlock(report: RunReport): string {
   };
   return `<table class="provenance">
 <thead><tr><th>provenance</th><th>a — ${esc(p.a?.summary ?? "not recorded")}</th><th>b — ${esc(p.b?.summary ?? "not recorded")}</th></tr></thead>
-<tbody>${(["reader", "catalogue", "live"] as const).map((app) => `<tr><td>${app}</td>${cell("a", app)}${cell("b", app)}</tr>`).join("")}</tbody>
+<tbody>${APPS.map((app) => `<tr><td>${app}</td>${cell("a", app)}${cell("b", app)}</tr>`).join("")}</tbody>
 </table>`;
 }
 
@@ -71,7 +72,7 @@ ${loudDeployment(report) ? `<p class="loud">${esc(loudDeployment(report)!)}</p>`
 
 <table>
 <thead><tr><th></th><th>a</th><th>b</th></tr></thead>
-<tbody>${(["reader", "catalogue", "live"] as const).map((app) => `<tr><td>${app}</td><td><code>${esc(report.sides.a[app])}</code></td><td><code>${esc(report.sides.b[app])}</code></td></tr>`).join("")}</tbody>
+<tbody>${APPS.map((app) => `<tr><td>${app}</td><td><code>${esc(report.sides.a[app] ?? "—")}</code></td><td><code>${esc(report.sides.b[app] ?? "—")}</code></td></tr>`).join("")}</tbody>
 </table>
 ${provenanceBlock(report)}
 ${deploymentHtml(report, esc)}

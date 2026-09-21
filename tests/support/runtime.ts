@@ -19,7 +19,7 @@ export function posture(overrides: Partial<ContainerPosture> = {}): ContainerPos
   return { ...clone(base), ...overrides, effective: { ...base.effective, ...overrides.effective } };
 }
 
-export const APPS = ["reader", "catalogue", "live"] as const;
+export const APPS = ["reader", "catalogue", "live", "time"] as const;
 
 export function runtimeCapture(overrides: Partial<Record<(typeof APPS)[number], ContainerPosture>> = {}): RuntimeCapture {
   return { collected: true, substrate: "compose", containers: Object.fromEntries(APPS.map((app) => [app, overrides[app] ?? posture()])) };

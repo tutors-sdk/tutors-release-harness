@@ -52,7 +52,7 @@ Docs: [where the A and B images come from](docs/images.md) ·
 ## How it works
 
 ```
-compose.harness.yaml          two app stacks (a, b), a signed-in reader per side, shared fixtures
+compose.harness.yaml          two app stacks (a, b) of the four apps (reader, catalogue, live, time), a signed-in reader per side, shared fixtures
 fixtures/
   course-server/              static server for the pinned fixture course
   identity/                   GitHub-OAuth-shaped issuer with fixed users per role (TLS, test CA)
@@ -169,7 +169,7 @@ harness run --mode <mode> --a <ref> --b <ref> [--substrate compose|kind] [--clai
             [--runs n] [--set fixture,auth,reference] [--journey name]... [--load 20x30s]
             [--now iso] [--out dir] [--image-prefix p|template-with-{app}] [--allow-unsigned]
             [--no-screenshots] [--no-axe] [--no-focus] [--no-runtime] [--startup-restarts n] [--keep] [--no-stack]
-            post-deploy: --recorded <release run dir> --production reader=URL,catalogue=URL,live=URL
+            post-deploy: --recorded <release run dir> --production reader=URL,catalogue=URL,live=URL[,time=URL]
             migration:   --snapshot <pg_dump>      upgrade: --upgrade-seconds 45 --upgrade-rate 20
 harness compare --dir <run dir> --mode <mode> [--claims f] [--noise f]
 harness images ensure --a <ref> --b <ref> [--ref-a git-ref] [--ref-b git-ref] [--allow-unsigned]
@@ -192,8 +192,11 @@ Environment: `HARNESS_IMAGE_PREFIX` (a prefix, `tutors`, or a template,
 `HARNESS_COSIGN_ISSUER` (who must have signed a pulled image; default the
 monorepo's `image-build.yml` workflow via GitHub OIDC), `HARNESS_ALLOW_UNSIGNED`,
 `HARNESS_PROVENANCE_FILE`. `--a`/`--b` also take
-`reader=REF,catalogue=REF,live=REF` with each `REF` pinned as `repo@sha256:…` —
-[docs/images.md](docs/images.md).
+`reader=REF,catalogue=REF,live=REF[,time=REF]` with each `REF` pinned as `repo@sha256:…` —
+[docs/images.md](docs/images.md). The monorepo's four apps are all in the stack; `time` is
+client-rendered and no journey drives it (twelve until a real regression escapes), so it is
+judged by the app-level artefacts only: `metrics`, `logs`, `runtime`, `startup` and the
+image artefacts.
 
 Which commands, flags, report fields and workflow inputs are stable, and what bumps the
 version, is in [docs/contract.md](docs/contract.md).

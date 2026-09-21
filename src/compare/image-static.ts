@@ -156,6 +156,8 @@ export const imageStatic: Engine = (a, b) => {
   for (const app of IMAGE_APPS) {
     const sa = a.imageStatic[app];
     const sb = b.imageStatic[app];
+    // A capture recorded before `time` joined the stack (contract 1.3.0) has nothing to compare it with.
+    if (!sa || !sb) continue;
     if (sa.manifest.ok && sb.manifest.ok) hunks.push(...diffManifest(app, sa.manifest.data, sb.manifest.data));
     else hunks.push(notCollected(app, "manifest", sa.manifest, sb.manifest, required));
     if (sa.sbom.ok && sb.sbom.ok) hunks.push(...diffSbom(app, sa.sbom.data, sb.sbom.data));

@@ -32,7 +32,7 @@ export function journey(overrides: Partial<JourneyCapture> = {}): JourneyCapture
 export function capture(side: SideName, overrides: Partial<SideCapture> = {}): SideCapture {
   return {
     side,
-    images: { reader: `tutors/reader:${side}`, catalogue: `tutors/catalogue:${side}`, live: `tutors/live:${side}` },
+    images: { reader: `tutors/reader:${side}`, catalogue: `tutors/catalogue:${side}`, live: `tutors/live:${side}`, time: `tutors/time:${side}` },
     capturedAt: "2026-09-16T09:05:00.000Z",
     journeys: [journey()],
     metrics: {

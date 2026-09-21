@@ -120,7 +120,7 @@ On the harness side, set the repository variables:
 | `HARNESS_IMAGE_PREFIX` | `quay.io/tutors-sdk/tutors-{app}` — already the workflows' default; set it only to point somewhere else (a fork's namespace, or `tutors` to force local builds) |
 | `HARNESS_COSIGN_IDENTITY` | only if the signing workflow is not `tutors-sdk/tutors-mono-repo/.github/workflows/image-build.yml` (the workflows pass it through; empty means the default) |
 | `HARNESS_PRODUCTION_TAG` | the deployed version, e.g. `16.2.0`; the deploy job updates it |
-| `HARNESS_PRODUCTION_URLS` | `reader=https://tutors.dev,catalogue=https://catalogue.tutors.dev,live=https://live.tutors.dev` |
+| `HARNESS_PRODUCTION_URLS` | `reader=https://tutors.dev,catalogue=https://catalogue.tutors.dev,live=https://live.tutors.dev` (`,time=https://time.tutors.dev` may be added; the harness only records it: no journey drives `time`) |
 
 ## First day on Quay
 

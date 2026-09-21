@@ -40,7 +40,7 @@ what the containers *are*. Both need Docker (compose) or kubectl (kind); on a
 live deployment there is nothing to inspect, so post-deploy mode skips them.
 
 **`runtime` — container posture, exact match.** Per app (`reader`,
-`catalogue`, `live`, and the signed-in `reader-auth` under compose):
+`catalogue`, `live`, `time`, and the signed-in `reader-auth` under compose):
 
 - declared: `docker inspect` (compose) or the pod spec (kind) — configured
   user, privileged, read-only root filesystem, capabilities added and dropped,

@@ -3,6 +3,7 @@
  * claimed and reported is one of these shapes.
  */
 
+import type { AppImages } from "./image-ref.ts";
 import type { ImageArtefactKind, ImageArtefactStatus, SideImageArtefacts, SideImageStatic } from "./image-static/types.ts";
 import type { Digests } from "./digests.ts";
 
@@ -23,6 +24,12 @@ export interface StackUrls {
   reader: string;
   catalogue: string;
   live: string;
+  /**
+   * The time app (contract 1.3.0). Absent for an external side that was given no `time=` URL. No journey
+   * drives it (twelve journeys until a real regression escapes); it is here for the app-level collectors
+   * (metrics, logs, startup, runtime, image artefacts) and for the origin every side's URLs are normalised by.
+   */
+  time?: string;
   /** The reader configured for sign-in (identity + persistence stubs); absent for an external side. */
   readerAuth?: string;
   /** The side's persistence stub, when it has one. */
@@ -31,10 +38,16 @@ export interface StackUrls {
   courseId: string;
 }
 
+/**
+ * A value per app as it is stored in a capture or a report: `time` is absent from those written before
+ * contract 1.3.0, so a reader of one must tolerate its absence.
+ */
+export type PerApp<T> = Record<"reader" | "catalogue" | "live", T> & { time?: T };
+
 export interface SideSpec {
   name: SideName;
   /** Image references per app, as passed to compose. */
-  images: { reader: string; catalogue: string; live: string };
+  images: AppImages;
   urls: StackUrls;
   /** Where the images came from; filled in by `run` before the stack starts. */
   provenance?: SideProvenance;
@@ -88,7 +101,7 @@ export interface SideProvenance {
   summary: string;
   /** True when the run was allowed to judge unverified registry images. */
   allowedUnsigned?: boolean;
-  images: Record<"reader" | "catalogue" | "live", ImageInfo>;
+  images: PerApp<ImageInfo>;
 }
 
 // ---- captured artefacts ------------------------------------------------------
@@ -220,7 +233,7 @@ export interface SideCapture {
   side: SideName;
   /** Absent only in captures written before contract 1.0.0. */
   harness?: HarnessInfo;
-  images: SideSpec["images"];
+  images: PerApp<string>;
   /** Where those images came from and what they say about themselves; absent for an external or recorded-before-R1 side. */
   provenance?: SideProvenance;
   capturedAt: string;
@@ -351,7 +364,7 @@ export interface RunReport {
   ranAt: string;
   now: string;
   runs: number;
-  sides: { a: SideSpec["images"]; b: SideSpec["images"] };
+  sides: { a: PerApp<string>; b: PerApp<string> };
   /** Per-side image provenance, digests and OCI labels; shown in the report header. */
   provenance?: { a?: SideProvenance; b?: SideProvenance };
   verdict: Verdict;
@@ -490,7 +503,7 @@ export interface ContainerPosture {
 export interface RuntimeCapture {
   collected: true;
   substrate: Substrate;
-  /** By app (`reader`, `catalogue`, `live`, and `reader-auth` under compose). */
+  /** By app (`reader`, `catalogue`, `live`, `time`, and `reader-auth` under compose). */
   containers: Record<string, ContainerPosture | NotCollected>;
 }
 

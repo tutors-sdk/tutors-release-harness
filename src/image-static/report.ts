@@ -17,7 +17,7 @@ function describeApp(s: AppImageStatic): Record<ImageArtefactKind, ImageArtefact
 
 /** The report's view of a side's static artefacts: what was collected, and for what was not, why. */
 export function describeImageStatic(side: SideImageStatic): SideImageArtefacts {
-  return Object.fromEntries(IMAGE_APPS.map((app) => [app, describeApp(side[app])])) as SideImageArtefacts;
+  return Object.fromEntries(IMAGE_APPS.flatMap((app) => (side[app] ? [[app, describeApp(side[app])]] : []))) as SideImageArtefacts;
 }
 
 export function imageArtefactsSection(a: SideCapture, b: SideCapture) {
@@ -37,6 +37,7 @@ export function imageStaticReasons(a: SideCapture, b: SideCapture): string[] {
     if (!capture.imageStatic) continue;
     for (const app of IMAGE_APPS) {
       const s = capture.imageStatic[app];
+      if (!s) continue;
       for (const [kind, value] of [["manifest", s.manifest], ["sbom", s.sbom], ["vulns", s.vulns]] as const) {
         if (value.ok) continue;
         const group = groups.find((g) => g.kind === kind && g.side === side && g.reason === value.reason);

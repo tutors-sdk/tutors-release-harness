@@ -1,9 +1,9 @@
 # Where the A and B images come from
 
 The harness compares **images**, never checkouts. Side **a** is what runs in
-production; side **b** is the candidate. Both are three images — `reader`,
-`catalogue`, `live` — and a verdict is only worth something if those are the
-images that ship. So the harness cares where they came from, checks what it
+production; side **b** is the candidate. Both are four images — `reader`,
+`catalogue`, `live` and `time`, the monorepo's four apps — and a verdict is
+only worth something if those are the images that ship. So the harness cares where they came from, checks what it
 can, and writes the answer at the top of every report.
 
 The monorepo publishes to **Quay.io**: `quay.io/tutors-sdk/tutors-<app>`,
@@ -61,8 +61,8 @@ Other forms `--a` accepts:
 
 | Form | Meaning |
 | --- | --- |
-| `quay.io/tutors-sdk/tutors-reader:16.2.0`, `tutors/reader:16.2.0` | that image for its app; the other two take the prefix and the same tag |
-| `reader=REF,catalogue=REF,live=REF` | every image spelled out (mutant runs use this); each `REF` may be pinned by digest |
+| `quay.io/tutors-sdk/tutors-reader:16.2.0`, `tutors/reader:16.2.0` | that image for its app; the others take the prefix and the same tag |
+| `reader=REF,catalogue=REF,live=REF,time=REF` | every image spelled out (mutant runs use this); each `REF` may be pinned by digest. `time=` may be left out (a spec written before the time app joined the stack): it then takes the prefix's `time` image at the reader's tag, else at the first tag among the others |
 | `main`, `release/16.3.0`, a sha (migration mode only) | a git ref of the monorepo to fetch migrations from |
 | `dir:path` (migration mode only) | a local directory of `.sql` files |
 
@@ -73,18 +73,18 @@ deployed, pin each image:
 
 ```bash
 pnpm harness images ensure \
-  --a "reader=quay.io/tutors-sdk/tutors-reader:16.2.0@sha256:…,catalogue=quay.io/tutors-sdk/tutors-catalogue@sha256:…,live=quay.io/tutors-sdk/tutors-live@sha256:…" \
+  --a "reader=quay.io/tutors-sdk/tutors-reader:16.2.0@sha256:…,catalogue=quay.io/tutors-sdk/tutors-catalogue@sha256:…,live=quay.io/tutors-sdk/tutors-live@sha256:…,time=quay.io/tutors-sdk/tutors-time@sha256:…" \
   --b 16.3.0-rc.1
 ```
 
-- A digest names one image and the three apps have three digests, so a digest
+- A digest names one image and the four apps have four digests, so a digest
   only appears in a full reference. `--a 16.2.0@sha256:…` is refused with
   that explanation rather than guessed at.
 - `repo:tag@sha256:…` and `repo@sha256:…` are both accepted. The tag is kept
   in the report for the reader; docker, compose and kubectl are given
   `repo@sha256:…`, so the digest alone decides what runs.
 - One pinned image with a tag (`--a quay.io/tutors-sdk/tutors-reader:16.2.0@sha256:…`)
-  pins that app; the other two take the prefix and the tag, unpinned.
+  pins that app; the others take the prefix and the tag, unpinned.
 - A pinned side cannot fall back to a build: there is no way to build a digest.
 - On the kind substrate, `kind load docker-image` carries tags, not digests, so
   a pinned image is given a local tag derived from its digest
@@ -170,7 +170,7 @@ release". The CI workflows never pass it.
 The monorepo's `.github/workflows/image-build.yml` (its PR #143; a reference
 copy of the contract is in [`monorepo/publish-images.yml`](monorepo/publish-images.yml)):
 
-- builds `reader`, `catalogue`, `live` (and `time`) from the root `Dockerfile`,
+- builds `reader`, `catalogue`, `live` and `time` from the root `Dockerfile`,
   multi-arch (`linux/amd64`, `linux/arm64`), on every push to `main` and every
   `v*` tag;
 - pushes to `quay.io/tutors-sdk/tutors-<app>` with a Quay robot account
@@ -219,21 +219,21 @@ between nights with `actions/cache`.
 ## 5. Building from a git ref (the loud fallback)
 
 `scripts/build-images.sh <ref> [tag]` clones the monorepo at `<ref>` into a
-temporary directory and runs its own `Dockerfile` three times with
+temporary directory and runs its own `Dockerfile` four times (one per app) with
 `--build-arg APP_NAME=<app>`, naming the images by `HARNESS_IMAGE_PREFIX`
 (prefix or template, as above; tag defaults to the ref) and labelling them with
 the commit (`org.opencontainers.image.revision`) and the tag (`.version`).
 
 ```bash
-scripts/build-images.sh v16.2.0                 # tutors/{reader,catalogue,live}:v16.2.0
-scripts/build-images.sh release/16.3.0 rc       # tutors/{reader,catalogue,live}:rc
+scripts/build-images.sh v16.2.0                 # tutors/{reader,catalogue,live,time}:v16.2.0
+scripts/build-images.sh release/16.3.0 rc       # tutors/{reader,catalogue,live,time}:rc
 TUTORS_REPO=git@github.com:me/fork.git scripts/build-images.sh my-branch
 scripts/build-images.sh --print-images 16.2.0   # just the names, no git, no docker
 ```
 
 `harness images ensure` calls this when a bare tag cannot be pulled, trying
 `v<tag>`, `<tag>` and `release/<tag>` as refs; pass `--ref-a`/`--ref-b` to name
-the ref explicitly. The script tags all three apps, so a side is either wholly
+the ref explicitly. The script tags all four apps, so a side is either wholly
 pulled or wholly built, never a mixture under one tag.
 
 The fallback is kept because a registry can lack a tag (an old release, a
@@ -264,13 +264,15 @@ published production images, verified, beside your local build:
 
 ```bash
 export HARNESS_IMAGE_PREFIX='quay.io/tutors-sdk/tutors-{app}'
-pnpm harness images ensure --a 16.2.0 --b "reader=tutors/reader:local,catalogue=tutors/catalogue:local,live=tutors/live:local"
-pnpm harness run --mode any-two --a 16.2.0 --b "reader=tutors/reader:local,catalogue=tutors/catalogue:local,live=tutors/live:local"
+pnpm harness images ensure --a 16.2.0 --b "reader=tutors/reader:local,catalogue=tutors/catalogue:local,live=tutors/live:local,time=tutors/time:local"
+pnpm harness run --mode any-two --a 16.2.0 --b "reader=tutors/reader:local,catalogue=tutors/catalogue:local,live=tutors/live:local,time=tutors/time:local"
 ```
 
 Mutants are built `FROM` the base reader image, whatever `--base` resolves to:
 with the Quay template that is the pulled, verified production image, so a
-mutant is production plus exactly one planted fault.
+mutant is production plus exactly one planted fault. Only the reader is
+mutated; catalogue, live and time are the base's own on both sides, so the
+base tag must exist for all four apps.
 
 ## 7. What the harness records about the images
 

@@ -12,6 +12,7 @@ import { compareCaptures } from "../src/compare/index.ts";
 import { diffManifest, diffSbom } from "../src/compare/image-static.ts";
 import { packagesFromSpdx } from "../src/image-static/sbom.ts";
 import type { Exec } from "../src/images.ts";
+import { QUAY_IMAGE_TEMPLATE, imagesFor, specFor } from "../src/image-ref.ts";
 import { DEFAULT_ALT_BASE, MUTANT_KINDS, baseSwapDockerfile, buildMutantImage } from "../src/mutant-build.ts";
 import { loadMutants } from "../src/mutants.ts";
 import { DEFAULT_MASKS_FILE, loadMasks } from "../src/normalise/masks.ts";
@@ -130,9 +131,20 @@ describe("what the harness must say about each image-level mutant (the unit-leve
     const b = staticSide({ packages: planted });
     const fails = compareCaptures(withStatic("a", staticSide()), withStatic("b", b), masks).filter((h) => h.severity === "fail");
     expect(new Set(fails.map((h) => h.artefact))).toEqual(new Set(["sbom"]));
-    expect(fails.map((h) => h.scope)).toEqual(["reader/harness-planted-package", "catalogue/harness-planted-package", "live/harness-planted-package"]);
+    expect(fails.map((h) => h.scope)).toEqual(["reader/harness-planted-package", "catalogue/harness-planted-package", "live/harness-planted-package", "time/harness-planted-package"]);
     expect(diffSbom("reader", { source: "generated", packages: packagesFromSpdx(spdx([["express", "4.19.2"], ["openssl", "3.0.14"]])) }, { source: "generated", packages: planted })[0]!.summary).toBe("reader: package added: harness-planted-package@9.9.9");
     // And the manifest engine says nothing about a package that is only on disk.
     expect(diffManifest("reader", manifest(), manifest())).toEqual([]);
+  });
+});
+
+describe("a mutant side names all four apps", () => {
+  it("only the reader is mutated: the mutant spec spells out catalogue, live and time as the base's own, and reads back unchanged", () => {
+    // What src/mutants.ts hands to `run`: the base images with the reader replaced.
+    const base = imagesFor("16.2.0", QUAY_IMAGE_TEMPLATE);
+    const mutant = "tutors-harness/mutant-route-500:latest";
+    const spec = specFor({ ...base, reader: mutant });
+    expect(spec).toBe(`reader=${mutant},catalogue=quay.io/tutors-sdk/tutors-catalogue:16.2.0,live=quay.io/tutors-sdk/tutors-live:16.2.0,time=quay.io/tutors-sdk/tutors-time:16.2.0`);
+    expect(imagesFor(spec, QUAY_IMAGE_TEMPLATE)).toEqual({ ...base, reader: mutant });
   });
 });

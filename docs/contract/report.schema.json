@@ -193,7 +193,7 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["reader", "catalogue", "live"],
-      "properties": { "reader": { "type": "string" }, "catalogue": { "type": "string" }, "live": { "type": "string" } }
+      "properties": { "reader": { "type": "string" }, "catalogue": { "type": "string" }, "live": { "type": "string" }, "time": { "type": "string", "description": "Since 1.3.0. The time app's image reference; \"-\" when the side has none (migration mode, a live deployment given no time URL). Absent from a report written before 1.3.0." } }
     },
     "sideProvenance": {
       "type": "object",
@@ -206,7 +206,7 @@
           "type": "object",
           "additionalProperties": false,
           "required": ["reader", "catalogue", "live"],
-          "properties": { "reader": { "$ref": "#/definitions/imageInfo" }, "catalogue": { "$ref": "#/definitions/imageInfo" }, "live": { "$ref": "#/definitions/imageInfo" } }
+          "properties": { "reader": { "$ref": "#/definitions/imageInfo" }, "catalogue": { "$ref": "#/definitions/imageInfo" }, "live": { "$ref": "#/definitions/imageInfo" }, "time": { "$ref": "#/definitions/imageInfo", "description": "Since 1.3.0." } }
         }
       }
     },
@@ -237,7 +237,7 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["reader", "catalogue", "live"],
-      "properties": { "reader": { "$ref": "#/definitions/appImageArtefacts" }, "catalogue": { "$ref": "#/definitions/appImageArtefacts" }, "live": { "$ref": "#/definitions/appImageArtefacts" } }
+      "properties": { "reader": { "$ref": "#/definitions/appImageArtefacts" }, "catalogue": { "$ref": "#/definitions/appImageArtefacts" }, "live": { "$ref": "#/definitions/appImageArtefacts" }, "time": { "$ref": "#/definitions/appImageArtefacts", "description": "Since 1.3.0." } }
     },
     "appImageArtefacts": {
       "type": "object",

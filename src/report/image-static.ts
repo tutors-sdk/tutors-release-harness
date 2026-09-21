@@ -9,15 +9,18 @@ function cellText(s: ImageArtefactStatus | undefined): string {
   return s.collected ? `${s.summary ?? "collected"}${s.source ? ` (${s.source})` : ""}` : `NOT COLLECTED: ${s.reason ?? "no reason recorded"}`;
 }
 
+/** The apps a report has image artefacts for: `time` is absent from a report written before contract 1.3.0. */
+const appsPresent = (report: RunReport) => IMAGE_APPS.filter((app) => report.imageArtefacts?.a?.[app] || report.imageArtefacts?.b?.[app]);
+
 /** The static image artefacts as a Markdown table; empty when the run collected none. */
 export function imageArtefactsMarkdown(report: RunReport): string[] {
   const section = report.imageArtefacts;
   if (!section?.a && !section?.b) return [];
   const lines = ["### Image artefacts (from the images, not the running apps)", "", "| app | artefact | a | b |", "|---|---|---|---|"];
-  for (const app of IMAGE_APPS) {
+  for (const app of appsPresent(report)) {
     for (const kind of IMAGE_ARTEFACT_KINDS) {
-      const a = section.a?.[app][kind];
-      const b = section.b?.[app][kind];
+      const a = section.a?.[app]?.[kind];
+      const b = section.b?.[app]?.[kind];
       const loud = (s: ImageArtefactStatus | undefined) => (s && !s.collected ? `**${mdEscape(cellText(s))}**` : mdEscape(cellText(s)));
       lines.push(`| ${app} | ${kind} | ${loud(a)} | ${loud(b)} |`);
     }
@@ -31,6 +34,6 @@ export function imageArtefactsHtml(report: RunReport): string {
   const section = report.imageArtefacts;
   if (!section?.a && !section?.b) return "";
   const cell = (s: ImageArtefactStatus | undefined) => (s && !s.collected ? `<td class="loud">${esc(cellText(s))}</td>` : `<td>${esc(cellText(s))}</td>`);
-  const rows = IMAGE_APPS.flatMap((app) => IMAGE_ARTEFACT_KINDS.map((kind) => `<tr><td>${app}</td><td>${kind}</td>${cell(section.a?.[app][kind])}${cell(section.b?.[app][kind])}</tr>`)).join("");
+  const rows = appsPresent(report).flatMap((app) => IMAGE_ARTEFACT_KINDS.map((kind) => `<tr><td>${app}</td><td>${kind}</td>${cell(section.a?.[app]?.[kind])}${cell(section.b?.[app]?.[kind])}</tr>`)).join("");
   return `<h2>Image artefacts</h2><p><small>Collected from the images, not the running apps. A cell that says NOT COLLECTED was not compared.</small></p><table><thead><tr><th>app</th><th>artefact</th><th>a</th><th>b</th></tr></thead><tbody>${rows}</tbody></table>`;
 }

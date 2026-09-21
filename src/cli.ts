@@ -24,7 +24,8 @@ const USAGE = `tutors-release-harness
       Start both stacks, capture, compare, claim, gate, report.
       --mode        ${MODES.join(" | ")}
       --a, --b      a tag (16.2.0), one app's image (tutors/reader:16.2.0, mutant images),
-                    reader=REF,catalogue=REF,live=REF (each REF may be pinned: repo@sha256:…);
+                    reader=REF,catalogue=REF,live=REF[,time=REF] (each REF may be pinned: repo@sha256:…;
+                    time defaults to the prefix's time image at the reader's tag);
                     for migration mode a git ref or dir:<path>
       --substrate   compose (default) | kind
       --image-prefix  where bare tags live (default: tutors, or HARNESS_IMAGE_PREFIX): a prefix
@@ -56,7 +57,7 @@ const USAGE = `tutors-release-harness
       --no-runtime  do not collect container posture (identity, capabilities, read-only root, limits)
       --startup-restarts  restarts per app to sample startup time from (default 5; 0 switches it off).
                     Fewer than timing.minRuns (normalise/masks.yaml) is reported, not judged; raise it, never retry.
-      post-deploy:  --recorded <release run dir> --production reader=URL,catalogue=URL,live=URL
+      post-deploy:  --recorded <release run dir> --production reader=URL,catalogue=URL,live=URL[,time=URL]
                     [--deployed <tag> --deployed-digests <digests> --release-record <file|dir>]  what the deploy says it
                     deployed, compared with the release record of the judged candidate (HARNESS_HOME/releases without
                     --release-record); a difference, or no record, WARNS

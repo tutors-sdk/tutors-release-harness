@@ -13,10 +13,12 @@ kind delete cluster --name <cluster>                       # remove this checkou
 ```
 
 Needs `kind` and `kubectl` on the PATH and Docker. The first `up` creates the
-cluster from `kind-config.yaml` (NodePorts published on host ports 4100–4102
-and 4200–4202, the compose ports plus 1000, so a cluster left running never
-blocks the compose stack) and
-loads the images with `kind load docker-image`; later runs reuse it.
+cluster from `kind-config.yaml` (NodePorts published on host ports 4100–4103
+and 4200–4203, the compose ports plus 1000, so a cluster left running never
+blocks the compose stack; `time` is 4103 and 4203) and
+loads the images with `kind load docker-image`; later runs reuse it. A cluster created
+before the time app was added (harness 1.3.0) never published 4103 and 4203: recreate it
+with `kind delete cluster --name tutors-harness`.
 
 Images are named exactly as on compose (`HARNESS_IMAGE_PREFIX`, prefix or
 `{app}` template — [docs/images.md](../../docs/images.md)) and are under the
@@ -32,7 +34,7 @@ use that name.
 
 | Component | compose | kind |
 | --- | --- | --- |
-| reader, catalogue, live per side | containers, hardened | Deployments under `restricted` PSA, same probes/security context/resources as the monorepo's `deploy/k8s/base` |
+| reader, catalogue, live, time per side | containers, hardened | Deployments under `restricted` PSA, same probes/security context/resources as the monorepo's `deploy/k8s/base` |
 | fixture course server | container | a Node process on the host (the browser fetches the course; the apps never do) |
 | container posture and startup time (`runtime`, `startup` artefacts) | `docker inspect`, `exec`, `logs`; stop and start | the pod spec, `kubectl exec` and `logs`; scale to zero and back |
 | signed-in reader, identity and persistence stubs | containers | not yet (the `auth` set is skipped on kind) |

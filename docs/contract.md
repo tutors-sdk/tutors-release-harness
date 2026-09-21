@@ -75,7 +75,7 @@ written). Source of truth: `RunReport` in `src/types.ts`.
 | `ranAt` | ISO 8601 UTC instant | when the comparison was judged (wall clock) |
 | `now` | string | the frozen clock both sides were given (`--now` / `HARNESS_NOW`) |
 | `runs` | integer ≥ 1 | journey repetitions per side |
-| `sides` | `{ a, b }`, each `{ reader, catalogue, live }` | the image reference of each app on each side. In migration mode `reader` is `migrations:<ref>` and the others `-`; in post-deploy mode `a` is the recorded candidate's images and each of `b`'s is `external:<URL>` |
+| `sides` | `{ a, b }`, each `{ reader, catalogue, live, time? }` | the image reference of each app on each side (`time` since 1.3.0; absent from an earlier report). In migration mode `reader` is `migrations:<ref>` and the others `-`; in post-deploy mode `a` is the recorded candidate's images and each of `b`'s is `external:<URL>` (`-` for `time` when no `time=` URL was given) |
 | `provenance` | `{ a?, b? }`, optional — since 1.1.0 | where each side's images came from; see [Image provenance](#image-provenance). A side is absent when it was not inspected: migration mode, the live side of post-deploy mode, a capture recorded before 1.1.0 |
 | `imageArtefacts` | `{ a?, b? }`, optional — since 1.2.0 | per side, per app, whether each static image artefact (`manifest`, `sbom`, `vulns`) was collected, and for one that was not, why; see [Static image artefacts](#static-image-artefacts). A side is absent when its images were not inspected: migration mode, the live side of post-deploy mode, a capture recorded before 1.2.0 |
 | `verdict` | `pass` \| `warn` \| `fail` | see [Verdicts and exit codes](#verdicts-and-exit-codes) |
@@ -121,7 +121,7 @@ gave no reason, the harness writes `Rule NNNN: <title>`. `rule` and `ruleTitle`
 ### Image provenance
 
 Since 1.1.0. `provenance.a` and `provenance.b` are each
-`{ summary, allowedUnsigned?, images: { reader, catalogue, live } }`, and each
+`{ summary, allowedUnsigned?, images: { reader, catalogue, live, time? } }`, and each
 image is:
 
 | Field | Meaning |
@@ -161,7 +161,7 @@ numbers under `migration`, `upgrade` and `load`.
 
 Since 1.2.0. Three artefacts describe what the two sides' images *are*,
 collected from the images themselves (before the stacks start), not from the
-running apps. Each is per app (`reader`, `catalogue`, `live`); a hunk's
+running apps. Each is per app (`reader`, `catalogue`, `live` and, since 1.3.0, `time`); a hunk's
 `scope` starts with the app.
 
 | `artefact` | Collected from | `scope` | A hunk means |
@@ -199,7 +199,7 @@ and the kind substrate.
 
 | Artefact | Scope of a hunk | What is compared |
 | --- | --- | --- |
-| `runtime` | `<app>/<field>`, `app` being `reader`, `catalogue`, `live` (and `reader-auth` under compose) | exact match of each container's declared posture (configured user, privileged, read-only root filesystem, capabilities added and dropped, security options, writable mounts, memory/cpu/pids requests and limits — `docker inspect` under compose, the pod spec under kind) and measured posture (effective UID and GID, effective and bounding capabilities, no-new-privileges, seccomp mode, root filesystem mounted `ro`, /tmp and the working directory writable — a process started inside the container reading /proc). Fields: `user`, `run-as-non-root`, `privileged`, `read-only-rootfs`, `cap-add`, `cap-drop`, `security-opt`, `writable-paths`, `memory-request`, `memory-limit`, `cpu-request`, `cpu-limit`, `pids-limit`, `uid`, `gid`, `cap-effective`, `cap-bounding`, `no-new-privileges`, `seccomp`, `rootfs-mounted-ro`, `tmp-writable`, `cwd-writable` |
+| `runtime` | `<app>/<field>`, `app` being `reader`, `catalogue`, `live`, `time` (since 1.3.0; and `reader-auth` under compose) | exact match of each container's declared posture (configured user, privileged, read-only root filesystem, capabilities added and dropped, security options, writable mounts, memory/cpu/pids requests and limits — `docker inspect` under compose, the pod spec under kind) and measured posture (effective UID and GID, effective and bounding capabilities, no-new-privileges, seccomp mode, root filesystem mounted `ro`, /tmp and the working directory writable — a process started inside the container reading /proc). Fields: `user`, `run-as-non-root`, `privileged`, `read-only-rootfs`, `cap-add`, `cap-drop`, `security-opt`, `writable-paths`, `memory-request`, `memory-limit`, `cpu-request`, `cpu-limit`, `pids-limit`, `uid`, `gid`, `cap-effective`, `cap-bounding`, `no-new-privileges`, `seccomp`, `rootfs-mounted-ro`, `tmp-writable`, `cwd-writable` |
 | `runtime` | `<app>/writes-outside-tmp` | the app logged a read-only filesystem error (`EROFS`) on b and not on a: with a read-only root and a tmpfs /tmp, that is a write outside /tmp |
 | `startup` | `<app>/root`, `<app>/ready` | time from the start command to the first response to `GET /` with a status below 500, and to the orchestrator's ready verdict (compose healthcheck healthy; pod Ready), over `--startup-restarts` restarts of the same container (kind: scale to zero and back, so no old pod answers), Mann-Whitney U like `timing` (`timing.minRuns`, `timing.alpha`, `timing.minEffect`, and `startup.minShiftMs` in `normalise/masks.yaml`) |
 | `startup` | `<app>/boot`, `<app>/root-status` | b failed to become healthy within the timeout in more restarts than a; `GET /` answers a different status after a restart |
@@ -581,7 +581,7 @@ they take (`--only`, `--migrations-a`, `--migrations-b`, `--interval`,
 
 | Command | Stable flags |
 | --- | --- |
-| `harness run` | `--mode` (required), `--a`, `--b` (required except in post-deploy), `--claims <file>`, `--rules <path\|url>` (since 1.3.0: the Rules a claim may name, see [The rules file](#the-rules-file)), `--noise <file\|dir\|skip\|none>` (omitted: the latest status in the local store, see [`noise-status.json`](#noise-statusjson-and-the-7-day-rule)), `--runs <n>`, `--set <fixture,auth,reference>`, `--journey <name>` (repeatable), `--load <rate>x<duration>`, `--out <dir>`, `--image-prefix <prefix or {app} template>`, `--allow-unsigned`, `--require-verified` (noise mode: write the status `degraded` unless every image on both sides was pulled and verified in this run), `--override-reason <text>` and `--override-by <who>` (see [Overriding a FAIL](#overriding-a-fail)), `--a-digests <digests>` and `--b-digests <digests>` (since 1.3.0: pin a side's images, see [Image digests](#image-digests-and-the-release-record)); post-deploy: `--recorded <release run dir>`, `--production reader=URL,catalogue=URL,live=URL`, and since 1.3.0 `--deployed <tag>`, `--deployed-digests <digests>` and `--release-record <file\|dir>` (see [Checking a deployment](#checking-a-deployment)) |
+| `harness run` | `--mode` (required), `--a`, `--b` (required except in post-deploy), `--claims <file>`, `--rules <path\|url>` (since 1.3.0: the Rules a claim may name, see [The rules file](#the-rules-file)), `--noise <file\|dir\|skip\|none>` (omitted: the latest status in the local store, see [`noise-status.json`](#noise-statusjson-and-the-7-day-rule)), `--runs <n>`, `--set <fixture,auth,reference>`, `--journey <name>` (repeatable), `--load <rate>x<duration>`, `--out <dir>`, `--image-prefix <prefix or {app} template>`, `--allow-unsigned`, `--require-verified` (noise mode: write the status `degraded` unless every image on both sides was pulled and verified in this run), `--override-reason <text>` and `--override-by <who>` (see [Overriding a FAIL](#overriding-a-fail)), `--a-digests <digests>` and `--b-digests <digests>` (since 1.3.0: pin a side's images, see [Image digests](#image-digests-and-the-release-record)); post-deploy: `--recorded <release run dir>`, `--production reader=URL,catalogue=URL,live=URL[,time=URL]`, and since 1.3.0 `--deployed <tag>`, `--deployed-digests <digests>` and `--release-record <file\|dir>` (see [Checking a deployment](#checking-a-deployment)) |
 | `harness compare` | `--dir <run dir>` (required), `--mode` (required), `--claims`, `--rules`, `--noise` |
 | `harness images ensure` | `--a`, `--b` (required), `--a-digests`, `--b-digests` (since 1.3.0: pull by digest, verify on it, refuse a tag that has moved; a pinned image is never built), `--ref-a`, `--ref-b` (monorepo git refs to build from when the pull fails), `--image-prefix`, `--allow-unsigned`, `--image-cache <dir>` (since 1.2.0: refreshed from images pulled and verified in this run; used, as provenance `cached`, only when the registry cannot be reached, and never for a tag the registry says does not exist). With `GITHUB_OUTPUT` set it writes `image_cache=none\|used\|refreshed` |
 | `harness mutants` | `--base <tag or reader image>` (required), `--out`, `--image-prefix`, `--allow-unsigned` |
@@ -593,8 +593,10 @@ they take (`--only`, `--migrations-a`, `--migrations-b`, `--interval`,
 | any | `--help` |
 
 `--a` / `--b` take a bare tag (`16.2.0`), one app's image reference (the other
-two apps take the prefix and that reference's tag), or
-`reader=REF,catalogue=REF,live=REF`; in migration mode a monorepo git ref or
+apps take the prefix and that reference's tag), or
+`reader=REF,catalogue=REF,live=REF[,time=REF]` (`time=` is optional since
+1.3.0: left out, it takes the prefix's `time` image at the reader's tag, else
+the first tag among the others, so a spec written for 1.2 keeps working); in migration mode a monorepo git ref or
 `dir:<path>`. Since 1.1.0 a `REF` may be pinned by digest —
 `repo:tag@sha256:<64 hex>` or `repo@sha256:<64 hex>` — and then the digest
 alone decides what runs. A digest names one image, so `16.2.0@sha256:…` is
@@ -605,8 +607,8 @@ The image prefix is `--image-prefix`, else the `HARNESS_IMAGE_PREFIX`
 environment variable, else `tutors`. It is either a bare prefix
 (`tutors` → `tutors/<app>:<tag>`) or, since 1.1.0, a template containing
 `{app}` (`quay.io/tutors-sdk/tutors-{app}` →
-`quay.io/tutors-sdk/tutors-reader:<tag>`); `<app>` is `reader`, `catalogue` or
-`live` ([images.md](images.md)).
+`quay.io/tutors-sdk/tutors-reader:<tag>`); `<app>` is `reader`, `catalogue`,
+`live` or `time` ([images.md](images.md)).
 
 `--allow-unsigned` (or `HARNESS_ALLOW_UNSIGNED=1`) lets a registry image whose
 signature could not be verified be judged anyway; the report records it
@@ -666,7 +668,7 @@ see [Overriding a FAIL](#overriding-a-fail)); `nightly-noise.yml` and
 | `HARNESS_IMAGE_PREFIX` | `quay.io/tutors-sdk/tutors-{app}` (since 1.1.0; was `tutors`) | where bare tags are resolved: a prefix or an `{app}` template. When the registry lacks the tag the workflows still build from the monorepo ref, as before, and the report says `built-from-ref` |
 | `HARNESS_COSIGN_IDENTITY` | `^https://github.com/tutors-sdk/tutors-mono-repo/\.github/workflows/image-build\.yml@` (since 1.1.0) | who must have signed a pulled image: the monorepo's `image-build.yml` workflow. Set it only if the signing workflow is another |
 | `HARNESS_PRODUCTION_TAG` | `main` | the tag nightly noise, weekly mutants and CI's smoke run use; the deploy updates it |
-| `HARNESS_PRODUCTION_URLS` | `reader=https://tutors.dev,catalogue=https://catalogue.tutors.dev,live=https://live.tutors.dev` | the live deployment post-deploy mode reads |
+| `HARNESS_PRODUCTION_URLS` | `reader=https://tutors.dev,catalogue=https://catalogue.tutors.dev,live=https://live.tutors.dev` | the live deployment post-deploy mode reads; `time=<URL>` may be added (since 1.3.0), and is optional |
 
 Every job that runs `harness images ensure` first installs cosign ≥ 3 with
 `sigstore/cosign-installer`; the images are public, so no registry credentials
@@ -846,6 +848,30 @@ changed; and a stack under the old name is left alone.
 - A stack under the old default name `tutors-harness` is reported by `harness
   doctor` as a legacy stack, not touched, and never removed. A kind cluster called
   `tutors-harness` is never adopted or deleted: `harness kind` refuses that name.
+**The `time` app joins the stack**
+
+- The monorepo ships four apps (reader, catalogue, live, time) and the harness
+  knew three. `time` is now built into both sides of the compose stack (`time-a`,
+  `time-b`, host ports `3104` and `3204`; kind NodePorts `30103` and `30203`,
+  published on `4103` and `4203`) and gets the app-level artefacts: `metrics`,
+  `logs`, `runtime`, `startup`, and the static image artefacts (`image-manifest`,
+  `sbom`, `vulns`). No journey drives it (twelve until a real regression
+  escapes), so it has no `dom`, `network`, `screenshot`, `headers`, `axe`, `focus`
+  or `timing` artefacts of its own.
+- `report.json`: an optional `time` beside `reader`, `catalogue` and `live` in
+  `sides.{a,b}`, in `provenance.{a,b}.images` and in `imageArtefacts.{a,b}`. A
+  report written before 1.3.0 has none, and a reader of one must tolerate that.
+  Hunks for `time` use the app name as the first part of their scope, as for the
+  others (`time/user`, `time/root`, `time/ready`).
+- CLI: `--a` / `--b` accept `time=REF` in the spelled-out form, optional; left
+  out it takes the reader's tag. `--production` and `HARNESS_PRODUCTION_URLS`
+  accept `time=URL`, optional. `scripts/build-images.sh` builds four apps.
+- Compatibility that is not free: a base tag must now exist for `time` as well
+  (`harness images ensure` fails, loudly, if the registry has none), and a kind
+  cluster created before 1.3.0 must be recreated (it never published the time
+  ports). Reports of 1.2.x are not comparable with 1.3.0 reports (the harness
+  version, above): there are more artefacts to differ.
+
 ### 1.2.1 (patch; statistics)
 
 No field, flag, artefact or verdict changes; a consumer written against 1.2.0
