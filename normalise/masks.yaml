@@ -14,6 +14,12 @@
 #             `pattern: <regex>`             replaces matches with `replace` (default "{{masked}}")
 #             `network` masks apply to the request URL only; with `drop: true`
 #             the matching requests are removed from the comparison entirely
+#             `console` masks apply to each message's text; with `drop: true`
+#             the matching console entries are removed from that page's list
+#             on both sides (use it only for noise whose COUNT varies with
+#             timing: a rewrite cannot hide a message that one side logged
+#             twice and the other never)
+#             (`drop` is accepted on network and console pattern masks only)
 #   metrics:  `series: <regex>`              drops matching series names
 #   logs:     `key: <name>`                  drops that key from the key-set comparison
 # `replace` may keep parts of the match with $1, $2 …; `modes: [post-deploy]`
@@ -83,6 +89,24 @@ masks:
       table (the stub is the recorder), and the anonymous-write rule; the network engine's per-page request counts
       cannot tell a regression from a timer tick. Only the stub's Supabase paths are dropped: the reader's own routes
       and the fixture course are still compared.
+
+  - id: realtime-rest-fallback-warning
+    artefact: console
+    pattern: '^Realtime send\(\) is automatically falling back to REST API'
+    drop: true
+    reason: >-
+      The signed-in reader's Supabase Realtime client cannot open its websocket to the persistence stub (the
+      handshake is answered 404), so every presence or broadcast send logs "Realtime send() is automatically
+      falling back to REST API. This behavior will be deprecated in the future. Please use httpSend()
+      explicitly for REST delivery." and posts over REST. Those sends run on timers, so how many land before a
+      page settles is not the release's: an A/A on the same image logged it 6+ times on the topic page on side
+      a, and 2 times on the previous (course) page and 5 times on the topic page on side b. The console engine
+      compares each page's messages as a set, so a message present on one side and absent on the other is a
+      failure, and a rewrite cannot fix a count; the entries are dropped instead. The WebSocket failure
+      message itself is deliberately NOT masked: it is stable per page and still compared. What the reader
+      persists is judged by the persistence artefact and the anonymous-write rule (the REST calls themselves
+      are dropped by persistence-stub-requests). Blind spot: a regression that makes the reader emit this
+      warning where it did not before is invisible on the console artefact.
 
   - id: hashed-assets
     artefact: [network, headers]

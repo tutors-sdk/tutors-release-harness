@@ -1,6 +1,6 @@
 {
   "$comment": "The harness CLI, machine-readable. tests/contract.test.ts fails when this list and src/cli.ts disagree, when a workflow uses a command or flag not marked stable, or when docs/contract.md omits a stable one. stable: true is covered by the compatibility promise in docs/contract.md; stable: false may change in a minor release.",
-  "contractVersion": "1.3.0",
+  "contractVersion": "1.4.0",
   "commands": [
     { "name": "run", "stable": true, "summary": "Start both stacks, capture, compare, claim, gate, report." },
     { "name": "compare", "stable": true, "summary": "Re-run normalise/compare/claim/gate on captures already on disk." },
@@ -14,9 +14,9 @@
     { "name": "noise", "stable": true, "since": "1.3.0", "subcommands": ["record", "status", "history"], "unstableSubcommands": ["history"], "summary": "The local noise store: the noise branch as a directory. record appends a night and keeps the ratchet; status says whether the latest status licenses a FAIL; history (not stable) prints the ratchet and the streak." },
     { "name": "guard", "stable": true, "since": "1.3.0", "subcommands": ["masks", "engine", "all"], "summary": "The CI guards (masks land in their own PR; an engine change needs a version bump) against a local ref." },
     { "name": "override", "stable": false, "since": "1.3.0", "subcommands": ["list"], "summary": "The local, append-only record of overridden FAILs (the harness-override issues, locally)." },
-    { "name": "vuln-db", "stable": false, "since": "1.3.0", "subcommands": ["update", "status"], "summary": "The pinned vulnerability database (grype's): update fetches it into HARNESS_VULN_DB_DIR, else HARNESS_HOME/vuln-db (the only place a database is ever updated: before a run, never during one); status says which database a scan would read, its build time, age and checksum." },
-    { "name": "prune", "stable": false, "since": "1.3.0", "summary": "Remove run directories under out/ older than --older-than-days and outside the newest --keep-last of their mode, and an image cache older than --image-cache-days. A dry run unless --yes; never touches HARNESS_HOME state, the run in progress or the newest release run that did not FAIL." },
-    { "name": "local", "stable": false, "since": "1.3.0", "subcommands": ["nightly", "gate", "mutants", "watch", "smoke"], "summary": "One command per maintainer task, planned from the same harness commands the workflows run; --dry-run prints the plan. smoke is the two-stacks smoke of ci.yml." }
+    { "name": "vuln-db", "stable": false, "since": "1.4.0", "subcommands": ["update", "status"], "summary": "The pinned vulnerability database (grype's): update fetches it into HARNESS_VULN_DB_DIR, else HARNESS_HOME/vuln-db (the only place a database is ever updated: before a run, never during one); status says which database a scan would read, its build time, age and checksum." },
+    { "name": "prune", "stable": false, "since": "1.4.0", "summary": "Remove run directories under out/ older than --older-than-days and outside the newest --keep-last of their mode, and an image cache older than --image-cache-days. A dry run unless --yes; never touches HARNESS_HOME state, the run in progress or the newest release run that did not FAIL." },
+    { "name": "local", "stable": false, "since": "1.3.0", "subcommands": ["nightly", "gate", "mutants", "watch", "smoke"], "summary": "One command per maintainer task, planned from the same harness commands the workflows run; --dry-run prints the plan. smoke (since 1.4.0) is the two-stacks smoke of ci.yml." }
   ],
   "flags": [
     { "name": "mode", "type": "string", "stable": true, "values": ["noise", "release", "any-two", "upgrade", "migration", "post-deploy"] },
@@ -68,9 +68,9 @@
     { "name": "for", "type": "string", "stable": true, "since": "1.3.0", "values": ["nightly", "gate", "mutants", "watch", "kind"] },
     { "name": "last", "type": "string", "stable": false, "since": "1.3.0" },
     { "name": "since", "type": "string", "stable": false, "since": "1.3.0" },
-    { "name": "older-than-days", "type": "string", "stable": false, "since": "1.3.0" },
-    { "name": "keep-last", "type": "string", "stable": false, "since": "1.3.0" },
-    { "name": "image-cache-days", "type": "string", "stable": false, "since": "1.3.0" },
+    { "name": "older-than-days", "type": "string", "stable": false, "since": "1.4.0" },
+    { "name": "keep-last", "type": "string", "stable": false, "since": "1.4.0" },
+    { "name": "image-cache-days", "type": "string", "stable": false, "since": "1.4.0" },
     { "name": "screenshots", "type": "boolean", "stable": false },
     { "name": "axe", "type": "boolean", "stable": false },
     { "name": "focus", "type": "boolean", "stable": false },
@@ -83,7 +83,7 @@
     { "name": "once", "type": "boolean", "stable": false, "since": "1.3.0" },
     { "name": "require", "type": "boolean", "stable": true, "since": "1.3.0" },
     { "name": "record", "type": "boolean", "stable": false, "since": "1.3.0" },
-    { "name": "yes", "type": "boolean", "stable": false, "since": "1.3.0" },
+    { "name": "yes", "type": "boolean", "stable": false, "since": "1.4.0" },
     { "name": "json", "type": "boolean", "stable": true },
     { "name": "help", "type": "boolean", "stable": true }
   ],
@@ -100,7 +100,7 @@
     ]
   },
   "environment": {
-    "$comment": "Environment variables that are part of the contract. Since 1.1.0, except HARNESS_IMAGE_PREFIX (whose {app} template form is since 1.1.0), the SBOM, vulnerability and static-artefact variables (since 1.2.0) and HARNESS_HOME, HARNESS_PROJECT, HARNESS_COMPOSE_PROJECT and HARNESS_KIND_CLUSTER (since 1.3.0).",
+    "$comment": "Environment variables that are part of the contract. Since 1.1.0, except HARNESS_IMAGE_PREFIX (whose {app} template form is since 1.1.0), the SBOM, vulnerability and static-artefact variables (since 1.2.0) and HARNESS_HOME, HARNESS_PROJECT, HARNESS_COMPOSE_PROJECT and HARNESS_KIND_CLUSTER (since 1.3.0), and HARNESS_VULN_DB_MAX_AGE_DAYS, HARNESS_ROLLBACK_ISSUE and HARNESS_REQUIRE_ARTEFACTS (since 1.4.0).",
     "HARNESS_IMAGE_PREFIX": {
       "default": "tutors",
       "meaning": "prefix (<prefix>/<app>:<tag>) or template containing {app}, for bare tags; --image-prefix overrides"
@@ -151,19 +151,19 @@
     },
     "HARNESS_VULN_DB_DIR": {
       "default": "",
-      "meaning": "since 1.2.0. A pre-fetched scanner database directory (GRYPE_DB_CACHE_DIR / TRIVY_CACHE_DIR). Scanner database updates are always switched off, so this is what pins the scan. Since 1.3.0, unset means HARNESS_HOME/vuln-db when `harness vuln-db update` has made it, else the scanner's own cache"
+      "meaning": "since 1.2.0. A pre-fetched scanner database directory (GRYPE_DB_CACHE_DIR / TRIVY_CACHE_DIR). Scanner database updates are always switched off, so this is what pins the scan. Since 1.4.0, unset means HARNESS_HOME/vuln-db when `harness vuln-db update` has made it, else the scanner's own cache"
     },
     "HARNESS_VULN_DB_MAX_AGE_DAYS": {
       "default": "5",
-      "meaning": "since 1.3.0. How old (days since built) the vulnerability database may be: `harness doctor` warns beyond it, and it is passed to grype as its own limit (GRYPE_DB_MAX_ALLOWED_BUILT_AGE), so a scan and the doctor agree. 5 is grype's own default"
+      "meaning": "since 1.4.0. How old (days since built) the vulnerability database may be: `harness doctor` warns beyond it, and it is passed to grype as its own limit (GRYPE_DB_MAX_ALLOWED_BUILT_AGE), so a scan and the doctor agree. 5 is grype's own default"
     },
     "HARNESS_ROLLBACK_ISSUE": {
       "default": "",
-      "meaning": "since 1.3.0. Post-deploy wording only: 1 | true | yes says a CI step opens a rollback issue on a FAIL (the reason says 'open a rollback issue'); 0 | false | no says none does (the reason says 'decide whether to roll back'). Unset: GitHub Actions (GITHUB_ACTIONS=true) has the step, anything else does not"
+      "meaning": "since 1.4.0. Post-deploy wording only: 1 | true | yes says a CI step opens a rollback issue on a FAIL (the reason says 'open a rollback issue'); 0 | false | no says none does (the reason says 'decide whether to roll back'). Unset: GitHub Actions (GITHUB_ACTIONS=true) has the step, anything else does not"
     },
     "HARNESS_REQUIRE_ARTEFACTS": {
       "default": "",
-      "meaning": "since 1.3.0. Comma separated artefacts (image-manifest, sbom, vulns, runtime, startup, bus), or static, or all, whose 'not collected' gap is a failing hunk instead of an informational one. Adds to what is already required (runtime, startup); an unknown name is exit 2"
+      "meaning": "since 1.4.0. Comma separated artefacts (image-manifest, sbom, vulns, runtime, startup, bus), or static, or all, whose 'not collected' gap is a failing hunk instead of an informational one. Adds to what is already required (runtime, startup); an unknown name is exit 2"
     },
     "HARNESS_REQUIRE_STATIC": {
       "default": "",

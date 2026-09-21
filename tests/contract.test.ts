@@ -199,8 +199,8 @@ describe("report.json", () => {
     const cli = json("docs/contract/cli.json");
     for (const flag of cli.flags.filter((f: { since?: string }) => f.since === "1.2.0")) expect(changes, flag.name).toContain(`--${flag.name === "runtime" ? "no-runtime" : flag.name}`);
     for (const [name, v] of Object.entries(cli.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.2.0")) expect(changes, name).toContain(name);
-    expect(CONTRACT_VERSION).toBe("1.3.0");
-    expect(HARNESS_VERSION).toBe("1.3.0");
+    expect(CONTRACT_VERSION).toBe("1.4.0");
+    expect(HARNESS_VERSION).toBe("1.4.0");
     expect(json("package.json").version).toBe(HARNESS_VERSION);
     for (const doc of [cli, json("docs/contract/workflows.json")]) expect(doc.contractVersion).toBe(CONTRACT_VERSION);
   });
@@ -231,6 +231,23 @@ describe("report.json", () => {
     }
     // the non-additive parts are said to be
     for (const caveat of ["was\nignored", "a missing `--noise` no longer", "default name of the compose project", "left alone"]) expect(changes.replaceAll("\n", " ").replaceAll("  ", " "), caveat).toContain(caveat.replaceAll("\n", " "));
+  });
+
+  it("its 1.4.0 changelog says what is patch-level and what is minor, and lists everything that is new in it", () => {
+    const start = contractMd.indexOf("### 1.4.0");
+    const end = contractMd.indexOf("### 1.3.0");
+    expect(start).toBeGreaterThan(0);
+    expect(end).toBeGreaterThan(start);
+    const changes = contractMd.slice(start, end);
+    const flat = changes.replaceAll("\n", " ").replaceAll("  ", " ");
+    for (const item of ["**minor**", "**patch-level**", "HARNESS_REQUIRE_ARTEFACTS", "HARNESS_VULN_DB_MAX_AGE_DAYS", "HARNESS_ROLLBACK_ISSUE", "harness prune", "harness vuln-db", "harness local smoke", "mutant-noise-report", "run-name", "NOT COLLECTED", "--help", "not comparable"]) expect(flat, item).toContain(item);
+    const cliJson = json("docs/contract/cli.json");
+    for (const flag of cliJson.flags.filter((f: { since?: string }) => f.since === "1.4.0")) expect(changes, flag.name).toContain(`--${flag.name}`);
+    for (const command of cliJson.commands.filter((c: { since?: string }) => c.since === "1.4.0")) expect(changes, command.name).toContain(command.name);
+    for (const [name, v] of Object.entries(cliJson.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.4.0")) expect(changes, name).toContain(name);
+    // what 1.3.0 already shipped is not claimed again, and what 1.4.0 adds is not folded into the 1.3.0 entry
+    const old = contractMd.slice(end, contractMd.indexOf("### 1.2.0"));
+    for (const item of ["HARNESS_REQUIRE_ARTEFACTS", "HARNESS_VULN_DB_MAX_AGE_DAYS", "HARNESS_ROLLBACK_ISSUE", "harness prune", "vuln-db", "mutant-noise-report"]) expect(old, item).not.toContain(item);
   });
 
   it("a report written before 1.3.0, with no `time` anywhere, is still valid and still renders (a reader must tolerate its absence)", () => {
@@ -604,7 +621,7 @@ describe("CLI", () => {
         expect(source, `usage for ${c.name} ${sub}`).toMatch(new RegExp(`harness ${c.name}[^\\n]*\\b${sub}\\b`));
       }
     }
-    // the 1.3.0 commands are declared, and none of them is stable; a command with no subcommands lists none
+    // the 1.3.0 and 1.4.0 commands are declared, and none of them is stable; a command with no subcommands lists none
     for (const name of ["prune", "vuln-db", "local"]) expect(byName[name]!.stable, name).toBe(false);
     expect(byName.prune!.subcommands).toBeUndefined();
   });

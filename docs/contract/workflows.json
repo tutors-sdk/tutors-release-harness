@@ -1,6 +1,6 @@
 {
   "$comment": "What the harness's workflows accept from outside and publish, machine-readable. tests/contract.test.ts fails when this and .github/workflows disagree.",
-  "contractVersion": "1.3.0",
+  "contractVersion": "1.4.0",
   "repositoryDispatch": {
     "release-candidate": {
       "workflow": "release.yml",
@@ -48,16 +48,16 @@
     "$comment": "Installed by every job that runs `harness images ensure`. Verifying the monorepo's signatures needs cosign >= 3.",
     "cosign": { "action": "sigstore/cosign-installer", "minimumMajor": 3, "usedBy": ["ci.yml", "nightly-noise.yml", "release.yml", "weekly-mutants.yml"] },
     "grype": {
-      "$comment": "Since 1.3.0. Installed, at one pinned version, by the jobs that judge images: nightly noise job, release job, mutants job. Not ci.yml (a smoke run) or post-deploy.yml (no images), and not the release workflow's migration and upgrade jobs (the release job judges the images).",
+      "$comment": "Since 1.4.0. Installed, at one pinned version, by the jobs that judge images: nightly noise job, release job, mutants job. Not ci.yml (a smoke run) or post-deploy.yml (no images), and not the release workflow's migration and upgrade jobs (the release job judges the images).",
       "action": "anchore/scan-action/download-grype",
       "version": "v0.119.0",
       "usedBy": ["nightly-noise.yml", "release.yml", "weekly-mutants.yml"],
       "requireStatic": { "nightly-noise.yml": true, "release.yml": true, "weekly-mutants.yml": false }
     },
-    "syft": { "$comment": "Since 1.3.0: pinned. Generates the mutants' SBOMs; the images of a nightly and a release carry an SBOM attestation.", "action": "anchore/sbom-action/download-syft", "version": "v1.52.0", "usedBy": ["weekly-mutants.yml"] }
+    "syft": { "$comment": "Since 1.4.0: pinned. Generates the mutants' SBOMs; the images of a nightly and a release carry an SBOM attestation.", "action": "anchore/sbom-action/download-syft", "version": "v1.52.0", "usedBy": ["weekly-mutants.yml"] }
   },
   "vulnerabilityDatabase": {
-    "$comment": "Since 1.3.0. Fetched once per job by `harness vuln-db update`, cached per UTC day and grype version, never updated during a run (docs/images.md). tests/workflows-vuln.test.ts holds the workflows to this.",
+    "$comment": "Since 1.4.0. Fetched once per job by `harness vuln-db update`, cached per UTC day and grype version, never updated during a run (docs/images.md). tests/workflows-vuln.test.ts holds the workflows to this.",
     "dir": ".harness/vuln-db",
     "env": "HARNESS_VULN_DB_DIR",
     "cacheKey": "vuln-db-grype-<GRYPE_VERSION>-<UTC day>",
@@ -91,7 +91,7 @@
     "schema": "release-record.schema.json"
   },
   "runNames": {
-    "$comment": "Since 1.3.0. The title of a run (the API's display_title), so the monorepo's release-harness-report workflow can find the run a release-candidate dispatch started. Matched as a whole tag: rc.1 does not match rc.10.",
+    "$comment": "Since 1.4.0. The title of a run (the API's display_title), so the monorepo's release-harness-report workflow can find the run a release-candidate dispatch started. Matched as a whole tag: rc.1 does not match rc.10.",
     "release.yml": "release ${{ github.event.client_payload.candidate || inputs.candidate }}"
   },
   "dispatchInputs": {
