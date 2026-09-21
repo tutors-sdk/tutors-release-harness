@@ -4,11 +4,15 @@ C4 diagrams of the harness for a new maintainer, a reviewer, or the owner
 presenting it. They answer four questions without opening the source: what the
 system is, who uses it, what it is built from, and how a run flows.
 
-Every box, arrow and label was traced to code or a document in this repository.
-Each page ends with an **Evidence** table naming the file for each claim, so a
-reviewer can check a diagram in a minute. Where something is planned, or is
-built somewhere other than this branch, the diagram says so with a style, never
-as fact (see the [legend](#legend)).
+Every box, arrow and label was traced to code or a document. Each page ends
+with an **Evidence** table naming the file for each claim, so a reviewer can
+check a diagram in a minute. Where something is planned, or built somewhere
+other than the default branch, the diagram says so with a style, never as fact
+(see the [legend](#legend)).
+
+**State drawn:** the harness at `origin/main` `5da3a39` (harness 1.4.1, contract
+1.4.0), and the monorepo at `origin/main` `5d7283e`. File and line pointers were
+re-checked against that code.
 
 ## What the harness is, in one paragraph
 
@@ -25,7 +29,8 @@ Actions; the workflows are thin wrappers that add scheduling, dispatch, and a
 place to keep the noise history and release records. It gates a release only
 while its own A/A run is clean, fresh and verified. Otherwise the same findings
 are a warning. Its own signal is ten planted regressions (mutants) it must
-catch.
+catch. It stacks four apps (`reader`, `catalogue`, `live`, `time`), runs six
+journeys in three sets, and compares 19 artefacts.
 
 ## How to read the set
 
@@ -92,7 +97,7 @@ flowchart LR
   cont["<b>Container</b><br/>[Container: technology]<br/>a runnable unit; blue"]:::container
   store[("<b>Data store</b><br/>[Data store]<br/>cylinder")]:::store
   comp["<b>Component</b><br/>[Component: file]<br/>inside a container; light blue"]:::component
-  pending["<b>Pending PR</b><br/>[amber, dashed]<br/>built on another branch, not merged here"]:::pending
+  pending["<b>Pending</b><br/>[amber, dashed]<br/>built on a branch, not on main"]:::pending
   planned["<b>Planned</b><br/>[red, dashed]<br/>designed or documented, not built"]:::planned
 
   person -->|"solid arrow: built, labelled with what flows"| focus
@@ -110,68 +115,56 @@ flowchart LR
 
 | Style | Meaning |
 | --- | --- |
-| solid box, solid arrow | built and present in this branch (`feat/contract-1.3.0`, commit `164963a`) |
-| **amber dashed box** | **pending PR:** built on `feat/harness-1.2.1-followups`, not yet merged into this branch. Drawn because the diagrams show the system as it will be once that lands |
+| solid box, solid arrow | built and on the default branch of its repository |
+| **amber dashed box** | **pending:** built on a branch that is not on `origin/main`. Only one element uses it today (the monorepo's `release-harness-report.yml`, see [Pending](#pending)) |
 | **red dashed box or arrow** | **planned, not built.** The code has a seam or a document describes it, but nothing runs |
 | dashed grey arrow | a relationship that is not a call: "stands in for" (a stub impersonating a service) |
 | grey box | external: not part of the harness |
 
-### What "pending PR" contains
-
-Read with `git show feat/harness-1.2.1-followups:<path>`; none of it is in this
-branch yet.
-
-- **The `time` app joins the stack.** `APPS` becomes `reader, catalogue, live,
-  time` (`src/image-ref.ts`), with `time-a` and `time-b` in
-  `compose.harness.yaml` on host ports 3104 and 3204, NodePorts 30103 and 30203
-  (host 4103 and 4203) on kind, and the `metrics`, `logs`, `runtime`, `startup`
-  and image artefacts. No journey drives it. Marked **"time app: pending PR"**.
-- **Corrected Mann-Whitney statistics** in a new `src/compare/stats.ts`
-  (`erfc`-based normal CDF, `smallestAttainableP`). The version in this branch
-  (`src/compare/engines.ts:252`) has the wrong CDF argument; the timing, load
-  and startup engines will import the new module. The nightly and release
-  default for `--runs` goes from 3 to 5.
-- **A wider engine-path guard**: `ENGINE_PATHS` in `src/ci/engine-change.ts`
-  grows to cover collectors, runtime, substrates, fixtures, traffic and the
-  lockfile, and a test fails when a new top-level entry is classified as
-  neither engine nor non-engine.
-
-Diagrams that mention timing statistics say "Mann-Whitney" and note where the
-corrected module lands; diagrams do not draw two versions.
-
-### Not built, anywhere
+### Planned, not built (red dashed)
 
 - **A message bus and its stub.** The monorepo plans a bus. The harness ships
   the seam (`src/bus/transport.ts`) and one transport, `http-recorder`, but no
-  `fixtures/bus/` stub exists, and with `HARNESS_BUS` unset the collector says
-  "not collected" (`docs/bus.md`). Drawn red-dashed.
-- **Posting the report on a pull request.** The harness never does this by
-  design (`docs/contract.md`, "What the harness does to a pull request"); it
-  writes `report.md`, shaped as a comment, to the job summary and an artifact.
-  Posting it is meant to be the monorepo's job, but no workflow on the
-  monorepo's `origin/main` does it either (a search for `report.md`, comment
-  APIs and `gh pr comment` finds nothing relevant). Nobody posts it today.
+  `fixtures/bus/` stub exists. With `HARNESS_BUS` unset the collector adds no
+  hunk and says `NOT COLLECTED` in the run log and `capture.json`;
+  `HARNESS_REQUIRE_ARTEFACTS=bus` makes that a failing `bus/not-collected` hunk
+  (`docs/bus.md`, `src/not-collected.ts`).
+- **Three proposed mutants: `posture-root`, `posture-volume`, `slow-boot`.** They
+  are not in `mutants/mutants.yaml` (ten mutants), and no file in the repository
+  names them; they are taken from the owner's plan. The self-test does say why
+  there is no slow-boot mutant: it turns startup sampling off
+  (`src/mutants.ts:74-76`).
+- **Wiring the clock probe into reports.** `src/clock-probe.ts` is pure and its
+  header says "Not wired into the report yet" (line 15).
 - **A boot probe as an arbitrary UID** (what OpenShift's restricted-v2 assigns),
   named as "not built yet" in `docs/modes.md`.
 
-### Built on the monorepo side (merged to `tutors-mono-repo` main)
+### Built on the monorepo side
 
-All of this is built and drawn solid. Read from `origin/main` of `tutors-sdk/tutors-mono-repo`
-at `c14c3ee` (merge of #308). The diagrams show only what the harness sees of it;
-they are not a monorepo architecture document.
+Read from `origin/main` of `tutors-sdk/tutors-mono-repo` at `5d7283e`. The
+diagrams show only what the harness sees of it; they are not a monorepo
+architecture document.
 
 | What | Where in the monorepo | PR |
 | --- | --- | --- |
-| `deploy.yml`: verifies the overlay pins against the registry and signature, then, in the `production` environment, sets `HARNESS_PRODUCTION_TAG` on the harness repository and dispatches `deployed` with `production` and `digests`. | `.github/workflows/deploy.yml` | #298 |
+| `deploy.yml`: verifies the overlay pins against the registry and signature, then, in the `production` environment, sets `HARNESS_PRODUCTION_TAG` on the harness repository and dispatches `deployed` with `production` and `digests` (all four apps, `time` included) | `.github/workflows/deploy.yml` | #298, #310 |
 | Overlays pinned by digest (`newTag` beside `digest`), `pnpm deploy:pin`, `pnpm check:deploy-pins` | `deploy/k8s/overlays/*`, `scripts/deploy-pin.ts`, `scripts/checks/deploy-pins.ts` | #298 |
 | `image-build.yml` is the only image publisher (`images.yml` removed) | `.github/workflows/image-build.yml` | #305 |
 | The final tag **promotes** the judged `X.Y.Z-rc.N` digest instead of rebuilding; an app that cannot be promoted is rebuilt with a `REBUILT` warning (or fails, with `require_promotion`) | `scripts/promote-image.ts` | #303 |
-| `pnpm release:harness`: builds the `release-candidate` payload from a local clone and can run the harness's `local gate`, `local watch --once` or `local nightly`. `release-dispatch.yml` still builds its payload with `gh api` and `jq`, and a test holds the two to the same fields | `scripts/release-harness.ts` | #307 |
-| `pnpm release:rules`: writes `rules.json`, the file behind the `rules_url` dispatch field and `rule:` claims | `scripts/release-rules.ts` | #308 |
+| The `release-candidate` dispatch carries `runs: 5`, `production_digests` and `candidate_digests` (four apps) and `rules_url` when a `rules.json` was published | `.github/workflows/release-dispatch.yml` | #310 |
+| `pnpm release:harness`: builds the `release-candidate` payload from a local clone and can run the harness's `local gate`, `local watch --once` or `local nightly`; a test holds it to the workflow's payload | `scripts/release-harness.ts` | #307 |
+| `pnpm release:rules`: writes `rules.json`, the file behind the `rules_url` field and `rule:` claims | `scripts/release-rules.ts` | #308 |
 | EARS Rule ids and `pnpm release:claims:draft`, which drafts claim stubs from the Rules that changed | `scripts/release-claims-draft.ts` | #301 |
+| The claims check accepts the harness's full artefact vocabulary (19 artefacts) | `scripts/checks/release-claims.ts` | #309 |
 | `pnpm check:migrations` and changelog artefact hints for claims | `scripts/checks/migrations.ts`, `CONTRIBUTING.md` | #300 |
 | Build identity on one endpoint, `GET /version`; `HARNESS_NOW` frozen clock | `scripts/checks/build-identity.ts` | #296 |
 | JSON logs and an `x-request-id` per request | the apps | #297 |
+
+**Not on `origin/main` when checked:** `release-harness-report.yml`, which posts
+the harness verdict on the release pull request. It exists on the monorepo
+branch `feat/release-dispatch-digests-and-report` (commit `da7850d`, one commit
+ahead of main), together with a `report` job in `release-dispatch.yml` that
+starts it. It is drawn amber. See [Pending](#pending).
 
 Still on the monorepo's side of the line and not drawn as harness code: the
 OpenShift overlays (`deploy/k8s/variants/openshift`) and their conformance check.
@@ -185,29 +178,24 @@ stands in for a cluster with the same admission policy (`restricted` Pod
 Security Admission); it does not rehearse Routes, the router's headers or
 arbitrary-UID assignment (`deploy/kind/README.md`).
 
-## Doc drift found
+## Pending
 
-The diagrams follow the code. These documents in the harness repository disagree
-with it. They were **not edited**; this list is for the owner to fix.
+Not drawn in the diagrams except where stated. Each gets a one-line update when
+it lands.
 
-| # | Document says | Code says |
-| --- | --- | --- |
-| 1 | `README.md`, "Where to stop": "Twelve journeys" | `traffic/journeys/journeys.ts:199` lists six journeys in three sets (`harness journeys` prints them) |
-| 2 | `mutants/README.md`: two of the ten mutants ("a lab page that writes a row for anonymous users" and "a navigator with a broken focus order") "need source access" and are not built | `mutants/mutants.yaml` lists `anon-write` and `focus-order` among the ten, and `mutants/wrap.mjs` plants them at the HTTP edge |
-| 3 | `docs/images.md` and `docs/local.md` count three apps ("Both are three images", 13 host ports) | true in this branch; four apps (`time`) and 15 host ports once `feat/harness-1.2.1-followups` lands. `docs/local.md` line 49 ("the 13 host ports") and `docs/images.md` line 4 need the change with it |
-
-Also stale since the monorepo work above merged (found while updating, and
-not part of the original three):
-
-| Document says | Now |
-| --- | --- |
-| `docs/local.md` parity rows R1, R2 and P1: "Open (monorepo)", "the monorepo has no local trigger" | `pnpm release:harness` (#307) is the local trigger; `docs/local.md` "What the monorepo would need to change" items 1 and 2 are done |
-| `docs/monorepo/README.md`, "First day on Quay" step 5: "Until the monorepo has a deploy job (plan items M11/M12), this variable is updated by hand" | `deploy.yml` (#298) sets it and dispatches `deployed` |
-| the monorepo's `guides/Release-Strategy.md` says the harness "reads no field" of `deployed` and lists digests as "not yet closed" | harness contract 1.3.0 reads both (`src/release-record.ts`). That guide is the monorepo's, noted for completeness |
+- **`harness local compare`**: main against the last release in one command. A
+  small harness PR; in flight.
+- **A deterministic-settle collector fix** for the signed-in reader's A/A flake.
+  A small harness PR; in flight.
+- **The monorepo's `release-harness-report.yml`** (verdict on the release PR).
+  Drawn amber because it is on a monorepo branch, not on `origin/main`, at the
+  time of writing (see above). It needs the `HARNESS_TOKEN` permission
+  **Actions: read** on the harness repository, and depends on the harness's
+  `run-name: release <candidate>`, which is built.
 
 ## Keeping them true
 
-Each Mermaid block was parsed with `@mermaid-js/mermaid-cli` (`mmdc`, Mermaid
+Every Mermaid block was parsed with `@mermaid-js/mermaid-cli` (`mmdc`, Mermaid
 11.17) against a headless Chrome, and rendered to SVG, as part of writing these
 pages. To re-check after editing:
 

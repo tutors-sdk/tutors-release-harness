@@ -5,10 +5,11 @@ built; the monorepo side was read from its `origin/main` at `c14c3ee`
 (`deploy.yml`, `image-build.yml` promotion, `pnpm release:harness`). Legend and
 conventions: [README](README.md#legend).
 
-Where a default changes when the pending PR lands, it is in the notes:
-**time app: pending PR** adds the `time` app to every stack and image step, and
-raises the `--runs` default of the nightly and release workflows from 3 to 5
-(see the [README](README.md#what-pending-pr-contains)).
+The stacks hold four apps (`time` included), and the nightly and release
+workflows run five journey repetitions a side (four is the least that can reach
+alpha 0.05 on timing; `docs/releases/1.3.0.md`). One participant is amber: the
+monorepo's `release-harness-report.yml`, which is on a monorepo branch and not
+on `origin/main` (see the [README](README.md#built-on-the-monorepo-side)).
 
 ## 4a. A release candidate, end to end
 
@@ -57,8 +58,9 @@ Two things about the monorepo side of this diagram:
 - `release-dispatch.yml` builds the payload with `gh api` and `jq`. The same
   payload can be built from a local clone with `pnpm release:harness` (#307),
   which reads git only and dispatches nothing; a monorepo test holds the two to
-  the same fields and order. `rules_url` points at the `rules.json` that
-  `pnpm release:rules` (#308) writes.
+  the same fields and order. It sends `runs: 5`, `production_digests` and
+  `candidate_digests` for all four apps, and `rules_url` when a `rules.json`
+  (`pnpm release:rules`, #308) was published (#310).
 - The candidate's image built here, `X.Y.Z-rc.N`, is the one that ships. On the
   final tag `image-build.yml` promotes its digest (see 4c-1).
 
@@ -75,10 +77,14 @@ sequenceDiagram
   participant Noise as noise branch
   participant Out as Artifacts and job summary
   participant Rec as release-records branch
+  participant Rep as release-harness-report.yml, pending
 
   Job->>Mono: curl claims_url into claims.yaml
+  Note over Job: the run is titled release candidate (run-name), from the dispatch payload
+  Job->>CLI: grype pinned, vuln-db restored from cache or fetched once, harness vuln-db status
+  Note over Job,CLI: HARNESS_REQUIRE_STATIC=1: no SBOM or vulnerability diff, no verdict
   Job->>Noise: gh api noise-status.json, then harness noise status vets it
-  Job->>CLI: harness run --mode release --a --b --runs 3 --load 20x30s with claims, rules, digests, noise file
+  Job->>CLI: harness run --mode release --a --b --runs 5 --load 20x30s with claims, rules, digests, noise file
   CLI->>Mono: GET rules.json if rules_url was sent
   Note over CLI: claims and rules load first, an invalid file is exit 2 with no stack started
   CLI->>CLI: image provenance for both sides, then manifest, SBOM and vulnerabilities from the images
@@ -95,7 +101,7 @@ sequenceDiagram
     CLI->>Stacks: posture, then restart each app for startup time
   end
   CLI->>Stacks: docker compose down
-  CLI->>CLI: normalise with masks.yaml, run every engine
+  CLI->>CLI: normalise (redact, origins, canonical forms, masks), run every engine
   CLI->>CLI: match every failing hunk to a claim
   CLI->>CLI: gate, FAIL only if the noise status is clean, verified and at most 7 days old
   CLI->>CLI: write report.json, report.html, report.md, then release-record.json
@@ -103,6 +109,8 @@ sequenceDiagram
   Job->>Out: upload release-report, append report.md to the job summary
   Job->>Rec: publish-record pushes releases/candidate.json, and releases/release.json if it could ship
   Note over Out: the harness does not post on the PR. Posting report.md is the monorepo's job
+  Rep-->>Job: pending: find this run by its title, wait up to 45 minutes, read release-report, needs HARNESS_TOKEN Actions read
+  Rep-->>Rep: pending: create or update one marked comment on the release pull request
 ```
 
 Notes:
@@ -139,6 +147,8 @@ sequenceDiagram
 
   Cron->>Noise: 02:17 UTC every night
   Noise->>Cache: restore .harness/image-cache, newest earlier key
+  Noise->>Cache: restore .harness/vuln-db, one entry per UTC day and grype version
+  Noise->>CLI: grype pinned v0.119.0, harness vuln-db update on a cache miss, then harness vuln-db status
   Noise->>CLI: images ensure --a TAG --b TAG --image-cache
   alt registry answers and the signature verifies
     CLI->>Quay: docker pull, cosign verify by digest
@@ -152,7 +162,7 @@ sequenceDiagram
   else tag is absent from the registry
     Note over CLI: an absent tag never borrows a cache, a bare tag falls to build from ref, which is built-from-ref and also degraded
   end
-  Noise->>CLI: run --mode noise --a TAG --b TAG --runs 3 --load 20x30s --require-verified
+  Noise->>CLI: run --mode noise --a TAG --b TAG --runs 5 --load 20x30s --require-verified, HARNESS_REQUIRE_STATIC=1
   CLI->>CLI: capture both sides, normalise, compare
   CLI->>CLI: any image not pulled+verified in this run gives a degraded reason
   CLI-->>Noise: noise-status.json with ranAt, clean, hunks and degraded if any
@@ -177,10 +187,14 @@ Points a maintainer needs:
   for a dirty one since (`docs/contract.md`).
 - A degraded night does not count in either direction. Release runs then only
   warn until a verified clean night is published.
-- Statistics: with three runs a side the timing engine cannot reach alpha 0.05.
-  The pending PR fixes the Mann-Whitney function and moves the nightly to five
-  runs. Reports and A/A history from before it are not evidence about the
-  corrected engines (`docs/releases/1.3.0.md` on `feat/harness-1.2.1-followups`).
+- `HARNESS_REQUIRE_STATIC=1` makes the nightly the canary for the scanner: an
+  image whose manifest, SBOM or vulnerabilities cannot be collected makes the
+  night not clean, so a scanner that has silently stopped is found on the
+  production tag and not during a release (`nightly-noise.yml`, `docs/images.md`).
+- Statistics: with three runs a side the timing engine cannot reach alpha 0.05,
+  so the nightly runs five. Reports and A/A history from before the corrected
+  Mann-Whitney (`src/compare/stats.ts`) are not evidence about the current
+  engines (`docs/releases/1.3.0.md`).
 
 ## 4c. From the judged candidate to production, and the post-deploy check
 
@@ -234,13 +248,10 @@ sequenceDiagram
   pin, after checking them against the registry and the signature. It does not
   read a digest off a running cluster, because the rollout is outside the
   repository.
-- **Only three digests are sent.** The payload's `digests` is built from
-  `reader`, `catalogue` and `live`. Once the `time` app is in the harness stack
-  (pending PR), the release record will hold a `time` digest too, and
-  `judgeDeployment` treats "the record has a digest and the deploy reported none"
-  as a gap: status `incomplete`, a warning. This is inferred from
-  `deploy.yml`'s `jq` expression and `src/release-record.ts:172`; no run
-  confirmed it. Either the monorepo sends `time` or the harness ignores it.
+- **Four digests are sent.** `deploy.yml`'s `digests` is built from `reader`,
+  `catalogue`, `live` and `time` (#310), matching the four the release record
+  holds, so `judgeDeployment` can reach `match` instead of `incomplete`
+  (`src/release-record.ts:172` is the gap it would otherwise report).
 
 ### 4c-2. The post-deploy run
 
@@ -274,12 +285,15 @@ sequenceDiagram
     CLI->>CLI: compare the digests the deploy reported with the release record
     Note over CLI: status is match, differs, incomplete, no-record or not-reported
   end
-  CLI->>CLI: normalise, CDN header masks apply only here, compare against the recorded capture, gate
+  CLI->>CLI: normalise, the recorded capture is redacted, production's URL reads as origin on both sides, headers canonical, CDN masks apply only here
+  CLI->>CLI: compare against the recorded capture, gate
   Note over CLI: FAIL needs a trusted noise status, else WARN. A deployment mismatch turns PASS into WARN and never softens a FAIL
   CLI-->>PD: exit 1 on FAIL, else 0
   PD->>Art: upload post-deploy-report, 14 days
-  alt exit 1
+  alt exit 1, a difference
     PD->>Iss: gh issue create, label rollback, body report.md
+  else exit 2, could not judge
+    PD->>PD: job fails, summary says could not judge, no issue is opened
   end
 ```
 
@@ -309,6 +323,8 @@ sequenceDiagram
 
   Dev->>CLI: pnpm harness doctor
   CLI-->>Dev: what the machine lacks and how to install it, exit 0 or 1
+  Dev->>CLI: harness vuln-db update, once, into HARNESS_HOME/vuln-db
+  Dev->>CLI: harness local smoke, both stacks boot, one journey A/A, migration fixtures pass and fail as they must
   Dev->>CLI: harness local nightly, or --dry-run to print the plan
   CLI->>Home: take locks/run.lock, one heavy run per machine
   CLI->>Net: images ensure --image-cache HOME/image-cache
@@ -326,6 +342,7 @@ sequenceDiagram
   CLI->>Home: releases/candidate.json, and overrides.jsonl if a FAIL was overridden
   CLI->>Out: gate.md and gate.json, the PR comments for reading here
   CLI-->>Dev: exit 1 if any rehearsal FAILed and was not overridden
+  Dev->>CLI: harness prune, a dry run, then --yes, frees old out/ directories and an old image cache
   Dev->>CLI: harness local watch --once, or without --once every 15 minutes
   CLI->>Prod: reference journeys, no Docker needed
   CLI->>Home: rollbacks/time-rollback.md if it differs from the recorded run
@@ -357,8 +374,8 @@ What differs from CI, all by design (`docs/local.md`):
 | Diagram | Source |
 | --- | --- |
 | 4a-1 | `docs/monorepo/release-dispatch.yml` (jobs `candidate`, `images`, `dispatch`); `.github/workflows/release.yml` (steps up to "Pull and verify"); `src/images.ts`; `docs/images.md` |
-| 4a-2 | `.github/workflows/release.yml`; `src/run.ts:249-364`; `src/collectors/index.ts`; `src/gate.ts`; `src/release-record.ts`; `docs/contract.md` "What the harness does to a pull request" |
+| 4a-2 | `.github/workflows/release.yml` (`run-name` line 21, grype and vuln-db steps); `src/run.ts:256-376`; monorepo `da7850d:.github/workflows/release-harness-report.yml` (pending); `src/collectors/index.ts`; `src/gate.ts`; `src/release-record.ts`; `docs/contract.md` "What the harness does to a pull request" |
 | 4b | `.github/workflows/nightly-noise.yml`; `src/images.ts` (`ensureImages`); `src/image-cache.ts`; `src/run.ts` (`evidenceGaps`); `src/gate.ts`; `src/ci/noise-history.ts` (`assess`, `record`); `docs/noise-burndown.md` |
 | 4c-1 | monorepo `.github/workflows/image-build.yml`, `scripts/promote-image.ts` (#303), `scripts/deploy-pin.ts`, `scripts/checks/deploy-pins.ts`, `.github/workflows/deploy.yml` (#298), `guides/Release-Strategy.md` "Deploy and post-deploy" |
-| 4c-2 | `.github/workflows/post-deploy.yml`; `src/run.ts:267-283, 367-372`; `src/release-record.ts` (`judgeDeployment`); `normalise/masks.yaml` (`modes: [post-deploy]`) |
+| 4c-2 | `.github/workflows/post-deploy.yml` (`exit_code` output, rollback issue on 1 only); `src/run.ts:278-293, 379-384`; `src/normalise/`; `src/release-record.ts` (`judgeDeployment`); `normalise/masks.yaml` (`modes: [post-deploy]`) |
 | 4d | `docs/local.md`; `src/local/cli.ts`, `tasks.ts`, `lock.ts`, `home.ts`; monorepo `scripts/release-harness.ts` |

@@ -6,23 +6,24 @@ which. Four views: what runs on a machine (A), the compose stacks up close (B),
 the GitHub side (C), and the state stores (D). Legend:
 [README](README.md#legend).
 
-The **time** app is drawn amber and dashed: **time app: pending PR** (built on
-`feat/harness-1.2.1-followups`, not in this branch).
+The stacks hold four apps: `reader`, `catalogue`, `live` and `time` (`APPS` in
+`src/image-ref.ts:11`). No journey drives `time`; it gets the app-level
+collectors (metrics, logs, posture, startup, image artefacts).
 
 ## 2A. What runs on a machine (laptop or CI runner)
 
 ```mermaid
 flowchart LR
   subgraph sys["Tutors release harness [Software System]"]
-    cli["<b>harness CLI</b><br/>[Container: Node.js 22+, TypeScript via tsx]<br/>run, images, stack, kind, mutants, compare, doctor, noise, guard, override, local"]:::container
+    cli["<b>harness CLI</b><br/>[Container: Node.js 22+, TypeScript via tsx]<br/>run, images, stack, kind, mutants, compare, doctor, noise, guard, override, prune, vuln-db, local"]:::container
     compose["<b>Compose substrate</b><br/>[Container: Docker Compose, compose.harness.yaml]<br/>Two isolated stacks A and B plus shared stubs (see 2B)"]:::container
     kind["<b>kind substrate</b><br/>[Container: kind cluster + kubectl]<br/>Namespaces harness-a and harness-b under restricted PSA"]:::container
     chromium["<b>Playwright Chromium</b><br/>[Container: host browser process]<br/>Drives the journeys and captures each page"]:::container
     k6["<b>k6</b><br/>[Container: grafana/k6 image, docker run --rm]<br/>Load and rollout traffic"]:::container
-    tools["<b>Image tooling</b><br/>[Container: host CLIs docker, cosign, syft, grype]<br/>Pull, verify, inspect, SBOM, scan"]:::container
+    tools["<b>Image tooling</b><br/>[Container: host CLIs docker, cosign, syft, grype]<br/>Pull, verify, inspect, SBOM, scan. grype pinned v0.119.0 in CI; syft runs in its own container on Windows"]:::container
     pg["<b>Throwaway Postgres</b><br/>[Container: postgres:16-alpine]<br/>Migration rehearsal only"]:::container
     mutants["<b>Mutant images</b><br/>[Container: local images tutors-harness/mutant-name]<br/>Base reader image plus one planted fault"]:::container
-    home[("<b>HARNESS_HOME store</b><br/>[Data store: files, default checkout/.harness]<br/>Noise history, release records, override log, image cache (see 2D)")]:::store
+    home[("<b>HARNESS_HOME store</b><br/>[Data store: files, default checkout/.harness]<br/>Noise history, release records, override log, image cache, vulnerability database (see 2D)")]:::store
     out[("<b>Run output</b><br/>[Data store: out/timestamp-mode/]<br/>a/ and b/ captures, report.json, .html, .md, noise-status.json, release-record.json")]:::store
   end
 
@@ -64,11 +65,11 @@ flowchart LR
 | kind substrate | kind, kubectl; cluster `tutors-harness-<8 hex>`; two namespaces under `restricted` PSA | The same two sides as Deployments and NodePort Services. Course server runs as a Node process on the host. The signed-in reader and stubs are not in it, so the `auth` journey set is skipped | `src/substrate/kind.ts`, `deploy/kind/README.md` |
 | Playwright Chromium | `playwright` ^1.63, `@axe-core/playwright`; the host's Chromium, launched with `--host-resolver-rules=MAP *.harness.test 127.0.0.1` | Runs the six journeys and captures the semantic DOM, screenshot, network, console, headers, axe, focus order and timing | `src/collectors/browser.ts`, `traffic/journeys/` |
 | k6 | `grafana/k6:latest` unless `HARNESS_K6_IMAGE` pins it; started per side with `docker run --rm` | Fixed-rate requests at the reader; in upgrade mode, requests through the edge while the candidate is rolled in | `src/collectors/load.ts`, `src/modes/upgrade.ts`, `traffic/load/reader.js` |
-| Image tooling | host CLIs `docker`, `cosign` (3+), `syft`, `grype`; each behind an injected `Exec` so tests never start one | Pull, inspect, verify signatures and attestations, generate SBOMs, scan | `src/images.ts`, `src/image-static/` |
+| Image tooling | host CLIs `docker`, `cosign` (3+), `syft`, `grype`; each behind an injected `Exec` so tests never start one. On a Windows host the default SBOM generator is `docker run anchore/syft` (`WINDOWS_SBOM_CMD`), so no native syft is needed | Pull, inspect, verify signatures and attestations, generate SBOMs, scan against a pinned database that is never updated during a run (`GRYPE_DB_CACHE_DIR` set from `HARNESS_VULN_DB_DIR`) | `src/images.ts`, `src/image-static/sbom.ts:24`, `src/image-static/vulns.ts:30`, `src/local/vuln-db.ts` |
 | Throwaway Postgres | `postgres:16-alpine` (`HARNESS_POSTGRES_IMAGE`) | Migration mode's schema catalogues, snapshot and rollback rehearsal. Removed afterwards | `src/migration/supabase-postgres.ts` |
 | Mutant images | Docker images `tutors-harness/mutant-<name>:latest` built from the base reader image, with `mutants/wrap.mjs` planting an HTTP-edge fault, or a changed base or added package | The harness's own negative fixtures | `src/mutants.ts`, `src/mutant-build.ts`, `mutants/` |
-| HARNESS_HOME store | Plain files under `HARNESS_HOME`, default `<checkout>/.harness` | What outlives one run on this machine | `src/local/home.ts` |
-| Run output | `out/<UTC timestamp>-<mode>/` | One run's captures and reports | `src/run.ts`, `docs/contract.md` "Output directory" |
+| HARNESS_HOME store | Plain files under `HARNESS_HOME`, default `<checkout>/.harness` | What outlives one run on this machine, including the vulnerability database `vuln-db/` | `src/local/home.ts` |
+| Run output | `out/<UTC timestamp>-<mode>/`; a run that cannot judge (exit 2) leaves no empty directory behind. `harness prune` frees old ones | One run's captures and reports | `src/run.ts` (`makeOutDir`), `src/local/prune.ts`, `docs/contract.md` "Output directory" |
 
 ## 2B. The compose substrate, up close
 
@@ -85,7 +86,7 @@ flowchart LR
 
   subgraph side["Side X, made twice: a and b"]
     apps["<b>reader-X, catalogue-X, live-X</b><br/>[Container: app image]<br/>a: ports 3100 to 3102, b: 3200 to 3202"]:::container
-    timex["<b>time-X</b><br/>[Container: app image]<br/>time app: pending PR, a: 3104, b: 3204"]:::pending
+    timex["<b>time-X</b><br/>[Container: app image]<br/>No journey drives it, a: 3104, b: 3204"]:::container
     authx["<b>reader-auth-X</b><br/>[Container: reader image]<br/>Sign-in on, a: 3103, b: 3203"]:::container
     percx["<b>persistence-X</b><br/>[Container: Node stub]<br/>Records every write, a: 8090, b: 8091"]:::container
   end
@@ -111,7 +112,6 @@ flowchart LR
   cli -.->|"planned"| busstub
 
   classDef container fill:#2e6fae,stroke:#1f4d7a,color:#ffffff
-  classDef pending fill:#fff3d6,stroke:#b7791f,color:#5c3d00,stroke-dasharray:6 4
   classDef planned fill:#ffffff,stroke:#c0392b,color:#c0392b,stroke-dasharray:6 4
 ```
 
@@ -134,8 +134,9 @@ What makes the two sides comparable:
   `anon-write` mutant does (`mutants/wrap.mjs`).
 - The k6 container joins the project network to reach `reader-a` and `reader-b`
   by service name (`COMPOSE_NETWORK` in `src/stack.ts`).
-- Host ports are 13 in this branch (15 with the time app), each with its own
-  variable; `--port-offset` on the local commands moves them all.
+- Host ports are 15, each with its own variable (`DEFAULT_PORTS` in
+  `src/local/ports.ts`, held to the compose file by `tests/docs-counts.test.ts`);
+  `--port-offset` on the local commands moves them all.
 
 ## 2C. The GitHub side: workflows, branches, artifacts
 
@@ -151,15 +152,16 @@ flowchart LR
   mono["<b>Tutors monorepo + CI</b><br/>[External system]"]:::ext
   cron["<b>GitHub schedules</b><br/>[External platform]<br/>cron 17 2 * * *, every 15 min, weekly"]:::ext
 
-  ci["<b>ci.yml</b><br/>[Container: workflow]<br/>every PR and push to main: unit tests, masks guard, two-stacks A/A smoke"]:::container
-  nightly["<b>nightly-noise.yml</b><br/>[Container: workflow]<br/>A/A on the production tag, then publish"]:::container
-  release["<b>release.yml</b><br/>[Container: workflow]<br/>release, migration, upgrade, publish-record, override-record"]:::container
+  ci["<b>ci.yml</b><br/>[Container: workflow]<br/>every PR and push to main: unit tests, masks guard, harness local smoke"]:::container
+  nightly["<b>nightly-noise.yml</b><br/>[Container: workflow]<br/>A/A, five runs, on the production tag, then publish"]:::container
+  release["<b>release.yml</b><br/>[Container: workflow, run-name release candidate]<br/>release, migration, upgrade, publish-record, override-record"]:::container
   post["<b>post-deploy.yml</b><br/>[Container: workflow]<br/>reference journeys against production"]:::container
   weekly["<b>weekly-mutants.yml</b><br/>[Container: workflow]<br/>engine-change guard, ten mutants, also on every PR"]:::container
 
   noiseb[("<b>noise branch</b><br/>[git branch, force-pushed]<br/>status, history, summary")]:::store
   recb[("<b>release-records branch</b><br/>[git branch, one commit per candidate]")]:::store
-  art[("<b>Workflow artifacts</b><br/>release-report 30d, noise-report 8d, post-deploy-report 14d")]:::store
+  art[("<b>Workflow artifacts</b><br/>release-report 30d, noise-report 8d, post-deploy-report 14d, mutant-noise-report 7d")]:::store
+  cachegh[("<b>actions/cache</b><br/>[GitHub cache]<br/>image-cache; one vuln-db entry per UTC day and grype version")]:::store
   issues[("<b>Issues</b><br/>labels rollback and harness-override")]:::store
   cli["<b>harness CLI</b><br/>[Container]<br/>every step is a pnpm harness line"]:::container
 
@@ -175,6 +177,10 @@ flowchart LR
   post -->|"upload"| art
   release -->|"harness-override issue"| issues
   post -->|"rollback issue"| issues
+  nightly -->|"restore, save"| cachegh
+  release -->|"restore vuln-db"| cachegh
+  weekly -->|"restore vuln-db"| cachegh
+  weekly -->|"upload on a failed self-test"| art
   noiseb -->|"latest status"| release
   noiseb -->|"latest status"| post
   recb -->|"release record"| post
@@ -189,6 +195,11 @@ flowchart LR
   classDef store fill:#2e6fae,stroke:#1f4d7a,color:#ffffff
   classDef ext fill:#6b6b6b,stroke:#444444,color:#ffffff
 ```
+
+`nightly-noise.yml`, `release.yml` and `weekly-mutants.yml` install grype at a
+pinned version, restore the vulnerability database from the cache (fetching with
+`harness vuln-db update` only on a miss) and print `harness vuln-db status`; the
+nightly and the release job set `HARNESS_REQUIRE_STATIC=1`, the mutants do not.
 
 Only four write scopes exist, all on this repository, and a test lists them:
 `nightly-noise.yml` `publish` (`contents`, the `noise` branch), `release.yml`
@@ -210,7 +221,10 @@ flowchart LR
   rec["<b>harness noise record</b><br/>[Command]"]:::component
   gatecmd["<b>run, release or post-deploy</b><br/>[Command]<br/>reads the noise status"]:::component
   watch["<b>harness local watch</b><br/>[Command]"]:::component
-  wrappers["<b>harness local nightly, gate, mutants</b><br/>[Command]"]:::component
+  wrappers["<b>harness local nightly, gate, mutants, smoke</b><br/>[Command]"]:::component
+  vdb["<b>harness vuln-db update</b><br/>[Command]<br/>and status"]:::component
+  prune["<b>harness prune</b><br/>[Command]<br/>dry run unless --yes"]:::component
+  out[("<b>out/</b><br/>[Data store: run directories]")]:::store
 
   subgraph home["HARNESS_HOME, default checkout/.harness [Data store: files]"]
     noise[("<b>noise/</b><br/>noise-status.json, noise-history.json, noise-summary.md<br/>GitHub twin: noise branch")]:::store
@@ -220,6 +234,7 @@ flowchart LR
     overrides[("<b>overrides.jsonl</b><br/>append-only, hash-chained<br/>GitHub twin: harness-override issues")]:::store
     rollbacks[("<b>rollbacks/</b><br/>what a failing watch would have opened<br/>GitHub twin: rollback issues")]:::store
     locks[("<b>locks/</b><br/>run.lock, watch.lock<br/>GitHub twin: concurrency groups")]:::store
+    vuln[("<b>vuln-db/</b><br/>one pinned grype database<br/>GitHub twin: actions/cache, one entry per day")]:::store
   end
 
   ensure -->|"records provenance"| ledger
@@ -233,6 +248,10 @@ flowchart LR
   watch -->|"writes on a FAIL"| rollbacks
   wrappers -->|"take"| locks
   watch -->|"takes"| locks
+  vdb -->|"fetches once"| vuln
+  vuln -->|"every scan reads it, updates off"| runrel
+  prune -->|"removes old run directories"| out
+  prune -->|"removes an old image cache"| cache
 
   classDef component fill:#85bbf0,stroke:#5d82a8,color:#000000
   classDef store fill:#2e6fae,stroke:#1f4d7a,color:#ffffff
@@ -245,8 +264,16 @@ flowchart LR
 | `releases/` | release mode, always, unless `recordRelease` is off (the mutants) | post-deploy mode, `--deployed <tag>` | `release-record.schema.json` |
 | `image-cache/` | `images ensure --image-cache` | `images ensure`, only when the registry cannot answer | not contract |
 | `image-provenance.json` | `images ensure`, and `run` for local images | `run`, `stack up`, `kind up`, which refuse an unverified registry image | not contract; `HARNESS_PROVENANCE_FILE` moves it |
+| `vuln-db/` | `harness vuln-db update` (HARNESS_VULN_DB_DIR, else `HARNESS_HOME/vuln-db` when it exists) | every grype scan, with updates switched off; `harness doctor` and `vuln-db status` for its age (limit `HARNESS_VULN_DB_MAX_AGE_DAYS`, default 5) | not contract |
 | `overrides.jsonl` | any `run` or `compare` whose FAIL was overridden | `harness override list` | not contract |
 | `rollbacks/`, `locks/` | `harness local watch`, `harness local ...` | a person; the lock check | not contract |
+
+`harness prune` (`src/local/prune.ts`) touches only `out/<timestamp>-<mode>`
+directories and the image cache's `images.tar` and `manifest.json`. It never
+touches the noise store, release records, overrides, rollbacks, locks or the
+provenance ledger; keeps the newest release run that did not FAIL (what `local
+watch` compares production with), anything from the last six hours, and the
+newest five of each mode; and removes only runs older than 14 days.
 
 ## Evidence
 
@@ -259,6 +286,7 @@ flowchart LR
 | Course fetched by the browser, not the apps | `compose.harness.yaml` comment on `course`; `deploy/kind/README.md` |
 | Identity routing | `fixtures/identity/README.md`; `src/collectors/browser.ts` (`context.route`) |
 | Bus stub not built | `docs/bus.md`; no `fixtures/bus/` |
-| time app | `git show feat/harness-1.2.1-followups:compose.harness.yaml` (`time-a`, `time-b`) |
+| time app, 15 ports | `compose.harness.yaml` (`time-a`, `time-b`), `src/local/ports.ts` |
+| vuln-db, prune, smoke | `src/local/vuln-db.ts`, `src/local/prune.ts:240`, `src/local/tasks.ts:149`; the three workflows' vuln-db steps |
 | Workflow triggers, jobs, artifacts, branches | `.github/workflows/*.yml`, `docs/contract/workflows.json` |
 | Local state paths | `src/local/home.ts`, `docs/local.md` "Where state lives" |

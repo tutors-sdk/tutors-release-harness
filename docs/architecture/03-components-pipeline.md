@@ -6,9 +6,8 @@ report (3.3), image acquisition (3.4), and the local ops layer (3.5). Each
 element names the file that implements it. Legend:
 [README](README.md#legend).
 
-Amber, dashed: **time app: pending PR** (the `time` app and the corrected
-statistics module `src/compare/stats.ts`, built on
-`feat/harness-1.2.1-followups`, not in this branch).
+Everything drawn is built on `origin/main` (harness 1.4.1) except the red
+dashed "planned" elements.
 
 ## 3.1 The run pipeline
 
@@ -28,12 +27,18 @@ flowchart TB
   rehearse["<b>Rehearsal modes</b><br/>[Component: modes/migration.ts, modes/upgrade.ts]<br/>Produce hunks of their own, migration with no stacks, upgrade after capture"]:::component
   captures[("<b>a/capture.json, b/capture.json</b><br/>[Data: files under out/]")]:::store
   masks[("<b>normalise/masks.yaml</b><br/>[Data: reviewed list of blind spots]")]:::store
-  norm["<b>Normaliser</b><br/>[Component: normalise/masks.ts]<br/>Applies masks to both sides before comparing; counts which fired"]:::component
+  subgraph normg["Normaliser: normalise() in normalise/masks.ts, the same steps on both sides, in this order"]
+    direction LR
+    red["<b>1 Redact</b><br/>[Component: normalise/redact.ts]<br/>apikey, Authorization, JWT and Supabase keys become redacted"]:::component
+    org["<b>2 Origins</b><br/>[Component: normalise/origins.ts]<br/>An external side's URL reads as {{origin}} on both sides"]:::component
+    can["<b>3 Canonical forms</b><br/>[Component: normalise/canonical.ts]<br/>content-type and cache-control in one spelling"]:::component
+    msk["<b>4 Masks</b><br/>[Component: normalise/masks.ts]<br/>Header, pattern, series and key masks; drop for network and console; counts which fired"]:::component
+  end
   cmp["<b>Compare engines</b><br/>[Component: compare/index.ts]<br/>One engine per artefact. Zoom in 3.3"]:::component
   match["<b>Claim matcher</b><br/>[Component: claims/matcher.ts, claims/hygiene.ts]<br/>Every failing hunk needs a claim"]:::component
   noisefile[("<b>noise-status.json</b><br/>[Data: from the noise store or branch]")]:::store
   depcheck["<b>Deployment check</b><br/>[Component: release-record.ts judgeDeployment]<br/>post-deploy only: deployed digests against the release record"]:::component
-  gate["<b>Gate</b><br/>[Component: gate.ts, override.ts]<br/>Verdict per mode; may FAIL only while the A/A is trusted"]:::component
+  gate["<b>Gate</b><br/>[Component: gate.ts, override.ts]<br/>Verdict per mode; may FAIL only while the A/A is trusted; post-deploy wording says roll back or open an issue"]:::component
   reports["<b>Report renderers</b><br/>[Component: report/index.ts, html.ts, markdown.ts]<br/>report.json, report.html, report.md"]:::component
   records["<b>Post-run records</b><br/>[Component: run.ts, release-record.ts]<br/>noise-status.json in noise mode; release-record.json in release mode"]:::component
 
@@ -45,9 +50,12 @@ flowchart TB
   capture -->|"writes"| captures
   run -.->|"migration and upgrade modes"| rehearse
   rehearse -->|"extraHunks"| cmp
-  captures --> norm
-  masks --> norm
-  norm -->|"normalised captures"| cmp
+  captures --> red
+  red --> org
+  org --> can
+  can --> msk
+  masks --> msk
+  msk -->|"normalised captures"| cmp
   cmp -->|"hunks"| match
   match -->|"CompareResult: unclaimed, stale, broad"| gate
   noisefile --> gate
@@ -58,7 +66,31 @@ flowchart TB
 
   classDef component fill:#85bbf0,stroke:#5d82a8,color:#000000
   classDef store fill:#2e6fae,stroke:#1f4d7a,color:#ffffff
+  style normg fill:#f4f8fc,stroke:#1168bd,stroke-dasharray:4 3
 ```
+
+**Why the normaliser has an order.** Redaction comes first, so no later step, hunk
+or report ever holds a secret-shaped value (`normalisePage` in
+`src/normalise/masks.ts:114` calls `redactPage` before anything else). Origins
+next: an external side's URLs, read from its `external:<url>` images, are
+rewritten to `{{origin}}` in the other side's captures too, so a literal link to
+production on the recorded side reads the same as production's own rewritten one
+(`src/normalise/origins.ts:22`, wired in `compareFromCaptures`,
+`src/run.ts:150`). Canonical forms next, so a mask pattern is written against
+one spelling of `content-type` and `cache-control`
+(`src/normalise/canonical.ts:108`). Masks last. None of the first three is a
+mask: they hide nothing that a release could change. In post-deploy mode the
+recorded capture is also redacted when it is loaded (`redactCapture`,
+`src/run.ts`), and the collector redacts what it records, so a new
+`capture.json` does not hold a key either.
+
+`normalise/masks.yaml` holds 25 masks (the review guard warns past 40): 10 apply
+in post-deploy mode only (CDN headers, a RUM beacon, revalidation forms that
+exist only because production sits behind Netlify), four `drop` whole network
+requests or console messages (third-party hosts, the persistence stub's
+Supabase paths, the CDN's RUM request, the Realtime REST-fallback warning), and
+`footer-tutors-version` masks the footer's build version. The report lists which
+masks fired and which were silent.
 
 What each mode does (`src/run.ts`, `docs/modes.md`):
 
@@ -97,7 +129,7 @@ flowchart LR
   st["<b>Static image artefacts</b><br/>[Component: image-static/collect.ts, manifest.ts, sbom.ts, vulns.ts]<br/>Read from the images before the stack starts"]:::component
   capf[("<b>capture.json + screenshots</b><br/>[Data: files under out/side/]")]:::store
 
-  apps["<b>Apps under test</b><br/>[Container: compose or kind]<br/>time app: pending PR"]:::container
+  apps["<b>Apps under test</b><br/>[Container: compose or kind]<br/>reader, catalogue, live, time"]:::container
   pstub["<b>Persistence stub</b><br/>[Container]"]:::container
   busx["<b>Bus recorder stub</b><br/>[Planned]<br/>Not built"]:::planned
 
@@ -128,7 +160,7 @@ flowchart LR
 ### The collectors
 
 Seventeen artefact names are captured; two more (`migration`, `upgrade`) come
-from the rehearsal modes. All nineteen are in `ARTEFACTS` (`src/types.ts:12`).
+from the rehearsal modes. All nineteen are in `ARTEFACTS` (`src/types.ts:13`).
 Load results are reported under `timing` (scope `load/...`).
 
 | Artefact | Collector | Read from | Engine | A difference means |
@@ -157,24 +189,43 @@ Behaviours worth knowing:
 - Only the first run of a journey produces screenshots, axe and focus. Later
   runs exist for the timing samples.
 - `runtime` and `startup` **fail** when they cannot be collected
-  ("not collected" is a failing, claimable hunk), so a missing collector cannot
-  read as a clean one. The static image artefacts report "not collected" as
-  informational unless `HARNESS_REQUIRE_STATIC=1` makes it fail
-  (`docs/images.md`, section 8).
+  ("NOT COLLECTED" is a failing, claimable hunk), so a missing collector cannot
+  read as a clean one. See the convention below.
 - Post-deploy skips metrics, logs, runtime, startup, load and persistence: a live
   deployment is not the harness's to read (`captureSide`, `spec.external`).
 - Nothing is retried anywhere. A noisy result is investigated, not re-run.
+- A JSON response body that is not read within three seconds is recorded as
+  `unread` and its shape is not compared (`BODY_READ_MS`, `SCHEMA_UNREAD` in
+  `src/collectors/browser.ts`), so a request nobody reads cannot stall a run or
+  read as a schema change.
+- The `time` app has no journey, so it contributes `metrics`, `logs`, `runtime`,
+  `startup` and the three image artefacts only.
+
+### Not collected: one convention
+
+`src/not-collected.ts` gives every artefact that can come up empty the same
+shape (`docs/contract.md`, "Not collected: one convention"):
+
+| Rule | Value |
+| --- | --- |
+| Text | `NOT COLLECTED: <what>[ of <subject>][ on side a\|b, or on both sides]: <reason>`, in `reasons`, a hunk `summary` and the run log |
+| Hunk | the artefact's own name, scope `<subject>/not-collected` (an app, or the artefact when all of it is missing) |
+| Severity | informational, unless the artefact is required, and then failing. Always informational when the operator switched it off (`--no-runtime`, `--startup-restarts 0`) |
+| Required by default | `runtime` and `startup` (`DEFAULT_REQUIRED`, line 39) |
+| Required on request | `HARNESS_REQUIRE_ARTEFACTS=<list>`: artefact names, `static` (the three image artefacts) or `all`; only ever adds; an unknown name is exit 2. `HARNESS_REQUIRE_STATIC=1` is an alias for `static`; the nightly and the release job set it |
+| `bus` | adds no hunk by default (`docs/bus.md`: a run with no bus is byte-for-byte what it was); a failing `bus/not-collected` hunk under `HARNESS_REQUIRE_ARTEFACTS=bus`, never asked of a live deployment |
 
 ## 3.3 Compare, claim, gate, report
 
 ```mermaid
 flowchart LR
-  norm["<b>Normaliser</b><br/>[Component: normalise/masks.ts]<br/>Both sides masked identically"]:::component
+  norm["<b>Normaliser</b><br/>[Component: normalise/]<br/>Redact, origins, canonical forms, masks, the same on both sides"]:::component
   cmp["<b>compareCaptures</b><br/>[Component: compare/index.ts]<br/>Runs every engine in a fixed order; deterministic"]:::component
   eng["<b>Page and side engines</b><br/>[Component: compare/engines.ts, extra.ts]<br/>dom, screenshot, network, console, headers, axe, focus, metrics, logs, timing, load"]:::component
   led["<b>Ledger rule</b><br/>[Component: compare/ledger.ts]<br/>Sides must agree; an anonymous journey may write nothing. Shared by persistence and bus"]:::component
   img["<b>Image engines</b><br/>[Component: compare/image-static.ts, runtime.ts]<br/>image-manifest, sbom, vulns, runtime, startup"]:::component
-  mw["<b>Mann-Whitney U</b><br/>[Component: compare/engines.ts:252 today]<br/>time app: pending PR: replaced by compare/stats.ts"]:::pending
+  mw["<b>Mann-Whitney U</b><br/>[Component: compare/stats.ts]<br/>mannWhitney and smallestAttainableP: says when the samples cannot reach alpha"]:::component
+  nc["<b>Not-collected convention</b><br/>[Component: not-collected.ts]<br/>One text, one scope, one severity rule"]:::component
   match["<b>matchClaims</b><br/>[Component: claims/matcher.ts]<br/>First matching claim in file order; artefact plus scope glob"]:::component
   hyg["<b>claimHygiene</b><br/>[Component: claims/hygiene.ts]<br/>Reports broad or greedy claims; never gates"]:::component
   gate["<b>gate()</b><br/>[Component: gate.ts]<br/>Verdict and reasons for the mode"]:::component
@@ -190,6 +241,8 @@ flowchart LR
   eng -->|"persistence, bus"| led
   eng -->|"timing, load"| mw
   img -->|"startup"| mw
+  nc -->|"NOT COLLECTED hunks"| img
+  nc -->|"bus, when required"| eng
   eng -->|"hunks"| match
   led -->|"hunks"| match
   img -->|"hunks"| match
@@ -204,8 +257,16 @@ flowchart LR
 
   classDef component fill:#85bbf0,stroke:#5d82a8,color:#000000
   classDef store fill:#2e6fae,stroke:#1f4d7a,color:#ffffff
-  classDef pending fill:#fff3d6,stroke:#b7791f,color:#5c3d00,stroke-dasharray:6 4
 ```
+
+**Timing statistics.** `timing`, `load` and `startup` share one two-sided
+Mann-Whitney U with continuity correction, `src/compare/stats.ts:40`. Before
+judging, each asks `smallestAttainableP` (line 70): if a perfectly separated pair
+of that many samples could not reach alpha 0.05, the finding is informational and
+says "cannot reach alpha, raise --runs" (`engines.ts` `timing`, `extra.ts` `load`,
+`runtime.ts` `startup`). Three runs a side cannot reach it (best p is 0.081), four
+can, which is why the nightly, the release workflow and the `slow-ssr` mutant run
+five (`.github/workflows/nightly-noise.yml`, `release.yml`, `mutants/mutants.yaml`).
 
 **Hunks.** An engine emits `Hunk`s (`src/types.ts`): an artefact, a scope, a
 severity (`fail` or `info`) and a summary. Only `fail` hunks need a claim.
@@ -233,7 +294,10 @@ before any stack starts.
 
 `trustNoise` returns true when `--noise skip` waived it, or when a status is
 present, has no `degraded`, is `clean`, and is no older than
-`noiseMaxAgeDays` (default 7). **The noise-status rule is the harness's licence
+`noiseMaxAgeDays` (default 7). The post-deploy reason says "decide whether to
+roll back" instead of "open a rollback issue" when no CI step will open one
+(`HARNESS_ROLLBACK_ISSUE`, else `GITHUB_ACTIONS`; `rollbackIssueConfigured`,
+`src/gate.ts`). **The noise-status rule is the harness's licence
 to fail: without it the same findings are a warning with the reason stated.**
 
 **Exit codes** (`docs/contract.md`): 0 for pass, warn, or a FAIL overridden with a
@@ -323,10 +387,12 @@ What lets everything run on a laptop with no GitHub. The workflows call the same
 flowchart TB
   clits["<b>cli.ts</b><br/>[Component: src/cli.ts]<br/>doctor, noise, guard, override, local"]:::component
   lcli["<b>Local commands</b><br/>[Component: local/cli.ts]<br/>doctorCommand, noiseCommand, guardCommand, overrideCommand, localCommand"]:::component
-  doctor["<b>Doctor</b><br/>[Component: local/doctor.ts, doctor-real.ts]<br/>Read-only checks of the machine; how to install what is missing"]:::component
+  doctor["<b>Doctor</b><br/>[Component: local/doctor.ts, doctor-real.ts]<br/>Read-only checks of the machine, including grype version and database age; how to install what is missing"]:::component
   tasks["<b>Task plans</b><br/>[Component: local/tasks.ts]<br/>planNightly, planGate, planMutants, planWatch: lists of harness argv, run by executePlan"]:::component
   lock["<b>Run lock</b><br/>[Component: local/lock.ts]<br/>One heavy run per machine; a stale pid is taken over"]:::component
   nstore["<b>Noise store</b><br/>[Component: local/noise-store.ts, ci/noise-history.ts]<br/>recordNight, defaultNoise, status, history, ratchet"]:::component
+  prune["<b>Prune</b><br/>[Component: local/prune.ts]<br/>Old run directories and an old image cache; a dry run unless --yes; keeps the newest good release run"]:::component
+  vdb["<b>Vulnerability database</b><br/>[Component: local/vuln-db.ts]<br/>vuln-db update and status: one pinned grype database, never updated during a run"]:::component
   olog["<b>Override log</b><br/>[Component: local/override-log.ts]<br/>Append-only, each line carries the hash of the last"]:::component
   guard["<b>Guards</b><br/>[Component: local/guard.ts]<br/>Resolve a base ref, run the CI scripts against it"]:::component
   masks["<b>mask-change.ts, engine-change.ts</b><br/>[Component: ci/]<br/>Masks in their own PR; engine change needs a version bump"]:::component
@@ -341,6 +407,10 @@ flowchart TB
   lcli --> tasks
   lcli --> nstore
   lcli --> olog
+  lcli --> prune
+  lcli --> vdb
+  prune -->|"removes from out/ and image-cache/"| home
+  vdb -->|"vuln-db/"| home
   lcli --> guard
   guard -->|"spawns with --base"| masks
   tasks -->|"acquires"| lock
@@ -358,7 +428,7 @@ flowchart TB
   classDef ext fill:#6b6b6b,stroke:#444444,color:#ffffff
 ```
 
-The four tasks, each planned as the workflow's own commands (`--dry-run` prints
+The five tasks, each planned as the workflow's own commands (`--dry-run` prints
 the plan and starts nothing):
 
 | Task | Steps | Workflow it mirrors |
@@ -367,6 +437,7 @@ the plan and starts nothing):
 | `harness local gate` | `noise status`, `images ensure`, then release, migration and upgrade runs as separate streams: a FAIL in one does not hide the others; writes `gate.md` and `gate.json` | `release.yml` |
 | `harness local mutants` | `images ensure`, `mutants --base` | `weekly-mutants.yml` |
 | `harness local watch` | `run --mode post-deploy` once or every 15 minutes; a difference writes `rollbacks/<time>-rollback.md`; never exits on a difference; needs no Docker | `post-deploy.yml` |
+| `harness local smoke` (also `pnpm smoke`) | `images ensure`, a one-journey A/A on both stacks, the expanding migration fixture must pass, the contracting one must be rejected (`expectFailure`); `--only stacks\|migration` | `ci.yml` |
 
 The monorepo's `pnpm release:harness` (#307) is the local trigger for these
 tasks: it builds the `release-candidate` payload from a local clone with git
@@ -383,16 +454,19 @@ seven days) applies to the store, and a CI status must not be copied into it
 
 | Claim | Source |
 | --- | --- |
-| Pipeline order, preflight before stacks, `finally` teardown | `src/run.ts:249-364` |
-| `compareFromCaptures` order: normalise, compare, claims, noise, gate, deployment, override, hygiene, reports | `src/run.ts:147-202` |
-| Mode behaviours | `src/run.ts:260-283`, `src/modes/`, `docs/modes.md`, `src/gate.ts` |
-| `captureSide` steps | `src/collectors/index.ts` |
-| Artefact list | `src/types.ts:12` |
+| Pipeline order, preflight before stacks, `finally` teardown | `src/run.ts:256-376` (`run`) |
+| `compareFromCaptures` order: normalise, compare, claims, noise, gate, deployment, override, hygiene, reports | `src/run.ts:150-209` |
+| Normaliser order: redact, origins, canonical, masks | `src/normalise/masks.ts:114-166` (`normalisePage`); `src/normalise/redact.ts`, `origins.ts:22`, `canonical.ts:108` |
+| Mode behaviours | `src/run.ts:269` (migration), `:278` (post-deploy), `src/modes/`, `docs/modes.md`, `src/gate.ts:51` |
+| `captureSide` steps | `src/collectors/index.ts:53` |
+| Artefact list (19) | `src/types.ts:13` |
+| Six journeys, three sets | `traffic/journeys/journeys.ts:199` |
+| Ten mutants, eight edge and two image-level | `mutants/mutants.yaml`; held by `tests/docs-counts.test.ts` |
 | Engines and their rules | `src/compare/engines.ts`, `extra.ts`, `ledger.ts`, `image-static.ts`, `runtime.ts` |
-| Not collected: runtime and startup fail, image-static informational | `src/compare/runtime.ts:141,200`; `src/compare/image-static.ts` (`staticRequired`); `docs/images.md` section 8 |
-| Claim matching | `src/claims/matcher.ts`, `src/claims/schema.ts`, `src/claims/rules.ts` |
-| Gate and `trustNoise` | `src/gate.ts` |
+| Not collected: one convention | `src/not-collected.ts`; callers `src/compare/runtime.ts:49,143,192`, `image-static.ts:147`, `extra.ts:79`; `docs/contract.md` "Not collected: one convention"; `tests/not-collected.test.ts` |
+| Timing statistics | `src/compare/stats.ts:40,70`; `src/compare/engines.ts:262` (`timing`), `extra.ts:86` (`load`), `runtime.ts:171` (`startup`) |
+| Claim matching | `src/claims/matcher.ts:23`, `src/claims/schema.ts`, `src/claims/rules.ts` |
+| Gate and `trustNoise` | `src/gate.ts:51`, `:94` |
 | Override | `src/override.ts` |
-| Image acquisition | `src/images.ts:352-517`, `src/image-cache.ts`, `src/image-ref.ts`, `src/digests.ts`, `scripts/build-images.sh` |
-| Local layer | `src/local/*`, `src/project.ts`, `docs/local.md`, `tests/local-parity.test.ts`; monorepo `scripts/release-harness.ts` |
-| Statistics pending | `git show feat/harness-1.2.1-followups:src/compare/stats.ts`; `docs/releases/1.3.0.md` on that branch |
+| Image acquisition | `src/images.ts:352` (`ensureImages`), `:321` (`tagAgreesWithDigest`), `:176` (`verifySignature`), `src/image-cache.ts`, `src/image-ref.ts`, `src/digests.ts`, `scripts/build-images.sh` |
+| Local layer | `src/local/*` (`prune.ts:240`, `vuln-db.ts`, `tasks.ts:149` `planSmoke`), `src/project.ts`, `docs/local.md`, `tests/local-parity.test.ts`; monorepo `scripts/release-harness.ts` |
