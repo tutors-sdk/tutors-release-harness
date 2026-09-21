@@ -560,7 +560,7 @@ Full list: [`contract/cli.json`](contract/cli.json). Invoke as `pnpm harness
 <command>` from a checkout (Node ≥ 22, `pnpm install`, and for capturing modes
 `pnpm exec playwright install chromium` and Docker). Commands and flags marked
 `stable: true` there are the ones below; the rest (`harness stack`, `harness
-kind`, `harness journeys`, `harness override`, `harness local`, `harness noise
+kind`, `harness journeys`, `harness override`, `harness local`, `harness prune`, `harness noise
 history`, `--substrate`, `--now`, `--masks`, `--snapshot`,
 `--upgrade-*`, `--noise-max-age-days`, `--no-screenshots`, `--no-axe`,
 `--no-focus`, `--no-runtime` and `--startup-restarts` (both since 1.2.0),
@@ -575,9 +575,11 @@ script that asks whether a machine can run the harness). Their flags (`--status`
 `--base`, `--json`) are stable with them. `harness local` (the maintainer wrappers,
 whose steps are planned from the same commands and change with them), `harness
 override list` (a listing for people), `harness noise history` (the ratchet as
-text; the file `noise-history.json` is what a program reads) and the flags only
-they take (`--only`, `--migrations-a`, `--migrations-b`, `--interval`,
-`--port-offset`, `--dry-run`, `--once`, `--record`, `--last`, `--since`) are not.
+text; the file `noise-history.json` is what a program reads), `harness prune` (deletes
+old run directories and an old image cache: a dry run unless `--yes`, and no workflow
+calls it) and the flags only they take (`--only`, `--migrations-a`, `--migrations-b`,
+`--interval`, `--port-offset`, `--dry-run`, `--once`, `--record`, `--last`, `--since`,
+`--older-than-days`, `--keep-last`, `--image-cache-days`, `--yes`) are not.
 
 | Command | Stable flags |
 | --- | --- |
@@ -826,10 +828,12 @@ changed; and a stack under the old name is left alone.
 - **Not stable:** `harness local nightly|gate|mutants|watch` (wrappers planned
   from the stable commands, which change with the workflows), `harness override
   list` (a listing for people), `harness noise history` (the ratchet as text; the
-  file `noise-history.json` is what a program reads), and the flags only they
-  take: `--only`, `--migrations-a`, `--migrations-b`, `--interval`,
-  `--port-offset`, `--dry-run`, `--once`, `--record`, `--last`, `--since`. They may
-  change in a minor release.
+  file `noise-history.json` is what a program reads), `harness prune` (removes old
+  run directories under `out/` and an old image cache; a dry run unless `--yes`),
+  and the flags only they take: `--only`, `--migrations-a`, `--migrations-b`,
+  `--interval`, `--port-offset`, `--dry-run`, `--once`, `--record`, `--last`,
+  `--since`, `--older-than-days`, `--keep-last`, `--image-cache-days`, `--yes`. They
+  may change in a minor release.
 - Exit code `1` also covers `doctor` finding a tool a run needs missing, `noise
   record` finding the ratchet broken, `noise status --require` finding a status
   that does not license a FAIL, and `guard` finding a violation.

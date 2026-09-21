@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { userInfo } from "node:os";
-import { join, resolve } from "node:path";
+import { basename, join, resolve } from "node:path";
 import { isUrl } from "../claims/rules.ts";
 import { ROOT } from "../stack.ts";
 import type { RunReport } from "../types.ts";
@@ -9,8 +9,9 @@ import { DEFAULT_SCOPES, SCOPES, renderDoctor, runDoctor, type Scope } from "./d
 import { realDoctorDeps } from "./doctor-real.ts";
 import { GUARDS, realGit, realScript, runGuard, type GuardKind } from "./guard.ts";
 import { harnessHome, imageCacheDir, locksDir, noiseDir, overridesFile, rollbacksDir } from "./home.ts";
-import { LockHeldError, acquireLock } from "./lock.ts";
+import { LockHeldError, acquireLock, lockHolder } from "./lock.ts";
 import { noiseHistoryCommand, noiseStatusCommand, recordNight } from "./noise-store.ts";
+import { PRUNE_DEFAULTS, prune, renderPrune } from "./prune.ts";
 import { appendOverride, overrideFromReport, readOverrides } from "./override-log.ts";
 import {
   PRODUCTION_DEFAULT_TAG,
@@ -128,6 +129,55 @@ export function overrideCommand(sub: string | undefined, v: Values): number {
     if (!log.chainIntact) for (const p of log.problems) console.log(`  WARNING: ${p}`);
   }
   return 0;
+}
+
+// ---- harness prune ------------------------------------------------------------------------------------
+
+/**
+ * Remove old run directories under `out/` and an old image cache. A dry run unless `--yes`: deleting is the one thing
+ * this command does that cannot be undone, so it says what it would do first. Refuses while a run or a watch holds its lock.
+ */
+export function pruneCommand(v: Values, deps: { home?: string; now?: Date; log?: (m: string) => void } = {}): number {
+  const log = deps.log ?? ((m: string) => console.log(m));
+  const home = deps.home ?? harnessHome();
+  const root = resolve(str(v, "out") ?? outRoot());
+  const rules = { olderThanDays: integer(v, "older-than-days", PRUNE_DEFAULTS.olderThanDays), keepLast: integer(v, "keep-last", PRUNE_DEFAULTS.keepLast), imageCacheDays: integer(v, "image-cache-days", PRUNE_DEFAULTS.imageCacheDays) };
+  // --dry-run wins over --yes: asking for both is asking to look.
+  const apply = flag(v, "yes") && !flag(v, "dry-run");
+  const holder = ["run.lock", "watch.lock"].map((name) => lockHolder(join(locksDir(home), name))).find((h) => h !== undefined);
+  if (holder && apply) {
+    console.error(`not pruning: ${holder.task} is running (pid ${holder.pid}, since ${holder.since}). Run it again when that has finished.`);
+    return 2;
+  }
+  let release = () => {};
+  if (apply) {
+    try {
+      release = acquireLock(join(locksDir(home), "run.lock"), "harness prune");
+    } catch (e) {
+      if (!(e instanceof LockHeldError)) throw e;
+      console.error(`not pruning: ${e.message}`);
+      return 2;
+    }
+  }
+  try {
+    const recorded = latestRecordedIn(root);
+    const result = prune({
+      outRoot: root,
+      imageCacheDirs: [resolve(str(v, "image-cache") ?? imageCacheDir(home))],
+      ...rules,
+      now: deps.now ?? new Date(),
+      protectedNames: new Set(recorded ? [basename(recorded)] : []),
+      apply
+    });
+    if (flag(v, "json")) log(JSON.stringify({ applied: result.applied, outRoot: result.outRoot, bytes: result.bytes, failed: result.failed, running: holder?.task ?? null, removals: result.removals, kept: result.runs.filter((r) => r.action === "keep").map((r) => ({ name: r.name, reason: r.reason })) }, null, 2));
+    else {
+      log(renderPrune(result, rules));
+      if (holder) log(`  note: ${holder.task} is running (pid ${holder.pid}); a real prune would refuse until it has finished`);
+    }
+    return result.failed ? 1 : 0;
+  } finally {
+    release();
+  }
 }
 
 // ---- harness local ------------------------------------------------------------------------------------

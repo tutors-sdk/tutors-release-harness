@@ -15,7 +15,7 @@ import { CLUSTER, kindDown, kindRollout, kindSide, kindUp } from "./substrate/ki
 import { refuseLegacyCluster } from "./project.ts";
 import { MODES, SUBSTRATES, type Mode, type Substrate } from "./types.ts";
 import { harnessInfo } from "./version.ts";
-import { UsageError, doctorCommand, guardCommand, localCommand, noiseCommand, overrideCommand, recordAppliedOverride } from "./local/cli.ts";
+import { UsageError, doctorCommand, guardCommand, localCommand, noiseCommand, overrideCommand, pruneCommand, recordAppliedOverride } from "./local/cli.ts";
 import { defaultNoise } from "./local/noise-store.ts";
 
 const USAGE = `tutors-release-harness
@@ -97,6 +97,12 @@ const USAGE = `tutors-release-harness
       change needs a version bump. Exit 1 on a violation, 2 when the ref does not exist.
   harness override list [--since <date>] [--json]
       The local, append-only record of every FAIL a person overrode.
+  harness prune [--out dir] [--older-than-days 14] [--keep-last 5] [--image-cache dir] [--image-cache-days 30] [--yes] [--json]
+      Free disk: remove run directories under out/ that are older than --older-than-days AND not among the newest
+      --keep-last of their mode, and an image cache saved more than --image-cache-days ago. A dry run unless --yes.
+      Never touches HARNESS_HOME state (noise store, release records, override log), the newest release run that did
+      not FAIL (what \`local watch\` compares production with), anything from the last 6 hours, or anything while a
+      run or watch holds its lock (exit 2). Exit 1 when something could not be removed (in use).
   harness local nightly [--tag T] [--runs 3] [--load 20x30s] [--image-cache dir] [--store dir] [--no-record]
   harness local gate --a <production tag> --b <candidate tag> [--a-digests d] [--b-digests d] [--claims f] [--rules f] [--runs 3] [--only release|migration|upgrade]
                      [--migrations-a ref] [--migrations-b ref] [--override-reason r --override-by who]
@@ -193,6 +199,9 @@ async function main(argv: string[]): Promise<number> {
       for: { type: "string" },
       last: { type: "string" },
       since: { type: "string" },
+      "older-than-days": { type: "string" },
+      "keep-last": { type: "string" },
+      "image-cache-days": { type: "string" },
       screenshots: { type: "boolean", default: true },
       axe: { type: "boolean", default: true },
       focus: { type: "boolean", default: true },
@@ -205,6 +214,7 @@ async function main(argv: string[]): Promise<number> {
       once: { type: "boolean", default: false },
       require: { type: "boolean", default: false },
       record: { type: "boolean", default: true },
+      yes: { type: "boolean", default: false },
       json: { type: "boolean", default: false },
       help: { type: "boolean", short: "h", default: false }
     },
@@ -381,6 +391,8 @@ async function main(argv: string[]): Promise<number> {
       return guardCommand(positionals[0], values);
     case "override":
       return overrideCommand(positionals[0], values);
+    case "prune":
+      return pruneCommand(values);
     case "local":
       return localCommand(positionals[0], values);
     case "journeys":

@@ -137,7 +137,7 @@ commits that came with this document.
 | N4 | Save the cache if refreshed (`actions/cache/save`, `image_cache=` output) | GH | `images ensure` refreshes the directory itself | none. **Closed** |
 | N5 | A/A, 3 runs, `--load 20x30s --require-verified` | CLI | same | none. **Closed** |
 | N6 | Report in the job summary | GH | `out/<time>-noise/report.md` and `report.html` | none |
-| N7 | Upload `noise-status` and `noise-report` (8 days) | GH | `out/` | no retention and no pruning: `out/` grows with screenshots. **Open, low**: delete old run directories by hand |
+| N7 | Upload `noise-status` and `noise-report` (8 days) | GH | `out/` | the artifact expires on GitHub; locally `out/` grows with screenshots. **Closed**: [`harness prune`](#disk-harness-prune) |
 | N8 | History from the `noise` branch (`gh api`) | GH | `<HARNESS_HOME>/noise/noise-history.json` | none. **Closed** |
 | N9 | Record tonight, ratchet, summary (`noise-history.ts record`) | WF | `harness noise record` | none. **Closed** |
 | N10 | Force-push the `noise` branch | GH | the store directory is the publication | none. **Closed** |
@@ -158,7 +158,7 @@ commits that came with this document.
 | R7 | Override: `override_reason` input, actor from `github.triggering_actor` | GH | `--override-reason`, `--override-by` (default: git `user.name`) | none. **Closed** |
 | R8 | Record the override (`gh issue create`, label `harness-override`) | GH | `<HARNESS_HOME>/overrides.jsonl`, append-only and hash-chained; `harness override list [--since]` | tamper-evident, not tamper-proof: a person with the file can rewrite it. **Closed** |
 | R9 | "PR comment" (`report.md` into the job summary) | GH | `report.md` and `report.html` in each run directory, and `gate.md` | the contract forbids workflows any PR permission, so nothing is ever posted; to post by hand: `gh pr comment <n> --body-file out\<time>-gate\gate.md`. **Closed** |
-| R10 | `release-report` artifact (30 days) | GH | `out/` | as N7 |
+| R10 | `release-report` artifact (30 days) | GH | `out/` | as N7. **Closed** |
 
 ### post-deploy.yml
 
@@ -202,9 +202,9 @@ commits that came with this document.
 
 Counts. Of the 37 steps in the four workflows, 7 were already a harness command
 (**CLI**), 7 were **workflow-only logic**, 23 were **GitHub-only services**; the 11
-platform rows (X) are not steps. Across all 48 rows after this change: 31 closed or
-fixed, 7 documented as a limit that stays (N3, N12, N13, C4, X4, X5, X10), 2 not
-applicable (M4, X11), and 8 open: N7 and R10 (no pruning of `out/`), C3 (no smoke
+platform rows (X) are not steps. Across all 48 rows after this change: 33 closed or
+fixed (N7 and R10 by `harness prune`), 7 documented as a limit that stays (N3, N12, N13, C4, X4, X5, X10), 2 not
+applicable (M4, X11), and 6 open: C3 (no smoke
 wrapper), X8 (the fixed subnet), X9 (kind's fixed ports), and R1, R2, P1 (the
 monorepo's).
 
@@ -224,6 +224,47 @@ for example to a backed-up folder.
 | `image-provenance.json` | the ledger `images ensure` leaves for `run` (`HARNESS_PROVENANCE_FILE` still moves it) | a file on the runner |
 
 Run output stays in `<checkout>/out/<time>-<mode>/` (`--out` on `harness run`).
+
+### Disk: `harness prune`
+
+`out/` (screenshots, k6 output, captures) and the image cache (a `docker save` tar of
+the production images, a gigabyte or more) grow without bound. `harness prune` frees
+them:
+
+```
+pnpm harness prune                       # what would go, and how much it frees; deletes nothing
+pnpm harness prune --yes                 # delete it
+pnpm harness prune --older-than-days 7 --keep-last 2 --yes
+```
+
+It is a dry run unless you say `--yes`: deleting is the one thing it does that cannot be
+undone, and a dry run costs a second. (`--dry-run` is accepted, and wins over `--yes`.)
+
+A run directory (`<UTC time>-<mode>` directly under `out/`; nothing else in `out/` is
+touched) goes only when **all** of these hold:
+
+| Rule | Default | Why |
+| --- | --- | --- |
+| older than `--older-than-days` | 14 | the nightly makes one directory a day: a fortnight is what you look back through when a mask or a regression arrives; the noise store's history keeps the verdicts for longer |
+| not among the newest `--keep-last` of its mode | 5 | a mode that runs rarely (release, upgrade) keeps its last few runs however old they are |
+| not the newest release run that did not FAIL | always | it is what `harness local watch` compares production with |
+| not started or changed in the last 6 hours | always | `harness run` takes no lock and may be running; the flags cannot override this |
+
+`--older-than-days 0` makes age no reason to keep a directory; `--keep-last 0` makes
+"newest" none. The image cache (`<HARNESS_HOME>/image-cache`, or `--image-cache <dir>`)
+loses its `images.tar` and `manifest.json` when it was saved more than
+`--image-cache-days` (30) ago: the nightly rewrites it every night, so an older one means
+nothing refreshed it and it would no longer stand for production.
+
+It never touches the state that has to persist: the noise store, the release records, the
+override log, the rollbacks, the locks and the provenance ledger are not under `out/` and
+are not looked at. It refuses (exit 2, nothing removed) while a `harness local` task or a
+watch holds its lock, and holds the run lock itself while it deletes. Exit 1 means something
+could not be removed, on Windows usually a file another program has open: it is reported,
+left exactly as it was, and the rest goes on; close the program and run it again. Removal
+retries a busy file a few times before giving up and never forces it; long paths need no
+special handling (Node uses the extended-length path form itself), though the Windows notes above still
+advise a short checkout path.
 
 ## The noise store is this machine's calibration
 

@@ -164,7 +164,8 @@ must fail with failures attributed to `b`.
 guards, the plans of `harness local ...` and how a plan runs (a fake executor:
 which failure stops which stream), the watch loop with a fake clock, the run
 lock, the override log, and the CLI through a real process for exit codes and
-`--dry-run`. Nothing starts Docker: the one thing they cannot prove is that the
+`--dry-run`, and `harness prune` on temp directories (what it may delete, what it must not,
+the lock, a file that cannot be removed). Nothing starts Docker: the one thing they cannot prove is that the
 Windows paths in `scripts/*.sh` and the tools' install locations hold on a real
 machine, which is what `harness doctor` and the first `harness local nightly` are
 for. Setup, scheduling and the parity matrix are in [docs/local.md](docs/local.md).

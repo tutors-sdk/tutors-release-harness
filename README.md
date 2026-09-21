@@ -178,6 +178,7 @@ harness kind up|down|rollout --a <ref> --b <ref>
 harness mutants --base <ref>
 harness journeys
 harness version [--json]
+harness prune [--older-than-days 14] [--keep-last 5] [--yes]   # frees out/ and the image cache; a dry run without --yes
 ```
 
 Exit codes: 0 pass or warn, 1 fail (or `images ensure` could not obtain an
