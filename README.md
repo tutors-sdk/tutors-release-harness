@@ -178,6 +178,7 @@ harness kind up|down|rollout --a <ref> --b <ref>
 harness mutants --base <ref>
 harness journeys
 harness version [--json]
+harness local smoke [--tag T] [--only stacks|migration] [--dry-run]   # the two-stacks smoke CI runs: pnpm smoke
 harness prune [--older-than-days 14] [--keep-last 5] [--yes]   # frees out/ and the image cache; a dry run without --yes
 ```
 
@@ -209,7 +210,7 @@ prints the same), and the HTML and Markdown reports name it in their footer.
 
 | Workflow | When | Does |
 | --- | --- | --- |
-| `ci.yml` | every PR | unit and fixture tests; masks land in their own PR; two stacks boot, one journey A/A; migration fixtures pass and fail as they must |
+| `ci.yml` | every PR | unit and fixture tests; masks land in their own PR; two stacks boot, one journey A/A; migration fixtures pass and fail as they must (all of it `pnpm smoke`, the same command locally) |
 | `nightly-noise.yml` | nightly | A/A on the production tag pulled from Quay (three runs, with load; last night's verified images as the outage fallback, a degraded night); publishes `noise-status.json` as an artifact and to the `noise` branch, and keeps the ratchet — [docs/noise-burndown.md](docs/noise-burndown.md) |
 | `release.yml` | monorepo dispatch on a release branch, or by hand | release mode with claims, 3 runs, k6; migration rehearsal; upgrade rehearsal |
 | `post-deploy.yml` | monorepo dispatch after deploy, then every 15 minutes | reference journeys against production vs the recorded candidate; opens a rollback issue on a new difference |

@@ -13,7 +13,7 @@ commands, and each piece of it has a local equivalent below.
 OpenShift is out of scope. The compose and kind substrates are what runs.
 
 - [Start here](#start-here)
-- [The four tasks](#the-four-tasks)
+- [The five tasks](#the-five-tasks)
 - [Parity matrix](#parity-matrix)
 - [Where state lives](#where-state-lives)
 - [The noise store is this machine's calibration](#the-noise-store-is-this-machines-calibration)
@@ -51,12 +51,12 @@ run needs is missing, `2` is a usage error. `--json` prints the same as data;
 | a leftover compose project of this checkout (`tutors-harness-<8 hex>`) | a run replaces it, `--remove-orphans` included. A stack under the old default name `tutors-harness` is reported by `harness doctor` as "legacy stack, not touched" and never removed |
 | Windows: WSL's `bash` first on PATH, CRLF in `scripts/*.sh`, long paths off | see [Windows notes](#windows-notes) |
 
-## The four tasks
+## The five tasks
 
 Each is one command, planned as the list of `harness` commands the workflow
 runs. `--dry-run` prints the plan and starts nothing. All of them take
-`--port-offset <n>` ([below](#running-beside-your-own-stack)); nightly, gate and
-mutants hold a lock so only one runs on the machine at a time; the environment
+`--port-offset <n>` ([below](#running-beside-your-own-stack)); nightly, gate,
+mutants and smoke hold a lock so only one runs on the machine at a time; the environment
 defaults are the workflows' (`HARNESS_IMAGE_PREFIX` defaults to
 `quay.io/tutors-sdk/tutors-{app}`, the production tag to `HARNESS_PRODUCTION_TAG`
 or `main`). Runs land in `<checkout>/out/`.
@@ -102,6 +102,25 @@ pnpm harness local mutants [--base 16.2.2] [--dry-run]
 `images ensure --a T --b T`, then `mutants --base T`: A/A first, then each of the
 ten planted regressions must FAIL and be attributed. The mutants are built
 locally; syft must be installed (`harness doctor --for mutants`).
+
+### The two-stacks smoke: `harness local smoke`
+
+```console
+pnpm smoke                                  # the same command
+pnpm harness local smoke [--tag 16.2.0] [--only stacks|migration] [--dry-run]
+```
+
+What the CI job "Two stacks boot and one journey runs (A/A)" does, and ci.yml now
+calls exactly this: `images ensure --a T --b T`; both stacks boot and one journey
+(`anonymous-student-reads-course`) runs A/A; the expanding migration fixture must
+pass; the contracting one (`b-bad`) must be **rejected**. That last step is the one
+that used to be `if cmd; then exit 1` in the workflow's shell: it is now a step that
+expects the FAIL verdict (exit 1), so accepting the fixture fails the smoke, and so
+does a harness error (exit 2), which is not a rejection. The first step that does not
+do what it must stops the rest. `--only stacks` or `--only migration` runs half;
+`--dry-run` prints the four commands. Roughly ten minutes; it needs what
+`harness doctor --for nightly` checks (Docker, cosign, Chromium), and `bash` on a
+machine whose registry lacks the tag.
 
 ### Post-deploy watch: `harness local watch`
 
@@ -180,7 +199,7 @@ commits that came with this document.
 | M4 | "Mutants re-run (required)": shell that combines two job results | WF + GH | the exit codes of `guard engine` and `local mutants` | nothing to port: a required status check is a GitHub setting. **n/a** |
 | C1 | Masks land in their own PR (`mask-change.ts`) | WF | `harness guard masks --base <ref>` | as M3. **Closed** |
 | C2 | Typecheck, lint, unit and fixture tests | CLI | `pnpm typecheck`, `pnpm lint`, `pnpm test` | none |
-| C3 | Two-stacks smoke, including "the contracting fixture must be rejected" (`if cmd; then exit 1`) | WF | the commands in TESTING.md, the inversion by hand | no wrapper. **Open, low** |
+| C3 | Two-stacks smoke, including "the contracting fixture must be rejected" (`if cmd; then exit 1`) | CLI | `harness local smoke` (`pnpm smoke`); ci.yml calls it | the inversion is a step that expects the FAIL verdict. **Closed** |
 | C4 | Stack logs on failure | WF | `docker compose -p <project> -f compose.harness.yaml --profile upgrade logs`, where `<project>` is this checkout's compose project (`harness doctor` prints it) | CI pins `HARNESS_COMPOSE_PROJECT=tutors-harness`, one checkout per runner. **Documented** |
 | C5 | Claims hygiene | CLI | reported in every report that has claims; never gates | none |
 
@@ -202,10 +221,9 @@ commits that came with this document.
 
 Counts. Of the 37 steps in the four workflows, 7 were already a harness command
 (**CLI**), 7 were **workflow-only logic**, 23 were **GitHub-only services**; the 11
-platform rows (X) are not steps. Across all 48 rows after this change: 33 closed or
-fixed (N7 and R10 by `harness prune`), 7 documented as a limit that stays (N3, N12, N13, C4, X4, X5, X10), 2 not
-applicable (M4, X11), and 6 open: C3 (no smoke
-wrapper), X8 (the fixed subnet), X9 (kind's fixed ports), and R1, R2, P1 (the
+platform rows (X) are not steps. Across all 48 rows after this change: 34 closed or
+fixed (N7 and R10 by `harness prune`, C3 by `harness local smoke`), 7 documented as a limit that stays (N3, N12, N13, C4, X4, X5, X10), 2 not
+applicable (M4, X11), and 5 open: X8 (the fixed subnet), X9 (kind's fixed ports), and R1, R2, P1 (the
 monorepo's).
 
 ## Where state lives

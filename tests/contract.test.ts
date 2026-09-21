@@ -686,10 +686,12 @@ describe("workflows", () => {
 
   it("install cosign 3 in every job that runs images ensure, and nowhere pass --allow-unsigned", () => {
     const tools = (json("docs/contract/workflows.json") as { tools: { cosign: { action: string; minimumMajor: number; usedBy: string[] } } }).tools.cosign;
-    const using = files.filter((f) => text[f]!.includes("harness images ensure")).sort();
+    // `harness local smoke` runs `images ensure` itself (ci.yml calls it instead of spelling the step out)
+    const ensuring = /harness images ensure|harness local smoke/;
+    const using = files.filter((f) => ensuring.test(text[f]!)).sort();
     expect(using).toEqual(tools.usedBy);
     for (const f of using) {
-      const ensures = [...text[f]!.matchAll(/harness images ensure/g)].length;
+      const ensures = [...text[f]!.matchAll(new RegExp(ensuring, "g"))].length;
       const installs = [...text[f]!.matchAll(new RegExp(`uses: ${tools.action}@v(\\d+)`, "g"))];
       expect(installs.length, f).toBe(ensures);
       // cosign-installer v4 is the first whose default is cosign 3.

@@ -108,6 +108,9 @@ const USAGE = `tutors-release-harness
   harness local gate --a <production tag> --b <candidate tag> [--a-digests d] [--b-digests d] [--claims f] [--rules f] [--runs 3] [--only release|migration|upgrade]
                      [--migrations-a ref] [--migrations-b ref] [--override-reason r --override-by who]
   harness local mutants [--base T]
+  harness local smoke [--tag T] [--only stacks|migration]
+      The two-stacks smoke ci.yml runs: both stacks boot from one tag, one journey A/A, and the migration fixtures (the
+      expanding one passes, the contracting one must be rejected). pnpm smoke is the same command.
   harness local watch [--recorded <release run dir>] [--production reader=URL,catalogue=URL,live=URL] [--deployed <tag> [--deployed-digests d] [--release-record f]] [--interval 15m] [--once]
       Each is what its workflow does, as one command, from the same harness commands (--dry-run prints them).
       All take --port-offset <n> to move the compose stack's host ports beside a stack of your own.

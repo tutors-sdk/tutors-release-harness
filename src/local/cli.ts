@@ -24,6 +24,7 @@ import {
   planGate,
   planMutants,
   planNightly,
+  planSmoke,
   planWatch,
   portEnv,
   readGateEntry,
@@ -33,7 +34,8 @@ import {
   writeGateSummary,
   type Executor,
   type GateStream,
-  type Plan
+  type Plan,
+  type SmokePart
 } from "./tasks.ts";
 
 /** The parsed flags of src/cli.ts, as far as the local commands read them. */
@@ -230,6 +232,11 @@ export function buildPlan(task: string | undefined, v: Values, env: NodeJS.Proce
     }
     case "mutants":
       return planMutants({ tag: str(v, "base") ?? PRODUCTION_DEFAULT_TAG(env) });
+    case "smoke": {
+      const only = str(v, "only");
+      if (only && only !== "stacks" && only !== "migration") throw new UsageError("local smoke --only takes stacks or migration");
+      return planSmoke({ tag: str(v, "tag") ?? PRODUCTION_DEFAULT_TAG(env), ...(only ? { only: only as SmokePart } : {}) });
+    }
     case "watch":
       return planWatch({
         production: str(v, "production") ?? PRODUCTION_URLS(env),
@@ -237,7 +244,7 @@ export function buildPlan(task: string | undefined, v: Values, env: NodeJS.Proce
         ...(str(v, "deployed") ? { deployed: { tag: str(v, "deployed")!, ...(str(v, "deployed-digests") ? { digests: str(v, "deployed-digests")! } : {}), ...(str(v, "release-record") ? { record: resolve(str(v, "release-record")!) } : {}) } } : {})
       });
     default:
-      throw new UsageError("local nightly|gate|mutants|watch [--dry-run]");
+      throw new UsageError("local nightly|gate|mutants|watch|smoke [--dry-run]");
   }
 }
 

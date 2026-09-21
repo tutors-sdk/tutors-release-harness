@@ -84,9 +84,12 @@ The fixtures are code the harness ships; they get tests like any other.
 
 ### Smoke (CI `two-stacks`, ~10 minutes, every PR)
 
-Both stacks up from the base tag, one journey, A/A, reports uploaded. Proves
-the substrate and the collectors end to end. Phase H0's exit criterion, kept
-running.
+Both stacks up from the base tag, one journey, A/A, reports uploaded, and the
+migration fixtures (the expanding one passes, the contracting one is rejected).
+Proves the substrate and the collectors end to end. Phase H0's exit criterion,
+kept running. CI and a maintainer run the same command: `pnpm smoke`
+(`harness local smoke`; `--dry-run` prints its four steps), which `ci.yml` calls, and
+`tests/local-parity.test.ts` holds the workflow to it.
 
 ### Mutants (`pnpm harness mutants`, ~15 minutes, weekly and on demand)
 

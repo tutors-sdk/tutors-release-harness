@@ -88,3 +88,23 @@ describe("bash", () => {
     expect(bashCommand({ HARNESS_BASH: "  " })).toBe("bash");
   });
 });
+
+describe("harness local smoke", () => {
+  it("--dry-run prints the four commands of the two-stacks smoke and starts nothing", () => {
+    const r = harness(["local", "smoke", "--dry-run", "--tag", "16.2.0"]);
+    expect(r.code).toBe(0);
+    expect(r.out).toContain("harness local smoke: 4 step(s)");
+    expect(r.out).toContain("harness images ensure --a 16.2.0 --b 16.2.0");
+    expect(r.out).toContain("harness run --mode noise --a 16.2.0 --b 16.2.0 --set fixture --journey anonymous-student-reads-course");
+    expect(r.out).toContain("b-bad");
+    expect(readdirSync(r.home)).toEqual([]);
+  });
+
+  it("--only stacks|migration, and anything else is a usage error", () => {
+    expect(harness(["local", "smoke", "--dry-run", "--only", "migration"]).out).toContain("2 step(s)");
+    const bad = harness(["local", "smoke", "--dry-run", "--only", "all"]);
+    expect(bad.code).toBe(2);
+    expect(bad.err).toMatch(/--only takes stacks or migration/);
+    expect(bad.err).not.toContain("    at ");
+  });
+});

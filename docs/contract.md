@@ -851,7 +851,7 @@ changed; and a stack under the old name is left alone.
   post-deploy `noise status`, CI's `guard`, and any script that asks whether a
   machine can run the harness), and each has a small, checkable contract (files it
   writes, exit codes).
-- **Not stable:** `harness local nightly|gate|mutants|watch` (wrappers planned
+- **Not stable:** `harness local nightly|gate|mutants|watch|smoke` (wrappers planned
   from the stable commands, which change with the workflows), `harness override
   list` (a listing for people), `harness noise history` (the ratchet as text; the
   file `noise-history.json` is what a program reads), `harness prune` (removes old

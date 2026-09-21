@@ -11,6 +11,7 @@ export { DEFAULT_PORTS, portEnv } from "./ports.ts";
  *   harness local gate      the release gate for a candidate: release (A/B, claims, k6), migration and upgrade rehearsals
  *   harness local mutants   the harness's own signal
  *   harness local watch     post-deploy comparison against production, once or every 15 minutes
+ *   harness local smoke     the two-stacks smoke of ci.yml: boot both stacks, one journey A/A, the migration fixtures accepted and rejected
  *
  * A plan is data: the argv of `harness ...` steps, exactly the lines the
  * GitHub workflows run (tests/local-parity.test.ts holds the two together), so a
@@ -44,10 +45,12 @@ export interface Step {
   gatesStream: boolean;
   /** Informational: its exit code never changes the plan's. */
   informational?: boolean;
+  /** A verdict that must be FAIL (exit 1): the smoke's contracting migration must be rejected. Exit 0 or a harness error (2) is the failure. */
+  expectFailure?: boolean;
 }
 
 export interface Plan {
-  task: "nightly" | "gate" | "mutants" | "watch";
+  task: "nightly" | "gate" | "mutants" | "watch" | "smoke";
   steps: Step[];
 }
 
@@ -128,6 +131,34 @@ export function planGate(o: GateOptions): Plan {
     steps.push({ id: "upgrade", title: "upgrade rehearsal: rollout under load", argv: ["run", "--mode", "upgrade", "--a", o.production, "--b", o.candidate, "--set", "fixture", "--journey", WORKFLOW_DEFAULTS.upgradeJourney, ...pins, ...override], stream: "upgrade", gatesStream: false });
   }
   return { task: "gate", steps };
+}
+
+/** What ci.yml's two-stacks job runs (docs/contract/workflows.json does not list it: it is this repository's own CI, not the monorepo's). */
+export const SMOKE = {
+  journey: WORKFLOW_DEFAULTS.upgradeJourney,
+  fixtures: { a: "dir:tests/fixtures/migrations/a", good: "dir:tests/fixtures/migrations/b-good", bad: "dir:tests/fixtures/migrations/b-bad" }
+} as const;
+
+export type SmokePart = "stacks" | "migration";
+
+/**
+ * The two-stacks smoke, exactly as ci.yml ran it step by step: both stacks from one tag, one journey A/A, then the
+ * migration fixtures (the expanding one must pass, the contracting one must be rejected). One stream: the first step
+ * that does not do what it must stops the rest, as `set -e` did.
+ */
+export function planSmoke(o: { tag: string; only?: SmokePart }): Plan {
+  const stacks = !o.only || o.only === "stacks";
+  const migration = !o.only || o.only === "migration";
+  const steps: Step[] = [];
+  if (stacks) {
+    steps.push({ id: "ensure", title: "pull and verify, or build, the images", argv: ["images", "ensure", "--a", o.tag, "--b", o.tag], stream: "smoke", gatesStream: true });
+    steps.push({ id: "noise", title: `both stacks boot and one journey runs, A/A on ${o.tag}`, argv: ["run", "--mode", "noise", "--a", o.tag, "--b", o.tag, "--set", "fixture", "--journey", SMOKE.journey], stream: "smoke", gatesStream: true });
+  }
+  if (migration) {
+    steps.push({ id: "migration-good", title: "migration rehearsal: the expanding fixture must pass", argv: ["run", "--mode", "migration", "--a", SMOKE.fixtures.a, "--b", SMOKE.fixtures.good], stream: "smoke", gatesStream: true });
+    steps.push({ id: "migration-bad", title: "migration rehearsal: the contracting fixture must be rejected", argv: ["run", "--mode", "migration", "--a", SMOKE.fixtures.a, "--b", SMOKE.fixtures.bad], stream: "smoke", gatesStream: true, expectFailure: true });
+  }
+  return { task: "smoke", steps };
 }
 
 export function planMutants(o: { tag: string }): Plan {
@@ -216,7 +247,10 @@ export function executePlan(plan: Plan, env: Record<string, string>, ex: Executo
       continue;
     }
     ex.log(`   harness ${filled.argv.join(" ")}`);
-    const code = ex.harness(filled.argv, env);
+    const raw = ex.harness(filled.argv, env);
+    // A step that must be rejected: the FAIL verdict (exit 1) is what it is here for; acceptance or a harness error is not.
+    const code = step.expectFailure ? (raw === 1 ? 0 : raw === 0 ? 1 : raw) : raw;
+    if (step.expectFailure) ex.log(raw === 1 ? "   rejected, as it must be" : raw === 0 ? "   ACCEPTED, and it must be rejected" : `   could not judge (exit ${raw})`);
     const mode = MODE_OF_STEP[step.id];
     const runDir = mode && step.argv[0] === "run" ? ex.latestRun(mode, started) : undefined;
     results.push({ id: step.id, title: step.title, argv: filled.argv, code, ...(runDir ? { runDir } : {}) });
