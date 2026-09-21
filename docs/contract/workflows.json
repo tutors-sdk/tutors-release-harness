@@ -41,6 +41,7 @@
     "noise-status": { "workflow": "nightly-noise.yml", "retentionDays": 8 },
     "noise-report": { "workflow": "nightly-noise.yml", "retentionDays": 8 },
     "mutant-reports": { "workflow": "weekly-mutants.yml", "retentionDays": 14 },
+    "mutant-noise-report": { "workflow": "weekly-mutants.yml", "retentionDays": 7 },
     "harness-ci": { "workflow": "ci.yml", "retentionDays": 7 }
   },
   "tools": {
@@ -88,6 +89,10 @@
     "readBy": ["post-deploy.yml"],
     "fetch": "gh api -H 'Accept: application/vnd.github.raw' repos/<repo>/contents/releases/<tag>.json?ref=release-records",
     "schema": "release-record.schema.json"
+  },
+  "runNames": {
+    "$comment": "Since 1.3.0. The title of a run (the API's display_title), so the monorepo's release-harness-report workflow can find the run a release-candidate dispatch started. Matched as a whole tag: rc.1 does not match rc.10.",
+    "release.yml": "release ${{ github.event.client_payload.candidate || inputs.candidate }}"
   },
   "dispatchInputs": {
     "$comment": "workflow_dispatch inputs added in 1.2.0. Not repository_dispatch payload fields: a dispatch from another repository cannot override.",

@@ -16,6 +16,9 @@
 # is the measure of whether the harness is trusted or merely tolerated
 # (docs/noise-burndown.md, "Overrides").
 name: Release harness
+# The run is titled for the candidate ("release 16.3.0-rc.4"), so the monorepo's release-harness-report workflow can
+# find the run its dispatch started and put the verdict on the release pull request (docs/monorepo/README.md).
+run-name: release ${{ github.event.client_payload.candidate || inputs.candidate }}
 
 on:
   workflow_dispatch:

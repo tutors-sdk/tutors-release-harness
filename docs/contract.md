@@ -728,11 +728,15 @@ Each is the run's whole `out/` directory unless noted, so a report is at
 | `noise-status` (only `<timestamp>-noise/noise-status.json`) | `nightly-noise.yml` | 8 days |
 | `noise-report` | `nightly-noise.yml` | 8 days |
 | `mutant-reports` | `weekly-mutants.yml` | 14 days |
+| `mutant-noise-report` | `weekly-mutants.yml` | 7 days (only when the self-test failed: the A/A report of the base, reports and captures only) |
 | `harness-ci` | `ci.yml` | 7 days |
 
 Each job also appends `report.md` to its step summary. A `release.yml` run
 concludes `failure` when any of its three jobs exits non-zero, `success`
-otherwise — including on `warn`.
+otherwise — including on `warn`. Since 1.3.0 the run is titled for the candidate
+(`run-name: release <candidate>`, `workflows.json` `runNames`), so a caller that
+dispatched `release-candidate` can find the run it started by title; a title matches only
+as a whole tag (`16.3.0-rc.1` is not `16.3.0-rc.10`).
 
 ## What the harness does to a pull request
 
@@ -1025,6 +1029,15 @@ change hunks in every mode; two reports from either side of it are not comparabl
   stamps each log line with the time it is printed and says `(run started <time>)`.
 - **New environment variable `HARNESS_ROLLBACK_ISSUE`** (post-deploy wording only): `1`, `true` or `yes` says a CI step
   opens a rollback issue; `0`, `false` or `no` says none does. Unset: GitHub Actions has the step, anything else does not.
+
+**Workflows: the release run has a title, and one more artifact** (no field changes)
+
+- `release.yml` sets `run-name: release <candidate>` (from the dispatch payload's
+  `candidate`, or the manual input), so a caller can find the run a `release-candidate`
+  dispatch started by title (`workflows.json` `runNames`). A title matches only as a whole
+  tag. Before, a repository-dispatched run was titled after a commit message.
+- `weekly-mutants.yml` uploads `mutant-noise-report` (7 days) when its self-test fails: the
+  A/A report of the base, reports and captures only. A new artifact is a minor addition.
 
 **The vulnerability database is one pinned directory** ([environment](#cli))
 

@@ -777,7 +777,7 @@ describe("workflows", () => {
   it("publish exactly the artifacts the contract lists", () => {
     const actual: Record<string, { workflow: string; retentionDays: number }> = {};
     for (const f of files) {
-      for (const m of text[f]!.matchAll(/uses: actions\/upload-artifact@[^\n]+\n(?:[^\n]*\n){0,3}?\s+name: ([a-z-]+)\n(?:[^\n]*\n){0,3}?\s+retention-days: (\d+)/g)) actual[m[1]!] = { workflow: f, retentionDays: Number(m[2]) };
+      for (const m of text[f]!.matchAll(/uses: actions\/upload-artifact@[^\n]+\n(?:[^\n]*\n){0,3}?\s+name: ([a-z-]+)\n(?:[^\n]*\n){0,12}?\s+retention-days: (\d+)/g)) actual[m[1]!] = { workflow: f, retentionDays: Number(m[2]) };
     }
     expect(actual).toEqual(workflowsContract.artifacts);
     for (const name of Object.keys(actual)) expect(contractMd).toContain(`\`${name}\``);

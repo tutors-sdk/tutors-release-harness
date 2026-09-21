@@ -84,6 +84,17 @@ to the release tag** (`docker buildx imagetools create -t <image>:16.3.0
 <image>:16.3.0-rc.4`, which keeps the digest) rather than rebuilding it from the
 release tag, which produces a different digest and a warning on every release.
 
+**The run is titled for the candidate.** `release.yml` sets
+`run-name: release ${{ github.event.client_payload.candidate || inputs.candidate }}`, so
+the run a dispatch started is `release 16.3.0-rc.4` in the run list and in the API's
+`display_title`. The monorepo's `release-harness-report.yml` finds the run to wait for,
+and to read `release-report` from, by matching that title as a whole tag (`rc.1` does not
+match `rc.10`); without it, it falls back to the one `repository_dispatch` run that
+started after the dispatch and refuses to guess between two. The title is contract:
+[`workflows.json`](../contract/workflows.json) `runNames`. Reading the run needs
+`HARNESS_TOKEN` to have **Actions: read** on this repository, which is the monorepo's
+setting; the harness itself still writes to no pull request.
+
 Repository secrets in the monorepo:
 
 | Secret | Value |
