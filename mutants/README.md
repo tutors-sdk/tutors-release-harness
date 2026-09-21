@@ -39,7 +39,7 @@ caught by the static image artefacts, not by anything a browser sees:
 
 | Mutant | `kind` | Built as | Must be attributed to |
 | --- | --- | --- | --- |
-| `base-swap` | `base-swap` | the production filesystem copied over another base (`alpine:3.20`, or `HARNESS_MUTANT_ALT_BASE`), with production's user, working directory, environment, ports, entrypoint and command restated from `docker image inspect` | `image-manifest` (`reader/base`: the lowest layer differs) |
+| `base-swap` | `base-swap` | the production filesystem copied over another base (`ubuntu:24.04`, or `HARNESS_MUTANT_ALT_BASE`), with production's user, working directory, environment, ports, entrypoint and command restated from `docker image inspect` | `image-manifest` (`reader/base`: the lowest layer differs) |
 | `added-package` | `planted-package` | `mutants/Dockerfile.planted-package`: the production image plus one npm package (`harness-planted-package@9.9.9`) `COPY`ed into `./node_modules`, so no root, no network and no package manager is needed | `sbom` (`reader/harness-planted-package`) |
 
 Both are built locally, so they have no cosign attestation. `harness mutants`
