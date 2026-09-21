@@ -54,7 +54,10 @@ run needs is missing, `2` is a usage error. `--json` prints the same as data;
 ## The four tasks
 
 Each is one command, planned as the list of `harness` commands the workflow
-runs. `--dry-run` prints the plan and starts nothing. All of them take
+runs. `--dry-run` prints the plan and starts nothing; each printed command line and the
+environment line are quoted for the shell you are in, so they can be pasted back (single
+quotes, a quote inside doubled in PowerShell and written `'\''` in bash, zsh and Git Bash;
+cmd.exe does not read single quotes). All of them take
 `--port-offset <n>` ([below](#running-beside-your-own-stack)); nightly, gate and
 mutants hold a lock so only one runs on the machine at a time; the environment
 defaults are the workflows' (`HARNESS_IMAGE_PREFIX` defaults to
