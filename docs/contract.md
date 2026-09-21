@@ -235,7 +235,7 @@ it looked at. The startup restarts leave every app running.
 | Exit code | Meaning |
 | --- | --- |
 | `0` | Verdict pass or warn, or a fail overridden with --override-reason; or the command succeeded |
-| `1` | Verdict fail that was not overridden; or images ensure could not obtain an image, or mutants or kind rollout did not succeed |
+| `1` | Verdict fail that was not overridden; or images ensure could not obtain an image, or mutants or kind rollout did not succeed; or doctor found a tool a run needs missing, noise record found the ratchet broken, noise status --require found a status that does not license a FAIL, or guard found a violation |
 | `2` | Usage error, the harness itself failed (an uncaught error), or an image may not be judged; no verdict was reached |
 
 "An image may not be judged" (since 1.1.0) is: at `run`, an image that is not
@@ -560,11 +560,24 @@ Full list: [`contract/cli.json`](contract/cli.json). Invoke as `pnpm harness
 <command>` from a checkout (Node ≥ 22, `pnpm install`, and for capturing modes
 `pnpm exec playwright install chromium` and Docker). Commands and flags marked
 `stable: true` there are the ones below; the rest (`harness stack`, `harness
-kind`, `harness journeys`, `--substrate`, `--now`, `--masks`, `--snapshot`,
+kind`, `harness journeys`, `harness override`, `harness local`, `harness noise
+history`, `--substrate`, `--now`, `--masks`, `--snapshot`,
 `--upgrade-*`, `--noise-max-age-days`, `--no-screenshots`, `--no-axe`,
 `--no-focus`, `--no-runtime` and `--startup-restarts` (both since 1.2.0),
 `--keep`, `--no-stack`) are for people at a terminal and may
 change in a minor release.
+
+Which of the 1.3.0 commands are stable: `doctor`, `noise record`, `noise status`
+and `guard` are, because workflows and the monorepo call them (the workflows'
+`noise status --store noise`, the nightly's `noise record`, CI's `guard`, and any
+script that asks whether a machine can run the harness). Their flags (`--status`,
+`--report`, `--tag`, `--store`, `--run-url`, `--summary`, `--require`, `--for`,
+`--base`, `--json`) are stable with them. `harness local` (the maintainer wrappers,
+whose steps are planned from the same commands and change with them), `harness
+override list` (a listing for people), `harness noise history` (the ratchet as
+text; the file `noise-history.json` is what a program reads) and the flags only
+they take (`--only`, `--migrations-a`, `--migrations-b`, `--interval`,
+`--port-offset`, `--dry-run`, `--once`, `--record`, `--last`, `--since`) are not.
 
 | Command | Stable flags |
 | --- | --- |
@@ -573,6 +586,10 @@ change in a minor release.
 | `harness images ensure` | `--a`, `--b` (required), `--a-digests`, `--b-digests` (since 1.3.0: pull by digest, verify on it, refuse a tag that has moved; a pinned image is never built), `--ref-a`, `--ref-b` (monorepo git refs to build from when the pull fails), `--image-prefix`, `--allow-unsigned`, `--image-cache <dir>` (since 1.2.0: refreshed from images pulled and verified in this run; used, as provenance `cached`, only when the registry cannot be reached, and never for a tag the registry says does not exist). With `GITHUB_OUTPUT` set it writes `image_cache=none\|used\|refreshed` |
 | `harness mutants` | `--base <tag or reader image>` (required), `--out`, `--image-prefix`, `--allow-unsigned` |
 | `harness version` | `--json` |
+| `harness doctor` (since 1.3.0) | `--for <nightly,gate,mutants,watch,kind>` (comma separated; default the first four), `--json`. Read-only: what this machine lacks to run the harness, and how to install it. Exit `0` ready (warnings allowed), `1` something a run needs is missing, `2` usage. `--json` prints `{ ok, scopes, platform, checks: [{ id, title, status: ok\|warn\|fail, detail }] }`; a check id may be added in a minor release |
+| `harness noise record` (since 1.3.0) | `--status <noise run dir\|noise-status.json>` (required), `--report <report.json>`, `--tag <tag>`, `--store <dir>` (default `<HARNESS_HOME>/noise`), `--run-url <url>`, `--summary <file>`. Appends a night to the store and rewrites its three files, exactly as the nightly publishes them to the `noise` branch: `noise-status.json` (a copy of the status), `noise-history.json`, `noise-summary.md`. Exit `0`, `1` when the ratchet is broken (the count had reached 0 and is not 0 tonight; the files are still written), `2` usage or no status |
+| `harness noise status` (since 1.3.0) | `--store <dir>`, `--require`, `--json`. Says whether the latest status licenses a FAIL (clean, without `degraded`, fresh); exit `0`, or `1` with `--require` when it does not. With `GITHUB_OUTPUT` set and a usable status it writes `noise_file=<path>` |
+| `harness guard masks\|engine\|all` (since 1.3.0) | `--base <ref>`. The PR guards of CI against a local ref: masks land in their own PR (`masks`); an engine, mask, journey, gate or mutant change needs a harness version bump (`engine`). Compares `<base>...HEAD`. Exit `0`, `1` a violation, `2` when the ref does not exist |
 | any | `--help` |
 
 `--a` / `--b` take a bare tag (`16.2.0`), one app's image reference (the other

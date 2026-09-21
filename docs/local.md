@@ -319,17 +319,26 @@ Not edited here. Listed so they can be raised there:
 1. **`release-dispatch.yml` has no local equivalent.** Tagging `vX.Y.Z-rc.N` with the GitHub API, waiting for `image-build.yml`, and dispatching are all GitHub. Locally `harness local gate --a P --b C` needs the two tags; a candidate the registry lacks is built from the git ref (unsigned, not evidence). A script in the monorepo that prints the production tag, the migration refs and the claims path for a checkout would make the local gate one line.
 2. **The production tag is read from `deploy/k8s/overlays/reader/kustomization.yaml` on `main` through `gh api`,** and `migrations_a` by probing tags and branches through `gh api`. Both are plain git lookups a local script could do (`git show main:...`, `git rev-parse --verify`).
 3. **`release/claims.yaml` is checked by the monorepo's `pnpm check:release-claims`,** a mirror of the harness's parser; the harness has no validate-only command, so a local check runs a whole `harness run`, which reads the claims file first and stops with exit 2 on a bad one before any stack starts.
-4. **The deploy job's `deployed` dispatch** has no local hook: after a deploy, run `harness local watch --once` (or leave the loop running).
+Contract 1.3.0 made these commands part of the contract (`docs/contract.md`, "CLI"
+and the changelog): `doctor`, `noise record`, `noise status` and `guard` are
+**stable**, because workflows and the monorepo depend on them; `local`,
+`override list` and `noise history` are not. The default it documents is the one
+described above: without `--noise`, release and post-deploy mode read
+`<HARNESS_HOME>/noise` (explicit `--noise`, then the store, then none; a missing
+status still only warns). `tests/contract.test.ts` lets this repository's own
+workflows call any command `cli.json` declares; what the monorepo copies may use
+only stable ones.
+
 5. **`image-build.yml` signs with GitHub OIDC keyless.** Every image a local run verifies was signed by that workflow; a locally built image cannot be signed the same way, so it is `built-from-ref` and refused as evidence. That is intended.
 
 ## Contract notes
 
-`docs/contract/cli.json` lists the new commands (`doctor`, `noise`, `guard`,
-`override`, `local`) and flags as `stable: false, since: 1.3.0`. **A contract bump
-is needed and has not been made:** without `--noise`, release and post-deploy mode
-now read the local store, where `docs/contract.md` says a missing `--noise` only
-warns (a checkout with no store, which is what CI is, behaves as before). Making any
-of the new commands stable, or documenting that default in `docs/contract.md`, is a
-minor version (1.3.0) with `CONTRACT_VERSION` and both JSON files moving together.
-`tests/contract.test.ts` now lets this repository's own workflows call any command
-`cli.json` declares; what the monorepo copies still may use only stable ones.
+Contract 1.3.0 made these commands part of the contract (`docs/contract.md`, "CLI"
+and the changelog): `doctor`, `noise record`, `noise status` and `guard` are
+**stable**, because workflows and the monorepo depend on them; `local`,
+`override list` and `noise history` are not. The default it documents is the one
+described above: without `--noise`, release and post-deploy mode read
+`<HARNESS_HOME>/noise` (explicit `--noise`, then the store, then none; a missing
+status still only warns). `tests/contract.test.ts` lets this repository's own
+workflows call any command `cli.json` declares; what the monorepo copies may use
+only stable ones.

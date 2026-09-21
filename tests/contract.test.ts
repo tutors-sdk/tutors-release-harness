@@ -32,7 +32,7 @@ const reportSchema = json("docs/contract/report.schema.json");
 const noiseSchema = json("docs/contract/noise-status.schema.json");
 const cli = json("docs/contract/cli.json") as {
   contractVersion: string;
-  commands: { name: string; stable: boolean; subcommands?: string[] }[];
+  commands: { name: string; stable: boolean; subcommands?: string[]; unstableSubcommands?: string[] }[];
   flags: { name: string; type: "string" | "boolean"; multiple?: boolean; stable: boolean; values?: string[] }[];
   exitCodes: Record<string, string>;
 };
@@ -436,6 +436,29 @@ describe("CLI", () => {
     expect(imagesFor(`reader=r@${d},catalogue=c:1@${d},live=l:1`, "tutors").reader).toBe(`r@${d}`);
     expect(() => imagesFor(`16.2.0@${d}`, "tutors")).toThrow();
     expect(() => imagesFor(`quay.io/x/tutors-reader@${d}`, "tutors")).toThrow();
+  });
+
+  it("1.3.0: doctor, noise record|status and guard are stable; local, override list and noise history are not, and the contract says which and why", () => {
+    const byName = Object.fromEntries(cli.commands.map((c) => [c.name, c]));
+    for (const name of ["doctor", "noise", "guard"]) expect(byName[name]!.stable, name).toBe(true);
+    for (const name of ["local", "override"]) expect(byName[name]!.stable, name).toBe(false);
+    expect(byName.noise!.subcommands).toEqual(["record", "status", "history"]);
+    expect(byName.noise!.unstableSubcommands).toEqual(["history"]);
+    expect(byName.guard!.subcommands).toEqual(["masks", "engine", "all"]);
+    expect(byName.guard!.unstableSubcommands).toBeUndefined();
+    for (const sub of byName.noise!.subcommands!.filter((s) => !byName.noise!.unstableSubcommands!.includes(s))) expect(contractMd, sub).toContain(`harness noise ${sub}`);
+    expect(contractMd).toContain("harness guard masks");
+    // the flags a stable command takes are stable with it, and every one of them is in the table
+    const stableFlags = new Set(cli.flags.filter((f) => f.stable).map((f) => f.name));
+    for (const flag of ["status", "report", "tag", "store", "run-url", "summary", "require", "for", "base", "json"]) expect(stableFlags.has(flag), flag).toBe(true);
+    // and the ones only the unstable commands take are not
+    for (const flag of ["only", "migrations-a", "migrations-b", "interval", "port-offset", "dry-run", "once", "record", "last", "since"]) expect(stableFlags.has(flag), flag).toBe(false);
+    expect(contractMd).toContain("Which of the 1.3.0 commands are stable");
+    // the exit codes those commands add are in cli.json and in the table
+    for (const words of ["doctor found a tool a run needs missing", "noise record found the ratchet broken", "guard found a violation"]) {
+      expect(cli.exitCodes["1"], words).toContain(words);
+      expect(contractMd, words).toContain(words);
+    }
   });
 
   it("contract.md documents every stable command and flag", () => {
