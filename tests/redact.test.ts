@@ -117,7 +117,8 @@ describe("redaction through normalise and compare", () => {
   it("redacts network URLs, the path, the tree, header values and a journey error", () => {
     const c = capture("b");
     const p = c.journeys[0]!.pages[0]!;
-    p.network.push({ method: "GET", url: `{{origin}}/rest/v1/t?apikey=${jwt("O")}`, status: 200, contentType: "application/json", cacheControl: "", schemaHash: "" });
+    // Not /rest/v1: the persistence-stub-requests mask drops those requests, so the entry would never reach the assertion.
+    p.network.push({ method: "GET", url: `{{origin}}/api/t?apikey=${jwt("O")}`, status: 200, contentType: "application/json", cacheControl: "", schemaHash: "" });
     p.path += `?apikey=${jwt("P")}`;
     p.aria += `\n- link "x":\n  - /url: /go?apikey=${publishable("Q")}`;
     p.headers.authorization = "Bearer abcdef0123456789";
@@ -125,7 +126,7 @@ describe("redaction through normalise and compare", () => {
     const out = normalise(c, masks, "release").capture;
     expect(JSON.stringify(out)).not.toMatch(/eyJ|sb_publishable|abcdef0123456789/);
     expect(out.journeys[0]!.pages[0]!.headers.authorization).toBe(REDACTED);
-    expect(out.journeys[0]!.pages[0]!.network.at(-1)!.url).toBe(`{{origin}}/rest/v1/t?apikey=${REDACTED}`);
+    expect(out.journeys[0]!.pages[0]!.network.at(-1)!.url).toBe(`{{origin}}/api/t?apikey=${REDACTED}`);
   });
 
   it("is pure: the input capture is untouched", () => {
