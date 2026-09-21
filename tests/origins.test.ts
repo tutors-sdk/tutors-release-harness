@@ -32,6 +32,21 @@ describe("externalOrigins", () => {
   });
 });
 
+describe("the time app's origin is an origin like the others", () => {
+  it("is read from an external side's time image, and a literal link to it reads as {{origin}} on the recorded side", () => {
+    const TIME = "https://time.tutors.dev";
+    const production = () => {
+      const c = external(withLinks(capture("b"), "{{origin}}/1234/medians"));
+      c.images = { ...c.images, time: `external:${TIME}` };
+      return c;
+    };
+    expect(externalOrigins(capture("a"), production())).toContain(TIME);
+    expect(diff(withLinks(capture("a"), `${TIME}/1234/medians`), production())).toEqual([]);
+    // a side with no time URL ("-") contributes no origin
+    expect(externalOrigins(capture("a"), { ...external(capture("b")), images: { ...external(capture("b")).images, time: "-" } })).not.toContain("-");
+  });
+});
+
 describe("rewriteOrigins", () => {
   it("rewrites the origin, the origin with a path, a query and a fragment", () => {
     expect(rewriteOrigins(`${PROD} ${PROD}/x?y=1 ${PROD}#top "${PROD}"`, [PROD]).text).toBe('{{origin}} {{origin}}/x?y=1 {{origin}}#top "{{origin}}"');

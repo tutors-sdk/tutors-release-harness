@@ -143,6 +143,10 @@ describe("missing tools, with the fix for the platform", () => {
   it("no syft is a failure only where the mutants need it, a warning elsewhere", async () => {
     const withMutants = await run({ tools: { syft: notInstalled } }, ["mutants"]);
     expect(find(withMutants.checks, "syft")!.status).toBe("fail");
+    // On Windows the default generator is syft in its own container: no native syft is needed, unless a command is named.
+    const onWindows = await run({ platform: "win32", tools: { syft: notInstalled } }, ["mutants"]);
+    expect(find(onWindows.checks, "syft")!.status).toBe("ok");
+    expect(find((await run({ platform: "win32", env: { HARNESS_SBOM_CMD: "syft docker:{image} -o spdx-json" }, tools: { syft: notInstalled } }, ["mutants"])).checks, "syft")!.status).toBe("fail");
     const gateOnly = await run({ tools: { syft: notInstalled } }, ["gate"]);
     expect(find(gateOnly.checks, "syft")!.status).toBe("warn");
     expect(gateOnly.ok).toBe(true);
@@ -153,6 +157,9 @@ describe("missing tools, with the fix for the platform", () => {
     expect(find((await run({ tools: { grype: notInstalled } })).checks, "grype")!.status).toBe("warn");
     const strict = await run({ tools: { grype: notInstalled }, env: { HARNESS_REQUIRE_STATIC: "1" } });
     expect(find(strict.checks, "grype")!.status).toBe("fail");
+    // the same requirement by the unified name; another artefact's requirement does not make grype mandatory
+    for (const list of ["vulns", "static", "all"]) expect(find((await run({ tools: { grype: notInstalled }, env: { HARNESS_REQUIRE_ARTEFACTS: list } })).checks, "grype")!.status, list).toBe("fail");
+    expect(find((await run({ tools: { grype: notInstalled }, env: { HARNESS_REQUIRE_ARTEFACTS: "sbom" } })).checks, "grype")!.status).toBe("warn");
   });
 
   it("grype without a database, updates being off during a run, warns", async () => {

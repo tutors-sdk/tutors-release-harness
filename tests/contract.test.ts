@@ -413,6 +413,28 @@ describe("one whole run carrying every 1.3.0 addition at once", () => {
     expect(kindCluster({}, harnessRoot()).name).not.toBe("tutors-harness");
   });
 
+  it("post-deploy against an external side, with a secret in the console, reordered headers and a gap: still one valid report, no schema change, no secret in any file", () => {
+    // Synthetic, assembled at run time: not a credential.
+    const key = ["eyJhbGciOiJIUzI1NiJ9", "eyJyb2xlIjoiWCJ9", "c2lnbmF0dXJlWA"].join(".");
+    const recorded = capture("a");
+    const production = capture("b", { images: { reader: "external:https://tutors.dev", catalogue: "external:https://catalogue.tutors.dev", live: "external:https://live.tutors.dev", time: "external:https://time.tutors.dev" } });
+    // the same headers, spelled the way a CDN spells them
+    recorded.journeys[0]!.pages[0]!.headers["cache-control"] = "public, max-age=300, immutable";
+    production.journeys[0]!.pages[0]!.headers["cache-control"] = "immutable,max-age=300,public";
+    production.journeys[0]!.pages[0]!.console.push({ level: "error", text: `blocked: https://example-project.supabase.co/rest/v1/app_errors?apikey=${key}` });
+    recorded.journeys[0]!.pages[0]!.console.push({ level: "error", text: `blocked: https://example-project.supabase.co/rest/v1/app_errors?apikey=${key}` });
+    const dir = mkdtempSync(join(tmpdir(), "harness-whole-external-"));
+    const result = compareFromCaptures({ mode: "post-deploy", substrate: "compose", captureDir: dir, a: recorded, b: production, claims: [], masksFile: DEFAULT_MASKS_FILE, noiseMaxAgeDays: 7, now: "2026-09-16T09:05:00.000Z", runs: 1, log: () => {} });
+    const written = JSON.parse(readFileSync(result.files.json, "utf8")) as RunReport;
+    expectValid(validateReport, written);
+    expect(written.verdict).toBe("pass");
+    // every file the run wrote to its report directory: none holds the value
+    for (const file of [result.files.json, result.files.md, result.files.html]) expect(readFileSync(file, "utf8"), file).not.toContain(key);
+    expect(JSON.stringify(written)).not.toContain("eyJ");
+    // the four apps, `time` included, are what the report's sides name
+    expect(Object.keys(written.sides.b).sort()).toEqual([...APPS].sort());
+  });
+
   it("a 1.2.0 dispatch, claims file and report are still valid: none of the new fields is required anywhere", () => {
     expect(validateReport(clone(runFixture("release").written))).toBe(true);
     expect(Object.keys(reportSchema.properties.deployment.properties)).not.toContain("required");
@@ -565,6 +587,28 @@ describe("CLI", () => {
     for (const c of cli.commands) expect(source, `usage text for ${c.name}`).toContain(`harness ${c.name}`);
   });
 
+  it("every subcommand cli.json lists is dispatched and has usage, and the dispatch of `local` and `vuln-db` has no subcommand cli.json lacks", () => {
+    const local = read("src/local/cli.ts");
+    const arms = (fn: string) => {
+      const start = local.indexOf(fn);
+      expect(start, fn).toBeGreaterThan(-1);
+      const body = local.slice(start, local.indexOf("\n}\n", start));
+      return [...body.matchAll(/^\s{4}case "([a-z-]+)":/gm)].map((m) => m[1]!);
+    };
+    const byName = Object.fromEntries(cli.commands.map((c) => [c.name, c]));
+    expect(arms("export function vulnDbCommand").sort()).toEqual([...byName["vuln-db"]!.subcommands!].sort());
+    expect(arms("export function buildPlan").sort()).toEqual([...byName.local!.subcommands!].sort());
+    for (const c of cli.commands) {
+      for (const sub of c.subcommands ?? []) {
+        expect(`${source}\n${local}`, `${c.name} ${sub}`).toContain(`"${sub}"`);
+        expect(source, `usage for ${c.name} ${sub}`).toMatch(new RegExp(`harness ${c.name}[^\\n]*\\b${sub}\\b`));
+      }
+    }
+    // the 1.3.0 commands are declared, and none of them is stable; a command with no subcommands lists none
+    for (const name of ["prune", "vuln-db", "local"]) expect(byName[name]!.stable, name).toBe(false);
+    expect(byName.prune!.subcommands).toBeUndefined();
+  });
+
   it("the enumerated flag values are the code's", () => {
     expect(cli.flags.find((f) => f.name === "mode")!.values).toEqual([...MODES]);
     expect(cli.flags.find((f) => f.name === "substrate")!.values).toEqual([...SUBSTRATES]);
@@ -578,7 +622,7 @@ describe("CLI", () => {
     expect(env.HARNESS_COSIGN_ISSUER!.default).toBe(DEFAULT_COSIGN_ISSUER);
     for (const name of Object.keys(env).filter((k) => !k.startsWith("$"))) {
       expect(contractMd, name).toContain(`\`${name}\``);
-      expect(["src/images.ts", "src/run.ts", "src/claims/hygiene.ts", "src/image-static/collect.ts", "src/compare/image-static.ts", "src/local/home.ts", "src/project.ts"].map((f) => read(f)).join(" "), name).toContain(name);
+      expect(["src/images.ts", "src/run.ts", "src/claims/hygiene.ts", "src/image-static/collect.ts", "src/compare/image-static.ts", "src/local/home.ts", "src/project.ts", "src/not-collected.ts"].map((f) => read(f)).join(" "), name).toContain(name);
     }
     expect(contractMd).toContain(`\`${DEFAULT_COSIGN_IDENTITY}\``);
     // The forms the contract promises, against the one function that expands them.
@@ -713,10 +757,12 @@ describe("workflows", () => {
 
   it("install cosign 3 in every job that runs images ensure, and nowhere pass --allow-unsigned", () => {
     const tools = (json("docs/contract/workflows.json") as { tools: { cosign: { action: string; minimumMajor: number; usedBy: string[] } } }).tools.cosign;
-    const using = files.filter((f) => text[f]!.includes("harness images ensure")).sort();
+    // `harness local smoke` runs `images ensure` itself (ci.yml calls it instead of spelling the step out)
+    const ensuring = /harness images ensure|harness local smoke/;
+    const using = files.filter((f) => ensuring.test(text[f]!)).sort();
     expect(using).toEqual(tools.usedBy);
     for (const f of using) {
-      const ensures = [...text[f]!.matchAll(/harness images ensure/g)].length;
+      const ensures = [...text[f]!.matchAll(new RegExp(ensuring, "g"))].length;
       const installs = [...text[f]!.matchAll(new RegExp(`uses: ${tools.action}@v(\\d+)`, "g"))];
       expect(installs.length, f).toBe(ensures);
       // cosign-installer v4 is the first whose default is cosign 3.

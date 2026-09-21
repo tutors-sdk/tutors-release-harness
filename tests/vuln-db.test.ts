@@ -250,6 +250,9 @@ describe("harness vuln-db status", () => {
     const strict = fake({ grype: missing, env: { HARNESS_HOME: "/h", HARNESS_REQUIRE_STATIC: "1" } });
     expect(vulnDbStatus(strict.deps, { json: false })).toBe(1);
     expect(strict.lines.join("\n")).not.toContain("informational");
+    // the unified convention (src/not-collected.ts): naming vulns, static or all in HARNESS_REQUIRE_ARTEFACTS is the same requirement
+    for (const list of ["vulns", "static", "all"]) expect(vulnDbStatus(fake({ grype: missing, env: { HARNESS_HOME: "/h", HARNESS_REQUIRE_ARTEFACTS: list } }).deps, { json: false }), list).toBe(1);
+    expect(vulnDbStatus(fake({ grype: missing, env: { HARNESS_HOME: "/h", HARNESS_REQUIRE_ARTEFACTS: "sbom" } }).deps, { json: false })).toBe(0);
   });
 
   it("too old: the same rule, with the limit named", () => {
