@@ -43,6 +43,8 @@ Every run writes `out/<timestamp>-<mode>/` with `a/` and `b/` captures
 (`capture.json`, screenshots, k6 output), `report.json`, `report.html`,
 `report.md` (the PR comment) and, in noise mode, `noise-status.json`.
 
+**New here? Start with the [user guide](docs/user-guide/README.md)** (release authors, operators, CI integrators and harness developers, with a ten-minute quickstart).
+
 Docs: [where the A and B images come from](docs/images.md) ·
 [the integration contract](docs/contract.md) ·
 [modes](docs/modes.md) · [claims](claims/README.md) ·
