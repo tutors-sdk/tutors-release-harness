@@ -1,6 +1,6 @@
 {
   "name": "tutors-release-harness",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Runs a Tutors release candidate beside the production image, diffs everything observable, and fails unless every difference is claimed.",
   "license": "MIT",
   "private": true,

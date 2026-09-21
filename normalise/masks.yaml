@@ -68,6 +68,17 @@ masks:
       commit on different machines — request different file names. What is compared instead is how many
       chunks and stylesheets each page loads and their statuses; a bundle that grows or splits still shows.
 
+  - id: footer-tutors-version
+    artefact: dom
+    pattern: "(Tutors v:\\s*)\\d+\\.\\d+\\.\\d+(?:[-+][0-9A-Za-z.+-]+)?"
+    replace: "$1{{version}}"
+    reason: >-
+      The UI footer prints the release's own version ("Tutors v:" + APP_VERSION, the element marked
+      data-tutors-build="version"), so every release differs there by construction. The ARIA snapshot
+      carries text but no attributes, so the mask keys on the label: only the semver token directly after
+      "Tutors v:" is rewritten. Other footer text, other version-like strings, and the label itself still
+      compare. The version is not a regression; whether the footer is present and worded the same is.
+
   - id: transport-length
     artefact: headers
     header: content-length
