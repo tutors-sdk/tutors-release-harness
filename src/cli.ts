@@ -15,6 +15,7 @@ import { CLUSTER, kindDown, kindRollout, kindSide, kindUp } from "./substrate/ki
 import { refuseLegacyCluster } from "./project.ts";
 import { MODES, SUBSTRATES, type Mode, type Substrate } from "./types.ts";
 import { harnessInfo } from "./version.ts";
+import { RequirementError, requirements } from "./not-collected.ts";
 import { UsageError, doctorCommand, guardCommand, localCommand, noiseCommand, overrideCommand, pruneCommand, recordAppliedOverride } from "./local/cli.ts";
 import { defaultNoise } from "./local/noise-store.ts";
 
@@ -231,6 +232,9 @@ async function main(argv: string[]): Promise<number> {
     return 0;
   }
 
+  // An unknown name in HARNESS_REQUIRE_ARTEFACTS would quietly require less than the operator meant: refuse it before anything runs.
+  if (command === "run" || command === "compare" || command === "mutants") requirements(process.env);
+
   const defaults = defaultRunOptions();
   const sets = values.set ? (values.set.split(",").map((s) => s.trim()) as JourneySet[]) : defaults.sets;
   for (const s of sets) if (!["fixture", "auth", "reference"].includes(s)) fail(`unknown journey set "${s}"`);
@@ -432,7 +436,7 @@ main(process.argv.slice(2)).then(
       process.exit(EXIT_CANNOT_JUDGE);
     }
     // A usage error of the local commands, or digests that are not digests: the message, not a stack.
-    if (error instanceof UsageError || error instanceof DigestError) {
+    if (error instanceof UsageError || error instanceof DigestError || error instanceof RequirementError) {
       console.error(error.message);
       process.exit(2);
     }

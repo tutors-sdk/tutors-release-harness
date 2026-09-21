@@ -1,5 +1,6 @@
 import type { NotCollected, StartupCapture, StartupSample } from "../types.ts";
 import type { Restarter } from "./targets.ts";
+import { notCollectedText } from "../not-collected.ts";
 import { reasonOf } from "./tool.ts";
 
 /**
@@ -92,7 +93,7 @@ export async function collectStartup(deps: StartupDeps): Promise<StartupCapture 
       apps[app] = { samples };
     } catch (e) {
       const reason = reasonOf(e);
-      log(`    startup: ${app} not collected: ${reason}`);
+      log(`    ${notCollectedText({ what: "startup time", subject: app, reason })}`);
       apps[app] = { collected: false, reason } satisfies NotCollected;
     }
   }

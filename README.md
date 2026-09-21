@@ -192,7 +192,9 @@ Environment: `HARNESS_IMAGE_PREFIX` (a prefix, `tutors`, or a template,
 `quay.io/tutors-sdk/tutors-{app}`), `HARNESS_COSIGN_IDENTITY` and
 `HARNESS_COSIGN_ISSUER` (who must have signed a pulled image; default the
 monorepo's `image-build.yml` workflow via GitHub OIDC), `HARNESS_ALLOW_UNSIGNED`,
-`HARNESS_PROVENANCE_FILE`. `--a`/`--b` also take
+`HARNESS_PROVENANCE_FILE`, `HARNESS_REQUIRE_ARTEFACTS` (artefacts whose "NOT COLLECTED" gap
+fails instead of informing: a list of `sbom`, `vulns`, `image-manifest`, `runtime`, `startup`,
+`bus`, or `static`, or `all`; `HARNESS_REQUIRE_STATIC=1` is the alias for `static`). `--a`/`--b` also take
 `reader=REF,catalogue=REF,live=REF` with each `REF` pinned as `repo@sha256:…` —
 [docs/images.md](docs/images.md).
 

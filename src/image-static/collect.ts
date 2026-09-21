@@ -1,5 +1,6 @@
 import { realExec, trustPolicyFromEnv, type Exec, type TrustPolicy } from "../images.ts";
 import type { ImageInfo, SideProvenance, SideSpec } from "../types.ts";
+import { notCollectedText } from "../not-collected.ts";
 import { osTempFiles, type TempFiles } from "./command.ts";
 import { collectManifest } from "./manifest.ts";
 import { DEFAULT_SBOM_CMD, collectSbom, type SbomAcquired, type SbomSourcePolicy } from "./sbom.ts";
@@ -58,7 +59,7 @@ function collectApp(app: ImageApp, ref: string, info: ImageInfo | undefined, dep
   // The text was only for the scanner; what is kept is the package multiset.
   const { spdxText: _text, ...keptSbom } = sbom as SbomAcquired;
   for (const [kind, value] of [["manifest", manifest], ["sbom", sbom], ["vulns", vulns]] as const) {
-    if (!value.ok) log(`  ${app}: ${kind} NOT COLLECTED: ${value.reason}`);
+    if (!value.ok) log(`  ${notCollectedText({ what: kind, subject: app, reason: value.reason })}`);
   }
   return { manifest, sbom: keptSbom as Collected<SbomData>, vulns };
 }

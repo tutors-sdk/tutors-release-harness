@@ -1,6 +1,7 @@
 import type { EngineConfig } from "../normalise/masks.ts";
 import type { ContainerPosture, Hunk, NotCollected, RuntimeCapture, SideCapture, StartupCapture, StartupSample } from "../types.ts";
 import { mannWhitney } from "./engines.ts";
+import { notCollectedHunk } from "../not-collected.ts";
 import { hunkId } from "./pages.ts";
 
 /**
@@ -17,8 +18,10 @@ import { hunkId } from "./pages.ts";
  *            the same Mann-Whitney test as timing.
  *
  * Neither ever passes silently: an artefact that could not be collected is a
- * failing hunk (claimable, with a reason, like any other difference) unless an
- * operator switched it off, in which case it is informational and still shown.
+ * `<subject>/not-collected` hunk (src/not-collected.ts: one convention for every
+ * artefact). Both are required by default, so it fails (claimable, with a reason,
+ * like any other difference) unless an operator switched the artefact off, in
+ * which case it is informational and still shown.
  * A capture with no such field at all was recorded before contract 1.2.0, or
  * belongs to a live deployment the harness cannot inspect: nothing to compare.
  */
@@ -28,7 +31,6 @@ type Sev = Hunk["severity"];
 
 const hunk = (artefact: "runtime" | "startup", scope: string, severity: Sev, summary: string, detail?: string): Hunk => ({ id: hunkId(artefact, scope), artefact, scope, severity, summary, ...(detail ? { detail } : {}) });
 
-const notCollectedText = (n: NotCollected) => `not collected: ${n.reason}`;
 const legacy: NotCollected = { collected: false, reason: "the capture was recorded by a harness older than contract 1.2.0" };
 
 /** What a side's artefact is, for the comparison: absent on both sides means there is nothing to say. */
@@ -44,7 +46,7 @@ function wholeGap(artefact: "runtime" | "startup", a: { collected: boolean } | N
     if (capture.collected) continue;
     const n = capture as NotCollected;
     ok = false;
-    out.push(hunk(artefact, `${artefact}/not-collected`, n.disabled ? "info" : "fail", `${artefact === "runtime" ? "container runtime posture" : "startup time"} ${notCollectedText(n)} (side ${side})`));
+    out.push(notCollectedHunk({ artefact, scopeSubject: artefact, what: artefact === "runtime" ? "container runtime posture" : "startup time", side, reason: n.reason, ...(n.disabled ? { disabled: true } : {}) }));
   }
   return ok;
 }
@@ -138,7 +140,7 @@ export const runtime: Engine = (a, b) => {
     for (const [side, c] of gap) {
       if (c && "effective" in c) continue;
       ok = false;
-      hunks.push(hunk("runtime", `${app}/not-collected`, "fail", `${app}: container posture ${c ? notCollectedText(c as NotCollected) : "not collected: no such container on this side"} (side ${side})`));
+      hunks.push(notCollectedHunk({ artefact: "runtime", scopeSubject: app, what: "container posture", subject: app, side, reason: c ? (c as NotCollected).reason : "no such container on this side" }));
     }
     if (!ok) continue;
     compareContainer(app, ca as ContainerPosture, cb as ContainerPosture, hunks);
@@ -197,7 +199,7 @@ export const startup: Engine = (a, b, ctx) => {
     for (const [side, e] of [["a", ea], ["b", eb]] as const) {
       if (e && "samples" in e) continue;
       ok = false;
-      hunks.push(hunk("startup", `${app}/not-collected`, "fail", `${app}: startup time ${e ? notCollectedText(e as NotCollected) : "not collected: no such app on this side"} (side ${side})`));
+      hunks.push(notCollectedHunk({ artefact: "startup", scopeSubject: app, what: "startup time", subject: app, side, reason: e ? (e as NotCollected).reason : "no such app on this side" }));
     }
     if (!ok) continue;
     const samplesA = (ea as { samples: StartupSample[] }).samples;

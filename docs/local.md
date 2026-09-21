@@ -42,7 +42,7 @@ run needs is missing, `2` is a usage error. `--json` prints the same as data;
 | Node >= 22, pnpm, git | the harness itself, the guards, the version stamp |
 | Docker daemon reachable, **Linux containers**, Compose v2, the daemon's clock against the host's | every stack; Docker Desktop's VM clock drifts after sleep and breaks pulls and signature checks |
 | cosign >= 3 | a registry image is not judged without a verified signature (exit 2); cosign 2 reads the monorepo's signatures as missing |
-| syft, grype and grype's database | mutants need syft; the vulnerability artefact is "not collected" without grype, and the harness switches database updates off during a run |
+| syft, grype and grype's database | mutants need syft; the vulnerability artefact is "NOT COLLECTED" without grype (informational, unless `HARNESS_REQUIRE_ARTEFACTS` names `vulns`), and the harness switches database updates off during a run |
 | Playwright's Chromium | every journey, including the post-deploy watch |
 | helper images already local: k6, `postgres:16-alpine`, the fixture stubs' `node:22-bookworm-slim` | a run that has to work offline |
 | free disk, `HARNESS_HOME` writable | images, SBOMs and captures |

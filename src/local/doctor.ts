@@ -1,5 +1,6 @@
 import { parse } from "yaml";
 import type { Exec } from "../images.ts";
+import { requirements } from "../not-collected.ts";
 import { LEGACY_PROJECT, composeProject, kindCluster } from "../project.ts";
 
 /**
@@ -266,8 +267,8 @@ export async function runDoctor(scopes: Scope[], deps: DoctorDeps): Promise<{ ok
   if (grypeSeverity) {
     const g = exec("grype", ["version"]);
     if (g.status !== 0) {
-      const required = env.HARNESS_REQUIRE_STATIC && /^(1|true|yes)$/i.test(env.HARNESS_REQUIRE_STATIC);
-      checks.push(bad(required ? "fail" : grypeSeverity, "grype", "grype", `not installed: the vulnerability artefact is 'not collected'${required ? ", and HARNESS_REQUIRE_STATIC makes that a failing hunk" : " (informational)"}`, FIX.grype));
+      const required = requirements(env).required.has("vulns");
+      checks.push(bad(required ? "fail" : grypeSeverity, "grype", "grype", `not installed: the vulnerability artefact is 'not collected'${required ? ", and HARNESS_REQUIRE_ARTEFACTS (or HARNESS_REQUIRE_STATIC) makes that a failing hunk" : " (informational)"}`, FIX.grype));
     } else {
       checks.push(ok("grype", "grype", /^Version:\s*(\S+)/m.exec(g.stdout)?.[1] ?? "installed"));
       // The harness switches grype's database updates off so a CVE published mid-run cannot look like a change.

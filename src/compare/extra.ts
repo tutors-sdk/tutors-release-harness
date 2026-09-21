@@ -1,6 +1,7 @@
 import { structuredPatch } from "diff";
 import type { EngineConfig } from "../normalise/masks.ts";
 import type { Hunk, SideCapture } from "../types.ts";
+import { notCollectedHunk, requirements } from "../not-collected.ts";
 import { mannWhitney } from "./engines.ts";
 import { ledgerHunks } from "./ledger.ts";
 import { hunkId, pagePairs } from "./pages.ts";
@@ -52,8 +53,12 @@ export const persistence: Engine = (a, b) =>
  * What each side published to the message bus during each journey, by topic:
  * the same two rules as persistence, when both sides collected bus traffic.
  * A side that collected against one that did not is one informational hunk,
- * never a failure (a live deployment has no recorder); neither side collecting
- * yields nothing here, the loud "not collected" being the collector's job.
+ * never a failure (a live deployment has no recorder). Neither side collecting
+ * yields nothing here by default, the loud "not collected" being the collector's
+ * job (its run log line and `capture.json`): no bus exists yet, so a hunk on every
+ * report would be noise. When a pipeline requires the artefact
+ * (HARNESS_REQUIRE_ARTEFACTS=bus) the gap is a failing `bus/not-collected` hunk
+ * (src/not-collected.ts), except against a live deployment, which has no recorder.
  */
 export const bus: Engine = (a, b) => {
   const bothCollected = a.bus?.collected === true && b.bus?.collected === true;
@@ -68,6 +73,10 @@ export const bus: Engine = (a, b) => {
   if (!bothCollected && (a.bus?.collected || b.bus?.collected)) {
     const side = a.bus?.collected ? "a" : "b";
     hunks.push({ id: hunkId("bus", "collection"), artefact: "bus", scope: "collection", severity: "info", summary: `bus traffic was collected on ${side} only; no bus comparison was possible` });
+  }
+  if (!a.external && !b.external && requirements().required.has("bus")) {
+    const gaps = [["a", a.bus], ["b", b.bus]].flatMap(([side, s]) => (s && typeof s === "object" && s.collected === false ? [{ side: side as "a" | "b", reason: s.reason }] : []));
+    if (gaps.length) hunks.push(notCollectedHunk({ artefact: "bus", scopeSubject: "bus", what: "bus traffic", side: gaps.length === 2 ? "both" : gaps[0]!.side, reason: gaps.length === 2 && gaps[0]!.reason !== gaps[1]!.reason ? `a: ${gaps[0]!.reason}; b: ${gaps[1]!.reason}` : gaps[0]!.reason }));
   }
   return hunks;
 };

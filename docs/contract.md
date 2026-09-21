@@ -176,9 +176,12 @@ None of that is reported as "no difference". The report carries:
 
 - `imageArtefacts.<side>.<app>.<manifest|sbom|vulns>` = `{ collected: false, reason }`;
 - a line in `reasons` starting `NOT COLLECTED:`;
-- an informational hunk `<app>/not-collected` under the artefact that could not
-  be compared: a failing one when `HARNESS_REQUIRE_STATIC=1`, which is what a
-  release pipeline that must not pass without an SBOM diff sets.
+- a hunk `<app>/not-collected` under the artefact that could not be compared:
+  informational, and failing when the artefact is required
+  (`HARNESS_REQUIRE_ARTEFACTS=sbom`, `=static` for all three, or the older alias
+  `HARNESS_REQUIRE_STATIC=1`), which is what a release pipeline that must not
+  pass without an SBOM diff sets. The convention is the same for every artefact,
+  see [Not collected](#not-collected-one-convention).
 
 The vulnerability scan needs the SBOM; with no SBOM it is not collected either.
 A side without `imageArtefacts` (an external side, migration mode) is not
@@ -186,6 +189,28 @@ compared at all.
 
 Claims name these artefacts like any other, e.g. `artefact: sbom`,
 `scope: "reader/@sveltejs/kit"`; see [`claims/README.md`](../claims/README.md).
+
+### Not collected: one convention
+
+Since 1.3.0, one rule for every artefact whose collector can come up empty
+(`image-manifest`, `sbom`, `vulns`, `runtime`, `startup`, `bus`); it lives in
+`src/not-collected.ts`.
+
+| | |
+| --- | --- |
+| Text | `NOT COLLECTED: <what>[ of <app>][ on side <a or b>, or on both sides]: <reason>`, in a hunk's `summary`, in `reasons` (static artefacts) and in the run log |
+| Hunk | the artefact's own `artefact`; `scope` `<app>/not-collected`, or `<artefact>/not-collected` when the whole artefact is missing (`runtime/not-collected`, `startup/not-collected`, `bus/not-collected`) |
+| Severity | informational, unless the artefact is **required**, and then `fail`; always informational when an operator switched the artefact off (`--no-runtime`, `--startup-restarts 0`) |
+| Required | `runtime` and `startup` always (their collectors run against the stacks the harness started, so a gap is a fault); and what `HARNESS_REQUIRE_ARTEFACTS` lists, with `HARNESS_REQUIRE_STATIC=1` as an alias for `static` |
+
+The artefacts that depend on a tool that may legitimately be absent from a
+developer's machine (`syft`, `grype`, an SBOM attestation, a message bus) are
+therefore informational until a pipeline requires them. `bus` is the one that adds
+no hunk while it is informational: no bus exists yet, and a hunk on every report
+would change every report; it stays a run-log line and a `capture.json` field
+until `HARNESS_REQUIRE_ARTEFACTS` includes it, and is never asked of a live
+deployment. Like any other hunk, a not-collected one is claimed with `artefact` and
+a scope glob (`runtime`, any app, `/not-collected`).
 
 ### Container runtime artefacts
 
@@ -218,7 +243,7 @@ that more restarts are needed.
 `docker` or `kubectl` missing or failing, the in-container probe unreadable,
 a restart that could not be driven — is a `fail` hunk with scope
 `runtime/not-collected`, `startup/not-collected` or `<app>/not-collected` and a
-summary of the form `… not collected: <reason>`. It gates like any unclaimed
+summary of the form `NOT COLLECTED: <what> …: <reason>`. It gates like any unclaimed
 difference, and is claimed like one (`artefact: runtime`, `scope:
 "*/not-collected"`, a reason a reviewer can weigh). An operator's choice
 (`--no-runtime`, `--startup-restarts 0`, and always `--startup-restarts 0` in
@@ -631,7 +656,8 @@ Environment variables in the contract, all since 1.1.0 unless the row says other
 | `HARNESS_SBOM_CMD` | `syft docker:{image} -o spdx-json` | since 1.2.0. The generator for `generate`; `{image}` is the image reference. Split on whitespace and quotes; no shell |
 | `HARNESS_VULN_CMD` | `grype sbom:{sbom} -o json` | since 1.2.0. The scanner; `{sbom}` is the path of the SPDX SBOM; must print grype or trivy JSON. trivy: `trivy sbom --format json {sbom}` |
 | `HARNESS_VULN_DB_DIR` | unset | since 1.2.0. A pre-fetched scanner database directory. Scanner database updates are always switched off, so a scan uses exactly this database |
-| `HARNESS_REQUIRE_STATIC` | unset | `1`, `true` or `yes`, since 1.2.0: a static image artefact that could not be collected is a failing hunk, not an informational one |
+| `HARNESS_REQUIRE_ARTEFACTS` | unset | since 1.3.0. A comma separated list of artefacts (`image-manifest`, `sbom`, `vulns`, `runtime`, `startup`, `bus`), or `static` (the first three), or `all`, whose "not collected" gap is a failing hunk instead of an informational one. It only adds to what is already required (`runtime` and `startup`); a name it does not know is an error (exit 2), so a typo cannot loosen a gate. See [Not collected](#not-collected-one-convention) |
+| `HARNESS_REQUIRE_STATIC` | unset | `1`, `true` or `yes`, since 1.2.0: the same as `HARNESS_REQUIRE_ARTEFACTS=static`, kept as an alias; the two add up |
 
 Stdout is for people, except `harness version --json`. The last lines of
 `run` and `compare` are `verdict: <VERDICT>`, the reasons, and
@@ -839,6 +865,22 @@ changed; and a stack under the old name is left alone.
   that does not license a FAIL, and `guard` finding a violation.
 - This repository's own workflows may call any command `cli.json` declares; the
   copies handed to the monorepo (`docs/monorepo/`) may call only stable ones.
+
+**Not collected: one convention** ([details](#not-collected-one-convention); *needs
+a contract decision before 1.3.0 is released*, see
+[releases/1.3.0-not-collected.md](releases/1.3.0-not-collected.md))
+
+- New environment variable `HARNESS_REQUIRE_ARTEFACTS` (a list of artefacts, or
+  `static`, or `all`), which supersedes `HARNESS_REQUIRE_STATIC`; that stays as an
+  alias for `static`. It only adds to the required set, and an unknown name is exit `2`.
+- Severity, hunk scopes and `artefact` values are unchanged: static artefacts
+  are informational unless required, `runtime` and `startup` are failing unless
+  switched off, so no existing gate changes. The text is one shape,
+  `NOT COLLECTED: <what> …: <reason>`, where `runtime` and `startup` said
+  `… not collected: <reason> (side b)` and the static artefacts' summary said
+  `<app>: sbom NOT COLLECTED on side b, so it was not compared`. A consumer that
+  matched a summary's text (the contract only promises `artefact`, `scope`,
+  `path` and `severity`) must match the new one.
 
 **Checkout names** ([environment](#cli))
 
