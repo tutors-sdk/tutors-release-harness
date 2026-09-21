@@ -57,9 +57,12 @@ Not defects, but places a reviewer should look:
   apps (#298, #310), so the digests match by construction for a promoted app. A
   cluster that runs something other than what was pinned is not caught by this
   check, only by the post-deploy journeys.
-- **The harness verdict is not yet posted on the release PR.** The monorepo's
-  `release-harness-report.yml` would do it, but is on a branch, not on main (see
-  the [README](README.md#pending)).
+- **The verdict on the release PR is the monorepo's job, and it polls.** The
+  harness never writes to a PR (decision 22). `release-harness-report.yml`
+  (#312) finds the harness run by the title `release <candidate>`, waits up to 45
+  minutes, and posts one marked comment. It is best-effort: a token without
+  Actions: read, no open PR or a timeout is said in its own summary and blocks
+  nothing (`release-harness-report.yml:70`, `scripts/release-report-comment.ts:134`).
 - **k6 is `grafana/k6:latest` unless pinned** with `HARNESS_K6_IMAGE`; `harness
   doctor` warns (`docs/local.md` X6).
 - **Journeys are six, not a hundred.** A journey is added only when a real

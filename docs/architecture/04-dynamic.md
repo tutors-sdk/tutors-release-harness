@@ -7,9 +7,9 @@ conventions: [README](README.md#legend).
 
 The stacks hold four apps (`time` included), and the nightly and release
 workflows run five journey repetitions a side (four is the least that can reach
-alpha 0.05 on timing; `docs/releases/1.3.0.md`). One participant is amber: the
-monorepo's `release-harness-report.yml`, which is on a monorepo branch and not
-on `origin/main` (see the [README](README.md#built-on-the-monorepo-side)).
+alpha 0.05 on timing; `docs/releases/1.3.0.md`). One participant is the
+monorepo's `release-harness-report.yml`, which posts the verdict on the release
+PR (see the [README](README.md#built-on-the-monorepo-side)).
 
 ## 4a. A release candidate, end to end
 
@@ -77,7 +77,7 @@ sequenceDiagram
   participant Noise as noise branch
   participant Out as Artifacts and job summary
   participant Rec as release-records branch
-  participant Rep as release-harness-report.yml, pending
+  participant Rep as release-harness-report.yml, monorepo
 
   Job->>Mono: curl claims_url into claims.yaml
   Note over Job: the run is titled release candidate (run-name), from the dispatch payload
@@ -109,8 +109,8 @@ sequenceDiagram
   Job->>Out: upload release-report, append report.md to the job summary
   Job->>Rec: publish-record pushes releases/candidate.json, and releases/release.json if it could ship
   Note over Out: the harness does not post on the PR. Posting report.md is the monorepo's job
-  Rep-->>Job: pending: find this run by its title, wait up to 45 minutes, read release-report, needs HARNESS_TOKEN Actions read
-  Rep-->>Rep: pending: create or update one marked comment on the release pull request
+  Rep->>Job: find this run by its title, wait up to 45 minutes, read release-report, HARNESS_TOKEN needs Actions read
+  Rep->>Rep: create or update one marked comment on the release pull request
 ```
 
 Notes:
@@ -374,7 +374,7 @@ What differs from CI, all by design (`docs/local.md`):
 | Diagram | Source |
 | --- | --- |
 | 4a-1 | `docs/monorepo/release-dispatch.yml` (jobs `candidate`, `images`, `dispatch`); `.github/workflows/release.yml` (steps up to "Pull and verify"); `src/images.ts`; `docs/images.md` |
-| 4a-2 | `.github/workflows/release.yml` (`run-name` line 21, grype and vuln-db steps); `src/run.ts:256-376`; monorepo `da7850d:.github/workflows/release-harness-report.yml` (pending); `src/collectors/index.ts`; `src/gate.ts`; `src/release-record.ts`; `docs/contract.md` "What the harness does to a pull request" |
+| 4a-2 | `.github/workflows/release.yml` (`run-name` line 21, grype and vuln-db steps); `src/run.ts:256-376`; monorepo `.github/workflows/release-harness-report.yml:70,114,216` and `release-dispatch.yml:395` (#312); `src/collectors/index.ts`; `src/gate.ts`; `src/release-record.ts`; `docs/contract.md` "What the harness does to a pull request" |
 | 4b | `.github/workflows/nightly-noise.yml`; `src/images.ts` (`ensureImages`); `src/image-cache.ts`; `src/run.ts` (`evidenceGaps`); `src/gate.ts`; `src/ci/noise-history.ts` (`assess`, `record`); `docs/noise-burndown.md` |
 | 4c-1 | monorepo `.github/workflows/image-build.yml`, `scripts/promote-image.ts` (#303), `scripts/deploy-pin.ts`, `scripts/checks/deploy-pins.ts`, `.github/workflows/deploy.yml` (#298), `guides/Release-Strategy.md` "Deploy and post-deploy" |
 | 4c-2 | `.github/workflows/post-deploy.yml` (`exit_code` output, rollback issue on 1 only); `src/run.ts:278-293, 379-384`; `src/normalise/`; `src/release-record.ts` (`judgeDeployment`); `normalise/masks.yaml` (`modes: [post-deploy]`) |

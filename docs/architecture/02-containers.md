@@ -150,6 +150,7 @@ issue labels.
 ```mermaid
 flowchart LR
   mono["<b>Tutors monorepo + CI</b><br/>[External system]"]:::ext
+  rep["<b>release-harness-report.yml</b><br/>[External: monorepo workflow]<br/>Posts the verdict on the release PR"]:::ext
   cron["<b>GitHub schedules</b><br/>[External platform]<br/>cron 17 2 * * *, every 15 min, weekly"]:::ext
 
   ci["<b>ci.yml</b><br/>[Container: workflow]<br/>every PR and push to main: unit tests, masks guard, harness local smoke"]:::container
@@ -166,6 +167,8 @@ flowchart LR
   cli["<b>harness CLI</b><br/>[Container]<br/>every step is a pnpm harness line"]:::container
 
   mono -->|"release-candidate dispatch"| release
+  mono -->|"report job starts it"| rep
+  rep -->|"finds the run by its title, waits, reads release-report<br/>[HARNESS_TOKEN, Actions: read]"| release
   mono -->|"deployed dispatch, deploy.yml announce"| post
   cron --> nightly
   cron --> post
