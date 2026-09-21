@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { APPS, dockerRef, imagesFor, isBuildable, isRegistryRef, parseRef, type App, type AppImages } from "./image-ref.ts";
+import { bashCommand } from "./local/bash.ts";
 import { classifyPullFailure, restoreImageCache, saveImageCache, type CacheEntry } from "./image-cache.ts";
 import { ROOT } from "./stack.ts";
 import type { ImageInfo, SideProvenance } from "./types.ts";
@@ -306,7 +307,7 @@ export interface EnsureResult {
 
 function build(exec: Exec, ref: string, tag: string, prefix: string, log: (m: string) => void): boolean {
   log(`  BUILDING FROM SOURCE: ${tag} is not in the registry; building the three images from monorepo ref ${ref}`);
-  return exec("bash", ["scripts/build-images.sh", ref, tag], { env: { HARNESS_IMAGE_PREFIX: prefix }, inherit: true }).status === 0;
+  return exec(bashCommand(), ["scripts/build-images.sh", ref, tag], { env: { HARNESS_IMAGE_PREFIX: prefix }, inherit: true }).status === 0;
 }
 
 /**

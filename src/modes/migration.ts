@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { bashCommand } from "../local/bash.ts";
 import { ROOT } from "../stack.ts";
 import type { Hunk, MigrationResult, ColumnInfo, SchemaCatalog } from "../types.ts";
 import { hunkId, resetHunkIds } from "../compare/pages.ts";
@@ -20,7 +21,7 @@ function migrationFiles(dir: string): string[] {
 export const fetchMigrations: MigrationSource = (ref, dest, log) => {
   mkdirSync(dest, { recursive: true });
   const script = resolve(ROOT, "scripts", "fetch-migrations.sh");
-  const result = spawnSync("bash", [script, ref, dest], { cwd: ROOT, encoding: "utf8" });
+  const result = spawnSync(bashCommand(), [script, ref, dest], { cwd: ROOT, encoding: "utf8" });
   if (result.status !== 0) throw new Error(`fetch-migrations ${ref}: ${result.stderr || result.stdout}`);
   log(`  ${result.stdout.trim()}`);
   return migrationFiles(dest);

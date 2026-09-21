@@ -16,7 +16,9 @@ if [[ "$ref" == dir:* ]]; then
   exit 0
 fi
 
-work="$(mktemp -d)"
+# Under Git Bash on Windows mktemp gives /tmp/tmp.XXXX, which the native git.exe cannot open: hand it the Windows form.
+native_path() { if command -v cygpath >/dev/null 2>&1; then cygpath -m "$1"; else printf '%s' "$1"; fi; }
+work="$(native_path "$(mktemp -d)")"
 trap 'rm -rf "$work"' EXIT
 git init --quiet "$work"
 git -C "$work" remote add origin "$repo"
