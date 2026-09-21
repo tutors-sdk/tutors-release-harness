@@ -109,7 +109,7 @@ export function composeRestarter(spec: SideSpec, deps: RestarterDeps): Restarter
     if (!id) throw new ToolError(`${app} was not prepared for a restart`);
     return id;
   };
-  const urls: Record<string, string | undefined> = { reader: spec.urls.reader, catalogue: spec.urls.catalogue, live: spec.urls.live };
+  const urls: Record<string, string | undefined> = { reader: spec.urls.reader, catalogue: spec.urls.catalogue, live: spec.urls.live, time: spec.urls.time };
   return {
     substrate: "compose",
     apps: [...APPS],
@@ -133,7 +133,7 @@ export function kindRestarter(spec: SideSpec, deps: RestarterDeps): Restarter {
   const ns = deps.names.namespace(spec.name);
   const selector = (app: string) => `app.kubernetes.io/name=tutors-${app}`;
   const scale = (app: string, replicas: number) => kubectl(deps.exec, deps.names, ["-n", ns, "scale", `deployment/${app}`, `--replicas=${replicas}`]);
-  const urls: Record<string, string | undefined> = { reader: spec.urls.reader, catalogue: spec.urls.catalogue, live: spec.urls.live };
+  const urls: Record<string, string | undefined> = { reader: spec.urls.reader, catalogue: spec.urls.catalogue, live: spec.urls.live, time: spec.urls.time };
   return {
     substrate: "kind",
     apps: [...APPS],

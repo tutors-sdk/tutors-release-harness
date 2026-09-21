@@ -13,7 +13,7 @@ import type { SideName, SideSpec } from "../types.ts";
  * `restricted` enforced on both — instead of compose. The journeys, ports and
  * collectors are unchanged; only how the stacks come up differs.
  *
- * What runs in the cluster: the three anonymous apps per side, from the same
+ * What runs in the cluster: the four anonymous apps per side, from the same
  * manifest shape as the monorepo's deploy/k8s base (probes, security context,
  * resources). What stays on the host: the fixture course server, because the
  * browser fetches the course directly and the apps never do. The signed-in
@@ -34,14 +34,14 @@ const KIND_CONFIG = resolve(ROOT, "deploy", "kind", "kind-config.yaml");
  * never holds the ports compose needs.
  */
 const NODE_PORT: Record<SideName, Record<(typeof APPS)[number], { host: number; node: number }>> = {
-  a: { reader: { host: 4100, node: 30100 }, catalogue: { host: 4101, node: 30101 }, live: { host: 4102, node: 30102 } },
-  b: { reader: { host: 4200, node: 30200 }, catalogue: { host: 4201, node: 30201 }, live: { host: 4202, node: 30202 } }
+  a: { reader: { host: 4100, node: 30100 }, catalogue: { host: 4101, node: 30101 }, live: { host: 4102, node: 30102 }, time: { host: 4103, node: 30103 } },
+  b: { reader: { host: 4200, node: 30200 }, catalogue: { host: 4201, node: 30201 }, live: { host: 4202, node: 30202 }, time: { host: 4203, node: 30203 } }
 };
 
 /** Point a side at the kind cluster's host ports; the signed-in reader and stubs are compose-only. */
 export function kindSide(spec: SideSpec): SideSpec {
   const p = NODE_PORT[spec.name];
-  return { ...spec, urls: { reader: `http://localhost:${p.reader.host}`, catalogue: `http://localhost:${p.catalogue.host}`, live: `http://localhost:${p.live.host}`, courseId: spec.urls.courseId } };
+  return { ...spec, urls: { reader: `http://localhost:${p.reader.host}`, catalogue: `http://localhost:${p.catalogue.host}`, live: `http://localhost:${p.live.host}`, time: `http://localhost:${p.time.host}`, courseId: spec.urls.courseId } };
 }
 
 function sh(cmd: string, args: string[], opts: { input?: string; quiet?: boolean } = {}): string {
@@ -216,7 +216,17 @@ export function kindUp(a: SideSpec, b: SideSpec, now: string, log: (m: string) =
     for (const app of APPS) kubectl(["-n", namespaceFor(side), "rollout", "status", `deployment/${app}`, "--timeout=180s"], { quiet: true });
   }
   startCourseServer(log);
-  for (const side of ["a", "b"] as const) for (const app of APPS) waitHealthy(`http://localhost:${NODE_PORT[side][app].host}/healthz/live`, 60_000);
+  for (const side of ["a", "b"] as const) {
+    for (const app of APPS) {
+      try {
+        waitHealthy(`http://localhost:${NODE_PORT[side][app].host}/healthz/live`, 60_000);
+      } catch (e) {
+        // A cluster made before the time app joined never published its NodePorts on the host.
+        const hint = app === "time" ? `; a cluster created before the time app was added does not publish ${NODE_PORT.a.time.host} and ${NODE_PORT.b.time.host}: recreate it with kind delete cluster --name ${CLUSTER}` : "";
+        throw new Error(`${e instanceof Error ? e.message : e}${hint}`);
+      }
+    }
+  }
   log("  both namespaces are up under the restricted pod security standard");
 }
 

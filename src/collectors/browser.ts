@@ -5,6 +5,7 @@ import { AxeBuilder } from "@axe-core/playwright";
 import { chromium, type Browser, type BrowserContext, type Page, type Response } from "playwright";
 import type { Journey } from "../../traffic/journeys/journeys.ts";
 import { reference } from "../../traffic/journeys/reference.ts";
+import { redactSecrets } from "../normalise/redact.ts";
 import { IDENTITY_URL } from "../stack.ts";
 import type { AxeFinding, ConsoleEntry, JourneyCapture, NetworkEntry, PageCapture, SideSpec, Timing } from "../types.ts";
 
@@ -38,15 +39,31 @@ export async function launchBrowser(): Promise<Browser> {
  * ports, and nothing about that is a finding. The course hosts are the same on
  * both sides in a run; they are normalised so a recorded run compares with a
  * later one that pins the course elsewhere.
+ *
+ * Secret-shaped values (an `apikey=` in a logged URL, a bearer token, a JWT) are
+ * redacted here too, so `capture.json` does not hold them; `normalise()` redacts
+ * again for captures recorded before this (src/normalise/redact.ts).
  */
 export function stripOrigins(text: string, spec: SideSpec): string {
   let out = text;
-  const origins = [spec.urls.reader, spec.urls.catalogue, spec.urls.live, spec.urls.readerAuth, spec.urls.persistence].filter((o): o is string => !!o);
-  for (const origin of origins) out = out.split(origin).join("{{origin}}");
+  const origins = [spec.urls.reader, spec.urls.catalogue, spec.urls.live, spec.urls.time, spec.urls.readerAuth, spec.urls.persistence].filter((o): o is string => !!o);
+  for (const origin of origins) {
+    out = out.split(origin).join("{{origin}}");
+    // The same origin over a WebSocket (`ws://persistence-a.harness.test:8090/realtime/...`, which the browser prints in a
+    // console error): the two sides' stubs are on different ports and are the same finding-free noise as their http origins.
+    const socket = origin.replace(/^http/, "ws");
+    if (socket !== origin) out = out.split(socket).join("{{origin}}");
+  }
   const courseHosts = [...new Set([spec.urls.courseId, reference.host, reference.courseId])].sort((x, y) => y.length - x.length);
   for (const host of courseHosts) for (const scheme of ["http://", "https://"]) out = out.split(`${scheme}${host}`).join("{{course}}");
-  return out;
+  return redactSecrets(out);
 }
+
+/** How long to wait for a JSON response body before recording it as unread. */
+const BODY_READ_MS = 3_000;
+
+/** `NetworkEntry.schemaHash` of a JSON response whose body could not be read; never equal to a real hash. */
+export const SCHEMA_UNREAD = "unread";
 
 /** A hash of a JSON document's shape — keys and value types, not values — so data differences are not schema differences. */
 export function schemaHash(json: unknown): string {
@@ -70,11 +87,20 @@ async function entryFor(response: Response, spec: SideSpec): Promise<NetworkEntr
   const contentType = headers["content-type"] ?? "";
   let hash = "";
   if (/json/.test(contentType) && response.status() < 300) {
+    let timer: NodeJS.Timeout | undefined;
     try {
-      const text = await response.text();
+      // Bounded: the browser only finishes a body that someone reads. A page that fires a request and never reads its
+      // response (the anon-write mutant's fetch, or a beacon) can leave `text()` pending until the context closes, and an
+      // unbounded await here stalled the whole run for as long as anyone was willing to wait.
+      const text = await Promise.race([response.text(), new Promise<never>((_, reject) => (timer = setTimeout(() => reject(new Error("body not read")), BODY_READ_MS)))]);
       if (text.length <= MAX_HASHED_BODY) hash = schemaHash(JSON.parse(text));
     } catch {
-      hash = "";
+      // The browser dropped the body (the page navigated away while an invalidation request was in flight) or it was not
+      // valid JSON: say that this side's body was not read, rather than that it had no shape. The engine does not compare
+      // a shape against "not read" (that is timing, not the release), and still compares status and content type.
+      hash = SCHEMA_UNREAD;
+    } finally {
+      clearTimeout(timer);
     }
   }
   return {

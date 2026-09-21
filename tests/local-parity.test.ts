@@ -12,7 +12,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { planGate, planMutants, planNightly, planWatch, WORKFLOW_DEFAULTS, type Plan } from "../src/local/tasks.ts";
+import { planGate, planMutants, planNightly, planSmoke, planWatch, WORKFLOW_DEFAULTS, type Plan } from "../src/local/tasks.ts";
 
 const ROOT = resolve(import.meta.dirname, "..");
 const workflow = (name: string) => readFileSync(resolve(ROOT, ".github/workflows", name), "utf8");
@@ -173,5 +173,32 @@ describe("nothing lives only in a workflow", () => {
   it("every harness command a workflow runs is one the CLI has, and the local wrappers use the same set of modes", () => {
     const usage = readFileSync(resolve(ROOT, "src/cli.ts"), "utf8");
     for (const f of files) for (const c of harnessCalls(workflow(f), {})) expect(usage, `${f}: harness ${c[0]}`).toContain(`harness ${c[0]}`);
+  });
+});
+
+describe("ci.yml's two-stacks job is `harness local smoke`", () => {
+  const yaml = workflow("ci.yml");
+  const calls = harnessCalls(yaml, { TAG: "main" });
+
+  it("makes one call, the same command a maintainer runs (`pnpm smoke`), with the workflow's tag", () => {
+    expect(called(calls, "local", "smoke")).toEqual(["local", "smoke", "--tag", "main"]);
+    expect(planSmoke({ tag: "main" }).task).toBe("smoke");
+    expect(JSON.parse(readFileSync(resolve(ROOT, "package.json"), "utf8")).scripts.smoke).toBe("tsx src/cli.ts local smoke");
+  });
+
+  it("no longer runs the steps by hand: they are the plan's, so CI and local cannot mean different things by 'the smoke'", () => {
+    expect(calls.filter((c) => c[0] === "run" || (c[0] === "images" && c[1] === "ensure"))).toEqual([]);
+    expect(yaml).not.toContain("the contracting fixture was accepted");
+  });
+
+  it("the plan is what the job ran before it was a command", () => {
+    const plan = planSmoke({ tag: "main" });
+    expect(plan.steps.map((s) => s.argv.join(" "))).toEqual([
+      "images ensure --a main --b main",
+      "run --mode noise --a main --b main --set fixture --journey anonymous-student-reads-course",
+      "run --mode migration --a dir:tests/fixtures/migrations/a --b dir:tests/fixtures/migrations/b-good",
+      "run --mode migration --a dir:tests/fixtures/migrations/a --b dir:tests/fixtures/migrations/b-bad"
+    ]);
+    expect(plan.steps.map((s) => s.expectFailure === true)).toEqual([false, false, false, true]);
   });
 });

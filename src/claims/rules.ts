@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { z } from "zod";
 import type { Claim } from "../types.ts";
+import { InputFileError, inputProblems, unreadable, type Problem } from "./input-error.ts";
 
 /**
  * The Rules a claim may name (contract 1.3.0).
@@ -42,14 +43,25 @@ export function parseRules(text: string, source = "rules.json"): Rules {
   let raw: unknown;
   try {
     raw = JSON.parse(text);
-  } catch {
-    throw new Error(`${source} is not valid JSON`);
+  } catch (e) {
+    throw new InputFileError(`${source} is not valid JSON (a rules file): ${e instanceof Error ? e.message : String(e)}`);
   }
   const parsed = RulesFileSchema.safeParse(raw);
-  if (!parsed.success) {
-    throw new Error(`${source} is not a valid rules file:\n${parsed.error.issues.map((i) => `  ${i.path.join(".") || "(root)"}: ${i.message}`).join("\n")}`);
-  }
+  if (!parsed.success) throw inputProblems("rules file", source, parsed.error.issues.map((i) => ruleProblem(i, raw)));
   return { source, rules: parsed.data.rules };
+}
+
+/** One zod issue of a rules file as what it means for the person who published it. */
+function ruleProblem(issue: z.core.$ZodIssue, raw: unknown): Problem {
+  const path = issue.path;
+  const value = path.reduce<unknown>((v, k) => (v !== null && typeof v === "object" ? (v as Record<PropertyKey, unknown>)[k] : undefined), raw);
+  if (path.length === 0) return { where: "the file", message: `a rules file is a JSON object with "version" and "rules", and this is ${Array.isArray(raw) ? "a list" : typeof raw}` };
+  if (path[0] === "version") {
+    return { where: "the file", field: "version", message: `this harness reads rules format ${RULES_VERSION}; the file says ${value === undefined ? "nothing" : JSON.stringify(value)}`, hints: [`the monorepo publishes rules.json with "version": ${RULES_VERSION}; a file of another version needs a harness that reads it`] };
+  }
+  if (path[0] === "rules" && path.length === 1) return { where: "the file", field: "rules", message: 'there is no "rules" object: {"0031": {"title": "..."}}' };
+  if (path[0] === "rules" && path.length >= 2) return { where: `rule "${String(path[1])}"`, ...(path[2] ? { field: String(path[2]) } : {}), message: issue.message };
+  return { where: "the file", field: path.join("."), message: issue.message };
 }
 
 export type FetchText = (url: string) => Promise<{ status: number; text: string }>;
@@ -65,14 +77,22 @@ export const isUrl = (where: string) => /^https?:\/\//i.test(where);
 
 /** `--rules <path|url>`: a file, or an http(s) URL the runner can GET without credentials. Throws with the reason; the run exits 2 before any stack starts. */
 export async function loadRules(where: string, fetchText: FetchText = realFetch): Promise<Rules> {
-  if (!isUrl(where)) return parseRules(readFileSync(where, "utf8"), where);
+  if (!isUrl(where)) {
+    let text: string;
+    try {
+      text = readFileSync(where, "utf8");
+    } catch (e) {
+      throw unreadable("the rules file", where, e);
+    }
+    return parseRules(text, where);
+  }
   let got: { status: number; text: string };
   try {
     got = await fetchText(where);
   } catch (e) {
-    throw new Error(`cannot fetch the rules file ${where}: ${e instanceof Error ? e.message : String(e)}`);
+    throw new InputFileError(`cannot fetch the rules file ${where}: ${e instanceof Error ? e.message : String(e)}`);
   }
-  if (got.status < 200 || got.status > 299) throw new Error(`cannot fetch the rules file ${where}: HTTP ${got.status}`);
+  if (got.status < 200 || got.status > 299) throw new InputFileError(`cannot fetch the rules file ${where}: HTTP ${got.status}`);
   return parseRules(got.text, where);
 }
 

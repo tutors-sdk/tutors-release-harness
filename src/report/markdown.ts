@@ -1,3 +1,4 @@
+import { APPS } from "../image-ref.ts";
 import type { RunReport } from "../types.ts";
 import { claimLabel } from "../claims/rules.ts";
 import { loudProvenance } from "./provenance.ts";
@@ -24,12 +25,13 @@ export function renderMarkdown(report: RunReport): string {
   }
   lines.push(`| | a | b |`);
   lines.push(`|---|---|---|`);
-  for (const app of ["reader", "catalogue", "live"] as const) lines.push(`| ${app} | \`${report.sides.a[app]}\` | \`${report.sides.b[app]}\` |`);
+  // `time` is absent from a report written before contract 1.3.0.
+  for (const app of APPS) lines.push(`| ${app} | \`${report.sides.a[app] ?? "—"}\` | \`${report.sides.b[app] ?? "—"}\` |`);
   if (report.provenance?.a || report.provenance?.b) {
     const p = report.provenance;
     const short = (v: string | undefined) => (v ? v.replace(/^sha256:/, "").slice(0, 12) : "—");
     lines.push(`| **provenance** | **${p.a?.summary ?? "not recorded"}** | **${p.b?.summary ?? "not recorded"}** |`);
-    for (const app of ["reader", "catalogue", "live"] as const) {
+    for (const app of APPS) {
       const cell = (side: "a" | "b") => {
         const info = p[side]?.images[app];
         return info ? `${info.digest ? `\`${info.digest}\`` : "no registry digest"} · rev \`${short(info.revision)}\` · version \`${info.version ?? "—"}\`` : "—";

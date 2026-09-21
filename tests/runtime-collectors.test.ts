@@ -116,7 +116,7 @@ describe("the harness stacks declare the posture the collector reads back", () =
   };
 
   it("compose: a read-only root with a tmpfs /tmp is what every app service runs with, so the stack itself is the read-only boot probe", () => {
-    for (const name of ["reader-a", "catalogue-b", "live-a", "reader-auth-b"]) {
+    for (const name of ["reader-a", "catalogue-b", "live-a", "time-b", "reader-auth-b"]) {
       const s = compose.services[name]!;
       expect(s.read_only, name).toBe(true);
       expect(s.tmpfs, name).toEqual(["/tmp"]);
@@ -150,17 +150,18 @@ describe("posture collection", () => {
   ];
 
   it("compose: finds each container by its compose labels and runs exactly inspect, exec and logs", () => {
-    const { exec, calls } = fakeExec(["reader", "catalogue", "live", "reader-auth"].flatMap((app, i) => composeAnswers(app, `c${i}`)));
+    const { exec, calls } = fakeExec(["reader", "catalogue", "live", "time", "reader-auth"].flatMap((app, i) => composeAnswers(app, `c${i}`)));
     const capture = collectPosture(composeTarget("a", exec, names));
     expect(capture.substrate).toBe("compose");
-    expect(Object.keys(capture.containers)).toEqual(["reader", "catalogue", "live", "reader-auth"]);
+    expect(Object.keys(capture.containers)).toEqual(["reader", "catalogue", "live", "time", "reader-auth"]);
+    expect(capture.containers.time).toMatchObject({ user: "", effective: { uid: 1001 } });
     expect(capture.containers.reader).toMatchObject({ user: "", effective: { uid: 1001 }, readOnlyViolations: 0, writablePaths: ["/data", "/tmp"] });
     expect(calls.filter((c) => c.startsWith("docker exec c0 node -e"))).toHaveLength(1);
     expect(calls.every((c) => c.startsWith("docker "))).toBe(true);
   });
 
   it("compose: an EROFS line in the logs is counted, stderr included", () => {
-    const { exec } = fakeExec(["reader", "catalogue", "live", "reader-auth"].flatMap((app, i) => composeAnswers(app, `c${i}`, app === "live" ? { logs: ok("", "Error: EROFS: read-only file system, open '/app/x'\n") } : {})));
+    const { exec } = fakeExec(["reader", "catalogue", "live", "time", "reader-auth"].flatMap((app, i) => composeAnswers(app, `c${i}`, app === "live" ? { logs: ok("", "Error: EROFS: read-only file system, open '/app/x'\n") } : {})));
     expect((collectPosture(composeTarget("a", exec, names)).containers.live as { readOnlyViolations: number }).readOnlyViolations).toBe(1);
   });
 
@@ -169,6 +170,7 @@ describe("posture collection", () => {
       ["docker ps -q --filter label=com.docker.compose.project=tutors-harness --filter label=com.docker.compose.service=reader-a", ok("")],
       ...composeAnswers("catalogue", "c1", { exec: { status: 126, stdout: "", stderr: 'OCI runtime exec failed: exec: "node": executable file not found in $PATH\n' } }),
       ...composeAnswers("live", "c2"),
+      ...composeAnswers("time", "c4"),
       ...composeAnswers("reader-auth", "c3", { inspect: { status: 1, stdout: "", stderr: "Error: No such object: c3\n" } })
     ]);
     const c = collectPosture(composeTarget("a", exec, names)).containers;
@@ -197,7 +199,7 @@ describe("posture collection", () => {
     ]);
     const capture = collectPosture(kindTarget("b", exec, names));
     expect(capture.substrate).toBe("kind");
-    expect(Object.keys(capture.containers)).toEqual(["reader", "catalogue", "live"]);
+    expect(Object.keys(capture.containers)).toEqual(["reader", "catalogue", "live", "time"]);
     expect(capture.containers.reader).toMatchObject({ capDrop: ["ALL"], securityOpt: ["no-new-privileges:true"], effective: { uid: 1001 } });
     expect(calls.some((c) => c.includes("-c app -- node -e"))).toBe(true);
   });
@@ -352,7 +354,7 @@ describe("captureRuntime", () => {
     const missing: Exec = () => ({ status: null, stdout: "", stderr: "", error: Object.assign(new Error("spawn docker ENOENT"), { code: "ENOENT" }) });
     const r = await captureRuntime(spec, { substrate: "compose", posture: true, startupRestarts: 2, log: () => {} }, deps(missing));
     // Posture is collected per container, so the whole says collected and every app says why not.
-    expect(Object.values((r.runtime as { containers: Record<string, { reason: string }> }).containers).map((c) => c.reason)).toEqual(Array(4).fill("docker is not installed or not on PATH"));
-    expect(Object.values((r.startup as { apps: Record<string, { reason: string }> }).apps).map((c) => c.reason)).toEqual(Array(3).fill("docker is not installed or not on PATH"));
+    expect(Object.values((r.runtime as { containers: Record<string, { reason: string }> }).containers).map((c) => c.reason)).toEqual(Array(5).fill("docker is not installed or not on PATH"));
+    expect(Object.values((r.startup as { apps: Record<string, { reason: string }> }).apps).map((c) => c.reason)).toEqual(Array(4).fill("docker is not installed or not on PATH"));
   });
 });

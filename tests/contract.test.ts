@@ -59,6 +59,9 @@ ajv.addFormat("date-time", /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/);
 const validateReport = ajv.compile(reportSchema);
 const validateNoise = ajv.compile(noiseSchema);
 
+/** How many places the schema names `time` (the sides, provenance images and image artefacts). */
+const schemaTime = (schema: unknown): number => JSON.stringify(schema).split('"time":').length - 1;
+
 function expectValid(validate: ValidateFunction, value: unknown) {
   validate(value);
   expect(validate.errors ?? []).toEqual([]);
@@ -82,11 +85,11 @@ const imageInfo = (app: string, n: number) => ({
   builtFrom: { ref: "v16.2.0", sha: "1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b" },
   cachedAt: "2026-09-15T02:30:00.000Z"
 });
-const sideProvenance = { summary: "pulled+verified", allowedUnsigned: true as const, images: { reader: imageInfo("reader", 1), catalogue: imageInfo("catalogue", 2), live: imageInfo("live", 3) } };
+const sideProvenance = { summary: "pulled+verified", allowedUnsigned: true as const, images: { reader: imageInfo("reader", 1), catalogue: imageInfo("catalogue", 2), live: imageInfo("live", 3), time: imageInfo("time", 4) } };
 /** One static image artefact carrying every field the report allows (a real one carries either `reason` or `summary`, not both). */
 const artefactStatus = { collected: true, source: "cosign attestation (signature verified)", reason: "no SBOM attestation", summary: "312 distinct package(s)" };
 const appArtefacts = { manifest: artefactStatus, sbom: artefactStatus, vulns: artefactStatus };
-const sideArtefacts = { reader: appArtefacts, catalogue: appArtefacts, live: appArtefacts };
+const sideArtefacts = { reader: appArtefacts, catalogue: appArtefacts, live: appArtefacts, time: appArtefacts };
 const load = { requests: 600, failed: 0, serverErrors: 0, p50: 12, p95: 40, rate: 20, duration: "30s" };
 
 /**
@@ -104,7 +107,7 @@ const full: DeepRequired<RunReport> = {
   ranAt: "2026-09-16T09:10:00.000Z",
   now: "2026-09-16T09:05:00.000Z",
   runs: 3,
-  sides: { a: { reader: "tutors/reader:16.2.0", catalogue: "tutors/catalogue:16.2.0", live: "tutors/live:16.2.0" }, b: { reader: "tutors/reader:rc", catalogue: "tutors/catalogue:rc", live: "tutors/live:rc" } },
+  sides: { a: { reader: "tutors/reader:16.2.0", catalogue: "tutors/catalogue:16.2.0", live: "tutors/live:16.2.0", time: "tutors/time:16.2.0" }, b: { reader: "tutors/reader:rc", catalogue: "tutors/catalogue:rc", live: "tutors/live:rc", time: "tutors/time:rc" } },
   provenance: { a: sideProvenance, b: sideProvenance },
   verdict: "fail",
   reasons: ["1 unclaimed diff(s)"],
@@ -133,8 +136,8 @@ const full: DeepRequired<RunReport> = {
   deployment: {
     production: "16.3.0",
     status: "differs",
-    digests: { reader: D(4), catalogue: D(5), live: D(6) },
-    recorded: { reader: D(4), catalogue: D(5), live: D(7) },
+    digests: { reader: D(4), catalogue: D(5), live: D(6), time: D(8) },
+    recorded: { reader: D(4), catalogue: D(5), live: D(7), time: D(8) },
     record: { candidate: "16.3.0-rc.4", judgedAt: "2026-09-16T09:10:00.000Z", verdict: "pass" },
     problems: [`live: deployed ${D(6)}, but release mode judged ${D(7)} (16.3.0-rc.4)`]
   }
@@ -196,9 +199,14 @@ describe("report.json", () => {
     const cli = json("docs/contract/cli.json");
     for (const flag of cli.flags.filter((f: { since?: string }) => f.since === "1.2.0")) expect(changes, flag.name).toContain(`--${flag.name === "runtime" ? "no-runtime" : flag.name}`);
     for (const [name, v] of Object.entries(cli.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.2.0")) expect(changes, name).toContain(name);
-    expect(CONTRACT_VERSION).toBe("1.3.0");
-    expect(HARNESS_VERSION).toBe("1.3.0");
+    expect(CONTRACT_VERSION).toBe("1.4.0");
+    // The harness version is package.json's and moves at least as far as the contract's (docs/contract.md, Versioning):
+    // a mask or engine PR bumps the patch of the harness alone, so do not pin a literal here.
     expect(json("package.json").version).toBe(HARNESS_VERSION);
+    const tuple = (v: string) => v.split(".").map(Number) as [number, number, number];
+    const [hMajor, hMinor] = tuple(HARNESS_VERSION);
+    const [cMajor, cMinor] = tuple(CONTRACT_VERSION);
+    expect(hMajor > cMajor || (hMajor === cMajor && hMinor >= cMinor), `harness ${HARNESS_VERSION} must not be behind contract ${CONTRACT_VERSION}`).toBe(true);
     for (const doc of [cli, json("docs/contract/workflows.json")]) expect(doc.contractVersion).toBe(CONTRACT_VERSION);
   });
 
@@ -228,6 +236,47 @@ describe("report.json", () => {
     }
     // the non-additive parts are said to be
     for (const caveat of ["was\nignored", "a missing `--noise` no longer", "default name of the compose project", "left alone"]) expect(changes.replaceAll("\n", " ").replaceAll("  ", " "), caveat).toContain(caveat.replaceAll("\n", " "));
+  });
+
+  it("its 1.4.0 changelog says what is patch-level and what is minor, and lists everything that is new in it", () => {
+    const start = contractMd.indexOf("### 1.4.0");
+    const end = contractMd.indexOf("### 1.3.0");
+    expect(start).toBeGreaterThan(0);
+    expect(end).toBeGreaterThan(start);
+    const changes = contractMd.slice(start, end);
+    const flat = changes.replaceAll("\n", " ").replaceAll("  ", " ");
+    for (const item of ["**minor**", "**patch-level**", "HARNESS_REQUIRE_ARTEFACTS", "HARNESS_VULN_DB_MAX_AGE_DAYS", "HARNESS_ROLLBACK_ISSUE", "harness prune", "harness vuln-db", "harness local smoke", "mutant-noise-report", "run-name", "NOT COLLECTED", "--help", "not comparable"]) expect(flat, item).toContain(item);
+    const cliJson = json("docs/contract/cli.json");
+    for (const flag of cliJson.flags.filter((f: { since?: string }) => f.since === "1.4.0")) expect(changes, flag.name).toContain(`--${flag.name}`);
+    for (const command of cliJson.commands.filter((c: { since?: string }) => c.since === "1.4.0")) expect(changes, command.name).toContain(command.name);
+    for (const [name, v] of Object.entries(cliJson.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.4.0")) expect(changes, name).toContain(name);
+    // what 1.3.0 already shipped is not claimed again, and what 1.4.0 adds is not folded into the 1.3.0 entry
+    const old = contractMd.slice(end, contractMd.indexOf("### 1.2.0"));
+    for (const item of ["HARNESS_REQUIRE_ARTEFACTS", "HARNESS_VULN_DB_MAX_AGE_DAYS", "HARNESS_ROLLBACK_ISSUE", "harness prune", "vuln-db", "mutant-noise-report"]) expect(old, item).not.toContain(item);
+  });
+
+  it("a report written before 1.3.0, with no `time` anywhere, is still valid and still renders (a reader must tolerate its absence)", () => {
+    const { time: _a, ...a } = full.sides.a;
+    const { time: _b, ...b } = full.sides.b;
+    const strip = <T extends { time?: unknown }>(x: T) => {
+      const { time: _t, ...rest } = x;
+      return rest;
+    };
+    const old = {
+      ...full,
+      sides: { a, b },
+      provenance: { a: { ...sideProvenance, images: strip(sideProvenance.images) }, b: { ...sideProvenance, images: strip(sideProvenance.images) } },
+      imageArtefacts: { a: strip(sideArtefacts), b: strip(sideArtefacts) }
+    } as unknown as RunReport;
+    expectValid(validateReport, old);
+    expect(renderMarkdown(old)).toContain("| time | `—` | `—` |");
+    expect(renderHtml(old)).toContain("<td>time</td>");
+  });
+
+  it("the 1.3.0 changelog lists everything the time app added", () => {
+    const changes = contractMd.slice(contractMd.indexOf("### 1.3.0"), contractMd.indexOf("### 1.2.0"));
+    for (const item of ["time", "time-a", "3104", "30103", "4103", "sides", "provenance", "imageArtefacts", "time=REF", "time=URL", "--production", "build-images.sh", "recreated"]) expect(changes, item).toContain(item);
+    expect(schemaTime(reportSchema)).toBe(3);
   });
 
   it("the schema and RunReport name the same top-level fields", () => {
@@ -386,6 +435,28 @@ describe("one whole run carrying every 1.3.0 addition at once", () => {
     expect(kindCluster({}, harnessRoot()).name).not.toBe("tutors-harness");
   });
 
+  it("post-deploy against an external side, with a secret in the console, reordered headers and a gap: still one valid report, no schema change, no secret in any file", () => {
+    // Synthetic, assembled at run time: not a credential.
+    const key = ["eyJhbGciOiJIUzI1NiJ9", "eyJyb2xlIjoiWCJ9", "c2lnbmF0dXJlWA"].join(".");
+    const recorded = capture("a");
+    const production = capture("b", { images: { reader: "external:https://tutors.dev", catalogue: "external:https://catalogue.tutors.dev", live: "external:https://live.tutors.dev", time: "external:https://time.tutors.dev" } });
+    // the same headers, spelled the way a CDN spells them
+    recorded.journeys[0]!.pages[0]!.headers["cache-control"] = "public, max-age=300, immutable";
+    production.journeys[0]!.pages[0]!.headers["cache-control"] = "immutable,max-age=300,public";
+    production.journeys[0]!.pages[0]!.console.push({ level: "error", text: `blocked: https://example-project.supabase.co/rest/v1/app_errors?apikey=${key}` });
+    recorded.journeys[0]!.pages[0]!.console.push({ level: "error", text: `blocked: https://example-project.supabase.co/rest/v1/app_errors?apikey=${key}` });
+    const dir = mkdtempSync(join(tmpdir(), "harness-whole-external-"));
+    const result = compareFromCaptures({ mode: "post-deploy", substrate: "compose", captureDir: dir, a: recorded, b: production, claims: [], masksFile: DEFAULT_MASKS_FILE, noiseMaxAgeDays: 7, now: "2026-09-16T09:05:00.000Z", runs: 1, log: () => {} });
+    const written = JSON.parse(readFileSync(result.files.json, "utf8")) as RunReport;
+    expectValid(validateReport, written);
+    expect(written.verdict).toBe("pass");
+    // every file the run wrote to its report directory: none holds the value
+    for (const file of [result.files.json, result.files.md, result.files.html]) expect(readFileSync(file, "utf8"), file).not.toContain(key);
+    expect(JSON.stringify(written)).not.toContain("eyJ");
+    // the four apps, `time` included, are what the report's sides name
+    expect(Object.keys(written.sides.b).sort()).toEqual([...APPS].sort());
+  });
+
   it("a 1.2.0 dispatch, claims file and report are still valid: none of the new fields is required anywhere", () => {
     expect(validateReport(clone(runFixture("release").written))).toBe(true);
     expect(Object.keys(reportSchema.properties.deployment.properties)).not.toContain("required");
@@ -533,9 +604,31 @@ describe("CLI", () => {
   });
 
   it("cli.json lists exactly the commands src/cli.ts dispatches", () => {
-    const commands = [...source.matchAll(/^\s*case "([a-z]+)":/gm), ...source.matchAll(/command === "([a-z]+)"/g)].map((m) => m[1]!);
+    const commands = [...source.matchAll(/^\s*case "([a-z][a-z-]*)":/gm), ...source.matchAll(/command === "([a-z]+)"/g)].map((m) => m[1]!);
     expect(cli.commands.map((c) => c.name).sort()).toEqual([...new Set(commands)].sort());
     for (const c of cli.commands) expect(source, `usage text for ${c.name}`).toContain(`harness ${c.name}`);
+  });
+
+  it("every subcommand cli.json lists is dispatched and has usage, and the dispatch of `local` and `vuln-db` has no subcommand cli.json lacks", () => {
+    const local = read("src/local/cli.ts");
+    const arms = (fn: string) => {
+      const start = local.indexOf(fn);
+      expect(start, fn).toBeGreaterThan(-1);
+      const body = local.slice(start, local.indexOf("\n}\n", start));
+      return [...body.matchAll(/^\s{4}case "([a-z-]+)":/gm)].map((m) => m[1]!);
+    };
+    const byName = Object.fromEntries(cli.commands.map((c) => [c.name, c]));
+    expect(arms("export function vulnDbCommand").sort()).toEqual([...byName["vuln-db"]!.subcommands!].sort());
+    expect(arms("export function buildPlan").sort()).toEqual([...byName.local!.subcommands!].sort());
+    for (const c of cli.commands) {
+      for (const sub of c.subcommands ?? []) {
+        expect(`${source}\n${local}`, `${c.name} ${sub}`).toContain(`"${sub}"`);
+        expect(source, `usage for ${c.name} ${sub}`).toMatch(new RegExp(`harness ${c.name}[^\\n]*\\b${sub}\\b`));
+      }
+    }
+    // the 1.3.0 and 1.4.0 commands are declared, and none of them is stable; a command with no subcommands lists none
+    for (const name of ["prune", "vuln-db", "local"]) expect(byName[name]!.stable, name).toBe(false);
+    expect(byName.prune!.subcommands).toBeUndefined();
   });
 
   it("the enumerated flag values are the code's", () => {
@@ -551,7 +644,7 @@ describe("CLI", () => {
     expect(env.HARNESS_COSIGN_ISSUER!.default).toBe(DEFAULT_COSIGN_ISSUER);
     for (const name of Object.keys(env).filter((k) => !k.startsWith("$"))) {
       expect(contractMd, name).toContain(`\`${name}\``);
-      expect(["src/images.ts", "src/run.ts", "src/claims/hygiene.ts", "src/image-static/collect.ts", "src/compare/image-static.ts", "src/local/home.ts", "src/project.ts"].map((f) => read(f)).join(" "), name).toContain(name);
+      expect(["src/images.ts", "src/run.ts", "src/claims/hygiene.ts", "src/image-static/collect.ts", "src/compare/image-static.ts", "src/local/home.ts", "src/project.ts", "src/not-collected.ts"].map((f) => read(f)).join(" "), name).toContain(name);
     }
     expect(contractMd).toContain(`\`${DEFAULT_COSIGN_IDENTITY}\``);
     // The forms the contract promises, against the one function that expands them.
@@ -607,7 +700,7 @@ describe("CLI", () => {
       const flags = own.includes(file) ? declaredFlags : stableFlags;
       // A call may continue over lines with a trailing backslash.
       const text = read(file).replace(/\\\n/g, " ");
-      for (const m of text.matchAll(/pnpm harness ([a-z]+)([^\n]*)/g)) {
+      for (const m of text.matchAll(/pnpm harness ([a-z][a-z-]*)([^\n]*)/g)) {
         calls += 1;
         expect(commands.has(m[1]!), `${file}: harness ${m[1]}`).toBe(true);
         for (const flag of m[2]!.matchAll(/(?<![\w-])--([a-z][a-z-]*)/g)) expect(flags.has(flag[1]!), `${file}: --${flag[1]}`).toBe(true);
@@ -686,10 +779,12 @@ describe("workflows", () => {
 
   it("install cosign 3 in every job that runs images ensure, and nowhere pass --allow-unsigned", () => {
     const tools = (json("docs/contract/workflows.json") as { tools: { cosign: { action: string; minimumMajor: number; usedBy: string[] } } }).tools.cosign;
-    const using = files.filter((f) => text[f]!.includes("harness images ensure")).sort();
+    // `harness local smoke` runs `images ensure` itself (ci.yml calls it instead of spelling the step out)
+    const ensuring = /harness images ensure|harness local smoke/;
+    const using = files.filter((f) => ensuring.test(text[f]!)).sort();
     expect(using).toEqual(tools.usedBy);
     for (const f of using) {
-      const ensures = [...text[f]!.matchAll(/harness images ensure/g)].length;
+      const ensures = [...text[f]!.matchAll(new RegExp(ensuring, "g"))].length;
       const installs = [...text[f]!.matchAll(new RegExp(`uses: ${tools.action}@v(\\d+)`, "g"))];
       expect(installs.length, f).toBe(ensures);
       // cosign-installer v4 is the first whose default is cosign 3.
@@ -704,7 +799,7 @@ describe("workflows", () => {
   it("publish exactly the artifacts the contract lists", () => {
     const actual: Record<string, { workflow: string; retentionDays: number }> = {};
     for (const f of files) {
-      for (const m of text[f]!.matchAll(/uses: actions\/upload-artifact@[^\n]+\n(?:[^\n]*\n){0,3}?\s+name: ([a-z-]+)\n(?:[^\n]*\n){0,3}?\s+retention-days: (\d+)/g)) actual[m[1]!] = { workflow: f, retentionDays: Number(m[2]) };
+      for (const m of text[f]!.matchAll(/uses: actions\/upload-artifact@[^\n]+\n(?:[^\n]*\n){0,3}?\s+name: ([a-z-]+)\n(?:[^\n]*\n){0,12}?\s+retention-days: (\d+)/g)) actual[m[1]!] = { workflow: f, retentionDays: Number(m[2]) };
     }
     expect(actual).toEqual(workflowsContract.artifacts);
     for (const name of Object.keys(actual)) expect(contractMd).toContain(`\`${name}\``);
@@ -767,7 +862,7 @@ describe("workflows", () => {
   it("the nightly asks the registry first, keeps a cache for an outage, and runs the A/A that requires verified images", () => {
     const nightly = text["nightly-noise.yml"]!;
     expect(nightly).toMatch(/harness images ensure --a "\$TAG" --b "\$TAG" --image-cache/);
-    expect(nightly).toMatch(/harness run --mode noise --a "\$TAG" --b "\$TAG" --runs 3 --load 20x30s --require-verified/);
+    expect(nightly).toMatch(/harness run --mode noise --a "\$TAG" --b "\$TAG" --runs 5 --load 20x30s --require-verified/);
     // one runner image for the A/A and for the runs it licenses, so the noise floor it measured is the one they meet
     const image = (f: string) => [...new Set([...text[f]!.matchAll(/runs-on: (ubuntu-[\d.]+)/g)].map((m) => m[1]))];
     expect(image("nightly-noise.yml")).toEqual(["ubuntu-24.04"]);

@@ -1,5 +1,5 @@
 # Nightly A/A on the production tag, pulled from the registry onto the CI
-# runner (never image-against-itself on a laptop): three runs, the noise count
+# runner (never image-against-itself on a laptop): five runs, the noise count
 # tracked over time, the status published where release runs can find it.
 #
 # A diff here is noise the normaliser must learn to mask, or non-determinism in
@@ -46,6 +46,14 @@ jobs:
       # Who must have signed a pulled image: the monorepo's image-build.yml workflow (docs/contract.md).
       HARNESS_COSIGN_IDENTITY: ${{ vars.HARNESS_COSIGN_IDENTITY || '^https://github.com/tutors-sdk/tutors-mono-repo/\.github/workflows/image-build\.yml@' }}
       TAG: ${{ inputs.tag || vars.HARNESS_PRODUCTION_TAG || 'main' }}
+      # grype, pinned: the version download-grype installs, and part of the database cache key.
+      GRYPE_VERSION: v0.119.0
+      # The one directory every scan reads: the default of a local run is HARNESS_HOME/vuln-db, the same place (docs/local.md).
+      HARNESS_VULN_DB_DIR: ${{ github.workspace }}/.harness/vuln-db
+      # Required, because this is the canary: an image whose manifest, SBOM or vulnerabilities cannot be collected makes the night
+      # not clean, so a scanner that has silently stopped working is found here, on the production tag, and not during a release.
+      # A degraded night (registry down) is already not counted. Rationale: docs/images.md, "The vulnerability database".
+      HARNESS_REQUIRE_STATIC: "1"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -61,6 +69,46 @@ jobs:
       # `images ensure` verifies the cosign signature of every image it pulls (docs/images.md).
       # The images are signed with cosign 3, and verifying them needs cosign >= 3: installer v4 installs it.
       - uses: sigstore/cosign-installer@v4.1.2
+
+      # The `vulns` artefact: each image's SBOM, scanned by grype (HARNESS_REQUIRE_STATIC=1: no database, no scan, no pass).
+      # Grype is pinned, and so is its database: fetched ONCE, here, into HARNESS_VULN_DB_DIR, restored from a cache with one
+      # entry per UTC day and grype version, and never updated during the run (the harness switches every scanner update off).
+      # Both sides of every comparison are scanned with the same database (docs/images.md, "The vulnerability database").
+      # download-grype takes the tag with its `v` and prints the absolute path of the binary as `cmd`; it is not on PATH.
+      - uses: anchore/scan-action/download-grype@v7.4.2
+        id: grype
+        with:
+          grype-version: ${{ env.GRYPE_VERSION }}
+      - name: Put the pinned grype on PATH
+        run: dirname "${{ steps.grype.outputs.cmd }}" >> "$GITHUB_PATH"
+
+      - name: Which day's vulnerability database
+        id: vulndb
+        run: echo "day=$(date -u +%F)" >> "$GITHUB_OUTPUT"
+      # An earlier day's entry (restore-keys) is still one database for the whole run, and better than none when grype's
+      # servers are down; grype itself refuses one older than HARNESS_VULN_DB_MAX_AGE_DAYS (default 5).
+      - name: Restore the vulnerability database
+        id: vulndb-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .harness/vuln-db
+          key: vuln-db-grype-${{ env.GRYPE_VERSION }}-${{ steps.vulndb.outputs.day }}
+          restore-keys: |
+            vuln-db-grype-${{ env.GRYPE_VERSION }}-
+      - name: Fetch the vulnerability database once (a cache miss only)
+        id: vulndb-fetch
+        if: steps.vulndb-cache.outputs.cache-hit != 'true'
+        continue-on-error: true
+        run: pnpm harness vuln-db update
+      - name: Keep today's vulnerability database for the other runs
+        if: steps.vulndb-fetch.outcome == 'success'
+        uses: actions/cache/save@v4
+        with:
+          path: .harness/vuln-db
+          key: vuln-db-grype-${{ env.GRYPE_VERSION }}-${{ steps.vulndb.outputs.day }}
+      # The database this run judges with: schema, build time, age, checksum. Exit 1 when it is unusable, because HARNESS_REQUIRE_STATIC is set.
+      - name: The vulnerability database this run judges with
+        run: pnpm harness vuln-db status
 
       # Last night's verified production images, for a night the registry is down or rate-limiting.
       # The key never matches exactly (it ends in this run's id); restore-keys picks the newest earlier one.
@@ -87,12 +135,13 @@ jobs:
 
       # --load makes the A/A exercise the same k6 comparison a release run does (release.yml passes the same
       # 20x30s), so its noise is calibrated here, not discovered on a release.
-      - name: A/A, three runs, with load
-        run: pnpm harness run --mode noise --a "$TAG" --b "$TAG" --runs 3 --load 20x30s --require-verified
+      - name: A/A, five runs, with load
+        run: pnpm harness run --mode noise --a "$TAG" --b "$TAG" --runs 5 --load 20x30s --require-verified
 
       - name: Show the A/A report
         if: always()
-        run: cat out/*-noise/report.md >> "$GITHUB_STEP_SUMMARY" || true
+        run: |
+          if ls out/*-noise/report.md > /dev/null 2>&1; then cat out/*-noise/report.md >> "$GITHUB_STEP_SUMMARY"; else echo "### A/A: could not judge (no report: the run stopped before a verdict, see the step log)" >> "$GITHUB_STEP_SUMMARY"; fi
 
       - name: Publish the noise status for release runs
         uses: actions/upload-artifact@v4

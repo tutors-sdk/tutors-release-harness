@@ -29,7 +29,7 @@ pnpm exec playwright install chromium
 pnpm harness run --mode noise   --a local --b local            # A/A: is the harness itself clean?
 pnpm harness run --mode release --a 16.2.0 --b 16.3.0-rc.1 \
   --claims ../tutors-mono-repo/release/claims.yaml \
-  --noise out/<the noise run> --runs 3 --load 20x30s          # A/B: gate the candidate
+  --noise out/<the noise run> --runs 5 --load 20x30s          # A/B: gate the candidate
 
 # Published images: pull from Quay, verify the cosign signature, or (loudly) build from the monorepo ref
 export HARNESS_IMAGE_PREFIX='quay.io/tutors-sdk/tutors-{app}'  # default is `tutors` -> tutors/<app>:<tag>, the local build
@@ -53,7 +53,7 @@ Docs: [where the A and B images come from](docs/images.md) ·
 ## How it works
 
 ```
-compose.harness.yaml          two app stacks (a, b), a signed-in reader per side, shared fixtures
+compose.harness.yaml          two app stacks (a, b) of the four apps (reader, catalogue, live, time), a signed-in reader per side, shared fixtures
 fixtures/
   course-server/              static server for the pinned fixture course
   identity/                   GitHub-OAuth-shaped issuer with fixed users per role (TLS, test CA)
@@ -94,7 +94,7 @@ docs/monorepo/                workflows to drop into the monorepo (publish image
 | Document response headers | exact, per header | Any change is a finding — security headers live here |
 | axe (WCAG 2.1 A/AA) violations by rule and node | set diff | New violations fail; fixed ones are noted |
 | Keyboard order: what each successive Tab focuses | sequence diff | A focus stop lost or reordered |
-| Timing: document TTFB per page, journey duration | Mann–Whitney U over ≥3 runs | Regression beyond noise |
+| Timing: document TTFB per page, journey duration | Mann–Whitney U over ≥4 runs (5 recommended); fewer is said out loud, not judged | Regression beyond noise |
 | `/metrics` before and after the journeys | series presence + counter deltas | Missing or new series; a counter that moved differently |
 | Structured logs: JSON-ness, level counts, field set, request-id propagation | aggregate | Log shape or volume changed |
 | Persistence: every write the side attempted, by table and method, per journey | multiset + the anonymous rule | Data written differently — and *any* write during an anonymous journey |
@@ -118,7 +118,7 @@ journeys against production and compares with the recorded candidate.
    differs is noise, and the normaliser must mask it — or the run is not yet
    trustworthy. Nightly. Its `noise-status.json` is what release mode consults.
 2. **Then A/B** (`--mode release`). Deterministic artefacts are compared once;
-   anything statistical wants `--runs 3` and `--load`.
+   anything statistical wants `--runs 5` (at alpha 0.05 four is the least that can ever call a difference significant) and `--load`.
 
 Release and post-deploy modes may **fail** on captured differences only while
 a clean A/A from the last seven days is supplied with `--noise`. Without one,
@@ -170,7 +170,7 @@ harness run --mode <mode> --a <ref> --b <ref> [--substrate compose|kind] [--clai
             [--runs n] [--set fixture,auth,reference] [--journey name]... [--load 20x30s]
             [--now iso] [--out dir] [--image-prefix p|template-with-{app}] [--allow-unsigned]
             [--no-screenshots] [--no-axe] [--no-focus] [--no-runtime] [--startup-restarts n] [--keep] [--no-stack]
-            post-deploy: --recorded <release run dir> --production reader=URL,catalogue=URL,live=URL
+            post-deploy: --recorded <release run dir> --production reader=URL,catalogue=URL,live=URL[,time=URL]
             migration:   --snapshot <pg_dump>      upgrade: --upgrade-seconds 45 --upgrade-rate 20
 harness compare --dir <run dir> --mode <mode> [--claims f] [--noise f]
 harness images ensure --a <ref> --b <ref> [--ref-a git-ref] [--ref-b git-ref] [--allow-unsigned]
@@ -179,6 +179,8 @@ harness kind up|down|rollout --a <ref> --b <ref>
 harness mutants --base <ref>
 harness journeys
 harness version [--json]
+harness local smoke [--tag T] [--only stacks|migration] [--dry-run]   # the two-stacks smoke CI runs: pnpm smoke
+harness prune [--older-than-days 14] [--keep-last 5] [--yes]   # frees out/ and the image cache; a dry run without --yes
 ```
 
 Exit codes: 0 pass or warn, 1 fail (or `images ensure` could not obtain an
@@ -192,9 +194,14 @@ Environment: `HARNESS_IMAGE_PREFIX` (a prefix, `tutors`, or a template,
 `quay.io/tutors-sdk/tutors-{app}`), `HARNESS_COSIGN_IDENTITY` and
 `HARNESS_COSIGN_ISSUER` (who must have signed a pulled image; default the
 monorepo's `image-build.yml` workflow via GitHub OIDC), `HARNESS_ALLOW_UNSIGNED`,
-`HARNESS_PROVENANCE_FILE`. `--a`/`--b` also take
-`reader=REF,catalogue=REF,live=REF` with each `REF` pinned as `repo@sha256:…` —
-[docs/images.md](docs/images.md).
+`HARNESS_PROVENANCE_FILE`, `HARNESS_REQUIRE_ARTEFACTS` (artefacts whose "NOT COLLECTED" gap
+fails instead of informing: a list of `sbom`, `vulns`, `image-manifest`, `runtime`, `startup`,
+`bus`, or `static`, or `all`; `HARNESS_REQUIRE_STATIC=1` is the alias for `static`). `--a`/`--b` also take
+`reader=REF,catalogue=REF,live=REF[,time=REF]` with each `REF` pinned as `repo@sha256:…` —
+[docs/images.md](docs/images.md). The monorepo's four apps are all in the stack; `time` is
+client-rendered and no journey drives it (a journey is added only when a real regression escaped that it would have caught), so it is
+judged by the app-level artefacts only: `metrics`, `logs`, `runtime`, `startup` and the
+image artefacts.
 
 Which commands, flags, report fields and workflow inputs are stable, and what bumps the
 version, is in [docs/contract.md](docs/contract.md).
@@ -207,11 +214,11 @@ prints the same), and the HTML and Markdown reports name it in their footer.
 
 | Workflow | When | Does |
 | --- | --- | --- |
-| `ci.yml` | every PR | unit and fixture tests; masks land in their own PR; two stacks boot, one journey A/A; migration fixtures pass and fail as they must |
-| `nightly-noise.yml` | nightly | A/A on the production tag pulled from Quay (three runs, with load; last night's verified images as the outage fallback, a degraded night); publishes `noise-status.json` as an artifact and to the `noise` branch, and keeps the ratchet — [docs/noise-burndown.md](docs/noise-burndown.md) |
-| `release.yml` | monorepo dispatch on a release branch, or by hand | release mode with claims, 3 runs, k6; migration rehearsal; upgrade rehearsal |
+| `ci.yml` | every PR | unit and fixture tests; masks land in their own PR; two stacks boot, one journey A/A; migration fixtures pass and fail as they must (all of it `pnpm smoke`, the same command locally) |
+| `nightly-noise.yml` | nightly | A/A on the production tag pulled from Quay (five runs, with load; last night's verified images as the outage fallback, a degraded night); publishes `noise-status.json` as an artifact and to the `noise` branch, and keeps the ratchet — [docs/noise-burndown.md](docs/noise-burndown.md) |
+| `release.yml` | monorepo dispatch on a release branch, or by hand | release mode with claims, 5 runs, k6; migration rehearsal; upgrade rehearsal |
 | `post-deploy.yml` | monorepo dispatch after deploy, then every 15 minutes | reference journeys against production vs the recorded candidate; opens a rollback issue on a new difference |
-| `weekly-mutants.yml` | weekly, and on every PR | the ten mutants; on a PR only when it touches an engine, a mask, a journey, the gate or a mutant, which also needs a version bump |
+| `weekly-mutants.yml` | weekly, and on every PR | the ten mutants; on a PR only when it touches an engine, a collector, a mask, a journey, a fixture, a stack, the gate or a mutant (`src/ci/engine-change.ts`), which also needs a version bump |
 
 Images are pulled from Quay (`HARNESS_IMAGE_PREFIX`, default in CI
 `quay.io/tutors-sdk/tutors-{app}`) and their cosign signatures verified — the
@@ -272,7 +279,7 @@ migration fixtures under `tests/fixtures/migrations`. See [TESTING.md](TESTING.m
 
 ## Where to stop
 
-Twelve journeys, not a hundred; ten mutants, not thirty. The harness
+Six journeys in three sets, not a hundred; ten mutants, not thirty. The harness
 compares artefacts, so its power comes from breadth of *capture* per journey,
 not from the number of journeys. Add a journey only when a real regression
 escaped that a journey would have caught.

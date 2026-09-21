@@ -7,9 +7,17 @@
  * unit test holds the two to the same answers.
  */
 
-export const APPS = ["reader", "catalogue", "live"] as const;
+/** The monorepo's four apps (its compose.yaml and image-build.yml matrix), in the order the harness lists them. */
+export const APPS = ["reader", "catalogue", "live", "time"] as const;
 export type App = (typeof APPS)[number];
 export type AppImages = Record<App, string>;
+
+/**
+ * The apps every image spec must name. `time` joined in contract 1.3.0; a spelled-out
+ * `reader=…,catalogue=…,live=…` written for 1.2 keeps working and `time` takes the reader's tag (else the first tag among them)
+ * (the same rule as a single full reference: the other apps take the prefix and the same tag).
+ */
+export const REQUIRED_APPS = ["reader", "catalogue", "live"] as const;
 
 /** The local default: what `docker compose build` in the monorepo produces (`tutors/<app>:local`). */
 export const DEFAULT_IMAGE_PREFIX = "tutors";
@@ -98,43 +106,52 @@ export function isBuildable(spec: string): boolean {
 }
 
 /**
- * Resolve `--a` / `--b` / `--base` into the three image references of a side.
+ * Resolve `--a` / `--b` / `--base` into the image references of a side, one per app.
  *
  *   16.2.0                                  <prefix>(app):16.2.0 for every app
  *   quay.io/tutors-sdk/tutors-reader:16.2.0 that image for its app; the others take the prefix and the same tag
- *   reader=REF,catalogue=REF,live=REF       every image spelled out; each REF may carry @sha256:…
+ *   reader=REF,catalogue=REF,live=REF[,time=REF]
+ *                                           every image spelled out; each REF may carry @sha256:…. `time` may be left
+ *                                           out, and then takes <prefix>(time) at the reader's tag
  *
  * A digest names exactly one image, so it only appears in a full reference.
- * `16.2.0@sha256:…` is refused: three apps cannot share a digest.
+ * `16.2.0@sha256:…` is refused: the apps cannot share a digest.
  */
 export function imagesFor(spec: string, prefix: string): AppImages {
   if (!spec) throw new Error("an image spec is empty");
+  const allAt = (tag: string): AppImages => Object.fromEntries(APPS.map((app) => [app, `${imageRepo(prefix, app)}:${tag}`])) as AppImages;
   if (spec.includes("=")) {
     const parts = Object.fromEntries(spec.split(",").map((kv) => [kv.slice(0, kv.indexOf("=")).trim(), kv.slice(kv.indexOf("=") + 1).trim()]));
-    const missing = APPS.filter((app) => !parts[app]);
-    if (missing.length) throw new Error(`--a/--b with app=image pairs must name every app; missing ${missing.join(", ")}`);
+    const missing = REQUIRED_APPS.filter((app) => !parts[app]);
+    if (missing.length) throw new Error(`--a/--b with app=image pairs must name ${REQUIRED_APPS.join(", ")} (time is optional); missing ${missing.join(", ")}`);
     const unknown = Object.keys(parts).filter((k) => !(APPS as readonly string[]).includes(k));
     if (unknown.length) throw new Error(`--a/--b with app=image pairs: unknown app ${unknown.join(", ")}`);
-    for (const app of APPS) parseRef(parts[app]!);
-    return { reader: parts.reader!, catalogue: parts.catalogue!, live: parts.live! };
+    for (const app of APPS) if (parts[app]) parseRef(parts[app]);
+    if (!parts.time) {
+      // The reader's tag, else the first tag any required app carries (a set pinned by digest alone has none).
+      const tag = REQUIRED_APPS.map((app) => parseRef(parts[app]!).tag).find(Boolean);
+      if (!tag) throw new Error(`--a/--b: no time=… given, and none of ${REQUIRED_APPS.join(", ")} carries a tag for it to take; spell out time=REF`);
+      parts.time = `${imageRepo(prefix, "time")}:${tag}`;
+    }
+    return Object.fromEntries(APPS.map((app) => [app, parts[app]!])) as AppImages;
   }
-  if (isBareTag(spec)) return { reader: `${imageRepo(prefix, "reader")}:${spec}`, catalogue: `${imageRepo(prefix, "catalogue")}:${spec}`, live: `${imageRepo(prefix, "live")}:${spec}` };
+  if (isBareTag(spec)) return allAt(spec);
   if (/^[^/:@]*@/.test(spec)) {
-    throw new Error(`"${spec}": a digest names one image, and the three apps have three digests; spell them out as reader=REPO@sha256:…,catalogue=REPO@sha256:…,live=REPO@sha256:…`);
+    throw new Error(`"${spec}": a digest names one image, and the apps have one digest each; spell them out as reader=REPO@sha256:…,catalogue=REPO@sha256:…,live=REPO@sha256:…,time=REPO@sha256:…`);
   }
 
   // A full reference for one app, e.g. tutors/reader:16.2.0 or a mutant image.
   const parsed = parseRef(spec);
   if (!parsed.tag) {
-    throw new Error(`"${spec}" has no tag for the other apps to take; spell all three out as reader=…,catalogue=…,live=…`);
+    throw new Error(`"${spec}" has no tag for the other apps to take; spell all of them out as reader=…,catalogue=…,live=…,time=…`);
   }
-  const images: AppImages = { reader: `${imageRepo(prefix, "reader")}:${parsed.tag}`, catalogue: `${imageRepo(prefix, "catalogue")}:${parsed.tag}`, live: `${imageRepo(prefix, "live")}:${parsed.tag}` };
+  const images = allAt(parsed.tag);
   const app = appOf(spec, prefix);
   if (app) images[app] = spec;
   return images;
 }
 
-/** `reader=…,catalogue=…,live=…` for a set of images: the spelled-out form `imagesFor` reads back unchanged. */
+/** `reader=…,catalogue=…,live=…,time=…` for a set of images: the spelled-out form `imagesFor` reads back unchanged. */
 export function specFor(images: AppImages): string {
   return APPS.map((app) => `${app}=${images[app]}`).join(",");
 }

@@ -8,11 +8,14 @@ import { loadClaims } from "./claims/schema.ts";
 import { loadRules } from "./claims/rules.ts";
 import { captureSide } from "./collectors/index.ts";
 import { compareCaptures } from "./compare/index.ts";
-import { gate } from "./gate.ts";
+import { gate, rollbackIssueConfigured } from "./gate.ts";
 import { runMigration } from "./modes/migration.ts";
 import { runUpgrade } from "./modes/upgrade.ts";
 import { DEFAULT_MASKS_FILE, loadMasks, normalise, type MaskHits } from "./normalise/masks.ts";
+import { externalOrigins } from "./normalise/origins.ts";
+import { redactCapture } from "./normalise/redact.ts";
 import { writeReports } from "./report/index.ts";
+import { APPS } from "./image-ref.ts";
 import { fileLedger, realExec, resolveSideProvenance, trustPolicyFromEnv } from "./images.ts";
 import { pinImages, type Digests } from "./digests.ts";
 import { deploymentReason, findReleaseRecord, judgeDeployment, releaseRecordOf, writeReleaseRecord } from "./release-record.ts";
@@ -146,8 +149,11 @@ interface CompareInput {
  */
 export function compareFromCaptures(input: CompareInput): RunOutcome {
   const masks = loadMasks(input.masksFile);
-  const na = normalise(input.a, masks, input.mode);
-  const nb = normalise(input.b, masks, input.mode);
+  // An external side's URL is the system's own origin on both sides (src/normalise/origins.ts): post-deploy's recorded side
+  // was captured at another origin, so a literal link to production must read the same as production's own rewritten one.
+  const origins = externalOrigins(input.a, input.b);
+  const na = normalise(input.a, masks, input.mode, { origins });
+  const nb = normalise(input.b, masks, input.mode, { origins });
   const masksApplied: MaskHits = {};
   for (const id of Object.keys(na.hits)) masksApplied[id] = (na.hits[id] ?? 0) + (nb.hits[id] ?? 0);
 
@@ -156,7 +162,8 @@ export function compareFromCaptures(input: CompareInput): RunOutcome {
   const ranAt = new Date();
   const noise = readNoise(input.noise, input.log);
   const degraded = input.mode === "noise" && input.requireVerified ? evidenceGaps(input.a, input.b) : [];
-  const gated = gate({ mode: input.mode, compare, noiseWaived: noise.waived, noiseMaxAgeDays: input.noiseMaxAgeDays, ranAt, ...(degraded.length ? { degraded } : {}), ...(noise.status ? { noise: noise.status } : {}) });
+  // rollbackIssue only words the reason: HARNESS_ROLLBACK_ISSUE (or GitHub Actions) says a CI step opens the issue; a local run has none.
+  const gated = gate({ mode: input.mode, compare, noiseWaived: noise.waived, noiseMaxAgeDays: input.noiseMaxAgeDays, ranAt, rollbackIssue: rollbackIssueConfigured(process.env), ...(degraded.length ? { degraded } : {}), ...(noise.status ? { noise: noise.status } : {}) });
   // Deployed images that are not the ones judged: loud, advisory. A FAIL stays a FAIL, and a PASS is not a clean one.
   const deploymentLine = input.deployment ? deploymentReason(input.deployment) : undefined;
   const verdict = deploymentLine && gated.verdict === "pass" ? { ...gated, verdict: "warn" as const } : gated;
@@ -250,31 +257,35 @@ export async function run(opts: RunOptions): Promise<RunOutcome> {
   // Before anything starts: an unreadable rules file, or a claim naming a rule it does not hold, is exit 2 with no stack up.
   const rules = opts.rules ? await loadRules(opts.rules) : undefined;
   const claims = opts.claimsFile ? loadClaims(opts.claimsFile, rules) : [];
+  // The directory is named now and made once the run has something to put in it (`makeOutDir`): a run that cannot judge (an image
+  // that is not there, or is not verified: exit 2) leaves nothing behind, not an empty directory.
   const outDir = resolve(opts.outDir, timestampDir(opts.mode));
-  mkdirSync(outDir, { recursive: true });
+  const makeOutDir = () => mkdirSync(outDir, { recursive: true });
   opts.log(`harness ${HARNESS_VERSION} · mode ${opts.mode} · substrate ${opts.substrate} · clock ${opts.now} · ${opts.runs} run(s) · out ${outDir}`);
 
   const common = { substrate: opts.substrate, captureDir: outDir, claims, masksFile: opts.masksFile, noiseMaxAgeDays: opts.noiseMaxAgeDays, claimMaxHunks: opts.claimMaxHunks, requireVerified: opts.requireVerified, ...(opts.override ? { override: opts.override } : {}), now: opts.now, runs: opts.runs, log: opts.log, ...(opts.noise ? { noise: opts.noise } : {}) };
 
   // ---- migration: no stacks, a throwaway Postgres and two sets of migrations.
   if (opts.mode === "migration") {
-    const a = sideSpec("a", { reader: `migrations:${opts.a}`, catalogue: "-", live: "-" });
-    const b = sideSpec("b", { reader: `migrations:${opts.b}`, catalogue: "-", live: "-" });
+    makeOutDir();
+    const a = sideSpec("a", { reader: `migrations:${opts.a}`, catalogue: "-", live: "-", time: "-" });
+    const b = sideSpec("b", { reader: `migrations:${opts.b}`, catalogue: "-", live: "-", time: "-" });
     const { result, hunks } = runMigration({ a: opts.a, b: opts.b, workDir: outDir, log: opts.log, ...(opts.snapshot ? { snapshot: opts.snapshot } : {}) });
     return compareFromCaptures({ ...common, mode: "migration", a: emptyCapture(a), b: emptyCapture(b), extraHunks: hunks, extras: { migration: result } });
   }
 
   // ---- post-deploy: a is the recorded candidate, b is live production, synthetic traffic only.
   if (opts.mode === "post-deploy") {
-    if (!opts.recorded || !opts.production) throw new Error("post-deploy needs --recorded <release run dir> and --production reader=..,catalogue=..,live=..");
+    if (!opts.recorded || !opts.production) throw new Error("post-deploy needs --recorded <release run dir> and --production reader=..,catalogue=..,live=..[,time=..]");
     const recorded = loadCapture(opts.recorded, "b");
+    makeOutDir();
     const b = externalSide("b", opts.production, reference.courseId);
     const journeys = selectJourneys(["reference"], opts.journeys);
     opts.log(`  a: recorded ${recorded.images.reader} from ${opts.recorded}`);
     opts.log(`  b: live ${b.urls.reader}`);
     const captureB = await captureSide(b, journeys, { outDir, now: opts.now, runs: opts.runs, screenshots: opts.screenshots, axe: opts.axe, focusStops: opts.focusStops, log: opts.log });
     // Only the reference journeys are comparable against production.
-    const recordedRef: SideCapture = { ...recorded, side: "a", journeys: recorded.journeys.filter((j) => journeys.some((s) => s.name === j.journey)), logs: {}, metrics: { before: {}, after: {} } };
+    const recordedRef: SideCapture = { ...redactCapture(recorded), side: "a", journeys: recorded.journeys.filter((j) => journeys.some((s) => s.name === j.journey)), logs: {}, metrics: { before: {}, after: {} } };
     delete recordedRef.load;
     mkdirSync(join(outDir, "a"), { recursive: true });
     writeFileSync(join(outDir, "a", "capture.json"), JSON.stringify(recordedRef, null, 2));
@@ -298,8 +309,9 @@ export async function run(opts: RunOptions): Promise<RunOutcome> {
   const trust = { exec: realExec, ledger: fileLedger(), policy: trustPolicyFromEnv(process.env, opts.allowUnsigned), log: opts.log };
   a.provenance = resolveSideProvenance(a.images, trust);
   b.provenance = resolveSideProvenance(b.images, trust);
-  opts.log(`  a: ${a.images.reader}, ${a.images.catalogue}, ${a.images.live} — ${a.provenance.summary}`);
-  opts.log(`  b: ${b.images.reader}, ${b.images.catalogue}, ${b.images.live} — ${b.provenance.summary}`);
+  makeOutDir();
+  opts.log(`  a: ${APPS.map((app) => a.images[app]).join(", ")} — ${a.provenance.summary}`);
+  opts.log(`  b: ${APPS.map((app) => b.images[app]).join(", ")} — ${b.provenance.summary}`);
   // R5: what the images are (manifest, SBOM, vulnerabilities), read from the images before anything runs.
   const staticPolicy = { ...staticPolicyFromEnv(process.env, trust.policy), ...opts.static };
   opts.log("collecting static image artefacts (manifest, SBOM, vulnerabilities)…");

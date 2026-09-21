@@ -26,16 +26,16 @@ Hunks carry the artefact `bus` and the scope `<journey>/<topic>`, so a claim is
 
 With `HARNESS_BUS` unset the collector does nothing and says so:
 
-- the run log has a line per side, `bus traffic not collected: no bus
+- the run log has a line per side, `NOT COLLECTED: bus traffic on side a: no bus
   configured (set HARNESS_BUS to collect it; see docs/bus.md)`;
 - each side's `capture.json` carries `"bus": { "collected": false, "reason":
-  "not collected: no bus configured" }`, so an absent collector can never be
+  "no bus configured" }`, so an absent collector can never be
   read as a clean bus;
 - no journey capture gets a `bus` field, the engine produces no hunk, and
   `report.json`, `report.md` and `report.html` are byte-for-byte what they were.
 
-A side that is a live deployment (post-deploy mode) records `not collected:
-external deployment`. If one side collected and the other did not, the engine
+A side that is a live deployment (post-deploy mode) records `external deployment`
+as the reason. If one side collected and the other did not, the engine
 emits a single informational hunk (`bus/collection`) and no comparison; it
 never fails the run.
 
@@ -43,8 +43,11 @@ An unknown transport name in `HARNESS_BUS` is an error (exit 2), not a
 fallback: recording with the wrong transport would silently record nothing.
 
 Surfacing "not collected" in `report.md` would change every existing report, so
-it is left to whoever ships the bus; the natural place is one `reasons` line
-once a bus is expected to be present.
+it is left to whoever ships the bus: once a bus is expected to be present, set
+`HARNESS_REQUIRE_ARTEFACTS=bus` and a side with no bus is a failing
+`bus/not-collected` hunk (never asked of a live deployment). The text, the scope
+and the rule are the one convention of
+[docs/contract.md](contract.md#not-collected-one-convention).
 
 ## The transport seam
 

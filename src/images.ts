@@ -220,7 +220,7 @@ export function describeProvenance(info: ImageInfo): string {
   return info.provenance;
 }
 
-/** One line per side: the single provenance when the three images agree, otherwise each app's. */
+/** One line per side: the single provenance when the images agree, otherwise each app's. */
 export function summarise(images: Record<App, ImageInfo>, allowedUnsigned: boolean): SideProvenance {
   const each = APPS.map((app) => describeProvenance(images[app]));
   const summary = new Set(each).size === 1 ? each[0]! : APPS.map((app, i) => `${app}: ${each[i]}`).join("; ");
@@ -334,7 +334,7 @@ export function tagAgreesWithDigest(exec: Exec, ref: string): { ok: true } | { o
 }
 
 function build(exec: Exec, ref: string, tag: string, prefix: string, log: (m: string) => void): boolean {
-  log(`  BUILDING FROM SOURCE: ${tag} is not in the registry; building the three images from monorepo ref ${ref}`);
+  log(`  BUILDING FROM SOURCE: ${tag} is not in the registry; building the four images from monorepo ref ${ref}`);
   return exec(bashCommand(), ["scripts/build-images.sh", ref, tag], { env: { HARNESS_IMAGE_PREFIX: prefix }, inherit: true }).status === 0;
 }
 
@@ -464,7 +464,7 @@ export function ensureImages(requests: ImageRequest[], prefix: string, deps: Ens
         sides.push({ spec: request.spec });
         continue;
       }
-      // The build tags all three apps, replacing anything pulled under the same tag.
+      // The build tags all four apps, replacing anything pulled under the same tag.
       const ledger = store.read();
       for (const ref of new Set(Object.values(images))) {
         const inspected = inspect(exec, ref);
@@ -480,6 +480,7 @@ export function ensureImages(requests: ImageRequest[], prefix: string, deps: Ens
       const provenance = resolveSideProvenance(images, { exec, ledger: store, policy, log });
       for (const app of APPS) {
         const info = provenance.images[app];
+        if (!info) continue;
         log(`  ${app}: ${info.ref} — ${describeProvenance(info)}${info.digest ? ` · ${info.digest.slice(0, 19)}…` : ""}${info.revision ? ` · revision ${short(info.revision)}` : ""}${info.version ? ` · version ${info.version}` : ""}`);
       }
       sides.push({ spec: request.spec, provenance });

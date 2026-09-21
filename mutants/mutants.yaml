@@ -6,7 +6,11 @@
 # business gating a release.
 #
 # `runs` is the number of journey repetitions the mutant needs to be caught;
-# only the timing mutant needs more than one.
+# only the timing mutant needs more than one, and it needs FIVE: Mann-Whitney
+# at alpha 0.05 cannot say "slower" from fewer than four samples a side (3 v 3
+# perfectly separated is p = 0.081), and five is the least that keeps a single
+# overlapping pair from hiding it (5 v 5 is p = 0.012 separated, 0.022 with one pair swapped;
+# 4 v 4 with one pair swapped is 0.061). See docs/noise-burndown.md, "k6 timing spread".
 #
 # `kind` is how the mutant is made (src/mutant-build.ts): `edge` (default) is
 # the wrapper in wrap.mjs planting a fault at the HTTP edge; `planted-package`
@@ -36,7 +40,7 @@ mutants:
   - name: slow-ssr
     plants: 400 ms added to every HTML response
     expect: [timing]
-    runs: 3
+    runs: 5
 
   - name: anon-write
     plants: every page records a learning event for anonymous readers

@@ -8,19 +8,36 @@
 #
 # Mask kinds, by artefact:
 #   headers:  `header: <name>`               drops that response header
+#             `header: <name>` + `pattern`   drops it only when its value matches (against the CANONICAL value, below)
 #             `pattern: <regex>`             rewrites matches inside every header value
 #   dom | console | network:
 #             `pattern: <regex>`             replaces matches with `replace` (default "{{masked}}")
 #             `network` masks apply to the request URL only; with `drop: true`
 #             the matching requests are removed from the comparison entirely
+#             `console` masks apply to each message's text; with `drop: true`
+#             the matching console entries are removed from that page's list
+#             on both sides (use it only for noise whose COUNT varies with
+#             timing: a rewrite cannot hide a message that one side logged
+#             twice and the other never)
+#             (`drop` is accepted on network and console pattern masks only)
 #   metrics:  `series: <regex>`              drops matching series names
 #   logs:     `key: <name>`                  drops that key from the key-set comparison
 # `replace` may keep parts of the match with $1, $2 …; `modes: [post-deploy]`
-# limits a mask to some modes (default: all).
+# limits a mask to some modes (default: all). A network entry records only two
+# response headers, so a `header:` mask with artefact `network` names
+# `content-type` or `cache-control` and clears that field of the matching entries.
 #
 # Structural normalisation that is NOT a mask (and needs no entry here): each
 # side's own origin is replaced by {{origin}} by the collector, because the two
 # sides necessarily answer on different ports.
+#
+# Canonical forms, also NOT masks (src/normalise/canonical.ts): before any mask runs,
+# BOTH sides' `content-type` and `cache-control` (document headers and network entries)
+# are put in one form: cache-control directives lower-cased, whitespace stripped, sorted
+# and de-duplicated; content-type without the default charset (utf-8), with the legacy
+# JavaScript aliases folded into text/javascript. Reordering and re-spelling therefore
+# never differ, while a changed max-age or a lost `immutable` still does. A mask
+# pattern on these two headers is written against the canonical form.
 
 masks:
   - id: response-date
@@ -59,6 +76,38 @@ masks:
       dependency shows up as a dom or console change instead. Stubbing the CDN in the fixture stack would
       let this mask go.
 
+  - id: persistence-stub-requests
+    artefact: network
+    pattern: '^\{\{origin\}\}/(rest|realtime|auth)/v1/'
+    drop: true
+    reason: >-
+      The signed-in reader talks to its side's persistence stub (Supabase-shaped: /rest/v1, /realtime/v1,
+      /auth/v1) on timers and debounces, so how many upserts, count queries and socket handshakes land inside the
+      window before a page settles depends on how long the page happened to be open: an A/A on the same image showed
+      the same POST 4x on a and 3x on b, and 2x against 1x, and a response body whose shape differed between the
+      first and a later call. What the reader writes is judged by the persistence artefact, per journey and per
+      table (the stub is the recorder), and the anonymous-write rule; the network engine's per-page request counts
+      cannot tell a regression from a timer tick. Only the stub's Supabase paths are dropped: the reader's own routes
+      and the fixture course are still compared.
+
+  - id: realtime-rest-fallback-warning
+    artefact: console
+    pattern: '^Realtime send\(\) is automatically falling back to REST API'
+    drop: true
+    reason: >-
+      The signed-in reader's Supabase Realtime client cannot open its websocket to the persistence stub (the
+      handshake is answered 404), so every presence or broadcast send logs "Realtime send() is automatically
+      falling back to REST API. This behavior will be deprecated in the future. Please use httpSend()
+      explicitly for REST delivery." and posts over REST. Those sends run on timers, so how many land before a
+      page settles is not the release's: an A/A on the same image logged it 6+ times on the topic page on side
+      a, and 2 times on the previous (course) page and 5 times on the topic page on side b. The console engine
+      compares each page's messages as a set, so a message present on one side and absent on the other is a
+      failure, and a rewrite cannot fix a count; the entries are dropped instead. The WebSocket failure
+      message itself is deliberately NOT masked: it is stable per page and still compared. What the reader
+      persists is judged by the persistence artefact and the anonymous-write rule (the REST calls themselves
+      are dropped by persistence-stub-requests). Blind spot: a regression that makes the reader emit this
+      warning where it did not before is invisible on the console artefact.
+
   - id: hashed-assets
     artefact: [network, headers]
     pattern: "(/_app/immutable/[a-z]+/(?:[A-Za-z0-9_-]+\\.)?)[A-Za-z0-9_-]{8}(\\.(?:js|css|woff2?|json))"
@@ -67,6 +116,17 @@ masks:
       SvelteKit names every chunk and stylesheet by content hash, so two builds — even of the same
       commit on different machines — request different file names. What is compared instead is how many
       chunks and stylesheets each page loads and their statuses; a bundle that grows or splits still shows.
+
+  - id: footer-tutors-version
+    artefact: dom
+    pattern: "(Tutors v:\\s*)\\d+\\.\\d+\\.\\d+(?:[-+][0-9A-Za-z.+-]+)?"
+    replace: "$1{{version}}"
+    reason: >-
+      The UI footer prints the release's own version ("Tutors v:" + APP_VERSION, the element marked
+      data-tutors-build="version"), so every release differs there by construction. The ARIA snapshot
+      carries text but no attributes, so the mask keys on the label: only the semver token directly after
+      "Tutors v:" is rewritten. Other footer text, other version-like strings, and the label itself still
+      compare. The version is not a regression; whether the footer is present and worded the same is.
 
   - id: transport-length
     artefact: headers
@@ -90,8 +150,12 @@ masks:
     reason: Connection reuse parameters of the transport; a CDN or router rewrites them.
 
   # Production sits behind a CDN the harness stacks do not have; these headers
-  # describe the CDN. Security headers are deliberately NOT here: a CDN that
-  # adds HSTS is a difference worth seeing once and claiming.
+  # and requests describe the CDN. Only what exists SOLELY because Netlify is in
+  # front is here, and only in post-deploy mode (release mode compares two stacks
+  # with no CDN, where every one of these would be a real finding). A header the
+  # app itself may change (a different max-age, an added `no-store`, a lost
+  # `immutable`) is NOT masked: cache-control and content-type are compared in
+  # their canonical form instead (src/normalise/canonical.ts).
   - id: cdn-age
     artefact: headers
     header: age
@@ -122,6 +186,43 @@ masks:
     header: netlify-vary
     modes: [post-deploy]
     reason: Netlify's own cache-key directive; only exists in front of production.
+  - id: cdn-hsts
+    artefact: headers
+    header: strict-transport-security
+    modes: [post-deploy]
+    reason: >-
+      Netlify injects HSTS on every HTTPS response; the recorded stack answers on plain HTTP and cannot send it
+      meaningfully. In release mode (two stacks, no CDN) HSTS is not masked, so an app that starts or stops
+      sending it is still seen there. Blind spot: an app that starts sending its own HSTS is invisible in post-deploy.
+  - id: cdn-rum-request
+    artefact: network
+    pattern: "^\\{\\{origin\\}\\}/\\.netlify/scripts/rum$"
+    drop: true
+    modes: [post-deploy]
+    reason: >-
+      Netlify's real-user-monitoring snippet is injected into HTML by the CDN and fetches /.netlify/scripts/rum
+      from production only; no release of the app adds or removes it. Only that exact path is dropped, so any
+      other new request on production still shows.
+  - id: cdn-document-no-cache
+    artefact: [headers, network]
+    header: cache-control
+    pattern: "^no-cache$"
+    modes: [post-deploy]
+    reason: >-
+      Netlify answers server-rendered documents that carry no Cache-Control with `no-cache` (revalidate every
+      time); the recorded stack sends nothing. Only a value that is exactly `no-cache` is cleared, so a document
+      that gains a max-age or `no-store` still differs. Blind spot: an app that itself starts sending only
+      `no-cache` is invisible in post-deploy (visible in release mode).
+  - id: cdn-static-revalidate
+    artefact: [headers, network]
+    header: cache-control
+    pattern: "^max-age=0,must-revalidate,public$"
+    modes: [post-deploy]
+    reason: >-
+      Netlify's default for a static file served without its own Cache-Control (for example /icons/copy.svg) is
+      `public,max-age=0,must-revalidate`, written here in the canonical sorted form; the recorded stack sends
+      nothing. Only that exact value is cleared: a static file that gains a real max-age, or hashed assets that
+      lose `immutable`, still differ. Blind spot as for cdn-document-no-cache.
 
 # Engine settings. Thresholds are noise floors measured by A/A runs; raising
 # one is a mask and needs the same review.
@@ -146,6 +247,11 @@ logs:
 timing:
   # Timing is compared with Mann-Whitney U only with at least this many runs per side;
   # with fewer, a large median shift is reported as info, never as a failure.
+  # This is a floor on the sample, not a promise that the sample can judge: at alpha
+  # 0.05 the test cannot reach significance from fewer than 4 samples a side (3 v 3,
+  # perfectly separated, is p = 0.081), and the engine says so, as information, when
+  # the runs it was given cannot ("samples cannot reach alpha ... Raise --runs").
+  # Widen alpha or raise --runs, never retry. 5 runs is what the nightly and release use.
   minRuns: 3
   alpha: 0.05
   # Side b's median must exceed side a's by at least this fraction AND this

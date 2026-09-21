@@ -76,6 +76,13 @@ describe("load", () => {
     expect(hunks.map((h) => [h.artefact, h.scope, h.severity])).toEqual([["timing", "load/http_req_duration", "fail"]]);
   });
 
+  it("a k6 run that kept too few samples to ever reach alpha says so instead of passing quietly", () => {
+    // 3 v 3 perfectly separated is p = 0.081 at best: no difference could be judged at alpha 0.05.
+    const hunks = diff(withLoad("a", 60, [50, 51, 52]), withLoad("b", 120, [100, 101, 102]));
+    expect(hunks.map((h) => [h.artefact, h.scope, h.severity])).toEqual([["timing", "load/http_req_duration", "info"]]);
+    expect(hunks[0]!.summary).toContain("3/3 samples cannot reach alpha 0.05 (best possible p=0.081)");
+  });
+
   it("a small shift within the noise floor is silent", () => {
     expect(diff(withLoad("a", 60, spread(50)), withLoad("b", 65, spread(52)))).toEqual([]);
   });
