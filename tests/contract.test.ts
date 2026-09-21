@@ -11,11 +11,17 @@ import { join, resolve } from "node:path";
 import { Ajv, type ValidateFunction } from "ajv";
 import { describe, expect, it } from "vitest";
 import { parse } from "yaml";
+import { claimLabel, parseRules } from "../src/claims/rules.ts";
 import { parseClaims } from "../src/claims/schema.ts";
 import { exitCodeFor, gate } from "../src/gate.ts";
 import { parseNoiseStatus } from "../src/noise.ts";
 import { DEFAULT_MASKS_FILE } from "../src/normalise/masks.ts";
 import { compareFromCaptures, defaultRunOptions } from "../src/run.ts";
+import { defaultNoise, recordNight } from "../src/local/noise-store.ts";
+import { noiseDir } from "../src/local/home.ts";
+import { pinImages } from "../src/digests.ts";
+import { composeProject, derivedName, harnessRoot, kindCluster } from "../src/project.ts";
+import { findReleaseRecord, judgeDeployment, releaseRecordOf, writeReleaseRecord } from "../src/release-record.ts";
 import { renderHtml } from "../src/report/html.ts";
 import { renderMarkdown } from "../src/report/markdown.ts";
 import { DEFAULT_COSIGN_IDENTITY, DEFAULT_COSIGN_ISSUER, EXIT_CANNOT_JUDGE, EXIT_UNAVAILABLE } from "../src/images.ts";
@@ -182,6 +188,7 @@ describe("report.json", () => {
     expect(contractMd).toContain(`one of the ${words[ARTEFACTS.length]} artefact names above`);
     for (const stale of words.slice(1, 25).filter((w) => w !== words[ARTEFACTS.length])) expect(contractMd, stale).not.toContain(`one of the ${stale} artefact names`);
     const changes = contractMd.slice(contractMd.indexOf("### 1.2.0"));
+    expect(changes).not.toContain("### 1.3.0");
     const since = new Set(["bus", "image-manifest", "sbom", "vulns", "runtime", "startup"]);
     for (const artefact of since) expect(ARTEFACTS as readonly string[]).toContain(artefact);
     const additions = [...since, "claimHygiene", "override", "imageArtefacts", "cached", "cachedAt", "degraded", "--image-cache", "--require-verified", "--override-reason", "--override-by", "--claim-max-hunks", "--no-runtime", "--startup-restarts", "HARNESS_CLAIM_MAX_HUNKS", "HARNESS_SBOM_SOURCE", "HARNESS_SBOM_CMD", "HARNESS_VULN_CMD", "HARNESS_VULN_DB_DIR", "HARNESS_REQUIRE_STATIC"];
@@ -189,10 +196,38 @@ describe("report.json", () => {
     const cli = json("docs/contract/cli.json");
     for (const flag of cli.flags.filter((f: { since?: string }) => f.since === "1.2.0")) expect(changes, flag.name).toContain(`--${flag.name === "runtime" ? "no-runtime" : flag.name}`);
     for (const [name, v] of Object.entries(cli.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.2.0")) expect(changes, name).toContain(name);
-    expect(CONTRACT_VERSION).toBe("1.2.0");
-    expect(HARNESS_VERSION).toBe("1.2.0");
+    expect(CONTRACT_VERSION).toBe("1.3.0");
+    expect(HARNESS_VERSION).toBe("1.3.0");
     expect(json("package.json").version).toBe(HARNESS_VERSION);
     for (const doc of [cli, json("docs/contract/workflows.json")]) expect(doc.contractVersion).toBe(CONTRACT_VERSION);
+  });
+
+  it("its 1.3.0 changelog lists every addition, the decisions and the reasons", () => {
+    const start = contractMd.indexOf("### 1.3.0");
+    const changes = contractMd.slice(start, contractMd.indexOf("### 1.2.0"));
+    expect(start).toBeGreaterThan(0);
+    const additions = [
+      // A: digests, the record, the deployment check
+      "production_digests", "candidate_digests", "--a-digests", "--b-digests", "--deployed", "--deployed-digests", "--release-record", "release-record.schema.json", "release-record.json", "release-records", "publish-record", "deployment", "exit `2`",
+      // B: rule on claims
+      "`rule`", "ruleTitle", "--rules", "rules_url", "rules.schema.json",
+      // C: the local noise store
+      "HARNESS_HOME", "--noise", "`none`", "warns",
+      // D: the commands, the choice and the reason
+      "harness doctor", "harness noise record", "harness noise\n  status", "harness guard", "harness local", "harness override\n  list", "noise history", "the workflows\n  and the monorepo depend on them",
+      // E: names
+      "HARNESS_PROJECT", "HARNESS_COMPOSE_PROJECT", "HARNESS_KIND_CLUSTER", "tutors-harness-<first 8 hex", "legacy stack", "never adopted or deleted"
+    ];
+    const cliJson = json("docs/contract/cli.json");
+    for (const item of additions) expect(changes, item).toContain(item);
+    for (const flag of cliJson.flags.filter((f: { since?: string }) => f.since === "1.3.0")) expect(changes, flag.name).toContain(`--${flag.name}`);
+    for (const command of cliJson.commands.filter((c: { since?: string }) => c.since === "1.3.0")) expect(changes, command.name).toContain(command.name);
+    for (const [name, v] of Object.entries(cliJson.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.3.0")) expect(changes, name).toContain(name);
+    for (const [event, spec] of Object.entries(workflowsContract.repositoryDispatch)) {
+      for (const [field, f] of Object.entries(spec.clientPayload as Record<string, { since?: string }>)) if (f.since === "1.3.0") expect(changes, `${event}.${field}`).toContain(field);
+    }
+    // the non-additive parts are said to be
+    for (const caveat of ["was\nignored", "a missing `--noise` no longer", "default name of the compose project", "left alone"]) expect(changes.replaceAll("\n", " ").replaceAll("  ", " "), caveat).toContain(caveat.replaceAll("\n", " "));
   });
 
   it("the schema and RunReport name the same top-level fields", () => {
@@ -268,6 +303,96 @@ describe("report.json", () => {
       expect(text).toContain(`harness ${HARNESS_VERSION}`);
       expect(text).toContain(`contract ${CONTRACT_VERSION}`);
     }
+  });
+});
+
+describe("one whole run carrying every 1.3.0 addition at once", () => {
+  const rulesText = JSON.stringify({ version: 1, rules: { "0031": { title: "Lab steps show their estimated reading time", digest: "sha256:aa" }, "0044": { title: "Presence is polled every 15 seconds" } } });
+  const claimsText = [
+    "claims:",
+    "  - artefact: headers",
+    '    scope: "reader:course"',
+    '    rule: "0031"',
+    "  - artefact: network",
+    '    scope: "GET /gone"',
+    '    rule: "0044"',
+    '    reason: "free text beside a rule"',
+    "  - artefact: dom",
+    '    scope: "reader:nothing"',
+    '    reason: "Rule 0002: spelled out, as it always could be"'
+  ].join("\n");
+  const digest = (n: number) => `sha256:${n.toString(16).padStart(2, "0").repeat(32)}`;
+  const at = (side: "a" | "b", tag: string, base?: number, provenance?: "pulled+verified") => {
+    const images = Object.fromEntries(APPS.map((app) => [app, `quay.io/tutors-sdk/tutors-${app}:${tag}`])) as Record<(typeof APPS)[number], string>;
+    const pinned = base === undefined ? images : pinImages(images, Object.fromEntries(APPS.map((app, i) => [app, digest(base + i)])));
+    const info = Object.fromEntries(APPS.map((app, i) => [app, { ref: pinned[app], id: `sha256:${i}`, ...(base === undefined ? {} : { digest: digest(base + i) }), provenance: provenance ?? "local" }]));
+    return capture(side, { images: pinned, ...(provenance ? { provenance: { summary: provenance, images: info as never } } : {}) });
+  };
+
+  it("release mode, then post-deploy mode: pinned digests, rule claims, the store's noise status, the record, the deployment warning", () => {
+    // C: a clean A/A in the local store, found because --noise is omitted
+    const home = mkdtempSync(join(tmpdir(), "harness-whole-"));
+    recordNight({ status: (() => { const d = mkdtempSync(join(tmpdir(), "harness-whole-noise-")); writeFileSync(join(d, "noise-status.json"), JSON.stringify({ schemaVersion: 1, ranAt: new Date().toISOString(), clean: true, hunks: 0 })); return d; })(), store: noiseDir(home) });
+    const noise = defaultNoise("release", undefined, () => {}, home);
+    expect(noise).toBeDefined();
+
+    // B: claims that name rules, checked against rules.json; A: the candidate pinned by the dispatch's digests
+    const rules = parseRules(rulesText);
+    const claims = parseClaims(claimsText, "claims.yaml", rules);
+    const b = clone(at("b", "16.3.0-rc.4", 10, "pulled+verified"));
+    delete b.journeys[0]!.pages[0]!.headers["x-frame-options"];
+    const dir = mkdtempSync(join(tmpdir(), "harness-whole-run-"));
+    const release = compareFromCaptures({ mode: "release", substrate: "compose", captureDir: dir, a: at("a", "16.2.0", 1, "pulled+verified"), b, claims, masksFile: DEFAULT_MASKS_FILE, noiseMaxAgeDays: 7, now: "2026-09-16T09:05:00.000Z", runs: 1, log: () => {}, ...(noise ? { noise } : {}) });
+    expectValid(validateReport, release.report);
+    expect(release.report.verdict).toBe("pass");
+    expect(release.report.sides.b.reader).toBe(`quay.io/tutors-sdk/tutors-reader:16.3.0-rc.4@${digest(10)}`);
+    const claimed = release.report.compare.matches.filter((m) => m.claim);
+    expect(claimed.map((m) => claimLabel(m.claim!))).toEqual(["Rule 0031: Lab steps show their estimated reading time"]);
+    expect(release.report.compare.staleClaims.map(claimLabel)).toEqual(["Rule 0044: Presence is polled every 15 seconds — free text beside a rule", "Rule 0002: spelled out, as it always could be"]);
+
+    // A: the record release mode leaves, and the store post-deploy mode reads it from
+    const made = releaseRecordOf(release.report, { pinned: true });
+    if (!("record" in made)) throw new Error(made.skipped);
+    const store = join(home, "releases");
+    const files = writeReleaseRecord(made.record, { store, outDir: dir, log: () => {} });
+    expect(files.map((f) => f.split(/[\\/]/).pop())).toEqual(["16.3.0-rc.4.json", "16.3.0.json", "release-record.json"]);
+    const ajvRecord = new Ajv({ allErrors: true, strict: true });
+    ajvRecord.addFormat("date-time", /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/);
+    const validateRecord = ajvRecord.compile(json("docs/contract/release-record.schema.json"));
+    expectValid(validateRecord, JSON.parse(readFileSync(join(dir, "release-record.json"), "utf8")));
+    const ajvRules = new Ajv({ allErrors: true, strict: true });
+    expectValid(ajvRules.compile(json("docs/contract/rules.schema.json")), JSON.parse(rulesText));
+
+    // the deploy says live is not the image that was judged
+    const deployed = { ...Object.fromEntries(APPS.map((app, i) => [app, digest(10 + i)])), live: digest(99) };
+    const found = findReleaseRecord("16.3.0", store);
+    expect(found.record?.candidate).toBe("16.3.0-rc.4");
+    const deployment = judgeDeployment({ production: "16.3.0", digests: deployed, found });
+    const postDir = mkdtempSync(join(tmpdir(), "harness-whole-post-"));
+    const post = compareFromCaptures({ mode: "post-deploy", substrate: "compose", captureDir: postDir, a: at("a", "16.3.0-rc.4", 10, "pulled+verified"), b: at("b", "16.3.0-rc.4"), claims, masksFile: DEFAULT_MASKS_FILE, noiseMaxAgeDays: 7, now: "2026-09-16T09:05:00.000Z", runs: 1, log: () => {}, ...(noise ? { noise } : {}), deployment });
+    const written = JSON.parse(readFileSync(post.files.json, "utf8")) as RunReport;
+    expectValid(validateReport, written);
+    expect(written.verdict).toBe("warn");
+    expect(written.deployment).toMatchObject({ status: "differs", production: "16.3.0", record: { candidate: "16.3.0-rc.4", verdict: "pass" } });
+    expect(written.reasons[0]).toMatch(/^DEPLOYED IMAGES DIFFER/);
+    for (const text of [readFileSync(post.files.md, "utf8"), readFileSync(post.files.html, "utf8")]) {
+      expect(text).toContain("The deployed images are NOT the ones release mode judged");
+      expect(text).toContain("Deployment 16.3.0");
+    }
+
+    // E: the names this checkout runs under, and the ones it must never take
+    expect(composeProject({}, harnessRoot()).name).toBe(derivedName(harnessRoot()));
+    expect(kindCluster({}, harnessRoot()).name).toMatch(/^tutors-harness-[0-9a-f]{8}$/);
+    expect(kindCluster({}, harnessRoot()).name).not.toBe("tutors-harness");
+  });
+
+  it("a 1.2.0 dispatch, claims file and report are still valid: none of the new fields is required anywhere", () => {
+    expect(validateReport(clone(runFixture("release").written))).toBe(true);
+    expect(Object.keys(reportSchema.properties.deployment.properties)).not.toContain("required");
+    expect(reportSchema.required).not.toContain("deployment");
+    expect(reportSchema.definitions.claim.required).toEqual(["artefact", "scope", "reason"]);
+    for (const spec of Object.values(workflowsContract.repositoryDispatch)) for (const [field, f] of Object.entries(spec.clientPayload as Record<string, { since?: string; required?: boolean }>)) if (f.since === "1.3.0") expect(f.required, field).toBe(false);
+    expect(parseClaims('claims:\n  - artefact: dom\n    scope: "reader:*"\n    reason: "Rule 0031: reading time"\n')).toHaveLength(1);
   });
 });
 

@@ -1,6 +1,6 @@
 {
   "$comment": "What the harness's workflows accept from outside and publish, machine-readable. tests/contract.test.ts fails when this and .github/workflows disagree.",
-  "contractVersion": "1.2.0",
+  "contractVersion": "1.3.0",
   "repositoryDispatch": {
     "release-candidate": {
       "workflow": "release.yml",

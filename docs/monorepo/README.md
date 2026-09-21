@@ -14,9 +14,10 @@ The monorepo also checks `release/claims.yaml` on the push and on the release PR
 minutes instead of in the harness run. That check mirrors
 `src/claims/schema.ts`, and the harness's parse is the authority: both must
 accept the same artefact names (the nineteen in [the contract](../contract.md)),
-accept the optional `version: 1`, and ignore unknown keys. A mirror that is
-stricter rejects a file the harness would take; one that is looser lets
-through a file that stops the run with exit 2.
+accept the optional `version: 1`, ignore unknown keys, and (since 1.3.0) take
+`rule: "0031"` (four digits, quoted) in place of a `reason`, with `reason`
+required otherwise. A mirror that is stricter rejects a file the harness would
+take; one that is looser lets through a file that stops the run with exit 2.
 
 ## Since 1.3.0: rules, digests, and what was deployed
 
@@ -110,7 +111,7 @@ harness must change with it:
 
 What the harness accepts, writes and promises — event types, payload fields,
 `report.json`, exit codes, what it will never do to a PR — is in
-[the contract](../contract.md). Pin the harness by tag (`v1.2.0`).
+[the contract](../contract.md). Pin the harness by tag (`v1.3.0`).
 
 On the harness side, set the repository variables:
 

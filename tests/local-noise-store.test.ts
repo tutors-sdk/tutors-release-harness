@@ -24,7 +24,7 @@ const quiet = () => vi.spyOn(console, "log").mockImplementation(() => undefined)
 function noiseRun(status: Partial<NoiseStatus> & { ranAt: string }, extra: object = {}): string {
   const dir = tmp("noise-run");
   writeFileSync(join(dir, STATUS_FILE), JSON.stringify({ schemaVersion: 1, clean: true, hunks: 0, ...status }));
-  writeFileSync(join(dir, "report.json"), JSON.stringify({ harness: { version: "1.2.0" }, masksApplied: { "some-mask": 4 }, ...extra }));
+  writeFileSync(join(dir, "report.json"), JSON.stringify({ harness: { version: "1.3.0" }, masksApplied: { "some-mask": 4 }, ...extra }));
   return dir;
 }
 
@@ -202,7 +202,7 @@ describe("noise record: the same three files the noise branch holds", () => {
     expect(readFileSync(join(store, STATUS_FILE), "utf8")).toBe(readFileSync(join(dir, STATUS_FILE), "utf8"));
     const history = JSON.parse(readFileSync(join(store, HISTORY_FILE), "utf8")) as { entries: { hunks: number; tag: string; harnessVersion: string }[] };
     expect(history.entries).toHaveLength(1);
-    expect(history.entries[0]).toMatchObject({ tag: "16.2.0", hunks: 0, harnessVersion: "1.2.0" });
+    expect(history.entries[0]).toMatchObject({ tag: "16.2.0", hunks: 0, harnessVersion: "1.3.0" });
     expect(readFileSync(join(store, SUMMARY_FILE), "utf8")).toContain("Nightly noise (A/A) — clean");
     log.mockRestore();
   });

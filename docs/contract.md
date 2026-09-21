@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.2.0`
+Contract version: `1.3.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -30,16 +30,16 @@ Three numbers, all stamped where a reader can see them:
 
 ```console
 $ pnpm harness version
-harness 1.2.0 (3f2c…) · contract 1.2.0
+harness 1.3.0 (3f2c…) · contract 1.3.0
 $ pnpm harness version --json
-{"version":"1.2.0","gitSha":"3f2c…","contractVersion":"1.2.0"}
+{"version":"1.3.0","gitSha":"3f2c…","contractVersion":"1.3.0"}
 ```
 
 `gitSha` is `git rev-parse HEAD` of the harness checkout, or the
 `HARNESS_GIT_SHA` environment variable when set, or `null` when neither is
 available (a tarball).
 
-Pin the harness by tag (`v1.2.0`) or by sha, and check `schemaVersion === 1`
+Pin the harness by tag (`v1.3.0`) or by sha, and check `schemaVersion === 1`
 before reading a report.
 
 ## Output directory
@@ -745,6 +745,107 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, cut by a maintainer.
 
 ## Changes
+
+### 1.3.0 (minor; digests, rules, the local store, the local commands, checkout names)
+
+One bump carrying every contract-visible change of the local-first work and of
+the release-gate follow-ups. Additive for a consumer written against 1.2.0: a
+dispatch payload without the new fields, a claims file without `rule`, a
+workflow that passes `--noise`, and a checkout with one stack all behave as they
+did. The harness version is 1.3.0 as well. Four things are not purely additive and
+are called out where they occur: a `rule` key in a claim was ignored before and is
+now checked; a missing `--noise` no longer means "no status" on a machine that has
+a local noise store; the default name of the compose project and kind cluster
+changed; and a stack under the old name is left alone.
+
+**Image digests in the dispatch, the release record, the deployment check**
+([details](#image-digests-and-the-release-record))
+
+- `release-candidate` payload: optional `production_digests` and
+  `candidate_digests` (objects `app -> sha256:<64 hex>`, any app the harness
+  stacks). `deployed` payload: optional `production` (tag) and `digests`.
+- CLI, all stable: `--a-digests` and `--b-digests` (`run`, `images ensure`),
+  which pin the references as `repo:tag@sha256:…`, pull and verify by digest, and
+  refuse with **exit `2`, cannot judge**, a digest that disagrees with what the
+  tag resolves to now (or a tag that cannot be resolved); a pinned image is never
+  built from source. For post-deploy mode: `--deployed`, `--deployed-digests`,
+  `--release-record`.
+- Release mode writes a **release record**
+  ([`release-record.schema.json`](contract/release-record.schema.json)):
+  `releases/<candidate>.json` (and `releases/<release>.json` for a candidate that
+  could ship) in `HARNESS_HOME`, and `release-record.json` in its output
+  directory. `release.yml`'s new `publish-record` job publishes it, never forced,
+  to the `release-records` branch of this repository: **a fourth `contents: write`
+  scope**, in `release.yml` only, named in `workflows.json` and enforced by the
+  tests.
+- `report.json`: optional `deployment` (post-deploy mode only). Post-deploy mode
+  compares what the deploy reported with the record and **warns** (exit `0`, a
+  `pass` becomes `warn`, a `fail` is untouched) on a difference, an app with a
+  digest on one side only, no record, or no digests reported.
+- Without any of the new fields every run is exactly what it was in 1.2.0.
+
+**`rule` on claims** ([the rules file](#the-rules-file))
+
+- Claims: optional `rule: "NNNN"` (four digits, quoted). With a rule `reason`
+  becomes optional free text and the report shows `Rule NNNN: <title>`. A `rule`
+  key was an ignored unknown key before 1.3.0; a claims file that carried one now
+  has it checked, and a malformed or unknown one is invalid (exit `2`).
+- New stable input `--rules <path or url>`, dispatch field and workflow input
+  `rules_url`, and [`rules.schema.json`](contract/rules.schema.json)
+  (`{ "version": 1, "rules": { "0031": { "title": "…", "digest": "…" } } }`). A
+  claim whose rule is not in the file, or that names one with no file, is invalid
+  before any stack starts; nothing else about the file gates anything.
+- `report.json`: a claim gains optional `rule` and `ruleTitle`; `reason` stays
+  always present.
+- `reason: "Rule 0031: …"` free-text claims, matching, stale claims and the
+  broad-claim rule are unchanged.
+
+**The local noise store is the default source of `--noise`**
+([where a run looks](#noise-statusjson-and-the-7-day-rule))
+
+- In `release` and `post-deploy` mode, `--noise` omitted now means the latest
+  status in `<HARNESS_HOME>/noise` (written by `harness noise record` and
+  `harness local nightly`). The lookup order is exactly: an explicit `--noise`
+  (file, directory, `skip`, or the new `none`, which does not look), then the local
+  store, then none. A missing status (or an unusable one in the store) still
+  **warns**; the store goes through the same gate, so the 7-day / clean / verified
+  rule is unchanged. The workflows pass `--noise` and are unaffected.
+- New environment variable `HARNESS_HOME`.
+
+**Commands: which are stable, and why**
+([the CLI](#cli))
+
+- **Stable since 1.3.0:** `harness doctor`, `harness noise record`, `harness noise
+  status` and `harness guard masks|engine|all`, with the flags they take
+  (`--status`, `--report`, `--tag`, `--store`, `--run-url`, `--summary`,
+  `--require`, `--for`; `--base` and `--json` already were). Reason: the workflows
+  and the monorepo depend on them (the nightly's `noise record`, the release and
+  post-deploy `noise status`, CI's `guard`, and any script that asks whether a
+  machine can run the harness), and each has a small, checkable contract (files it
+  writes, exit codes).
+- **Not stable:** `harness local nightly|gate|mutants|watch` (wrappers planned
+  from the stable commands, which change with the workflows), `harness override
+  list` (a listing for people), `harness noise history` (the ratchet as text; the
+  file `noise-history.json` is what a program reads), and the flags only they
+  take: `--only`, `--migrations-a`, `--migrations-b`, `--interval`,
+  `--port-offset`, `--dry-run`, `--once`, `--record`, `--last`, `--since`. They may
+  change in a minor release.
+- Exit code `1` also covers `doctor` finding a tool a run needs missing, `noise
+  record` finding the ratchet broken, `noise status --require` finding a status
+  that does not license a FAIL, and `guard` finding a violation.
+- This repository's own workflows may call any command `cli.json` declares; the
+  copies handed to the monorepo (`docs/monorepo/`) may call only stable ones.
+
+**Checkout names** ([environment](#cli))
+
+- The default compose project and kind cluster name is now
+  `tutors-harness-<first 8 hex of sha256 of the checkout's real path>` (lowercased
+  on Windows), so two checkouts or git worktrees never share a stack. New
+  environment variable `HARNESS_PROJECT`; `HARNESS_COMPOSE_PROJECT` and
+  `HARNESS_KIND_CLUSTER` (which already existed) are now contract and win over it.
+- A stack under the old default name `tutors-harness` is reported by `harness
+  doctor` as a legacy stack, not touched, and never removed. A kind cluster called
+  `tutors-harness` is never adopted or deleted: `harness kind` refuses that name.
 
 ### 1.2.0 (minor; R3, R5 and R7)
 
