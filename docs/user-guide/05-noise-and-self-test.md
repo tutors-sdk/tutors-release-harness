@@ -6,6 +6,7 @@ A harness that fails releases must first show that it does not fail on nothing, 
 - [The noise store](#the-noise-store)
 - [The ratchet and the streak](#the-ratchet-and-the-streak)
 - [Degraded nights](#degraded-nights)
+- [A known flake class: the signed-in reader](#a-known-flake-class-the-signed-in-reader)
 - [The mutant self-test](#the-mutant-self-test)
 - [Guards](#guards)
 - [The burn-down playbook](#the-burn-down-playbook)
@@ -138,6 +139,14 @@ A status is **degraded** when a `noise` run made with `--require-verified` did n
 
 The gate refuses a degraded status, so release runs only warn until a verified clean night is recorded. A degraded night is not a failure of the harness: it is the harness declining to count evidence it cannot vouch for.
 
+## A known flake class: the signed-in reader
+
+One class of noise is known and has a fix in flight (a deterministic settle of the page before it is captured; it will land as a small pull request). Until then, you may meet it as an A/A that is not clean for no reason you can find:
+
+- **Symptoms.** Hunks on the **`reader-auth:course`** page, on an A/A of the same image: an *extra console message* on one side, or *extra lines in the accessibility tree* (a `dom` hunk of a line or two present on one side and not the other), because the page was captured just before or after it finished settling. The two commonest console and network forms of this reader's timer-driven traffic are already masked (`persistence-stub-requests`, `realtime-rest-fallback-warning`); the anonymous journeys are not affected.
+- **What to do.** Treat it as a race in the harness's capture, not a difference in the release: do not claim it and do not add a mask for the DOM text. Compare with other nights and re-run the A/A. If it is the only thing dirty, tell a maintainer.
+- **Reading the failure artifact.** When the weekly mutants self-test stops because its A/A was not clean, download `mutant-noise-report` from the run (`gh run download <run id> -n mutant-noise-report -D out`) and open `report.html`. Its Differences table is the same hunk list the job log now prints, one line per non-info hunk: `fail <artefact> <scope>: <summary>`. A short list confined to `reader-auth:*` pages is the flake class above; hunks on the anonymous pages are something else and need the burn-down playbook.
+
 ## The mutant self-test
 
 A harness that cannot catch its own planted faults has no business gating a release. `harness mutants --base <tag>` builds **ten mutants** from the base reader image (so a mutant is production plus exactly one fault), runs an A/A on the base, then runs release mode against each mutant. It passes only when every mutant produces a FAIL whose unclaimed hunks include an artefact the mutant was expected to trip.
@@ -159,7 +168,7 @@ pnpm harness local mutants           # pull and verify the base images, then the
 | `base-swap` | the candidate is built FROM a different base image (the production filesystem over another distribution) | `image-manifest` | 1 |
 | `added-package` | the candidate carries one package the production image does not | `sbom` | 1 |
 
-Eight are planted at the HTTP edge by a wrapper (`mutants/wrap.mjs`); two (`base-swap`, `added-package`) change what the image *is* and are caught by the image artefacts. `slow-ssr` needs five runs because the timing test cannot reach significance with fewer than four ([chapter 3](03-reading-a-report.md#timing-and-statistics)). `base-swap` swaps onto `ubuntu:24.04`; `HARNESS_MUTANT_ALT_BASE` names another base.
+Eight are planted at the HTTP edge by a wrapper (`mutants/wrap.mjs`); two (`base-swap`, `added-package`) change what the image *is* and are caught by the image artefacts. `slow-ssr` needs five runs because the timing test cannot reach significance with fewer than four ([chapter 3](03-reading-a-report.md#timing-and-statistics)). `base-swap` swaps onto `ubuntu:24.04` (Alpine cannot receive the production filesystem); `HARNESS_MUTANT_ALT_BASE` names another base. `focus-order` is applied by an observer, because the reader serves a bare shell and renders every page in the browser, so there is no `<nav>` at the `load` event. The target is 10 of 10 caught **and attributed**.
 
 **What "attribution" means.** A mutant is *caught* when the release-mode verdict is FAIL. It is *attributed* when the artefacts of its unclaimed hunks include one of the artefacts it was expected to trip. Both must be true. Catching `dropped-header` because a different, unrelated hunk failed is not a catch: the harness would be failing for the wrong reason, and would miss the fault when the noise went away.
 
@@ -172,12 +181,13 @@ dropped-header   yes     yes         headers
 10 of 10 mutants caught and attributed.
 ```
 
-Anything that escaped is listed with its report, and the run ends `N of 10 mutants escaped; the harness must not gate releases until this is 0 of 10.` Exit `0` only when all ten are caught and attributed, else `1`.
+When the A/A on the base is not clean, the log now lists the hunks that made it so, one line each (severity, artefact, scope and summary of every non-info hunk, at most 40, then a count of the info hunks), after the reasons; a CI log therefore says *what* failed, not only `N diff(s)`. Anything that escaped is listed with its report, and the run ends `N of 10 mutants escaped; the harness must not gate releases until this is 0 of 10.` Exit `0` only when all ten are caught and attributed, else `1`.
 
 **Practicalities.**
 
 - Needs Docker, Chromium, cosign for the base images, and **syft** on `PATH` (`harness doctor --for mutants`): the two image-level mutants are built locally and have no cosign attestation, so `mutants` generates SBOMs with `HARNESS_SBOM_SOURCE=generate` on both sides. Without syft, `added-package` escapes, and the run says why.
 - It takes about fifteen minutes.
+- In CI, when the self-test fails, `weekly-mutants.yml` uploads the artifact `mutant-noise-report` (7 days): the A/A report of the base (`report.md`, `report.json`, `report.html`, `noise-status.json`) and the two `capture.json` files, without every mutant's screenshots. See the next section for how to read it.
 - Mutant runs never leave a release record.
 - Mutants run under the image name `tutors-harness/mutant-<name>:latest`.
 
@@ -204,8 +214,8 @@ What such a PR may also touch: `normalise/masks.yaml`, `docs/noise-burndown.md`,
 A pass:
 
 ```text
-guard masks against feat/contract-1.3.0
-masks: 18 -> 18 (added 0, changed 0, removed 0, thresholds changed 0)
+guard masks against origin/main
+masks: 25 -> 25 (added 0, changed 0, removed 0, thresholds changed 0)
 no mask added or loosened: ok
 ```
 
@@ -213,7 +223,7 @@ A violation (a real run, with a mask and a change to `src/gate.ts` in one commit
 
 ```text
 guard masks against docs/user-guide
-masks: 18 -> 19 (added 1, changed 0, removed 0, thresholds changed 0)
+masks: 25 -> 26 (added 1, changed 0, removed 0, thresholds changed 0)
 ::error title=Masks land in their own PR::normalise/masks.yaml added demo-mask, and this PR also changes: src/gate.ts. Masks land in their own PR (with only their notes, tests and the version bump), so the reviewer of the change never also reviews the blind spot that hides it; see docs/noise-burndown.md.
 ```
 
@@ -225,36 +235,38 @@ A change to what the harness captures, compares, judges or gates on needs a **ve
 
 | Area | Paths |
 | --- | --- |
-| what is compared and how it is judged | `src/compare/**`, `src/gate.ts`, `src/claims/**`, `src/normalise/**`, `normalise/**` |
+| what is compared and how it is judged | `src/compare/**`, `src/gate.ts`, `src/not-collected.ts`, `src/claims/**`, `src/normalise/**`, `normalise/**` |
 | what is captured | `src/collectors/**`, `src/runtime/**`, `src/image-static/**`, `src/persistence/**`, `src/migration/**`, `src/bus/**`, `src/clock-probe.ts` |
-| how a run is put together, and which images and stacks are judged | `src/run.ts`, `src/modes/**`, `src/noise.ts`, `src/stack.ts`, `src/substrate/**`, `src/images.ts`, `src/image-ref.ts`, `src/image-cache.ts`, `compose.harness.yaml`, `deploy/**`, `fixtures/**`, `scripts/**` |
+| how a run is put together, and which images and stacks are judged | `src/run.ts`, `src/modes/**`, `src/noise.ts`, `src/stack.ts`, `src/substrate/**`, `src/images.ts`, `src/image-ref.ts`, `src/image-cache.ts`, `src/digests.ts`, `src/release-record.ts`, `compose.harness.yaml`, `deploy/**`, `fixtures/**`, `scripts/**` |
 | what is driven through the stacks | `traffic/**` |
 | the harness's own negative fixtures | `mutants/**`, `src/mutants.ts`, `src/mutant-build.ts` |
 | a dependency bump | `pnpm-lock.yaml` |
 
-Everything else directly under `src/` or at the repository root is listed as non-engine with a reason (the CI guards themselves, report rendering, the CLI parser, the override recorder, types, the version file, tests, docs), and a unit test fails when a new top-level entry is in neither list, so the list cannot quietly rot.
+Everything else directly under `src/` or at the repository root is listed as non-engine with a reason (the CI guards themselves, report rendering, the CLI parser, `src/local`, `src/project.ts`, the override recorder, types, the version file, tests, docs), and a unit test fails when a new top-level entry is in neither list, so the list cannot quietly rot.
 
-Real output (comparing against an older base, with a version bump in place):
+Real output (comparing against an older base, with a version bump in place; the list is abridged):
 
 ```text
-guard engine against 95eb541
-engine, mask, journey, gate or mutant change:
-  mutants/Dockerfile.planted-package
+guard engine against 164963a
+engine, mask, journey, fixture, stack, gate, collector or mutant change:
+  compose.harness.yaml
   ...
   src/gate.ts
-version 1.1.0 -> 1.3.0; the mutants must pass on this PR
+  ...
+  traffic/journeys/journeys.ts
+version 1.3.0 -> 1.4.1; the mutants must pass on this PR
 ```
 
-and with no bump:
+and with no bump (a real run, with a mask and a change to `src/gate.ts` in one commit):
 
 ```text
-engine, mask, journey, gate or mutant change:
+engine, mask, journey, fixture, stack, gate, collector or mutant change:
   normalise/masks.yaml
   src/gate.ts
-package.json version is 1.3.0 (base: 1.3.0). A change to what the harness compares or gates on needs a version bump; see TESTING.md.
+package.json version is 1.4.1 (base: 1.4.1). A change to what the harness compares or gates on needs a version bump; see TESTING.md.
 ```
 
-exit 1. With no engine change: `no engine, mask, journey, gate or mutant change: mutants re-run and version bump not required`. In CI the check named **Mutants re-run (required)** always reports (pass when nothing relevant changed), so it is the one to require on `main`; the guard itself can only check the version bump, and the mutants run is the second half of the rule.
+exit 1. With no engine change: `no engine, mask, journey, fixture, stack, gate, collector or mutant change: mutants re-run and version bump not required`. In CI the check named **Mutants re-run (required)** always reports (pass when nothing relevant changed), so it is the one to require on `main`; the guard itself can only check the version bump, and the mutants run is the second half of the rule.
 
 ## The burn-down playbook
 

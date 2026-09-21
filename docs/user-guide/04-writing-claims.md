@@ -292,7 +292,20 @@ A new colour theme moves every screenshot. Either write one claim per app (`read
 
 This claim is broad, so `approvedBy` is required, and the report flags it as `broad-with-approval` in the hygiene section. It covers `screenshot` only: the `dom` and `headers` hunks of the same release still need their own claims. Put broad claims below the precise ones: the first matching claim takes the hunk.
 
-### 18. A release with nothing to claim
+### 18. A cache policy change
+
+`cache-control` is compared in its canonical form, so re-ordering directives is not a difference, but a changed `max-age` is. You will see a `headers` hunk on the page (`reader:course/cache-control`) and, for the requests the page makes, `network` hunks whose summary reads `reader:course: GET localhost:8080/tutors.json cache-control changed: immutable,max-age=31536000,public → immutable,max-age=300,public`. Copy the network scope from the report:
+
+```yaml
+  - artefact: headers
+    scope: "reader:*/cache-control"
+    reason: "CHANGELOG 16.4.0: documents are cached for five minutes (headers, network)"
+  - artefact: network
+    scope: "GET */tutors.json"
+    reason: "CHANGELOG 16.4.0: documents are cached for five minutes (headers, network)"
+```
+
+### 19. A release with nothing to claim
 
 ```yaml
 claims: []
@@ -366,27 +379,27 @@ One entry per Rule that carries exactly one `@rule-NNNN` tag, keys sorted, the s
 
 `release:claims:draft` prints one stub per added or changed Rule. The `artefact` and `scope` are left as `TODO`, because only you know which page or route a Rule changes, and the draft is not valid until every `TODO` is replaced. With `--rule` the stub carries `rule: "0031"` (the field harness contract 1.3.0 reads); without it, `reason: "Rule 0031: <title>"`. A Rule can be observable in several artefacts: copy the stub once per artefact and scope. A removed Rule cannot be cited by id; if it changes what the release shows, cite the changelog entry.
 
-Use `rule:` only against a harness that speaks contract 1.3.0. A 1.2.0 harness has no `rule` field: it ignores the key, so a claim that also has a `reason` still works, and a claim with only a `rule` is rejected for its missing `reason`. Keep to `reason: "Rule 0031: ..."` until you are sure.
+`rule:` needs a harness that speaks contract 1.3.0 or later (the current one does). A 1.2.0 harness ignores the key, so a claim that also has a `reason` still works, and a claim with only a `rule` is rejected for its missing `reason`.
 
 ## Rejections and fixes
 
-A claims file is checked as a whole, and a bad one stops the run with exit `2` before anything starts. The harness prints the file name, then one line per problem (followed by a stack trace: read the first lines). These are real messages.
+A claims file is checked as a whole, and a bad one stops the run with exit `2` before anything starts. The harness prints the file name and the number of problems, then one block per problem naming the claim (`claim 1 of 1 (claims.0)`), the field, and what would be right. There is no stack trace. These are real messages, shown without the file path.
 
 | Message | Cause | Fix |
 | --- | --- | --- |
-| `claims.0.artefact: Invalid input` | the artefact is not one of the nineteen names or `*` (a typo such as `header`, or `a11y`) | use an exact name from the [schema](#the-schema) |
-| `claims.0.reason: a reason names a Rule or a changelog entry, not a rubber stamp` | the reason starts with `see pr`, `approved`, `all`, `ok` or `misc` | cite the Rule or the changelog entry |
-| `claims.0.reason: a reason is at least 8 characters` | too short | say what changed and why |
-| `claims.0.reason: a claim needs a reason (a Rule or a changelog entry), or a rule: "0031" that the rules file contains` | no `reason` and no `rule` | add a reason, or a `rule` and `--rules` |
-| `claims.0.rule: rule is the Rule's four digits, quoted: rule: "0031" (unquoted, YAML reads 0031 as the number 31)` | `rule: 0031` without quotes | quote it |
-| `claims.0.rule: rule is four digits, e.g. "0031"` | a `rule` that is not four digits | use the four-digit id |
-| `claims.0.rule: rule "0999" is not in the rules file <path or URL>` | the Rule is not in `rules.json` | check the id; publish the rules file for this commit |
-| `claims.0.rule: rule "0031" was named, but no rules file was given: pass --rules <path\|url> (in the release dispatch, rules_url), or give a reason instead` | a `rule` with no `--rules` | pass the rules file, or use a reason |
-| `claims.0.scope: Too small: expected string to have >=1 characters` | empty scope | write one |
-| `version: Invalid input: expected 1` | `version:` names something other than 1 | delete it or write `version: 1` |
-| `<file> is not valid JSON` / `is not a valid rules file: version: Invalid input: expected 1` / `rules.31: "31" is not a rule id: a rule is named by four digits, e.g. "0031"` / `rules.0031.title: Invalid input: expected string, received undefined` | the rules file is malformed | regenerate it with `pnpm release:rules` |
+| `claim 1 of 1 (claims.0), artefact: "header" is not an artefact` then `valid artefacts: dom, screenshot, ...; or "*" for every artefact` and `did you mean "headers"?` | the artefact is not one of the nineteen names or `*` (a typo such as `header`, or `a11y`) | use the name the message suggests, or one from the [schema](#the-schema) |
+| `claim 1 of 1 (claims.0), reason: a reason names a Rule or a changelog entry, not a rubber stamp` | the reason starts with `see pr`, `approved`, `all`, `ok` or `misc` | cite the Rule or the changelog entry |
+| `... reason: a reason is at least 8 characters` | too short | say what changed and why |
+| `... reason: a claim needs a reason (a Rule or a changelog entry), or a rule: "0031" that the rules file contains` | no `reason` and no `rule` | add a reason, or a `rule` and `--rules` |
+| `... rule: rule is the Rule's four digits, quoted: rule: "0031" (unquoted, YAML reads 0031 as the number 31)` then `the file has the number 31; write rule: "0031"` | `rule: 0031` without quotes | quote it |
+| `... rule: rule is four digits, e.g. "0031"` | a `rule` that is not four digits | use the four-digit id |
+| `... rule: rule "0999" is not in the rules file <path or URL>` then `the rules file has: 0031, 0044` | the Rule is not in `rules.json` | check the id against the list the message prints; publish the rules file for this commit |
+| `... rule: rule "0031" was named, but no rules file was given` then `pass --rules <path\|url> (in the release dispatch, rules_url), or give a reason instead` | a `rule` with no `--rules` | pass the rules file, or use a reason |
+| `... scope: scope is empty: give the glob of what the claim covers, e.g. "reader:lab-*"` | empty scope | write one |
+| `the file, version: this harness reads claims format 1; the file says the number 2` then `write version: 1, or leave version out` | `version:` names something other than 1 | delete it or write `version: 1` |
+| `<file> is not valid JSON (a rules file): ...` / `is not a valid rules file: 1 problem` then `the file, version: this harness reads rules format 1; the file says nothing` / `rule "31": "31" is not a rule id: a rule is named by four digits, e.g. "0031"` / `rule "0031", title: Invalid input: expected string, received undefined` | the rules file is malformed | regenerate it with `pnpm release:rules` |
 | `cannot fetch the rules file <url>: HTTP 404` (or `fetch failed`) | `--rules` names a URL that cannot be read without credentials, is not published yet, or times out | publish it and check the URL; a private URL will not work |
-| `ENOENT: no such file or directory, open '<file>'` | `--claims` or `--rules` names a file that is not there | fix the path |
+| `cannot read the claims file <file>: no such file` / `cannot read the rules file <file>: no such file` | `--claims` or `--rules` names a file that is not there | fix the path |
 
 Findings that are not file errors:
 
@@ -405,12 +418,13 @@ Findings that are not file errors:
 pnpm check:release-claims
 ```
 
-It mirrors the harness's schema so a bad file fails on the pull request in minutes, not in the harness run. It differs from the harness in ways worth knowing (checked against the monorepo's `origin/main` at commit c14c3ee, 2026-09-21):
+It mirrors the harness's schema so a bad file fails on the pull request in minutes, not in the harness run. It accepts all nineteen artefact names, the optional `version: 1`, and `rule: "0031"` in place of a `reason`. It is stricter than the harness in ways worth knowing:
 
 - It rejects **unknown fields and unknown top-level keys** (`approvedby`); the harness ignores them. This is the check that catches the typo.
 - It rejects a **broad claim with no `approvedBy`** at once; the harness lets the run start and fails it.
-- It checks that a cited Rule (in `rule:` or a reason beginning `Rule NNNN`) is defined by a feature under `tests/bdd/features`.
-- Its artefact list has thirteen names: `dom`, `screenshot`, `network`, `console`, `headers`, `axe`, `focus`, `metrics`, `logs`, `timing`, `persistence`, `migration`, `upgrade`. The harness accepts nineteen. **A claim for `bus`, `image-manifest`, `sbom`, `vulns`, `runtime` or `startup` passes the harness but the pre-check rejects it** with `artefact must be one of ... or "*"`. Until the two lists are brought together, those claims cannot be committed with a green pre-check; raise it with the monorepo owners.
+- It checks that a cited Rule (in `rule:` or a reason beginning `Rule NNNN`) is defined by a feature under `tests/bdd/features` at the ref being checked (`--ref <ref>`), and that a claim with both a `rule` and a `Rule NNNN` reason names the same Rule.
+
+Its own reference is `release/README.md` in the monorepo; when the two disagree, the harness's parse is the authority.
 
 **Try the claims on a finished run.** Download the `release-report` artifact of a release run (`gh run download <run id> -n release-report -D out`) and re-judge it locally without Docker:
 
