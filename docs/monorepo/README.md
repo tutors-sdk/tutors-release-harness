@@ -64,7 +64,7 @@ Then the sequence for a release is:
 3. Every 15 minutes → the synthetic workflow repeats the post-deploy
    comparison against the last recorded run.
 4. Nightly → A/A on the production tag (the harness's right to gate).
-5. Weekly → the eight mutants.
+5. Weekly → the ten mutants.
 
 If images are not published yet, everything still works: `harness images ensure`
 builds from the git ref (`v<tag>`, `<tag>`, `release/<tag>`) when the pull fails —

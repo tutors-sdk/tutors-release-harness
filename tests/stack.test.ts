@@ -1,9 +1,7 @@
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import { parse } from "yaml";
 import { describe, expect, it } from "vitest";
-import { COMPOSE_FILE, ROOT, externalSide, imagesFor, sideSpec, urlsFor } from "../src/stack.ts";
-import { loadMutants } from "../src/mutants.ts";
+import { COMPOSE_FILE, externalSide, imagesFor, sideSpec, urlsFor } from "../src/stack.ts";
 import { kindSide, manifestsFor } from "../src/substrate/kind.ts";
 
 describe("image references", () => {
@@ -93,14 +91,7 @@ describe("compose.harness.yaml", () => {
   });
 });
 
-describe("mutants.yaml", () => {
-  it("lists eight mutants with expected artefacts and a wrap.mjs case for each", () => {
-    const mutants = loadMutants();
-    expect(mutants.map((m) => m.name)).toEqual(["dropped-header", "route-500", "console-error", "dom-note", "missing-alt", "slow-ssr", "anon-write", "focus-order"]);
-    const wrap = readFileSync(resolve(ROOT, "mutants", "wrap.mjs"), "utf8");
-    for (const m of mutants) expect(wrap, `wrap.mjs handles ${m.name}`).toContain(`"${m.name}"`);
-  });
-});
+// The mutants catalogue (ten: eight edge faults and two image-level ones) is tested in tests/mutant-build.test.ts.
 
 describe("kind side", () => {
   it("uses its own host ports and drops the compose-only stubs", () => {

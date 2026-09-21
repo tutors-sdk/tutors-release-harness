@@ -3,10 +3,12 @@
  * claimed and reported is one of these shapes.
  */
 
+import type { ImageArtefactKind, ImageArtefactStatus, SideImageArtefacts, SideImageStatic } from "./image-static/types.ts";
+
 export type SideName = "a" | "b";
 
 /** Every kind of thing the harness captures or rehearses. Claims and masks name these. */
-export const ARTEFACTS = ["dom", "screenshot", "network", "console", "headers", "axe", "focus", "metrics", "logs", "timing", "persistence", "migration", "upgrade"] as const;
+export const ARTEFACTS = ["dom", "screenshot", "network", "console", "headers", "axe", "focus", "metrics", "logs", "timing", "persistence", "migration", "upgrade", /* R5 static image artefacts */ "image-manifest", "sbom", "vulns"] as const;
 export type Artefact = (typeof ARTEFACTS)[number];
 
 export const MODES = ["noise", "release", "any-two", "upgrade", "migration", "post-deploy"] as const;
@@ -37,6 +39,8 @@ export interface SideSpec {
   provenance?: SideProvenance;
   /** True when the side is a live deployment the harness did not start (post-deploy mode). */
   external?: boolean;
+  /** R5: what the side's images are (manifest, SBOM, vulnerabilities), collected before the stack starts. */
+  imageStatic?: SideImageStatic;
 }
 
 // ---- image provenance ----------------------------------------------------------
@@ -204,6 +208,8 @@ export interface SideCapture {
   metrics: { before: Record<string, MetricsSnapshot>; after: Record<string, MetricsSnapshot> };
   logs: Record<string, LogSummary>;
   load?: LoadSummary;
+  /** R5: static artefacts of the side's images. Absent for an external side, a migration run, or a capture recorded before contract 1.2.0. */
+  imageStatic?: SideImageStatic;
 }
 
 // ---- schema catalogue (migration mode) -------------------------------------------
@@ -319,4 +325,8 @@ export interface RunReport {
   migration?: MigrationResult;
   upgrade?: UpgradeResult;
   load?: { a: Omit<LoadSummary, "samples">; b: Omit<LoadSummary, "samples"> };
+  /** Since contract 1.2.0. Per side, per app: which static image artefacts were collected and, for those that were not, why. */
+  imageArtefacts?: { a?: SideImageArtefacts; b?: SideImageArtefacts };
 }
+
+export type { ImageArtefactKind, ImageArtefactStatus, SideImageArtefacts };

@@ -12,7 +12,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
  * surface the workflows use, and the dispatch payloads. Semver, independent of
  * the harness version; docs/contract.md says what bumps which part.
  */
-export const CONTRACT_VERSION = "1.1.0";
+export const CONTRACT_VERSION = "1.2.0";
 
 /** The contract's major version, stamped into report.json and noise-status.json as `schemaVersion`. */
 export const SCHEMA_VERSION = Number(CONTRACT_VERSION.split(".")[0]);

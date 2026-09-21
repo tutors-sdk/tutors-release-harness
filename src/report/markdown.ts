@@ -1,4 +1,5 @@
 import type { RunReport } from "../types.ts";
+import { imageArtefactsMarkdown } from "./image-static.ts";
 
 const ICON = { pass: "✅", warn: "⚠️", fail: "❌" } as const;
 
@@ -48,6 +49,8 @@ export function renderMarkdown(report: RunReport): string {
     for (const m of claimed) lines.push(`| \`${m.hunk.artefact}\` | \`${m.hunk.scope}\` | ${escape(m.claim!.reason)} |`);
     lines.push("");
   }
+
+  lines.push(...imageArtefactsMarkdown(report)); // R5
 
   if (report.migration) {
     const m = report.migration;

@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.1.0`
+Contract version: `1.2.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -28,16 +28,16 @@ Three numbers, all stamped where a reader can see them:
 
 ```console
 $ pnpm harness version
-harness 1.1.0 (3f2c…) · contract 1.1.0
+harness 1.2.0 (3f2c…) · contract 1.2.0
 $ pnpm harness version --json
-{"version":"1.1.0","gitSha":"3f2c…","contractVersion":"1.1.0"}
+{"version":"1.2.0","gitSha":"3f2c…","contractVersion":"1.2.0"}
 ```
 
 `gitSha` is `git rev-parse HEAD` of the harness checkout, or the
 `HARNESS_GIT_SHA` environment variable when set, or `null` when neither is
 available (a tarball).
 
-Pin the harness by tag (`v1.1.0`) or by sha, and check `schemaVersion === 1`
+Pin the harness by tag (`v1.2.0`) or by sha, and check `schemaVersion === 1`
 before reading a report.
 
 ## Output directory
@@ -74,6 +74,7 @@ written). Source of truth: `RunReport` in `src/types.ts`.
 | `runs` | integer ≥ 1 | journey repetitions per side |
 | `sides` | `{ a, b }`, each `{ reader, catalogue, live }` | the image reference of each app on each side. In migration mode `reader` is `migrations:<ref>` and the others `-`; in post-deploy mode `a` is the recorded candidate's images and each of `b`'s is `external:<URL>` |
 | `provenance` | `{ a?, b? }`, optional — since 1.1.0 | where each side's images came from; see [Image provenance](#image-provenance). A side is absent when it was not inspected: migration mode, the live side of post-deploy mode, a capture recorded before 1.1.0 |
+| `imageArtefacts` | `{ a?, b? }`, optional — since 1.2.0 | per side, per app, whether each static image artefact (`manifest`, `sbom`, `vulns`) was collected, and for one that was not, why; see [Static image artefacts](#static-image-artefacts). A side is absent when its images were not inspected: migration mode, the live side of post-deploy mode, a capture recorded before 1.2.0 |
 | `verdict` | `pass` \| `warn` \| `fail` | see [Verdicts and exit codes](#verdicts-and-exit-codes) |
 | `reasons` | string[] | why, one line each. For people: **do not parse** |
 | `noise` | noise status, optional | the status consulted for the gating decision; absent when `--noise` was not given or was `skip` |
@@ -90,7 +91,7 @@ written). Source of truth: `RunReport` in `src/types.ts`.
 **Hunk**: `{ id, artefact, scope, path?, summary, detail?, severity }`.
 `artefact` is one of `dom`, `screenshot`, `network`, `console`, `headers`,
 `axe`, `focus`, `metrics`, `logs`, `timing`, `persistence`, `migration`,
-`upgrade`. `severity` is `fail` (gates unless claimed) or `info` (reported,
+`upgrade`, and since 1.2.0 `image-manifest`, `sbom`, `vulns`. `severity` is `fail` (gates unless claimed) or `info` (reported,
 never gates). `scope` and `path` are what a claim's glob is matched against.
 `id` is stable for the same difference within a run; do not rely on it across
 harness versions. `summary` and `detail` are for people.
@@ -134,6 +135,36 @@ What a consumer can rely on: `verdict`, `provenance.*.images.*.provenance` and
 `compare.broadUnapproved.length`, `compare.staleClaims`, the `artefact`,
 `scope`, `path` and `severity` of each hunk, `sides`, `harness`, and the
 numbers under `migration`, `upgrade` and `load`.
+
+### Static image artefacts
+
+Since 1.2.0. Three artefacts describe what the two sides' images *are*,
+collected from the images themselves (before the stacks start), not from the
+running apps. Each is per app (`reader`, `catalogue`, `live`); a hunk's
+`scope` starts with the app.
+
+| `artefact` | Collected from | `scope` | A hunk means |
+| --- | --- | --- | --- |
+| `image-manifest` | `docker image inspect` | `<app>/base`, `/platform`, `/user`, `/ports/<port>`, `/entrypoint`, `/cmd`, `/layers`, `/size`, `/label/<key>` | built FROM a different base (the `org.opencontainers.image.base.digest` label when the build sets it, and the lowest layer always); now runs as root, or another USER; a port added or removed; entrypoint or cmd changed; a different layer count; size grown by at least 10% and 5 MB (shrinking is informational); an OCI label other than `revision`, `version`, `created` changed |
+| `sbom` | the SPDX SBOM: the attestation cosign attached to a pulled image (`cosign verify-attestation --type spdxjson` against the same identity and issuer as the signature check, by digest), or generated locally (`HARNESS_SBOM_SOURCE=generate`) | `<app>/<package name>` | a package added, removed or bumped: a set diff over `name@version`. The package the SBOM describes (the image itself) is left out |
+| `vulns` | the SBOM, scanned by a pluggable scanner with its database pinned (grype by default, trivy by command) | `<app>/<advisory id>`, or `<app>/db` | a vulnerability **new on b** (fail); one that was on a and is gone on b (`info`); the two sides scanned with different scanner versions or databases (fail, and the diff is not to be trusted) |
+
+**Not collected, never silent.** An image built locally has no attestation; a
+scanner or generator may not be installed; an SBOM may be for another digest.
+None of that is reported as "no difference". The report carries:
+
+- `imageArtefacts.<side>.<app>.<manifest|sbom|vulns>` = `{ collected: false, reason }`;
+- a line in `reasons` starting `NOT COLLECTED:`;
+- an informational hunk `<app>/not-collected` under the artefact that could not
+  be compared: a failing one when `HARNESS_REQUIRE_STATIC=1`, which is what a
+  release pipeline that must not pass without an SBOM diff sets.
+
+The vulnerability scan needs the SBOM; with no SBOM it is not collected either.
+A side without `imageArtefacts` (an external side, migration mode) is not
+compared at all.
+
+Claims name these artefacts like any other, e.g. `artefact: sbom`,
+`scope: "reader/@sveltejs/kit"`; see [`claims/README.md`](../claims/README.md).
 
 ## Verdicts and exit codes
 
@@ -225,7 +256,7 @@ claims:
     approvedBy: "a-maintainer"                          # optional; required for a broad claim to count
 ```
 
-- `artefact`: one of the thirteen artefact names above, or `*`.
+- `artefact`: one of the sixteen artefact names above, or `*`.
 - `scope`: matched with picomatch (`dot: true`, case-insensitive) against the
   hunk's `scope` **or** its `path`.
 - `reason`: at least 8 characters, and must not start with `see pr`,
@@ -280,7 +311,7 @@ environment variable, else `tutors`. It is either a bare prefix
 signature could not be verified be judged anyway; the report records it
 (`pulled-unverified`, `allowedUnsigned`). The workflows never pass it.
 
-Environment variables in the contract, all since 1.1.0 except the first:
+Environment variables in the contract, all since 1.1.0 except the first and the last five (since 1.2.0):
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
@@ -288,6 +319,11 @@ Environment variables in the contract, all since 1.1.0 except the first:
 | `HARNESS_COSIGN_IDENTITY` | `^https://github.com/tutors-sdk/tutors-mono-repo/\.github/workflows/image-build\.yml@` | regular expression the signing certificate's identity must match; empty means the default |
 | `HARNESS_COSIGN_ISSUER` | `https://token.actions.githubusercontent.com` | the certificate's OIDC issuer; empty means the default |
 | `HARNESS_ALLOW_UNSIGNED` | unset | `1`, `true` or `yes`: the same as `--allow-unsigned` |
+| `HARNESS_SBOM_SOURCE` | `auto` | since 1.2.0. Where each image's SBOM comes from: `auto` or `attestation` (the cosign SPDX attestation of a pulled image), or `generate` (a local generator, on both sides) |
+| `HARNESS_SBOM_CMD` | `syft docker:{image} -o spdx-json` | since 1.2.0. The generator for `generate`; `{image}` is the image reference. Split on whitespace and quotes; no shell |
+| `HARNESS_VULN_CMD` | `grype sbom:{sbom} -o json` | since 1.2.0. The scanner; `{sbom}` is the path of the SPDX SBOM; must print grype or trivy JSON. trivy: `trivy sbom --format json {sbom}` |
+| `HARNESS_VULN_DB_DIR` | unset | since 1.2.0. A pre-fetched scanner database directory. Scanner database updates are always switched off, so a scan uses exactly this database |
+| `HARNESS_REQUIRE_STATIC` | unset | `1`, `true` or `yes`, since 1.2.0: a static image artefact that could not be collected is a failing hunk, not an informational one |
 
 Stdout is for people, except `harness version --json`. The last lines of
 `run` and `compare` are `verdict: <VERDICT>`, the reasons, and

@@ -1,4 +1,5 @@
 import type { Hunk, RunReport } from "../types.ts";
+import { imageArtefactsHtml } from "./image-static.ts";
 
 const esc = (s: string) => s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
 
@@ -69,6 +70,7 @@ export function renderHtml(report: RunReport): string {
 <tbody>${(["reader", "catalogue", "live"] as const).map((app) => `<tr><td>${app}</td><td><code>${esc(report.sides.a[app])}</code></td><td><code>${esc(report.sides.b[app])}</code></td></tr>`).join("")}</tbody>
 </table>
 ${provenanceBlock(report)}
+${imageArtefactsHtml(report)}
 
 ${
   report.migration

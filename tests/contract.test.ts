@@ -71,6 +71,10 @@ const imageInfo = (app: string, n: number) => ({
   builtFrom: { ref: "v16.2.0", sha: "1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b" }
 });
 const sideProvenance = { summary: "pulled+verified", allowedUnsigned: true as const, images: { reader: imageInfo("reader", 1), catalogue: imageInfo("catalogue", 2), live: imageInfo("live", 3) } };
+/** One static image artefact carrying every field the report allows (a real one carries either `reason` or `summary`, not both). */
+const artefactStatus = { collected: true, source: "cosign attestation (signature verified)", reason: "no SBOM attestation", summary: "312 distinct package(s)" };
+const appArtefacts = { manifest: artefactStatus, sbom: artefactStatus, vulns: artefactStatus };
+const sideArtefacts = { reader: appArtefacts, catalogue: appArtefacts, live: appArtefacts };
 const load = { requests: 600, failed: 0, serverErrors: 0, p50: 12, p95: 40, rate: 20, duration: "30s" };
 
 /**
@@ -103,7 +107,8 @@ const full: DeepRequired<RunReport> = {
   masksApplied: { "response-date": 4, etag: 0 },
   migration: { a: { ref: "v16.2.0", files: ["0001.sql"], catalog }, b: { ref: "release/16.3.0", files: ["0001.sql", "0002.sql"], catalog }, rolledBack: catalog },
   upgrade: { substrate: "compose", requests: 900, failed: 0, serverErrors: 0, byUpstream: { a: { requests: 300, failed: 0, serverErrors: 0, p95: 30 }, b: { requests: 600, failed: 0, serverErrors: 0, p95: 31 } }, switchedAt: 15000, durationMs: 45000 },
-  load: { a: load, b: load }
+  load: { a: load, b: load },
+  imageArtefacts: { a: sideArtefacts, b: sideArtefacts }
 };
 
 function runFixture(mode: Mode, opts: { mutate?: boolean; claims?: string; noise?: string } = {}) {
@@ -184,6 +189,14 @@ describe("report.json", () => {
     expect(written.provenance).toEqual({ a: local });
     for (const field of ["provenance", "digest", "revision", "verifiedIdentity", "unverifiedReason", "builtFrom", "allowedUnsigned"]) expect(contractMd, field).toContain(`\`${field}\``);
     for (const value of PROVENANCES) expect(contractMd, value).toContain(`\`${value}\``);
+  });
+
+  it("static image artefacts: the schema accepts them, refuses an unknown field, and the contract documents each", () => {
+    expect(validateReport({ ...full, imageArtefacts: { a: sideArtefacts } })).toBe(true);
+    expect(validateReport({ ...full, imageArtefacts: { a: { ...sideArtefacts, reader: { ...appArtefacts, sbom: { collected: false, reason: "no SBOM attestation" } } } } })).toBe(true);
+    expect(validateReport({ ...full, imageArtefacts: { a: { ...sideArtefacts, reader: { ...appArtefacts, sbom: { reason: "no collected flag" } } } } })).toBe(false);
+    expect(validateReport({ ...full, imageArtefacts: { a: { ...sideArtefacts, reader: { ...appArtefacts, extra: artefactStatus } } } })).toBe(false);
+    for (const field of ["imageArtefacts", "image-manifest", "sbom", "vulns", "collected", "NOT COLLECTED"]) expect(contractMd, field).toContain(field);
   });
 
   it("every mode writes a report the schema accepts", () => {
@@ -316,7 +329,7 @@ describe("CLI", () => {
     expect(env.HARNESS_COSIGN_ISSUER!.default).toBe(DEFAULT_COSIGN_ISSUER);
     for (const name of Object.keys(env).filter((k) => !k.startsWith("$"))) {
       expect(contractMd, name).toContain(`\`${name}\``);
-      expect(read("src/images.ts") + read("src/run.ts"), name).toContain(name);
+      expect(read("src/images.ts") + read("src/run.ts") + read("src/image-static/collect.ts") + read("src/compare/image-static.ts"), name).toContain(name);
     }
     expect(contractMd).toContain(`\`${DEFAULT_COSIGN_IDENTITY}\``);
     // The forms the contract promises, against the one function that expands them.
