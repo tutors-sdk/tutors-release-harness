@@ -1,6 +1,21 @@
-# Nightly A/A on the production tag. Calibrates the masks; a diff here is
-# noise the normaliser must learn to mask, or non-determinism in the stack.
-# The status it writes is what release mode consults before it may FAIL.
+# Nightly A/A on the production tag, pulled from the registry onto the CI
+# runner (never image-against-itself on a laptop): three runs, the noise count
+# tracked over time, the status published where release runs can find it.
+#
+# A diff here is noise the normaliser must learn to mask, or non-determinism in
+# the stack; docs/noise-burndown.md is the playbook. The ratchet: the count
+# reaches 0 and stays there.
+#
+# Two jobs:
+#   noise    — read-only. Pulls and verifies the production images (or, when the
+#              registry cannot answer, falls back to last night's verified images
+#              from the runner cache, and the night is DEGRADED), runs the A/A
+#              with --require-verified, uploads the status and the report.
+#   publish  — the only job with a write permission, and only to this repository's
+#              `noise` branch: appends tonight to the history, prints the ratchet to
+#              the run summary, publishes noise-status.json to the branch so that
+#              release.yml and post-deploy.yml can fetch the latest one, and fails
+#              when the ratchet is broken.
 name: Nightly noise (A/A)
 
 on:
@@ -15,9 +30,16 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: nightly-noise
+  cancel-in-progress: false
+
 jobs:
   noise:
-    runs-on: ubuntu-latest
+    # Pinned, not ubuntu-latest: the A/A measures the noise floor of THIS runner image (fonts, anti-aliasing,
+    # timing), and release.yml and post-deploy.yml run on the same one. Move all three together, in one PR,
+    # and expect a fresh burn-down after (docs/noise-burndown.md).
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     env:
       HARNESS_IMAGE_PREFIX: ${{ vars.HARNESS_IMAGE_PREFIX || 'quay.io/tutors-sdk/tutors-{app}' }}
@@ -40,11 +62,37 @@ jobs:
       # The images are signed with cosign 3, and verifying them needs cosign >= 3: installer v4 installs it.
       - uses: sigstore/cosign-installer@v4.1.2
 
-      - name: Pull and verify, or build, the production images
-        run: pnpm harness images ensure --a "$TAG" --b "$TAG"
+      # Last night's verified production images, for a night the registry is down or rate-limiting.
+      # The key never matches exactly (it ends in this run's id); restore-keys picks the newest earlier one.
+      - name: Restore the last verified production images
+        uses: actions/cache/restore@v4
+        with:
+          path: .harness/image-cache
+          key: production-images-${{ env.TAG }}-${{ github.run_id }}
+          restore-keys: |
+            production-images-${{ env.TAG }}-
 
-      - name: A/A, three runs
-        run: pnpm harness run --mode noise --a "$TAG" --b "$TAG" --runs 3
+      # The registry is always asked first: the cache is used only when it cannot answer, and a night that
+      # used it (or built from source) is DEGRADED: it neither counts as clean nor licenses a release FAIL.
+      - name: Pull and verify the production images
+        id: ensure
+        run: pnpm harness images ensure --a "$TAG" --b "$TAG" --image-cache .harness/image-cache
+
+      - name: Keep the verified images for a night the registry is down
+        if: steps.ensure.outputs.image_cache == 'refreshed'
+        uses: actions/cache/save@v4
+        with:
+          path: .harness/image-cache
+          key: production-images-${{ env.TAG }}-${{ github.run_id }}
+
+      # --load makes the A/A exercise the same k6 comparison a release run does (release.yml passes the same
+      # 20x30s), so its noise is calibrated here, not discovered on a release.
+      - name: A/A, three runs, with load
+        run: pnpm harness run --mode noise --a "$TAG" --b "$TAG" --runs 3 --load 20x30s --require-verified
+
+      - name: Show the A/A report
+        if: always()
+        run: cat out/*-noise/report.md >> "$GITHUB_STEP_SUMMARY" || true
 
       - name: Publish the noise status for release runs
         uses: actions/upload-artifact@v4
@@ -60,3 +108,89 @@ jobs:
           name: noise-report
           path: out/
           retention-days: 8
+
+  publish:
+    name: Publish the noise status and check the ratchet
+    needs: noise
+    # Only when the A/A produced a status: a night that never got that far leaves the last one to age out.
+    if: needs.noise.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      # Pushes this repository's `noise` branch and nothing else. No token for any other repository, and none of
+      # the pull-request, check, status or deployment permissions the contract rules out.
+      contents: write
+    concurrency:
+      group: noise-branch
+      cancel-in-progress: false
+    env:
+      TAG: ${{ inputs.tag || vars.HARNESS_PRODUCTION_TAG || 'main' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: noise-report
+          path: tonight
+
+      - name: The history so far, from the noise branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p current
+          gh api -H "Accept: application/vnd.github.raw" "repos/${GITHUB_REPOSITORY}/contents/noise-history.json?ref=noise" > current/noise-history.json 2>/dev/null \
+            || { echo "no noise branch yet: starting the history"; rm -f current/noise-history.json; }
+
+      # Exit 1 means the ratchet is broken. It is reported after publishing, so the status that says so still reaches the branch.
+      - name: Record tonight and check the ratchet
+        id: record
+        continue-on-error: true
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          status="$(ls tonight/*/noise-status.json | head -1)"
+          report="$(ls tonight/*/report.json | head -1)"
+          pnpm exec tsx src/ci/noise-history.ts record \
+            --status "$status" --report "$report" --history current/noise-history.json \
+            --out publish --tag "$TAG" --run-url "$RUN_URL" --summary "$GITHUB_STEP_SUMMARY"
+
+      # One commit, forced, every night: the history lives in noise-history.json, not in git, so the branch never grows
+      # and nothing can conflict. Release runs read noise-status.json from here (docs/noise-burndown.md).
+      - name: Publish to the noise branch
+        if: steps.record.outcome != 'skipped' && hashFiles('publish/noise-status.json') != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd publish
+          cat > README.md <<'README'
+          # noise
+
+          Written by `.github/workflows/nightly-noise.yml`, force-pushed every night. Do not edit.
+
+          - `noise-status.json`: the latest A/A result. `release.yml` and `post-deploy.yml` read it; the gate may FAIL a release only while it is clean, verified and no more than seven days old.
+          - `noise-history.json`: one entry per night, for the ratchet.
+          - `noise-summary.md`: tonight's summary.
+
+          See `docs/noise-burndown.md` on the default branch.
+          README
+          git init -q -b noise
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md noise-status.json noise-history.json noise-summary.md
+          git commit -q -m "noise: A/A status $(date -u +%Y-%m-%d)"
+          auth="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth}" push --force "https://github.com/${GITHUB_REPOSITORY}.git" noise
+
+      - name: Fail the night when the ratchet is broken
+        if: steps.record.outcome == 'failure'
+        run: |
+          echo "the record step failed: the noise ratchet is broken (the count had reached 0 and is not 0 tonight), or tonight's status was unusable; see the summary and the step log" >&2
+          exit 1

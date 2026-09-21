@@ -25,7 +25,7 @@ export function renderMarkdown(report: RunReport): string {
   }
   lines.push("");
   for (const reason of report.reasons) lines.push(`- ${reason}`);
-  if (report.noise) lines.push(`- A/A consulted: ${report.noise.clean ? "clean" : `${report.noise.hunks} diff(s)`} at ${report.noise.ranAt}`);
+  if (report.noise) lines.push(`- A/A consulted: ${report.noise.clean ? "clean" : `${report.noise.hunks} diff(s)`}${report.noise.degraded?.length ? " but DEGRADED (does not count)" : ""} at ${report.noise.ranAt}`);
   lines.push("");
 
   if (compare.unclaimed.length) {
@@ -39,6 +39,16 @@ export function renderMarkdown(report: RunReport): string {
     lines.push("");
   }
 
+  if (report.override) {
+    const o = report.override;
+    lines.push(`### ${o.applied ? "Harness FAIL overridden" : "Override recorded, not needed"}`);
+    lines.push("");
+    lines.push(`- by \`${o.by}\` at ${o.at}`);
+    lines.push(`- verdict before the override: ${o.verdict.toUpperCase()}`);
+    lines.push(`- reason: ${escape(o.reason)}`);
+    lines.push("");
+  }
+
   const claimed = compare.matches.filter((m) => m.claim);
   if (claimed.length) {
     lines.push(`### Claimed differences (${claimed.length})`);
@@ -46,6 +56,25 @@ export function renderMarkdown(report: RunReport): string {
     lines.push("| artefact | scope | claimed by |");
     lines.push("|---|---|---|");
     for (const m of claimed) lines.push(`| \`${m.hunk.artefact}\` | \`${m.hunk.scope}\` | ${escape(m.claim!.reason)} |`);
+    lines.push("");
+  }
+
+  if (report.claimHygiene) {
+    const h = report.claimHygiene;
+    lines.push(`### Claim hygiene`);
+    lines.push("");
+    lines.push(`${h.claims} claim(s) cover ${h.claimedHunks} failing hunk(s): ${h.hunksPerClaim} hunk(s) per claim, at most ${h.maxHunksPerClaim} under one claim (flagged above ${h.threshold}).`);
+    if (h.flagged.length) {
+      lines.push("");
+      lines.push("| artefact | scope | hunks | flag |");
+      lines.push("|---|---|---|---|");
+      for (const f of h.flagged) {
+        const why = f.flags.map((x) => (x === "covers-many-hunks" ? `covers more than ${h.threshold} hunks` : `broad claim, approved by \`${f.claim.approvedBy}\``)).join("; ");
+        lines.push(`| \`${f.claim.artefact}\` | \`${f.claim.scope}\` | ${f.hunks} | ${why} |`);
+      }
+      lines.push("");
+      lines.push("A claim states that a difference is intended. One that covers many hunks, or everything, has stopped saying which. Split it, or explain it in the reason.");
+    }
     lines.push("");
   }
 

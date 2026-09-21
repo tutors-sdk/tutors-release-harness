@@ -2,7 +2,8 @@ import { parseArgs } from "node:util";
 import { resolve } from "node:path";
 import { journeys, type JourneySet } from "../traffic/journeys/journeys.ts";
 import { loadClaims } from "./claims/schema.ts";
-import { exitCodeFor } from "./gate.ts";
+import { appendFileSync } from "node:fs";
+import { parseOverride, exitCodeForReport } from "./override.ts";
 import { EXIT_CANNOT_JUDGE, ImageTrustError, ensureImages, fileLedger, realExec, resolveSideProvenance, trustPolicyFromEnv } from "./images.ts";
 import { runMutants } from "./mutants.ts";
 import { compareFromCaptures, defaultRunOptions, loadCapture, run } from "./run.ts";
@@ -26,7 +27,12 @@ const USAGE = `tutors-release-harness
       --allow-unsigned  judge registry images whose cosign signature could not be verified
                     (or HARNESS_ALLOW_UNSIGNED=1). Local work only; the report records it.
       --claims      claims.yaml for release mode
+      --claim-max-hunks  flag a claim that covers more than this many hunks (default 10, or HARNESS_CLAIM_MAX_HUNKS); reported, never gates
       --noise       noise-status.json (or its directory) from a recent A/A run; "skip" waives it, loudly
+      --require-verified  noise mode: write the status DEGRADED unless every image on both sides was pulled and
+                    signature-verified in this run (the nightly sets it); the gate never trusts a degraded status
+      --override-reason, --override-by  accept a FAIL and say so: the verdict stays FAIL, the run exits 0, and the
+                    report records who overrode it and why (both required together; reason 20+ characters)
       --runs        journey repetitions per side; 3+ enables statistical timing (default 1)
       --set         journey sets, comma separated: fixture,auth,reference (default all three)
       --journey     run only this journey (repeatable)
@@ -41,11 +47,13 @@ const USAGE = `tutors-release-harness
   harness compare --dir <run dir> --mode <mode> [--claims f] [--noise f]
       Re-run normalise/compare/claim/gate on captures already on disk.
 
-  harness images ensure --a <ref> --b <ref> [--ref-a git-ref] [--ref-b git-ref] [--allow-unsigned]
+  harness images ensure --a <ref> --b <ref> [--ref-a git-ref] [--ref-b git-ref] [--allow-unsigned] [--image-cache dir]
       Per image: use it if local; else pull it and verify its cosign signature by digest
       (HARNESS_COSIGN_IDENTITY, HARNESS_COSIGN_ISSUER override who must have signed it);
       else, for a bare tag, build it from the monorepo ref. Exit 1 when an image cannot be
       obtained; exit 2 when a registry image is unsigned, wrongly signed, or cosign is missing.
+      --image-cache  a directory kept between runs: refreshed from images pulled and verified in this run,
+                    and used (recorded as provenance "cached", a degraded run) only when the registry cannot be reached.
   harness stack up|down --a <ref> --b <ref>
   harness kind up|down|rollout --a <ref> --b <ref>
   harness mutants --base <ref> [--out dir]
@@ -108,12 +116,17 @@ async function main(argv: string[]): Promise<number> {
       "upgrade-seconds": { type: "string" },
       "upgrade-rate": { type: "string" },
       "noise-max-age-days": { type: "string" },
+      "claim-max-hunks": { type: "string" },
+      "override-reason": { type: "string" },
+      "override-by": { type: "string" },
+      "image-cache": { type: "string" },
       screenshots: { type: "boolean", default: true },
       axe: { type: "boolean", default: true },
       focus: { type: "boolean", default: true },
       keep: { type: "boolean", default: false },
       stack: { type: "boolean", default: true },
       "allow-unsigned": { type: "boolean", default: false },
+      "require-verified": { type: "boolean", default: false },
       json: { type: "boolean", default: false },
       help: { type: "boolean", short: "h", default: false }
     },
@@ -134,6 +147,14 @@ async function main(argv: string[]): Promise<number> {
   const sets = values.set ? (values.set.split(",").map((s) => s.trim()) as JourneySet[]) : defaults.sets;
   for (const s of sets) if (!["fixture", "auth", "reference"].includes(s)) fail(`unknown journey set "${s}"`);
   const load = parseLoad(values.load);
+  let override: ReturnType<typeof parseOverride>;
+  try {
+    override = parseOverride(values["override-reason"], values["override-by"]);
+  } catch (e) {
+    fail(e instanceof Error ? e.message : String(e));
+  }
+  const claimMaxHunks = values["claim-max-hunks"] === undefined ? defaults.claimMaxHunks : Number(values["claim-max-hunks"]);
+  if (!Number.isInteger(claimMaxHunks) || claimMaxHunks < 1) fail("--claim-max-hunks takes a positive integer");
   const common = {
     ...defaults,
     substrate: substrate(values.substrate),
@@ -144,6 +165,9 @@ async function main(argv: string[]): Promise<number> {
     ...(values.masks ? { masksFile: resolve(values.masks) } : {}),
     ...(values["noise-max-age-days"] ? { noiseMaxAgeDays: Number(values["noise-max-age-days"]) } : {}),
     ...(load ? { load } : {}),
+    claimMaxHunks,
+    requireVerified: values["require-verified"],
+    ...(override ? { override } : {}),
     ...(values.recorded ? { recorded: resolve(values.recorded) } : {}),
     ...(values.production ? { production: values.production } : {}),
     ...(values.snapshot ? { snapshot: resolve(values.snapshot) } : {}),
@@ -178,7 +202,7 @@ async function main(argv: string[]): Promise<number> {
         ...(values.noise ? { noise: values.noise } : {})
       });
       printOutcome(outcome.report.verdict, outcome.report.reasons, outcome.files);
-      return exitCodeFor(outcome.report.verdict);
+      return exitCodeForReport(outcome.report);
     }
     case "compare": {
       if (!values.dir) fail("compare needs --dir <run directory containing a/ and b/>");
@@ -192,13 +216,16 @@ async function main(argv: string[]): Promise<number> {
         claims: values.claims ? loadClaims(resolve(values.claims)) : [],
         masksFile: common.masksFile,
         noiseMaxAgeDays: common.noiseMaxAgeDays,
+        claimMaxHunks: common.claimMaxHunks,
+        requireVerified: common.requireVerified,
+        ...(common.override ? { override: common.override } : {}),
         now: common.now,
         runs: common.runs,
         log: common.log,
         ...(values.noise ? { noise: values.noise } : {})
       });
       printOutcome(outcome.report.verdict, outcome.report.reasons, outcome.files);
-      return exitCodeFor(outcome.report.verdict);
+      return exitCodeForReport(outcome.report);
     }
     case "images": {
       if (positionals[0] !== "ensure") fail("images ensure --a <ref> --b <ref>");
@@ -209,8 +236,10 @@ async function main(argv: string[]): Promise<number> {
           { spec: values.b, ...(values["ref-b"] ? { ref: values["ref-b"] } : {}) }
         ],
         common.imagePrefix,
-        { log: common.log, policy: trustPolicyFromEnv(process.env, common.allowUnsigned) }
+        { log: common.log, policy: trustPolicyFromEnv(process.env, common.allowUnsigned), ...(values["image-cache"] ? { cacheDir: resolve(values["image-cache"]) } : {}) }
       );
+      // For workflows: `image_cache=used|refreshed|none`, so the cache is saved only when it was refreshed.
+      if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, `image_cache=${result.cache}\n`);
       return result.exitCode;
     }
     case "stack": {

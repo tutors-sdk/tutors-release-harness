@@ -40,6 +40,9 @@ const workflowsContract = json("docs/contract/workflows.json") as {
   repositoryVariables: Record<string, { default: string; usedBy: string[] }>;
   artifacts: Record<string, { workflow: string; retentionDays: number }>;
   forbiddenPermissions: string[];
+  writePermissions: Record<string, Record<string, string[] | string>>;
+  noiseBranch: { branch: string; writtenBy: string; files: string[]; readBy: string[] };
+  dispatchInputs: Record<string, Record<string, string>>;
 };
 const contractMd = read("docs/contract.md");
 
@@ -68,7 +71,8 @@ const imageInfo = (app: string, n: number) => ({
   provenance: "pulled+verified" as const,
   verifiedIdentity: "^https://github.com/tutors-sdk/tutors-mono-repo/",
   unverifiedReason: "no valid signature",
-  builtFrom: { ref: "v16.2.0", sha: "1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b" }
+  builtFrom: { ref: "v16.2.0", sha: "1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b" },
+  cachedAt: "2026-09-15T02:30:00.000Z"
 });
 const sideProvenance = { summary: "pulled+verified", allowedUnsigned: true as const, images: { reader: imageInfo("reader", 1), catalogue: imageInfo("catalogue", 2), live: imageInfo("live", 3) } };
 const load = { requests: 600, failed: 0, serverErrors: 0, p50: 12, p95: 40, rate: 20, duration: "30s" };
@@ -92,7 +96,7 @@ const full: DeepRequired<RunReport> = {
   provenance: { a: sideProvenance, b: sideProvenance },
   verdict: "fail",
   reasons: ["1 unclaimed diff(s)"],
-  noise: { schemaVersion: SCHEMA_VERSION, ranAt: "2026-09-16T02:00:00.000Z", clean: true, hunks: 0 },
+  noise: { schemaVersion: SCHEMA_VERSION, ranAt: "2026-09-16T02:00:00.000Z", clean: true, hunks: 0, degraded: ["side a did not run pulled+verified images (cached)"] },
   compare: {
     hunks: [{ id: "1", artefact: "dom", scope: "reader:lab-step", path: "/lab/x", summary: "semantic DOM differs", detail: "+ x", severity: "fail" }],
     matches: [{ hunk: { id: "1", artefact: "dom", scope: "reader:lab-step", path: "/lab/x", summary: "semantic DOM differs", detail: "+ x", severity: "fail" }, claim: { artefact: "*", scope: "**", reason: "Rule 0031: reading time", approvedBy: "a-maintainer" } }],
@@ -103,7 +107,16 @@ const full: DeepRequired<RunReport> = {
   masksApplied: { "response-date": 4, etag: 0 },
   migration: { a: { ref: "v16.2.0", files: ["0001.sql"], catalog }, b: { ref: "release/16.3.0", files: ["0001.sql", "0002.sql"], catalog }, rolledBack: catalog },
   upgrade: { substrate: "compose", requests: 900, failed: 0, serverErrors: 0, byUpstream: { a: { requests: 300, failed: 0, serverErrors: 0, p95: 30 }, b: { requests: 600, failed: 0, serverErrors: 0, p95: 31 } }, switchedAt: 15000, durationMs: 45000 },
-  load: { a: load, b: load }
+  load: { a: load, b: load },
+  claimHygiene: {
+    claims: 2,
+    claimedHunks: 13,
+    hunksPerClaim: 6.5,
+    maxHunksPerClaim: 12,
+    threshold: 10,
+    flagged: [{ claim: { artefact: "*", scope: "**", reason: "Rule 0031: reading time", approvedBy: "a-maintainer" }, hunks: 12, flags: ["covers-many-hunks", "broad-with-approval"] }]
+  },
+  override: { reason: "Rule 0044: payments hotfix, frame options restored in 16.3.1", by: "a-maintainer", verdict: "fail", applied: true, at: "2026-09-16T09:20:00.000Z" }
 };
 
 function runFixture(mode: Mode, opts: { mutate?: boolean; claims?: string; noise?: string } = {}) {
@@ -201,6 +214,16 @@ describe("report.json", () => {
 });
 
 describe("noise-status.json", () => {
+  it("since 1.2.0 a status may carry `degraded`; the schema and the reader agree, and the contract says what it means", () => {
+    const degraded = { schemaVersion: 1, ranAt: "2026-09-16T02:00:00.000Z", clean: true, hunks: 0, degraded: ["side a did not run pulled+verified images (cached)"] };
+    expectValid(validateNoise, degraded);
+    expect(parseNoiseStatus(JSON.stringify(degraded))).toEqual(degraded);
+    expect(validateNoise({ ...degraded, degraded: [""] })).toBe(false);
+    expect(validateNoise({ ...degraded, degraded: "cached" })).toBe(false);
+    expect(() => parseNoiseStatus(JSON.stringify({ ...degraded, degraded: "cached" }))).toThrow(/not a valid noise status/);
+    for (const field of ["degraded", "--require-verified", "--image-cache", "--override-reason", "--override-by", "claimHygiene", "override", "cachedAt", "HARNESS_CLAIM_MAX_HUNKS"]) expect(contractMd, field).toContain(field);
+  });
+
   it("noise mode writes one the schema accepts; no other mode writes one", () => {
     const { dir, written } = runFixture("noise");
     const status = JSON.parse(readFileSync(join(dir, "noise-status.json"), "utf8"));
@@ -316,7 +339,7 @@ describe("CLI", () => {
     expect(env.HARNESS_COSIGN_ISSUER!.default).toBe(DEFAULT_COSIGN_ISSUER);
     for (const name of Object.keys(env).filter((k) => !k.startsWith("$"))) {
       expect(contractMd, name).toContain(`\`${name}\``);
-      expect(read("src/images.ts") + read("src/run.ts"), name).toContain(name);
+      expect(read("src/images.ts") + read("src/run.ts") + read("src/claims/hygiene.ts"), name).toContain(name);
     }
     expect(contractMd).toContain(`\`${DEFAULT_COSIGN_IDENTITY}\``);
     // The forms the contract promises, against the one function that expands them.
@@ -446,8 +469,69 @@ describe("workflows", () => {
       for (const block of blocks) {
         expect(typeof block, `${f}: permissions must be a map, not write-all`).toBe("object");
         for (const scope of workflowsContract.forbiddenPermissions) expect(block[scope], `${f}: ${scope}`).toBeUndefined();
-        for (const [scope, level] of Object.entries(block)) if (level === "write") expect(`${f}: ${scope}`).toBe("post-deploy.yml: issues");
       }
     }
+  });
+
+  it("hold `write` on exactly the scopes writePermissions lists, and only in the jobs it names, all on this repository", () => {
+    const actual: Record<string, Record<string, string[]>> = {};
+    for (const f of files) {
+      const top = Object.entries(parsed[f]!.permissions ?? {}).filter(([, level]) => level === "write").map(([scope]) => scope);
+      if (top.length) (actual[f] ??= {})["<workflow>"] = top.sort();
+      for (const [job, def] of Object.entries(parsed[f]!.jobs)) {
+        const scopes = Object.entries(def.permissions ?? {}).filter(([, level]) => level === "write").map(([scope]) => scope);
+        if (scopes.length) (actual[f] ??= {})[job] = scopes.sort();
+      }
+    }
+    const declared = Object.fromEntries(Object.entries(workflowsContract.writePermissions).filter(([k]) => !k.startsWith("$")).map(([f, v]) => [f, Object.fromEntries(Object.entries(v).filter(([k]) => k !== "why"))]));
+    expect(actual).toEqual(declared);
+  });
+
+  it("nothing pushes, tags or releases anywhere but the noise branch of this repository", () => {
+    for (const f of files) {
+      for (const m of text[f]!.matchAll(/git (?:-c [^\n]*?)?push[^\n]*/g)) {
+        expect(f, m[0]).toBe("nightly-noise.yml");
+        expect(m[0]).toContain("${GITHUB_REPOSITORY}");
+        expect(m[0]).toMatch(/ noise$/);
+      }
+      expect(text[f], f).not.toMatch(/git tag|gh release|gh pr |gh api [^\n]*-X (?:POST|PUT|PATCH|DELETE)/);
+    }
+  });
+
+  it("the latest noise status comes from the noise branch, vetted, not from an expiring artifact", () => {
+    expect(workflowsContract.noiseBranch.branch).toBe("noise");
+    for (const f of workflowsContract.noiseBranch.readBy) {
+      expect(text[f], f).toContain("contents/noise-status.json?ref=noise");
+      expect(text[f], f).toContain("noise-history.ts vet --status");
+      expect(text[f], f).not.toContain("dawidd6/action-download-artifact@v6\n        continue-on-error: true\n        with:\n          workflow: nightly-noise.yml");
+    }
+    expect(text[workflowsContract.noiseBranch.writtenBy]).toContain("noise-history.ts record");
+    for (const file of workflowsContract.noiseBranch.files) expect(text["nightly-noise.yml"], file).toContain(file);
+    expect(contractMd).toContain("`noise` branch");
+  });
+
+  it("the nightly asks the registry first, keeps a cache for an outage, and runs the A/A that requires verified images", () => {
+    const nightly = text["nightly-noise.yml"]!;
+    expect(nightly).toMatch(/harness images ensure --a "\$TAG" --b "\$TAG" --image-cache/);
+    expect(nightly).toMatch(/harness run --mode noise --a "\$TAG" --b "\$TAG" --runs 3 --load 20x30s --require-verified/);
+    // one runner image for the A/A and for the runs it licenses, so the noise floor it measured is the one they meet
+    const image = (f: string) => [...new Set([...text[f]!.matchAll(/runs-on: (ubuntu-[\d.]+)/g)].map((m) => m[1]))];
+    expect(image("nightly-noise.yml")).toEqual(["ubuntu-24.04"]);
+    expect(image("release.yml")).toContain("ubuntu-24.04");
+    expect(image("post-deploy.yml")).toEqual(["ubuntu-24.04"]);
+    expect(nightly).toContain("actions/cache/restore@");
+    expect(nightly).toContain("actions/cache/save@");
+    expect(nightly).toContain("steps.ensure.outputs.image_cache == 'refreshed'");
+    // no image-against-itself shortcut: nothing builds or loads locally before `ensure`
+    expect(nightly.indexOf("actions/cache/restore@")).toBeLessThan(nightly.indexOf("harness images ensure"));
+  });
+
+  it("an override can only come from a person dispatching release.yml by hand", () => {
+    const release = text["release.yml"]!;
+    expect(Object.keys(workflowsContract.dispatchInputs["release.yml"]!)).toEqual(["override_reason"]);
+    expect(release).toContain("OVERRIDE_REASON: ${{ inputs.override_reason }}");
+    expect(release).toContain("OVERRIDE_BY: ${{ github.triggering_actor }}");
+    expect(release).not.toMatch(/client_payload\.override/);
+    expect(release).toContain("harness-override");
   });
 });

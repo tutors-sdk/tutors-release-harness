@@ -31,6 +31,29 @@ jobs:
       - run: pnpm lint
       - run: pnpm test
 
+  # A mask is a blind spot you chose: a PR that adds or loosens one changes nothing else (src/ci/mask-change.ts),
+  # and a mask list past ~40 is flagged. Always reports on a pull request, so it can be a required check.
+  masks:
+    name: Masks land in their own PR (required)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Masks added or loosened, and nothing else changed
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: pnpm exec tsx src/ci/mask-change.ts --base "$BASE_SHA"
+
   # Phase H0 exit criterion, kept running: any two tags boot side by side and
   # one journey runs against both. Images are pulled from Quay and their
   # signatures verified when the registry has the tag; otherwise they are built

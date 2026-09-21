@@ -184,6 +184,21 @@ the nightly noise run and the weekly mutants use it. Update it when a release
 is deployed (the monorepo's deploy workflow can do this with
 `gh variable set HARNESS_PRODUCTION_TAG --repo tutors-sdk/tutors-release-harness`).
 
+### A registry outage, and the runner cache
+
+`harness images ensure --image-cache <dir>` (the nightly passes it) always asks
+the registry first. When the pull fails because the registry **cannot answer**
+(rate limit, timeout, 5xx), it loads last night's images from `<dir>` (a
+`docker save` tar and a manifest of ids, digests and the identity they were
+verified against) and records them as provenance `cached` — not re-verified,
+because the registry that holds the signatures is the one that is down. A tag
+the registry says **does not exist** never borrows another night's cache. The
+cache is refreshed only from images pulled **and** verified in the same run,
+so an unverified or locally built image can never enter it. A noise run that
+used a cached image is **degraded**: it neither counts as a clean night nor
+licenses a release FAIL (`docs/noise-burndown.md`). The workflow keeps `<dir>`
+between nights with `actions/cache`.
+
 ## 5. Building from a git ref (the loud fallback)
 
 `scripts/build-images.sh <ref> [tag]` clones the monorepo at `<ref>` into a

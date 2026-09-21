@@ -6,7 +6,7 @@ differ in what produces the hunks.
 
 | Mode | a | b | Produces | Gates on |
 | --- | --- | --- | --- | --- |
-| `noise` | production tag | the same tag | captured diffs | never; writes `noise-status.json` |
+| `noise` | production tag | the same tag | captured diffs | never; writes `noise-status.json` (`--require-verified` marks it `degraded` unless every image was pulled and verified in the run) |
 | `release` | production tag | candidate tag | captured diffs (+ k6 with `--load`) | unclaimed diffs, while a clean A/A ≤ 7 days old is supplied |
 | `any-two` | any | any | captured diffs | never |
 | `migration` | git ref or `dir:` | git ref or `dir:` | expand/contract and rollback hunks | any violation |

@@ -10,6 +10,11 @@ export interface GateInput {
   /** Days after which a noise status is too old to trust. */
   noiseMaxAgeDays: number;
   ranAt: Date;
+  /**
+   * Noise mode only: what makes this run's own evidence weak (an image that was not pulled and
+   * verified in the run). A clean A/A on weak evidence is a warning, never a pass.
+   */
+  degraded?: string[];
 }
 
 export interface GateOutput {
@@ -38,6 +43,9 @@ export function gate(input: GateInput): GateOutput {
   switch (mode) {
     case "noise": {
       const total = compare.hunks.filter((h) => h.severity === "fail").length;
+      if (total === 0 && input.degraded?.length) {
+        return { verdict: "warn", reasons: [`A/A is clean but DEGRADED, so it does not count: ${input.degraded.join("; ")}`, ...reasons] };
+      }
       if (total === 0) return { verdict: "pass", reasons: ["A/A is clean: the harness may gate releases", ...reasons] };
       return { verdict: "warn", reasons: [`A/A produced ${total} diff(s): the normaliser needs a mask for each, or the stack is not deterministic; the harness is advisory until this is 0`, ...reasons] };
     }
@@ -67,9 +75,10 @@ export function gate(input: GateInput): GateOutput {
   }
 }
 
-function trustNoise(input: GateInput): { ok: true } | { ok: false; why: string } {
+export function trustNoise(input: Pick<GateInput, "noise" | "noiseWaived" | "noiseMaxAgeDays" | "ranAt">): { ok: true } | { ok: false; why: string } {
   if (input.noiseWaived) return { ok: true };
   if (!input.noise) return { ok: false, why: "no A/A (noise) result was supplied; run `harness run --mode noise` first and pass --noise <its noise-status.json>" };
+  if (input.noise.degraded?.length) return { ok: false, why: `the last A/A run (${input.noise.ranAt}) was degraded and does not count: ${input.noise.degraded.join("; ")}` };
   if (!input.noise.clean) return { ok: false, why: `the last A/A run (${input.noise.ranAt}) had ${input.noise.hunks} diff(s)` };
   const ageMs = input.ranAt.getTime() - new Date(input.noise.ranAt).getTime();
   if (ageMs > input.noiseMaxAgeDays * 86_400_000) return { ok: false, why: `the last clean A/A run (${input.noise.ranAt}) is older than ${input.noiseMaxAgeDays} day(s)` };
