@@ -70,9 +70,8 @@ deployed (`16.3.0`), and `digests`, the images that run:
   "client_payload": { "production": "16.3.0", "digests": { "reader": "sha256:<64 hex>", "catalogue": "sha256:<64 hex>", "live": "sha256:<64 hex>", "time": "sha256:<64 hex>" } } }
 ```
 
-Today the monorepo's `deploy.yml` sends `production` and three digests (`reader`,
-`catalogue`, `live`); with the record's fourth (`time`) missing the check says
-`incomplete`, a warning, until `time` is added to the object.
+The monorepo's `deploy.yml` sends `production` and four digests (`reader`, `catalogue`,
+`live`, `time`, since monorepo #310), matching the record the harness keeps for the four apps it stacks.
 
 The harness compares them with what release mode judged, which it kept on its
 `release-records` branch (`releases/<release>.json`, the newest candidate of
