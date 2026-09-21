@@ -101,8 +101,12 @@ masks:
     reason: Connection reuse parameters of the transport; a CDN or router rewrites them.
 
   # Production sits behind a CDN the harness stacks do not have; these headers
-  # describe the CDN. Security headers are deliberately NOT here: a CDN that
-  # adds HSTS is a difference worth seeing once and claiming.
+  # and requests describe the CDN. Only what exists SOLELY because Netlify is in
+  # front is here, and only in post-deploy mode (release mode compares two stacks
+  # with no CDN, where every one of these would be a real finding). A header the
+  # app itself may change (a different max-age, an added `no-store`, a lost
+  # `immutable`) is NOT masked: cache-control and content-type are compared in
+  # their canonical form instead (src/normalise/canonical.ts).
   - id: cdn-age
     artefact: headers
     header: age
@@ -133,6 +137,43 @@ masks:
     header: netlify-vary
     modes: [post-deploy]
     reason: Netlify's own cache-key directive; only exists in front of production.
+  - id: cdn-hsts
+    artefact: headers
+    header: strict-transport-security
+    modes: [post-deploy]
+    reason: >-
+      Netlify injects HSTS on every HTTPS response; the recorded stack answers on plain HTTP and cannot send it
+      meaningfully. In release mode (two stacks, no CDN) HSTS is not masked, so an app that starts or stops
+      sending it is still seen there. Blind spot: an app that starts sending its own HSTS is invisible in post-deploy.
+  - id: cdn-rum-request
+    artefact: network
+    pattern: "^\\{\\{origin\\}\\}/\\.netlify/scripts/rum$"
+    drop: true
+    modes: [post-deploy]
+    reason: >-
+      Netlify's real-user-monitoring snippet is injected into HTML by the CDN and fetches /.netlify/scripts/rum
+      from production only; no release of the app adds or removes it. Only that exact path is dropped, so any
+      other new request on production still shows.
+  - id: cdn-document-no-cache
+    artefact: [headers, network]
+    header: cache-control
+    pattern: "^no-cache$"
+    modes: [post-deploy]
+    reason: >-
+      Netlify answers server-rendered documents that carry no Cache-Control with `no-cache` (revalidate every
+      time); the recorded stack sends nothing. Only a value that is exactly `no-cache` is cleared, so a document
+      that gains a max-age or `no-store` still differs. Blind spot: an app that itself starts sending only
+      `no-cache` is invisible in post-deploy (visible in release mode).
+  - id: cdn-static-revalidate
+    artefact: [headers, network]
+    header: cache-control
+    pattern: "^max-age=0,must-revalidate,public$"
+    modes: [post-deploy]
+    reason: >-
+      Netlify's default for a static file served without its own Cache-Control (for example /icons/copy.svg) is
+      `public,max-age=0,must-revalidate`, written here in the canonical sorted form; the recorded stack sends
+      nothing. Only that exact value is cleared: a static file that gains a real max-age, or hashed assets that
+      lose `immutable`, still differ. Blind spot as for cdn-document-no-cache.
 
 # Engine settings. Thresholds are noise floors measured by A/A runs; raising
 # one is a mask and needs the same review.
