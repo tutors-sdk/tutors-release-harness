@@ -748,6 +748,26 @@ Releases are git tags `v<harness version>` on `main`, cut by a maintainer.
 
 ## Changes
 
+### Unreleased (post-deploy on an external side; versions to be reconciled)
+
+What a production run showed: an external side behind a CDN differs from the recorded stack in ways that are
+spelling, not behaviour, and made a clean post-deploy verdict unreachable. No `report.json` field changes; what
+reports SAY changes, and it can change hunks in every mode, so a harness version bump is due
+(`src/ci/engine-change.ts`) and two reports from either side of it are not comparable.
+
+- **Canonical header forms** (engine, every mode). `content-type` and `cache-control` are put in one form on both
+  sides before comparing and before any mask, for the document headers and for each network entry. `cache-control`:
+  directives lower-cased, whitespace stripped, sorted, de-duplicated (`public,immutable,max-age=1` and
+  `max-age=1, public, immutable` are equal). `content-type`: lower-cased media type and parameter names, the default
+  charset (`utf-8`) dropped, the legacy JavaScript aliases (`application/javascript` …) folded into `text/javascript`.
+  A changed `max-age`, a lost `immutable`, another media type or a non-default charset is still a hunk. What changes
+  for a consumer: the values quoted in a hunk summary are the canonical ones (`cache-control changed:
+  immutable,max-age=31536000,public → immutable,max-age=300,public`), and a reordering that used to be a hunk is not.
+  Known blind spot: a document that loses `charset=utf-8` reads as unchanged.
+- **Header masks may carry a pattern** (`normalise/masks.yaml`). `header: cache-control` with `pattern: "^no-cache$"`
+  drops the header only when its canonical value matches, and `artefact: network` on a header mask clears
+  `content-type` or `cache-control` of the network entries. Existing masks are unaffected.
+
 ### 1.3.0 (minor; digests, rules, the local store, the local commands, checkout names, the `time` app, statistics)
 
 `main` is at 1.1.0 and this is its next release: 1.2.0 (below) was never
