@@ -59,6 +59,20 @@ masks:
       dependency shows up as a dom or console change instead. Stubbing the CDN in the fixture stack would
       let this mask go.
 
+  - id: persistence-stub-requests
+    artefact: network
+    pattern: '^\{\{origin\}\}/(rest|realtime|auth)/v1/'
+    drop: true
+    reason: >-
+      The signed-in reader talks to its side's persistence stub (Supabase-shaped: /rest/v1, /realtime/v1,
+      /auth/v1) on timers and debounces, so how many upserts, count queries and socket handshakes land inside the
+      window before a page settles depends on how long the page happened to be open: an A/A on the same image showed
+      the same POST 4x on a and 3x on b, and 2x against 1x, and a response body whose shape differed between the
+      first and a later call. What the reader writes is judged by the persistence artefact, per journey and per
+      table (the stub is the recorder), and the anonymous-write rule; the network engine's per-page request counts
+      cannot tell a regression from a timer tick. Only the stub's Supabase paths are dropped: the reader's own routes
+      and the fixture course are still compared.
+
   - id: hashed-assets
     artefact: [network, headers]
     pattern: "(/_app/immutable/[a-z]+/(?:[A-Za-z0-9_-]+\\.)?)[A-Za-z0-9_-]{8}(\\.(?:js|css|woff2?|json))"
