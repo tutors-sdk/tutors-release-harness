@@ -13,6 +13,12 @@
 #             `pattern: <regex>`             replaces matches with `replace` (default "{{masked}}")
 #             `network` masks apply to the request URL only; with `drop: true`
 #             the matching requests are removed from the comparison entirely
+#             `console` masks apply to each message's text; with `drop: true`
+#             the matching console entries are removed from that page's list
+#             on both sides (use it only for noise whose COUNT varies with
+#             timing: a rewrite cannot hide a message that one side logged
+#             twice and the other never)
+#             (`drop` is accepted on network and console pattern masks only)
 #   metrics:  `series: <regex>`              drops matching series names
 #   logs:     `key: <name>`                  drops that key from the key-set comparison
 # `replace` may keep parts of the match with $1, $2 …; `modes: [post-deploy]`
