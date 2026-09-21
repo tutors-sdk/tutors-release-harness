@@ -1,5 +1,6 @@
 import { parse } from "yaml";
 import type { Exec } from "../images.ts";
+import { LEGACY_PROJECT, composeProject, kindCluster } from "../project.ts";
 
 /**
  * `harness doctor`: what this machine lacks to run the harness, and how to get it.
@@ -284,11 +285,17 @@ export async function runDoctor(scopes: Scope[], deps: DoctorDeps): Promise<{ ok
     const kubectl = exec("kubectl", ["version", "--client"]);
     checks.push(kubectl.status === 0 ? ok("kubectl", "kubectl", kubectl.stdout.trim().split(/\r?\n/)[0] ?? "installed") : bad("fail", "kubectl", "kubectl", "not installed", FIX.kubectl));
     if (kind.status === 0) {
-      const cluster = env.HARNESS_KIND_CLUSTER || "tutors-harness";
+      const { name: cluster, source } = kindCluster(env, deps.root, deps.platform);
       const clusters = exec("kind", ["get", "clusters"]).stdout.split(/\r?\n/).map((s) => s.trim());
-      if (clusters.includes(cluster)) {
-        checks.push(bad("warn", "kind-cluster", `kind cluster "${cluster}"`, `already exists and would be reused (only the harness-a and harness-b namespaces are created and deleted in it). If it is yours, or was not made from deploy/kind/kind-config.yaml, the host ports 4100-4202 are not mapped: set HARNESS_KIND_CLUSTER to give the harness its own cluster`, install("$env:HARNESS_KIND_CLUSTER='harness-local'", "export HARNESS_KIND_CLUSTER=harness-local", "export HARNESS_KIND_CLUSTER=harness-local")));
-      } else checks.push(ok("kind-cluster", `kind cluster "${cluster}"`, "not there yet: `harness kind up` creates it"));
+      if (cluster === LEGACY_PROJECT) {
+        checks.push(bad("fail", "kind-cluster", `kind cluster "${cluster}"`, `${source} names the cluster "${LEGACY_PROJECT}", the name every checkout used before 1.3.0. A cluster of that name is not adopted or deleted by any harness command, so \`harness kind up\` refuses it: unset ${source} to use this checkout's own name`, install("Remove-Item Env:" + source, "unset " + source, "unset " + source)));
+      } else if (clusters.includes(cluster)) {
+        checks.push(bad("warn", "kind-cluster", `kind cluster "${cluster}"`, `already exists and would be reused (${source}; only the harness-a and harness-b namespaces are created and deleted in it). If it was not made from deploy/kind/kind-config.yaml, the host ports 4100-4202 are not mapped: set HARNESS_KIND_CLUSTER to give the harness its own cluster`, install("$env:HARNESS_KIND_CLUSTER='harness-local'", "export HARNESS_KIND_CLUSTER=harness-local", "export HARNESS_KIND_CLUSTER=harness-local")));
+      } else checks.push(ok("kind-cluster", `kind cluster "${cluster}"`, `not there yet: \`harness kind up\` creates it (name from ${source}; another checkout or worktree gets another name)`));
+      // The name every checkout used before 1.3.0 is somebody's cluster, never this one's.
+      if (cluster !== LEGACY_PROJECT && clusters.includes(LEGACY_PROJECT)) {
+        checks.push(ok("kind-legacy", `legacy kind cluster "${LEGACY_PROJECT}"`, `exists: legacy cluster, not touched. It is not this checkout's (${cluster}) and no harness command adopts, loads into or deletes it. If it was made from deploy/kind/kind-config.yaml it holds the host ports 4100-4202 that a new cluster maps, and \`harness kind up\` will fail on them: delete it yourself (kind delete cluster --name ${LEGACY_PROJECT}) if it is not needed`));
+      }
     }
   }
 
@@ -336,7 +343,7 @@ export async function runDoctor(scopes: Scope[], deps: DoctorDeps): Promise<{ ok
         checks.push(bad("fail", "ports", "the host ports the stack publishes are free", blocked.map((p) => `${p.port} (${p.variable}) is ${p.state === "busy" ? "in use" : "reserved by the OS"}`).join("; "), FIX.ports));
       } else checks.push(ok("ports", "the host ports the stack publishes are free", `${states.length} ports, ${Math.min(...states.map((p) => p.port))}-${Math.max(...states.map((p) => p.port))}`));
 
-      const project = env.HARNESS_COMPOSE_PROJECT || "tutors-harness";
+      const { name: project, source: projectSource } = composeProject(env, deps.root, deps.platform);
       const ls = exec("docker", ["compose", "ls", "--all", "--format", "json"]);
       let projects: { Name?: string; Status?: string }[] = [];
       try {
@@ -344,10 +351,15 @@ export async function runDoctor(scopes: Scope[], deps: DoctorDeps): Promise<{ ok
       } catch {
         projects = [];
       }
-      const others = projects.map((p) => p.Name).filter((n): n is string => Boolean(n) && n !== project);
+      const legacy = project === LEGACY_PROJECT ? undefined : projects.find((p) => p.Name === LEGACY_PROJECT);
+      const others = projects.map((p) => p.Name).filter((n): n is string => Boolean(n) && n !== project && n !== LEGACY_PROJECT);
       const ours = projects.find((p) => p.Name === project);
       if (ours) checks.push(bad("warn", "compose-project", `compose project "${project}"`, `already exists (${ours.Status ?? "?"}): a run replaces it, --remove-orphans included. Leftover from an interrupted run, or another run in progress? Other projects (${others.join(", ") || "none"}) are never touched`));
-      else checks.push(ok("compose-project", `compose project "${project}" is the harness's own`, others.length ? `other projects on this Docker, never touched: ${others.join(", ")}` : "no other compose projects"));
+      else checks.push(ok("compose-project", `compose project "${project}" is the harness's own`, `named from ${projectSource}; another checkout or worktree gets another name${others.length ? `. Other projects on this Docker, never touched: ${others.join(", ")}` : "; no other compose projects"}`));
+      // What every checkout called its stack before 1.3.0: left exactly as it is.
+      if (legacy) {
+        checks.push(bad("warn", "legacy-stack", `legacy compose project "${LEGACY_PROJECT}"`, `exists (${legacy.Status ?? "?"}): legacy stack, not touched. It is not this checkout's (${project}) and no harness command removes it. It holds the stack's fixed host ports and subnet, so this checkout's stack cannot start beside it while it runs: stop it yourself if it is not needed (docker compose -p ${LEGACY_PROJECT} down)`));
+      }
 
       const subnet = composeSubnet(compose);
       if (subnet) {

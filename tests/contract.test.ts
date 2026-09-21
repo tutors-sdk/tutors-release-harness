@@ -426,7 +426,7 @@ describe("CLI", () => {
     expect(env.HARNESS_COSIGN_ISSUER!.default).toBe(DEFAULT_COSIGN_ISSUER);
     for (const name of Object.keys(env).filter((k) => !k.startsWith("$"))) {
       expect(contractMd, name).toContain(`\`${name}\``);
-      expect(read("src/images.ts") + read("src/run.ts") + read("src/claims/hygiene.ts") + read("src/image-static/collect.ts") + read("src/compare/image-static.ts"), name).toContain(name);
+      expect(["src/images.ts", "src/run.ts", "src/claims/hygiene.ts", "src/image-static/collect.ts", "src/compare/image-static.ts", "src/local/home.ts", "src/project.ts"].map((f) => read(f)).join(" "), name).toContain(name);
     }
     expect(contractMd).toContain(`\`${DEFAULT_COSIGN_IDENTITY}\``);
     // The forms the contract promises, against the one function that expands them.

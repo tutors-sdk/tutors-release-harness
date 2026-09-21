@@ -48,7 +48,7 @@ run needs is missing, `2` is a usage error. `--json` prints the same as data;
 | free disk, `HARNESS_HOME` writable | images, SBOMs and captures |
 | the 13 host ports the stack publishes | a developer's own service on 8080 or 3100 |
 | the fixed subnet `172.29.0.0/24` against every other Docker network | `docker compose up` fails with "Pool overlaps" otherwise |
-| a leftover `tutors-harness` compose project | a run replaces it, `--remove-orphans` included |
+| a leftover compose project of this checkout (`tutors-harness-<8 hex>`) | a run replaces it, `--remove-orphans` included. A stack under the old default name `tutors-harness` is reported by `harness doctor` as "legacy stack, not touched" and never removed |
 | Windows: WSL's `bash` first on PATH, CRLF in `scripts/*.sh`, long paths off | see [Windows notes](#windows-notes) |
 
 ## The four tasks
@@ -181,7 +181,7 @@ commits that came with this document.
 | C1 | Masks land in their own PR (`mask-change.ts`) | WF | `harness guard masks --base <ref>` | as M3. **Closed** |
 | C2 | Typecheck, lint, unit and fixture tests | CLI | `pnpm typecheck`, `pnpm lint`, `pnpm test` | none |
 | C3 | Two-stacks smoke, including "the contracting fixture must be rejected" (`if cmd; then exit 1`) | WF | the commands in TESTING.md, the inversion by hand | no wrapper. **Open, low** |
-| C4 | Stack logs on failure | WF | `docker compose -p tutors-harness -f compose.harness.yaml --profile upgrade logs` | project name follows `HARNESS_COMPOSE_PROJECT`. **Documented** |
+| C4 | Stack logs on failure | WF | `docker compose -p <project> -f compose.harness.yaml --profile upgrade logs`, where `<project>` is this checkout's compose project (`harness doctor` prints it) | CI pins `HARNESS_COMPOSE_PROJECT=tutors-harness`, one checkout per runner. **Documented** |
 | C5 | Claims hygiene | CLI | reported in every report that has claims; never gates | none |
 
 ### Prerequisites and platform
@@ -196,7 +196,7 @@ commits that came with this document.
 | X6 | k6 image | `grafana/k6:latest`, unpinned | `harness doctor` warns; pin with `HARNESS_K6_IMAGE` |
 | X7 | Time zone, `HARNESS_NOW` | no verdict depends on the host zone: the browser is pinned to Europe/Dublin, the frozen clock is a UTC instant, run directories and the noise status are UTC. `HARNESS_NOW` is read from the environment (PowerShell `$env:HARNESS_NOW = "..."`, cmd `set`), or `--now`. The **Docker VM's clock** is what drifts | `harness doctor` checks the skew and the value. **Closed** |
 | X8 | Parallel runs and a developer's own stack | see [below](#running-beside-your-own-stack) | project name and ports **configurable**; the subnet is **not**. **Open (compose file)** |
-| X9 | kind | cluster name `HARNESS_KIND_CLUSTER`, default `tutors-harness`: the same name as an existing cluster of that name would be reused (only the `harness-a` and `harness-b` namespaces are created and deleted). Host ports 4100-4202 are fixed in `deploy/kind/kind-config.yaml` and apply only when the cluster was created from it | `harness doctor --for kind` warns. **Open, low** |
+| X9 | kind | cluster name: `HARNESS_KIND_CLUSTER`, then `HARNESS_PROJECT`, else `tutors-harness-<8 hex of the checkout's path>`: two checkouts get two clusters, and a cluster called plain `tutors-harness` (the pre-1.3.0 default, which may be yours) is refused by `harness kind up` and `down`, never adopted or deleted. Host ports 4100-4202 are fixed in `deploy/kind/kind-config.yaml`, so two clusters of two checkouts cannot run at once | `harness doctor --for kind` names the cluster, warns when it already exists, and reports a legacy `tutors-harness` cluster as not touched. **Closed** (names), ports **open, low** |
 | X10 | Playwright's Chromium | the host's Chromium takes the screenshots, not a container's, so fonts and anti-aliasing are the host's | [calibration](#the-noise-store-is-this-machines-calibration) |
 | X11 | CI-only environment assumptions in the code | none: `GITHUB_OUTPUT` is the only `GITHUB_*` variable read, and only to write to it when set | none |
 
@@ -296,11 +296,11 @@ and survives sleep better than cron.
 
 | What | Configurable? | How |
 | --- | --- | --- |
-| Compose project name | yes | `HARNESS_COMPOSE_PROJECT`, default `tutors-harness`: never `tutors`, so a developer's own project is not touched. **Two checkouts (or git worktrees) of the harness on one machine share the default name**: give each its own |
+| Compose project name | yes | `HARNESS_COMPOSE_PROJECT`, then `HARNESS_PROJECT`, else `tutors-harness-<first 8 hex of sha256(real path of the harness checkout, lowercased on Windows)>`: never `tutors`, so a developer's own project is not touched, and **two checkouts or git worktrees of the harness on one machine get two names** (the same checkout always gets the same one; `harness doctor` prints it). Host ports and the compose subnet are still fixed: use `--port-offset` and stop one stack before starting the other |
 | Container names | not set anywhere | compose derives them from the project name |
 | Host ports (13) | yes | one variable each (`READER_PORT_A`, `COURSE_PORT`, `IDENTITY_PORT`, `EDGE_PORT`, ...), or all at once with `--port-offset 1000` on `harness local ...` and `harness doctor` (a variable you set yourself wins). `COURSE_PORT` also changes the course id, identically on both sides |
 | The network subnet `172.29.0.0/24` and the identity stub's address `172.29.0.10` | **no**, fixed in `compose.harness.yaml` | two harness stacks, or any other Docker network on that range, cannot coexist. The run lock serialises harness runs; `harness doctor` names the network that clashes |
-| kind cluster | name yes (`HARNESS_KIND_CLUSTER`), ports no | see X9 |
+| kind cluster | name yes (derived from the checkout, `HARNESS_KIND_CLUSTER`, `HARNESS_PROJECT`), ports no | see X9 |
 
 A run never stops, removes or prunes anything outside its own compose project
 (`docker compose -p <project> down`) and its own kind namespaces.

@@ -11,7 +11,8 @@ import { EXIT_CANNOT_JUDGE, ImageTrustError, ensureImages, fileLedger, realExec,
 import { runMutants } from "./mutants.ts";
 import { compareFromCaptures, defaultRunOptions, loadCapture, run } from "./run.ts";
 import { imagesFor, sideSpec, stackDown, stackUp } from "./stack.ts";
-import { kindDown, kindRollout, kindSide, kindUp } from "./substrate/kind.ts";
+import { CLUSTER, kindDown, kindRollout, kindSide, kindUp } from "./substrate/kind.ts";
+import { refuseLegacyCluster } from "./project.ts";
 import { MODES, SUBSTRATES, type Mode, type Substrate } from "./types.ts";
 import { harnessInfo } from "./version.ts";
 import { UsageError, doctorCommand, guardCommand, localCommand, noiseCommand, overrideCommand, recordAppliedOverride } from "./local/cli.ts";
@@ -345,6 +346,12 @@ async function main(argv: string[]): Promise<number> {
       return 0;
     }
     case "kind": {
+      // Before anything is inspected or started: a cluster called tutors-harness is not this checkout's to touch.
+      try {
+        refuseLegacyCluster(CLUSTER);
+      } catch (e) {
+        fail(e instanceof Error ? e.message : String(e));
+      }
       const action = positionals[0];
       if (action === "down") {
         kindDown(common.log);

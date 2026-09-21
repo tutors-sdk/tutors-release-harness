@@ -612,7 +612,7 @@ environment variable, else `tutors`. It is either a bare prefix
 signature could not be verified be judged anyway; the report records it
 (`pulled-unverified`, `allowedUnsigned`). The workflows never pass it.
 
-Environment variables in the contract, all since 1.1.0 except the first, the last six (since 1.2.0) and `HARNESS_HOME` (since 1.3.0):
+Environment variables in the contract, all since 1.1.0 unless the row says otherwise:
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
@@ -621,6 +621,9 @@ Environment variables in the contract, all since 1.1.0 except the first, the las
 | `HARNESS_COSIGN_ISSUER` | `https://token.actions.githubusercontent.com` | the certificate's OIDC issuer; empty means the default |
 | `HARNESS_ALLOW_UNSIGNED` | unset | `1`, `true` or `yes`: the same as `--allow-unsigned` |
 | `HARNESS_HOME` | `<checkout>/.harness` | since 1.3.0. Where the harness keeps what outlives a run on this machine: the noise store (`noise/`, the default source of `--noise`), the release records (`releases/`), the override log, the image cache. See [local.md](local.md) |
+| `HARNESS_PROJECT` | `tutors-harness-<8 hex>` | since 1.3.0. The name of this checkout's compose project and kind cluster when the next two do not say. Unset, it is `tutors-harness-` and the first 8 hex characters of the SHA-256 of the checkout's real path (lowercased on Windows): two checkouts or git worktrees never share a stack, and one checkout always gets the same name. `harness doctor` prints the names this checkout uses |
+| `HARNESS_COMPOSE_PROJECT` | derived | since 1.3.0 (an override that already existed). The compose project of the stack; wins over `HARNESS_PROJECT` |
+| `HARNESS_KIND_CLUSTER` | derived | since 1.3.0 (an override that already existed). The kind cluster; wins over `HARNESS_PROJECT`. `tutors-harness` is refused: it is the pre-1.3.0 default name, and a cluster of that name is never adopted or deleted |
 | `HARNESS_CLAIM_MAX_HUNKS` | `10` | since 1.2.0: a claim covering more failing hunks than this is flagged in `claimHygiene`; a positive integer, else the default. `--claim-max-hunks` overrides |
 | `HARNESS_SBOM_SOURCE` | `auto` | since 1.2.0. Where each image's SBOM comes from: `auto` or `attestation` (the cosign SPDX attestation of a pulled image), or `generate` (a local generator, on both sides) |
 | `HARNESS_SBOM_CMD` | `syft docker:{image} -o spdx-json` | since 1.2.0. The generator for `generate`; `{image}` is the image reference. Split on whitespace and quotes; no shell |

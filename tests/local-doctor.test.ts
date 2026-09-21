@@ -11,9 +11,12 @@ import { describe, expect, it } from "vitest";
 import { DEFAULT_SCOPES, cidrOverlap, composePorts, composeStubImages, composeSubnet, fixFor, parseCosignVersion, renderDoctor, runDoctor, type Check, type DoctorDeps, type Scope } from "../src/local/doctor.ts";
 import type { ExecResult } from "../src/images.ts";
 import { DEFAULT_PORTS } from "../src/local/ports.ts";
+import { LEGACY_PROJECT, derivedName } from "../src/project.ts";
 
 const ROOT = resolve(import.meta.dirname, "..");
 const COMPOSE = readFileSync(resolve(ROOT, "compose.harness.yaml"), "utf8");
+/** The compose project and kind cluster this fake machine's checkout gets (a linux path, so no lowercasing). */
+const OWN = derivedName(ROOT, "linux");
 
 const done = (stdout = "", status = 0, stderr = ""): ExecResult => ({ status, stdout, stderr });
 const notInstalled = (): ExecResult => ({ status: null, stdout: "", stderr: "", error: Object.assign(new Error("spawn ENOENT"), { code: "ENOENT" }) as NodeJS.ErrnoException });
@@ -236,7 +239,7 @@ describe("collisions with a developer's own stack", () => {
       tools: {
         docker: (a) => {
           if (a[0] === "network" && a[1] === "ls") return done("abc");
-          if (a[0] === "network" && a[1] === "inspect") return done("tutors-harness_default|tutors-harness|172.29.0.0/24,\n");
+          if (a[0] === "network" && a[1] === "inspect") return done(`${OWN}_default|${OWN}|172.29.0.0/24,\n`);
           return healthy().docker!(a);
         }
       }
@@ -244,10 +247,10 @@ describe("collisions with a developer's own stack", () => {
     expect(find(r.checks, "subnet")!.status).toBe("ok");
   });
 
-  it("other compose projects are named as untouched, a leftover harness project is a warning", async () => {
+  it("other compose projects are named as untouched, a leftover project of this checkout is a warning", async () => {
     const list = JSON.stringify([
       { Name: "tutors", Status: "running(9)" },
-      { Name: "tutors-harness", Status: "exited(12)" }
+      { Name: OWN, Status: "exited(12)" }
     ]);
     const r = await run({ tools: { docker: (a) => (a[0] === "compose" && a[1] === "ls" ? done(list) : healthy().docker!(a)) } });
     const c = find(r.checks, "compose-project")!;
@@ -348,5 +351,81 @@ describe("the parsers", () => {
     expect(composePorts(COMPOSE, {}, 1000).find((p) => p.variable === "READER_PORT_A")!.port).toBe(4100);
     expect(composePorts(COMPOSE, { READER_PORT_A: "5000" }, 1000).find((p) => p.variable === "READER_PORT_A")!.port).toBe(5000);
     expect(composeStubImages(COMPOSE)).toContain("node:22-bookworm-slim");
+  });
+});
+
+describe("this checkout's own names (contract 1.3.0)", () => {
+  /** A docker that records every call, on top of the healthy one, with `compose ls` answering `projects`. */
+  function recording(projects: object[]) {
+    const calls: string[] = [];
+    const docker: Handler = (a) => {
+      calls.push(a.join(" "));
+      return a[0] === "compose" && a[1] === "ls" ? done(JSON.stringify(projects)) : healthy().docker!(a);
+    };
+    return { calls, docker };
+  }
+
+  it("says which compose project and kind cluster this checkout uses, and where the name came from", async () => {
+    const r = await run({}, ["gate", "kind"]);
+    expect(find(r.checks, "compose-project")).toMatchObject({ status: "ok", title: `compose project "${OWN}" is the harness's own` });
+    expect(find(r.checks, "compose-project")!.detail).toContain(`named from this checkout's path (${ROOT})`);
+    expect(find(r.checks, "kind-cluster")).toMatchObject({ status: "ok", title: `kind cluster "${OWN}"` });
+    const overridden = await run({ env: { HARNESS_PROJECT: "mine" } }, ["gate", "kind"]);
+    expect(find(overridden.checks, "compose-project")!.title).toContain('"mine"');
+    expect(find(overridden.checks, "compose-project")!.detail).toContain("named from HARNESS_PROJECT");
+    expect(find(overridden.checks, "kind-cluster")!.title).toContain('"mine"');
+    // the specific variables beat the general one
+    const specific = await run({ env: { HARNESS_PROJECT: "mine", HARNESS_COMPOSE_PROJECT: "compose-only", HARNESS_KIND_CLUSTER: "kind-only" } }, ["gate", "kind"]);
+    expect(find(specific.checks, "compose-project")!.title).toContain('"compose-only"');
+    expect(find(specific.checks, "kind-cluster")!.title).toContain('"kind-only"');
+  });
+
+  it("planted: a stack under the old default name is reported as a legacy stack, not touched, and nothing is run against it", async () => {
+    const { calls, docker } = recording([{ Name: LEGACY_PROJECT, Status: "running(12)" }, { Name: "tutors", Status: "running(9)" }]);
+    const r = await run({ tools: { docker } });
+    const legacy = find(r.checks, "legacy-stack")!;
+    expect(legacy.status).toBe("warn");
+    expect(legacy.title).toBe(`legacy compose project "${LEGACY_PROJECT}"`);
+    expect(legacy.detail).toContain("legacy stack, not touched");
+    expect(legacy.detail).toContain(`docker compose -p ${LEGACY_PROJECT} down`);
+    // this checkout's own project is fine, and the developer's other one is named but not blamed
+    expect(find(r.checks, "compose-project")).toMatchObject({ status: "ok" });
+    expect(find(r.checks, "compose-project")!.detail).toContain("Other projects on this Docker, never touched: tutors");
+    expect(find(r.checks, "compose-project")!.detail).not.toContain(LEGACY_PROJECT);
+    // read-only: no down, no rm, no stop, no kill, nothing that changes a container
+    expect(calls.filter((c) => /\b(down|rm|stop|kill|prune|remove|delete)\b/.test(c))).toEqual([]);
+  });
+
+  it("must not flag: no legacy stack, or a machine whose project IS called tutors-harness by choice, says nothing about a legacy one", async () => {
+    expect(find((await run()).checks, "legacy-stack")).toBeUndefined();
+    const { docker } = recording([{ Name: LEGACY_PROJECT, Status: "running(12)" }]);
+    const chosen = await run({ env: { HARNESS_COMPOSE_PROJECT: LEGACY_PROJECT }, tools: { docker } });
+    expect(find(chosen.checks, "legacy-stack")).toBeUndefined();
+    expect(find(chosen.checks, "compose-project")!.status).toBe("warn"); // it is this run's own leftover, as any project of that name would be
+  });
+
+  it("planted: a kind cluster called tutors-harness is the owner's: reported as not touched, never as this checkout's", async () => {
+    const kind: Handler = (a) => (a[0] === "get" ? done(`${LEGACY_PROJECT}\nsomething-else\n`) : done("kind v0.30.0"));
+    const r = await run({ tools: { kind } }, ["kind"]);
+    expect(find(r.checks, "kind-cluster")).toMatchObject({ status: "ok", title: `kind cluster "${OWN}"` });
+    const legacy = find(r.checks, "kind-legacy")!;
+    expect(legacy.detail).toContain("legacy cluster, not touched");
+    expect(legacy.detail).toContain("no harness command adopts, loads into or deletes it");
+    expect(r.ok).toBe(true);
+  });
+
+  it("planted: HARNESS_KIND_CLUSTER=tutors-harness would adopt the owner's cluster, so it is a failure that says the harness refuses it", async () => {
+    const r = await run({ env: { HARNESS_KIND_CLUSTER: LEGACY_PROJECT } }, ["kind"]);
+    const c = find(r.checks, "kind-cluster")!;
+    expect(c.status).toBe("fail");
+    expect(c.detail).toContain("is not adopted or deleted by any harness command");
+    expect(r.ok).toBe(false);
+  });
+
+  it("the derived name of a cluster that already exists is a warning that it would be reused, as before", async () => {
+    const kind: Handler = (a) => (a[0] === "get" ? done(`${OWN}\n`) : done("kind v0.30.0"));
+    const c = find((await run({ tools: { kind } }, ["kind"])).checks, "kind-cluster")!;
+    expect(c.status).toBe("warn");
+    expect(c.detail).toContain("already exists and would be reused");
   });
 });

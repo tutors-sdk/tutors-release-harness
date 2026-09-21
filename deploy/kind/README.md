@@ -9,7 +9,7 @@ engines, claims, gate, report) is identical; only `stackUp`/`stackDown` change.
 pnpm harness run --mode noise --a local --b local --substrate kind --set fixture
 pnpm harness kind rollout --a 16.2.0 --b 16.3.0-rc.1      # rolling update of harness-a/reader under k6 load
 pnpm harness kind down                                     # delete the namespaces; the cluster stays
-kind delete cluster --name tutors-harness                  # remove the cluster
+kind delete cluster --name <cluster>                       # remove this checkout's cluster (harness doctor --for kind prints its name)
 ```
 
 Needs `kind` and `kubectl` on the PATH and Docker. The first `up` creates the
@@ -57,3 +57,15 @@ the real overlays.
 `kubectl set image deployment/reader app=<b image>` with `maxUnavailable: 0`,
 `maxSurge: 1`, then `rollout status`. Any failed or 5xx request during the
 window fails the rehearsal. The result lands in `out/<ts>-kind-rollout/rollout.json`.
+
+## The cluster's name
+
+The cluster is `tutors-harness-<8 hex>`, the hex being the first eight characters of
+the SHA-256 of this checkout's real path (lowercased on Windows), so two checkouts or
+git worktrees on one machine get two clusters and never adopt each other's.
+`HARNESS_KIND_CLUSTER` (then `HARNESS_PROJECT`) overrides it. A cluster called plain
+`tutors-harness` is what every checkout used before 1.3.0 and is treated as yours:
+`harness kind up` and `down` refuse that name, and `harness doctor --for kind` reports
+it as "legacy cluster, not touched". Note that every cluster made from
+`kind-config.yaml` maps the same host ports (4100–4202), so two clusters cannot run at
+once; delete the one you are not using.

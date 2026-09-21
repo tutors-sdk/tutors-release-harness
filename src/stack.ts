@@ -2,11 +2,17 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 import { dockerRef } from "./image-ref.ts";
+import { composeProject, orExit } from "./project.ts";
 import type { SideName, SideSpec, StackUrls } from "./types.ts";
 
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 export const COMPOSE_FILE = resolve(ROOT, "compose.harness.yaml");
-export const COMPOSE_PROJECT = process.env.HARNESS_COMPOSE_PROJECT ?? "tutors-harness";
+/**
+ * This checkout's compose project (src/project.ts): `tutors-harness-<8 hex of the checkout's path>`, so two checkouts or
+ * worktrees never share a stack. HARNESS_COMPOSE_PROJECT, then HARNESS_PROJECT, win. `-p` always overrides the `name:`
+ * in compose.harness.yaml, which is only what a hand-typed `docker compose` without `-p` would use.
+ */
+export const COMPOSE_PROJECT = orExit(() => composeProject().name);
 /** The compose network the k6 container joins to reach the sides by service name. */
 export const COMPOSE_NETWORK = `${COMPOSE_PROJECT}_default`;
 

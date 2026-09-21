@@ -94,7 +94,7 @@
     ]
   },
   "environment": {
-    "$comment": "Environment variables that are part of the contract. Since 1.1.0, except HARNESS_IMAGE_PREFIX (whose {app} template form is since 1.1.0), the SBOM, vulnerability and static-artefact variables (since 1.2.0) and HARNESS_HOME (since 1.3.0).",
+    "$comment": "Environment variables that are part of the contract. Since 1.1.0, except HARNESS_IMAGE_PREFIX (whose {app} template form is since 1.1.0), the SBOM, vulnerability and static-artefact variables (since 1.2.0) and HARNESS_HOME, HARNESS_PROJECT, HARNESS_COMPOSE_PROJECT and HARNESS_KIND_CLUSTER (since 1.3.0).",
     "HARNESS_IMAGE_PREFIX": {
       "default": "tutors",
       "meaning": "prefix (<prefix>/<app>:<tag>) or template containing {app}, for bare tags; --image-prefix overrides"
@@ -110,6 +110,18 @@
     "HARNESS_ALLOW_UNSIGNED": {
       "default": "",
       "meaning": "1 | true | yes: the same as --allow-unsigned"
+    },
+    "HARNESS_PROJECT": {
+      "default": "tutors-harness-<8 hex>",
+      "meaning": "since 1.3.0. The name of this checkout's docker compose project and kind cluster, when HARNESS_COMPOSE_PROJECT / HARNESS_KIND_CLUSTER do not say. Unset, the name is tutors-harness-<the first 8 hex of sha256 of the checkout's real path, lowercased on Windows>, so two checkouts or worktrees never share a stack"
+    },
+    "HARNESS_COMPOSE_PROJECT": {
+      "default": "",
+      "meaning": "since 1.3.0 (an override that existed before it). The docker compose project this checkout's stack runs under; wins over HARNESS_PROJECT. Empty means the derived name. It is never the machine owner's own project, which the harness never touches"
+    },
+    "HARNESS_KIND_CLUSTER": {
+      "default": "",
+      "meaning": "since 1.3.0 (an override that existed before it). The kind cluster name; wins over HARNESS_PROJECT. Empty means the derived name. The name tutors-harness, which every checkout used before 1.3.0, is refused: a cluster of that name is not adopted or deleted by any harness command"
     },
     "HARNESS_HOME": {
       "default": "<checkout>/.harness",

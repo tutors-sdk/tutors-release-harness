@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, statfsSync, writeFileSync 
 import { createServer } from "node:net";
 import { dirname, join } from "node:path";
 import { realExec } from "../images.ts";
-import { ROOT } from "../stack.ts";
+import { harnessRoot } from "../project.ts";
 import type { DoctorDeps } from "./doctor.ts";
 import { harnessHome } from "./home.ts";
 
@@ -44,7 +44,7 @@ export function realDoctorDeps(env: NodeJS.ProcessEnv = process.env): DoctorDeps
       return r.status === 0 ? r.stdout.trim().split(/\r?\n/).pop() : undefined;
     },
     nodeVersion: process.version,
-    root: ROOT,
+    root: harnessRoot(),
     home,
     now: () => new Date(),
     exists: existsSync,
