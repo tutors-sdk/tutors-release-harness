@@ -6,7 +6,7 @@
  * fix it prints for that platform.
  */
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { DEFAULT_SCOPES, cidrOverlap, composePorts, composeStubImages, composeSubnet, fixFor, parseCosignVersion, renderDoctor, runDoctor, type Check, type DoctorDeps, type Scope } from "../src/local/doctor.ts";
 import type { ExecResult } from "../src/images.ts";
@@ -21,7 +21,7 @@ const OWN = derivedName(ROOT, "linux");
 const done = (stdout = "", status = 0, stderr = ""): ExecResult => ({ status, stdout, stderr });
 const notInstalled = (): ExecResult => ({ status: null, stdout: "", stderr: "", error: Object.assign(new Error("spawn ENOENT"), { code: "ENOENT" }) as NodeJS.ErrnoException });
 
-type Handler = (args: string[]) => ExecResult | undefined;
+type Handler = (args: string[], opts?: { env?: NodeJS.ProcessEnv }) => ExecResult | undefined;
 
 interface Machine {
   platform?: NodeJS.Platform;
@@ -41,6 +41,20 @@ interface Machine {
 
 const NOW = new Date("2026-09-16T09:05:00.000Z");
 
+const GRYPE_DB_URL = `https://grype.anchore.io/databases/v6/vulnerability-db_v6.1.9_2026-09-15T00:35:57Z_1789972764.tar.zst?checksum=sha256%3A${"3f".repeat(32)}`;
+
+/** grype as `grype version` and `grype db status -o json` print it (tests/fixtures/real-tools); the database was built `hoursOld` before NOW. */
+function grypeWith(o: { version?: string; hoursOld?: number; db?: "missing" | "invalid"; seen?: { env?: NodeJS.ProcessEnv }[] } = {}): Handler {
+  return (args, opts) => {
+    if (args[0] !== "db") return done(`Application:         grype\nVersion:             ${o.version ?? "0.119.0"}\nBuildDate:           2026-09-17T16:17:07Z`);
+    o.seen?.push(opts?.env ? { env: opts.env } : {});
+    if (o.db === "missing") return done(JSON.stringify({ schemaVersion: "", path: "/db/6/vulnerability.db", valid: false, error: "database does not exist" }), 1, "ERROR database does not exist");
+    const built = new Date(NOW.getTime() - (o.hoursOld ?? 30) * 3_600_000).toISOString();
+    const status = { schemaVersion: "v6.1.9", from: GRYPE_DB_URL, built, path: "/db/6/vulnerability.db", valid: o.db !== "invalid" };
+    return done(JSON.stringify(o.db === "invalid" ? { ...status, error: "checksum mismatch" } : status), o.db === "invalid" ? 1 : 0);
+  };
+}
+
 /** A healthy machine: everything present, everything free. */
 function healthy(): Record<string, Handler> {
   return {
@@ -57,7 +71,7 @@ function healthy(): Record<string, Handler> {
     },
     cosign: () => done("GitVersion:    v3.0.2\nGitCommit: abc"),
     syft: () => done("Version:  1.20.0"),
-    grype: (args) => (args[0] === "db" ? done("Status: valid") : done("Version:  0.90.0")),
+    grype: grypeWith(),
     kind: (args) => (args[0] === "get" ? done("") : done("kind v0.30.0 go1.24 windows/amd64")),
     kubectl: () => done("Client Version: v1.34.0"),
     bash: () => done("Linux"),
@@ -77,7 +91,7 @@ function machine(m: Machine = {}): DoctorDeps {
   return {
     platform: m.platform ?? "linux",
     env: m.env ?? {},
-    exec: (cmd, args) => tools[cmd]?.(args) ?? notInstalled(),
+    exec: (cmd, args, opts) => tools[cmd]?.(args, opts) ?? notInstalled(),
     pnpmVersion: () => ("pnpm" in m ? m.pnpm : "10.28.1"),
     nodeVersion: m.node ?? "v22.12.0",
     root: ROOT,
@@ -142,7 +156,7 @@ describe("missing tools, with the fix for the platform", () => {
   });
 
   it("grype without a database, updates being off during a run, warns", async () => {
-    const r = await run({ tools: { grype: (a) => (a[0] === "db" ? done("", 1, "no vulnerability database found") : done("Version: 0.90.0")) } });
+    const r = await run({ tools: { grype: (a) => (a[0] === "db" ? done("", 1, "no vulnerability database found") : done("Version: 0.119.0")) } });
     expect(find(r.checks, "grype-db")!.status).toBe("warn");
     expect(find(r.checks, "grype-db")!.detail).toContain("no vulnerability database");
   });
@@ -163,6 +177,106 @@ describe("missing tools, with the fix for the platform", () => {
     expect(find((await run({ node: "v20.11.0" })).checks, "node")!.status).toBe("fail");
     expect(find((await run({ pnpm: "9.15.0" })).checks, "pnpm")!.status).toBe("warn");
     expect(find((await run({ pnpm: undefined })).checks, "pnpm")!.status).toBe("warn");
+  });
+});
+
+describe("grype and the pinned vulnerability database", () => {
+  const scoped = (m: Machine = {}, scopes: Scope[] = ["nightly"]) => run(m, scopes);
+
+  it("a recent database is ok, and the doctor says its schema, build time, age and checksum, and which grype CI pins", async () => {
+    const r = await scoped({ tools: { grype: grypeWith({ hoursOld: 30 }) } });
+    expect(find(r.checks, "grype")).toMatchObject({ status: "ok", title: "grype >= 0.96.0" });
+    expect(find(r.checks, "grype")!.detail).toContain("the version CI pins");
+    const db = find(r.checks, "grype-db")!;
+    expect(db.status).toBe("ok");
+    expect(db.detail).toContain("schema v6.1.9");
+    expect(db.detail).toContain("built 2026-09-15T03:05:00.000Z (1.3 days ago)");
+    expect(db.detail).toContain(`sha256:${"3f".repeat(32)}`);
+    expect(db.detail).toContain("limit 5 days");
+  });
+
+  it("a database older than the limit warns; under HARNESS_REQUIRE_STATIC it fails, because every scan would be 'not collected'", async () => {
+    const stale = { tools: { grype: grypeWith({ hoursOld: 6 * 24 }) } };
+    const warn = await scoped(stale);
+    expect(find(warn.checks, "grype-db")!.status).toBe("warn");
+    expect(find(warn.checks, "grype-db")!.detail).toContain("older than 5 days");
+    expect(warn.ok).toBe(true);
+    const strict = await scoped({ ...stale, env: { HARNESS_REQUIRE_STATIC: "1" } });
+    expect(find(strict.checks, "grype-db")!.status).toBe("fail");
+    expect(strict.ok).toBe(false);
+  });
+
+  it("HARNESS_VULN_DB_MAX_AGE_DAYS moves the limit, and is passed to grype so the scan and the doctor agree", async () => {
+    const seen: { env?: NodeJS.ProcessEnv }[] = [];
+    const tools = { grype: grypeWith({ hoursOld: 6 * 24, seen }) };
+    expect(find((await scoped({ tools, env: { HARNESS_VULN_DB_MAX_AGE_DAYS: "7" } })).checks, "grype-db")!.status).toBe("ok");
+    expect(seen[0]!.env).toMatchObject({ GRYPE_DB_MAX_ALLOWED_BUILT_AGE: "168h" });
+    expect(find((await scoped({ tools: { grype: grypeWith({ hoursOld: 30 }) }, env: { HARNESS_VULN_DB_MAX_AGE_DAYS: "1" } })).checks, "grype-db")!.status).toBe("warn");
+    const bogus = await scoped({ tools: { grype: grypeWith({ hoursOld: 30 }) }, env: { HARNESS_VULN_DB_MAX_AGE_DAYS: "soon" } });
+    expect(find(bogus.checks, "grype-db-max-age")).toMatchObject({ status: "warn", detail: "soon is not a positive number of days: using 5" });
+    expect(find(bogus.checks, "grype-db")!.status).toBe("ok");
+  });
+
+  it("looks at the harness's own directory: HARNESS_VULN_DB_DIR, else HARNESS_HOME/vuln-db when it exists, with updates off", async () => {
+    const seen: { env?: NodeJS.ProcessEnv }[] = [];
+    const tools = { grype: grypeWith({ seen }) };
+    const own = join("/tmp/harness-home", "vuln-db");
+    await scoped({ tools, files: { [own]: "" } });
+    expect(seen[0]!.env).toMatchObject({ GRYPE_DB_CACHE_DIR: own, GRYPE_DB_AUTO_UPDATE: "false", GRYPE_CHECK_FOR_APP_UPDATE: "false" });
+    // grype's own age check is off for this call, so `valid` means intact and the doctor judges the age itself
+    expect(seen[0]!.env).toMatchObject({ GRYPE_DB_VALIDATE_AGE: "false" });
+    const named = await scoped({ tools, env: { HARNESS_VULN_DB_DIR: "/data/vuln-db" }, files: { "/data/vuln-db": "" } });
+    expect(seen[1]!.env).toMatchObject({ GRYPE_DB_CACHE_DIR: "/data/vuln-db" });
+    expect(find(named.checks, "grype-db")!.detail).toContain("in /data/vuln-db");
+    // neither: grype's own cache, said so
+    const neither = await scoped({ tools });
+    expect(seen[2]!.env).not.toHaveProperty("GRYPE_DB_CACHE_DIR");
+    expect(find(neither.checks, "grype-db")!.detail).toContain("grype's own cache");
+  });
+
+  it("a HARNESS_VULN_DB_DIR that does not exist, a missing database and an invalid one each warn with the update command", async () => {
+    const gone = find((await scoped({ env: { HARNESS_VULN_DB_DIR: "/nope" } })).checks, "grype-db")!;
+    expect(gone.status).toBe("warn");
+    expect(gone.detail).toContain("HARNESS_VULN_DB_DIR=/nope does not exist");
+    for (const db of ["missing", "invalid"] as const) {
+      const c = find((await scoped({ tools: { grype: grypeWith({ db }) } })).checks, "grype-db")!;
+      expect(c.status, db).toBe("warn");
+      expect(fixFor(c.fix!, "linux"), db).toContain("harness vuln-db update");
+    }
+    expect(find((await scoped({ tools: { grype: grypeWith({ db: "missing" }) } })).checks, "grype-db")!.detail).toContain("database does not exist");
+  });
+
+  it("too old a grype (its database format is not the harness's) warns, and fails under HARNESS_REQUIRE_STATIC", async () => {
+    const old = { tools: { grype: grypeWith({ version: "0.80.2" }) } };
+    const c = find((await scoped(old)).checks, "grype")!;
+    expect(c.status).toBe("warn");
+    expect(c.detail).toContain("older than 0.96.0");
+    expect(find((await scoped({ ...old, env: { HARNESS_REQUIRE_STATIC: "yes" } })).checks, "grype")!.status).toBe("fail");
+    expect(find((await scoped({ tools: { grype: grypeWith({ version: "0.96.0" }) } })).checks, "grype")!.status).toBe("ok");
+    expect(find((await scoped({ tools: { grype: grypeWith({ version: "0.100.1" }) } })).checks, "grype")!.status).toBe("ok");
+  });
+
+  it("no grype prints the install for each platform, with the version CI pins", async () => {
+    const r = await scoped({ tools: { grype: notInstalled } });
+    const c = find(r.checks, "grype")!;
+    expect(c.status).toBe("warn");
+    expect(fixFor(c.fix!, "win32")).toContain("grype_0.119.0_windows_amd64.zip");
+    expect(fixFor(c.fix!, "win32")).toContain("no admin");
+    expect(fixFor(c.fix!, "darwin")).toContain("brew install grype");
+    expect(fixFor(c.fix!, "linux")).toContain("install.sh | sh -s -- -b ~/.local/bin v0.119.0");
+    // no database check without a scanner
+    expect(find(r.checks, "grype-db")).toBeUndefined();
+  });
+
+  it("the watch scope needs neither grype nor its database", async () => {
+    const r = await scoped({ tools: { grype: notInstalled } }, ["watch"]);
+    expect(r.checks.map((c) => c.id)).not.toContain("grype");
+  });
+
+  it("the report prints the fix for the platform under the problem, and a database problem alone does not change the exit code", async () => {
+    const r = await scoped({ platform: "win32", tools: { grype: grypeWith({ db: "missing" }) } });
+    expect(r.ok).toBe(true);
+    expect(renderDoctor(r, "win32")).toContain("fix: harness vuln-db update");
   });
 });
 
