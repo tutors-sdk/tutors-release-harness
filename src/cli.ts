@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { journeys, type JourneySet } from "../traffic/journeys/journeys.ts";
 import { loadClaims } from "./claims/schema.ts";
 import { isUrl, loadRules } from "./claims/rules.ts";
+import { InputFileError } from "./claims/input-error.ts";
 import { appendFileSync } from "node:fs";
 import { parseOverride, exitCodeForReport } from "./override.ts";
 import { DigestError, parseDigests, pinImages } from "./digests.ts";
@@ -426,7 +427,8 @@ main(process.argv.slice(2)).then(
       process.exit(EXIT_CANNOT_JUDGE);
     }
     // A usage error of the local commands, or digests that are not digests: the message, not a stack.
-    if (error instanceof UsageError || error instanceof DigestError) {
+    // A claims or rules file that cannot be used: which file, which claim, which field, what is wrong; no stack.
+    if (error instanceof UsageError || error instanceof DigestError || error instanceof InputFileError) {
       console.error(error.message);
       process.exit(2);
     }
