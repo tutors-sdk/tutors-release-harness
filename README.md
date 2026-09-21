@@ -29,7 +29,7 @@ pnpm exec playwright install chromium
 pnpm harness run --mode noise   --a local --b local            # A/A: is the harness itself clean?
 pnpm harness run --mode release --a 16.2.0 --b 16.3.0-rc.1 \
   --claims ../tutors-mono-repo/release/claims.yaml \
-  --noise out/<the noise run> --runs 3 --load 20x30s          # A/B: gate the candidate
+  --noise out/<the noise run> --runs 5 --load 20x30s          # A/B: gate the candidate
 
 # Published images: pull from Quay, verify the cosign signature, or (loudly) build from the monorepo ref
 export HARNESS_IMAGE_PREFIX='quay.io/tutors-sdk/tutors-{app}'  # default is `tutors` -> tutors/<app>:<tag>, the local build
@@ -93,7 +93,7 @@ docs/monorepo/                workflows to drop into the monorepo (publish image
 | Document response headers | exact, per header | Any change is a finding — security headers live here |
 | axe (WCAG 2.1 A/AA) violations by rule and node | set diff | New violations fail; fixed ones are noted |
 | Keyboard order: what each successive Tab focuses | sequence diff | A focus stop lost or reordered |
-| Timing: document TTFB per page, journey duration | Mann–Whitney U over ≥3 runs | Regression beyond noise |
+| Timing: document TTFB per page, journey duration | Mann–Whitney U over ≥4 runs (5 recommended); fewer is said out loud, not judged | Regression beyond noise |
 | `/metrics` before and after the journeys | series presence + counter deltas | Missing or new series; a counter that moved differently |
 | Structured logs: JSON-ness, level counts, field set, request-id propagation | aggregate | Log shape or volume changed |
 | Persistence: every write the side attempted, by table and method, per journey | multiset + the anonymous rule | Data written differently — and *any* write during an anonymous journey |
@@ -117,7 +117,7 @@ journeys against production and compares with the recorded candidate.
    differs is noise, and the normaliser must mask it — or the run is not yet
    trustworthy. Nightly. Its `noise-status.json` is what release mode consults.
 2. **Then A/B** (`--mode release`). Deterministic artefacts are compared once;
-   anything statistical wants `--runs 3` and `--load`.
+   anything statistical wants `--runs 5` (at alpha 0.05 four is the least that can ever call a difference significant) and `--load`.
 
 Release and post-deploy modes may **fail** on captured differences only while
 a clean A/A from the last seven days is supplied with `--noise`. Without one,
@@ -207,8 +207,8 @@ prints the same), and the HTML and Markdown reports name it in their footer.
 | Workflow | When | Does |
 | --- | --- | --- |
 | `ci.yml` | every PR | unit and fixture tests; masks land in their own PR; two stacks boot, one journey A/A; migration fixtures pass and fail as they must |
-| `nightly-noise.yml` | nightly | A/A on the production tag pulled from Quay (three runs, with load; last night's verified images as the outage fallback, a degraded night); publishes `noise-status.json` as an artifact and to the `noise` branch, and keeps the ratchet — [docs/noise-burndown.md](docs/noise-burndown.md) |
-| `release.yml` | monorepo dispatch on a release branch, or by hand | release mode with claims, 3 runs, k6; migration rehearsal; upgrade rehearsal |
+| `nightly-noise.yml` | nightly | A/A on the production tag pulled from Quay (five runs, with load; last night's verified images as the outage fallback, a degraded night); publishes `noise-status.json` as an artifact and to the `noise` branch, and keeps the ratchet — [docs/noise-burndown.md](docs/noise-burndown.md) |
+| `release.yml` | monorepo dispatch on a release branch, or by hand | release mode with claims, 5 runs, k6; migration rehearsal; upgrade rehearsal |
 | `post-deploy.yml` | monorepo dispatch after deploy, then every 15 minutes | reference journeys against production vs the recorded candidate; opens a rollback issue on a new difference |
 | `weekly-mutants.yml` | weekly, and on every PR | the ten mutants; on a PR only when it touches an engine, a mask, a journey, the gate or a mutant, which also needs a version bump |
 

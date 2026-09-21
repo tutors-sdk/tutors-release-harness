@@ -146,6 +146,11 @@ logs:
 timing:
   # Timing is compared with Mann-Whitney U only with at least this many runs per side;
   # with fewer, a large median shift is reported as info, never as a failure.
+  # This is a floor on the sample, not a promise that the sample can judge: at alpha
+  # 0.05 the test cannot reach significance from fewer than 4 samples a side (3 v 3,
+  # perfectly separated, is p = 0.081), and the engine says so, as information, when
+  # the runs it was given cannot ("samples cannot reach alpha ... Raise --runs").
+  # Widen alpha or raise --runs, never retry. 5 runs is what the nightly and release use.
   minRuns: 3
   alpha: 0.05
   # Side b's median must exceed side a's by at least this fraction AND this

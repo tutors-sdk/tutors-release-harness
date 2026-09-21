@@ -767,7 +767,7 @@ describe("workflows", () => {
   it("the nightly asks the registry first, keeps a cache for an outage, and runs the A/A that requires verified images", () => {
     const nightly = text["nightly-noise.yml"]!;
     expect(nightly).toMatch(/harness images ensure --a "\$TAG" --b "\$TAG" --image-cache/);
-    expect(nightly).toMatch(/harness run --mode noise --a "\$TAG" --b "\$TAG" --runs 3 --load 20x30s --require-verified/);
+    expect(nightly).toMatch(/harness run --mode noise --a "\$TAG" --b "\$TAG" --runs 5 --load 20x30s --require-verified/);
     // one runner image for the A/A and for the runs it licenses, so the noise floor it measured is the one they meet
     const image = (f: string) => [...new Set([...text[f]!.matchAll(/runs-on: (ubuntu-[\d.]+)/g)].map((m) => m[1]))];
     expect(image("nightly-noise.yml")).toEqual(["ubuntu-24.04"]);

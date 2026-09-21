@@ -647,7 +647,7 @@ fine-grained PAT, or a GitHub App installation token); sample sender:
 
 | `event_type` | Workflow | `client_payload` |
 | --- | --- | --- |
-| `release-candidate` | `release.yml` — release mode (3 runs, k6 `20x30s`), migration rehearsal, upgrade rehearsal, as three jobs; then the release record is published | `production` (required): production tag, side a. `candidate` (required): candidate tag, side b. `claims_url`: a URL the runner can `curl` without credentials; omitted means no claims. `rules_url` (since 1.3.0): a URL the runner can GET without credentials for `rules.json` ([The rules file](#the-rules-file)); a claim that names a `rule` needs it. `runs`: default `3`. `migrations_a`, `migrations_b`: monorepo git refs for migration mode; default `v<production>` and `v<candidate>`. Since 1.3.0: `production_digests`, `candidate_digests`: objects `app -> sha256:<64 hex>` ([Image digests](#image-digests-and-the-release-record)) |
+| `release-candidate` | `release.yml` — release mode (5 runs, k6 `20x30s`), migration rehearsal, upgrade rehearsal, as three jobs; then the release record is published | `production` (required): production tag, side a. `candidate` (required): candidate tag, side b. `claims_url`: a URL the runner can `curl` without credentials; omitted means no claims. `rules_url` (since 1.3.0): a URL the runner can GET without credentials for `rules.json` ([The rules file](#the-rules-file)); a claim that names a `rule` needs it. `runs`: default `5` (was `3`; three cannot reach alpha, see [Changes](#changes)). `migrations_a`, `migrations_b`: monorepo git refs for migration mode; default `v<production>` and `v<candidate>`. Since 1.3.0: `production_digests`, `candidate_digests`: objects `app -> sha256:<64 hex>` ([Image digests](#image-digests-and-the-release-record)) |
 | `deployed` | `post-deploy.yml` — post-deploy mode against `HARNESS_PRODUCTION_URLS` | Since 1.3.0, both optional: `production` (the tag that was deployed) and `digests` (an object `app -> sha256:<64 hex>`: the images that run), compared with the release record ([Checking a deployment](#checking-a-deployment)). Without them (every 1.2.0 payload) nothing is compared. The recorded side is the `release-report` artifact of the latest successful `release.yml` run; the payload cannot choose it (by hand, `workflow_dispatch` with `recorded_run_id` can) |
 
 Any other event type is ignored. Unknown payload fields are ignored. A missing
@@ -846,6 +846,27 @@ changed; and a stack under the old name is left alone.
 - A stack under the old default name `tutors-harness` is reported by `harness
   doctor` as a legacy stack, not touched, and never removed. A kind cluster called
   `tutors-harness` is never adopted or deleted: `harness kind` refuses that name.
+### 1.2.1 (patch; statistics)
+
+No field, flag, artefact or verdict changes; a consumer written against 1.2.0
+keeps working.
+
+- **Bug fix: the Mann-Whitney p-value was too small.** The normal CDF behind
+  the `timing` (page TTFB, journey duration, load) and `startup` artefacts
+  passed z where it needed z / sqrt 2: a perfectly separated 5 v 5 reported
+  p = 0.0004 (correct: 0.0122), 3 v 3 reported 0.014 (correct: 0.081). Reports
+  of 1.2.0 (and earlier) judged those artefacts on the wrong p, so they are not
+  comparable with 1.2.1 reports (harness version, above).
+- **Three samples a side cannot reach alpha 0.05.** The `timing` engine (as
+  `startup` already did) now says so, as information: `n/n samples cannot reach
+  alpha 0.05 (best possible p=0.081). Raise --runs`, for a shift that clears
+  `minEffect` and `minShiftMs`. Load says the same when k6 left too few samples.
+  Nothing new fails, and nothing that failed on 1.2.0 for a reason other than
+  the wrong p stops failing.
+- **Workflow default: `release-candidate` `runs` is `5` (was `3`)**, and the
+  nightly A/A runs `--runs 5`, so both can judge timing at all. A dispatch that
+  passes `runs` is unaffected; one that omits it runs two more passes of the
+  journeys per side. `weekly-mutants.yml`'s `slow-ssr` mutant runs five.
 
 ### 1.2.0 (minor; R3, R5 and R7)
 

@@ -1,6 +1,6 @@
 import type { EngineConfig } from "../normalise/masks.ts";
 import type { ContainerPosture, Hunk, NotCollected, RuntimeCapture, SideCapture, StartupCapture, StartupSample } from "../types.ts";
-import { mannWhitney } from "./engines.ts";
+import { mannWhitney, smallestAttainableP } from "./stats.ts";
 import { hunkId } from "./pages.ts";
 
 /**
@@ -165,16 +165,6 @@ const modal = (xs: (number | null)[]) => {
   return [...counts.entries()].sort((p, q) => q[1] - p[1] || p[0] - q[0])[0]?.[0];
 };
 const failed = (s: StartupSample) => s.rootMs === null || s.readyMs === null;
-
-/**
- * The smallest p Mann-Whitney can produce for these sample sizes: with 3
- * restarts a side, even a perfectly separated pair gives p = 0.08, so no
- * difference could ever be judged at alpha 0.05. Say so, rather than let the
- * engine look quiet.
- */
-function smallestAttainableP(n1: number, n2: number): number {
-  return mannWhitney(Array.from({ length: n1 }, (_, i) => i), Array.from({ length: n2 }, (_, i) => n1 + i)).p;
-}
 
 export const startup: Engine = (a, b, ctx) => {
   const hunks: Hunk[] = [];

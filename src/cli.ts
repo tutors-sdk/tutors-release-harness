@@ -46,7 +46,7 @@ const USAGE = `tutors-release-harness
                     signature-verified in this run (the nightly sets it); the gate never trusts a degraded status
       --override-reason, --override-by  accept a FAIL and say so: the verdict stays FAIL, the run exits 0, and the
                     report records who overrode it and why (both required together; reason 20+ characters)
-      --runs        journey repetitions per side; 3+ enables statistical timing (default 1)
+      --runs        journey repetitions per side; timing needs 4+ to ever reach alpha 0.05, 5 recommended (default 1)
       --set         journey sets, comma separated: fixture,auth,reference (default all three)
       --journey     run only this journey (repeatable)
       --load        k6 after the journeys on each side: "<rate>x<duration>", e.g. 20x30s

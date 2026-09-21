@@ -165,6 +165,13 @@ describe("startup", () => {
     expect(said.summary).toContain("Raise --startup-restarts");
   });
 
+  it("three restarts a side cannot reach the default alpha of 0.05 either (best possible p = 0.081), and say so", () => {
+    const three = (samples: typeof STEADY) => samples.slice(0, 3);
+    const hunks = diff(sideWithRuntime("a", { startup: startupCapture({ reader: three(STEADY) }) }), sideWithRuntime("b", { startup: startupCapture({ reader: three(slow) }) }));
+    expect(failing(hunks)).toEqual([]);
+    expect(hunks.find((h) => h.scope === "reader/root")!.summary).toContain("3/3 samples cannot reach alpha 0.05 (best possible p=0.081). Raise --startup-restarts");
+  });
+
   it("degrades loudly: an app that could not be restarted fails with the reason; --startup-restarts 0 is information", () => {
     const partial = startupCapture();
     partial.apps.live = { collected: false, reason: "no running container for compose service live-b in project tutors-harness" };

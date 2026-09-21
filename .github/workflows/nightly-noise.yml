@@ -1,5 +1,5 @@
 # Nightly A/A on the production tag, pulled from the registry onto the CI
-# runner (never image-against-itself on a laptop): three runs, the noise count
+# runner (never image-against-itself on a laptop): five runs, the noise count
 # tracked over time, the status published where release runs can find it.
 #
 # A diff here is noise the normaliser must learn to mask, or non-determinism in
@@ -87,8 +87,8 @@ jobs:
 
       # --load makes the A/A exercise the same k6 comparison a release run does (release.yml passes the same
       # 20x30s), so its noise is calibrated here, not discovered on a release.
-      - name: A/A, three runs, with load
-        run: pnpm harness run --mode noise --a "$TAG" --b "$TAG" --runs 3 --load 20x30s --require-verified
+      - name: A/A, five runs, with load
+        run: pnpm harness run --mode noise --a "$TAG" --b "$TAG" --runs 5 --load 20x30s --require-verified
 
       - name: Show the A/A report
         if: always()

@@ -1,7 +1,7 @@
 import { structuredPatch } from "diff";
 import type { EngineConfig } from "../normalise/masks.ts";
 import type { Hunk, SideCapture } from "../types.ts";
-import { mannWhitney } from "./engines.ts";
+import { mannWhitney, smallestAttainableP } from "./stats.ts";
 import { ledgerHunks } from "./ledger.ts";
 import { hunkId, pagePairs } from "./pages.ts";
 
@@ -87,8 +87,15 @@ export const load: Engine = (a, b, ctx) => {
 
   const effect = a.load.p95 > 0 ? (b.load.p95 - a.load.p95) / a.load.p95 : 0;
   if (effect >= minEffect && b.load.p95 - a.load.p95 >= minShiftMs) {
+    const shift = `under load, p95 ${a.load.p95}ms → ${b.load.p95}ms (+${(effect * 100).toFixed(0)}%), p50 ${a.load.p50}ms → ${b.load.p50}ms, n=${a.load.requests}/${b.load.requests}`;
+    // Normally hundreds of samples a side, but a k6 run that lost most of its requests can leave too few to ever reach alpha: say so.
+    const floor = smallestAttainableP(a.load.samples.length, b.load.samples.length);
+    if (floor >= alpha) {
+      hunks.push({ id: hunkId("timing", scope), artefact: "timing", scope, severity: "info", summary: `${shift}; ${a.load.samples.length}/${b.load.samples.length} samples cannot reach alpha ${alpha} (best possible p=${floor.toFixed(3)}). Raise --load's rate or duration` });
+      return hunks;
+    }
     const { p } = mannWhitney(a.load.samples, b.load.samples);
-    const summary = `under load, p95 ${a.load.p95}ms → ${b.load.p95}ms (+${(effect * 100).toFixed(0)}%), p50 ${a.load.p50}ms → ${b.load.p50}ms, n=${a.load.requests}/${b.load.requests}, p=${p.toExponential(1)}`;
+    const summary = `${shift}, p=${p.toExponential(1)}`;
     hunks.push({ id: hunkId("timing", scope), artefact: "timing", scope, severity: p < alpha ? "fail" : "info", summary });
   } else if (a.load.p95 > 0 && effect <= -minEffect) {
     hunks.push({ id: hunkId("timing", scope), artefact: "timing", scope, severity: "info", summary: `under load, p95 improved ${a.load.p95}ms → ${b.load.p95}ms` });

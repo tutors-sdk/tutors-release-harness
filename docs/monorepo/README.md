@@ -163,7 +163,7 @@ existed, so its tag push published nothing.
 Then the sequence for a release is:
 
 1. Release branch pushed → candidate tagged and built → harness **release**
-   mode (A/B with claims, 3 runs, k6), **migration** mode (production ref vs
+   mode (A/B with claims, 5 runs, k6), **migration** mode (production ref vs
    candidate sha), **upgrade** mode (edge rollout under load). The PR comment
    is in the workflow summary and the report is an artifact.
 2. Tag / deploy → the monorepo updates `HARNESS_PRODUCTION_TAG` (by hand until

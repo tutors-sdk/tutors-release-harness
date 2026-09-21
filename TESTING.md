@@ -9,6 +9,7 @@ fail, and ratchets. This is the runway for the runway.
 | Failure class | Example | Owning tier |
 | --- | --- | --- |
 | An engine misses a diff | a dropped header produces no hunk | Unit, with a planted change per engine |
+| A p-value is wrong, or the sample cannot judge | the normal CDF fed z where it needs z/sqrt 2 (5 v 5 separated reported p = 0.0004, not 0.0122); three runs a side reported as if they could reach alpha 0.05 (they cannot: best possible p = 0.081) | Unit on `src/compare/stats.ts` against hand-derived values (`tests/stats.test.ts`), and on the timing, load and startup engines saying "samples cannot reach alpha" as information; the `slow-ssr` mutant runs five |
 | An engine invents a diff | identical captures produce a hunk | Unit A/A |
 | A mask hides too much or too little | a mask with no reason; a pattern that never fires | Unit (schema), report (silent masks), nightly A/A |
 | The claim matcher is too generous | a `dom` claim covers a `headers` hunk; `scope: "**"` passes without a human | Unit |
@@ -128,7 +129,7 @@ tested in `tests/engine-change.test.ts`.
 
 ### Noise (nightly)
 
-A/A on the production tag pulled from the registry, three runs with the same
+A/A on the production tag pulled from the registry, five runs with the same
 k6 load a release run uses, on a pinned runner image. Zero diffs, or the
 harness is advisory until the normaliser is fixed. The status it writes is what
 release mode consults, from the `noise` branch; a release run without a fresh,

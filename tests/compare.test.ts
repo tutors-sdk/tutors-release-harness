@@ -125,14 +125,33 @@ describe("timing", () => {
     expect(hunks.length).toBeGreaterThan(0);
   });
 
-  it("with three runs, a consistent 30%+ regression fails", () => {
-    const hunks = diff(withRuns("a", [40, 42, 41], [4000, 4100, 4050]), withRuns("b", [70, 72, 69], [5600, 5700, 5650]));
+  it("with five runs, a consistent 30%+ regression fails", () => {
+    const hunks = diff(withRuns("a", [40, 42, 41, 43, 40], [4000, 4100, 4050, 4020, 4080]), withRuns("b", [70, 72, 69, 71, 73], [5600, 5700, 5650, 5620, 5710]));
     const fails = hunks.filter((h) => h.severity === "fail");
     expect(fails.map((h) => h.scope).sort()).toEqual(["anonymous-student-reads-course", "reader:course"]);
+    expect(fails[0]!.summary).toContain("p=0.012, n=5/5)");
   });
 
-  it("with three runs and overlapping samples, nothing fails", () => {
-    const hunks = diff(withRuns("a", [40, 60, 45], [4000, 4600, 4200]), withRuns("b", [44, 58, 50], [4100, 4500, 4300]));
+  it("with three runs a perfectly separated regression cannot reach alpha, and the engine says so instead of passing quietly", () => {
+    // 3 v 3 perfectly separated: p = 0.081 at best (stats.test.ts), so never below alpha 0.05, whatever the shift.
+    const hunks = diff(withRuns("a", [40, 42, 41], [4000, 4100, 4050]), withRuns("b", [70, 72, 69], [5600, 5700, 5650]));
+    expect(hunks.filter((h) => h.severity === "fail")).toEqual([]);
+    expect(hunks.map((h) => [h.artefact, h.scope, h.severity]).sort()).toEqual([
+      ["timing", "anonymous-student-reads-course", "info"],
+      ["timing", "reader:course", "info"]
+    ]);
+    for (const h of hunks) {
+      expect(h.summary).toContain("3/3 samples cannot reach alpha 0.05 (best possible p=0.081). Raise --runs");
+    }
+  });
+
+  it("four runs is the least that can reach alpha 0.05 (p = 0.030 when perfectly separated)", () => {
+    const hunks = diff(withRuns("a", [40, 42, 41, 43], [4000, 4100, 4050, 4020]), withRuns("b", [70, 72, 69, 71], [5600, 5700, 5650, 5620]));
+    expect(hunks.filter((h) => h.severity === "fail")).toHaveLength(2);
+  });
+
+  it("with five runs and overlapping samples, nothing fails", () => {
+    const hunks = diff(withRuns("a", [40, 60, 45, 52, 41], [4000, 4600, 4200, 4300, 4050]), withRuns("b", [44, 58, 50, 47, 62], [4100, 4500, 4300, 4250, 4650]));
     expect(hunks.filter((h) => h.severity === "fail")).toEqual([]);
   });
 

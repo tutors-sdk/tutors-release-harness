@@ -45,7 +45,7 @@ calendar does.
 nightly-noise.yml
   noise   restore cache -> images ensure (pull + cosign verify by digest,
                             else cache, else build)         evidence: verified | degraded
-          -> run --mode noise --runs 3 --load 20x30s --require-verified
+          -> run --mode noise --runs 5 --load 20x30s --require-verified
           -> noise-status.json { clean, hunks, degraded? }
   publish append to noise-history.json -> ratchet, streak, summary
           -> force-push noise branch (noise-status.json, noise-history.json, noise-summary.md)
@@ -218,10 +218,31 @@ where the fix belongs. What `masks.yaml` already covers is named.
 *Shows as* `timing` hunks, scope `load/http_req_duration` or a page's TTFB,
 "slower on b".
 
-The rules (`src/compare/engines.ts`, `extra.ts`): a hunk needs side b's median
+The rules (`src/compare/engines.ts`, `extra.ts`, the test itself in `stats.ts`): a hunk needs side b's median
 (or p95 under load) to exceed a's by **both** `minEffect` (20%) **and**
 `minShiftMs` (20 ms), and then Mann–Whitney p < `alpha` (0.05) with at least
-`minRuns` (3) runs. On a shared GitHub-hosted runner, two identical stacks
+`minRuns` (3) runs. **Three runs cannot reach alpha:** the smallest p the test can
+produce for 3 v 3 (every sample of a below every sample of b) is 0.081, so a
+release run with `--runs 3` could never call a slowdown significant however large.
+The engine says so as information ("3/3 samples cannot reach alpha 0.05 (best
+possible p=0.081). Raise --runs") and never as a pass. What `--runs` can reach at
+alpha 0.05, for n v n perfectly separated (p, normal approximation with continuity
+correction):
+
+| runs a side | 2 | 3 | 4 | 5 | 6 | 8 |
+| --- | --- | --- | --- | --- | --- | --- |
+| best possible p | 0.245 | 0.081 | 0.030 | 0.012 | 0.005 | 0.0009 |
+| reaches alpha 0.05 | no | no | yes | yes | yes | yes |
+
+Four is the least; five is the default of the nightly, the release workflow and
+the `slow-ssr` mutant because with four a single overlapping pair (p = 0.061)
+already hides a real regression, and with five it does not (p = 0.022). Until
+1.2.1 the p-value function was wrong (it reported 0.0004 for 5 v 5 and 0.014 for
+3 v 3) and three runs *seemed* to work: A/A history taken with the earlier
+harness says nothing about the noise floor of these engines. Cost: each run is
+one more pass of every selected journey on each side, so five runs against
+three is two more passes per side (about two thirds more journey wall-clock;
+the k6 load and the startup restarts are unchanged). On a shared GitHub-hosted runner, two identical stacks
 sharing one noisy machine can clear that bar; with dozens of pages each judged
 separately, at α = 0.05 the odd false hunk is expected, not a surprise. Note
 too that under load the sample count is in the hundreds, so the p-value is
@@ -230,7 +251,8 @@ tiny for any visible shift: the effect-size guards carry the load comparison.
 Order of remedies, never a retry:
 
 1. `--runs 5` in the nightly and release (more samples per page, and the test
-   has power to tell noise from shift).
+   has power to tell noise from shift). Done in 1.2.1; more runs cost wall-clock
+   linearly and tighten the floor (8 v 8: p = 0.0009).
 2. Tighten `alpha` (0.01) or raise `minShiftMs` / `minEffect`: a threshold
    change, so a mask-style PR with the reason measured from the A/A history.
 3. The sides are captured one after the other (a, then b), so a machine that

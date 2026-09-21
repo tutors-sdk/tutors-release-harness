@@ -16,8 +16,8 @@ differ in what produces the hunks.
 ## noise, release, any-two
 
 ```bash
-pnpm harness run --mode noise   --a 16.2.0 --b 16.2.0 --runs 3
-pnpm harness run --mode release --a 16.2.0 --b 16.3.0-rc.1 --claims claims.yaml --noise out/<noise run> --runs 3 --load 20x30s
+pnpm harness run --mode noise   --a 16.2.0 --b 16.2.0 --runs 5
+pnpm harness run --mode release --a 16.2.0 --b 16.3.0-rc.1 --claims claims.yaml --noise out/<noise run> --runs 5 --load 20x30s
 ```
 
 Both stacks come up from `compose.harness.yaml` (or two kind namespaces with
