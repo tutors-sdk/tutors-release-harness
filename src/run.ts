@@ -13,6 +13,7 @@ import { runMigration } from "./modes/migration.ts";
 import { runUpgrade } from "./modes/upgrade.ts";
 import { DEFAULT_MASKS_FILE, loadMasks, normalise, type MaskHits } from "./normalise/masks.ts";
 import { externalOrigins } from "./normalise/origins.ts";
+import { redactCapture } from "./normalise/redact.ts";
 import { writeReports } from "./report/index.ts";
 import { APPS } from "./image-ref.ts";
 import { fileLedger, realExec, resolveSideProvenance, trustPolicyFromEnv } from "./images.ts";
@@ -283,7 +284,7 @@ export async function run(opts: RunOptions): Promise<RunOutcome> {
     opts.log(`  b: live ${b.urls.reader}`);
     const captureB = await captureSide(b, journeys, { outDir, now: opts.now, runs: opts.runs, screenshots: opts.screenshots, axe: opts.axe, focusStops: opts.focusStops, log: opts.log });
     // Only the reference journeys are comparable against production.
-    const recordedRef: SideCapture = { ...recorded, side: "a", journeys: recorded.journeys.filter((j) => journeys.some((s) => s.name === j.journey)), logs: {}, metrics: { before: {}, after: {} } };
+    const recordedRef: SideCapture = { ...redactCapture(recorded), side: "a", journeys: recorded.journeys.filter((j) => journeys.some((s) => s.name === j.journey)), logs: {}, metrics: { before: {}, after: {} } };
     delete recordedRef.load;
     mkdirSync(join(outDir, "a"), { recursive: true });
     writeFileSync(join(outDir, "a", "capture.json"), JSON.stringify(recordedRef, null, 2));

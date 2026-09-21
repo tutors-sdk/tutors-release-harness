@@ -776,6 +776,18 @@ reports SAY changes, and it can change hunks in every mode, so a harness version
   path is still a DOM hunk. Nothing changes when neither side is external (release, noise). Consumers see fewer DOM
   hunks in post-deploy; `{{origin}}` in a hunk may now stand for a literal link to production on the recorded side.
 
+- **Secret-shaped values are redacted** (engine, every mode; `src/normalise/redact.ts`). Before anything else,
+  `normalise()` replaces, in console messages, network URLs, page paths, the accessibility tree, response header
+  values and a journey's error: the value of `apikey=` (and a `"apikey"` JSON member), an `Authorization` value,
+  a `Bearer` token, a JWT (`eyJ…` in three base64url parts), and `sb_publishable_…` / `sb_secret_…` keys with
+  `<redacted>`, keeping the name (`…&apikey=<redacted>`); the whole value of an `authorization`,
+  `proxy-authorization`, `x-api-key` or `apikey` header goes. It is the same on both sides, so it never causes or hides a
+  hunk, and `report.json`, `report.md`, `report.html` and PR summaries never hold the value. The collector redacts
+  too (a new `capture.json` does not hold it), and post-deploy re-redacts the recorded side it copies into
+  `a/capture.json`. Not covered: captures written before this change keep the value on disk in the run directory
+  that recorded them (delete them or the artifact), logs (the harness keeps keys and counts, never a line), and
+  anything not on the list, which is narrow on purpose.
+
 ### 1.3.0 (minor; digests, rules, the local store, the local commands, checkout names, the `time` app, statistics)
 
 `main` is at 1.1.0 and this is its next release: 1.2.0 (below) was never

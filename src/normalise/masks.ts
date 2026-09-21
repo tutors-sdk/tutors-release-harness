@@ -6,6 +6,7 @@ import { ROOT } from "../stack.ts";
 import { ARTEFACTS, MODES, type Mode, type NetworkEntry, type PageCapture, type SideCapture } from "../types.ts";
 import { canonicalHeaderValue } from "./canonical.ts";
 import { rewriteOrigins } from "./origins.ts";
+import { redactPage, redactSecrets } from "./redact.ts";
 
 const artefactList = z.union([z.enum(ARTEFACTS), z.array(z.enum(ARTEFACTS)).min(1)]).transform((v) => (Array.isArray(v) ? v : [v]));
 
@@ -105,7 +106,9 @@ export interface NormaliseOptions {
   origins?: readonly string[];
 }
 
-function normalisePage(page: PageCapture, masks: Mask[], hits: MaskHits, origins: readonly string[]): PageCapture {
+function normalisePage(raw: PageCapture, masks: Mask[], hits: MaskHits, origins: readonly string[]): PageCapture {
+  // Secret-shaped values first (src/normalise/redact.ts), so no later step, hunk or report ever holds one.
+  const page = redactPage(raw);
   const own = (text: string) => rewriteOrigins(text, origins).text;
   let aria = own(page.aria);
   const headers: Record<string, string> = {};
@@ -157,7 +160,7 @@ export function normalise(capture: SideCapture, file: MasksFile, mode?: Mode, op
   const masks = file.masks.filter((m) => !m.modes || (mode !== undefined && m.modes.includes(mode)));
   for (const m of masks) hits[m.id] = 0;
 
-  const journeys = capture.journeys.map((j) => ({ ...j, pages: j.pages.map((p) => normalisePage(p, masks, hits, origins)), ...(j.error !== undefined ? { error: rewriteOrigins(j.error, origins).text } : {}) }));
+  const journeys = capture.journeys.map((j) => ({ ...j, pages: j.pages.map((p) => normalisePage(p, masks, hits, origins)), ...(j.error !== undefined ? { error: rewriteOrigins(redactSecrets(j.error), origins).text } : {}) }));
 
   const seriesMasks = masks.filter((m) => m.series && m.artefact.includes("metrics")).map((m) => ({ id: m.id, re: new RegExp(m.series!) }));
   const dropSeries = (snapshot: SideCapture["metrics"]["before"]) =>
