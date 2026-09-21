@@ -881,8 +881,8 @@ the old name is left alone; and the `runs` default of `release-candidate` is now
   `time-b`, host ports `3104` and `3204`; kind NodePorts `30103` and `30203`,
   published on `4103` and `4203`) and gets the app-level artefacts: `metrics`,
   `logs`, `runtime`, `startup`, and the static image artefacts (`image-manifest`,
-  `sbom`, `vulns`). No journey drives it (twelve until a real regression
-  escapes), so it has no `dom`, `network`, `screenshot`, `headers`, `axe`, `focus`
+  `sbom`, `vulns`). No journey drives it (a journey is added only when a real regression
+  escaped that it would have caught), so it has no `dom`, `network`, `screenshot`, `headers`, `axe`, `focus`
   or `timing` artefacts of its own.
 - `report.json`: an optional `time` beside `reader`, `catalogue` and `live` in
   `sides.{a,b}`, in `provenance.{a,b}.images` and in `imageArtefacts.{a,b}`. A
