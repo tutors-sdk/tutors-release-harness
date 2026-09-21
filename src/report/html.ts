@@ -63,7 +63,7 @@ export function renderHtml(report: RunReport): string {
 <h1>Tutors release harness — <code>${esc(report.mode)}</code> <span class="verdict ${report.verdict}">${report.verdict}</span></h1>
 <p><small>${esc(report.ranAt)} · clock ${esc(report.now)} · ${report.runs} run(s) per side · harness ${esc(report.harnessVersion)}</small></p>
 ${loud ? `<p class="loud">${esc(loud.text)}</p>` : ""}
-<ul>${report.reasons.map((r) => `<li>${esc(r)}</li>`).join("")}${report.noise ? `<li>A/A consulted: ${report.noise.clean ? "clean" : `${report.noise.hunks} diff(s)`} at ${esc(report.noise.ranAt)}</li>` : ""}</ul>
+<ul>${report.reasons.map((r) => `<li>${esc(r)}</li>`).join("")}${report.noise ? `<li>A/A consulted: ${report.noise.clean ? "clean" : `${report.noise.hunks} diff(s)`}${report.noise.degraded?.length ? " but DEGRADED (does not count)" : ""} at ${esc(report.noise.ranAt)}</li>` : ""}</ul>
 
 <table>
 <thead><tr><th></th><th>a</th><th>b</th></tr></thead>
@@ -96,6 +96,17 @@ ${compare.hunks.length ? `<table><thead><tr><th>artefact</th><th>scope</th><th>w
 
 ${compare.staleClaims.length ? `<h2>Stale claims (${compare.staleClaims.length})</h2><ul>${compare.staleClaims.map((c) => `<li><code>${c.artefact}</code> <code>${esc(c.scope)}</code> — ${esc(c.reason)}</li>`).join("")}</ul>` : ""}
 ${compare.broadUnapproved.length ? `<h2>Broad claims without approval (${compare.broadUnapproved.length})</h2><ul>${compare.broadUnapproved.map((c) => `<li><code>${c.artefact}</code> <code>${esc(c.scope)}</code> — ${esc(c.reason)}</li>`).join("")}</ul>` : ""}
+
+${
+  report.override
+    ? `<h2>${report.override.applied ? "Harness FAIL overridden" : "Override recorded, not needed"}</h2><p class="loud">By <code>${esc(report.override.by)}</code> at ${esc(report.override.at)}; verdict before the override: ${report.override.verdict.toUpperCase()}.<br>Reason: ${esc(report.override.reason)}</p>`
+    : ""
+}
+${
+  report.claimHygiene
+    ? `<h2>Claim hygiene</h2><p>${report.claimHygiene.claims} claim(s) cover ${report.claimHygiene.claimedHunks} failing hunk(s): ${report.claimHygiene.hunksPerClaim} per claim, at most ${report.claimHygiene.maxHunksPerClaim} under one (flagged above ${report.claimHygiene.threshold}).</p>${report.claimHygiene.flagged.length ? `<ul>${report.claimHygiene.flagged.map((f) => `<li><code>${f.claim.artefact}</code> <code>${esc(f.claim.scope)}</code> — ${f.hunks} hunk(s): ${f.flags.map((x) => (x === "covers-many-hunks" ? "covers many hunks" : `broad claim approved by ${esc(f.claim.approvedBy ?? "")}`)).join("; ")}</li>`).join("")}</ul>` : ""}`
+    : ""
+}
 
 <h2>Masks</h2>
 <p>Fired: ${fired.length ? fired.map(([id, n]) => `<code>${esc(id)}</code>×${n}`).join(", ") : "none"}.<br>

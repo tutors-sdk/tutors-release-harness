@@ -197,8 +197,8 @@ prints the same), and the HTML and Markdown reports name it in their footer.
 
 | Workflow | When | Does |
 | --- | --- | --- |
-| `ci.yml` | every PR | unit and fixture tests; two stacks boot, one journey A/A; migration fixtures pass and fail as they must |
-| `nightly-noise.yml` | nightly | A/A on the production tag, three runs; publishes `noise-status.json` |
+| `ci.yml` | every PR | unit and fixture tests; masks land in their own PR; two stacks boot, one journey A/A; migration fixtures pass and fail as they must |
+| `nightly-noise.yml` | nightly | A/A on the production tag pulled from Quay (three runs, with load; last night's verified images as the outage fallback, a degraded night); publishes `noise-status.json` as an artifact and to the `noise` branch, and keeps the ratchet — [docs/noise-burndown.md](docs/noise-burndown.md) |
 | `release.yml` | monorepo dispatch on a release branch, or by hand | release mode with claims, 3 runs, k6; migration rehearsal; upgrade rehearsal |
 | `post-deploy.yml` | monorepo dispatch after deploy, then every 15 minutes | reference journeys against production vs the recorded candidate; opens a rollback issue on a new difference |
 | `weekly-mutants.yml` | weekly, and on every PR | the eight mutants; on a PR only when it touches an engine, a mask, a journey, the gate or a mutant, which also needs a version bump |

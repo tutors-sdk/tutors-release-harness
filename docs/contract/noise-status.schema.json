@@ -10,6 +10,7 @@
     "schemaVersion": { "const": 1, "description": "Major version of the contract. Written since 1.0.0; a file without it is read as 1." },
     "ranAt": { "type": "string", "format": "date-time", "description": "When the noise run was judged (UTC). Freshness is measured from here." },
     "clean": { "type": "boolean", "description": "True exactly when hunks is 0." },
-    "hunks": { "type": "integer", "minimum": 0, "description": "Failing hunks the A/A produced." }
+    "hunks": { "type": "integer", "minimum": 0, "description": "Failing hunks the A/A produced." },
+    "degraded": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "Since 1.2.0. Why the evidence is weak even at hunks 0: an image was not pulled and signature-verified in the run (a registry outage was survived from the runner's cache, or an image was built or present locally). Absent or empty means nothing was wrong. The gate never trusts a status that has any." }
   }
 }

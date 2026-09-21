@@ -3,6 +3,7 @@ import { join, resolve } from "node:path";
 import { selectJourneys, type Journey, type JourneySet } from "../traffic/journeys/journeys.ts";
 import { reference } from "../traffic/journeys/reference.ts";
 import { matchClaims } from "./claims/matcher.ts";
+import { DEFAULT_CLAIM_MAX_HUNKS, claimHygiene, claimMaxHunksFromEnv } from "./claims/hygiene.ts";
 import { loadClaims } from "./claims/schema.ts";
 import { captureSide } from "./collectors/index.ts";
 import { compareCaptures } from "./compare/index.ts";
@@ -14,6 +15,7 @@ import { writeReports } from "./report/index.ts";
 import { fileLedger, realExec, resolveSideProvenance, trustPolicyFromEnv } from "./images.ts";
 import { ROOT, externalSide, imagesFor, sideSpec, stackDown, stackUp } from "./stack.ts";
 import { kindDown, kindSide, kindUp } from "./substrate/kind.ts";
+import { overrideLine, recordOverride, type OverrideRequest } from "./override.ts";
 import type { Claim, Hunk, Mode, NoiseStatus, RunReport, SideCapture, SideSpec, Substrate } from "./types.ts";
 
 import { HARNESS_VERSION, SCHEMA_VERSION, harnessInfo } from "./version.ts";
@@ -38,6 +40,17 @@ export interface RunOptions {
   /** Path to a noise-status.json, or "skip" to waive (logged in the report). */
   noise?: string;
   noiseMaxAgeDays: number;
+  /** A claim covering more failing hunks than this is flagged in the report (`--claim-max-hunks`). */
+  claimMaxHunks: number;
+  /**
+   * Noise mode: write the status as DEGRADED unless every image on both sides was pulled and
+   * signature-verified in this run (`--require-verified`). The nightly sets it; the gate never
+   * trusts a degraded status, so a night that survived on a cache or a local build cannot
+   * license a release FAIL.
+   */
+  requireVerified: boolean;
+  /** Record a human's decision to accept a FAIL (`--override-reason`, `--override-by`). */
+  override?: OverrideRequest;
   screenshots: boolean;
   axe: boolean;
   focusStops: number;
@@ -90,6 +103,9 @@ interface CompareInput {
   masksFile: string;
   noise?: string;
   noiseMaxAgeDays: number;
+  claimMaxHunks?: number;
+  requireVerified?: boolean;
+  override?: OverrideRequest;
   now: string;
   runs: number;
   /** Hunks produced by a rehearsal mode rather than by capture comparison. */
@@ -113,7 +129,10 @@ export function compareFromCaptures(input: CompareInput): RunOutcome {
   const compare = matchClaims(hunks, input.claims);
   const ranAt = new Date();
   const noise = readNoise(input.noise, input.log);
-  const verdict = gate({ mode: input.mode, compare, noiseWaived: noise.waived, noiseMaxAgeDays: input.noiseMaxAgeDays, ranAt, ...(noise.status ? { noise: noise.status } : {}) });
+  const degraded = input.mode === "noise" && input.requireVerified ? evidenceGaps(input.a, input.b) : [];
+  const verdict = gate({ mode: input.mode, compare, noiseWaived: noise.waived, noiseMaxAgeDays: input.noiseMaxAgeDays, ranAt, ...(degraded.length ? { degraded } : {}), ...(noise.status ? { noise: noise.status } : {}) });
+  const override = input.override ? recordOverride(input.override, verdict.verdict, ranAt) : undefined;
+  const hygiene = input.claims.length ? claimHygiene(compare, input.claimMaxHunks ?? DEFAULT_CLAIM_MAX_HUNKS) : undefined;
 
   const strip = (l: NonNullable<SideCapture["load"]>) => {
     const { samples: _s, ...rest } = l;
@@ -131,18 +150,20 @@ export function compareFromCaptures(input: CompareInput): RunOutcome {
     sides: { a: input.a.images, b: input.b.images },
     ...(input.a.provenance || input.b.provenance ? { provenance: { ...(input.a.provenance ? { a: input.a.provenance } : {}), ...(input.b.provenance ? { b: input.b.provenance } : {}) } } : {}),
     verdict: verdict.verdict,
-    reasons: [...verdict.reasons, ...provenanceReasons(input.a, input.b)],
+    reasons: [...(override ? [overrideLine(override)] : []), ...verdict.reasons, ...provenanceReasons(input.a, input.b)],
     ...(noise.status ? { noise: noise.status } : {}),
     compare,
     masksApplied,
     ...(input.extras ?? {}),
-    ...(input.a.load && input.b.load ? { load: { a: strip(input.a.load), b: strip(input.b.load) } } : {})
+    ...(input.a.load && input.b.load ? { load: { a: strip(input.a.load), b: strip(input.b.load) } } : {}),
+    ...(hygiene ? { claimHygiene: hygiene } : {}),
+    ...(override ? { override } : {})
   };
 
   const files = writeReports(input.captureDir, report);
   if (input.mode === "noise") {
     const failing = compare.hunks.filter((h) => h.severity === "fail").length;
-    const status: NoiseStatus = { schemaVersion: SCHEMA_VERSION, ranAt: report.ranAt, clean: failing === 0, hunks: failing };
+    const status: NoiseStatus = { schemaVersion: SCHEMA_VERSION, ranAt: report.ranAt, clean: failing === 0, hunks: failing, ...(degraded.length ? { degraded } : {}) };
     writeFileSync(join(input.captureDir, "noise-status.json"), JSON.stringify(status, null, 2));
   }
   return { report, outDir: input.captureDir, files };
@@ -156,10 +177,29 @@ function provenanceReasons(a: SideCapture, b: SideCapture): string[] {
     const images = Object.values(side.provenance.images);
     const unverified = images.filter((i) => i.provenance === "pulled-unverified");
     if (unverified.length) reasons.push(`side ${side.side} ran ${unverified.length} registry image(s) whose signature was NOT verified (--allow-unsigned); this run is not evidence for a release`);
+    const cached = images.filter((i) => i.provenance === "cached");
+    if (cached.length) reasons.push(`side ${side.side} ran ${cached.length} image(s) restored from the runner's cache because the registry could not be reached (cached ${cached[0]?.cachedAt ?? "earlier"}): the tag may have moved; this run is not evidence for a release`);
     const built = images.find((i) => i.provenance === "built-from-ref");
     if (built) reasons.push(`side ${side.side} was built here from monorepo ref ${built.builtFrom?.ref ?? "?"}, not pulled from the registry: it is not the image that ships`);
   }
   return [...new Set(reasons)];
+}
+
+/**
+ * Why a noise run's own evidence is weak: any side whose images were not all
+ * pulled and signature-verified in this very run. A clean A/A over a cache, a
+ * local build or an unverified pull says nothing about production.
+ */
+export function evidenceGaps(a: SideCapture, b: SideCapture): string[] {
+  const gaps: string[] = [];
+  for (const side of [a, b]) {
+    if (!side.provenance) {
+      gaps.push(`side ${side.side}: image provenance was not recorded`);
+      continue;
+    }
+    if (Object.values(side.provenance.images).some((i) => i.provenance !== "pulled+verified")) gaps.push(`side ${side.side} did not run pulled+verified images (${side.provenance.summary})`);
+  }
+  return gaps;
 }
 
 export function loadCapture(dir: string, side: "a" | "b"): SideCapture {
@@ -180,7 +220,7 @@ export async function run(opts: RunOptions): Promise<RunOutcome> {
   mkdirSync(outDir, { recursive: true });
   opts.log(`harness ${HARNESS_VERSION} · mode ${opts.mode} · substrate ${opts.substrate} · clock ${opts.now} · ${opts.runs} run(s) · out ${outDir}`);
 
-  const common = { substrate: opts.substrate, captureDir: outDir, claims, masksFile: opts.masksFile, noiseMaxAgeDays: opts.noiseMaxAgeDays, now: opts.now, runs: opts.runs, log: opts.log, ...(opts.noise ? { noise: opts.noise } : {}) };
+  const common = { substrate: opts.substrate, captureDir: outDir, claims, masksFile: opts.masksFile, noiseMaxAgeDays: opts.noiseMaxAgeDays, claimMaxHunks: opts.claimMaxHunks, requireVerified: opts.requireVerified, ...(opts.override ? { override: opts.override } : {}), now: opts.now, runs: opts.runs, log: opts.log, ...(opts.noise ? { noise: opts.noise } : {}) };
 
   // ---- migration: no stacks, a throwaway Postgres and two sets of migrations.
   if (opts.mode === "migration") {
@@ -287,6 +327,8 @@ export const defaultRunOptions = (): Omit<RunOptions, "mode" | "a" | "b"> => ({
   journeys: [],
   masksFile: DEFAULT_MASKS_FILE,
   noiseMaxAgeDays: 7,
+  claimMaxHunks: claimMaxHunksFromEnv(),
+  requireVerified: false,
   screenshots: true,
   axe: true,
   focusStops: 12,

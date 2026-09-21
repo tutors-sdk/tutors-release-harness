@@ -92,6 +92,45 @@
       "additionalProperties": false,
       "required": ["a", "b"],
       "properties": { "a": { "$ref": "#/definitions/load" }, "b": { "$ref": "#/definitions/load" } }
+    },
+    "claimHygiene": {
+      "type": "object",
+      "description": "Since 1.2.0. Present whenever the claims file had claims. Informational: never changes the verdict.",
+      "additionalProperties": false,
+      "required": ["claims", "claimedHunks", "hunksPerClaim", "maxHunksPerClaim", "threshold", "flagged"],
+      "properties": {
+        "claims": { "type": "integer", "minimum": 0, "description": "Claims in the file, stale ones included." },
+        "claimedHunks": { "type": "integer", "minimum": 0, "description": "Failing hunks covered by some claim." },
+        "hunksPerClaim": { "type": "number", "minimum": 0, "description": "claimedHunks / claims to two decimals; 0 without claims." },
+        "maxHunksPerClaim": { "type": "integer", "minimum": 0, "description": "The most failing hunks any one claim covers." },
+        "threshold": { "type": "integer", "minimum": 1, "description": "N: a claim covering more failing hunks than this is flagged (--claim-max-hunks, HARNESS_CLAIM_MAX_HUNKS; default 10)." },
+        "flagged": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["claim", "hunks", "flags"],
+            "properties": {
+              "claim": { "$ref": "#/definitions/claim" },
+              "hunks": { "type": "integer", "minimum": 0 },
+              "flags": { "type": "array", "items": { "enum": ["covers-many-hunks", "broad-with-approval"] }, "minItems": 1, "description": "covers-many-hunks: more than threshold hunks. broad-with-approval: a broad claim (artefact * or scope **) that a human approved; allowed, but routine use means claims have become a checkbox." }
+            }
+          }
+        }
+      }
+    },
+    "override": {
+      "type": "object",
+      "description": "Since 1.2.0. Present only when an override of a harness FAIL was requested (--override-reason, --override-by): a recorded event, not a verdict. The verdict stays what the harness decided.",
+      "additionalProperties": false,
+      "required": ["reason", "by", "verdict", "applied", "at"],
+      "properties": {
+        "reason": { "type": "string", "minLength": 20, "description": "Why the FAIL was accepted." },
+        "by": { "type": "string", "minLength": 1, "description": "Who decided (in the workflows, the actor who dispatched the run)." },
+        "verdict": { "enum": ["pass", "fail", "warn"], "description": "The verdict the harness reached before the override." },
+        "applied": { "type": "boolean", "description": "True when the verdict was fail, so the override changed the exit code from 1 to 0; false when it was not needed." },
+        "at": { "type": "string", "format": "date-time" }
+      }
     }
   },
   "definitions": {
@@ -114,7 +153,8 @@
         "schemaVersion": { "const": 1 },
         "ranAt": { "type": "string", "format": "date-time" },
         "clean": { "type": "boolean" },
-        "hunks": { "type": "integer", "minimum": 0 }
+        "hunks": { "type": "integer", "minimum": 0 },
+        "degraded": { "type": "array", "items": { "type": "string", "minLength": 1 } }
       }
     },
     "images": {
@@ -149,7 +189,7 @@
         "revision": { "type": "string", "description": "org.opencontainers.image.revision label: the monorepo commit, as the image states it." },
         "version": { "type": "string", "description": "org.opencontainers.image.version label." },
         "created": { "type": "string", "description": "org.opencontainers.image.created label." },
-        "provenance": { "enum": ["local", "pulled+verified", "pulled-unverified", "built-from-ref"], "description": "local: present and never pulled, not verified. pulled+verified: pulled and its cosign signature verified by digest against verifiedIdentity. pulled-unverified: pulled, not verified, judged only because of --allow-unsigned. built-from-ref: built on this machine from a monorepo git ref; not the published image." },
+        "provenance": { "enum": ["local", "pulled+verified", "pulled-unverified", "built-from-ref", "cached"], "description": "local: present and never pulled, not verified. pulled+verified: pulled and its cosign signature verified by digest against verifiedIdentity. pulled-unverified: pulled, not verified, judged only because of --allow-unsigned. built-from-ref: built on this machine from a monorepo git ref; not the published image. cached (since 1.2.0): restored from the runner's image cache because the registry could not be reached; pulled and verified on the earlier run named by cachedAt, but the tag's freshness is unconfirmed." },
         "verifiedIdentity": { "type": "string", "description": "pulled+verified: the certificate identity regular expression the signature was checked against." },
         "unverifiedReason": { "type": "string", "description": "pulled-unverified: why verification failed. For people." },
         "builtFrom": {
@@ -157,7 +197,8 @@
           "additionalProperties": false,
           "required": ["ref"],
           "properties": { "ref": { "type": "string", "description": "The monorepo git ref." }, "sha": { "type": "string", "description": "The commit it resolved to." } }
-        }
+        },
+        "cachedAt": { "type": "string", "format": "date-time", "description": "cached: when the cache entry was saved, i.e. the earlier run that pulled and verified the image." }
       }
     },
     "artefact": { "enum": ["dom", "screenshot", "network", "console", "headers", "axe", "focus", "metrics", "logs", "timing", "persistence", "migration", "upgrade"] },

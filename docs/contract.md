@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.1.0`
+Contract version: `1.2.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -28,16 +28,16 @@ Three numbers, all stamped where a reader can see them:
 
 ```console
 $ pnpm harness version
-harness 1.1.0 (3f2c…) · contract 1.1.0
+harness 1.2.0 (3f2c…) · contract 1.2.0
 $ pnpm harness version --json
-{"version":"1.1.0","gitSha":"3f2c…","contractVersion":"1.1.0"}
+{"version":"1.2.0","gitSha":"3f2c…","contractVersion":"1.2.0"}
 ```
 
 `gitSha` is `git rev-parse HEAD` of the harness checkout, or the
 `HARNESS_GIT_SHA` environment variable when set, or `null` when neither is
 available (a tarball).
 
-Pin the harness by tag (`v1.1.0`) or by sha, and check `schemaVersion === 1`
+Pin the harness by tag (`v1.2.0`) or by sha, and check `schemaVersion === 1`
 before reading a report.
 
 ## Output directory
@@ -76,7 +76,7 @@ written). Source of truth: `RunReport` in `src/types.ts`.
 | `provenance` | `{ a?, b? }`, optional — since 1.1.0 | where each side's images came from; see [Image provenance](#image-provenance). A side is absent when it was not inspected: migration mode, the live side of post-deploy mode, a capture recorded before 1.1.0 |
 | `verdict` | `pass` \| `warn` \| `fail` | see [Verdicts and exit codes](#verdicts-and-exit-codes) |
 | `reasons` | string[] | why, one line each. For people: **do not parse** |
-| `noise` | noise status, optional | the status consulted for the gating decision; absent when `--noise` was not given or was `skip` |
+| `noise` | noise status, optional | the status consulted for the gating decision; absent when `--noise` was not given or was `skip`. Carries `degraded` when the status did |
 | `compare.hunks` | Hunk[] | every difference, failing and informational |
 | `compare.matches` | `{ hunk, claim? }[]` | one per hunk, with the claim that covers it, if any |
 | `compare.unclaimed` | Hunk[] | failing hunks no claim covers — what gates |
@@ -86,6 +86,8 @@ written). Source of truth: `RunReport` in `src/types.ts`.
 | `migration` | optional | migration mode only: `{ a, b, rolledBack }`; `a`/`b` are `{ ref, files[], catalog }`, a catalog is `{ tables: { [table]: { [column]: { type, nullable, default } } }, indexes[], functions[], policies[] }` |
 | `upgrade` | optional | upgrade mode only: `{ substrate, requests, failed, serverErrors, byUpstream: { [side]: { requests, failed, serverErrors, p95 } }, switchedAt, durationMs }`; times in ms |
 | `load` | optional | when `--load` ran on both sides: `{ a, b }`, each `{ requests, failed, serverErrors, p50, p95, rate, duration }` |
+| `claimHygiene` | optional — since 1.2.0 | present when the claims file had claims; see [Claim hygiene](#claim-hygiene). Informational: never changes the verdict |
+| `override` | optional — since 1.2.0 | present only when an override of a FAIL was requested; see [Overriding a FAIL](#overriding-a-fail) |
 
 **Hunk**: `{ id, artefact, scope, path?, summary, detail?, severity }`.
 `artefact` is one of `dom`, `screenshot`, `network`, `console`, `headers`,
@@ -107,13 +109,14 @@ image is:
 | Field | Meaning |
 | --- | --- |
 | `ref` | the reference as given or expanded; the same string as in `sides` |
-| `provenance` | `local` \| `pulled+verified` \| `pulled-unverified` \| `built-from-ref` — below |
+| `provenance` | `local` \| `pulled+verified` \| `pulled-unverified` \| `built-from-ref` \| `cached` — below |
 | `id` | local image id (`sha256:…` of the config) |
 | `digest` | registry digest of the manifest (of the index, for a multi-arch image), `sha256:` + 64 hex. **Only for a pulled image** |
 | `revision`, `version`, `created` | the image's `org.opencontainers.image.*` labels, as the image states them; absent when unlabelled |
 | `verifiedIdentity` | `pulled+verified`: the certificate-identity regular expression the signature was checked against |
 | `unverifiedReason` | `pulled-unverified`: why verification failed. For people |
 | `builtFrom` | `built-from-ref`: `{ ref, sha? }`, the monorepo git ref and the commit it resolved to |
+| `cachedAt` | `cached` (since 1.2.0): ISO instant the cache entry was saved, i.e. the earlier run that pulled and verified the image |
 
 | `provenance` | Means |
 | --- | --- |
@@ -121,12 +124,13 @@ image is:
 | `pulled+verified` | pulled from a registry, and `cosign verify` succeeded **by digest** against `verifiedIdentity` and the OIDC issuer |
 | `pulled-unverified` | pulled, not verified, and judged only because `--allow-unsigned` was given. `allowedUnsigned: true` is set on the side |
 | `built-from-ref` | built on this machine from `builtFrom.ref` because the registry had no such tag. Not the image that ships |
+| `cached` | since 1.2.0. Restored from the runner's image cache (`images ensure --image-cache`) because the registry could not be reached: an outage, a rate limit. The image was pulled and verified on the earlier run named by `cachedAt`, but the tag may have moved since. Judged, and the run says so in `reasons`; a **noise** run on it is `degraded` |
 
 `summary` is one line for people (`pulled+verified`,
 `built-from-ref v16.2.0@1a2b3c4d5e6f`, or each app spelled out when they
 differ): do not parse it. A consumer deciding whether a run is evidence for a
 release checks that every `images.*.provenance` on both sides is
-`pulled+verified`. A side that is `pulled-unverified` or `built-from-ref` also
+`pulled+verified`. A side that is `pulled-unverified`, `built-from-ref` or `cached` also
 adds a line to `reasons`; it does not change the verdict.
 
 What a consumer can rely on: `verdict`, `provenance.*.images.*.provenance` and
@@ -139,8 +143,8 @@ numbers under `migration`, `upgrade` and `load`.
 
 | Exit code | Meaning |
 | --- | --- |
-| `0` | Verdict pass or warn; or the command succeeded |
-| `1` | Verdict fail; or images ensure could not obtain an image, or mutants or kind rollout did not succeed |
+| `0` | Verdict pass or warn, or a fail overridden with --override-reason; or the command succeeded |
+| `1` | Verdict fail that was not overridden; or images ensure could not obtain an image, or mutants or kind rollout did not succeed |
 | `2` | Usage error, the harness itself failed (an uncaught error), or an image may not be judged; no verdict was reached |
 
 "An image may not be judged" (since 1.1.0) is: at `run`, an image that is not
@@ -187,6 +191,7 @@ Written next to `report.json` by `noise` mode only:
 | `ranAt` | the noise run's `report.json` `ranAt` |
 | `clean` | `true` exactly when `hunks` is `0` |
 | `hunks` | failing hunks the A/A produced |
+| `degraded` | optional, since 1.2.0: a non-empty list of reasons the evidence is weak even at `hunks: 0` — an image was not pulled and signature-verified in the run (a registry outage was survived from the runner's cache, or the images were built or already present locally). Written only by `noise` mode run with `--require-verified`, which the nightly always passes. Absent or empty means nothing was wrong. `clean` keeps its meaning (`hunks` is `0`); the gate additionally refuses a status that has `degraded` |
 
 `--noise <path>` takes the file, or a directory containing it (the noise run's
 output directory). A file that is not exactly this shape stops the run with
@@ -195,19 +200,73 @@ exit `2` — it is never read generously.
 **The A/A rule.** `release` and `post-deploy` may return `fail` only when one
 of these holds:
 
-- a status was supplied, `clean` is `true`, and `ranAt` is no more than 7 days
-  before the judging run's `ranAt` (`--noise-max-age-days`, default 7, not a
-  stable flag);
+- a status was supplied, `clean` is `true`, it has no `degraded` (since 1.2.0),
+  and `ranAt` is no more than 7 days before the judging run's `ranAt`
+  (`--noise-max-age-days`, default 7, not a stable flag);
 - `--noise skip` was given — an explicit waiver, logged to stdout. The report
   then has no `noise` field.
 
 Otherwise the same findings come back as `warn`, exit `0`, and the first
 reason starts `advisory only:` and says which condition failed. The
-`nightly-noise.yml` workflow publishes the status as the `noise-status`
-artifact with 8 days' retention, so a status older than the rule allows
-disappears by itself.
+`nightly-noise.yml` workflow publishes the status twice: as the `noise-status`
+artifact (8 days' retention), and, since 1.2.0, to the `noise` branch of this
+repository, which is where `release.yml` and `post-deploy.yml` read it. The
+branch holds the **latest** night's status, clean or not: a clean night from
+last week never stands in for a dirty one since. The fetch drops a file that is
+missing or not a valid status, with a warning, and the run degrades to `warn`;
+whether a valid one is fresh and clean is only ever the gate's decision, so the
+7-day rule is applied in one place.
+
+The `noise` branch (`noise-status.json`, `noise-history.json`,
+`noise-summary.md`) is force-pushed by the nightly and by nothing else; see
+[`noise-burndown.md`](noise-burndown.md).
 
 Not checked: a `ranAt` in the future is trusted (its age is negative).
+
+## Claim hygiene
+
+Since 1.2.0. When the claims file has claims, `report.json` carries
+`claimHygiene`, and the Markdown comment and HTML report a "Claim hygiene"
+section:
+
+| Field | Meaning |
+| --- | --- |
+| `claims` | claims in the file, stale ones included |
+| `claimedHunks` | failing hunks covered by some claim |
+| `hunksPerClaim` | `claimedHunks / claims`, two decimals |
+| `maxHunksPerClaim` | the most failing hunks any one claim covers |
+| `threshold` | N: `--claim-max-hunks`, else `HARNESS_CLAIM_MAX_HUNKS`, else `10` |
+| `flagged` | `{ claim, hunks, flags[] }`; `covers-many-hunks` when `hunks` exceeds `threshold`, `broad-with-approval` for a broad claim (artefact `*`, scope `**`) that a human approved |
+
+It is a smell detector and never gates: the gate's rule for a broad claim
+(`approvedBy` or it fails) is unchanged. Routine use of `broad-with-approval`,
+or a claim that swallows many hunks, is the sign that claims have become a
+checkbox.
+
+## Overriding a FAIL
+
+Since 1.2.0. A bypass in GitHub's branch protection is invisible to the
+harness, so the supported way past a FAIL is to say so to the harness:
+
+```console
+$ pnpm harness run --mode release … --override-reason "Rule 0044: payments hotfix, frame options restored in 16.3.1" --override-by leigh
+```
+
+- both flags are required together; the reason must be at least 20 characters
+  and not a rubber stamp (`ok`, `lgtm`, `approved`…), or the run exits `2`;
+- the **verdict stays what the harness decided**. When it was `fail`, the exit
+  code is `0` instead of `1` and `report.json` gets
+  `override: { reason, by, verdict, applied: true, at }`. When it was not,
+  `applied` is `false`, so an unneeded override never looks like a bypass;
+- the reason and the person are the first `reasons` entry, and in the Markdown
+  comment and the HTML report;
+- in `release.yml`, only a person dispatching by hand can do this
+  (`override_reason`; the actor is `github.triggering_actor`); a
+  `repository_dispatch` payload cannot. The `override-record` job then opens a
+  `harness-override` issue in this repository for each applied override. The
+  quarterly count of those issues, against the FAILs the harness issued, is the
+  measure of whether the harness is trusted or tolerated
+  ([`noise-burndown.md`](noise-burndown.md#overrides)).
 
 ## Claims file
 
@@ -253,9 +312,9 @@ change in a minor release.
 
 | Command | Stable flags |
 | --- | --- |
-| `harness run` | `--mode` (required), `--a`, `--b` (required except in post-deploy), `--claims <file>`, `--noise <file\|dir\|skip>`, `--runs <n>`, `--set <fixture,auth,reference>`, `--journey <name>` (repeatable), `--load <rate>x<duration>`, `--out <dir>`, `--image-prefix <prefix or {app} template>`, `--allow-unsigned`; post-deploy: `--recorded <release run dir>`, `--production reader=URL,catalogue=URL,live=URL` |
+| `harness run` | `--mode` (required), `--a`, `--b` (required except in post-deploy), `--claims <file>`, `--noise <file\|dir\|skip>`, `--runs <n>`, `--set <fixture,auth,reference>`, `--journey <name>` (repeatable), `--load <rate>x<duration>`, `--out <dir>`, `--image-prefix <prefix or {app} template>`, `--allow-unsigned`, `--require-verified` (noise mode: write the status `degraded` unless every image on both sides was pulled and verified in this run), `--override-reason <text>` and `--override-by <who>` (see [Overriding a FAIL](#overriding-a-fail)); post-deploy: `--recorded <release run dir>`, `--production reader=URL,catalogue=URL,live=URL` |
 | `harness compare` | `--dir <run dir>` (required), `--mode` (required), `--claims`, `--noise` |
-| `harness images ensure` | `--a`, `--b` (required), `--ref-a`, `--ref-b` (monorepo git refs to build from when the pull fails), `--image-prefix`, `--allow-unsigned` |
+| `harness images ensure` | `--a`, `--b` (required), `--ref-a`, `--ref-b` (monorepo git refs to build from when the pull fails), `--image-prefix`, `--allow-unsigned`, `--image-cache <dir>` (since 1.2.0: refreshed from images pulled and verified in this run; used, as provenance `cached`, only when the registry cannot be reached, and never for a tag the registry says does not exist). With `GITHUB_OUTPUT` set it writes `image_cache=none\|used\|refreshed` |
 | `harness mutants` | `--base <tag or reader image>` (required), `--out`, `--image-prefix`, `--allow-unsigned` |
 | `harness version` | `--json` |
 | any | `--help` |
@@ -280,7 +339,7 @@ environment variable, else `tutors`. It is either a bare prefix
 signature could not be verified be judged anyway; the report records it
 (`pulled-unverified`, `allowedUnsigned`). The workflows never pass it.
 
-Environment variables in the contract, all since 1.1.0 except the first:
+Environment variables in the contract, all since 1.1.0 except the first and the last:
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
@@ -288,6 +347,7 @@ Environment variables in the contract, all since 1.1.0 except the first:
 | `HARNESS_COSIGN_IDENTITY` | `^https://github.com/tutors-sdk/tutors-mono-repo/\.github/workflows/image-build\.yml@` | regular expression the signing certificate's identity must match; empty means the default |
 | `HARNESS_COSIGN_ISSUER` | `https://token.actions.githubusercontent.com` | the certificate's OIDC issuer; empty means the default |
 | `HARNESS_ALLOW_UNSIGNED` | unset | `1`, `true` or `yes`: the same as `--allow-unsigned` |
+| `HARNESS_CLAIM_MAX_HUNKS` | `10` | since 1.2.0: a claim covering more failing hunks than this is flagged in `claimHygiene`; a positive integer, else the default. `--claim-max-hunks` overrides |
 
 Stdout is for people, except `harness version --json`. The last lines of
 `run` and `compare` are `verdict: <VERDICT>`, the reasons, and
@@ -313,7 +373,9 @@ required field fails the run at its first harness step (exit `2`).
 
 `release.yml` also takes the same values as `workflow_dispatch` inputs
 (`production`, `candidate`, `claims_url`, `migrations_a`, `migrations_b`,
-`runs`); `nightly-noise.yml` and `weekly-mutants.yml` take `tag`.
+`runs`) and, since 1.2.0, `override_reason` (a `workflow_dispatch` input only:
+see [Overriding a FAIL](#overriding-a-fail)); `nightly-noise.yml` and
+`weekly-mutants.yml` take `tag`.
 
 ### Repository variables (on this repository)
 
@@ -353,7 +415,8 @@ otherwise — including on `warn`.
 Nothing. The harness has no token for the monorepo and its workflows never
 hold `pull-requests`, `checks`, `statuses` or `deployments` permission (a test
 enforces this). It will not comment on a PR, set a commit status, create a
-check run, push, tag, label, approve or merge, in any repository.
+check run, tag, label, approve or merge, in any repository, and pushes to none
+but the one branch named below.
 
 What it does instead:
 
@@ -362,7 +425,15 @@ What it does instead:
   conclusion into a check, is the monorepo's job, with the monorepo's token;
 - in `post-deploy.yml` only, and only with `issues: write` on **this**
   repository: opens an issue labelled `rollback` with `report.md` as its body
-  when post-deploy mode exits `1`.
+  when post-deploy mode exits `1`;
+- since 1.2.0, in `release.yml` only, the `override-record` job, with
+  `issues: write` on **this** repository: opens an issue labelled
+  `harness-override` for each FAIL a person overrode;
+- since 1.2.0, in `nightly-noise.yml` only, the `publish` job, with
+  `contents: write` on **this** repository: force-pushes the `noise` branch
+  (the latest A/A status, its history and summary). No other branch, no tag, no
+  release, no other repository. A test lists these three write scopes and fails
+  on any other.
 
 Post-deploy mode sends anonymous, read-only requests for the published
 reference course to the production URLs. It never signs in and never writes.
@@ -387,3 +458,28 @@ mask or engine can change the hunks for the same two images without any
 change to this contract.
 
 Releases are git tags `v<harness version>` on `main`, cut by a maintainer.
+
+## Changes
+
+### 1.2.0 (minor; phase R3)
+
+All additive: a consumer written against 1.1.0 keeps working.
+
+- `report.json`: optional `claimHygiene` and `override`; a new `provenance`
+  value `cached` with an optional `cachedAt` on an image; `noise.degraded`.
+  Consumers must tolerate a `provenance` value they do not know, as they
+  tolerate an unknown artefact.
+- `noise-status.json`: optional `degraded`. `clean` keeps its meaning. The gate
+  refuses a status that carries it (the A/A rule, above); a 1.1.0 status has
+  none and is trusted as before.
+- CLI: stable flags `--image-cache` (`images ensure`), `--require-verified`,
+  `--override-reason`, `--override-by` (`run`, `compare`); non-stable
+  `--claim-max-hunks`; `HARNESS_CLAIM_MAX_HUNKS`. A run without them behaves as
+  in 1.1.0. Exit code `0` for a FAIL now also covers one overridden with
+  `--override-reason`; without the flag, `1` as before.
+- Workflows: the latest noise status is read from the `noise` branch
+  (`nightly-noise.yml` writes it; `release.yml` and `post-deploy.yml` read it)
+  instead of the expiring artifact; `release.yml` takes `override_reason` and
+  holds `issues: write` in one job; `nightly-noise.yml` holds `contents: write`
+  in one job, for that branch only. The runner image of the three jobs that
+  produce screenshots is pinned to `ubuntu-24.04`.

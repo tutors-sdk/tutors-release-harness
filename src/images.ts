@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { APPS, dockerRef, imagesFor, isBuildable, isRegistryRef, parseRef, type App, type AppImages } from "./image-ref.ts";
+import { classifyPullFailure, restoreImageCache, saveImageCache, type CacheEntry } from "./image-cache.ts";
 import { ROOT } from "./stack.ts";
 import type { ImageInfo, SideProvenance } from "./types.ts";
 
@@ -61,6 +62,8 @@ export interface LedgerEntry {
   verifiedIdentity?: string;
   unverifiedReason?: string;
   builtFrom?: { ref: string; sha?: string };
+  /** For `cached`: when the cache entry was saved. */
+  cachedAt?: string;
   recordedAt: string;
 }
 export type Ledger = Record<string, LedgerEntry>;
@@ -187,7 +190,7 @@ export function verifySignature(exec: Exec, repo: string, digest: string, policy
 function infoFrom(ref: string, inspected: Inspected, entry: LedgerEntry | undefined): ImageInfo {
   // Only a pulled image has a registry digest worth reporting: Docker's containerd image store
   // gives every local build a RepoDigest too (its own manifest), which no registry ever served.
-  const digest = entry?.provenance.startsWith("pulled") ? (registryDigest(ref, inspected.repoDigests) ?? entry.digest) : undefined;
+  const digest = entry?.provenance.startsWith("pulled") || entry?.provenance === "cached" ? (registryDigest(ref, inspected.repoDigests) ?? entry.digest) : undefined;
   const label = (k: string) => inspected.labels[`org.opencontainers.image.${k}`] || undefined;
   const revision = label("revision") ?? entry?.builtFrom?.sha;
   return {
@@ -200,6 +203,7 @@ function infoFrom(ref: string, inspected: Inspected, entry: LedgerEntry | undefi
     provenance: entry?.provenance ?? "local",
     ...(entry?.verifiedIdentity ? { verifiedIdentity: entry.verifiedIdentity } : {}),
     ...(entry?.unverifiedReason ? { unverifiedReason: entry.unverifiedReason } : {}),
+    ...(entry?.cachedAt ? { cachedAt: entry.cachedAt } : {}),
     ...(entry?.builtFrom ? { builtFrom: { ...entry.builtFrom, ...(entry.builtFrom.sha || !revision ? {} : { sha: revision }) } } : {})
   };
 }
@@ -209,6 +213,7 @@ const short = (sha: string | undefined) => (sha ? sha.replace(/^sha256:/, "").sl
 export function describeProvenance(info: ImageInfo): string {
   if (info.provenance === "built-from-ref") return `built-from-ref ${info.builtFrom?.ref ?? "?"}@${short(info.builtFrom?.sha ?? info.revision) || "?"}`;
   if (info.provenance === "local") return "local (unverified)";
+  if (info.provenance === "cached") return `cached ${info.cachedAt ?? "?"} (registry unreachable; tag freshness unconfirmed)`;
   return info.provenance;
 }
 
@@ -240,7 +245,7 @@ export function resolveSideProvenance(images: AppImages, deps: { exec: Exec; led
     // harness built that exact image itself (the ledger entry matches its id). A RepoDigest alone
     // does not prove a pull — the containerd image store gives local builds one — but refusing
     // is the safe reading, and `--allow-unsigned` or a non-registry name is the way out.
-    const fromRegistry = isRegistryRef(ref) && digest !== undefined && entry?.provenance !== "built-from-ref";
+    const fromRegistry = isRegistryRef(ref) && digest !== undefined && entry?.provenance !== "built-from-ref" && entry?.provenance !== "cached";
     if (fromRegistry && entry?.provenance !== "pulled+verified") {
       entry = settle(ref, inspected, digest, deps);
       ledger[ref] = entry;
@@ -280,6 +285,12 @@ export interface EnsureDeps {
   exec?: Exec;
   ledger?: LedgerStore;
   policy?: TrustPolicy;
+  /**
+   * A directory holding the last night's `docker save` of the verified images (`--image-cache`).
+   * Used only when the registry cannot be reached, and refreshed only from images pulled and verified in this run.
+   */
+  cacheDir?: string;
+  now?: () => Date;
   log: (m: string) => void;
 }
 
@@ -289,6 +300,8 @@ export interface EnsureResult {
   exitCode: number;
   problems: string[];
   sides: { spec: string; provenance?: SideProvenance }[];
+  /** What happened to the image cache: `used` (a registry outage was survived from it: the run is degraded), `refreshed`, or `none`. */
+  cache: "none" | "used" | "refreshed";
 }
 
 function build(exec: Exec, ref: string, tag: string, prefix: string, log: (m: string) => void): boolean {
@@ -322,6 +335,7 @@ export function ensureImages(requests: ImageRequest[], prefix: string, deps: Ens
   };
   if (policy.allowUnsigned) log("WARNING: --allow-unsigned is set: registry images that fail signature verification will still be judged. Never use this for a release decision.");
 
+  let cacheUsed = false;
   const seen = new Set<string>();
   for (const request of requests) {
     if (seen.has(request.spec)) continue;
@@ -338,8 +352,13 @@ export function ensureImages(requests: ImageRequest[], prefix: string, deps: Ens
 
     // 1 and 2: local, else pull. Names without a registry host are never pulled.
     const missing: string[] = [];
+    const unreachable: string[] = [];
+    const pulledNow = new Map<string, string>();
     for (const ref of new Set(Object.values(images))) {
-      if (inspect(exec, ref)) {
+      const local = inspect(exec, ref);
+      // An image last restored from the cache is retried against the registry, not trusted for being there.
+      const restoredEarlier = local !== undefined && store.read()[ref]?.provenance === "cached" && store.read()[ref]?.id === local.id && isRegistryRef(ref);
+      if (local && !restoredEarlier) {
         log(`  ${ref}: present locally`);
         continue;
       }
@@ -352,8 +371,36 @@ export function ensureImages(requests: ImageRequest[], prefix: string, deps: Ens
       const pulled = exec("docker", ["pull", "--quiet", dockerRef(ref)]);
       if (pulled.error) problem(`docker could not be run: ${pulled.error.message}`);
       if (pulled.status !== 0) {
-        log(`  ${ref}: not in the registry (${pulled.stderr.trim().split(/\r?\n/).pop() ?? `docker pull exited ${pulled.status}`})`);
+        const why = pulled.stderr.trim().split(/\r?\n/).pop() ?? `docker pull exited ${pulled.status}`;
+        const kind = classifyPullFailure(pulled.stderr);
+        log(`  ${ref}: ${kind === "unreachable" ? "the registry could not be reached" : "not in the registry"} (${why})`);
         missing.push(ref);
+        if (kind === "unreachable") unreachable.push(ref);
+      } else {
+        // A fresh pull supersedes anything recorded for this name (a `cached` entry with the same id would otherwise stay `cached`).
+        const ledger = store.read();
+        if (ledger[ref] && ledger[ref].provenance !== "pulled+verified") {
+          delete ledger[ref];
+          store.write(ledger);
+        }
+        const fresh = inspect(exec, ref);
+        if (fresh) pulledNow.set(ref, fresh.id);
+      }
+    }
+
+    // 2b: the registry could not answer: the runner's cache of the last verified pull, loudly, and never as a pass.
+    if (unreachable.length && deps.cacheDir) {
+      const restored = restoreImageCache(exec, deps.cacheDir, unreachable, pulledNow, (r) => inspect(exec, r)?.id);
+      if (!restored) log(`  no usable image cache at ${deps.cacheDir}`);
+      else {
+        const ledger = store.read();
+        for (const entry of restored.restored) {
+          log(`  REGISTRY UNREACHABLE: using ${entry.ref} from the image cache saved ${restored.manifest.savedAt}; the tag may have moved, so this run is DEGRADED`);
+          ledger[entry.ref] = { id: entry.id, provenance: "cached", digest: entry.digest, verifiedIdentity: entry.verifiedIdentity, cachedAt: restored.manifest.savedAt, recordedAt: (deps.now ?? (() => new Date()))().toISOString() };
+          missing.splice(missing.indexOf(entry.ref), 1);
+          cacheUsed = true;
+        }
+        store.write(ledger);
       }
     }
 
@@ -400,5 +447,26 @@ export function ensureImages(requests: ImageRequest[], prefix: string, deps: Ens
 
   const ok = problems.length === 0;
   if (!ok) log(`images ensure: ${problems.length} problem(s); nothing may be judged (exit ${exitCode})`);
-  return { ok, exitCode, problems, sides };
+
+  // Refresh the cache, but only from images that were pulled and verified in this very run.
+  let cache: EnsureResult["cache"] = cacheUsed ? "used" : "none";
+  if (ok && !cacheUsed && deps.cacheDir) {
+    const entries: CacheEntry[] = [];
+    for (const side of sides) {
+      for (const info of Object.values(side.provenance?.images ?? {})) {
+        if (info.provenance === "pulled+verified" && info.id && info.digest && info.verifiedIdentity && !entries.some((e) => e.ref === info.ref)) {
+          entries.push({ ref: info.ref, id: info.id, digest: info.digest, verifiedIdentity: info.verifiedIdentity });
+        }
+      }
+    }
+    const everyImageVerified = sides.every((s) => s.provenance && Object.values(s.provenance.images).every((i) => i.provenance === "pulled+verified"));
+    if (entries.length && everyImageVerified) {
+      const saved = saveImageCache(exec, entries, deps.cacheDir, (deps.now ?? (() => new Date()))());
+      if (saved.ok) {
+        cache = "refreshed";
+        log(`  image cache refreshed at ${deps.cacheDir} (${entries.length} image(s), all pulled and verified in this run)`);
+      } else log(`  image cache not refreshed: ${saved.problem}`);
+    }
+  }
+  return { ok, exitCode, problems, sides, cache };
 }

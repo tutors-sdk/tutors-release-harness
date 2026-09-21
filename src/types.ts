@@ -47,8 +47,10 @@ export interface SideSpec {
  *   pulled+verified    pulled from a registry and its cosign signature checked against the publishing workflow's identity
  *   pulled-unverified  pulled from a registry and NOT verified; only ever under --allow-unsigned
  *   built-from-ref     built here from a monorepo git ref because the registry had no such tag
+ *   cached             restored from the runner's image cache because the registry could not be reached; it was
+ *                      pulled and verified on an earlier run, but the tag's freshness is unconfirmed (since 1.2.0)
  */
-export const PROVENANCES = ["local", "pulled+verified", "pulled-unverified", "built-from-ref"] as const;
+export const PROVENANCES = ["local", "pulled+verified", "pulled-unverified", "built-from-ref", "cached"] as const;
 export type Provenance = (typeof PROVENANCES)[number];
 
 /** What the harness knows about one image it ran. */
@@ -72,6 +74,8 @@ export interface ImageInfo {
   unverifiedReason?: string;
   /** For built-from-ref: the git ref and the commit it resolved to. */
   builtFrom?: { ref: string; sha?: string };
+  /** For cached: when the cache entry was saved (the earlier run that pulled and verified it). */
+  cachedAt?: string;
 }
 
 export interface SideProvenance {
@@ -292,6 +296,13 @@ export interface NoiseStatus {
   ranAt: string;
   clean: boolean;
   hunks: number;
+  /**
+   * Since 1.2.0. Why this A/A is weak evidence even at `hunks: 0`: an image was not
+   * pulled and signature-verified in the run (a registry outage was survived from cache,
+   * or an image was built locally). Absent or empty means nothing was wrong with the evidence.
+   * The gate never trusts a status that carries reasons here.
+   */
+  degraded?: string[];
 }
 
 export interface RunReport {
@@ -319,4 +330,49 @@ export interface RunReport {
   migration?: MigrationResult;
   upgrade?: UpgradeResult;
   load?: { a: Omit<LoadSummary, "samples">; b: Omit<LoadSummary, "samples"> };
+  /** Since 1.2.0. How broadly the claims cover; present whenever a claims file with claims was given. Informational: never changes the verdict. */
+  claimHygiene?: ClaimHygiene;
+  /** Since 1.2.0. Present only when an override of a harness FAIL was requested (`--override-reason`): a recorded event, not a verdict. */
+  override?: OverrideRecord;
+}
+
+/** Why a claim was flagged for review. */
+export type ClaimFlag = "covers-many-hunks" | "broad-with-approval";
+
+export interface FlaggedClaim {
+  claim: Claim;
+  /** Failing hunks this claim covers. */
+  hunks: number;
+  flags: ClaimFlag[];
+}
+
+export interface ClaimHygiene {
+  /** Claims in the file. */
+  claims: number;
+  /** Failing hunks covered by some claim. */
+  claimedHunks: number;
+  /** claimedHunks / claims, to two decimals; 0 when there are no claims. */
+  hunksPerClaim: number;
+  /** The most failing hunks any one claim covers. */
+  maxHunksPerClaim: number;
+  /** The configured N: a claim covering more than this many hunks is flagged (`--claim-max-hunks`). */
+  threshold: number;
+  /** Claims a reviewer should look at twice. */
+  flagged: FlaggedClaim[];
+}
+
+/**
+ * A human's recorded decision to let a change through despite a harness FAIL.
+ * The verdict stays `fail`; the exit code becomes 0 (`applied`), and the event
+ * is in the report, the step summary and (in the workflows) an issue.
+ */
+export interface OverrideRecord {
+  reason: string;
+  by: string;
+  /** The verdict the harness reached before the override. */
+  verdict: Verdict;
+  /** True when the verdict was fail and so the override changed the exit code; false when it was not needed. */
+  applied: boolean;
+  /** ISO instant the override was recorded. */
+  at: string;
 }

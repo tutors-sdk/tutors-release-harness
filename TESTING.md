@@ -23,6 +23,12 @@ fail, and ratchets. This is the runway for the runway.
 | The harness cannot fail | a planted regression passes release mode | Mutants (weekly, and in CI on any PR that changes an engine, a mask, a journey, the gate or a mutant) |
 | The contract drifts | `report.json` gains a field the schema does not know; a workflow uses an undocumented flag | Unit (`tests/contract.test.ts`) |
 | The harness is noisy | A/A on the production tag is not clean | Nightly noise; the gate degrades to warn automatically |
+| The harness FAILs on weak evidence | release FAILs with no status, a stale, dirty or degraded one; a cache or a local build passes as a clean A/A | Unit, end to end (`tests/release-gate.test.ts`) and on the gate |
+| The registry is down and the night is green | the nightly used last night's cached image and reported clean | Unit on `images ensure` with a fake registry (`tests/image-cache.test.ts`); the status is `degraded` and the gate refuses it |
+| The ratchet loosens | the noise count reaches 0 and creeps back without anyone noticing | Unit on the history (`tests/noise-history.test.ts`); the nightly's publish job fails |
+| A mask hides the change that needs it | a mask added in the same PR as the engine change it makes pass | Unit (`tests/mask-change.test.ts`) and the CI job "Masks land in their own PR (required)" |
+| Claims become a checkbox | one claim swallows a dozen hunks; `scope: "**"` with `approvedBy` on every release | Unit (`tests/claim-hygiene.test.ts`); reported, never gates |
+| A FAIL is bypassed and nobody knows | an admin merges past the check | The recorded override (`--override-reason`), unit-tested; the quarterly count in `docs/noise-burndown.md` |
 
 ## Tiers
 
@@ -93,9 +99,20 @@ tested in `tests/engine-change.test.ts`.
 
 ### Noise (nightly)
 
-A/A on the production tag, three runs. Zero diffs, or the harness is advisory
-until the normaliser is fixed. The status it writes is what release mode
-consults; a release run without it warns instead of failing.
+A/A on the production tag pulled from the registry, three runs with the same
+k6 load a release run uses, on a pinned runner image. Zero diffs, or the
+harness is advisory until the normaliser is fixed. The status it writes is what
+release mode consults, from the `noise` branch; a release run without a fresh,
+clean, **verified** one warns instead of failing. A night that could not pull
+(the registry is down or rate-limiting) falls back to the runner's cache of the
+last verified images and is **degraded**: it neither counts as clean nor
+licenses a FAIL. The burn-down playbook is [docs/noise-burndown.md](docs/noise-burndown.md).
+
+The tests around it never touch Docker or the network:
+`tests/release-gate.test.ts` (WARN without a fresh clean verified status, FAIL
+with one, per case, through the real pipeline), `tests/image-cache.test.ts`
+(the outage fallback, with a fake docker and registry),
+`tests/noise-history.test.ts` (the ratchet, the streak, publishing, fetching).
 
 ### Rehearsal fixtures (on demand, ~1 minute each)
 
@@ -116,14 +133,16 @@ must fail with failures attributed to `b`.
 
 | Metric | Direction | Enforced where |
 | --- | --- | --- |
-| A/A diff count on the production tag | stays 0 | nightly noise → gate degrades |
+| A/A diff count on the production tag | stays 0 once it reaches 0 | nightly `publish` job fails on a regression; gate degrades |
+| Consecutive clean, verified nightly A/As | reaches 7 (R3 exit) | the nightly summary |
 | Mutants caught and attributed | 8 of 8 | weekly mutants; required on PRs that change an engine, mask, journey, gate or mutant |
 | Harness version on such PRs | goes up | `src/ci/engine-change.ts` in the same workflow |
 | `report.json`, `noise-status.json`, CLI, dispatch payloads vs `docs/contract.md` | no drift | `tests/contract.test.ts` |
-| Masks in `normalise/masks.yaml` | grow only with review | CODEOWNERS |
+| Masks in `normalise/masks.yaml` | grow only with review, in their own PR, and stay under ~40 | CODEOWNERS; CI "Masks land in their own PR (required)" |
 | Masks that never fire | → 0 | listed in every report as "silent" |
 | Engines without a planted-change test | 0 | review |
 | Retries anywhere in the harness | 0 | `vitest.config.ts`, no Playwright retries |
+| Overrides of a harness FAIL | → 0 per quarter | `harness-override` issues; `docs/noise-burndown.md` |
 
 ## What is deliberately not tested here
 

@@ -106,3 +106,31 @@ describe("post-deploy mode", () => {
     expect(gate({ ...base, mode: "post-deploy", compare: matchClaims([fail("reference:course")], []) }).verdict).toBe("warn");
   });
 });
+
+describe("a degraded A/A never licenses a FAIL", () => {
+  const degraded: NoiseStatus = { ...clean, degraded: ["side a did not run pulled+verified images (cached 2026-09-14T02:30:00.000Z)"] };
+
+  it("release and post-deploy only warn on a clean but degraded status, and say why", () => {
+    for (const mode of ["release", "post-deploy"] as const) {
+      const out = gate({ ...base, mode, compare: matchClaims([fail()], []), noise: degraded });
+      expect(out.verdict, mode).toBe("warn");
+      expect(out.reasons[0], mode).toMatch(/degraded and does not count/);
+    }
+  });
+
+  it("an empty degraded list is no degradation (the field may be present and empty)", () => {
+    expect(gate({ ...base, mode: "release", compare: matchClaims([fail()], []), noise: { ...clean, degraded: [] } }).verdict).toBe("fail");
+  });
+
+  it("noise mode with zero diffs but degraded evidence is a warning, never a pass", () => {
+    const out = gate({ ...base, mode: "noise", compare: matchClaims([], []), degraded: ["side a did not run pulled+verified images (local)"] });
+    expect(out.verdict).toBe("warn");
+    expect(out.reasons[0]).toMatch(/DEGRADED/);
+  });
+
+  it("the seven-day rule is exact: seven days trusts, past seven days warns", () => {
+    const at = (days: number): NoiseStatus => ({ ...clean, ranAt: new Date(now.getTime() - days * 86_400_000).toISOString() });
+    expect(gate({ ...base, mode: "release", compare: matchClaims([fail()], []), noise: at(7) }).verdict).toBe("fail");
+    expect(gate({ ...base, mode: "release", compare: matchClaims([fail()], []), noise: at(7.001) }).verdict).toBe("warn");
+  });
+});

@@ -29,7 +29,8 @@ concurrency:
 
 jobs:
   post-deploy:
-    runs-on: ubuntu-latest
+    # The runner image the nightly A/A calibrated the noise floor on (nightly-noise.yml pins the same one).
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
       PRODUCTION_URLS: ${{ vars.HARNESS_PRODUCTION_URLS || 'reader=https://tutors.dev,catalogue=https://catalogue.tutors.dev,live=https://live.tutors.dev' }}
@@ -54,21 +55,23 @@ jobs:
           run_id: ${{ inputs.recorded_run_id }}
           if_no_artifact_found: fail
 
-      - name: Fetch the latest nightly noise status
-        uses: dawidd6/action-download-artifact@v6
-        continue-on-error: true
-        with:
-          workflow: nightly-noise.yml
-          name: noise-status
-          path: noise
-          if_no_artifact_found: warn
+      # The latest status the nightly published to the `noise` branch (see release.yml). Missing or unusable: WARN, never FAIL.
+      - name: Fetch the latest noise status
+        id: noise
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p noise
+          gh api -H "Accept: application/vnd.github.raw" "repos/${GITHUB_REPOSITORY}/contents/noise-status.json?ref=noise" > noise/noise-status.json 2>/dev/null || rm -f noise/noise-status.json
+          pnpm exec tsx src/ci/noise-history.ts vet --status noise/noise-status.json
 
       - name: Post-deploy mode
         id: run
+        env:
+          NOISE_FILE: ${{ steps.noise.outputs.noise_file }}
         run: |
           recorded="$(ls -d recorded/*-release | head -1)"
-          noise="$(ls noise/*/noise-status.json 2>/dev/null | head -1 || true)"
-          pnpm harness run --mode post-deploy --recorded "$recorded" --production "$PRODUCTION_URLS" ${noise:+--noise "$noise"}
+          pnpm harness run --mode post-deploy --recorded "$recorded" --production "$PRODUCTION_URLS" ${NOISE_FILE:+--noise "$NOISE_FILE"}
 
       - uses: actions/upload-artifact@v4
         if: always()
@@ -81,10 +84,9 @@ jobs:
         if: failure() && steps.run.outcome == 'failure'
         env:
           GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          body="$(cat out/*-post-deploy/report.md)"
+          { cat out/*-post-deploy/report.md; echo; echo "Report artifact: ${RUN_URL}"; } > body.md
           gh label create rollback --color B60205 --description "Production differs from the tested release" 2>/dev/null || true
           gh issue create --title "Rollback candidate: production differs from the tested release ($(date -u +%Y-%m-%dT%H:%MZ))" \
-            --label rollback --body "$body
-
-Report artifact: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            --label rollback --body-file body.md

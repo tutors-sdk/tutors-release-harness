@@ -11,7 +11,9 @@ export const NoiseStatusSchema = z.object({
   schemaVersion: z.literal(SCHEMA_VERSION).optional(),
   ranAt: z.iso.datetime(),
   clean: z.boolean(),
-  hunks: z.number().int().min(0)
+  hunks: z.number().int().min(0),
+  /** Since contract 1.2.0: reasons the evidence is weak; the gate refuses a status that has any. */
+  degraded: z.array(z.string().min(1)).optional()
 });
 
 export function parseNoiseStatus(text: string, source = "noise-status.json"): NoiseStatus {
@@ -19,6 +21,6 @@ export function parseNoiseStatus(text: string, source = "noise-status.json"): No
   if (!parsed.success) {
     throw new Error(`${source} is not a valid noise status:\n${parsed.error.issues.map((i) => `  ${i.path.join(".")}: ${i.message}`).join("\n")}`);
   }
-  const { schemaVersion, ...rest } = parsed.data;
-  return { ...(schemaVersion === undefined ? {} : { schemaVersion }), ...rest };
+  const { schemaVersion, degraded, ...rest } = parsed.data;
+  return { ...(schemaVersion === undefined ? {} : { schemaVersion }), ...rest, ...(degraded === undefined ? {} : { degraded }) };
 }

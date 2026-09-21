@@ -14,3 +14,9 @@
 /docs/contract.md      @tutors-sdk/maintainers
 /docs/contract/        @tutors-sdk/maintainers
 /src/version.ts        @tutors-sdk/maintainers
+
+# The guard that keeps masks in their own PR, and the ratchet that says when the
+# harness has earned the right to fail: weakening either weakens the gate.
+/src/ci/mask-change.ts   @tutors-sdk/maintainers
+/src/ci/noise-history.ts @tutors-sdk/maintainers
+/docs/noise-burndown.md  @tutors-sdk/maintainers
