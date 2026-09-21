@@ -334,11 +334,10 @@ scans would otherwise look like a change in the release. So the harness never
 lets the scanner update: it sets `GRYPE_DB_AUTO_UPDATE=false`,
 `GRYPE_CHECK_FOR_APP_UPDATE=false`, `TRIVY_SKIP_DB_UPDATE=true` and
 `TRIVY_OFFLINE_SCAN=true` on every scan, and points the scanner at
-`HARNESS_VULN_DB_DIR` (`GRYPE_DB_CACHE_DIR` / `TRIVY_CACHE_DIR`). Whoever owns
-the runner fetches the database once, into that directory, and versions it: for
-grype, `GRYPE_DB_CACHE_DIR=$dir grype db update` in a setup step, cached by date
-(nightly) or by a checksum recorded next to the release. Both sides of a run are
-scanned with that one database; the scanner's version and the database's build
+`HARNESS_VULN_DB_DIR` (`GRYPE_DB_CACHE_DIR` / `TRIVY_CACHE_DIR`). The database is
+fetched once, before the run, by `harness vuln-db update`
+([below](#the-vulnerability-database)). Both sides of a run are scanned with
+that one database; the scanner's version and the database's build
 time are read from its output and, if the two sides ever differ, that is a
 failing `<app>/db` hunk rather than a silent mismatch. A new advisory on b
 fails the release; one that was on a and is gone on b is noted informationally.
@@ -350,3 +349,101 @@ artefacts table, an informational `<app>/not-collected` hunk) and that artefact
 is not compared. `HARNESS_REQUIRE_STATIC=1` turns those hunks into failures,
 which is what a release pipeline that must never pass without an SBOM diff
 sets.
+
+
+### The vulnerability database
+
+Since 1.3.0 the workflows that judge images install grype and fetch its database,
+and a laptop does the same with one command. This is the whole mechanism, and the
+reasons.
+
+**One database per run, fetched once, never updated mid-run.** Grype's database
+changes every day. If a scan could update it, the first side of a comparison could
+be scanned with Monday's and the second with Tuesday's, and a CVE published in
+between would appear as a "new vulnerability on b" that the release did not
+introduce. So:
+
+- `harness vuln-db update` runs `grype db update` with `GRYPE_DB_CACHE_DIR` set to
+  one directory: `HARNESS_VULN_DB_DIR`, else `<HARNESS_HOME>/vuln-db`
+  (`.harness/vuln-db` in a checkout, and in CI). It is the only place a database is
+  updated, and it runs before a run, never in one.
+- every scan then runs with `GRYPE_DB_AUTO_UPDATE=false` against that directory,
+  so all the images of both sides read the same file. `HARNESS_VULN_DB_DIR`, unset,
+  means `<HARNESS_HOME>/vuln-db` when that exists: no variable to remember, and CI and
+  a laptop read the same place.
+- `harness vuln-db status` says which database that is: schema, build time, age
+  and the sha256 of the archive it came from (`--json` for a program). The report
+  keeps the scanner's version and the database's build time and schema
+  (`imageArtefacts.<side>.<app>.vulns.scanner.db`), and a difference between the
+  sides is the failing `<app>/db` hunk.
+
+**In CI** (nightly-noise.yml `noise`, release.yml `release`, weekly-mutants.yml
+`mutants`; tests/workflows-vuln.test.ts holds them to this):
+
+1. `anchore/scan-action/download-grype@v7.4.2` with `grype-version: v0.119.0`. The
+   action's real interface, read from its `action.yml` and `action.js` (v7.4.2):
+   input `grype-version` (a tag, **with** the `v`: it is handed to grype's
+   `install.sh` and, on Windows, put in a release URL); output `cmd`, the
+   **absolute path** of the binary, which is not on `PATH`. Its own `cache-db`
+   input is not used: it updates the database at install time, and this harness
+   decides when that happens. A step puts the binary's directory on `GITHUB_PATH`,
+   so the harness's default scanner command (`grype sbom:{sbom} -o json`) works
+   unchanged. The syft step of the mutants job is pinned the same way
+   (`syft-version: v1.52.0`, output `cmd`).
+2. One `actions/cache/restore` per job, key `vuln-db-grype-<grype version>-<UTC
+   day>`, `restore-keys` the same without the day. The first job of a UTC day to run
+   misses, fetches, and saves; every later job that day, and the other workflows,
+   restore the same database. A new grype version starts a new key, because a
+   database schema can change with it.
+3. The fetch, `pnpm harness vuln-db update`, runs only on a miss of today's key and
+   is `continue-on-error`: an outage of grype's servers then leaves the newest earlier
+   day's database that `restore-keys` found (a database a day or two old is still
+   *one* database for the whole run), and the job carries on to the check below.
+4. The save (`actions/cache/save`) runs only after a fetch that succeeded, so a
+   database that failed to arrive is never stored under today's key.
+5. `pnpm harness vuln-db status` runs before anything else does. It exits 1 on an
+   unusable database (absent, invalid, or older than the limit) only when
+   `HARNESS_REQUIRE_STATIC` is set, so in the nightly and the release it stops the job
+   with the reason, and in the mutants job it prints it and goes on.
+
+The database is about 2.1 GB on disk (a 160 MB download, decompressed into one
+SQLite file), which the runner has room for; the cache compresses it (a sample of
+the file compressed about 8:1, so expect a few hundred MB per entry; entries not
+used for a week are evicted). The cache is not what makes the comparison right (a
+single directory does): it makes a run not depend on grype's servers being up, and
+it makes the nightly, the releases and the mutants of one day use the same database.
+
+**How old a database may be: 5 days, `HARNESS_VULN_DB_MAX_AGE_DAYS`.** Grype
+refuses to scan with a database older than 120 hours ("failed to load vulnerability
+db: the vulnerability database was built 6 days ago (max allowed age is 5 days)",
+exit 1; the wording is grype 0.119.0's). Five days is that limit. `harness doctor`
+warns at the same age, so it never says "ready" about a machine whose every scan
+would be "not collected", and `HARNESS_VULN_DB_MAX_AGE_DAYS` moves both the warning
+and the limit passed to grype (`GRYPE_DB_MAX_ALLOWED_BUILT_AGE`), so they cannot
+disagree. The database is rebuilt daily, so CI's is a day or two old at most. On a
+laptop that runs the gate weekly, refresh it first (`harness vuln-db update`, about a
+minute); if you want a looser limit than grype's, set the variable, and know that a
+stale database finds fewer advisories, on both sides equally. `harness doctor`
+prints the build time, the age and the checksum.
+
+**Decision: `HARNESS_REQUIRE_STATIC=1` in the nightly and the release, not in the
+mutants.** It turns "an artefact could not be collected" from an informational hunk
+into a failing one. It is set where an uncollected artefact is a hole in a verdict
+the pipeline stands behind, and left off where it is not:
+
+| Job | `HARNESS_REQUIRE_STATIC` | Why |
+| --- | --- | --- |
+| nightly A/A | `1` | It is the canary. The A/A compares the production tag with itself, so a scanner or SBOM that silently stopped working produces no diff and no noise, only `NOT COLLECTED` lines that nobody reads. Required, the night is not clean, the ratchet and the run summary say so, and the cause is found on the production tag at 02:17, not during a release. A degraded night (registry down, images from the cache) is already not counted, so a registry outage does not add a second reason to fail. |
+| release | `1` | A release is judged against production on the manifest, the SBOM and the vulnerabilities. A gate that passes with two of the three "not collected" reads as "no difference". The nightly shows every night that the collection works on the production tag, so a release fails on a missing artefact only when something changed since; a person who has to ship anyway uses `override_reason`, which is recorded. The first release after this lands needs production's and the candidate's images to carry the monorepo's SBOM attestation: a production tag older than that attestation fails closed, and the nightly, which runs first, shows it. |
+| weekly mutants (and its PR runs) | unset | It judges the harness, not an image. The image-level mutants are caught on the manifest and the SBOM (`mutants/mutants.yaml` expects those artefacts), none plants a vulnerability, and it runs on every pull request that touches an engine: grype's servers being down, or a database a day too old, must not block an unrelated engine change. Grype and its database are installed there so that the `vulns` collection runs on real data, and a failure to collect is printed, not fatal. |
+| post-deploy, the ci.yml smoke run, the migration and upgrade jobs | unset, and no grype | post-deploy compares live URLs (no images); the smoke run and the rehearsals are not where images are judged: the release job judges them. |
+
+**Bumping grype.** Change `PINNED_GRYPE_VERSION` in `src/local/vuln-db.ts`,
+`GRYPE_VERSION` in the three jobs, and `tools.grype.version` in
+`docs/contract/workflows.json` (the workflow test fails until all agree);
+regenerate `tests/fixtures/real-tools` with the new binary and run the tests,
+because the JSON the harness reads is grype's, not the harness's. `harness doctor`
+accepts any grype from 0.96.0 (schema v6, with a correct listing URL) and says which
+one CI pins.
+
+**Locally**, see [local.md](local.md#the-vulnerability-database).
