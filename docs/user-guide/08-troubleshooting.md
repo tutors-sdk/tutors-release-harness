@@ -119,17 +119,17 @@ Then check `masksApplied`. Never retry a flake; the harness has no retries.
 
 The messages of an invalid claims file are in [chapter 4](04-writing-claims.md#rejections-and-fixes). The ones that trip people up:
 
-### `claims.0.artefact: Invalid input`
+### `claim 1 of 1 (claims.0), artefact: "header" is not an artefact`
 
-**Cause.** The artefact is not one of the nineteen names or `*`: a typo (`header`, `a11y`). **Fix.** Use an exact name. Exit 2, before any stack starts.
+**Cause.** The artefact is not one of the nineteen names or `*`: a typo (`header`, `a11y`). **Fix.** The message prints the valid names and, when it can, `did you mean "headers"?`. Exit 2, before any stack starts, with no output directory.
 
-### `claims.0.rule: rule is the Rule's four digits, quoted: rule: "0031" ...`
+### `rule: rule is the Rule's four digits, quoted: rule: "0031" ...`
 
-**Cause.** `rule: 0031` without quotes; YAML reads it as the number 31. **Fix.** Quote it.
+**Cause.** `rule: 0031` without quotes; YAML reads it as the number 31. The message adds `the file has the number 31; write rule: "0031"`. **Fix.** Quote it.
 
-### `rule "0031" was named, but no rules file was given: pass --rules <path|url> ...`, or `rule "0999" is not in the rules file`
+### `rule "0031" was named, but no rules file was given`, or `rule "0999" is not in the rules file`
 
-**Cause.** A `rule` with no rules file, or a Rule the file does not contain. **Fix.** Pass `--rules` (in a dispatch, `rules_url`), publish the rules file for the candidate's commit, or check the id.
+**Cause.** A `rule` with no rules file, or a Rule the file does not contain. The messages say what to do (`pass --rules <path|url> (in the release dispatch, rules_url), or give a reason instead`) and list the Rules the file has (`the rules file has: 0031, 0044`). **Fix.** Pass `--rules` (in a dispatch, `rules_url`), publish the rules file for the candidate's commit, or check the id.
 
 ### `cannot fetch the rules file <url>: HTTP 404` or `fetch failed`
 
@@ -143,9 +143,9 @@ The messages of an invalid claims file are in [chapter 4](04-writing-claims.md#r
 
 **Cause.** A typo the harness ignores (`approvedby`, `approved_by`): unknown keys are silently dropped. **Fix.** `approvedBy`, exactly. The monorepo's `pnpm check:release-claims` catches unknown fields.
 
-### The monorepo pre-check rejects a claim the harness would accept (`sbom`, `runtime`, ...)
+### The monorepo pre-check rejects a claim the harness accepts
 
-**Cause.** The pre-check's artefact list has thirteen names; the harness accepts nineteen. **Fix.** Raise it with the monorepo owners; until they agree, claims for `bus`, `image-manifest`, `sbom`, `vulns`, `runtime` and `startup` cannot pass the pre-check. See [chapter 4](04-writing-claims.md#before-you-push).
+**Cause.** The pre-check is stricter in three ways: it rejects unknown fields (`approvedby`), a broad claim with no `approvedBy`, and a cited Rule that no feature under `tests/bdd/features` defines at the ref being checked. It accepts all nineteen artefact names. **Fix.** Fix the claim as its message says; the harness's parse is the authority if the two ever disagree.
 
 ### `--override-reason must say why the FAIL is being accepted, in at least 20 characters ...`, or `an override needs both --override-reason and --override-by`
 
@@ -155,7 +155,7 @@ The messages of an invalid claims file are in [chapter 4](04-writing-claims.md#r
 
 ### `the host ports the stack publishes are free`: FAIL (`4100 (READER_PORT_A) is in use ...`)
 
-**Cause.** Something is listening on a port the stack publishes, or Windows reserves the range. **Fix.** Stop what holds it, or move the stack with `--port-offset <n>` on `harness local ...` and `harness doctor`. `netsh int ipv4 show excludedportrange protocol=tcp` lists Windows' reserved ranges. Beware: an offset of 1000 puts the stack on 4100 to 4203, which is where a kind cluster's fixed host ports are; use another offset (2000) if a kind cluster exists.
+**Cause.** Something is listening on a port the stack publishes, or Windows reserves the range. **Fix.** Stop what holds it, or move the stack with `--port-offset <n>` on `harness local ...` and `harness doctor`. `netsh int ipv4 show excludedportrange protocol=tcp` lists Windows' reserved ranges. Beware: an offset of 1000 puts the stack on 4100 to 4204, which overlaps where a kind cluster's fixed host ports are; use another offset (2000) if a kind cluster exists.
 
 ### `the stack's fixed subnet 172.29.0.0/24 is unused`: FAIL, `Pool overlaps with other one on this address space`
 
@@ -175,7 +175,7 @@ The messages of an invalid claims file are in [chapter 4](04-writing-claims.md#r
 
 ### `kind cluster "<name>" already exists and would be reused` (warning)
 
-**Cause.** A cluster of this checkout's name exists. Only its `harness-a` and `harness-b` namespaces are created and deleted. **Fix.** If it was not made from `deploy/kind/kind-config.yaml`, the host ports 4100 to 4202 are not mapped: set `HARNESS_KIND_CLUSTER` to give the harness a fresh cluster of its own.
+**Cause.** A cluster of this checkout's name exists. Only its `harness-a` and `harness-b` namespaces are created and deleted. **Fix.** If it was not made from `deploy/kind/kind-config.yaml`, the host ports 4100 to 4203 are not mapped: set `HARNESS_KIND_CLUSTER` to give the harness a fresh cluster of its own.
 
 ## The machine
 
@@ -209,7 +209,7 @@ $env:HARNESS_BASH = "C:\Program Files\Git\bin\bash.exe"
 
 ### `free disk space`: FAIL (under 5 GiB) or warning (under 15 GiB)
 
-**Cause.** Images, SBOMs and captures need room, and nothing prunes `out/`, so it grows with every run. **Fix.** Delete old run directories ([chapter 2](02-running-locally.md#retention-of-out)), move `HARNESS_HOME` and `--out` to a bigger drive, and `docker system prune` deliberately (it drops other unused images too).
+**Cause.** Images, SBOMs and captures need room, and `out/` and the image cache grow with every run. **Fix.** `pnpm harness prune` (a dry run: it prints what would go and how much it frees), then `pnpm harness prune --yes`. It keeps the newest five runs of each mode, anything from the last six hours, and the newest release run that did not FAIL ([chapter 2](02-running-locally.md#disk-harness-prune)). Move `HARNESS_HOME` and `--out` to a bigger drive if you must, and `docker system prune` deliberately (it drops other unused images too).
 
 ### `Playwright's Chromium`: FAIL, `not installed: no journey can run`
 
@@ -226,6 +226,30 @@ $env:HARNESS_BASH = "C:\Program Files\Git\bin\bash.exe"
 ### Paths too long on Windows
 
 **Cause.** Run directories nest deep; the checkout is long. **Fix.** Keep the checkout short, enable `LongPathsEnabled` and `git config --global core.longpaths true` (the doctor warns when the path is over 90 characters and long paths are off).
+
+### `harness prune` exits 1, or refuses with exit 2
+
+**Cause.** Exit 1: something could not be removed, on Windows usually a file another program has open. It is reported, left as it was, and the rest goes on. Exit 2: a `harness local` task or a watch holds its lock. **Fix.** Close the program and run `harness prune` again; wait for the running task to finish.
+
+### `vulnerability database: NOT USABLE`, or a `vulns` NOT COLLECTED line
+
+**Cause.** grype is not installed, or its database has never been fetched, or it is older than `HARNESS_VULN_DB_MAX_AGE_DAYS` (5). The message names the command that fixes it. **Fix.** Install grype (on Windows unzip the release archive on `PATH`; no admin needed), run `pnpm harness vuln-db update` once, online, then `pnpm harness vuln-db status`. The artefact is informational unless `HARNESS_REQUIRE_ARTEFACTS` names it (the nightly and release jobs require it in CI). See [chapter 2](02-running-locally.md#the-vulnerability-database).
+
+### An SBOM cannot be generated on Windows (`unable to place layer cache ... The filename, directory name, or volume label syntax is incorrect`)
+
+**Cause.** Native syft on Windows caches layers in files whose names contain `:`, which Windows forbids. **Fix.** Nothing: the default generator on a Windows host runs syft in its own `anchore/syft` container over the Docker socket, so this arises only if you set `HARNESS_SBOM_CMD` to a native syft. Unset it.
+
+### `NOT COLLECTED: runtime ...` or `startup ...` fails the run
+
+**Cause.** `runtime` and `startup` are required by default: their collectors run against stacks the harness started, so a gap is a fault (no such container, a probe that crashed, `docker` or `kubectl` failing). **Fix.** Read the reason after the last colon and fix it; claim it only with a reason a reviewer can weigh. `--no-runtime` or `--startup-restarts 0` switch the artefact off as information, for local work only.
+
+### `HARNESS_REQUIRE_ARTEFACTS takes artefact names (...), static or all; "x" is not one` (exit 2)
+
+**Cause.** An unknown name in the variable; a typo must not loosen a gate. **Fix.** Use `image-manifest`, `sbom`, `vulns`, `runtime`, `startup`, `bus`, `static` or `all`.
+
+### Post-deploy shows a wall of differences that look like spelling
+
+**Cause.** Headers or origins that differ only in form. Since 1.4.0 `content-type` and `cache-control` are compared canonically, production's own URLs read as `{{origin}}` on both sides, and a few CDN-only masks apply in this mode. What is left is real or needs a mask. **Fix.** Compare with [chapter 3](03-reading-a-report.md#post-deploy-against-a-live-site); do not claim spelling; tell a maintainer, who will add a canonical form or a CDN-only mask in its own pull request.
 
 ### `harness compare`: `no capture at <dir>/a/capture.json`
 
@@ -255,9 +279,9 @@ $env:HARNESS_BASH = "C:\Program Files\Git\bin\bash.exe"
 
 **Cause.** One heavy run per machine: two would share the compose project, its ports and its subnet. **Fix.** Wait for the other run. A lock whose holder has died is taken over automatically; a scheduled `local watch --once` that finds the previous watch still running does nothing and exits 0.
 
-### `unknown command "--help"`
+### `harness --help` prints usage, or `harness help run` prints one command's part
 
-**Cause.** The first argument is the command. **Fix.** `pnpm harness run --help` (or any command). A bare `pnpm harness` prints the usage and exits 2.
+**Not an error.** `pnpm harness --help`, `-h` and `help` print the usage and exit 0; `pnpm harness <command> --help` (or `pnpm harness help <command>`) prints that command's part. A bare `pnpm harness` prints the usage and exits 2.
 
 ### `TypeError [ERR_PARSE_ARGS_UNKNOWN_OPTION]: Unknown option '--x'`
 
@@ -271,10 +295,15 @@ $env:HARNESS_BASH = "C:\Program Files\Git\bin\bash.exe"
 
 **Cause.** `noise record` was given a directory or file with no `noise-status.json`. **Fix.** Point `--status` at the noise run's directory.
 
-### An invalid claims or rules file prints a stack trace
+### A flag that does not exist prints a stack trace
 
-**Cause.** The uncaught-error path prints the error with its stack. **Fix.** Read the first lines: they name the file and every problem. The run stops before any stack starts.
+**Cause.** An unknown flag is rejected by the argument parser, which is the one usage error that still prints a stack (`TypeError [ERR_PARSE_ARGS_UNKNOWN_OPTION]`). **Fix.** Read the first line and check the flag against [chapter 7](07-reference.md#flags). Claims and rules problems, by contrast, are clean multi-line messages.
 
-### The run exits 2 and leaves an empty `out/<time>-<mode>/`
+### `cannot judge` and no output directory
 
-**Cause.** The output directory is made before the image check; `cannot judge` stops the run afterwards. **Fix.** Ignore the directory (or delete it), and resolve the reason printed after `cannot judge:`.
+**Not a problem.** A run that exits 2 before it has images to judge (not present, not verified) leaves no `out/<time>-<mode>/` behind. The reason is printed after `cannot judge:`.
+
+### The post-deploy workflow failed but no rollback issue was opened
+
+**Cause.** The harness exited 2 ("could not judge": an unusable input, an image that cannot be trusted, a run that stopped before a verdict). The workflow fails so it is seen and says so in the job summary, but a rollback issue is opened only for exit 1, a difference between production and the recorded candidate. **Fix.** Read the step log for the reason and correct it.
+
