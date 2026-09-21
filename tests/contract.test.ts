@@ -245,7 +245,7 @@ describe("report.json", () => {
     expect(end).toBeGreaterThan(start);
     const changes = contractMd.slice(start, end);
     const flat = changes.replaceAll("\n", " ").replaceAll("  ", " ");
-    for (const item of ["**minor**", "**patch-level**", "HARNESS_REQUIRE_ARTEFACTS", "HARNESS_VULN_DB_MAX_AGE_DAYS", "HARNESS_ROLLBACK_ISSUE", "harness prune", "harness vuln-db", "harness local smoke", "mutant-noise-report", "run-name", "NOT COLLECTED", "--help", "not comparable"]) expect(flat, item).toContain(item);
+    for (const item of ["**minor**", "**patch-level**", "HARNESS_REQUIRE_ARTEFACTS", "HARNESS_VULN_DB_MAX_AGE_DAYS", "HARNESS_ROLLBACK_ISSUE", "harness prune", "harness vuln-db", "harness local smoke", "harness local compare", "mutant-noise-report", "run-name", "NOT COLLECTED", "--help", "not comparable"]) expect(flat, item).toContain(item);
     const cliJson = json("docs/contract/cli.json");
     for (const flag of cliJson.flags.filter((f: { since?: string }) => f.since === "1.4.0")) expect(changes, flag.name).toContain(`--${flag.name}`);
     for (const command of cliJson.commands.filter((c: { since?: string }) => c.since === "1.4.0")) expect(changes, command.name).toContain(command.name);
@@ -629,6 +629,9 @@ describe("CLI", () => {
     // the 1.3.0 and 1.4.0 commands are declared, and none of them is stable; a command with no subcommands lists none
     for (const name of ["prune", "vuln-db", "local"]) expect(byName[name]!.stable, name).toBe(false);
     expect(byName.prune!.subcommands).toBeUndefined();
+    // `local compare` (1.4.0): a subcommand of a non-stable command, and the two flags only it takes are non-stable too
+    expect(byName.local!.subcommands).toContain("compare");
+    for (const name of ["strict", "no-load"]) expect(cli.flags.find((f) => f.name === name), name).toMatchObject({ stable: false, since: "1.4.0", type: "boolean" });
   });
 
   it("the enumerated flag values are the code's", () => {

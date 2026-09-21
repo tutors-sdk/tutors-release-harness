@@ -177,13 +177,17 @@ Runs the reference journeys against production and compares them with the record
 
 ### Comparing main with the last release
 
-There is no `harness local compare` command yet; one is being scripted (main against the last release in one command). Today the equivalent is the gate restricted to release mode, with the last release tag as production and `main` as the candidate:
+`harness local compare` (also `pnpm compare`) is the gate restricted to release mode, with the last release found for you and `main` as the candidate:
 
 ```console
-pnpm harness local gate --a <last release tag> --b main --only release --runs 3
+pnpm compare                       # main against the newest release: 3 runs, with the k6 load leg
+pnpm compare --no-load --runs 1    # a fast look
+pnpm harness local compare [--a 16.2.2] [--b main] [--runs 3] [--load 20x30s | --no-load] [--claims f] [--port-offset n] [--dry-run] [--json] [--strict]
 ```
 
-`--only release` runs the noise status, `images ensure` and release mode, and leaves out the migration and upgrade rehearsals. Add `--claims` and `--rules` if you want a release's claims applied, and use `--runs 5` when you need timing to be judgeable (three runs cannot reach significance). The result is an investigation: `main` is a moving tag, so it is not a candidate a release decision should rest on.
+`--a` defaults to the highest `X.Y.Z` tag that exists for all four apps on quay.io (else `HARNESS_PRODUCTION_TAG`, else exit 2 and you pass `--a`). It runs the gate's release step (`--only release`): the noise status, `images ensure` (both sides pulled and cosign-verified, nothing built) and release mode, with no claims, so every difference is listed as unclaimed. It ends with the verdict, the counts, and the paths of `report.md` and `report.html`. It is an exploration, not a gate: exit `0` whenever a report was produced, `2` when it could not judge, `1` for a harness fault, and `--strict` makes the exit follow the verdict like `local gate`. Measured: 9 min 15 s by default, 4 min 47 s for the fast look (images already in Docker). Details: [docs/local.md](../local.md#compare-main-with-the-last-release).
+
+Add `--claims` to apply a release's claims, and use `--runs 5` when you need timing to be judgeable (three runs cannot reach significance). The result is an investigation: `main` is a moving tag, so it is not a candidate a release decision should rest on.
 
 ## The run modes
 

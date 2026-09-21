@@ -11,6 +11,7 @@ import { GUARDS, realGit, realScript, runGuard, type GuardKind } from "./guard.t
 import { harnessHome, imageCacheDir, locksDir, noiseDir, overridesFile, rollbacksDir } from "./home.ts";
 import { LockHeldError, acquireLock, lockHolder } from "./lock.ts";
 import { realExec } from "../images.ts";
+import { COMPARE_DEFAULTS, ReleaseResolutionError, planCompare, realFetch, renderDryRun, resolveLastRelease, runCompare, type FetchLike } from "./compare.ts";
 import { realVulnDbDeps, vulnDbStatus, vulnDbUpdate } from "./vuln-db.ts";
 import { noiseHistoryCommand, noiseStatusCommand, recordNight } from "./noise-store.ts";
 import { PRUNE_DEFAULTS, prune, renderPrune } from "./prune.ts";
@@ -202,10 +203,11 @@ export function pruneCommand(v: Values, deps: { home?: string; now?: Date; log?:
 
 const outRoot = () => resolve(ROOT, "out");
 
-function realExecutor(log: (m: string) => void): Executor {
+/** `toStderr`: a child's stdout goes to stderr too (`local compare --json` keeps stdout for its one JSON document). */
+function realExecutor(log: (m: string) => void, toStderr = false): Executor {
   return {
     harness: (argv, env) => {
-      const r = spawnSync(process.execPath, [join(ROOT, "bin", "harness.mjs"), ...argv], { cwd: ROOT, stdio: "inherit", env: { ...process.env, ...env } });
+      const r = spawnSync(process.execPath, [join(ROOT, "bin", "harness.mjs"), ...argv], { cwd: ROOT, stdio: toStderr ? ["inherit", 2, 2] : "inherit", env: { ...process.env, ...env } });
       return r.status ?? 2;
     },
     latestRun: (mode, since) => latestRunIn(outRoot(), mode, since),
@@ -218,6 +220,22 @@ function realExecutor(log: (m: string) => void): Executor {
 function whoAmI(): string {
   const r = spawnSync("git", ["config", "user.name"], { cwd: ROOT, encoding: "utf8" });
   return (r.status === 0 && r.stdout.trim()) || userInfo().username;
+}
+
+/** The flags of `local compare` other than `--a`, checked: the gate's release step, exploratory (3 runs, no claims). */
+export function compareOptions(v: Values): { candidate: string; runs: number; load: string | false; claims?: string; strict: boolean } {
+  const load = str(v, "load");
+  // `--no-load` reaches here as `no-load: true`, or (util.parseArgs' allowNegative reads it as the negation of `--load`) as `load: false`.
+  const noLoad = flag(v, "no-load") || v.load === false;
+  if (noLoad && load) throw new UsageError("--load and --no-load contradict each other: keep one");
+  if (load && !/^\d+x\d+[smh]$/.test(load)) throw new UsageError("--load takes <rate>x<duration>, e.g. 20x30s");
+  return {
+    candidate: str(v, "b") ?? COMPARE_DEFAULTS.candidate,
+    runs: integer(v, "runs", COMPARE_DEFAULTS.runs, 1),
+    load: noLoad ? false : (load ?? WORKFLOW_DEFAULTS.load),
+    ...(str(v, "claims") ? { claims: resolve(str(v, "claims")!) } : {}),
+    strict: flag(v, "strict")
+  };
 }
 
 export function buildPlan(task: string | undefined, v: Values, env: NodeJS.ProcessEnv = process.env): Plan {
@@ -246,6 +264,12 @@ export function buildPlan(task: string | undefined, v: Values, env: NodeJS.Proce
         ...(override ? { override } : {})
       });
     }
+    case "compare": {
+      const production = str(v, "a");
+      if (!production) throw new UsageError("local compare finds --a (the last release) before it plans; to plan for a tag of your own, pass --a <tag>");
+      const { strict: _strict, ...options } = compareOptions(v);
+      return planCompare({ ...options, production });
+    }
     case "mutants":
       return planMutants({ tag: str(v, "base") ?? PRODUCTION_DEFAULT_TAG(env) });
     case "smoke": {
@@ -260,7 +284,7 @@ export function buildPlan(task: string | undefined, v: Values, env: NodeJS.Proce
         ...(str(v, "deployed") ? { deployed: { tag: str(v, "deployed")!, ...(str(v, "deployed-digests") ? { digests: str(v, "deployed-digests")! } : {}), ...(str(v, "release-record") ? { record: resolve(str(v, "release-record")!) } : {}) } } : {})
       });
     default:
-      throw new UsageError("local nightly|gate|mutants|watch|smoke [--dry-run]");
+      throw new UsageError("local nightly|gate|mutants|watch|smoke|compare [--dry-run]");
   }
 }
 
@@ -273,6 +297,7 @@ function intervalOf(v: Values): number {
 }
 
 export async function localCommand(task: string | undefined, v: Values): Promise<number> {
+  if (task === "compare") return compareCommand(v);
   const plan = buildPlan(task, v);
   const intervalMs = plan.task === "watch" ? intervalOf(v) : 0;
   const env = { ...workflowEnv(process.env), ...portEnv(integer(v, "port-offset", 0), process.env) };
@@ -378,4 +403,77 @@ async function watchCommand(plan: Plan, env: Record<string, string>, ex: Executo
   } finally {
     release();
   }
+}
+
+// ---- harness local compare ----------------------------------------------------------------------------
+
+export interface CompareDeps {
+  env?: NodeJS.ProcessEnv;
+  /** The Quay API; a test gives it a fake, so nothing here reaches the network. */
+  fetch?: FetchLike;
+  ex?: Executor;
+  home?: string;
+  now?: () => number;
+  say?: (message: string) => void;
+  emit?: (text: string) => void;
+}
+
+/**
+ * `harness local compare`: `main` (or --b) against the newest release, the gate's release step, as an exploration.
+ * Exit 0 when a report was produced, 2 when it could not judge (no release found, an image missing or unverifiable,
+ * the run lock held), 1 for a harness fault; `--strict` follows the verdict like `local gate`.
+ */
+export async function compareCommand(v: Values, deps: CompareDeps = {}): Promise<number> {
+  const env = deps.env ?? process.env;
+  const json = flag(v, "json");
+  const say = deps.say ?? ((m: string) => (json ? console.error(m) : console.log(m)));
+  const emit = deps.emit ?? ((t: string) => console.log(t));
+  // Every flag is checked before anything is fetched.
+  const options = compareOptions(v);
+  const portOffset = integer(v, "port-offset", 0);
+  let a: string;
+  let resolved: string;
+  let announce: string;
+  const given = str(v, "a");
+  if (given) {
+    a = given;
+    resolved = `${a} (given with --a)`;
+    announce = `release: ${resolved}`;
+  } else {
+    try {
+      const found = await resolveLastRelease(env, deps.fetch ?? realFetch);
+      a = found.tag;
+      resolved = `${a} (${found.how})`;
+      announce = `resolved: ${resolved}`;
+    } catch (e) {
+      if (!(e instanceof ReleaseResolutionError)) throw e;
+      console.error(e.message);
+      return 2;
+    }
+  }
+  const plan = buildPlan("compare", { ...v, a }, env);
+  const planEnv = { ...workflowEnv(env), ...portEnv(portOffset, env) };
+  if (flag(v, "dry-run")) {
+    if (json) emit(JSON.stringify({ a, resolved, b: options.candidate, strict: options.strict, environment: planEnv, steps: plan.steps.map((s) => ({ id: s.id, title: s.title, argv: s.argv })) }, null, 2));
+    else say(renderDryRun({ announce, a, b: options.candidate, plan, env: planEnv }));
+    return 0;
+  }
+  const home = deps.home ?? harnessHome();
+  mkdirSync(home, { recursive: true });
+  say(announce);
+  say(`harness local compare: state in ${home}`);
+  return runCompare({
+    plan,
+    env: planEnv,
+    ex: deps.ex ?? realExecutor(say, json),
+    lock: () => acquireLock(join(locksDir(home), "run.lock"), "harness local compare"),
+    a,
+    b: options.candidate,
+    resolved,
+    strict: options.strict,
+    json,
+    ...(deps.now ? { now: deps.now } : {}),
+    say,
+    emit
+  });
 }

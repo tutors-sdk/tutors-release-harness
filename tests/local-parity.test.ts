@@ -13,6 +13,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { planGate, planMutants, planNightly, planSmoke, planWatch, WORKFLOW_DEFAULTS, type Plan } from "../src/local/tasks.ts";
+import { planCompare } from "../src/local/compare.ts";
 
 const ROOT = resolve(import.meta.dirname, "..");
 const workflow = (name: string) => readFileSync(resolve(ROOT, ".github/workflows", name), "utf8");
@@ -200,5 +201,37 @@ describe("ci.yml's two-stacks job is `harness local smoke`", () => {
       "run --mode migration --a dir:tests/fixtures/migrations/a --b dir:tests/fixtures/migrations/b-bad"
     ]);
     expect(plan.steps.map((s) => s.expectFailure === true)).toEqual([false, false, false, true]);
+  });
+});
+
+describe("`harness local compare` is release.yml's release job, on main against the last release", () => {
+  const compare = planCompare({ production: "16.2.2", candidate: "main", runs: 3, load: WORKFLOW_DEFAULTS.load });
+  const gate = planGate({ production: "16.2.2", candidate: "main", only: "release", runs: 3 });
+  const env = { PRODUCTION: "16.2.2", CANDIDATE: "main", RUNS: "3", CLAIMS_URL: "u", RULES_URL: "", NOISE_FILE: "f", OVERRIDE_REASON: "", OVERRIDE_BY: "", PRODUCTION_DIGESTS: "", CANDIDATE_DIGESTS: "" };
+  const calls = harnessCalls(workflow("release.yml"), env);
+  // what a comparison of two tags does not carry: the release's claims, rules, override and pins
+  const bare = ["claims", "rules", "override-reason", "override-by", "a-digests", "b-digests", "noise"];
+
+  it("its steps are the gate's, not a copy of them: the noise status, the pull and verify, the release run", () => {
+    expect(compare.steps.map((s) => s.argv)).toEqual(gate.steps.map((s) => s.argv));
+    expect(compare.steps.map((s) => s.id)).toEqual(["noise-status", "ensure", "release"]);
+  });
+
+  it("the release run has the flags the release job's has (mode, both sides, runs, load), and none of its claims, rules, override or pins", () => {
+    const wanted = canon(called(calls, "run", "--mode", "release"), bare);
+    expect(canon(compare.steps.find((s) => s.id === "release")!.argv, bare)).toEqual(wanted);
+    expect(compare.steps.find((s) => s.id === "release")!.argv).not.toContain("--claims");
+  });
+
+  it("pulls and verifies as the release job does (and builds nothing: no git refs)", () => {
+    expect(compare.steps.find((s) => s.id === "ensure")!.argv).toEqual(["images", "ensure", "--a", "16.2.2", "--b", "main"]);
+    // release.yml ensures in its release job and again in its upgrade job, with the same flags (and the optional digest pins, which two tags do not have)
+    for (const e of calls.filter((c) => c[0] === "images" && c[1] === "ensure")) expect(canon(e, bare)).toEqual(canon(compare.steps.find((s) => s.id === "ensure")!.argv, bare));
+  });
+
+  it("`pnpm compare` is `harness local compare`, as `pnpm smoke` is `harness local smoke`", () => {
+    const scripts = JSON.parse(readFileSync(resolve(ROOT, "package.json"), "utf8")).scripts;
+    expect(scripts.compare).toBe("tsx src/cli.ts local compare");
+    expect(scripts.compare.replace("compare", "smoke")).toBe(scripts.smoke);
   });
 });
