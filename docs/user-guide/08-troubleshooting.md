@@ -283,9 +283,9 @@ $env:HARNESS_BASH = "C:\Program Files\Git\bin\bash.exe"
 
 **Not an error.** `pnpm harness --help`, `-h` and `help` print the usage and exit 0; `pnpm harness <command> --help` (or `pnpm harness help <command>`) prints that command's part. A bare `pnpm harness` prints the usage and exits 2.
 
-### `TypeError [ERR_PARSE_ARGS_UNKNOWN_OPTION]: Unknown option '--x'`
+### `harness: Unknown option '--x'.` / `harness: Option '--a <value>' argument missing.`
 
-**Cause.** A flag that does not exist (a typo, or from another version). **Fix.** Check [chapter 7](07-reference.md#flags). Exit 2.
+**Cause.** A flag the command does not take (a typo, or from another version), or one that is missing its value. **Fix.** Run the `pnpm harness help <command>` the message names, or check [chapter 7](07-reference.md#flags). Exit 2, a two-line message with no stack trace.
 
 ### `run needs --a and --b`, `--mode must be one of ...`, `--load takes <rate>x<duration>, e.g. 20x30s`
 
@@ -294,10 +294,6 @@ $env:HARNESS_BASH = "C:\Program Files\Git\bin\bash.exe"
 ### `no noise status at <file>: run harness run --mode noise first (or harness local nightly)`
 
 **Cause.** `noise record` was given a directory or file with no `noise-status.json`. **Fix.** Point `--status` at the noise run's directory.
-
-### A flag that does not exist prints a stack trace
-
-**Cause.** An unknown flag is rejected by the argument parser, which is the one usage error that still prints a stack (`TypeError [ERR_PARSE_ARGS_UNKNOWN_OPTION]`). **Fix.** Read the first line and check the flag against [chapter 7](07-reference.md#flags). Claims and rules problems, by contrast, are clean multi-line messages.
 
 ### `cannot judge` and no output directory
 

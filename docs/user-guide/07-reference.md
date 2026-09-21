@@ -11,7 +11,7 @@ Complete tables. Stable means covered by the compatibility promise in [`docs/con
 - [Artefacts](#artefacts)
 - [Contract version compatibility](#contract-version-compatibility)
 
-Invoke as `pnpm harness <command>` from a checkout (Node 22 or newer, `pnpm install`, and for capturing modes `pnpm exec playwright install chromium` and Docker). Flags are parsed globally: a flag is accepted after any command, and an unknown flag stops with `Unknown option '--x'` (exit 2, still with a stack trace). `pnpm harness --help`, `-h` and `help` print the usage and exit 0; `pnpm harness <command> --help` (or `pnpm harness help <command>`) prints that command's part of it. A bare `pnpm harness` prints the usage and exits 2.
+Invoke as `pnpm harness <command>` from a checkout (Node 22 or newer, `pnpm install`, and for capturing modes `pnpm exec playwright install chromium` and Docker). Flags are parsed globally: a flag is accepted after any command, and an unknown flag, or one missing its value, stops with `harness: Unknown option '--x'.` and a pointer to `harness help <command>` (exit 2, no stack trace). `pnpm harness --help`, `-h` and `help` print the usage and exit 0; `pnpm harness <command> --help` (or `pnpm harness help <command>`) prints that command's part of it. A bare `pnpm harness` prints the usage and exits 2.
 
 ## Commands
 
