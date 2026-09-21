@@ -78,7 +78,7 @@ export async function runMutants(options: MutantsOptions): Promise<boolean> {
   for (const mutant of mutants) {
     const image = buildMutant(mutant, baseImages.reader, opts.log);
     const bSpec = specFor({ ...baseImages, reader: image });
-    const outcome = await run({ ...opts, static: staticOpts, sets, mode: "release", a: baseSpec, b: bSpec, noise: noiseStatus, runs: Math.max(opts.runs, mutant.runs ?? 1) });
+    const outcome = await run({ ...opts, static: staticOpts, sets, mode: "release", recordRelease: false, a: baseSpec, b: bSpec, noise: noiseStatus, runs: Math.max(opts.runs, mutant.runs ?? 1) });
     const artefacts = [...new Set(outcome.report.compare.unclaimed.map((h) => h.artefact))];
     const caught = outcome.report.verdict === "fail";
     const attributed = mutant.expect.some((a) => artefacts.includes(a));

@@ -281,3 +281,12 @@ describe("through the pipeline: post-deploy mode with a deployment", () => {
     expect(compare("release").written).not.toHaveProperty("deployment");
   });
 });
+
+describe("what must not leave a record", () => {
+  it("the mutants run release mode on planted faults and switch the record off; every other release run leaves one", () => {
+    const root = resolve(import.meta.dirname, "..");
+    expect(readFileSync(resolve(root, "src/mutants.ts"), "utf8")).toMatch(/mode: "release", recordRelease: false,/);
+    // the default is to record: `run` writes one unless told not to
+    expect(readFileSync(resolve(root, "src/run.ts"), "utf8")).toContain('if (opts.mode === "release" && opts.recordRelease !== false) {');
+  });
+});

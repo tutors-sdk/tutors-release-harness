@@ -88,6 +88,8 @@ export interface RunOptions {
    * release record is (`--release-record`; default the store under HARNESS_HOME). Compared with the record; a difference warns.
    */
   deployed?: { production?: string; digests: Digests; record?: string };
+  /** Since 1.3.0. Release mode leaves a release record (default true). The mutants run release mode on planted faults: they must not leave one. */
+  recordRelease?: boolean;
   /** migration: a pg_dump to restore before applying the candidate's migrations. */
   snapshot?: string;
   /** upgrade: seconds of load and requests per second. */
@@ -353,7 +355,7 @@ export async function run(opts: RunOptions): Promise<RunOutcome> {
   opts.log("comparing…");
   const outcome = compareFromCaptures({ ...common, mode: opts.mode, a: captureA, b: captureB, extraHunks, ...(upgrade ? { extras: { upgrade } } : {}) });
   // Release mode leaves the record post-deploy mode checks a deployment against (docs/contract.md, "The release record").
-  if (opts.mode === "release") {
+  if (opts.mode === "release" && opts.recordRelease !== false) {
     const made = releaseRecordOf(outcome.report, { pinned: opts.bDigests !== undefined });
     if ("record" in made) writeReleaseRecord(made.record, { outDir: outcome.outDir, log: opts.log });
     else opts.log(made.skipped);
