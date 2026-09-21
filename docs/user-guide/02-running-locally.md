@@ -6,12 +6,14 @@ OpenShift is out of scope. Compose and kind are what runs.
 
 - [Set up the machine](#set-up-the-machine)
 - [Where state lives](#where-state-lives)
-- [The four maintainer tasks](#the-four-maintainer-tasks)
+- [The five maintainer tasks](#the-five-maintainer-tasks)
+- [Comparing main with the last release](#comparing-main-with-the-last-release)
+- [The vulnerability database](#the-vulnerability-database)
 - [The run modes](#the-run-modes)
 - [Running beside your own stack](#running-beside-your-own-stack)
 - [Where the images come from](#where-the-images-come-from)
 - [Scheduling](#scheduling)
-- [Retention of `out/`](#retention-of-out)
+- [Disk: `harness prune`](#disk-harness-prune)
 - [Windows notes](#windows-notes)
 
 ## Set up the machine
@@ -29,16 +31,16 @@ pnpm harness doctor
 | Node 22 or newer, pnpm, git | the harness itself, the guards and the version stamp |
 | Docker daemon reachable, running **Linux containers**, Compose v2, and the daemon's clock against the host's | every stack. Docker Desktop's VM clock drifts after sleep and breaks pulls and signature checks |
 | cosign 3 or newer | a registry image is not judged without a verified signature (exit 2). cosign 2 reads the monorepo's signatures as missing |
-| syft, grype and grype's database | the mutants need syft. Without grype the vulnerability artefact is "not collected" |
+| syft; grype 0.96.0 or newer and its database | the mutants need syft (on Windows the default generator runs syft in its own container, so a native syft is not needed). Without grype, or without its database, the vulnerability artefact is `NOT COLLECTED` (informational unless you require it). The doctor also checks the database's age against `HARNESS_VULN_DB_MAX_AGE_DAYS` (default 5) |
 | Playwright's Chromium | every journey, including the post-deploy watch |
 | helper images already local: k6, `postgres:16-alpine`, the fixture stubs' Node image | a run that has to work offline |
 | free disk (fails under 5 GiB, warns under 15 GiB), `HARNESS_HOME` writable | images, SBOMs and captures |
-| the host ports the stack publishes | your own service on 8080 or 3100 |
+| the 15 host ports the stack publishes | your own service on 8080 or 3100 |
 | the fixed subnet `172.29.0.0/24` against every other Docker network | otherwise `docker compose up` fails with "Pool overlaps" |
 | a leftover compose project of this checkout, and a legacy `tutors-harness` stack or kind cluster | reported, never removed |
 | Windows: WSL's `bash` first on `PATH`, CRLF in `scripts/*.sh`, long paths | see [Windows notes](#windows-notes) |
 
-Install the tools that are missing with the platform commands the doctor prints. On Windows: `winget install Docker.DockerDesktop Git.Git OpenJS.NodeJS.LTS Kubernetes.kind Kubernetes.kubectl`, and `scoop install cosign syft grype` (cosign must be version 3 or later) or the release binaries from GitHub, renamed `.exe`, on `PATH`. On macOS: `brew install cosign syft grype`. On Linux: your package manager, or the release binaries.
+Install the tools that are missing with the platform commands the doctor prints. On Windows: `winget install Docker.DockerDesktop Git.Git OpenJS.NodeJS.LTS Kubernetes.kind Kubernetes.kubectl`, and `scoop install cosign syft grype` (cosign must be version 3 or later) or the release binaries from GitHub, renamed `.exe`, on `PATH`. On macOS: `brew install cosign syft grype`. On Linux: your package manager, or the release binaries. grype and syft need no admin rights: unzip the release archive somewhere on `PATH`; the doctor prints the exact download for your platform.
 
 ## Where state lives
 
@@ -48,6 +50,7 @@ Install the tools that are missing with the platform commands the doctor prints.
 | --- | --- | --- |
 | `noise/noise-status.json`, `noise-history.json`, `noise-summary.md` | the latest night, the ratchet's history, tonight's summary | the `noise` branch |
 | `image-cache/` | `docker save` of the last verified production images | `actions/cache` |
+| `vuln-db/` | the pinned vulnerability database, fetched by `harness vuln-db update` (about 2.1 GB on disk) | `actions/cache`, `.harness/vuln-db` |
 | `overrides.jsonl` | every applied override, one JSON line each, hash-chained, append-only | `harness-override` issues |
 | `releases/<candidate>.json`, `releases/<release>.json` | what release mode judged: the digests of the candidate's images and the verdict | the `release-records` branch |
 | `rollbacks/` | what a failing watch would have opened as an issue | `rollback` issues |
@@ -58,7 +61,7 @@ Run output stays in `<checkout>/out/<UTC timestamp>-<mode>/` (`--out` on `harnes
 
 The noise store is **this machine's calibration**. The A/A measures the noise floor of the machine that ran it (fonts, anti-aliasing, timing), and the gate applies the same rule locally as in CI. Do not copy CI's `noise-status.json` into the local store to gain the right to fail: a Linux runner's clean A/A says nothing about this machine's Chromium.
 
-## The four maintainer tasks
+## The five maintainer tasks
 
 Each `harness local` task is one command, planned as the list of `harness` commands the matching workflow runs. `--dry-run` prints the plan and starts nothing, which is the safest way to learn what a task will do:
 
@@ -69,10 +72,10 @@ pnpm harness local nightly --runs 5 --dry-run
 ```text
 harness local nightly: 3 step(s)
 
-environment: HARNESS_IMAGE_PREFIX=quay.io/tutors-sdk/tutors-{app}
+environment: $env:HARNESS_IMAGE_PREFIX='quay.io/tutors-sdk/tutors-{app}';
 
   1. pull and verify the production images
-       harness images ensure --a main --b main --image-cache <checkout>\.harness\image-cache
+       harness images ensure --a main --b main --image-cache '<checkout>\.harness\image-cache'
   2. A/A on main, 5 runs, with load
        harness run --mode noise --a main --b main --runs 5 --load 20x30s --require-verified
   3. record the night in the local noise store
@@ -83,26 +86,26 @@ Things every task has in common:
 
 - The environment default is the workflows': `HARNESS_IMAGE_PREFIX` defaults to `quay.io/tutors-sdk/tutors-{app}` (a value you set yourself wins), and the production tag defaults to `HARNESS_PRODUCTION_TAG`, else `main`. `main` is a moving tag; set the deployed tag for anything you will rely on.
 - `--port-offset <n>` moves the compose stack's host ports ([below](#running-beside-your-own-stack)).
-- Nightly, gate and mutants hold a lock (`locks/run.lock`): one heavy run per machine. A second one stops at once with `another harness run holds ...` and exit 2. A lock whose holder has died is taken over. The `watch` holds its own lock.
+- Nightly, gate, mutants and smoke hold a lock (`locks/run.lock`): one heavy run per machine. A second one stops at once with `another harness run holds ...` and exit 2. A lock whose holder has died is taken over. The `watch` holds its own lock.
 - The exit code is the worst of the steps.
-- A plan prints the override reason without quotes; if you copy a printed line to run it by hand, quote the reason yourself.
+- The printed plan is quoted for your shell so that you can paste a line back: on Windows the environment line is PowerShell syntax (`$env:NAME='value';`, a quote inside a value doubled), on macOS and Linux it is `NAME='value'` (a quote inside a value written `'''`). cmd.exe does not read single quotes.
 
 ### Nightly A/A: `harness local nightly`
 
 ```console
-pnpm harness local nightly [--tag T] [--runs n] [--load 20x30s] [--image-cache dir] [--store dir] [--no-record] [--dry-run] [--port-offset n]
+pnpm harness local nightly [--tag T] [--runs 5] [--load 20x30s] [--image-cache dir] [--store dir] [--no-record] [--dry-run] [--port-offset n]
 ```
 
 1. `images ensure --a T --b T --image-cache <HARNESS_HOME>/image-cache`: pull the production images and verify their signatures. With the registry down, last night's verified images come back from the cache and the night is *degraded*.
-2. `run --mode noise --a T --b T --runs n --load 20x30s --require-verified`, where `n` is `--runs` or the workflow's run count, and the load is `--load` or `20x30s`.
+2. `run --mode noise --a T --b T --runs 5 --load 20x30s --require-verified` (five runs and `20x30s` unless you pass `--runs` or `--load`).
 3. `noise record --status <that run> --tag T`: append the night to the noise store, keep the ratchet, write the summary. Exit `1` when the ratchet is broken. `--no-record` leaves this step out.
 
-`--store` names another noise store for step 3 (default `<HARNESS_HOME>/noise`). See [chapter 5](05-noise-and-self-test.md).
+`--store` names another noise store for step 3 (default `<HARNESS_HOME>/noise`). Before the first one, and after a quiet week, run `harness vuln-db update` ([below](#the-vulnerability-database)): a run scans with the database already on disk and never updates it. See [chapter 5](05-noise-and-self-test.md).
 
 ### Release gate for a candidate: `harness local gate`
 
 ```console
-pnpm harness local gate --a 16.2.0 --b 16.3.0-rc.1 [--claims path/to/claims.yaml] [--rules path-or-url] [--runs n] \
+pnpm harness local gate --a 16.2.0 --b 16.3.0-rc.1 [--claims path/to/claims.yaml] [--rules path-or-url] [--runs 5] \
     [--a-digests d] [--b-digests d] [--only release|migration|upgrade] \
     [--migrations-a v16.2.0 --migrations-b <sha>] \
     [--override-reason "why, 20+ characters" --override-by leigh] [--dry-run]
@@ -132,6 +135,30 @@ pnpm harness local mutants [--base T] [--dry-run]
 
 `images ensure --a T --b T`, then `mutants --base T`: an A/A first, then each of the ten planted regressions must FAIL and be attributed. The mutants are built locally and syft must be installed (`harness doctor --for mutants`). `--base` defaults like the nightly's tag. See [chapter 5](05-noise-and-self-test.md#the-mutant-self-test).
 
+### The two-stacks smoke: `harness local smoke`
+
+```console
+pnpm smoke                                   # the same command
+pnpm harness local smoke [--tag 16.2.0] [--only stacks|migration] [--dry-run]
+```
+
+What the CI job "Two stacks boot and one journey runs (A/A)" does; `ci.yml` calls exactly this. Four steps, in order, and the first that does not do what it must stops the rest:
+
+```text
+harness local smoke: 4 step(s)
+
+  1. pull and verify, or build, the images
+       harness images ensure --a main --b main
+  2. both stacks boot and one journey runs, A/A on main
+       harness run --mode noise --a main --b main --set fixture --journey anonymous-student-reads-course
+  3. migration rehearsal: the expanding fixture must pass
+       harness run --mode migration --a dir:tests/fixtures/migrations/a --b dir:tests/fixtures/migrations/b-good
+  4. migration rehearsal: the contracting fixture must be rejected
+       harness run --mode migration --a dir:tests/fixtures/migrations/a --b dir:tests/fixtures/migrations/b-bad
+```
+
+Step 4 expects the FAIL verdict (exit 1): accepting the contracting fixture fails the smoke, and so does a harness error (exit 2), which is not a rejection. `--only stacks` runs steps 1 and 2, `--only migration` runs 3 and 4. It takes roughly ten minutes and needs what `harness doctor --for nightly` checks (Docker, cosign, Chromium), and `bash` on a machine whose registry lacks the tag.
+
 ### Post-deploy watch: `harness local watch`
 
 ```console
@@ -141,11 +168,22 @@ pnpm harness local watch [--recorded out/<time>-release] [--production reader=UR
 
 Runs the reference journeys against production and compares them with the recorded candidate: by default the newest `out/*-release` run that did not FAIL (an overridden FAIL counts), or the one you name with `--recorded`. `--production` defaults to `HARNESS_PRODUCTION_URLS`, else `reader=https://tutors.dev,catalogue=https://catalogue.tutors.dev,live=https://live.tutors.dev`.
 
-- Without `--once` it loops until Ctrl-C, starting each iteration one `--interval` after the last *started* (default `15m`, at least `10s`). It never exits on a difference.
-- A difference (verdict FAIL) writes `<HARNESS_HOME>/rollbacks/<time>-rollback.md`, what the `rollback` issue would have said. Nothing notifies you: watch the folder, or wrap the command.
+- Without `--once` it loops until Ctrl-C, starting each iteration one `--interval` after the last *started* (default `15m`, at least `10s`). It never exits on a difference. Each log line is stamped with the time it is printed, followed by `(run started <time>)`.
+- A difference (verdict FAIL) writes `<HARNESS_HOME>/rollbacks/<time>-rollback.md`, what the `rollback` issue would have said. Nothing notifies you: watch the folder, or wrap the command. A local warning or failure says `decide whether to roll back`: nothing here opens an issue. The workflow's wording (`open a rollback issue`) applies where a CI step opens one (`HARNESS_ROLLBACK_ISSUE`, else GitHub Actions).
 - A watch that finds the previous one still running does nothing (`--once` exits 0), as the workflow's concurrency group does.
 - It needs no Docker.
+- **A fresh checkout or worktree has no recorded run.** The recorded candidate is a release run under *this* checkout's `out/`, and a new `git worktree` has its own empty `out/` and `.harness/`. Until `harness local gate` has produced a release run there, or you pass `--recorded <dir>` (a release run directory from another checkout, or a downloaded `release-report` artifact), the watch runs nothing and exits 2 with `cannot run: no recorded release run to compare production with: run `harness local gate` first, or pass --recorded <release run dir>`. It is not a failure of production.
 - `--deployed`, `--deployed-digests` and `--release-record` add the deployment check: what the deploy says it deployed is compared with the release record of the judged candidate, and a difference (or no record) makes a pass a warn ([chapter 6](06-ci-integration.md#the-deployed-dispatch)).
+
+### Comparing main with the last release
+
+There is no `harness local compare` command yet; one is being scripted (main against the last release in one command). Today the equivalent is the gate restricted to release mode, with the last release tag as production and `main` as the candidate:
+
+```console
+pnpm harness local gate --a <last release tag> --b main --only release --runs 3
+```
+
+`--only release` runs the noise status, `images ensure` and release mode, and leaves out the migration and upgrade rehearsals. Add `--claims` and `--rules` if you want a release's claims applied, and use `--runs 5` when you need timing to be judgeable (three runs cannot reach significance). The result is an investigation: `main` is a moving tag, so it is not a candidate a release decision should rest on.
 
 ## The run modes
 
@@ -159,7 +197,7 @@ The flags shared by the capturing modes:
 
 | Flag | Meaning |
 | --- | --- |
-| `--runs n` | journey repetitions per side. Default 1; timing needs at least four to be judgeable, five is the recommendation |
+| `--runs n` | journey repetitions per side. Default 1 for a direct `run`; the workflows and the `local` wrappers use 5. Timing needs at least four to be judgeable |
 | `--set fixture,auth,reference` | journey sets (default all three) |
 | `--journey name` | one journey; repeatable |
 | `--load 20x30s` | k6 after the journeys on each side, `<rate>x<duration>` |
@@ -215,7 +253,7 @@ pnpm harness run --mode post-deploy \
   --production reader=https://tutors.dev,catalogue=https://catalogue.tutors.dev,live=https://live.tutors.dev
 ```
 
-No stacks. Side a is the recorded candidate's capture from a release run (filtered to the `reference` journeys, so that release run must have included that set); side b is captured now against the live URLs with the same journeys: anonymous, read-only traffic against the published reference course. Metrics, logs, runtime and persistence are not compared, and a set of CDN-only header masks applies. `--deployed <tag>`, `--deployed-digests <digests>` and `--release-record <file|dir>` add the deployment check.
+No stacks. Side a is the recorded candidate's capture from a release run (filtered to the `reference` journeys, so that release run must have included that set); side b is captured now against the live URLs with the same journeys: anonymous, read-only traffic against the published reference course. Metrics, logs, runtime and persistence are not compared, and a set of CDN-only header masks applies. Production's own URLs read as `{{origin}}` on both sides, `content-type` and `cache-control` are compared in their canonical form, and secret-shaped values are redacted ([chapter 3](03-reading-a-report.md#post-deploy-against-a-live-site)). `--deployed <tag>`, `--deployed-digests <digests>` and `--release-record <file|dir>` add the deployment check.
 
 ### `any-two`: an investigation
 
@@ -241,7 +279,7 @@ Normalise, compare, match claims and gate again on captures already on disk. Use
 | kind cluster name | yes | `HARNESS_KIND_CLUSTER`, then `HARNESS_PROJECT`, else the same derived name. Plain `tutors-harness` is refused. |
 | Host ports | yes, compose only | one variable each, or all at once with `--port-offset n` on `harness local ...` and `harness doctor`. A variable you set yourself wins. |
 | The network subnet `172.29.0.0/24` and the identity stub's address `172.29.0.10` | **no** | fixed in `compose.harness.yaml`. Two harness stacks, or any Docker network on that range, cannot coexist. The run lock serialises harness runs. |
-| kind host ports 4100 to 4202 | **no** | fixed in `deploy/kind/kind-config.yaml` |
+| kind host ports 4100 to 4203 | **no** | fixed in `deploy/kind/kind-config.yaml` |
 
 The host ports of the compose stack, and the variable that moves each:
 
@@ -257,13 +295,13 @@ The host ports of the compose stack, and the variable that moves each:
 | `READER_AUTH_PORT_A`, `READER_AUTH_PORT_B` | 3103, 3203 | the signed-in reader |
 | `TIME_PORT_A`, `TIME_PORT_B` | 3104, 3204 | time |
 
-`--port-offset 1000` shows in the plan's environment:
+`--port-offset 2000` shows in the plan's environment (PowerShell syntax on Windows, `NAME='value'` elsewhere; real output):
 
 ```text
-environment: HARNESS_IMAGE_PREFIX=quay.io/tutors-sdk/tutors-{app} COURSE_PORT=9080 IDENTITY_PORT=9443 EDGE_PORT=4300 PERSISTENCE_PORT_A=9090 READER_PORT_A=4100 CATALOGUE_PORT_A=4101 LIVE_PORT_A=4102 READER_AUTH_PORT_A=4103 PERSISTENCE_PORT_B=9091 READER_PORT_B=4200 ...
+environment: $env:HARNESS_IMAGE_PREFIX='quay.io/tutors-sdk/tutors-{app}'; $env:COURSE_PORT=10080; $env:IDENTITY_PORT=10443; $env:EDGE_PORT=5300; $env:PERSISTENCE_PORT_A=10090; $env:READER_PORT_A=5100; $env:CATALOGUE_PORT_A=5101; $env:LIVE_PORT_A=5102; $env:READER_AUTH_PORT_A=5103; $env:TIME_PORT_A=5104; $env:PERSISTENCE_PORT_B=10091; $env:READER_PORT_B=5200; ...
 ```
 
-An offset of 1000 lands the stack on 4100 to 4203, which is where a kind cluster's fixed host ports live (4100 to 4202). If you keep a kind cluster around, use an offset such as 2000.
+An offset of 1000 would land the stack on 4100 to 4204, on top of a kind cluster's fixed host ports (4100 to 4203). If you keep a kind cluster around, use an offset such as 2000.
 
 A run never stops, removes or prunes anything outside its own compose project (`docker compose -p <project> down`) and its own kind namespaces.
 
@@ -329,7 +367,7 @@ Verification needs the network (Sigstore's transparency log): there is no offlin
 When the registry lacks a bare tag, `images ensure` builds the images from the monorepo ref with `scripts/build-images.sh`, trying `v<tag>`, `<tag>` and `release/<tag>` in turn (`--ref-a` and `--ref-b` name the ref explicitly; `TUTORS_REPO` names another repository). It is loud on purpose, because a local build is not the image that ships:
 
 ```text
-  BUILDING FROM SOURCE: 16.9.9 is not in the registry; building the three images from monorepo ref v16.9.9
+  BUILDING FROM SOURCE: 16.9.9 is not in the registry; building the four images from monorepo ref v16.9.9
 ```
 
 The side is recorded `built-from-ref v16.9.9@<sha>`, the report shows a warning at the top, and the reasons say the side "was built here from monorepo ref ..., not pulled from the registry: it is not the image that ships". A release decision should rest on `pulled+verified` on both sides. It needs `bash` (Git Bash on Windows; see below).
@@ -400,26 +438,61 @@ cron works. A `launchd` agent with `StartCalendarInterval` does the same and sur
 - `harness noise status` and `harness noise history` for the streak.
 - `.harness/rollbacks/` for what a failing watch found.
 
-## Retention of `out/`
+## The vulnerability database
 
-**Nothing prunes `out/`.** Each run directory holds screenshots and captures for both sides, so `out/` grows with every nightly, gate and mutants run. Delete old run directories by hand or on a schedule. Two cautions:
+The `vulns` artefact scans each image's SBOM with grype, and the harness never lets grype update its database during a run: a CVE published between the two sides' scans would look like a change in the release. So the database is one directory you fetch once, before a run, and refresh when it is old. It is the same directory, command and rules as CI.
 
-- `harness local watch` compares production with the newest `out/*-release` run that did not FAIL. Keep at least that one, or pass `--recorded` with a copy you have kept.
-- `HARNESS_HOME` is different: `noise-history.json` keeps the most recent 400 nights, `image-cache/` is overwritten by each verified night, `releases/` holds one small file per candidate, `rollbacks/` accumulates, and `overrides.jsonl` is an append-only, hash-chained record that you should keep.
-
-Delete run directories older than 14 days:
-
-```bash
-# bash, zsh, Git Bash
-find out -mindepth 1 -maxdepth 1 -type d -mtime +14 -exec rm -rf {} +
+```console
+harness vuln-db update            # once, online: a download of about 160 MB, 2.1 GB on disk, into <HARNESS_HOME>/vuln-db
+harness vuln-db status            # which database a scan will read: schema, build time, age, checksum (--json for a program)
+harness doctor --for nightly      # grype's version (CI pins 0.119.0), the directory, the database's age against the limit
 ```
 
-```powershell
-# PowerShell
-Get-ChildItem out -Directory | Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-14) } | Remove-Item -Recurse -Force
+- **Where.** `<HARNESS_HOME>/vuln-db` (`.harness/vuln-db`, the path CI caches), or `HARNESS_VULN_DB_DIR`. Unset, a scan uses `<HARNESS_HOME>/vuln-db` if it exists, so after one `harness vuln-db update` every run on this machine reads it without a variable. Before that, grype's own cache is used, with updates off.
+- **How old.** grype refuses a database older than 5 days, so `harness doctor` warns at 5 (`HARNESS_VULN_DB_MAX_AGE_DAYS` moves both). On a laptop, run `harness vuln-db update` before a `local gate` or `local nightly` that follows a quiet week. `local nightly` and `local gate` do not run the update themselves.
+- **Without it, or without grype**, the artefact is `NOT COLLECTED: <reason>`, with the command that fixes it in the reason, and informational. CI sets `HARNESS_REQUIRE_STATIC=1` in the nightly and the release job (not in the mutants); a local run does not, because a laptop may lack grype or an attestation. Set `HARNESS_REQUIRE_ARTEFACTS=static` (or `vulns` alone) to judge with CI's strictness: `harness doctor` then fails, instead of warning, on a missing grype or database, and `harness vuln-db status` exits 1 on an unusable one.
+- **Install grype** (no admin rights): on Windows, unzip `grype_0.119.0_windows_amd64.zip` from the [release page](https://github.com/anchore/grype/releases/tag/v0.119.0) and put `grype.exe` on `PATH`; on macOS `brew install grype`; on Linux `curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b ~/.local/bin v0.119.0`.
+
+Real output on a machine with no grype and no database (exit 0, because the artefact is not required):
+
+```text
+vulnerability database: NOT USABLE
+  directory  grype's own default cache (no HARNESS_VULN_DB_DIR, and no HARNESS_HOME/vuln-db yet)
+  grype is not installed
+  fix: harness vuln-db update (fetches the database into HARNESS_HOME/vuln-db once; needs the network), then run again; until then the vulnerability artefact is 'not collected' (informational: the vulnerability artefact is not required; see HARNESS_REQUIRE_ARTEFACTS)
 ```
 
-Docker keeps images too. `docker system prune` drops unused images, yours included; use it deliberately, not from a schedule.
+## Disk: `harness prune`
+
+`out/` (screenshots, k6 output, captures) and the image cache (a `docker save` of the production images, a gigabyte or more) grow without bound. `harness prune` frees them.
+
+```console
+pnpm harness prune                        # what would go, and how much it frees; deletes nothing
+pnpm harness prune --yes                  # delete it
+pnpm harness prune --older-than-days 7 --keep-last 2 --yes
+```
+
+It is a dry run unless you say `--yes` (`--dry-run` is accepted and wins over `--yes`). Real output of a dry run on an output directory with nothing old:
+
+```text
+harness prune (a dry run: nothing is deleted; add --yes to delete)
+  <checkout>\out: run directories older than 14 days that are not among the newest 5 of their mode
+    nothing to remove
+  would free 0 B in 0 run directories
+```
+
+A run directory (`<UTC time>-<mode>` directly under `out/`; nothing else there is touched) goes only when **all** of these hold:
+
+| Rule | Default | Why |
+| --- | --- | --- |
+| older than `--older-than-days` | 14 | the nightly makes one directory a day: a fortnight is what you look back through when a mask or a regression arrives; the noise store's history keeps the verdicts for longer |
+| not among the newest `--keep-last` of its mode | 5 | a mode that runs rarely (release, upgrade) keeps its last few runs however old they are |
+| not the newest release run that did not FAIL | always | it is what `harness local watch` compares production with |
+| not started or changed in the last 6 hours | always | `harness run` takes no lock and may be running; no flag overrides this |
+
+`--older-than-days 0` makes age no reason to keep a directory; `--keep-last 0` makes "newest" none. The image cache (`<HARNESS_HOME>/image-cache`, or `--image-cache <dir>`) loses its `images.tar` and `manifest.json` when it was saved more than `--image-cache-days` (30) ago: the nightly rewrites it every night, so an older one means nothing refreshed it and it would no longer stand for production. `--out <dir>` names another output root, and `--json` prints the result as data.
+
+It never touches the state that has to persist: the noise store, the release records, the override log, the rollbacks, the locks and the provenance ledger are not under `out/`. It refuses (exit 2, nothing removed) while a `harness local` task or a watch holds its lock, and holds the run lock itself while it deletes. Exit 1 means something could not be removed, on Windows usually a file another program has open: it is reported, left as it was, and the rest goes on; close the program and run it again. Docker keeps images too: `docker system prune` drops unused images, yours included; use it deliberately, not from a schedule.
 
 ## Windows notes
 
@@ -435,4 +508,5 @@ Docker keeps images too. `docker system prune` drops unused images, yours includ
 - **Paths.** Keep the checkout short; run directories nest deep. `git config --global core.longpaths true` and Windows' `LongPathsEnabled` if you cannot.
 - **Ports.** Windows reserves ranges (Hyper-V, WinNAT). `netsh int ipv4 show excludedportrange protocol=tcp` lists them; `harness doctor` reports a reserved port as such. Move the stack with `--port-offset`.
 - **Docker Desktop** must be on Linux containers (WSL 2 backend). Its VM clock drifts after sleep or hibernation; `harness doctor` compares it with the host's, and restarting Docker Desktop fixes it.
+- **syft.** Native syft cannot unpack an image on Windows (it caches layers in files whose names contain `:`), so the default SBOM generator there is the same syft run in its `anchore/syft` container over the Docker socket, and no native syft is needed. Set `HARNESS_SBOM_CMD` to use one.
 - **Tools installed as `.cmd` shims** (npm-global installs) will not start: the harness only spawns `docker`, `cosign`, `syft`, `grype`, `kind`, `kubectl`, `git` and `bash`, which are `.exe` files.

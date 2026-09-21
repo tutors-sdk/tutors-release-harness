@@ -16,6 +16,7 @@ report: <checkout>/out/2026-09-21T11-26-16-release/report.html
 - [How to read a hunk](#how-to-read-a-hunk)
 - [Provenance banners](#provenance-banners)
 - [Degraded and not collected](#degraded-and-not-collected)
+- [Post-deploy against a live site](#post-deploy-against-a-live-site)
 - [Real regression, noise or missing claim?](#real-regression-noise-or-missing-claim)
 - [Timing and statistics](#timing-and-statistics)
 
@@ -81,7 +82,7 @@ Claim each one in the release's `claims.yaml` with the Rule or changelog entry t
 
 </details>
 
-<sub>harness 1.3.0 (164963a0b8cf, contract 1.3.0) · 2026-09-21T11:26:16.613Z · clock 2026-09-16T09:05:00.000Z · 1 run(s) · masks fired: response-date×2, request-id×2, metrics-process×4</sub>
+<sub>harness 1.4.1 (9513b145e26c, contract 1.4.0) · 2026-09-21T11:26:16.613Z · clock 2026-09-16T09:05:00.000Z · 1 run(s) · masks fired: response-date×2, request-id×2, metrics-process×4</sub>
 ```
 
 Read it top to bottom.
@@ -112,7 +113,7 @@ The report is the machine-readable record. Its shape (`additionalProperties: fal
 ```jsonc
 {
   "schemaVersion": 1,                      // the contract's major version: refuse a value you do not know
-  "harness": { "version": "1.3.0", "gitSha": "164963a0...", "contractVersion": "1.3.0" },
+  "harness": { "version": "1.4.1", "gitSha": "9513b145...", "contractVersion": "1.4.0" },
   "mode": "release",                       // noise | release | any-two | upgrade | migration | post-deploy
   "substrate": "compose",
   "ranAt": "2026-09-21T11:26:16.613Z",     // when the comparison was judged (wall clock)
@@ -151,9 +152,9 @@ What the summaries look like, per artefact:
 | `dom` | `reader:course: semantic DOM differs (+1 −1 lines at line 2)` | a diff of the accessibility snapshot: `-  - link "Topic 1"` then `+  - link "Topic 1 (4 min read)"` |
 | `dom` | `journey "student-signs-in" completed on a but failed on b` | the error b hit. Not a claim: a journey that breaks is a bug |
 | `screenshot` | `reader:home: 0.42% of pixels differ (threshold 0.10%)` | `diff image: diff/<file>.png` |
-| `network` | `reader:course: new request on b: GET /api/presence` / `request no longer made on b` / `requested 1× on a, 2× on b` / `... status changed: 200 → 304` | |
-| `console` | `reader:course: new console message on b` | `error: Failed to load resource: 404 /assets/logo.svg` |
-| `headers` | `reader:course: header added on b: content-security-policy: ...` | |
+| `network` | `reader:course: new request on b: GET /api/presence` / `request no longer made on b` / `requested 1× on a, 2× on b` / `... status changed: 200 → 304` / `... cache-control changed: ...` | |
+| `console` | `reader:course: new console message on b` | `error: Failed to load resource: 404 /assets/logo.svg`. Secret-shaped values are already redacted here: `error: Failed to load https://x.test/?apikey=<redacted>&x=1` |
+| `headers` | `reader:course: header added on b: content-security-policy: ...` / `... cache-control changed: immutable,max-age=31536000,public → immutable,max-age=300,public` | the values are the canonical ones: a mere reordering or re-spelling is not a hunk, a changed `max-age` is |
 | `axe` | `reader:topic: new axe violation on b: color-contrast (serious)` | the CSS target |
 | `focus` | `reader:course: keyboard order changed (3 stops on a, 2 on b)` | the stops, diffed |
 | `metrics` | `reader: tutors_course_loads_total moved by 1 on a and 9 on b under the same traffic` / `series missing on b` / `new series on b` | |
@@ -202,13 +203,21 @@ The noise status carries `degraded: [...]`. The gate never trusts a degraded sta
 advisory only: the last A/A run (2026-09-21T13:25:01.000Z) was degraded and does not count: reader: cached
 ```
 
-**Not collected.** An artefact that could not be gathered: no SBOM attestation for a locally built image, syft or grype not installed, a container that could not be inspected, a restart that could not be driven. It appears as a line in the reasons and, in the Image artefacts table, as a cell:
+**Not collected.** An artefact that could not be gathered: no SBOM attestation for a locally built image, syft or grype not installed, no vulnerability database, a container that could not be inspected, a restart that could not be driven. Every artefact says so in one shape, in the reasons, in the hunk's summary, in the run log and, for the image artefacts, in a cell of the Image artefacts table:
 
 ```text
-NOT COLLECTED: sbom of reader, catalogue, live on side b: <reason>. It was not compared.
+NOT COLLECTED: sbom of reader, catalogue, live on side b: <reason>
 ```
 
-For the image artefacts it is an informational hunk (`<app>/not-collected`), unless `HARNESS_REQUIRE_STATIC=1` makes it a failing one. For `runtime` and `startup` it is always a failing hunk (`runtime/not-collected`, `startup/not-collected`, `<app>/not-collected`): claim it only with a reason a reviewer can weigh, or fix the collector. An operator's choice (`--no-runtime`, `--startup-restarts 0`, always in `upgrade` mode and in the mutants) is informational and says so. A missing artefact is never a clean artefact.
+The hunk is `<app>/not-collected` (or `<artefact>/not-collected` when the whole artefact is missing: `runtime/not-collected`, `startup/not-collected`). Its severity follows one rule: **informational, unless the artefact is required, and then failing.**
+
+| Artefact | Required | Notes |
+| --- | --- | --- |
+| `runtime`, `startup` | always | their collectors run against stacks the harness started, so a gap is a fault: fix the collector, or claim it only with a reason a reviewer can weigh |
+| `image-manifest`, `sbom`, `vulns` | when `HARNESS_REQUIRE_ARTEFACTS` names them (`sbom`, `vulns`, `static` for all three, `all`), or `HARNESS_REQUIRE_STATIC=1` | the nightly A/A and the release job set the latter, so a missing SBOM or scanner is a dirty night or a failed release there; a laptop is informational |
+| `bus` | only with `HARNESS_REQUIRE_ARTEFACTS=bus` | adds no hunk at all until a bus exists |
+
+An operator's choice (`--no-runtime`, `--startup-restarts 0`, always in `upgrade` mode and in the mutants) is informational and says so. A missing artefact is never a clean artefact.
 
 **Deployed images.** In post-deploy mode, if the deploy told the harness what it deployed, the report has a *Deployment* section with the digests deployed against the digests judged, and a banner when they differ:
 
@@ -217,6 +226,18 @@ The deployed images are NOT the ones release mode judged (16.3.0-rc.4): reader: 
 ```
 
 `match`, `differs`, `incomplete`, `no-record` and `not-reported` are the five states; anything but `match` is a warning and turns a `pass` into a `warn`. It never turns anything into a `fail`.
+
+## Post-deploy against a live site
+
+Post-deploy mode compares the recorded candidate (side a, a capture made against the harness's own stack) with production (side b, a live deployment behind a CDN). Left alone, that would show a wall of differences that are spelling, not behaviour. What the harness does about it, and what you will see:
+
+- **Canonical headers.** `content-type` and `cache-control` are compared in one form on both sides. `public,immutable,max-age=1` and `max-age=1, public, immutable` are equal; a different `max-age`, a lost `immutable`, another media type or a non-default charset is still a hunk. The values in a hunk's summary are the canonical ones.
+- **Symmetric origins.** The URLs of the external side (`HARNESS_PRODUCTION_URLS`) read as `{{origin}}` in *both* sides' captures: DOM, network URLs, console and page path. A literal absolute link to production in the recorded side (the "Tutors v16" and "What's New" links in the reader, a link to `https://tutors.dev`) now reads the same as production's own. A link to another host, port or path is still a DOM hunk.
+- **CDN-only masks.** A few masks apply only in this mode, for headers and requests that exist solely because production sits behind Netlify (HSTS, its real-user-monitoring request, `no-cache` on documents, `max-age=0,must-revalidate,public` on static files). The report's Masks section says which fired.
+- **Redaction.** Secret-shaped values never reach a capture or a report ([chapter 1](01-concepts.md#normalising-and-masks)).
+- **The verdict wording.** `N new difference(s) between production and the recorded candidate: open a rollback issue` appears where a CI step opens one (`HARNESS_ROLLBACK_ISSUE`, else GitHub Actions); a local run says `decide whether to roll back` and never promises an issue.
+
+These changes were driven by a real, read-only run against production: before them it produced **67** differences, and after them **7** real ones, which is the difference between a verdict that could never be clean and one that says something. If a post-deploy report still lists differences that look like spelling, that is a candidate for a mask or a canonical form, not a claim: tell a maintainer.
 
 ## Real regression, noise or missing claim?
 
