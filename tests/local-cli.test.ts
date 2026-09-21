@@ -8,10 +8,10 @@
 import { spawnSync } from "node:child_process";
 import { mkdtempSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { bashCommand } from "../src/local/bash.ts";
-import { UsageError, doctorCommand, guardCommand, localCommand, noiseCommand, overrideCommand } from "../src/local/cli.ts";
+import { UsageError, doctorCommand, guardCommand, localCommand, noiseCommand, overrideCommand, vulnDbCommand } from "../src/local/cli.ts";
 import { appendOverride } from "../src/local/override-log.ts";
 
 const ROOT = resolve(import.meta.dirname, "..");
@@ -50,6 +50,21 @@ describe("usage errors are a message and exit 2, not a stack trace", () => {
     expect(() => overrideCommand("delete", {})).toThrow(/override list/);
     expect(() => overrideCommand("list", { since: "yesterday" })).toThrow(/ISO date/);
     await expect(doctorCommand({ for: "everything" })).rejects.toThrow(/--for takes/);
+    expect(() => vulnDbCommand("refresh", {})).toThrow(/vuln-db update\|status/);
+    expect(() => vulnDbCommand(undefined, {})).toThrow(UsageError);
+  });
+
+  it("vuln-db with no scanner on PATH says so and how to install it (through the process, an empty PATH, nothing fetched)", () => {
+    const home = mkdtempSync(join(tmpdir(), "harness-cli-"));
+    const r = harness(["vuln-db", "update"], home, { PATH: dirname(process.execPath) });
+    expect(r.code).toBe(1);
+    expect(r.out).toContain("grype is not installed");
+    expect(r.out).toContain("v0.119.0");
+    const status = harness(["vuln-db", "status"], home, { PATH: dirname(process.execPath) });
+    expect(status.code).toBe(0);
+    expect(status.out).toContain("NOT USABLE");
+    expect(harness(["vuln-db", "status"], home, { PATH: dirname(process.execPath), HARNESS_REQUIRE_STATIC: "1" }).code).toBe(1);
+    expect(harness(["vuln-db", "bogus"], home).code).toBe(2);
   });
 
   it("an interval that is not one is refused even in a dry run", async () => {

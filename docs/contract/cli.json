@@ -14,6 +14,7 @@
     { "name": "noise", "stable": true, "since": "1.3.0", "subcommands": ["record", "status", "history"], "unstableSubcommands": ["history"], "summary": "The local noise store: the noise branch as a directory. record appends a night and keeps the ratchet; status says whether the latest status licenses a FAIL; history (not stable) prints the ratchet and the streak." },
     { "name": "guard", "stable": true, "since": "1.3.0", "subcommands": ["masks", "engine", "all"], "summary": "The CI guards (masks land in their own PR; an engine change needs a version bump) against a local ref." },
     { "name": "override", "stable": false, "since": "1.3.0", "subcommands": ["list"], "summary": "The local, append-only record of overridden FAILs (the harness-override issues, locally)." },
+    { "name": "vuln-db", "stable": false, "since": "1.3.0", "subcommands": ["update", "status"], "summary": "The pinned vulnerability database (grype's): update fetches it into HARNESS_VULN_DB_DIR, else HARNESS_HOME/vuln-db (the only place a database is ever updated: before a run, never during one); status says which database a scan would read, its build time, age and checksum." },
     { "name": "local", "stable": false, "since": "1.3.0", "subcommands": ["nightly", "gate", "mutants", "watch"], "summary": "One command per maintainer task, planned from the same harness commands the workflows run; --dry-run prints the plan." }
   ],
   "flags": [
@@ -145,7 +146,11 @@
     },
     "HARNESS_VULN_DB_DIR": {
       "default": "",
-      "meaning": "since 1.2.0. A pre-fetched scanner database directory (GRYPE_DB_CACHE_DIR / TRIVY_CACHE_DIR). Scanner database updates are always switched off, so this is what pins the scan"
+      "meaning": "since 1.2.0. A pre-fetched scanner database directory (GRYPE_DB_CACHE_DIR / TRIVY_CACHE_DIR). Scanner database updates are always switched off, so this is what pins the scan. Since 1.3.0, unset means HARNESS_HOME/vuln-db when `harness vuln-db update` has made it, else the scanner's own cache"
+    },
+    "HARNESS_VULN_DB_MAX_AGE_DAYS": {
+      "default": "5",
+      "meaning": "since 1.3.0. How old (days since built) the vulnerability database may be: `harness doctor` warns beyond it, and it is passed to grype as its own limit (GRYPE_DB_MAX_ALLOWED_BUILT_AGE), so a scan and the doctor agree. 5 is grype's own default"
     },
     "HARNESS_ROLLBACK_ISSUE": {
       "default": "",

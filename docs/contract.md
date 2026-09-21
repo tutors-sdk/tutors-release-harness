@@ -630,8 +630,9 @@ Environment variables in the contract, all since 1.1.0 unless the row says other
 | `HARNESS_SBOM_SOURCE` | `auto` | since 1.2.0. Where each image's SBOM comes from: `auto` or `attestation` (the cosign SPDX attestation of a pulled image), or `generate` (a local generator, on both sides) |
 | `HARNESS_SBOM_CMD` | `syft docker:{image} -o spdx-json`; on a Windows host `docker run --rm -v /var/run/docker.sock:/var/run/docker.sock anchore/syft:latest docker:{image} -o spdx-json -q`, because native syft cannot unpack an image there (colons in layer file names) | since 1.2.0. The generator for `generate`; `{image}` is the image reference. Split on whitespace and quotes; no shell |
 | `HARNESS_VULN_CMD` | `grype sbom:{sbom} -o json` | since 1.2.0. The scanner; `{sbom}` is the path of the SPDX SBOM; must print grype or trivy JSON. trivy: `trivy sbom --format json {sbom}` |
-| `HARNESS_VULN_DB_DIR` | unset | since 1.2.0. A pre-fetched scanner database directory. Scanner database updates are always switched off, so a scan uses exactly this database |
-| `HARNESS_ROLLBACK_ISSUE` | unset | unreleased. Post-deploy wording only: `1`, `true` or `yes` says a CI step opens a rollback issue on a FAIL (the reason says `open a rollback issue`); `0`, `false` or `no` says none does (`decide whether to roll back`). Unset: GitHub Actions has the step, anything else does not |
+| `HARNESS_VULN_DB_DIR` | unset | since 1.2.0. A pre-fetched scanner database directory. Scanner database updates are always switched off, so a scan uses exactly this database. Since 1.3.0, unset means `<HARNESS_HOME>/vuln-db` when `harness vuln-db update` has created it, else the scanner's own cache |
+| `HARNESS_VULN_DB_MAX_AGE_DAYS` | `5` | since 1.3.0. Days since the vulnerability database was built beyond which `harness doctor` warns; also passed to grype as its own limit (`GRYPE_DB_MAX_ALLOWED_BUILT_AGE`), so a scan and the doctor agree. 5 days is grype's own default |
+| `HARNESS_ROLLBACK_ISSUE` | unset | since 1.3.0. Post-deploy wording only: `1`, `true` or `yes` says a CI step opens a rollback issue on a FAIL (the reason says `open a rollback issue`); `0`, `false` or `no` says none does (`decide whether to roll back`). Unset: GitHub Actions has the step, anything else does not |
 | `HARNESS_REQUIRE_STATIC` | unset | `1`, `true` or `yes`, since 1.2.0: a static image artefact that could not be collected is a failing hunk, not an informational one |
 
 Stdout is for people, except `harness version --json`. The last lines of
@@ -674,6 +675,15 @@ see [Overriding a FAIL](#overriding-a-fail)); `nightly-noise.yml` and
 Every job that runs `harness images ensure` first installs cosign ≥ 3 with
 `sigstore/cosign-installer`; the images are public, so no registry credentials
 are held.
+
+Since 1.3.0 the jobs that judge images (nightly noise, the release job, weekly
+mutants) also install grype, pinned (`anchore/scan-action/download-grype`), fetch
+its vulnerability database once with `harness vuln-db update` into
+`.harness/vuln-db`, cache it per UTC day and grype version, and never update it
+during a run; the nightly and release jobs set `HARNESS_REQUIRE_STATIC=1`, the
+mutants job does not. See [`contract/workflows.json`](contract/workflows.json)
+(`tools.grype`, `vulnerabilityDatabase`) and
+[images.md](images.md#the-vulnerability-database).
 
 ### Artifacts
 
@@ -879,7 +889,9 @@ the old name is left alone; and the `runs` default of `release-candidate` is now
 - **Not stable:** `harness local nightly|gate|mutants|watch` (wrappers planned
   from the stable commands, which change with the workflows), `harness override
   list` (a listing for people), `harness noise history` (the ratchet as text; the
-  file `noise-history.json` is what a program reads), and the flags only they
+  file `noise-history.json` is what a program reads), `harness vuln-db
+  update|status` (fetches, or reads, the pinned vulnerability database; the
+  workflows call it, and its output is for people), and the flags only they
   take: `--only`, `--migrations-a`, `--migrations-b`, `--interval`,
   `--port-offset`, `--dry-run`, `--once`, `--record`, `--last`, `--since`. They may
   change in a minor release.
@@ -960,6 +972,19 @@ the old name is left alone; and the `runs` default of `release-candidate` is now
 - `post-deploy.yml` opens the `rollback` issue on exit `1` only. Exit `2` fails
   the workflow and says "could not judge" in the job summary, without an issue;
   before, any failure of the step opened one, which said nothing about production.
+
+**The vulnerability database is one pinned directory** ([environment](#cli))
+
+- New command `harness vuln-db update|status` (not stable: see above). `update`
+  fetches grype's database into `HARNESS_VULN_DB_DIR`, else `<HARNESS_HOME>/vuln-db`:
+  the only place a database is ever updated, before a run, never during one.
+  `status` prints the database a scan would read, its build time, age and checksum.
+- `HARNESS_VULN_DB_DIR`, unset, now means `<HARNESS_HOME>/vuln-db` when that
+  directory exists (it did mean grype's own cache before); a machine that never ran
+  `vuln-db update` behaves as before. New environment variable
+  `HARNESS_VULN_DB_MAX_AGE_DAYS` (default `5`, grype's own limit): `harness doctor`
+  warns beyond it and it is passed to grype, so the two agree. Scans and reports are
+  unchanged.
 
 ### 1.2.0 (minor; R3, R5 and R7)
 

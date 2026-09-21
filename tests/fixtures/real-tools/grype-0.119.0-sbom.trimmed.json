@@ -1,0 +1,127 @@
+{
+  "matches": [
+    {
+      "vulnerability": {
+        "id": "CVE-2023-50387",
+        "dataSource": "https://security-tracker.debian.org/tracker/CVE-2023-50387",
+        "namespace": "debian:distro:debian:10",
+        "severity": "High",
+        "fix": {
+          "versions": [],
+          "state": "wont-fix"
+        }
+      },
+      "artifact": {
+        "name": "systemd",
+        "version": "252.39-1~deb12u2",
+        "type": "deb",
+        "purl": "pkg:deb/debian/systemd@252.39-1~deb12u2?distro=Debian"
+      }
+    },
+    {
+      "vulnerability": {
+        "id": "CVE-2023-50387",
+        "dataSource": "https://security-tracker.debian.org/tracker/CVE-2023-50387",
+        "namespace": "debian:distro:debian:10",
+        "severity": "High",
+        "fix": {
+          "versions": [
+            "255.4-1"
+          ],
+          "state": "fixed",
+          "available": [
+            {
+              "version": "255.4-1",
+              "date": "2026-02-27",
+              "kind": "first-observed"
+            }
+          ]
+        }
+      },
+      "artifact": {
+        "name": "systemd",
+        "version": "252.39-1~deb12u2",
+        "type": "deb",
+        "purl": "pkg:deb/debian/systemd@252.39-1~deb12u2?distro=Debian"
+      }
+    },
+    {
+      "vulnerability": {
+        "id": "CVE-2023-50387",
+        "dataSource": "https://security-tracker.debian.org/tracker/CVE-2023-50387",
+        "namespace": "debian:distro:debian:10",
+        "severity": "High",
+        "fix": {
+          "versions": [
+            "255.4-1"
+          ],
+          "state": "fixed",
+          "available": [
+            {
+              "version": "255.4-1",
+              "date": "2026-02-27",
+              "kind": "first-observed"
+            }
+          ]
+        }
+      },
+      "artifact": {
+        "name": "systemd",
+        "version": "252.39-1~deb12u2",
+        "type": "deb",
+        "purl": "pkg:deb/debian/systemd@252.39-1~deb12u2?distro=Debian"
+      }
+    },
+    {
+      "vulnerability": {
+        "id": "CVE-2023-50387",
+        "dataSource": "https://security-tracker.debian.org/tracker/CVE-2023-50387",
+        "namespace": "debian:distro:debian:10",
+        "severity": "High",
+        "fix": {
+          "versions": [
+            "255.4-1"
+          ],
+          "state": "fixed",
+          "available": [
+            {
+              "version": "255.4-1",
+              "date": "2026-02-27",
+              "kind": "first-observed"
+            }
+          ]
+        }
+      },
+      "artifact": {
+        "name": "systemd",
+        "version": "252.39-1~deb12u2",
+        "type": "deb",
+        "purl": "pkg:deb/debian/systemd@252.39-1~deb12u2?distro=Debian"
+      }
+    }
+  ],
+  "source": {
+    "type": "directory",
+    "target": "rootfs"
+  },
+  "distro": {
+    "name": "Debian",
+    "version": "",
+    "idLike": [
+      "Debian"
+    ]
+  },
+  "descriptor": {
+    "name": "grype",
+    "version": "0.119.0",
+    "db": {
+      "status": {
+        "schemaVersion": "v6.1.9",
+        "from": "https://grype.anchore.io/databases/v6/vulnerability-db_v6.1.9_2026-09-21T00:35:57Z_1789972764.tar.zst?checksum=sha256%3A3fac8f6fb69bb80a7956703caa7fed5d66ee0c936ca0a2c8fa127e4fe7835c7a",
+        "built": "2026-09-21T06:39:24Z",
+        "path": "<db dir>/6/vulnerability.db",
+        "valid": true
+      }
+    }
+  }
+}

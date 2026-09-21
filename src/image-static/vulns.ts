@@ -16,6 +16,8 @@ export interface VulnDeps {
   vulnCmd: string;
   /** Directory holding a pre-fetched scanner database, exported as GRYPE_DB_CACHE_DIR and TRIVY_CACHE_DIR. */
   dbDir?: string;
+  /** How old the database may be (HARNESS_VULN_DB_MAX_AGE_DAYS), exported as grype's own limit; unset, grype's default of 5 days applies. */
+  dbMaxAgeDays?: number;
 }
 
 /**
@@ -25,7 +27,7 @@ export interface VulnDeps {
  * database itself is fetched and versioned by whoever owns the runner
  * (docs/images.md, "Vulnerability scan").
  */
-export function scannerEnv(dbDir: string | undefined): NodeJS.ProcessEnv {
+export function scannerEnv(dbDir: string | undefined, maxAgeDays?: number): NodeJS.ProcessEnv {
   return {
     GRYPE_DB_AUTO_UPDATE: "false",
     GRYPE_CHECK_FOR_APP_UPDATE: "false",
@@ -33,9 +35,14 @@ export function scannerEnv(dbDir: string | undefined): NodeJS.ProcessEnv {
     TRIVY_SKIP_JAVA_DB_UPDATE: "true",
     TRIVY_OFFLINE_SCAN: "true",
     TRIVY_NO_PROGRESS: "true",
-    ...(dbDir ? { GRYPE_DB_CACHE_DIR: dbDir, TRIVY_CACHE_DIR: dbDir } : {})
+    ...(dbDir ? { GRYPE_DB_CACHE_DIR: dbDir, TRIVY_CACHE_DIR: dbDir } : {}),
+    ...(maxAgeDays ? { GRYPE_DB_MAX_ALLOWED_BUILT_AGE: `${Math.round(maxAgeDays * 24)}h` } : {})
   };
 }
+
+/** Appended when the scanner failed on its database rather than on the SBOM (grype: "failed to load vulnerability db: database does not exist" / "built 6 days ago (max allowed age is 5 days)"). */
+const DB_HINT = "fetch or refresh it with `harness vuln-db update`, before the run: the harness never lets the scanner update mid-run";
+const DB_FAILURE = /vulnerability db|vulnerability database|database does not exist|skip-db-update|failed to open db/i;
 
 const SCANNER_HINT = "https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy";
 
@@ -93,8 +100,11 @@ export function collectVulns(deps: VulnDeps, app: string, sbomText: string | und
     return { ok: false, reason: `HARNESS_VULN_CMD: ${e instanceof Error ? e.message : String(e)}` };
   }
   if (!argv.length) return { ok: false, reason: "HARNESS_VULN_CMD is empty" };
-  const result = deps.exec(argv[0]!, argv.slice(1), { env: scannerEnv(deps.dbDir) });
-  if (result.error || result.status !== 0) return { ok: false, reason: failureReason(argv[0]!, result, SCANNER_HINT) };
+  const result = deps.exec(argv[0]!, argv.slice(1), { env: scannerEnv(deps.dbDir, deps.dbMaxAgeDays) });
+  if (result.error || result.status !== 0) {
+    const reason = failureReason(argv[0]!, result, SCANNER_HINT);
+    return { ok: false, reason: !result.error && DB_FAILURE.test(result.stderr) ? `${reason} (${DB_HINT})` : reason };
+  }
   const parsed = parseScannerOutput(result.stdout);
   return parsed.ok ? parsed : { ok: false, reason: `${argv[0]}: ${parsed.reason}` };
 }

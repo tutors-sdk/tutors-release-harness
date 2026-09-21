@@ -17,7 +17,7 @@ import { refuseLegacyCluster } from "./project.ts";
 import { MODES, SUBSTRATES, type Mode, type Substrate } from "./types.ts";
 import { harnessInfo } from "./version.ts";
 import { helpFor } from "./local/usage.ts";
-import { UsageError, doctorCommand, guardCommand, localCommand, noiseCommand, overrideCommand, recordAppliedOverride } from "./local/cli.ts";
+import { UsageError, doctorCommand, guardCommand, localCommand, noiseCommand, overrideCommand, recordAppliedOverride, vulnDbCommand } from "./local/cli.ts";
 import { defaultNoise } from "./local/noise-store.ts";
 
 const USAGE = `tutors-release-harness
@@ -92,6 +92,11 @@ const USAGE = `tutors-release-harness
   harness doctor [--for nightly,gate,mutants,watch,kind] [--port-offset n] [--json]
       What this machine lacks to run the harness, and how to install it (Windows, macOS, Linux). Read-only.
       Exit 0 ready (warnings allowed), 1 something a run needs is missing, 2 usage.
+  harness vuln-db update|status [--json]
+      The pinned vulnerability database (grype's), one directory for CI and this machine: HARNESS_VULN_DB_DIR, else
+      HARNESS_HOME/vuln-db. update fetches it: the only place a database is ever updated, run it BEFORE a run (the scanner is
+      never allowed to update during one). status says which database a scan would read, when it was built, how old it is
+      and its checksum; exit 0 when usable, and, when it is not, 1 under HARNESS_REQUIRE_STATIC and 0 without it. Not stable.
   harness noise record --status <noise run dir | noise-status.json> [--report f] [--tag T] [--store dir] [--run-url u] [--summary f] [--masks f]
       Append tonight's A/A to the noise store (the local \`noise\` branch): status, history, summary. Exit 1 when the ratchet is broken.
   harness noise status [--store dir] [--noise-max-age-days 7] [--require] [--json]
@@ -382,6 +387,8 @@ async function main(argv: string[]): Promise<number> {
     }
     case "doctor":
       return doctorCommand(values);
+    case "vuln-db":
+      return vulnDbCommand(positionals[0], values);
     case "noise":
       return noiseCommand(positionals[0], values);
     case "guard":
