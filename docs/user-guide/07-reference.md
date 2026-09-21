@@ -28,7 +28,7 @@ Invoke as `pnpm harness <command>` from a checkout (Node 22 or newer, `pnpm inst
 | `harness noise history` | **no** | 1.3.0 | The ratchet, the clean streak and the last nights. |
 | `harness guard masks\|engine\|all --base <ref>` | yes | 1.3.0 | The CI guards against a local ref. |
 | `harness override list` | **no** | 1.3.0 | The local, append-only record of overridden FAILs. |
-| `harness local nightly\|gate\|mutants\|watch\|smoke` | **no** | 1.3.0 (`smoke` 1.4.0) | One command per maintainer task, planned from the same commands the workflows run; `--dry-run` prints the plan. `smoke` is the two-stacks smoke `ci.yml` runs (`pnpm smoke`). |
+| `harness local nightly\|gate\|mutants\|watch\|smoke\|compare` | **no** | 1.3.0 (`smoke`, `compare` 1.4.0) | One command per maintainer task, planned from the same commands the workflows run; `--dry-run` prints the plan. `smoke` is the two-stacks smoke `ci.yml` runs (`pnpm smoke`). `compare` (`pnpm compare`) is the gate's release step with `main` against the last release, 3 runs, no claims; exit `0` whenever a report was produced, `2` when it could not judge, `1` for a harness fault. |
 | `harness vuln-db update\|status` | **no** | 1.4.0 | The pinned vulnerability database: `update` fetches it into `HARNESS_VULN_DB_DIR`, else `<HARNESS_HOME>/vuln-db`; `status` says which database a scan would read, its build time, age and checksum. |
 | `harness prune` | **no** | 1.4.0 | Free `out/` and the image cache. A dry run unless `--yes`. |
 | `harness help [command]`, `--help`, `-h` | yes | | The usage; exit 0. |
@@ -170,6 +170,8 @@ Every flag, alphabetically. Types: strings unless noted. "Stable" is from `cli.j
 | `--summary` | yes | 1.3.0 | `noise record`: a file the summary is appended to |
 | `--tag` | yes | 1.3.0 | `noise record`, `local nightly`: the production tag |
 | `--yes` (boolean) | no | 1.4.0 | `prune`: delete (the default is a dry run) |
+| `--strict` (boolean) | no | 1.4.0 | `local compare`: exit code follows the verdict, as `local gate` does |
+| `--no-load` (boolean) | no | 1.4.0 | `local compare`: drop the k6 load leg |
 | `--upgrade-rate`, `--upgrade-seconds` | no | | Upgrade mode: requests per second (default 20) and seconds (default 45) |
 
 ## Image specs

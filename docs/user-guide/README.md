@@ -49,7 +49,7 @@ Older, narrower documents this guide builds on and links to: [the integration co
 
 Everything in this guide describes what is on `main` (harness 1.4.1, contract 1.4.0). Two small changes are in flight and will land as their own pull requests; the guide mentions them where they matter and does not rely on them.
 
-- **`harness local compare`**: main against the last release in one command. Until it lands, the equivalent is `pnpm harness local gate --a <last release tag> --b main --only release --runs 3`, which runs release mode only (no migration or upgrade rehearsal). It is being scripted; see [chapter 2](02-running-locally.md#comparing-main-with-the-last-release).
+- **`harness local compare`** (`pnpm compare`): main against the last release in one command: it finds the release, pulls and verifies both sides, runs release mode with no claims, and prints the verdict, the counts and the report path. An exploration: exit 0 whenever a report was produced. See [chapter 2](02-running-locally.md#comparing-main-with-the-last-release).
 - **A deterministic settle for the signed-in reader's A/A**: a known flake class on the `reader-auth` course page (extra console messages, or extra lines in the accessibility tree) that a page settle fix will remove. Until then, [chapter 5](05-noise-and-self-test.md#a-known-flake-class-the-signed-in-reader) says how to recognise it and how to read the artifact the weekly mutants job now uploads.
 
 ## Quickstart: ten minutes to a first local run
