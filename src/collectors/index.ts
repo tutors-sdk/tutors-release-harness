@@ -8,7 +8,7 @@ import { captureJourney, launchBrowser } from "./browser.ts";
 import { runLoad } from "./load.ts";
 import { summariseLogs } from "./logs.ts";
 import { fetchMetrics } from "./metrics.ts";
-import { fetchWrites, resetWrites } from "./persistence.ts";
+import { busStatusLine, ledgersFor, readLedgers, resetLedgers } from "./ledgers.ts";
 
 export interface CaptureOptions {
   outDir: string;
@@ -51,6 +51,8 @@ export async function captureSide(spec: SideSpec, journeys: Journey[], opts: Cap
 
   const startedAt = new Date().toISOString();
   const before = spec.external ? {} : await metricsFor(spec);
+  const ledgers = ledgersFor(spec);
+  opts.log(busStatusLine(spec.name, ledgers.bus.status));
   const browser = await launchBrowser();
   const captured: JourneyCapture[] = [];
   try {
@@ -61,8 +63,7 @@ export async function captureSide(spec: SideSpec, journeys: Journey[], opts: Cap
           continue;
         }
         opts.log(`  ${spec.name}: ${journey.name} (run ${run}/${opts.runs})`);
-        const stub = spec.urls.persistence;
-        if (stub) await resetWrites(stub);
+        await resetLedgers(ledgers);
         const result = await captureJourney(browser, spec, journey, run, {
           outDir: sideDir,
           now: opts.now,
@@ -70,7 +71,7 @@ export async function captureSide(spec: SideSpec, journeys: Journey[], opts: Cap
           axe: opts.axe && run === 1,
           focusStops: run === 1 ? opts.focusStops : 0
         });
-        if (stub) result.persistence = await fetchWrites(stub);
+        Object.assign(result, await readLedgers(ledgers));
         if (result.error) opts.log(`    failed: ${result.error}`);
         captured.push(result);
       }
@@ -91,7 +92,7 @@ export async function captureSide(spec: SideSpec, journeys: Journey[], opts: Cap
     }
   }
 
-  const capture: SideCapture = { side: spec.name, harness: harnessInfo(), images: spec.images, ...(spec.provenance ? { provenance: spec.provenance } : {}), capturedAt: new Date().toISOString(), journeys: captured, metrics: { before, after }, logs, ...(spec.external ? { external: true } : {}) };
+  const capture: SideCapture = { side: spec.name, harness: harnessInfo(), images: spec.images, ...(spec.provenance ? { provenance: spec.provenance } : {}), capturedAt: new Date().toISOString(), journeys: captured, metrics: { before, after }, logs, ...(spec.external ? { external: true } : {}), bus: ledgers.bus.status };
   if (opts.load) {
     capture.load = runLoad({
       base: spec.external ? spec.urls.reader : `http://reader-${spec.name}:3000`,

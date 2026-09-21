@@ -18,6 +18,9 @@ fail, and ratchets. This is the runway for the runway.
 | An image is named wrongly | the Quay template expands to `quay.io/…/tutors/reader`; the shell script and the CLI disagree | Unit on `src/image-ref.ts`, with `build-images.sh --print-images` held to the same answers |
 | An untrusted image is judged | an unsigned or wrongly-signed pull passes; a missing cosign is skipped; a stale verification vouches for new content | Unit on `src/images.ts` with the process runner injected (a fake docker, registry and cosign) |
 | A report hides where its images came from | a side built from source reads like a published one | Unit on the report header and on capture → report flow |
+| A backend leaks into a rule | the anonymous-write rule only works on Supabase REST; migration mode only on the Docker Postgres | Unit: a second, in-memory backend behind each seam (`tests/persistence-seam.test.ts`, `tests/migration-seam.test.ts`) drives the same collector, rule and rehearsal |
+| The bus collector is silent when absent, or fails a run it cannot judge | no bus configured reads as a clean bus; a live side with no recorder fails | Unit on the collector and engine with an in-memory transport (`tests/bus.test.ts`) |
+| The app ignores the frozen clock | a stat rendered from the wall clock differs run to run | Unit on `probeClock` (`tests/clock-probe.test.ts`); the decision is `docs/harness-now.md` |
 | The stacks are not identical | side b has an env var side a lacks | Unit on `compose.harness.yaml` and the kind manifests |
 | The whole thing cannot boot | compose or kind fails on a laptop or in CI | Smoke: A/A on one journey (CI, every PR) |
 | The harness cannot fail | a planted regression passes release mode | Mutants (weekly, and in CI on any PR that changes an engine, a mask, a journey, the gate or a mutant) |

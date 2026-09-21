@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.1.0`
+Contract version: `1.2.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -28,16 +28,16 @@ Three numbers, all stamped where a reader can see them:
 
 ```console
 $ pnpm harness version
-harness 1.1.0 (3f2c…) · contract 1.1.0
+harness 1.2.0 (3f2c…) · contract 1.2.0
 $ pnpm harness version --json
-{"version":"1.1.0","gitSha":"3f2c…","contractVersion":"1.1.0"}
+{"version":"1.2.0","gitSha":"3f2c…","contractVersion":"1.2.0"}
 ```
 
 `gitSha` is `git rev-parse HEAD` of the harness checkout, or the
 `HARNESS_GIT_SHA` environment variable when set, or `null` when neither is
 available (a tarball).
 
-Pin the harness by tag (`v1.1.0`) or by sha, and check `schemaVersion === 1`
+Pin the harness by tag (`v1.2.0`) or by sha, and check `schemaVersion === 1`
 before reading a report.
 
 ## Output directory
@@ -89,11 +89,18 @@ written). Source of truth: `RunReport` in `src/types.ts`.
 
 **Hunk**: `{ id, artefact, scope, path?, summary, detail?, severity }`.
 `artefact` is one of `dom`, `screenshot`, `network`, `console`, `headers`,
-`axe`, `focus`, `metrics`, `logs`, `timing`, `persistence`, `migration`,
+`axe`, `focus`, `metrics`, `logs`, `timing`, `persistence`, `bus`, `migration`,
 `upgrade`. `severity` is `fail` (gates unless claimed) or `info` (reported,
 never gates). `scope` and `path` are what a claim's glob is matched against.
 `id` is stable for the same difference within a run; do not rely on it across
 harness versions. `summary` and `detail` are for people.
+
+The `bus` artefact (since 1.2.0) is the topics a side published to during a
+journey, under the same two rules as `persistence`. It is produced only when
+bus traffic was collected on both sides, which needs a bus and
+`HARNESS_BUS`; until then no hunk carries it and no report changes. See
+[bus.md](bus.md). The environment variables `HARNESS_BUS` and
+`HARNESS_PERSISTENCE_BACKEND` are not part of the contract.
 
 **Claim**: `{ artefact, scope, reason, approvedBy? }`, exactly as parsed from
 the claims file.
@@ -225,7 +232,7 @@ claims:
     approvedBy: "a-maintainer"                          # optional; required for a broad claim to count
 ```
 
-- `artefact`: one of the thirteen artefact names above, or `*`.
+- `artefact`: one of the fourteen artefact names above, or `*`.
 - `scope`: matched with picomatch (`dot: true`, case-insensitive) against the
   hunk's `scope` **or** its `path`.
 - `reason`: at least 8 characters, and must not start with `see pr`,

@@ -160,7 +160,7 @@
         }
       }
     },
-    "artefact": { "enum": ["dom", "screenshot", "network", "console", "headers", "axe", "focus", "metrics", "logs", "timing", "persistence", "migration", "upgrade"] },
+    "artefact": { "enum": ["dom", "screenshot", "network", "console", "headers", "axe", "focus", "metrics", "logs", "timing", "persistence", "bus", "migration", "upgrade"] },
     "hunk": {
       "type": "object",
       "additionalProperties": false,

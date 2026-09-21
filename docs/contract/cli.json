@@ -1,6 +1,6 @@
 {
   "$comment": "The harness CLI, machine-readable. tests/contract.test.ts fails when this list and src/cli.ts disagree, when a workflow uses a command or flag not marked stable, or when docs/contract.md omits a stable one. stable: true is covered by the compatibility promise in docs/contract.md; stable: false may change in a minor release.",
-  "contractVersion": "1.1.0",
+  "contractVersion": "1.2.0",
   "commands": [
     { "name": "run", "stable": true, "summary": "Start both stacks, capture, compare, claim, gate, report." },
     { "name": "compare", "stable": true, "summary": "Re-run normalise/compare/claim/gate on captures already on disk." },
