@@ -45,18 +45,12 @@ It is not:
 
 Older, narrower documents this guide builds on and links to: [the integration contract](../contract.md), [where the images come from](../images.md), [modes](../modes.md), [running locally (parity matrix)](../local.md), [the noise burn-down playbook](../noise-burndown.md), [claims](../../claims/README.md), [mutants](../../mutants/README.md) and [TESTING.md](../../TESTING.md). Where they and this guide disagree, the code and the contract win; please report the difference.
 
-## Status: what depends on pending work
+## Pending: two changes on their way
 
-Everything in this guide is checked against the code in this checkout (contract and harness version 1.3.0: digests in the dispatch, `rule` claims, the local noise store, the `local` wrappers). The guide also describes work that is finished on the branch `feat/harness-1.2.1-followups` but **not yet in this checkout**. These statements are correct once that pull request lands (lands with the follow-ups PR), and not before. They are listed here, with the chapters that rely on them, and are not flagged anywhere else in the guide.
+Everything in this guide describes what is on `main` (harness 1.4.1, contract 1.4.0). Two small changes are in flight and will land as their own pull requests; the guide mentions them where they matter and does not rely on them.
 
-| Change | What you will see once it lands | Chapters that rely on it |
-| --- | --- | --- |
-| **Corrected Mann-Whitney statistics.** The p-value used by the `timing` (page TTFB, journey duration and k6 load) and `startup` artefacts is fixed. Today it is too small: a perfectly separated 5 against 5 reports p = 0.0004 (correct: 0.0122) and 3 against 3 reports 0.0136 (correct: 0.0809). | Reports say "N/N samples cannot reach alpha 0.05 (best possible p=0.081). Raise --runs" as information when the run count cannot ever be significant. Four runs per side is the least that can reach alpha 0.05 and five is the least that survives one overlapping pair. The release workflow and the nightly A/A default to `--runs 5` (today 3), and the `slow-ssr` mutant runs five. Reports and A/A history taken before the fix are not evidence about these artefacts. The local wrappers' default of 3 runs is tied to the workflows by `tests/local-parity.test.ts`, so expect it to move to 5 as well. | 02, 03 (timing and statistics), 04, 05, 06, 07, 08 |
-| **A wider engine-path guard.** `harness guard engine` and the "Mutants re-run (required)" check treat every collector, runtime, image-artefact, persistence, migration and bus directory, the claim matcher, `run`, the modes, stacks, image resolution, fixtures, scripts, `traffic/**`, the mutant runner and `pnpm-lock.yaml` as engine code, not only `src/compare/**`, `src/gate.ts`, masks, journeys and mutants. A new top-level entry that is in neither list fails a unit test. | More pull requests need a version bump and a mutants re-run. | 05, 09 |
-| **The `time` app joins the stack.** The monorepo ships four apps; the harness stacks reader, catalogue, live and, after this, time. It appears on both compose sides (host ports 3104 and 3204), in the kind manifests (NodePorts published on host 4103 and 4203), in image resolution, verification, the image artefacts, `runtime`, `startup`, `metrics` and `logs`. No journey drives it. `--a`/`--b` accept an optional `time=REF`, `--production` an optional `time=URL`. | A base tag must exist for `time` too, and a kind cluster made earlier must be recreated. The doctor's port check covers 15 ports instead of 13, and `--port-offset` has two more ports to move. | 01, 02, 06, 07, 08 |
-| **Related fixes on the same branch.** A mask `persistence-stub-requests` (19 masks instead of 18) for the signed-in reader's timer-driven calls to its persistence stub; `ws://` origins of the persistence stub are normalised in console text; a JSON response body the browser never delivered is recorded as unread and its shape is not compared; that read is bounded to three seconds; the `base-swap` mutant swaps onto `ubuntu:24.04` because Alpine cannot receive the production filesystem (`HARNESS_MUTANT_ALT_BASE` still overrides it). | A/A runs are cleaner and the mutants self-test can build every mutant. | 01, 05, 07, 09 |
-
-Version numbers in this guide (1.3.0) are those of this checkout. The follow-ups branch carries its own 1.2.1 and 1.3.0 entries in `docs/contract.md`; the numbering will be settled when the two are merged.
+- **`harness local compare`**: main against the last release in one command. Until it lands, the equivalent is `pnpm harness local gate --a <last release tag> --b main --only release --runs 3`, which runs release mode only (no migration or upgrade rehearsal). It is being scripted; see [chapter 2](02-running-locally.md#comparing-main-with-the-last-release).
+- **A deterministic settle for the signed-in reader's A/A**: a known flake class on the `reader-auth` course page (extra console messages, or extra lines in the accessibility tree) that a page settle fix will remove. Until then, [chapter 5](05-noise-and-self-test.md#a-known-flake-class-the-signed-in-reader) says how to recognise it and how to read the artifact the weekly mutants job now uploads.
 
 ## Quickstart: ten minutes to a first local run
 
@@ -77,7 +71,7 @@ pnpm exec playwright install chromium
 pnpm harness doctor
 ```
 
-It prints one line per check and, under each problem, the fix for your operating system. This is a real run on a Windows machine that lacked syft and had a leftover Docker network on the stack's fixed subnet (long lines shortened):
+It prints one line per check and, under each problem, the fix for your operating system. This is a real run on a Windows machine that has no grype (long lines shortened):
 
 ```text
 harness doctor (nightly, gate, mutants, watch) on windows
@@ -88,15 +82,15 @@ harness doctor (nightly, gate, mutants, watch) on windows
   ok    Docker runs Linux containers                  linux
   ok    docker compose v2                             5.4.0
   ok    cosign >= 3                                   3.1.3
-  FAIL  syft                                          not installed: the mutants generate SBOMs with it, and without it the added-package mutant escapes
-                                                      fix: scoop install syft, or the syft_*_windows_amd64.zip from https://github.com/anchore/syft/releases on PATH
-  warn  grype                                         not installed: the vulnerability artefact is 'not collected' (informational)
+  ok    syft                                          not installed, and not needed: on Windows the default SBOM generator runs syft in its own container (Docker)
+  warn  grype >= 0.96.0                               not installed: the vulnerability artefact is 'not collected' (informational)
+                                                      fix: no admin needed: unzip https://github.com/anchore/grype/releases/download/v0.119.0/grype_0.119.0_windows_amd64.zip and put grype.exe on PATH ...
   ok    Playwright's Chromium                         C:\Users\...\ms-playwright\chromium-1243\chrome-win64\chrome.exe
-  ok    the host ports the stack publishes are free   13 ports, 3100-8443
-  FAIL  the stack's fixed subnet 172.29.0.0/24 is unused   overlaps tutors-harness_default (172.29.0.0/24): `docker compose up` fails with "Pool overlaps ..."
-                                                      fix: docker network ls; docker network rm <name> (only if it is not in use)
+  warn  the k6 image is pinned                        grafana/k6:latest moves: two nightlies can run different k6 versions. Pin it with HARNESS_K6_IMAGE=grafana/k6:<version>
+  ok    the host ports the stack publishes are free   15 ports, 3100-8443
+  ok    the stack's fixed subnet 172.29.0.0/24 is unused   no other Docker network overlaps it
 
-2 problem(s) to fix before these runs can be trusted, 3 warning(s).
+ready, with 2 warning(s).
 ```
 
 Exit `0` means ready (warnings are allowed), `1` means something a run needs is missing, `2` is a usage error. Fix every `FAIL`. A machine that only needs to run the post-deploy watch can ask for less: `pnpm harness doctor --for watch`.
@@ -134,7 +128,9 @@ Open that `report.html`. The same directory holds `report.md` (the text of a pul
 
 A `WARN` on a first A/A is normal: it means the run found differences between production and itself, which is noise the masks do not yet cover. See [chapter 5](05-noise-and-self-test.md).
 
-**6. Rehearse a release without starting anything.** `--dry-run` prints the commands a task would run and starts nothing:
+**6. Or run the whole smoke in one command.** `pnpm smoke` (`harness local smoke`) is what CI runs: it fetches the images, boots both stacks, runs one journey as an A/A, and checks that the expanding migration fixture passes and the contracting one is rejected. It takes roughly ten minutes.
+
+**7. Rehearse a release without starting anything.** `--dry-run` prints the commands a task would run and starts nothing:
 
 ```console
 pnpm harness local gate --a 16.2.0 --b 16.3.0-rc.1 --runs 5 --dry-run
@@ -144,4 +140,4 @@ Where to go next: the full maintainer tasks are in [chapter 2](02-running-locall
 
 ## A note on the command line
 
-`pnpm harness ...` is `tsx src/cli.ts ...` and prints two banner lines from pnpm before its own output. `pnpm -s harness ...` (silent) or `node bin/harness.mjs ...` prints only the harness's output; both work. This guide writes `pnpm harness` throughout. `--help` prints the usage after a command (`pnpm harness run --help`, exit 0). A bare `pnpm harness` prints it and exits 2, and `pnpm harness --help` answers `unknown command "--help"` followed by the usage, exit 2.
+`pnpm harness ...` is `tsx src/cli.ts ...` and prints two banner lines from pnpm before its own output. `pnpm -s harness ...` (silent) or `node bin/harness.mjs ...` prints only the harness's output; both work. This guide writes `pnpm harness` throughout. `pnpm harness --help`, `-h` and `help` print the usage and exit 0; `pnpm harness run --help` (or `pnpm harness help run`) prints that command's part of it. A bare `pnpm harness` prints the usage and exits 2.

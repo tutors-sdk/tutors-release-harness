@@ -24,6 +24,8 @@ Terms as this guide uses them. Where a term has a chapter, it is linked.
 
 **candidate.** The release candidate: side b of a `release` run, tagged `X.Y.Z-rc.N`.
 
+**canonical form.** The single spelling `content-type` and `cache-control` values are put in on both sides before comparing (directives sorted, default charset dropped, legacy JavaScript media types folded). A change of value still differs; a re-spelling does not. [03](03-reading-a-report.md#post-deploy-against-a-live-site)
+
 **capture.** Everything recorded for one side of a run (`a/capture.json`, `b/capture.json`, screenshots, k6 output). `harness compare` re-judges captures without re-running stacks.
 
 **claim.** A statement in the release's claims file that a difference is intended: an artefact, a scope glob, a reason or a Rule, and optionally `approvedBy`. [04](04-writing-claims.md)
@@ -86,15 +88,21 @@ Terms as this guide uses them. Where a term has a chapter, it is linked.
 
 **page key.** The name of a page in a journey, such as `reader:lab-step`, used in scopes.
 
+**NOT COLLECTED.** The one text (`NOT COLLECTED: <what> of <app> on side b: <reason>`) and hunk scope (`<app>/not-collected`) an artefact that could not be gathered uses. Informational unless the artefact is required (`runtime` and `startup` always; others through `HARNESS_REQUIRE_ARTEFACTS`). [03](03-reading-a-report.md#degraded-and-not-collected)
+
 **persistence stub.** A Supabase-shaped stub per side that records every write the reader attempts, so writes are attributable to a side.
 
 **post-deploy.** The mode (and the workflow) that replays the reference journeys against live production and compares with the recorded candidate.
+
+**prune.** `harness prune`: free old run directories under `out/` and an old image cache; a dry run unless `--yes`. [02](02-running-locally.md#disk-harness-prune)
 
 **production tag.** The tag that is deployed, and so the tag to pass as `--a`. Held in the repository variable `HARNESS_PRODUCTION_TAG`.
 
 **provenance.** Where an image came from: `local`, `pulled+verified`, `pulled-unverified`, `built-from-ref`, `cached`.
 
 **pulled+verified.** Pulled from a registry and its cosign signature verified, by digest, against the monorepo's build workflow identity. The only provenance that is evidence for a release.
+
+**redaction.** Secret-shaped values (an `apikey=` value, `Authorization`, a bearer token, a JWT, Supabase keys) are replaced with `<redacted>` before a capture or report holds them. [01](01-concepts.md#normalising-and-masks)
 
 **ratchet.** The rule that once the nightly A/A count has reached zero on verified evidence it must stay there; otherwise the night fails. [05](05-noise-and-self-test.md#the-ratchet-and-the-streak)
 
@@ -114,6 +122,8 @@ Terms as this guide uses them. Where a term has a chapter, it is linked.
 
 **stale claim.** A claim that matched no hunk in this run. Reported, never gates.
 
+**smoke.** `harness local smoke` (`pnpm smoke`): both stacks boot, one journey runs as an A/A, the expanding migration passes and the contracting one is rejected. What CI runs on every pull request. [02](02-running-locally.md#the-two-stacks-smoke-harness-local-smoke)
+
 **streak.** Consecutive clean, verified nightly A/A results. The burn-down target is seven.
 
 **substrate.** What the stacks run on: `compose` (default) or `kind`.
@@ -123,5 +133,7 @@ Terms as this guide uses them. Where a term has a chapter, it is linked.
 **unclaimed hunk.** A failing hunk no claim covers. What gates a release.
 
 **verdict.** `pass`, `warn` or `fail`. [01](01-concepts.md#verdicts)
+
+**vulnerability database.** grype's database, fetched once into `HARNESS_VULN_DB_DIR` (else `<HARNESS_HOME>/vuln-db`) by `harness vuln-db update` and never updated during a run, so both sides of a comparison see the same advisories. [02](02-running-locally.md#the-vulnerability-database)
 
 **watch.** `harness local watch`: the local post-deploy monitor, once or every 15 minutes.
