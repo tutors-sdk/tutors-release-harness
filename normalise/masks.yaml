@@ -152,3 +152,10 @@ timing:
   # many milliseconds to count: a 3 ms → 4 ms TTFB is +33% and means nothing.
   minEffect: 0.2
   minShiftMs: 20
+
+startup:
+  # Startup time (harness restarts each app N times; see docs/modes.md) is judged with the timing block's
+  # minRuns, alpha and minEffect. Its own floor is in milliseconds: startups are seconds long, the harness
+  # polls every 100 ms, and compose's healthcheck only ticks every 2 s, so a 20 ms shift is measurement noise.
+  # Never retry a noisy startup run: raise --startup-restarts, or widen timing.alpha here with a reason.
+  minShiftMs: 250

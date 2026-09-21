@@ -3,12 +3,13 @@ import { join } from "node:path";
 import type { Journey } from "../../traffic/journeys/journeys.ts";
 import { serviceLogs, serviceName } from "../stack.ts";
 import { harnessInfo } from "../version.ts";
-import type { JourneyCapture, LogSummary, MetricsSnapshot, SideCapture, SideSpec } from "../types.ts";
+import type { JourneyCapture, LogSummary, MetricsSnapshot, SideCapture, SideSpec, Substrate } from "../types.ts";
 import { captureJourney, launchBrowser } from "./browser.ts";
 import { runLoad } from "./load.ts";
 import { summariseLogs } from "./logs.ts";
 import { fetchMetrics } from "./metrics.ts";
 import { busStatusLine, ledgersFor, readLedgers, resetLedgers } from "./ledgers.ts";
+import { captureRuntime } from "../runtime/index.ts"; // R5 runtime artefacts
 
 export interface CaptureOptions {
   outDir: string;
@@ -21,6 +22,8 @@ export interface CaptureOptions {
   logsFrom?: { a: SideSpec; b: SideSpec };
   /** k6 against the side's reader after the journeys. */
   load?: { rate: number; duration: string };
+  /** R5 (contract 1.2.0): container posture and startup time, after everything else; absent for a stack the harness did not start. */
+  runtime?: { substrate: Substrate; posture: boolean; startupRestarts: number };
   log: (message: string) => void;
 }
 
@@ -103,6 +106,11 @@ export async function captureSide(spec: SideSpec, journeys: Journey[], opts: Cap
       onNetwork: !spec.external,
       log: opts.log
     });
+  }
+  if (opts.runtime && !spec.external) {
+    const { runtime, startup } = await captureRuntime(spec, { ...opts.runtime, log: opts.log });
+    capture.runtime = runtime;
+    capture.startup = startup;
   }
   writeFileSync(join(sideDir, "capture.json"), JSON.stringify(capture, null, 2));
   return capture;

@@ -19,6 +19,7 @@ import { overrideLine, recordOverride, type OverrideRequest } from "./override.t
 import type { Claim, Hunk, Mode, NoiseStatus, RunReport, SideCapture, SideSpec, Substrate } from "./types.ts";
 
 import { HARNESS_VERSION, SCHEMA_VERSION, harnessInfo } from "./version.ts";
+import { DEFAULT_RESTARTS } from "./runtime/startup.ts";
 import { parseNoiseStatus } from "./noise.ts";
 import { collectImageStatic, staticPolicyFromEnv } from "./image-static/collect.ts"; // R5
 import { imageArtefactsSection, imageStaticReasons } from "./image-static/report.ts"; // R5
@@ -58,6 +59,10 @@ export interface RunOptions {
   focusStops: number;
   /** k6 after the journeys on each side. */
   load?: { rate: number; duration: string };
+  /** R5 (contract 1.2.0): collect container posture (identity, capabilities, filesystem, limits). */
+  runtime: boolean;
+  /** R5: restarts per app to sample startup time from; 0 switches it off. */
+  startupRestarts: number;
   /** Leave the stack running afterwards (for investigation). */
   keep: boolean;
   /** Don't start or stop the stack; assume it is up. */
@@ -302,7 +307,7 @@ export async function run(opts: RunOptions): Promise<RunOutcome> {
   let upgrade: RunReport["upgrade"] | undefined;
   let extraHunks: Hunk[] = [];
   try {
-    const captureOpts = { outDir, now: opts.now, runs: opts.runs, screenshots: opts.screenshots, axe: opts.axe, focusStops: opts.focusStops, log: opts.log, ...(opts.substrate === "compose" ? { logsFrom: { a, b } } : {}), ...(opts.load ? { load: opts.load } : {}) };
+    const captureOpts = { outDir, now: opts.now, runs: opts.runs, screenshots: opts.screenshots, axe: opts.axe, focusStops: opts.focusStops, log: opts.log, ...(opts.substrate === "compose" ? { logsFrom: { a, b } } : {}), ...(opts.load ? { load: opts.load } : {}), runtime: { substrate: opts.substrate, posture: opts.runtime, startupRestarts: opts.mode === "upgrade" ? 0 : opts.startupRestarts } };
     if (opts.mode === "upgrade") {
       if (opts.substrate !== "compose") throw new Error("upgrade mode runs on the compose substrate; kind rolling updates are rehearsed by `harness kind rollout`");
       // A short capture of both sides first (they must both be healthy), then the rollout.
@@ -343,6 +348,8 @@ export const defaultRunOptions = (): Omit<RunOptions, "mode" | "a" | "b"> => ({
   screenshots: true,
   axe: true,
   focusStops: 12,
+  runtime: true,
+  startupRestarts: DEFAULT_RESTARTS,
   keep: false,
   noStack: false,
   allowUnsigned: false,

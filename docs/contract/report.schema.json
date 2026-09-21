@@ -230,7 +230,7 @@
         "summary": { "type": "string", "description": "Collected: one line of what was found. For people." }
       }
     },
-    "artefact": { "enum": ["dom", "screenshot", "network", "console", "headers", "axe", "focus", "metrics", "logs", "timing", "persistence", "bus", "migration", "upgrade", "image-manifest", "sbom", "vulns"] },
+    "artefact": { "enum": ["dom", "screenshot", "network", "console", "headers", "axe", "focus", "metrics", "logs", "timing", "persistence", "bus", "migration", "upgrade", "image-manifest", "sbom", "vulns", "runtime", "startup"], "description": "\"bus\", \"image-manifest\", \"sbom\", \"vulns\", \"runtime\" and \"startup\" since contract 1.2.0. A consumer must tolerate an artefact name it does not know." },
     "hunk": {
       "type": "object",
       "additionalProperties": false,

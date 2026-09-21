@@ -22,6 +22,8 @@ fail, and ratchets. This is the runway for the runway.
 | A backend leaks into a rule | the anonymous-write rule only works on Supabase REST; migration mode only on the Docker Postgres | Unit: a second, in-memory backend behind each seam (`tests/persistence-seam.test.ts`, `tests/migration-seam.test.ts`) drives the same collector, rule and rehearsal |
 | The bus collector is silent when absent, or fails a run it cannot judge | no bus configured reads as a clean bus; a live side with no recorder fails | Unit on the collector and engine with an in-memory transport (`tests/bus.test.ts`) |
 | The app ignores the frozen clock | a stat rendered from the wall clock differs run to run | Unit on `probeClock` (`tests/clock-probe.test.ts`); the decision is `docs/harness-now.md` |
+| A container's posture drifts, or an artefact silently stops being collected | a candidate whose image runs as root, adds a capability or a `VOLUME`, or writes outside `/tmp`; docker missing on the runner and the report saying nothing | Unit on the `runtime` engine, on the posture parsers and on the collectors with the process runner injected (a fake docker and kubectl); "not collected" is a failing hunk |
+| Startup time regresses, or the sample cannot judge | a candidate that boots twice as slowly; three restarts a side reported as if judged | Unit on the `startup` engine (Mann-Whitney, the shift floor, "cannot reach alpha") and on the restart sampler with a fake clock |
 | The stacks are not identical | side b has an env var side a lacks | Unit on `compose.harness.yaml` and the kind manifests |
 | The whole thing cannot boot | compose or kind fails on a laptop or in CI | Smoke: A/A on one journey (CI, every PR) |
 | The harness cannot fail | a planted regression passes release mode | Mutants (weekly, and in CI on any PR that changes an engine, a mask, a journey, the gate or a mutant) |
@@ -48,6 +50,17 @@ Anything that would run `docker`, `cosign` or `bash` takes its process runner
 as a parameter (`Exec` in `src/images.ts`); the tests pass a fake and assert on
 the exact commands, so the ensure flow — local, pull, verify by digest, build,
 refuse — is covered without Docker.
+
+Container posture and startup time (`src/runtime/`, `src/compare/runtime.ts`)
+are collected through docker and kubectl behind the same injected `Exec`:
+`tests/runtime-collectors.test.ts` feeds them what the real tools print and
+asserts on every command line, `tests/runtime-engines.test.ts` has the three
+tests per engine, and `tests/runtime-report.test.ts` runs a whole comparison
+and checks the report against the schema. What they cannot prove is that the
+assumptions about a real container hold (`node` on the PATH inside every app
+image, `/proc/self/mountinfo`, the health status format): the first
+`--mode noise` run on a machine with Docker is that proof, and it must be
+clean before the harness gates on these artefacts.
 
 Rules for a new engine or rule: it does not merge without (1) the A/A test,
 (2) a planted change it catches, (3) a change it must *not* flag.
@@ -150,6 +163,7 @@ must fail with failures attributed to `b`.
 | Masks in `normalise/masks.yaml` | grow only with review, in their own PR, and stay under ~40 | CODEOWNERS; CI "Masks land in their own PR (required)" |
 | Masks that never fire | → 0 | listed in every report as "silent" |
 | Engines without a planted-change test | 0 | review |
+| Artefacts that could not be collected in a nightly A/A | 0 | `not collected` is a failing hunk, so a dirty A/A |
 | Retries anywhere in the harness | 0 | `vitest.config.ts`, no Playwright retries |
 | Overrides of a harness FAIL | → 0 per quarter | `harness-override` issues; `docs/noise-burndown.md` |
 

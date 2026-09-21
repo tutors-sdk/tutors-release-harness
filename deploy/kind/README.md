@@ -34,6 +34,7 @@ use that name.
 | --- | --- | --- |
 | reader, catalogue, live per side | containers, hardened | Deployments under `restricted` PSA, same probes/security context/resources as the monorepo's `deploy/k8s/base` |
 | fixture course server | container | a Node process on the host (the browser fetches the course; the apps never do) |
+| container posture and startup time (`runtime`, `startup` artefacts) | `docker inspect`, `exec`, `logs`; stop and start | the pod spec, `kubectl exec` and `logs`; scale to zero and back |
 | signed-in reader, identity and persistence stubs | containers | not yet (the `auth` set is skipped on kind) |
 | edge proxy for `upgrade` mode | container | not needed: `kind rollout` uses a real RollingUpdate |
 
