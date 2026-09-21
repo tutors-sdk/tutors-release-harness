@@ -93,6 +93,22 @@ jobs:
       - name: Every mutant, caught and attributed
         run: pnpm harness mutants --base "$TAG"
 
+      # When the A/A on the base is not clean the log lists the hunks (src/mutants.ts), and this small artifact carries the
+      # report itself, so the failure can be read without downloading every mutant's screenshots. Reports and captures only.
+      - name: Upload the A/A report of a failed self-test
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutant-noise-report
+          path: |
+            out/*-noise/report.md
+            out/*-noise/report.json
+            out/*-noise/report.html
+            out/*-noise/noise-status.json
+            out/*-noise/*/capture.json
+          retention-days: 7
+          if-no-files-found: ignore
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:
