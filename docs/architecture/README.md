@@ -77,8 +77,8 @@ Levels 1 to 3 use Mermaid `flowchart` with C4-style classes and subgraphs, not
 2. Native C4 lays elements out in fixed rows with no control over placement, and
    relationship labels overlap once a diagram has more than a handful of arrows.
    These diagrams have up to 25.
-3. A legend that distinguishes built, pending and planned needs a per-element
-   dashed style, which `flowchart` classes give directly.
+3. A legend that distinguishes built and planned needs a per-element dashed
+   style, which `flowchart` classes give directly.
 
 The native syntax was not tried on GitHub, so this is a judgement about
 control, not a measured failure. `sequenceDiagram` is used for the dynamic views
@@ -97,7 +97,6 @@ flowchart LR
   cont["<b>Container</b><br/>[Container: technology]<br/>a runnable unit; blue"]:::container
   store[("<b>Data store</b><br/>[Data store]<br/>cylinder")]:::store
   comp["<b>Component</b><br/>[Component: file]<br/>inside a container; light blue"]:::component
-  pending["<b>Pending</b><br/>[amber, dashed]<br/>built on a branch, not on main"]:::pending
   planned["<b>Planned</b><br/>[red, dashed]<br/>designed or documented, not built"]:::planned
 
   person -->|"solid arrow: built, labelled with what flows"| focus
@@ -109,14 +108,12 @@ flowchart LR
   classDef container fill:#2e6fae,stroke:#1f4d7a,color:#ffffff
   classDef store fill:#2e6fae,stroke:#1f4d7a,color:#ffffff
   classDef component fill:#85bbf0,stroke:#5d82a8,color:#000000
-  classDef pending fill:#fff3d6,stroke:#b7791f,color:#5c3d00,stroke-dasharray:6 4
   classDef planned fill:#ffffff,stroke:#c0392b,color:#c0392b,stroke-dasharray:6 4
 ```
 
 | Style | Meaning |
 | --- | --- |
 | solid box, solid arrow | built and on the default branch of its repository |
-| **amber dashed box** | **pending:** built on a branch that is not on `origin/main`. Only one element uses it today (the monorepo's `release-harness-report.yml`, see [Pending](#pending)) |
 | **red dashed box or arrow** | **planned, not built.** The code has a seam or a document describes it, but nothing runs |
 | dashed grey arrow | a relationship that is not a call: "stands in for" (a stub impersonating a service) |
 | grey box | external: not part of the harness |
@@ -141,7 +138,7 @@ flowchart LR
 
 ### Built on the monorepo side
 
-Read from `origin/main` of `tutors-sdk/tutors-mono-repo` at `5d7283e`. The
+Read from `origin/main` of `tutors-sdk/tutors-mono-repo` at `623d6f5`. The
 diagrams show only what the harness sees of it; they are not a monorepo
 architecture document.
 
@@ -152,6 +149,7 @@ architecture document.
 | `image-build.yml` is the only image publisher (`images.yml` removed) | `.github/workflows/image-build.yml` | #305 |
 | The final tag **promotes** the judged `X.Y.Z-rc.N` digest instead of rebuilding; an app that cannot be promoted is rebuilt with a `REBUILT` warning (or fails, with `require_promotion`) | `scripts/promote-image.ts` | #303 |
 | The `release-candidate` dispatch carries `runs: 5`, `production_digests` and `candidate_digests` (four apps) and `rules_url` when a `rules.json` was published | `.github/workflows/release-dispatch.yml` | #310 |
+| `release-harness-report.yml` posts the harness verdict on the release pull request: a `report` job in `release-dispatch.yml` starts it, it finds the harness's `release.yml` run by its title `release <candidate>`, waits up to 45 minutes, reads `release-report`, and creates or updates one marked comment. `HARNESS_TOKEN` needs **Actions: read** on the harness repository; the job holds `pull-requests: write`. (#311 merged into a stacked branch, and #312 re-landed it on main.) The harness still never writes to a PR itself | `.github/workflows/release-harness-report.yml`, `release-dispatch.yml`, `scripts/release-report-comment.ts` | #310, #312 |
 | `pnpm release:harness`: builds the `release-candidate` payload from a local clone and can run the harness's `local gate`, `local watch --once` or `local nightly`; a test holds it to the workflow's payload | `scripts/release-harness.ts` | #307 |
 | `pnpm release:rules`: writes `rules.json`, the file behind the `rules_url` field and `rule:` claims | `scripts/release-rules.ts` | #308 |
 | EARS Rule ids and `pnpm release:claims:draft`, which drafts claim stubs from the Rules that changed | `scripts/release-claims-draft.ts` | #301 |
@@ -159,12 +157,6 @@ architecture document.
 | `pnpm check:migrations` and changelog artefact hints for claims | `scripts/checks/migrations.ts`, `CONTRIBUTING.md` | #300 |
 | Build identity on one endpoint, `GET /version`; `HARNESS_NOW` frozen clock | `scripts/checks/build-identity.ts` | #296 |
 | JSON logs and an `x-request-id` per request | the apps | #297 |
-
-**Not on `origin/main` when checked:** `release-harness-report.yml`, which posts
-the harness verdict on the release pull request. It exists on the monorepo
-branch `feat/release-dispatch-digests-and-report` (commit `da7850d`, one commit
-ahead of main), together with a `report` job in `release-dispatch.yml` that
-starts it. It is drawn amber. See [Pending](#pending).
 
 Still on the monorepo's side of the line and not drawn as harness code: the
 OpenShift overlays (`deploy/k8s/variants/openshift`) and their conformance check.
@@ -180,18 +172,13 @@ arbitrary-UID assignment (`deploy/kind/README.md`).
 
 ## Pending
 
-Not drawn in the diagrams except where stated. Each gets a one-line update when
+Not drawn in the diagrams. Each gets a one-line update when
 it lands.
 
 - **`harness local compare`**: main against the last release in one command. A
   small harness PR; in flight.
 - **A deterministic-settle collector fix** for the signed-in reader's A/A flake.
   A small harness PR; in flight.
-- **The monorepo's `release-harness-report.yml`** (verdict on the release PR).
-  Drawn amber because it is on a monorepo branch, not on `origin/main`, at the
-  time of writing (see above). It needs the `HARNESS_TOKEN` permission
-  **Actions: read** on the harness repository, and depends on the harness's
-  `run-name: release <candidate>`, which is built.
 
 ## Keeping them true
 

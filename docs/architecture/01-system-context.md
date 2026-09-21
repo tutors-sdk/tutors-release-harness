@@ -13,7 +13,7 @@ flowchart TB
   harness["<b>Tutors release harness</b><br/>[Software System]<br/>Runs a candidate beside production through identical stacks, diffs everything observable, fails unless every difference is claimed"]:::focus
 
   mono["<b>Tutors monorepo + CI</b><br/>[External system: tutors-sdk/tutors-mono-repo]<br/>Builds, signs and promotes images; tags candidates; dispatches release-candidate and deployed; holds claims, rules, migrations and the deploy pins. Outputs listed below"]:::ext
-  report["<b>release-harness-report.yml</b><br/>[Monorepo workflow, on a branch, not on main]<br/>Would post the harness verdict on the release pull request"]:::pending
+  report["<b>release-harness-report.yml</b><br/>[Monorepo workflow, GitHub Actions]<br/>Posts the harness verdict on the release pull request"]:::ext
   quay["<b>Quay registry</b><br/>[External system: quay.io/tutors-sdk/tutors-app]<br/>Public repositories of the app images"]:::ext
   sigstore["<b>Sigstore / cosign</b><br/>[External system]<br/>Keyless signatures and SBOM attestations, transparency log"]:::ext
   github["<b>GitHub Actions + API</b><br/>[External system]<br/>Runs the workflows; holds artifacts, two branches and issues"]:::ext
@@ -32,9 +32,9 @@ flowchart TB
   harness -->|"verifies signature and<br/>SBOM attestation [cosign 3+]"| sigstore
   harness -->|"claims, rules by URL;<br/>migrations, fallback source by git ref"| mono
   harness -->|"artifacts, job summary with report.md,<br/>noise and release-records branches,<br/>rollback and override issues,<br/>run titled release candidate"| github
-  mono -.->|"pending: reads the harness run and release-report<br/>[HARNESS_TOKEN, Actions: read]"| github
-  mono -.->|"pending: starts"| report
-  report -.->|"pending: verdict comment<br/>[pull-requests: write, monorepo token]"| reviewer
+  mono -->|"reads the harness run and release-report<br/>[HARNESS_TOKEN, Actions: read]"| github
+  mono -->|"report job starts it after the dispatch"| report
+  report -->|"verdict comment on the release PR<br/>[pull-requests: write, monorepo token]"| reviewer
   harness -->|"anonymous read-only journeys<br/>[post-deploy, every 15 min]"| prod
   harness -->|"published course fetched<br/>by the reference journeys"| refcourse
   harness -.->|"stands in for them with stubs;<br/>never contacted"| backends
@@ -50,7 +50,6 @@ flowchart TB
   classDef focus fill:#1168bd,stroke:#0b4884,color:#ffffff
   classDef ext fill:#6b6b6b,stroke:#444444,color:#ffffff
   classDef planned fill:#ffffff,stroke:#c0392b,color:#c0392b,stroke-dasharray:6 4
-  classDef pending fill:#fff3d6,stroke:#b7791f,color:#5c3d00,stroke-dasharray:6 4
 ```
 
 ## Who uses it
@@ -77,7 +76,7 @@ a loop that never exits on a difference), not from a role named in the code.
 | Harness | Sigstore | `cosign verify` by digest against the identity of the monorepo's `image-build.yml` and GitHub's OIDC issuer; `cosign verify-attestation` for the SBOM. Needs the network and cosign 3 or newer | `src/images.ts`, `src/image-static/sbom.ts`, `docs/local.md` (N3) |
 | Harness | Monorepo | `claims.yaml` and `rules.json` fetched by URL (`curl` in the workflow, `--rules` URL in the CLI); `supabase/migrations` by sparse git fetch; source by `git clone` only in the build-from-ref fallback | `.github/workflows/release.yml`, `scripts/fetch-migrations.sh`, `scripts/build-images.sh` |
 | Harness | GitHub | Artifacts (`release-report`, `noise-report`, `mutant-noise-report`, ...); `report.md` appended to the job summary; the `noise` and `release-records` branches; `rollback` and `harness-override` issues. `release.yml` is titled `release <candidate>` (`run-name`) so a caller can find the run a dispatch started | `docs/contract.md` "What the harness does to a pull request"; `docs/contract/workflows.json` (`runNames`); `.github/workflows/release.yml:21` |
-| Monorepo (pending) | Harness run | `release-harness-report.yml` finds the `release.yml` run by its title, waits up to 45 minutes, downloads `release-report`, and creates or updates one marked comment on the release PR. Needs `HARNESS_TOKEN` with **Actions: read** on the harness repository, and `pull-requests: write` on the monorepo job. On a monorepo branch (`da7850d`), not on main | monorepo `da7850d:.github/workflows/release-harness-report.yml`; `docs/monorepo/README.md` ("The run is titled for the candidate") |
+| Monorepo | Harness run | `release-harness-report.yml`, started by the `report` job of `release-dispatch.yml`, finds the harness's `release.yml` run by its title (`release <candidate>`), waits up to 45 minutes, downloads `release-report`, and creates or updates one marked comment on the release PR. Needs `HARNESS_TOKEN` with **Actions: read** on the harness repository, and `pull-requests: write` on the monorepo job | monorepo `.github/workflows/release-harness-report.yml:70,77,114` and `release-dispatch.yml:395`, `scripts/release-report-comment.ts:134` (`matchRun`); `docs/monorepo/README.md` ("The run is titled for the candidate") (#312) |
 | Harness | Production apps | Anonymous, read-only requests for the published reference course. Never signs in, never writes | `src/run.ts` (post-deploy branch), `docs/contract.md` |
 | Harness | Reference course host | The reader under test fetches `tutors.json` from it during the `reference` journeys, in every mode that runs that set | `traffic/journeys/reference.ts` |
 | Harness | Supabase / GitHub OAuth | Nothing is sent. An identity stub and a persistence stub speak their shapes so that signed-in journeys and write attribution work | `fixtures/identity/README.md`, `fixtures/persistence/README.md` |
@@ -99,17 +98,16 @@ Concrete outputs only; this is not a description of the monorepo. All on
 | Digest-pinned deploy overlays; `deployed` dispatch with four digests | `pnpm deploy:pin`, `pnpm check:deploy-pins`, `deploy.yml` (#298) | the deployed tag and digests compared with the release record |
 | Build identity on `GET /version` only; frozen clock `HARNESS_NOW` | apps (#296) | lets a comparison mask one route instead of chasing the sha |
 | JSON logs and `x-request-id` | apps (#297) | the `logs` artefact: JSON-ness, field set, request-id ratio |
-| The harness verdict on the release PR (**pending**, on a branch) | `release-harness-report.yml` | reads `release-report` and the run title the harness sets |
+| The harness verdict on the release PR | `release-harness-report.yml` (#312) | reads `release-report` and the run title the harness sets |
 
 ## Boundaries worth stating
 
 - **The harness never writes to a pull request, commit status or check.** Its
   workflows hold no `pull-requests`, `checks`, `statuses` or `deployments`
   permission, and a test enforces it. `report.md` is shaped as a PR comment,
-  and posting it on the release PR is the monorepo's job with the monorepo's
-  token (`docs/contract.md`, "What the harness does to a pull request"). That
-  workflow exists but is not on the monorepo's main branch yet, so today nobody
-  posts it.
+  and the monorepo's `release-harness-report.yml` posts it on the release PR
+  with the monorepo's token (`docs/contract.md`, "What the harness does to a
+  pull request"). The harness itself still never writes to a PR.
 - **The only writes it makes to GitHub** are on this repository: the `noise`
   branch, the `release-records` branch, `harness-override` issues, `rollback`
   issues (`docs/contract/workflows.json`, `writePermissions`).
@@ -129,5 +127,5 @@ Concrete outputs only; this is not a description of the monorepo. All on
 | People and roles | `claims/README.md`; `src/override.ts`; `.github/CODEOWNERS`; `docs/contract.md` (Compatibility, last line); `.github/workflows/post-deploy.yml` |
 | External systems | `docs/images.md`; `docs/monorepo/README.md`; `src/run.ts` (post-deploy branch, `externalSide`); `traffic/journeys/reference.ts`; `.github/workflows/*.yml` |
 | Stubs stand in, never contacted | `compose.harness.yaml` (identity and persistence services); `fixtures/identity/README.md`; `fixtures/persistence/README.md` |
-| Monorepo outputs | `git show origin/main:<path>` in `tutors-mono-repo` at `5d7283e`: `.github/workflows/deploy.yml`, `image-build.yml`, `release-dispatch.yml`; `scripts/promote-image.ts`, `release-harness.ts`, `release-rules.ts`, `release-claims-draft.ts`, `deploy-pin.ts`; `scripts/checks/migrations.ts`, `deploy-pins.ts`, `build-identity.ts`, `release-claims.ts`; `guides/Release-Strategy.md` "Deploy and post-deploy". The report workflow: `git show da7850d:.github/workflows/release-harness-report.yml`, and `git log origin/main..origin/feat/release-dispatch-digests-and-report` shows only that commit |
+| Monorepo outputs | `git show origin/main:<path>` in `tutors-mono-repo` at `623d6f5`: `.github/workflows/deploy.yml`, `image-build.yml`, `release-dispatch.yml`; `scripts/promote-image.ts`, `release-harness.ts`, `release-rules.ts`, `release-claims-draft.ts`, `deploy-pin.ts`; `scripts/checks/migrations.ts`, `deploy-pins.ts`, `build-identity.ts`, `release-claims.ts`; `guides/Release-Strategy.md` "Deploy and post-deploy". `.github/workflows/release-harness-report.yml`, `scripts/release-report-comment.ts` |
 | Bus planned | `docs/bus.md` ("interface and rule shipped in 1.2.0, disabled until a bus exists"); no `fixtures/bus/` directory exists |
