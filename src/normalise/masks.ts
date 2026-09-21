@@ -17,7 +17,12 @@ export const MaskSchema = z
     header: z.string().optional(),
     pattern: z.string().optional(),
     replace: z.string().optional(),
-    /** network only: remove matching requests from the capture instead of rewriting their URL. */
+    /**
+     * network and console only: remove matching requests (by URL) or console entries (by text) from the
+     * capture on both sides instead of rewriting them. For noise that varies in HOW MANY times it lands
+     * (which a rewrite cannot hide, because a page's console list is compared as a set of messages that
+     * is empty on one side and not on the other).
+     */
     drop: z.boolean().optional(),
     series: z.string().optional(),
     key: z.string().optional()
@@ -25,8 +30,8 @@ export const MaskSchema = z
   .refine((m) => [m.header, m.pattern, m.series, m.key].filter((x) => x !== undefined).length === 1, {
     message: "a mask has exactly one of header, pattern, series, key"
   })
-  .refine((m) => !m.drop || (m.pattern !== undefined && m.artefact.every((a) => a === "network")), {
-    message: "drop applies to network pattern masks only"
+  .refine((m) => !m.drop || (m.pattern !== undefined && m.artefact.every((a) => a === "network" || a === "console")), {
+    message: "drop applies to network and console pattern masks only"
   });
 
 export const MasksFileSchema = z.object({
@@ -100,7 +105,14 @@ function normalisePage(page: PageCapture, masks: Mask[], hits: MaskHits): PageCa
       } else if (artefact === "network" && mask.pattern) {
         network = network.map((n) => ({ ...n, url: applyPattern(n.url, mask, hits) }));
       }
-      if (artefact === "console" && mask.pattern) consoleEntries = consoleEntries.map((c) => ({ ...c, text: applyPattern(c.text, mask, hits) }));
+      if (artefact === "console" && mask.pattern && mask.drop) {
+        const re = new RegExp(mask.pattern);
+        const kept = consoleEntries.filter((c) => !re.test(c.text));
+        hit(hits, mask.id, consoleEntries.length - kept.length);
+        consoleEntries = kept;
+      } else if (artefact === "console" && mask.pattern) {
+        consoleEntries = consoleEntries.map((c) => ({ ...c, text: applyPattern(c.text, mask, hits) }));
+      }
     }
   }
   return { ...page, aria, headers, network, console: consoleEntries };
