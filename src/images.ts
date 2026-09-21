@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { APPS, dockerRef, imagesFor, isBuildable, isRegistryRef, parseRef, type App, type AppImages } from "./image-ref.ts";
 import { bashCommand } from "./local/bash.ts";
+import { harnessHome } from "./local/home.ts";
 import { classifyPullFailure, restoreImageCache, saveImageCache, type CacheEntry } from "./image-cache.ts";
 import { ROOT } from "./stack.ts";
 import type { ImageInfo, SideProvenance } from "./types.ts";
@@ -74,7 +75,7 @@ export interface LedgerStore {
   write(ledger: Ledger): void;
 }
 
-export const LEDGER_FILE = process.env.HARNESS_PROVENANCE_FILE ?? resolve(ROOT, ".harness", "image-provenance.json");
+export const LEDGER_FILE = process.env.HARNESS_PROVENANCE_FILE ?? resolve(harnessHome(), "image-provenance.json");
 
 export function fileLedger(path = LEDGER_FILE): LedgerStore {
   return {
