@@ -75,6 +75,8 @@ describe("realtime-rest-fallback-warning mask", () => {
   it("must still count: the WebSocket-failed message is not masked", () => {
     expect(diff(side("a", [WS], [WS]), side("b", [], [WS]))).toHaveLength(1);
     expect(diff(side("a", [], [WS]), side("b", [WS], [WS]))).toHaveLength(1);
-    expect(normalise(side("a", [WS], [WS]), masks, "noise").capture.journeys[0]!.pages[0]!.console).toEqual([WS]);
+    // Redaction (which runs in normalise) rewrites the apikey value in the message; the message itself is kept.
+    const kept = normalise(side("a", [WS], [WS]), masks, "noise").capture.journeys[0]!.pages[0]!.console;
+    expect(kept).toEqual([{ ...WS, text: WS.text.replace("apikey=k", "apikey=<redacted>") }]);
   });
 });
