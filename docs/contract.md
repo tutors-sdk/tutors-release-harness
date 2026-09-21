@@ -735,8 +735,8 @@ a contract major is a harness major.
 | **patch** | no change to anything above | wording of `reasons`, `summary`, `detail`, `report.md`, `report.html`, stdout; documentation; bug fixes that make the code match this document |
 
 Independently of the contract, the **harness version** must be bumped by any
-PR that changes what the harness compares or gates on — an engine, a mask, a
-journey, the gate, a mutant (`src/ci/engine-change.ts` lists the paths; CI
+PR that changes what the harness compares or gates on — an engine, a collector, a mask, a
+journey, a fixture, a stack, the gate, a mutant (`src/ci/engine-change.ts` lists the paths; CI
 enforces it and re-runs the mutants, see [TESTING.md](../TESTING.md)). Two
 reports are comparable only when their `harness.version` is the same: a new
 mask or engine can change the hunks for the same two images without any

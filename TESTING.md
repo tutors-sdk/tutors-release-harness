@@ -29,7 +29,7 @@ fail, and ratchets. This is the runway for the runway.
 | Two checkouts share a stack, or the harness touches one that is not its own | two worktrees on one machine replacing each other's compose stack; a kind cluster called `tutors-harness` adopted or deleted; a doctor that hides the old stack | Unit on `src/project.ts` (`tests/project-name.test.ts`: the same path, the same name, two paths two names, Windows case, overrides, the refusal through the process) and on `harness doctor` with a fake Docker and kind (`tests/local-doctor.test.ts`: a legacy stack and a legacy cluster are reported as not touched, and nothing that changes a container is ever run) |
 | The stacks are not identical | side b has an env var side a lacks | Unit on `compose.harness.yaml` and the kind manifests |
 | The whole thing cannot boot | compose or kind fails on a laptop or in CI | Smoke: A/A on one journey (CI, every PR) |
-| The harness cannot fail | a planted regression passes release mode | Mutants (weekly, and in CI on any PR that changes an engine, a mask, a journey, the gate or a mutant) |
+| The harness cannot fail | a planted regression passes release mode | Mutants (weekly, and in CI on any PR that changes an engine, a collector, a mask, a journey, a fixture, a stack, the gate or a mutant) |
 | The contract drifts | `report.json` gains a field the schema does not know; a workflow uses an undocumented flag | Unit (`tests/contract.test.ts`) |
 | The harness is noisy | A/A on the production tag is not clean | Nightly noise; the gate degrades to warn automatically |
 | The harness FAILs on weak evidence | release FAILs with no status, a stale, dirty or degraded one; a cache or a local build passes as a clean A/A | Unit, end to end (`tests/release-gate.test.ts`) and on the gate |
@@ -101,17 +101,35 @@ sides (`HARNESS_SBOM_SOURCE=generate`); without `syft`, `added-package` escapes
 and the run says why. A/A runs first, so the mutants are
 caught by a harness that has the right to gate.
 
-**A re-run is required when an engine, a mask, a journey, the gate or a mutant
-changes, and CI enforces it.** `weekly-mutants.yml` also runs on every pull
+**A re-run is required when an engine, a collector, a mask, a journey, a fixture, a stack, the gate
+or a mutant changes, and CI enforces it.** `weekly-mutants.yml` also runs on every pull
 request. Its first job (`src/ci/engine-change.ts`) looks at the files the PR
 touches:
 
 | Paths | |
 | --- | --- |
-| `src/compare/**`, `src/gate.ts` | engines and the gate |
+| `src/compare/**`, `src/gate.ts`, `src/claims/**` | engines, the gate, and the matcher that decides what is claimed |
 | `normalise/**`, `src/normalise/**` | masks and how they are applied |
-| `traffic/journeys/**` | journeys |
-| `mutants/**` | the mutants themselves |
+| `src/collectors/**`, `src/runtime/**`, `src/image-static/**`, `src/persistence/**`, `src/migration/**`, `src/bus/**`, `src/clock-probe.ts` | what is captured: a report can change with no engine touched |
+| `src/run.ts`, `src/modes/**`, `src/noise.ts`, `src/stack.ts`, `src/substrate/**` | how a run, a mode and a stack are put together, and the noise rule the gate consults |
+| `src/images.ts`, `src/image-ref.ts`, `src/image-cache.ts` | which images are judged, and whether they are trusted |
+| `compose.harness.yaml`, `deploy/**`, `fixtures/**`, `scripts/**` | what the two stacks are made of |
+| `traffic/**` | journeys, and the k6 load |
+| `mutants/**`, `src/mutants.ts`, `src/mutant-build.ts` | the mutants themselves, and the code that builds and runs them |
+| `pnpm-lock.yaml` | a dependency bump (Playwright, axe-core, pixelmatch) changes what is captured and compared |
+
+**Deliberately not engine** (each with its reason in `NON_ENGINE_PATHS`, `src/ci/engine-change.ts`):
+`src/ci` and `src/report` (the guards themselves; rendering, whose wording is a contract patch and which
+the mutants, asserting on the verdict, cannot exercise), `src/cli.ts` (parses and dispatches; behaviour
+lives in `src/run.ts`), `src/override.ts` (records an override, never changes a verdict), `src/types.ts`,
+`src/version.ts`, `tests`, `docs`, `claims`, `bin`, `package.json` (the version bump is the required change;
+dependencies are covered through the lock file), `README.md`, `TESTING.md`, `LICENSE`,
+`eslint.config.mjs`, `tsconfig.json` and `vitest.config.ts`. Workflows under `.github` are held to the
+contract by `tests/contract.test.ts` instead.
+
+**This list is enforced.** `tests/engine-change.test.ts` fails when a file or directory appears directly
+under `src/` or at the repository root that is neither an engine path nor listed as non-engine, so the list
+cannot go stale as the tree grows: whoever adds `src/foo/` must say which it is.
 
 If none is touched, the mutants are skipped and the check passes in a minute.
 If any is, the PR must

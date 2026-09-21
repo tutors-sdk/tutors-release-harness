@@ -210,7 +210,7 @@ prints the same), and the HTML and Markdown reports name it in their footer.
 | `nightly-noise.yml` | nightly | A/A on the production tag pulled from Quay (five runs, with load; last night's verified images as the outage fallback, a degraded night); publishes `noise-status.json` as an artifact and to the `noise` branch, and keeps the ratchet — [docs/noise-burndown.md](docs/noise-burndown.md) |
 | `release.yml` | monorepo dispatch on a release branch, or by hand | release mode with claims, 5 runs, k6; migration rehearsal; upgrade rehearsal |
 | `post-deploy.yml` | monorepo dispatch after deploy, then every 15 minutes | reference journeys against production vs the recorded candidate; opens a rollback issue on a new difference |
-| `weekly-mutants.yml` | weekly, and on every PR | the ten mutants; on a PR only when it touches an engine, a mask, a journey, the gate or a mutant, which also needs a version bump |
+| `weekly-mutants.yml` | weekly, and on every PR | the ten mutants; on a PR only when it touches an engine, a collector, a mask, a journey, a fixture, a stack, the gate or a mutant (`src/ci/engine-change.ts`), which also needs a version bump |
 
 Images are pulled from Quay (`HARNESS_IMAGE_PREFIX`, default in CI
 `quay.io/tutors-sdk/tutors-{app}`) and their cosign signatures verified — the

@@ -3,8 +3,8 @@
 # gating a release.
 #
 # Weekly, on demand, and on every pull request: a PR that touches an engine, a
-# mask, a journey, the gate or a mutant (src/ci/engine-change.ts lists the
-# paths) must bump the harness version and pass the mutants before it merges.
+# mask, a journey, a collector, a fixture, a stack, the gate or a mutant
+# (src/ci/engine-change.ts lists the paths, and a test keeps the list complete) must bump the harness version and pass the mutants before it merges.
 # "Mutants re-run (required)" always reports, so it can be a required check;
 # on any other PR it passes without running them.
 name: Weekly mutants
