@@ -1,7 +1,8 @@
 # 4. Dynamic views
 
-Four scenarios as sequence diagrams. Solid arrows are built. A dashed arrow with
-"not built" in the label is a step someone else has to build. Legend and
+Four scenarios as sequence diagrams (4c is two diagrams). Everything drawn is
+built; the monorepo side was read from its `origin/main` at `c14c3ee`
+(`deploy.yml`, `image-build.yml` promotion, `pnpm release:harness`). Legend and
 conventions: [README](README.md#legend).
 
 Where a default changes when the pending PR lands, it is in the notes:
@@ -50,6 +51,16 @@ sequenceDiagram
   end
   CLI-->>Job: exit 0, provenance kept in image-provenance.json
 ```
+
+Two things about the monorepo side of this diagram:
+
+- `release-dispatch.yml` builds the payload with `gh api` and `jq`. The same
+  payload can be built from a local clone with `pnpm release:harness` (#307),
+  which reads git only and dispatches nothing; a monorepo test holds the two to
+  the same fields and order. `rules_url` points at the `rules.json` that
+  `pnpm release:rules` (#308) writes.
+- The candidate's image built here, `X.Y.Z-rc.N`, is the one that ships. On the
+  final tag `image-build.yml` promotes its digest (see 4c-1).
 
 ### 4a-2. Capture, compare, claim, gate, record
 
@@ -171,15 +182,74 @@ Points a maintainer needs:
   runs. Reports and A/A history from before it are not evidence about the
   corrected engines (`docs/releases/1.3.0.md` on `feat/harness-1.2.1-followups`).
 
-## 4c. Post-deploy, from the deploy event to a rollback issue
+## 4c. From the judged candidate to production, and the post-deploy check
 
-The `deployed` event is drawn dashed because the monorepo has no deploy job yet.
-The every-15-minutes schedule is built and is the path that runs today.
+Two diagrams: the monorepo's path from the judged rc to a `deployed` event
+(built, on `origin/main`), then the harness's response.
+
+### 4c-1. Promote, pin, verify, announce
 
 ```mermaid
 sequenceDiagram
   autonumber
-  participant Deploy as Monorepo deploy job
+  participant Maint as Maintainer
+  participant IB as image-build.yml
+  participant Quay as Quay registry
+  participant Sig as Sigstore
+  participant Dep as deploy.yml
+  participant Env as production environment
+  participant GH as GitHub API
+  participant HR as Harness repository
+
+  Note over IB,Quay: the judged image is X.Y.Z-rc.N, built and signed earlier (4a-1)
+  Maint->>IB: push tag vX.Y.Z
+  IB->>Quay: per app, promote-image plan: rc tag exists, same git tree, revision label is the rc commit
+  IB->>Sig: cosign verify the rc digest, identity image-build.yml at the rc tag
+  alt every check passes for the app
+    IB->>Quay: retag the rc digest as X.Y.Z, X.Y, latest, sha-short, nothing rebuilt
+    Note over IB: Trivy runs again on the promoted digest before any tag moves
+  else no rc, different tree, wrong revision or signature
+    IB->>Quay: rebuild, sign and attest, warning and job summary say REBUILT
+    Note over IB: with require_promotion the run fails instead of rebuilding
+  end
+  Maint->>Maint: pnpm deploy:pin X.Y.Z rewrites the four overlays, newTag beside digest, opens a PR
+  Maint->>Dep: PR touches deploy/k8s/overlays, deploy.yml verify job
+  Dep->>Quay: check:deploy-pins --registry, the tag resolves to the pinned digest
+  Dep->>Sig: the digest is signed by image-build.yml, either signing ref
+  Note over Maint: merge, then roll out outside the repository (oc apply -k or GitOps)
+  Dep->>Dep: a push to main changed a pin, so announce may run
+  Dep->>Env: announce job waits for the environment's reviewers, if any are configured
+  Env-->>Dep: approved, the rollout has happened
+  Dep->>HR: gh variable set HARNESS_PRODUCTION_TAG, using HARNESS_TOKEN
+  Dep->>GH: repository_dispatch deployed with production and digests
+```
+
+- **The released digest equals the judged rc digest** for every app that was
+  promoted, so the digest in the overlays, the digest in the `deployed` payload
+  and the digest the harness recorded in the release record are the same bytes.
+  A `REBUILT` app breaks the equality, and then post-deploy's journeys are the
+  only check that production behaves like the judged image
+  (`guides/Release-Strategy.md`, "Pinned digest equals judged digest").
+- **Where the digests come from.** `deploy.yml` sends the digests the overlays
+  pin, after checking them against the registry and the signature. It does not
+  read a digest off a running cluster, because the rollout is outside the
+  repository.
+- **Only three digests are sent.** The payload's `digests` is built from
+  `reader`, `catalogue` and `live`. Once the `time` app is in the harness stack
+  (pending PR), the release record will hold a `time` digest too, and
+  `judgeDeployment` treats "the record has a digest and the deploy reported none"
+  as a gap: status `incomplete`, a warning. This is inferred from
+  `deploy.yml`'s `jq` expression and `src/release-record.ts:172`; no run
+  confirmed it. Either the monorepo sends `time` or the harness ignores it.
+
+### 4c-2. The post-deploy run
+
+The every-15-minutes schedule runs the same job with no payload; only a
+`deployed` dispatch carries a tag and digests to check.
+
+```mermaid
+sequenceDiagram
+  autonumber
   participant GH as GitHub Actions
   participant PD as post-deploy.yml job
   participant Art as Artifacts
@@ -189,9 +259,8 @@ sequenceDiagram
   participant Prod as Production apps
   participant Iss as Issues
 
-  Deploy-->>GH: not built: repository_dispatch deployed with the tag and image digests
-  Note over GH: the schedule, cron every 15 minutes, starts the same job with no payload
-  GH->>PD: start post-deploy.yml
+  Note over GH: deploy.yml already set HARNESS_PRODUCTION_TAG, so tonight's noise run and the weekly mutants use the new tag
+  GH->>PD: repository_dispatch deployed, or the 15 minute schedule
   PD->>Art: download release-report of the latest successful release.yml run
   PD->>NB: gh api noise-status.json, harness noise status vets it
   opt the payload named a deployed tag
@@ -214,13 +283,11 @@ sequenceDiagram
   end
 ```
 
-What the digest comparison does and does not establish: `judgeDeployment`
-compares the digests **the deploy job reported** with the digests **release mode
-recorded**. The harness does not read a digest off production, so this catches a
-deploy that reports something other than what was judged, not a deploy whose
-report is wrong (`src/release-record.ts`). Promoting the candidate's image to
-the release tag, rather than rebuilding it, is what keeps the digest equal
-(`docs/monorepo/README.md`).
+What the digest comparison establishes: `judgeDeployment` compares the digests
+**the deploy job reported** (the verified overlay pins) with the digests
+**release mode recorded**. The harness does not read a digest off production, so
+this catches a deploy that pins something other than what was judged, not a
+cluster that runs something other than what was pinned (`src/release-record.ts`).
 
 ## 4d. A purely local run, from a laptop with no GitHub
 
@@ -238,6 +305,7 @@ sequenceDiagram
   participant Dock as Docker and k6
   participant Out as out directory
   participant Prod as Production apps
+  participant Mono as Monorepo checkout
 
   Dev->>CLI: pnpm harness doctor
   CLI-->>Dev: what the machine lacks and how to install it, exit 0 or 1
@@ -249,7 +317,9 @@ sequenceDiagram
   CLI->>Out: captures, report.json, report.html, report.md, noise-status.json
   CLI->>Home: noise record, into noise/ status, history and summary
   CLI-->>Dev: exit code is the worst step
-  Dev->>CLI: harness local gate --a production --b candidate --claims file
+  Dev->>Mono: pnpm release:harness, print the release-candidate payload from git alone
+  Mono-->>Dev: production, candidate, migration refs, claims URL, runs
+  Dev->>CLI: harness local gate --a production --b candidate --claims file, or pnpm release:harness --run
   CLI->>Home: read the noise store, does it license a FAIL
   CLI->>Net: images ensure, build from ref if the registry lacks a tag
   CLI->>Dock: release, then migration, then upgrade, one after another under the lock
@@ -273,8 +343,14 @@ What differs from CI, all by design (`docs/local.md`):
   `gh pr comment <n> --body-file` is the manual step.
 - A registry outage is survived from `HARNESS_HOME/image-cache`, and the night is
   degraded, exactly as in CI.
-- There is no local trigger for a monorepo dispatch or a `deployed` event;
-  `local gate` and `local watch --once` are run by hand.
+- **The local trigger now exists, on the monorepo side.** `pnpm release:harness`
+  (#307) builds the dispatch payload from a local clone and, with `--run`, calls
+  `local gate`; `--deployed --run` calls `local watch --once` with
+  `HARNESS_PRODUCTION_TAG` set; `--nightly --run` calls `local nightly`. It tags,
+  pushes and dispatches nothing, so a candidate the registry lacks is built from
+  its tag by the harness (not evidence) unless the tag was pushed first. The
+  monorepo checkout and the harness checkout sit side by side, or `HARNESS_DIR`
+  names the harness.
 
 ## Evidence
 
@@ -283,5 +359,6 @@ What differs from CI, all by design (`docs/local.md`):
 | 4a-1 | `docs/monorepo/release-dispatch.yml` (jobs `candidate`, `images`, `dispatch`); `.github/workflows/release.yml` (steps up to "Pull and verify"); `src/images.ts`; `docs/images.md` |
 | 4a-2 | `.github/workflows/release.yml`; `src/run.ts:249-364`; `src/collectors/index.ts`; `src/gate.ts`; `src/release-record.ts`; `docs/contract.md` "What the harness does to a pull request" |
 | 4b | `.github/workflows/nightly-noise.yml`; `src/images.ts` (`ensureImages`); `src/image-cache.ts`; `src/run.ts` (`evidenceGaps`); `src/gate.ts`; `src/ci/noise-history.ts` (`assess`, `record`); `docs/noise-burndown.md` |
-| 4c | `.github/workflows/post-deploy.yml`; `src/run.ts:267-283, 367-372`; `src/release-record.ts` (`judgeDeployment`); `normalise/masks.yaml` (`modes: [post-deploy]`) |
-| 4d | `docs/local.md`; `src/local/cli.ts`, `tasks.ts`, `lock.ts`, `home.ts` |
+| 4c-1 | monorepo `.github/workflows/image-build.yml`, `scripts/promote-image.ts` (#303), `scripts/deploy-pin.ts`, `scripts/checks/deploy-pins.ts`, `.github/workflows/deploy.yml` (#298), `guides/Release-Strategy.md` "Deploy and post-deploy" |
+| 4c-2 | `.github/workflows/post-deploy.yml`; `src/run.ts:267-283, 367-372`; `src/release-record.ts` (`judgeDeployment`); `normalise/masks.yaml` (`modes: [post-deploy]`) |
+| 4d | `docs/local.md`; `src/local/cli.ts`, `tasks.ts`, `lock.ts`, `home.ts`; monorepo `scripts/release-harness.ts` |

@@ -164,7 +164,7 @@ flowchart LR
   cli["<b>harness CLI</b><br/>[Container]<br/>every step is a pnpm harness line"]:::container
 
   mono -->|"release-candidate dispatch"| release
-  mono -.->|"deployed dispatch: monorepo deploy job not built"| post
+  mono -->|"deployed dispatch, deploy.yml announce"| post
   cron --> nightly
   cron --> post
   cron --> weekly

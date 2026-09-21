@@ -12,7 +12,7 @@ flowchart TB
 
   harness["<b>Tutors release harness</b><br/>[Software System]<br/>Runs a candidate beside production through identical stacks, diffs everything observable, fails unless every difference is claimed"]:::focus
 
-  mono["<b>Tutors monorepo + CI</b><br/>[External system: tutors-sdk/tutors-mono-repo]<br/>Builds and signs images, tags candidates, dispatches events, holds claims, rules and migrations"]:::ext
+  mono["<b>Tutors monorepo + CI</b><br/>[External system: tutors-sdk/tutors-mono-repo]<br/>Builds, signs and promotes images; tags candidates; dispatches release-candidate and deployed; holds claims, rules, migrations and the deploy pins. Outputs listed below"]:::ext
   quay["<b>Quay registry</b><br/>[External system: quay.io/tutors-sdk/tutors-app]<br/>Public repositories of the app images"]:::ext
   sigstore["<b>Sigstore / cosign</b><br/>[External system]<br/>Keyless signatures and SBOM attestations, transparency log"]:::ext
   github["<b>GitHub Actions + API</b><br/>[External system]<br/>Runs the workflows; holds artifacts, two branches and issues"]:::ext
@@ -22,9 +22,9 @@ flowchart TB
   bus["<b>Message bus</b><br/>[Planned in the monorepo]<br/>Not built"]:::planned
 
   author -->|"pushes release branch<br/>and claims.yaml"| mono
-  mono -->|"signed images + SPDX SBOM<br/>[image-build.yml]"| quay
+  mono -->|"signed images + SPDX SBOM;<br/>final tag promotes the judged rc digest<br/>[image-build.yml]"| quay
   mono -->|"release-candidate dispatch<br/>[repository_dispatch, HARNESS_TOKEN]"| github
-  mono -.->|"deployed dispatch: contract built,<br/>monorepo deploy job not yet"| github
+  mono -->|"deployed dispatch (production + digests) and<br/>HARNESS_PRODUCTION_TAG variable<br/>[deploy.yml announce, HARNESS_TOKEN]"| github
   github -->|"starts thin workflow wrappers<br/>on dispatch and schedule"| harness
 
   harness -->|"pulls by tag or digest<br/>[docker pull, anonymous]"| quay
@@ -40,6 +40,7 @@ flowchart TB
   harness -->|"verdict, report.md, report.html"| reviewer
   dev -->|"engine, mask, journey,<br/>mutant changes; version bump"| harness
   ops -->|"runs local nightly and watch;<br/>acts on rollback issues"| harness
+  author -->|"pnpm release:harness: same payload<br/>from a local clone, runs local gate"| harness
 
   classDef person fill:#08427b,stroke:#052e56,color:#ffffff
   classDef focus fill:#1168bd,stroke:#0b4884,color:#ffffff
@@ -64,8 +65,9 @@ a loop that never exits on a difference), not from a role named in the code.
 | From | To | What flows | Where it is defined |
 | --- | --- | --- | --- |
 | Monorepo | GitHub | `release-candidate` repository dispatch: production and candidate tags, claims URL, optionally rules URL, digests, migration refs, runs | `docs/monorepo/release-dispatch.yml`, `docs/contract/workflows.json` |
-| Monorepo | GitHub | `deployed` dispatch: optionally the deployed tag and image digests. **The monorepo has no deploy job that sends it yet**; the harness side is built | `docs/monorepo/README.md`, "First day on Quay" step 5; `.github/workflows/post-deploy.yml` |
-| Monorepo | Quay | Multi-arch images per app, tagged `sha-<short>`, `main`, `X.Y.Z`, `X.Y.Z-rc.N`; cosign signature by digest; SPDX attestation | `docs/images.md`, section 3 |
+| Monorepo | GitHub | `HARNESS_PRODUCTION_TAG` set on the harness repository, then a `deployed` dispatch with `production` and `digests` (reader, catalogue, live). Sent by `deploy.yml`'s `announce` job after the overlay pins verify and, where reviewers are configured, they approve the `production` environment | monorepo `.github/workflows/deploy.yml` (#298); `.github/workflows/post-deploy.yml` |
+| Release author | Harness (locally) | `pnpm release:harness` builds the `release-candidate` payload from a local clone with git alone, and with `--run` hands it to `harness local gate` (`--deployed --run`: `local watch --once`; `--nightly --run`: `local nightly`). It tags, pushes and dispatches nothing | monorepo `scripts/release-harness.ts` (#307) |
+| Monorepo | Quay | Multi-arch images per app, tagged `sha-<short>`, `main`, `X.Y.Z-rc.N`; on the final tag the judged rc digest is **retagged** `X.Y.Z`, `X.Y`, `latest`, not rebuilt. Cosign signature by digest; SPDX attestation | `docs/images.md`, section 3; monorepo `image-build.yml`, `scripts/promote-image.ts` (#303) |
 | Harness | Quay | `docker pull` of each side's images by tag or `repo@sha256:...`; `docker buildx imagetools inspect` to resolve a tag to a digest | `src/images.ts` |
 | Harness | Sigstore | `cosign verify` by digest against the identity of the monorepo's `image-build.yml` and GitHub's OIDC issuer; `cosign verify-attestation` for the SBOM. Needs the network and cosign 3 or newer | `src/images.ts`, `src/image-static/sbom.ts`, `docs/local.md` (N3) |
 | Harness | Monorepo | `claims.yaml` and `rules.json` fetched by URL (`curl` in the workflow, `--rules` URL in the CLI); `supabase/migrations` by sparse git fetch; source by `git clone` only in the build-from-ref fallback | `.github/workflows/release.yml`, `scripts/fetch-migrations.sh`, `scripts/build-images.sh` |
@@ -74,6 +76,23 @@ a loop that never exits on a difference), not from a role named in the code.
 | Harness | Reference course host | The reader under test fetches `tutors.json` from it during the `reference` journeys, in every mode that runs that set | `traffic/journeys/reference.ts` |
 | Harness | Supabase / GitHub OAuth | Nothing is sent. An identity stub and a persistence stub speak their shapes so that signed-in journeys and write attribution work | `fixtures/identity/README.md`, `fixtures/persistence/README.md` |
 | Harness | Message bus | Nothing yet: `HARNESS_BUS` unset means "not collected" and says so | `docs/bus.md` |
+
+## What the monorepo produces for the harness
+
+Concrete outputs only; this is not a description of the monorepo. All on
+`tutors-mono-repo` `origin/main`.
+
+| Output | Produced by | The harness uses it as |
+| --- | --- | --- |
+| Signed, SBOM-attested images, one publisher | `image-build.yml` (the duplicate `images.yml` is gone, #305) | `--a` and `--b` images, verified by digest |
+| A promoted release: `X.Y.Z` is the judged `X.Y.Z-rc.N` digest, or `REBUILT` says it is not | `image-build.yml` with `scripts/promote-image.ts` (#303) | what makes the deployed digest equal the judged one, so the release record can match |
+| Candidate tags `vX.Y.Z-rc.N` and the `release-candidate` dispatch | `release-dispatch.yml` (payload by `gh api` and `jq`); locally `pnpm release:harness` (#307) | `--a`, `--b`, `--a-digests`, `--b-digests`, `--claims`, `--rules`, migration refs |
+| `release/claims.yaml`, shape-checked; drafts from changed Rules | `pnpm check:release-claims`; `pnpm release:claims:draft` (#301) | `--claims`; a claim names an artefact, a scope and a `reason` or `rule` |
+| `rules.json` | `pnpm release:rules` (#308) | `--rules` (`rules_url`); a claim's `rule: "0031"` must be in it |
+| `supabase/migrations`, expand/contract checked on the PR | `pnpm check:migrations` (#300) | migration mode reads two refs of it |
+| Digest-pinned deploy overlays; `deployed` dispatch | `pnpm deploy:pin`, `pnpm check:deploy-pins`, `deploy.yml` (#298) | the deployed tag and digests compared with the release record |
+| Build identity on `GET /version` only; frozen clock `HARNESS_NOW` | apps (#296) | lets a comparison mask one route instead of chasing the sha |
+| JSON logs and `x-request-id` | apps (#297) | the `logs` artefact: JSON-ness, field set, request-id ratio |
 
 ## Boundaries worth stating
 
@@ -90,8 +109,9 @@ a loop that never exits on a difference), not from a role named in the code.
   account and `HARNESS_TOKEN` are secrets of the monorepo.
 - **Production is only read**, and only through the anonymous reference-course
   journeys.
-- **Everything except dispatch, the `deployed` event and GitHub-hosted
-  publication runs on a laptop** with no GitHub (`docs/local.md`).
+- **Everything except GitHub-hosted publication runs on a laptop** with no
+  GitHub (`docs/local.md`). The two dispatches now have a local twin on the
+  monorepo side, `pnpm release:harness`, which prints or runs the equivalent.
 
 ## Evidence
 
@@ -100,5 +120,5 @@ a loop that never exits on a difference), not from a role named in the code.
 | People and roles | `claims/README.md`; `src/override.ts`; `.github/CODEOWNERS`; `docs/contract.md` (Compatibility, last line); `.github/workflows/post-deploy.yml` |
 | External systems | `docs/images.md`; `docs/monorepo/README.md`; `src/run.ts` (post-deploy branch, `externalSide`); `traffic/journeys/reference.ts`; `.github/workflows/*.yml` |
 | Stubs stand in, never contacted | `compose.harness.yaml` (identity and persistence services); `fixtures/identity/README.md`; `fixtures/persistence/README.md` |
+| Monorepo outputs | `git show origin/main:<path>` in `tutors-mono-repo` at `c14c3ee`: `.github/workflows/deploy.yml`, `image-build.yml`, `release-dispatch.yml`; `scripts/promote-image.ts`, `release-harness.ts`, `release-rules.ts`, `release-claims-draft.ts`, `deploy-pin.ts`; `scripts/checks/migrations.ts`, `deploy-pins.ts`, `build-identity.ts`; `guides/Release-Strategy.md` "Deploy and post-deploy" |
 | Bus planned | `docs/bus.md` ("interface and rule shipped in 1.2.0, disabled until a bus exists"); no `fixtures/bus/` directory exists |
-| `deployed` sender not built | `docs/monorepo/README.md`, "First day on Quay" |

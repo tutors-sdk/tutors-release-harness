@@ -332,9 +332,11 @@ flowchart TB
   masks["<b>mask-change.ts, engine-change.ts</b><br/>[Component: ci/]<br/>Masks in their own PR; engine change needs a version bump"]:::component
   naming["<b>Names and ports</b><br/>[Component: project.ts, local/ports.ts, local/bash.ts]<br/>Compose project and kind cluster from the checkout path; --port-offset; HARNESS_BASH"]:::component
   home["<b>HARNESS_HOME</b><br/>[Data store: local/home.ts]<br/>noise, image-cache, releases, overrides.jsonl, rollbacks, locks, image-provenance.json"]:::store
+  rh["<b>pnpm release:harness</b><br/>[External: monorepo scripts/release-harness.ts]<br/>Builds the dispatch payload from git; with --run calls local gate, local watch --once or local nightly"]:::ext
   core["<b>Run pipeline and image acquisition</b><br/>[Component: 3.1 and 3.4]<br/>The same run() and ensureImages() the workflows use"]:::component
 
   clits --> lcli
+  rh -->|"spawns pnpm harness local ..."| clits
   lcli --> doctor
   lcli --> tasks
   lcli --> nstore
@@ -353,6 +355,7 @@ flowchart TB
 
   classDef component fill:#85bbf0,stroke:#5d82a8,color:#000000
   classDef store fill:#2e6fae,stroke:#1f4d7a,color:#ffffff
+  classDef ext fill:#6b6b6b,stroke:#444444,color:#ffffff
 ```
 
 The four tasks, each planned as the workflow's own commands (`--dry-run` prints
@@ -364,6 +367,12 @@ the plan and starts nothing):
 | `harness local gate` | `noise status`, `images ensure`, then release, migration and upgrade runs as separate streams: a FAIL in one does not hide the others; writes `gate.md` and `gate.json` | `release.yml` |
 | `harness local mutants` | `images ensure`, `mutants --base` | `weekly-mutants.yml` |
 | `harness local watch` | `run --mode post-deploy` once or every 15 minutes; a difference writes `rollbacks/<time>-rollback.md`; never exits on a difference; needs no Docker | `post-deploy.yml` |
+
+The monorepo's `pnpm release:harness` (#307) is the local trigger for these
+tasks: it builds the `release-candidate` payload from a local clone with git
+alone and, with `--run`, calls `local gate` (`--deployed --run` calls `local
+watch --once`, `--nightly --run` calls `local nightly`). It lives in the
+monorepo, so it is drawn as an external element.
 
 The local store is this machine's calibration: the noise floor of a laptop's
 Chromium is not a Linux runner's, so the same rule (clean, verified, at most
@@ -385,5 +394,5 @@ seven days) applies to the store, and a CI status must not be copied into it
 | Gate and `trustNoise` | `src/gate.ts` |
 | Override | `src/override.ts` |
 | Image acquisition | `src/images.ts:352-517`, `src/image-cache.ts`, `src/image-ref.ts`, `src/digests.ts`, `scripts/build-images.sh` |
-| Local layer | `src/local/*`, `src/project.ts`, `docs/local.md`, `tests/local-parity.test.ts` |
+| Local layer | `src/local/*`, `src/project.ts`, `docs/local.md`, `tests/local-parity.test.ts`; monorepo `scripts/release-harness.ts` |
 | Statistics pending | `git show feat/harness-1.2.1-followups:src/compare/stats.ts`; `docs/releases/1.3.0.md` on that branch |

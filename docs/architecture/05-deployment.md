@@ -11,7 +11,11 @@ substrate stands in for a cluster with the same admission policy and nothing
 more (5C).
 
 The harness deploys nothing to production. Its own "deployment" is a checkout
-plus Docker.
+plus Docker. The monorepo deploys production: its overlays are pinned by digest,
+the promoted digest is the one the harness judged, and its OpenShift variants
+(`deploy/k8s/variants/openshift`) belong to the monorepo's own conformance check,
+not to this harness. What reaches the harness from that deployment is the
+`deployed` event (4c-1 in [04-dynamic.md](04-dynamic.md)).
 
 ## 5A. A laptop
 
@@ -30,6 +34,7 @@ flowchart TB
       kind["<b>kind cluster</b><br/>[optional, --substrate kind]<br/>tutors-harness-8hex"]:::container
     end
     checkout[("<b>Checkout</b><br/>[Data store: files]<br/>out/ for runs, .harness/ for HARNESS_HOME")]:::store
+    monoc["<b>Monorepo checkout</b><br/>[pnpm release:harness, beside the harness or HARNESS_DIR]<br/>Prints the dispatch payload from git; --run calls local gate, local watch --once or local nightly"]:::container
     sched["<b>OS scheduler</b><br/>[Task Scheduler or cron, optional]<br/>Runs local nightly and local watch --once"]:::container
   end
   net["<b>Quay, Sigstore, production, monorepo</b><br/>[External systems, over the network]"]:::ext
@@ -45,6 +50,7 @@ flowchart TB
   k6 -->|"project network"| stacks
   cli -->|"reads and writes"| checkout
   sched -->|"starts"| cli
+  monoc -->|"pnpm harness local ..."| cli
   tools -->|"pull, verify, fetch"| net
   chromium -.->|"post-deploy watch: production"| net
 
@@ -66,6 +72,14 @@ machine owner's, and no command adopts or removes it (`harness doctor` reports
 it as "not touched", and `harness kind up` and `down` refuse a cluster of that
 name). A run only ever runs `docker compose -p <its own project>` and touches its
 own kind namespaces.
+
+**Running the release flow from a laptop.** The monorepo's `pnpm release:harness`
+(#307) is the local trigger: it reads git only (the reader overlay on
+`origin/main`, tags, the release branch), builds the same `release-candidate`
+payload `release-dispatch.yml` sends, and with `--run` starts `harness local gate`.
+The harness checkout needs `pnpm install` and `pnpm harness doctor` to pass. It
+never tags, pushes or dispatches, so push the candidate tag first or the harness
+builds the candidate from the ref (not evidence).
 
 **Ports.** Thirteen host ports, each with its own variable; `--port-offset N` on
 `harness local ...` and `harness doctor` moves them all, and a variable you set
@@ -231,14 +245,20 @@ Only what the code and documents establish.
 
 | Item | Where it lives | Used by | Notes |
 | --- | --- | --- | --- |
-| `HARNESS_TOKEN` | a secret of the **monorepo**: a fine-grained PAT with `contents: write` on the harness repository | the monorepo's `release-dispatch.yml`, to send `repository_dispatch` | what GitHub requires for that call. The harness never holds it |
-| `QUAY_USERNAME`, `QUAY_PASSWORD` | secrets of the **monorepo**: a Quay robot account with write access to the four `tutors-*` repositories | the monorepo's `image-build.yml`, to push | **the harness needs no registry credential**: the repositories are public and it pulls anonymously |
+| `HARNESS_TOKEN` | a secret of the **monorepo**: a fine-grained PAT on the harness repository (`contents: write` for `repository_dispatch`; the exact permission `gh variable set` needs is set out in the monorepo's `guides/Release-Strategy.md`, not restated here) | the monorepo's `release-dispatch.yml`, to send `release-candidate`; and `deploy.yml`'s `announce` job, to set `HARNESS_PRODUCTION_TAG` and send `deployed` | The harness never holds it |
+| `production` environment | a GitHub environment of the **monorepo**, with required reviewers if configured | `deploy.yml` `announce` | the approval means "the rollout has happened"; without reviewers the job runs as soon as verify passes |
+| `QUAY_USERNAME`, `QUAY_PASSWORD` | secrets of the **monorepo**: a Quay robot account with write access to the four `tutors-*` repositories | the monorepo's `image-build.yml`, the only publisher (`images.yml` is removed), to push and to promote | **the harness needs no registry credential**: the repositories are public and it pulls anonymously |
 | the workflow's `github.token` | GitHub, per job | `gh api` and `gh issue create`, and `git push` in the two publish jobs | read-only by default. `contents: write` only in `nightly-noise.yml` `publish` and `release.yml` `publish-record`. `issues: write` only in `release.yml` `override-record` and in `post-deploy.yml`. A test lists these and fails on any other |
 | `pull-requests`, `checks`, `statuses`, `deployments` | never held | | forbidden; a test enforces it |
 | cosign signing key | none: signatures are keyless (GitHub OIDC), and the harness only **verifies**, against `HARNESS_COSIGN_IDENTITY` and `HARNESS_COSIGN_ISSUER` | `src/images.ts` | no key material in this repository |
 | Repository variables | GitHub, on the harness repository | the workflows | `HARNESS_IMAGE_PREFIX`, `HARNESS_COSIGN_IDENTITY`, `HARNESS_PRODUCTION_TAG`, `HARNESS_PRODUCTION_URLS`. Configuration, not secrets |
 | Values that look like secrets in the stacks | `compose.harness.yaml`, `src/substrate/kind.ts` | the apps under test | `PRIVATE_AUTH_SECRET: harness-only-not-a-real-secret-...`, `harness-client-id`, `harness-client-secret`, `harness-anon-key`: fixed fakes that exist only inside a stack |
 | Test CA and server certificate | `fixtures/identity/certs/`, committed on purpose | the identity stub, `NODE_EXTRA_CA_CERTS` in the signed-in readers | private keys "protect nothing"; trusted only inside the stack |
+
+`HARNESS_PRODUCTION_TAG` is written by the monorepo: `deploy.yml` sets it on the
+harness repository just before it dispatches `deployed`, so nothing needs to
+update it by hand (`docs/monorepo/README.md` still says it is by hand: see
+[Doc drift](README.md#doc-drift-found)).
 
 The production URLs are configuration (`HARNESS_PRODUCTION_URLS`). Post-deploy
 mode sends anonymous requests and needs no credential.
@@ -254,4 +274,5 @@ mode sends anonymous requests and needs no credential.
 | kind namespaces, PSA, NodePorts, manifests | `src/substrate/kind.ts`, `deploy/kind/kind-config.yaml`, `deploy/kind/README.md` |
 | OpenShift out of scope | `docs/local.md:13`; `deploy/kind/README.md` ("Why restricted PSA stands in for the restricted SCC") |
 | Secrets and permissions | `docs/monorepo/README.md`; `docs/contract/workflows.json`; `docs/contract.md` "What the harness does to a pull request"; `fixtures/identity/README.md` |
+| Monorepo deploy and promotion | monorepo `.github/workflows/deploy.yml`, `image-build.yml`, `scripts/promote-image.ts`, `scripts/release-harness.ts`, `guides/Release-Strategy.md` |
 | time app ports | `git show feat/harness-1.2.1-followups:compose.harness.yaml`, `deploy/kind/kind-config.yaml` on that branch |

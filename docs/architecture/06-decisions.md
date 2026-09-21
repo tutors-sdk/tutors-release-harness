@@ -30,7 +30,7 @@ decision record. Order is roughly the order a run meets them.
 | 21 | **The local noise store is the machine's own calibration** | A laptop's Chromium has a different noise floor from a Linux runner's, so the gate applies the same rule to a local status and a CI status must not be copied in | `src/local/noise-store.ts` (`defaultNoise`), `docs/local.md` |
 | 22 | **The harness never writes to a pull request** | It holds no token for the monorepo and no PR, check or status permission. It writes `report.md` as a comment-shaped artifact, and the monorepo posts it. Four write scopes on this repository, tested | `docs/contract.md` "What the harness does to a pull request", `docs/contract/workflows.json` |
 | 23 | **A FAIL can be overridden only by saying so to the harness** | A bypass in branch protection is invisible. An override keeps the verdict FAIL, exits 0, and records who and why, so the count of overrides measures whether the gate is trusted or merely tolerated | `src/override.ts`, `src/local/override-log.ts`, `release.yml` `override-record` |
-| 24 | **The release record is evidence, never a gate** | The harness cannot see what production really runs, only what the deploy reports. A mismatch or a missing record turns a PASS into a WARN and never softens a FAIL | `src/release-record.ts`, `docs/contract.md` "Checking a deployment" |
+| 24 | **The release record is evidence, never a gate** | The harness cannot see what production really runs, only what the deploy reports (the overlay pins that `deploy.yml` verified). A mismatch or a missing record turns a PASS into a WARN and never softens a FAIL | `src/release-record.ts`, `docs/contract.md` "Checking a deployment" |
 | 25 | **A checkout gets its own stack name, and a legacy name is never touched** | Two checkouts once shared `tutors-harness` and replaced each other's stack. The default is derived from the path, and a cluster or project called `tutors-harness` is assumed to be somebody else's | `src/project.ts`, `tests/project-name.test.ts` |
 | 26 | **kind under restricted PSA stands in for a cluster; OpenShift is out of scope** | Restricted PSA requires the same security context as OpenShift's restricted SCC, so a release that passes admission here would pass there. Routes and arbitrary UIDs are not rehearsed, and the harness does not claim to | `deploy/kind/README.md`, `docs/local.md:13` |
 | 27 | **The contract is versioned and held to the code by a test** | The monorepo builds against `docs/contract.md`, so a drift between document and code fails a test rather than a release | `docs/contract.md`, `tests/contract.test.ts`, `docs/contract/*.json` |
@@ -49,10 +49,25 @@ Not defects, but places a reviewer should look:
   adds a test that fails when a new top-level entry is in neither the engine list
   nor the non-engine list, because the list "could quietly rot".
 - **The deployed digests come from the deploy job, not from production**
-  (decision 24). Promoting rather than rebuilding the candidate is what keeps them
-  equal.
+  (decision 24). The monorepo now promotes the judged rc digest on the final tag
+  instead of rebuilding it (#303), so the digests match by construction for a
+  promoted app, and `deploy.yml` (#298) sends them. It sends three, and the
+  harness will record four once the time app lands, so expect an `incomplete`
+  warning until one side changes (`04-dynamic.md` 4c-1, inferred).
 - **k6 is `grafana/k6:latest` unless pinned** with `HARNESS_K6_IMAGE`; `harness
   doctor` warns (`docs/local.md` X6).
 - **Journeys are six, not a hundred.** A journey is added only when a real
   regression escaped that one would have caught (`README.md`, "Where to stop").
   The README's count of "twelve" is stale.
+
+## Monorepo-side decisions the harness depends on
+
+Not the harness's decisions, but the ones its verdicts rest on. Read from the
+monorepo's `origin/main` (`c14c3ee`).
+
+| Decision | Why | Look at |
+| --- | --- | --- |
+| **The final tag promotes the judged rc digest; it does not rebuild** | The harness judges `X.Y.Z-rc.N`, so the release must ship those bytes. An app that cannot be promoted is rebuilt with a `REBUILT` warning, and `require_promotion` turns that into a failure | monorepo `scripts/promote-image.ts`, `image-build.yml` (#303) |
+| **One image publisher** | Two workflows publishing the same tags could disagree about digests and signatures. The harness pins the identity of `image-build.yml` | monorepo `image-build.yml`; `images.yml` removed (#305) |
+| **Deploy overlays are pinned by digest and verified before anything is announced** | A tag can move; the runtime pulls the digest. The `deployed` event carries what was pinned, verified against the registry and signature | monorepo `deploy.yml`, `scripts/checks/deploy-pins.ts` (#298) |
+| **The local trigger builds the same payload as the workflow** | Judging a candidate should not need GitHub; a test holds the script and the workflow to the same fields | monorepo `scripts/release-harness.ts` (#307) |

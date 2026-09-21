@@ -145,15 +145,37 @@ corrected module lands; diagrams do not draw two versions.
   the seam (`src/bus/transport.ts`) and one transport, `http-recorder`, but no
   `fixtures/bus/` stub exists, and with `HARNESS_BUS` unset the collector says
   "not collected" (`docs/bus.md`). Drawn red-dashed.
-- **The monorepo's deploy job** that sends the `deployed` event
-  (`docs/monorepo/README.md`, "First day on Quay", step 5: "Until the monorepo
-  has a deploy job (plan items M11/M12)"). The harness side is built.
 - **Posting the report on a pull request.** The harness never does this by
   design (`docs/contract.md`, "What the harness does to a pull request"); it
   writes `report.md`, shaped as a comment, to the job summary and an artifact.
-  Posting it is the monorepo's job, and this repository holds no code for it.
+  Posting it is meant to be the monorepo's job, but no workflow on the
+  monorepo's `origin/main` does it either (a search for `report.md`, comment
+  APIs and `gh pr comment` finds nothing relevant). Nobody posts it today.
 - **A boot probe as an arbitrary UID** (what OpenShift's restricted-v2 assigns),
   named as "not built yet" in `docs/modes.md`.
+
+### Built on the monorepo side (merged to `tutors-mono-repo` main)
+
+All of this is built and drawn solid. Read from `origin/main` of `tutors-sdk/tutors-mono-repo`
+at `c14c3ee` (merge of #308). The diagrams show only what the harness sees of it;
+they are not a monorepo architecture document.
+
+| What | Where in the monorepo | PR |
+| --- | --- | --- |
+| `deploy.yml`: verifies the overlay pins against the registry and signature, then, in the `production` environment, sets `HARNESS_PRODUCTION_TAG` on the harness repository and dispatches `deployed` with `production` and `digests`. | `.github/workflows/deploy.yml` | #298 |
+| Overlays pinned by digest (`newTag` beside `digest`), `pnpm deploy:pin`, `pnpm check:deploy-pins` | `deploy/k8s/overlays/*`, `scripts/deploy-pin.ts`, `scripts/checks/deploy-pins.ts` | #298 |
+| `image-build.yml` is the only image publisher (`images.yml` removed) | `.github/workflows/image-build.yml` | #305 |
+| The final tag **promotes** the judged `X.Y.Z-rc.N` digest instead of rebuilding; an app that cannot be promoted is rebuilt with a `REBUILT` warning (or fails, with `require_promotion`) | `scripts/promote-image.ts` | #303 |
+| `pnpm release:harness`: builds the `release-candidate` payload from a local clone and can run the harness's `local gate`, `local watch --once` or `local nightly`. `release-dispatch.yml` still builds its payload with `gh api` and `jq`, and a test holds the two to the same fields | `scripts/release-harness.ts` | #307 |
+| `pnpm release:rules`: writes `rules.json`, the file behind the `rules_url` dispatch field and `rule:` claims | `scripts/release-rules.ts` | #308 |
+| EARS Rule ids and `pnpm release:claims:draft`, which drafts claim stubs from the Rules that changed | `scripts/release-claims-draft.ts` | #301 |
+| `pnpm check:migrations` and changelog artefact hints for claims | `scripts/checks/migrations.ts`, `CONTRIBUTING.md` | #300 |
+| Build identity on one endpoint, `GET /version`; `HARNESS_NOW` frozen clock | `scripts/checks/build-identity.ts` | #296 |
+| JSON logs and an `x-request-id` per request | the apps | #297 |
+
+Still on the monorepo's side of the line and not drawn as harness code: the
+OpenShift overlays (`deploy/k8s/variants/openshift`) and their conformance check.
+The harness does not use them (see [Out of scope](#out-of-scope)).
 
 ### Out of scope
 
@@ -163,15 +185,25 @@ stands in for a cluster with the same admission policy (`restricted` Pod
 Security Admission); it does not rehearse Routes, the router's headers or
 arbitrary-UID assignment (`deploy/kind/README.md`).
 
-## Where the docs and the code disagree
+## Doc drift found
 
-The diagrams follow the code. Places found where a document is stale:
+The diagrams follow the code. These documents in the harness repository disagree
+with it. They were **not edited**; this list is for the owner to fix.
 
-| Document says | Code says |
+| # | Document says | Code says |
+| --- | --- | --- |
+| 1 | `README.md`, "Where to stop": "Twelve journeys" | `traffic/journeys/journeys.ts:199` lists six journeys in three sets (`harness journeys` prints them) |
+| 2 | `mutants/README.md`: two of the ten mutants ("a lab page that writes a row for anonymous users" and "a navigator with a broken focus order") "need source access" and are not built | `mutants/mutants.yaml` lists `anon-write` and `focus-order` among the ten, and `mutants/wrap.mjs` plants them at the HTTP edge |
+| 3 | `docs/images.md` and `docs/local.md` count three apps ("Both are three images", 13 host ports) | true in this branch; four apps (`time`) and 15 host ports once `feat/harness-1.2.1-followups` lands. `docs/local.md` line 49 ("the 13 host ports") and `docs/images.md` line 4 need the change with it |
+
+Also stale since the monorepo work above merged (found while updating, and
+not part of the original three):
+
+| Document says | Now |
 | --- | --- |
-| `README.md`, "Where to stop": "Twelve journeys" | `traffic/journeys/journeys.ts:199` lists six journeys in three sets |
-| `mutants/README.md`: two of the ten mutants "need source access" and are not built | `mutants/mutants.yaml` lists `anon-write` and `focus-order` among the ten, planted at the HTTP edge by `mutants/wrap.mjs` |
-| `docs/images.md` and `docs/local.md` count three apps and 13 host ports | 3 apps and 13 ports in this branch; 4 apps and 15 ports once the time app lands |
+| `docs/local.md` parity rows R1, R2 and P1: "Open (monorepo)", "the monorepo has no local trigger" | `pnpm release:harness` (#307) is the local trigger; `docs/local.md` "What the monorepo would need to change" items 1 and 2 are done |
+| `docs/monorepo/README.md`, "First day on Quay" step 5: "Until the monorepo has a deploy job (plan items M11/M12), this variable is updated by hand" | `deploy.yml` (#298) sets it and dispatches `deployed` |
+| the monorepo's `guides/Release-Strategy.md` says the harness "reads no field" of `deployed` and lists digests as "not yet closed" | harness contract 1.3.0 reads both (`src/release-record.ts`). That guide is the monorepo's, noted for completeness |
 
 ## Keeping them true
 
