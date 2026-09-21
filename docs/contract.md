@@ -673,6 +673,15 @@ Every job that runs `harness images ensure` first installs cosign ≥ 3 with
 `sigstore/cosign-installer`; the images are public, so no registry credentials
 are held.
 
+Since 1.3.0 the jobs that judge images (nightly noise, the release job, weekly
+mutants) also install grype, pinned (`anchore/scan-action/download-grype`), fetch
+its vulnerability database once with `harness vuln-db update` into
+`.harness/vuln-db`, cache it per UTC day and grype version, and never update it
+during a run; the nightly and release jobs set `HARNESS_REQUIRE_STATIC=1`, the
+mutants job does not. See [`contract/workflows.json`](contract/workflows.json)
+(`tools.grype`, `vulnerabilityDatabase`) and
+[images.md](images.md#the-vulnerability-database).
+
 ### Artifacts
 
 Each is the run's whole `out/` directory unless noted, so a report is at

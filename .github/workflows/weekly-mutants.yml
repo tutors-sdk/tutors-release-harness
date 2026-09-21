@@ -64,6 +64,12 @@ jobs:
       # Who must have signed a pulled image: the monorepo's image-build.yml workflow (docs/contract.md).
       HARNESS_COSIGN_IDENTITY: ${{ vars.HARNESS_COSIGN_IDENTITY || '^https://github.com/tutors-sdk/tutors-mono-repo/\.github/workflows/image-build\.yml@' }}
       TAG: ${{ inputs.tag || vars.HARNESS_PRODUCTION_TAG || 'main' }}
+      # grype, pinned: the version download-grype installs, and part of the database cache key.
+      GRYPE_VERSION: v0.119.0
+      # syft, pinned: the SBOM generator of the mutants (the version the harness's parsers are tested against).
+      SYFT_VERSION: v1.52.0
+      # The one directory every scan reads: the default of a local run is HARNESS_HOME/vuln-db, the same place (docs/local.md).
+      HARNESS_VULN_DB_DIR: ${{ github.workspace }}/.harness/vuln-db
     steps:
       - uses: actions/checkout@v4
         with:
@@ -82,10 +88,53 @@ jobs:
 
       # The image-level mutants (base-swap, added-package) are built locally and have no attestation, so `harness mutants`
       # generates their SBOMs with syft on both sides (HARNESS_SBOM_SOURCE=generate). Without syft added-package escapes.
+      # `download-syft` takes the tag with its `v` (syft-version) and prints the path of the binary as `cmd`.
       - uses: anchore/sbom-action/download-syft@v0
         id: syft
+        with:
+          syft-version: ${{ env.SYFT_VERSION }}
       - name: Point the harness at the downloaded syft
         run: echo "HARNESS_SBOM_CMD=${{ steps.syft.outputs.cmd }} docker:{image} -o spdx-json" >> "$GITHUB_ENV"
+
+      # The `vulns` artefact: each image's SBOM, scanned by grype (informational here: without HARNESS_REQUIRE_STATIC a scan that cannot run is 'not collected', not a failure).
+      # Grype is pinned, and so is its database: fetched ONCE, here, into HARNESS_VULN_DB_DIR, restored from a cache with one
+      # entry per UTC day and grype version, and never updated during the run (the harness switches every scanner update off).
+      # Both sides of every comparison are scanned with the same database (docs/images.md, "The vulnerability database").
+      # download-grype takes the tag with its `v` and prints the absolute path of the binary as `cmd`; it is not on PATH.
+      - uses: anchore/scan-action/download-grype@v7.4.2
+        id: grype
+        with:
+          grype-version: ${{ env.GRYPE_VERSION }}
+      - name: Put the pinned grype on PATH
+        run: dirname "${{ steps.grype.outputs.cmd }}" >> "$GITHUB_PATH"
+
+      - name: Which day's vulnerability database
+        id: vulndb
+        run: echo "day=$(date -u +%F)" >> "$GITHUB_OUTPUT"
+      # An earlier day's entry (restore-keys) is still one database for the whole run, and better than none when grype's
+      # servers are down; grype itself refuses one older than HARNESS_VULN_DB_MAX_AGE_DAYS (default 5).
+      - name: Restore the vulnerability database
+        id: vulndb-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .harness/vuln-db
+          key: vuln-db-grype-${{ env.GRYPE_VERSION }}-${{ steps.vulndb.outputs.day }}
+          restore-keys: |
+            vuln-db-grype-${{ env.GRYPE_VERSION }}-
+      - name: Fetch the vulnerability database once (a cache miss only)
+        id: vulndb-fetch
+        if: steps.vulndb-cache.outputs.cache-hit != 'true'
+        continue-on-error: true
+        run: pnpm harness vuln-db update
+      - name: Keep today's vulnerability database for the other runs
+        if: steps.vulndb-fetch.outcome == 'success'
+        uses: actions/cache/save@v4
+        with:
+          path: .harness/vuln-db
+          key: vuln-db-grype-${{ env.GRYPE_VERSION }}-${{ steps.vulndb.outputs.day }}
+      # The database this run judges with: schema, build time, age, checksum. Exit 0 even when it is unusable: nothing in this job needs it.
+      - name: The vulnerability database this run judges with
+        run: pnpm harness vuln-db status
 
       - name: Pull and verify, or build, the base images
         run: pnpm harness images ensure --a "$TAG" --b "$TAG"
