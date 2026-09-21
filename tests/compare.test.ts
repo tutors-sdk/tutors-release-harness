@@ -61,6 +61,17 @@ describe("engines catch one planted change each", () => {
     expect(hunks[0]!.summary).toContain("response schema");
   });
 
+  it("network: a body one side never got to read is not a schema change, but status and content type are still compared", () => {
+    const b = capture("b");
+    const entry = b.journeys[0]!.pages[0]!.network[1]!;
+    const a = capture("a");
+    a.journeys[0]!.pages[0]!.network[1]!.schemaHash = "unread"; // the page navigated away while this request was in flight on a
+    expect(diff(a, b)).toEqual([]);
+    expect(diff(b, a)).toEqual([]);
+    entry.status = 500;
+    expect(diff(a, b).map((h) => h.summary).join(" ")).toContain("status changed");
+  });
+
   it("console: a new error on b fails, an error gone on b is informational", () => {
     const a = capture("a");
     a.journeys[0]!.pages[0]!.console.push({ level: "warning", text: "old warning" });

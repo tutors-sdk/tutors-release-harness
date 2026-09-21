@@ -137,6 +137,8 @@ export const network: Engine = (a, b) => {
         ["response schema", na.schemaHash, nb.schemaHash]
       ];
       for (const [field, va, vb] of fields) {
+        // A body one side never got to read says nothing about the release (src/collectors/browser.ts, SCHEMA_UNREAD).
+        if (field === "response schema" && (va === "unread" || vb === "unread")) continue;
         if (va !== vb) hunks.push({ id: hunkId("network", scope), artefact: "network", scope, path: pair.path, severity: "fail", summary: `${pair.pageKey}: ${scope} ${field} changed: ${va || "∅"} → ${vb || "∅"}` });
       }
     }

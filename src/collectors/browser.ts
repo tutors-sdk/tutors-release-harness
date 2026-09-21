@@ -42,11 +42,20 @@ export async function launchBrowser(): Promise<Browser> {
 export function stripOrigins(text: string, spec: SideSpec): string {
   let out = text;
   const origins = [spec.urls.reader, spec.urls.catalogue, spec.urls.live, spec.urls.time, spec.urls.readerAuth, spec.urls.persistence].filter((o): o is string => !!o);
-  for (const origin of origins) out = out.split(origin).join("{{origin}}");
+  for (const origin of origins) {
+    out = out.split(origin).join("{{origin}}");
+    // The same origin over a WebSocket (`ws://persistence-a.harness.test:8090/realtime/...`, which the browser prints in a
+    // console error): the two sides' stubs are on different ports and are the same finding-free noise as their http origins.
+    const socket = origin.replace(/^http/, "ws");
+    if (socket !== origin) out = out.split(socket).join("{{origin}}");
+  }
   const courseHosts = [...new Set([spec.urls.courseId, reference.host, reference.courseId])].sort((x, y) => y.length - x.length);
   for (const host of courseHosts) for (const scheme of ["http://", "https://"]) out = out.split(`${scheme}${host}`).join("{{course}}");
   return out;
 }
+
+/** `NetworkEntry.schemaHash` of a JSON response whose body could not be read; never equal to a real hash. */
+export const SCHEMA_UNREAD = "unread";
 
 /** A hash of a JSON document's shape — keys and value types, not values — so data differences are not schema differences. */
 export function schemaHash(json: unknown): string {
@@ -74,7 +83,10 @@ async function entryFor(response: Response, spec: SideSpec): Promise<NetworkEntr
       const text = await response.text();
       if (text.length <= MAX_HASHED_BODY) hash = schemaHash(JSON.parse(text));
     } catch {
-      hash = "";
+      // The browser dropped the body (the page navigated away while an invalidation request was in flight) or it was not
+      // valid JSON: say that this side's body was not read, rather than that it had no shape. The engine does not compare
+      // a shape against "not read" (that is timing, not the release), and still compares status and content type.
+      hash = SCHEMA_UNREAD;
     }
   }
   return {
