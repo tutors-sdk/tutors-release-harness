@@ -406,7 +406,8 @@ introduce. So:
    database that failed to arrive is never stored under today's key.
 5. `pnpm harness vuln-db status` runs before anything else does. It exits 1 on an
    unusable database (absent, invalid, or older than the limit) only when
-   `HARNESS_REQUIRE_STATIC` is set, so in the nightly and the release it stops the job
+   the vulnerability artefact is required (`HARNESS_REQUIRE_STATIC`, or
+   `HARNESS_REQUIRE_ARTEFACTS` naming `vulns`), so in the nightly and the release it stops the job
    with the reason, and in the mutants job it prints it and goes on.
 
 The database is about 2.1 GB on disk (a 160 MB download, decompressed into one
@@ -431,7 +432,9 @@ prints the build time, the age and the checksum.
 
 **Decision: `HARNESS_REQUIRE_STATIC=1` in the nightly and the release, not in the
 mutants.** It turns "an artefact could not be collected" from an informational hunk
-into a failing one. It is set where an uncollected artefact is a hole in a verdict
+into a failing one (it is the alias of `HARNESS_REQUIRE_ARTEFACTS=static`, the
+convention of [contract.md](contract.md#not-collected-one-convention); the workflows keep the
+older name). It is set where an uncollected artefact is a hole in a verdict
 the pipeline stands behind, and left off where it is not:
 
 | Job | `HARNESS_REQUIRE_STATIC` | Why |
