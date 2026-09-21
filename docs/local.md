@@ -14,6 +14,7 @@ OpenShift is out of scope. The compose and kind substrates are what runs.
 
 - [Start here](#start-here)
 - [The five tasks](#the-five-tasks)
+- [Compare main with the last release](#compare-main-with-the-last-release)
 - [Parity matrix](#parity-matrix)
 - [Where state lives](#where-state-lives)
 - [The vulnerability database](#the-vulnerability-database)
@@ -160,6 +161,117 @@ still counts from the start. A local WARN or FAIL says `decide whether to roll
 back`, not `open a rollback issue`: nothing here opens an issue (the note under
 `rollbacks/` is written on a FAIL only), whereas the workflow's reason keeps the CI
 wording (`HARNESS_ROLLBACK_ISSUE`, or GitHub Actions).
+
+## Compare main with the last release
+
+```console
+pnpm compare                       # main against the newest release: 3 runs, with the k6 load leg
+pnpm compare --no-load --runs 1    # a fast look
+pnpm harness local compare [--a 16.2.2] [--b main] [--runs 3] [--load 20x30s | --no-load] \
+    [--claims path\to\claims.yaml] [--port-offset n] [--dry-run] [--json] [--strict]
+```
+
+One command for "what does `main` change, compared with what people run now?". No tag
+lookups by hand: it finds the last release itself, pulls and verifies both sides, runs the
+release gate's release step, and ends with the verdict, the counts and where the report is.
+It is [`local gate --only release`](#release-gate-for-a-candidate-harness-local-gate) with
+different defaults (`src/local/compare.ts` builds no steps of its own; it calls the gate's
+plan builder), so `--dry-run` prints the same three commands:
+
+```console
+harness noise status
+harness images ensure --a 16.2.2 --b main
+harness run --mode release --a 16.2.2 --b main --runs 3 --load 20x30s
+```
+
+**Which release is "the last release".** `--a` defaults to the highest `X.Y.Z` tag that
+exists for all four apps (`reader`, `catalogue`, `live`, `time`) under
+`HARNESS_IMAGE_PREFIX` (default `quay.io/tutors-sdk/tutors-{app}`), read from the public Quay
+API (`https://quay.io/api/v1/repository/tutors-sdk/tutors-<app>/tag/?limit=100&onlyActiveTags=true`,
+paged; read-only, no credentials). Only strict `X.Y.Z` counts: `main`, `latest`, `sha-...`,
+the `16.2` alias and `-rc.1` tags are ignored, and a release one app lacks is not the last
+release (the previous one is). The line printed says which it chose and how:
+
+```text
+resolved: 16.2.2 (highest X.Y.Z present for reader, catalogue, live, time on quay.io)
+```
+
+If the prefix is not a Quay one, or Quay cannot be queried, it falls back to
+`HARNESS_PRODUCTION_TAG` (not its literal default `main`) and says so; with neither it exits
+`2` and tells you to pass `--a <tag>`. `--a` always wins and needs no network. `--b` defaults
+to `main` and takes any tag.
+
+**What it pulls.** Eight images: the four apps at the release and at `main`, roughly 350 to 385
+MB each unpacked, from `quay.io/tutors-sdk/tutors-{reader,catalogue,live,time}`. Each is
+cosign-verified on its digest, as `images ensure` always does. **Nothing is built**: the
+command passes no monorepo git refs, so an image the registry lacks is an exit `2`, not a
+build. Docker keeps what it pulled, so the second run pulls only what moved (`main` moves).
+`main` is a moving tag: the summary and the report header name the digest that was judged.
+
+**What it does not do.** No claims unless you pass `--claims`, so every difference is
+unclaimed, which is the point: a full list of what changed. With a clean, recent
+[noise status](#the-noise-store-is-this-machines-calibration) the verdict is therefore `FAIL`
+("this changed", not "this is broken"); without one it is a `WARN` and says why. It does not
+run the migration or upgrade rehearsals (`local gate` does), and it never touches the noise
+store. Like every release run it does write a release record for the candidate
+(`<HARNESS_HOME>/releases/main.json`), and a run that ends `pass` or `warn` becomes the
+"newest release run" that `harness local watch` compares production with by default and that
+`harness prune` keeps; pass `--recorded` to `watch` if that matters to you.
+
+**How long.** Measured on a Windows 11 laptop with Docker Desktop, with the images already in
+Docker (a second run; verifying them is quick): the default `pnpm compare` (3 runs, k6 20x30s)
+took 9 min 15 s, and the fast look `pnpm compare --no-load --runs 1` took 4 min 47 s. Most of
+it is starting the two stacks (15 containers), the SBOMs, the six journeys per side and
+the k6 legs; a run scales with `--runs`. The first run on a machine also downloads the images
+(about 2.9 GB unpacked across the eight; that time was not measured and depends on your
+network).
+
+**Where the report is.** The last lines of the run:
+
+```text
+== compare: main beside the last release 16.2.2
+verdict:      WARN
+              - advisory only: no A/A (noise) result was supplied; run `harness run --mode noise` first and pass --noise <its noise-status.json>
+              - 735 unclaimed diff(s)
+              - NOT COLLECTED: vulns of reader, catalogue, live, time on side a: grype is not installed (...)
+differences:  746 (0 claimed, 735 unclaimed, 11 informational)
+report.md:    D:\code\harness\out\2026-09-21T15-05-03-release\report.md
+report.html:  D:\code\harness\out\2026-09-21T15-05-03-release\report.html
+              open out/2026-09-21T15-05-03-release/report.html in a browser to read it
+elapsed:      4m 47s
+exit code:    0 (an exploration: 0 whenever a report was produced; --strict follows the verdict)
+
+next:
+  1. read D:\code\harness\out\2026-09-21T15-05-03-release\report.html
+  2. judge these captures against a claims file, without running anything again: pnpm harness compare --dir D:\code\harness\out\2026-09-21T15-05-03-release --mode release --claims <claims.yaml>
+  3. the gate as CI runs it (claims, five runs, load, the migration and upgrade rehearsals): pnpm harness local gate --a 16.2.2 --b main --claims <claims.yaml>
+```
+
+`out/<timestamp>-release/report.html` can be opened in a browser (`start
+out\<timestamp>-release\report.html` in PowerShell, `open` on macOS, `xdg-open` on Linux);
+`report.md` is the same as text for a PR comment, `report.json` is what a program reads, and
+the directory holds the captures of both sides. The follow-ups it lists are commands that
+exist: `harness compare --dir <that directory> --mode release --claims <file>` judges the same
+captures against a claims file without running anything again, and `harness local gate` is the
+full gate.
+
+**Exit codes.** This is an exploration, not a gate. Exit `0` when the run completed and
+produced a report, whatever the verdict; `2` when it could not judge (no release could be
+resolved, an image is missing or unverifiable, another harness run holds the lock, the run
+wrote no report); `1` only for a harness fault (a report that cannot be read). `--strict`
+makes the exit follow the verdict like `local gate`: `1` on a `FAIL`. `--json` prints one JSON
+document on stdout (the plan with `--dry-run`, else the summary) and sends everything else to
+stderr.
+
+**Windows.** The same in PowerShell and Git Bash; `pnpm compare` needs no `bash` (no image is
+built, no migration fetched). The stack uses a fixed compose subnet and 15 host ports, so it
+cannot run while another harness stack is up on the machine, from this checkout or another
+worktree (the run fails with "Pool overlaps", exit `2`): check `docker network ls` for a
+`tutors-harness-<8 hex>_default` network, and move the ports beside a stack of your own with
+`--port-offset 2000` ([below](#running-beside-your-own-stack); `1000` lands on the kind
+cluster's ports). Your own `tutors-*` and `supabase_*` containers are never touched; a run
+only stops the compose project named for this checkout. Run `pnpm harness doctor` first, and
+keep the checkout path short (run directories nest deep).
 
 ## Parity matrix
 
@@ -458,7 +570,7 @@ Still open, and not ours to edit:
 Contract 1.3.0 made these commands part of the contract (`docs/contract.md`, "CLI"
 and the changelog): `doctor`, `noise record`, `noise status` and `guard` are
 **stable**, because workflows and the monorepo depend on them; `local`, `override list` and
-`noise history` are not, and neither are `local smoke`, `prune` and `vuln-db`, which came in 1.4.0. The default it documents is the one
+`noise history` are not, and neither are `local smoke`, `local compare`, `prune` and `vuln-db`, which came in 1.4.0. The default it documents is the one
 described above: without `--noise`, release and post-deploy mode read
 `<HARNESS_HOME>/noise` (explicit `--noise`, then the store, then none; a missing
 status still only warns). `tests/contract.test.ts` lets this repository's own

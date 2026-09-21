@@ -12,6 +12,7 @@ export { DEFAULT_PORTS, portEnv } from "./ports.ts";
  *   harness local mutants   the harness's own signal
  *   harness local watch     post-deploy comparison against production, once or every 15 minutes
  *   harness local smoke     the two-stacks smoke of ci.yml: boot both stacks, one journey A/A, the migration fixtures accepted and rejected
+ *   harness local compare   the gate's release step against the last release, as an exploration with no claims (src/local/compare.ts)
  *
  * A plan is data: the argv of `harness ...` steps, exactly the lines the
  * GitHub workflows run (tests/local-parity.test.ts holds the two together), so a
@@ -50,7 +51,7 @@ export interface Step {
 }
 
 export interface Plan {
-  task: "nightly" | "gate" | "mutants" | "watch" | "smoke";
+  task: "nightly" | "gate" | "mutants" | "watch" | "smoke" | "compare";
   steps: Step[];
 }
 
@@ -97,6 +98,8 @@ export interface GateOptions {
   /** Since 1.3.0: the release's rules.json, a path or a URL (`--rules`). */
   rules?: string;
   runs?: number;
+  /** The release step's k6 load, `<rate>x<duration>`; `false` drops the load leg. Default: the gate's ({@link WORKFLOW_DEFAULTS}.load). */
+  load?: string | false;
   migrationsA?: string;
   migrationsB?: string;
   /** Since 1.3.0: the dispatch's production_digests / candidate_digests, as `--a-digests` / `--b-digests` take them. */
@@ -119,7 +122,7 @@ export function planGate(o: GateOptions): Plan {
     steps.push({
       id: "release",
       title: "release mode: A/B, claims, k6",
-      argv: ["run", "--mode", "release", "--a", o.production, "--b", o.candidate, "--runs", String(o.runs ?? WORKFLOW_DEFAULTS.runs), "--load", WORKFLOW_DEFAULTS.load, ...pins, ...(o.claims ? ["--claims", o.claims] : []), ...(o.rules ? ["--rules", o.rules] : []), ...override],
+      argv: ["run", "--mode", "release", "--a", o.production, "--b", o.candidate, "--runs", String(o.runs ?? WORKFLOW_DEFAULTS.runs), ...(o.load === false ? [] : ["--load", o.load ?? WORKFLOW_DEFAULTS.load]), ...pins, ...(o.claims ? ["--claims", o.claims] : []), ...(o.rules ? ["--rules", o.rules] : []), ...override],
       stream: "release",
       gatesStream: false
     });

@@ -123,6 +123,14 @@ const USAGE = `tutors-release-harness
   harness local smoke [--tag T] [--only stacks|migration]
       The two-stacks smoke ci.yml runs: both stacks boot from one tag, one journey A/A, and the migration fixtures (the
       expanding one passes, the contracting one must be rejected). pnpm smoke is the same command.
+  harness local compare [--a <tag>] [--b main] [--runs 3] [--load 20x30s | --no-load] [--claims f] [--strict] [--json]
+      main against the last release, in one command. --a is the highest X.Y.Z present for all four apps on quay.io
+      (else HARNESS_PRODUCTION_TAG, else exit 2: pass --a). Pulls and cosign-verifies both sides, builds nothing, runs the
+      gate's release step, and prints the verdict, the counts and where report.html is. No claims unless --claims, so every
+      difference is listed as unclaimed. An exploration, not a gate: exit 0 whenever a report was produced (whatever the
+      verdict), 2 when it could not judge (no release found, an image missing or unverifiable, the run lock held), 1 for a
+      harness fault; --strict makes the exit follow the verdict like \`local gate\`. pnpm compare is the same command;
+      a fast look is pnpm compare --no-load --runs 1.
   harness local watch [--recorded <release run dir>] [--production reader=URL,catalogue=URL,live=URL] [--deployed <tag> [--deployed-digests d] [--release-record f]] [--interval 15m] [--once]
       Each is what its workflow does, as one command, from the same harness commands (--dry-run prints them).
       All take --port-offset <n> to move the compose stack's host ports beside a stack of your own.
@@ -236,6 +244,8 @@ async function main(argv: string[]): Promise<number> {
       require: { type: "boolean", default: false },
       record: { type: "boolean", default: true },
       yes: { type: "boolean", default: false },
+      strict: { type: "boolean", default: false },
+      "no-load": { type: "boolean", default: false },
       json: { type: "boolean", default: false },
       help: { type: "boolean", short: "h", default: false }
     },

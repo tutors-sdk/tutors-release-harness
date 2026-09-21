@@ -23,7 +23,8 @@
     "noise": "tsx src/cli.ts run --mode noise",
     "release": "tsx src/cli.ts run --mode release",
     "mutants": "tsx src/cli.ts mutants",
-    "smoke": "tsx src/cli.ts local smoke"
+    "smoke": "tsx src/cli.ts local smoke",
+    "compare": "tsx src/cli.ts local compare"
   },
   "dependencies": {
     "@axe-core/playwright": "^4.10.2",

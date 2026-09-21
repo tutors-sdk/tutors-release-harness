@@ -39,6 +39,18 @@ pnpm harness run --mode upgrade   --a 16.2.0 --b 16.3.0-rc.1
 pnpm harness mutants --base local                              # ten planted regressions, all caught
 ```
 
+**What does `main` change since the last release?** One command; it finds the release itself
+(the highest `X.Y.Z` on quay.io for all four apps), pulls and verifies both sides, runs the
+release gate's release step with no claims, and prints the verdict, the counts and the report path:
+
+```bash
+pnpm compare                       # main against the last release: 3 runs, with the k6 load leg
+pnpm compare --no-load --runs 1    # a fast look
+```
+
+An exploration, not a gate: it exits 0 whenever it produced a report (`--strict` follows the
+verdict). See [docs/local.md](docs/local.md#compare-main-with-the-last-release).
+
 Every run writes `out/<timestamp>-<mode>/` with `a/` and `b/` captures
 (`capture.json`, screenshots, k6 output), `report.json`, `report.html`,
 `report.md` (the PR comment) and, in noise mode, `noise-status.json`.
@@ -179,6 +191,7 @@ harness mutants --base <ref>
 harness journeys
 harness version [--json]
 harness local smoke [--tag T] [--only stacks|migration] [--dry-run]   # the two-stacks smoke CI runs: pnpm smoke
+harness local compare [--a tag] [--b main] [--runs 3] [--no-load] [--strict] [--dry-run]   # main against the last release: pnpm compare
 harness prune [--older-than-days 14] [--keep-last 5] [--yes]   # frees out/ and the image cache; a dry run without --yes
 ```
 

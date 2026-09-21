@@ -604,7 +604,7 @@ text; the file `noise-history.json` is what a program reads), `harness prune` (d
 old run directories and an old image cache: a dry run unless `--yes`, and no workflow
 calls it) and the flags only they take (`--only`, `--migrations-a`, `--migrations-b`,
 `--interval`, `--port-offset`, `--dry-run`, `--once`, `--record`, `--last`, `--since`,
-`--older-than-days`, `--keep-last`, `--image-cache-days`, `--yes`) are not.
+`--older-than-days`, `--keep-last`, `--image-cache-days`, `--yes`, `--strict`, `--no-load`) are not.
 
 | Command | Stable flags |
 | --- | --- |
@@ -804,7 +804,7 @@ What makes this a **minor** release, per [Compatibility](#compatibility):
 - new environment variables with defaults (`HARNESS_REQUIRE_ARTEFACTS`,
   `HARNESS_VULN_DB_MAX_AGE_DAYS`, `HARNESS_ROLLBACK_ISSUE`);
 - new non-stable commands (`harness prune`, `harness vuln-db`, `harness local
-  smoke`) and the flags only they take, and a new artifact (`mutant-noise-report`);
+  smoke`, `harness local compare`) and the flags only they take, and a new artifact (`mutant-noise-report`);
 - reports that say things differently for the same two images: the canonical
   header forms, redacted secrets and `{{origin}}` on an external side change
   hunks and hunk summaries, and the `NOT COLLECTED` text is one shape. Two reports
@@ -843,9 +843,13 @@ and `severity`, which the contract has always said.
   vulnerability database; the workflows call it, and its output is for people),
   `harness prune` (removes old run directories under `out/` and an old image cache; a
   dry run unless `--yes`), `harness local smoke`, and the flags only they take:
-  `--older-than-days`, `--keep-last`, `--image-cache-days`, `--yes`. They may change in a
-  minor release. `smoke` joins `nightly|gate|mutants|watch` as a wrapper planned from the
-  stable commands.
+  `--older-than-days`, `--keep-last`, `--image-cache-days`, `--yes`, `--strict`, `--no-load`.
+  They may change in a minor release. `smoke` and `compare` join `nightly|gate|mutants|watch` as
+  wrappers planned from the stable commands. `harness local compare` runs the gate's release
+  step with `main` against the last release (the highest `X.Y.Z` present for all four apps on
+  quay.io), 3 runs, and no claims unless `--claims`: an exploration, so its exit code is
+  `0` whenever a report was produced, `2` when it could not judge and `1` for a harness fault;
+  `--strict` makes it follow the verdict as `local gate` does. The exit codes of `run` are unchanged.
 
 **Exit 2 ("could not judge") is cleaner** (behaviour a consumer sees; no field changes; patch-level)
 
