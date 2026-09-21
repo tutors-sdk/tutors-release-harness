@@ -63,7 +63,7 @@ jobs:
         run: |
           mkdir -p noise
           gh api -H "Accept: application/vnd.github.raw" "repos/${GITHUB_REPOSITORY}/contents/noise-status.json?ref=noise" > noise/noise-status.json 2>/dev/null || rm -f noise/noise-status.json
-          pnpm exec tsx src/ci/noise-history.ts vet --status noise/noise-status.json
+          pnpm harness noise status --store noise
 
       - name: Post-deploy mode
         id: run

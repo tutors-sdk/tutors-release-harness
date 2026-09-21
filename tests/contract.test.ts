@@ -406,18 +406,26 @@ describe("CLI", () => {
     for (const f of cli.flags.filter((f) => f.stable)) expect(contractMd, f.name).toContain(`\`--${f.name}`);
   });
 
-  it("the workflows, and the ones the monorepo copies, use only stable commands and flags", () => {
+  it("the workflows and the ones the monorepo copies use only commands and flags cli.json declares; what the monorepo copies, only stable ones", () => {
     const stableCommands = new Set(cli.commands.filter((c) => c.stable).map((c) => c.name));
     const stableFlags = new Set(cli.flags.filter((f) => f.stable).map((f) => f.name));
-    const files = [...readdirSync(resolve(ROOT, ".github/workflows")).map((f) => `.github/workflows/${f}`), ...readdirSync(resolve(ROOT, "docs/monorepo")).filter((f) => f.endsWith(".yml")).map((f) => `docs/monorepo/${f}`)];
+    // The workflows in this repository ship in the same tree as the CLI, so they can never run a harness that lacks what
+    // they call: they may use anything cli.json declares, stable or not. What the monorepo copies (docs/monorepo) is pinned
+    // to a harness by tag, and may only rely on what the contract promises.
+    const declaredCommands = new Set(cli.commands.map((c) => c.name));
+    const declaredFlags = new Set(cli.flags.map((f) => f.name));
+    const own = readdirSync(resolve(ROOT, ".github/workflows")).map((f) => `.github/workflows/${f}`);
+    const copied = readdirSync(resolve(ROOT, "docs/monorepo")).filter((f) => f.endsWith(".yml")).map((f) => `docs/monorepo/${f}`);
     let calls = 0;
-    for (const file of files) {
+    for (const file of [...own, ...copied]) {
+      const commands = own.includes(file) ? declaredCommands : stableCommands;
+      const flags = own.includes(file) ? declaredFlags : stableFlags;
       // A call may continue over lines with a trailing backslash.
       const text = read(file).replace(/\\\n/g, " ");
       for (const m of text.matchAll(/pnpm harness ([a-z]+)([^\n]*)/g)) {
         calls += 1;
-        expect(stableCommands.has(m[1]!), `${file}: harness ${m[1]}`).toBe(true);
-        for (const flag of m[2]!.matchAll(/(?<![\w-])--([a-z][a-z-]*)/g)) expect(stableFlags.has(flag[1]!), `${file}: --${flag[1]}`).toBe(true);
+        expect(commands.has(m[1]!), `${file}: harness ${m[1]}`).toBe(true);
+        for (const flag of m[2]!.matchAll(/(?<![\w-])--([a-z][a-z-]*)/g)) expect(flags.has(flag[1]!), `${file}: --${flag[1]}`).toBe(true);
       }
     }
     expect(calls).toBeGreaterThan(5);
@@ -557,10 +565,10 @@ describe("workflows", () => {
     expect(workflowsContract.noiseBranch.branch).toBe("noise");
     for (const f of workflowsContract.noiseBranch.readBy) {
       expect(text[f], f).toContain("contents/noise-status.json?ref=noise");
-      expect(text[f], f).toContain("noise-history.ts vet --status");
+      expect(text[f], f).toContain("harness noise status --store noise");
       expect(text[f], f).not.toContain("dawidd6/action-download-artifact@v6\n        continue-on-error: true\n        with:\n          workflow: nightly-noise.yml");
     }
-    expect(text[workflowsContract.noiseBranch.writtenBy]).toContain("noise-history.ts record");
+    expect(text[workflowsContract.noiseBranch.writtenBy]).toContain("harness noise record");
     for (const file of workflowsContract.noiseBranch.files) expect(text["nightly-noise.yml"], file).toContain(file);
     expect(contractMd).toContain("`noise` branch");
   });
