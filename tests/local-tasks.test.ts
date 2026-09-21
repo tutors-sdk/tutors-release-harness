@@ -26,6 +26,7 @@ import {
   planGate,
   planMutants,
   planNightly,
+  planSmoke,
   planWatch,
   portEnv,
   readGateEntry,
@@ -453,5 +454,81 @@ describe("where state lives", () => {
     const nightly = readFileSync(join(import.meta.dirname, "..", ".github", "workflows", "nightly-noise.yml"), "utf8");
     expect(nightly).toContain("--image-cache .harness/image-cache");
     expect(parse(nightly)).toBeTruthy();
+  });
+});
+
+describe("harness local smoke: the two-stacks smoke of ci.yml", () => {
+  it("is the four steps CI used to run one by one: ensure, A/A on one journey, the migration fixture that must pass, the one that must be rejected", () => {
+    const plan = planSmoke({ tag: "main" });
+    expect(plan.task).toBe("smoke");
+    expect(argvOf(plan)).toEqual([
+      "images ensure --a main --b main",
+      "run --mode noise --a main --b main --set fixture --journey anonymous-student-reads-course",
+      "run --mode migration --a dir:tests/fixtures/migrations/a --b dir:tests/fixtures/migrations/b-good",
+      "run --mode migration --a dir:tests/fixtures/migrations/a --b dir:tests/fixtures/migrations/b-bad"
+    ]);
+    expect(plan.steps.map((s) => s.expectFailure ?? false)).toEqual([false, false, false, true]);
+  });
+
+  it("--only takes one half", () => {
+    expect(argvOf(planSmoke({ tag: "main", only: "stacks" }))).toHaveLength(2);
+    expect(argvOf(planSmoke({ tag: "main", only: "migration" })).every((a) => a.startsWith("run --mode migration"))).toBe(true);
+    expect(() => buildPlan("smoke", { only: "everything" }, {})).toThrow(/--only takes stacks or migration/);
+    expect(buildPlan("smoke", { only: "migration" }, {}).steps).toHaveLength(2);
+  });
+
+  it("the tag defaults to the production tag, as the workflows' TAG does", () => {
+    expect(buildPlan("smoke", {}, {}).steps[0]!.argv).toEqual(["images", "ensure", "--a", "main", "--b", "main"]);
+    expect(buildPlan("smoke", {}, { HARNESS_PRODUCTION_TAG: "16.2.2" }).steps[0]!.argv).toContain("16.2.2");
+    expect(buildPlan("smoke", { tag: "16.3.0" }, {}).steps[1]!.argv).toContain("16.3.0");
+  });
+
+  /** A fake that answers by the whole command line, since the two migration steps differ only in --b. */
+  const answering = (code: (line: string) => number) => {
+    const ran: string[] = [];
+    const ex: Executor = { harness: (argv) => (ran.push(argv.join(" ")), code(argv.join(" "))), latestRun: () => undefined, latestRecorded: () => undefined, log: () => {} };
+    return { ex, ran };
+  };
+  const smoke = () => planSmoke({ tag: "main" });
+
+  it("passes when the good fixture passes and the bad one is rejected (exit 1)", () => {
+    const f = answering((line) => (line.includes("b-bad") ? 1 : 0));
+    const r = executePlan(smoke(), {}, f.ex);
+    expect(r.code).toBe(0);
+    expect(f.ran).toHaveLength(4);
+    expect(r.results.map((x) => x.code)).toEqual([0, 0, 0, 0]);
+  });
+
+  it("fails when the contracting fixture is accepted, which is what the inversion in ci.yml was for", () => {
+    const f = answering(() => 0);
+    const r = executePlan(smoke(), {}, f.ex);
+    expect(r.code).toBe(1);
+    expect(r.results.at(-1)!.code).toBe(1);
+  });
+
+  it("a harness error (exit 2) is not a rejection: it is not the FAIL verdict the fixture is there to prove", () => {
+    const f = answering((line) => (line.includes("b-bad") ? 2 : 0));
+    expect(executePlan(smoke(), {}, f.ex).code).toBe(2);
+  });
+
+  it("the first step that does not do what it must stops the rest, as `set -e` did", () => {
+    const pull = answering((line) => (line.startsWith("images") ? 1 : 0));
+    const r1 = executePlan(smoke(), {}, pull.ex);
+    expect(pull.ran).toHaveLength(1);
+    expect(r1.results.map((x) => x.code)).toEqual([1, "skipped", "skipped", "skipped"]);
+    const aa = answering((line) => (line.includes("--mode noise") ? 1 : 0));
+    expect(aa.ran).toHaveLength(0);
+    const r2 = executePlan(smoke(), {}, aa.ex);
+    expect(aa.ran).toHaveLength(2);
+    expect(r2.code).toBe(1);
+    expect(r2.results.map((x) => x.code)).toEqual([0, 1, "skipped", "skipped"]);
+    const good = answering((line) => (line.includes("b-good") ? 1 : 0));
+    expect(executePlan(smoke(), {}, good.ex).results.map((x) => x.code)).toEqual([0, 0, 1, "skipped"]);
+  });
+
+  it("--dry-run text shows the four commands", () => {
+    const text = renderPlan(smoke(), workflowEnv({}));
+    expect(text).toContain("harness local smoke: 4 step(s)");
+    expect(text).toContain("harness run --mode migration --a dir:tests/fixtures/migrations/a --b dir:tests/fixtures/migrations/b-bad");
   });
 });

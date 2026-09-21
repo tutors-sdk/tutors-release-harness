@@ -30,6 +30,8 @@ export const ENGINE_PATHS = [
   // What is compared and how it is judged.
   "src/compare/**",
   "src/gate.ts",
+  // The one "NOT COLLECTED" convention: the text and the severity of a gap in a report.
+  "src/not-collected.ts",
   "src/claims/**",
   "src/normalise/**",
   "normalise/**",

@@ -346,12 +346,13 @@ fails the release; one that was on a and is gone on b is noted informationally.
 
 **Loud, never silent.** A locally built image has no attestation, `syft` or
 `grype` may not be installed, the database may be absent: each is reported as
-`NOT COLLECTED: <reason>` (a line in `reasons`, a cell in the report's Image
-artefacts table, an informational `<app>/not-collected` hunk) and that artefact
-is not compared. `HARNESS_REQUIRE_STATIC=1` turns those hunks into failures,
-which is what a release pipeline that must never pass without an SBOM diff
-sets.
-
+`NOT COLLECTED: <what> of <app> on side <a|b>: <reason>` (a line in `reasons`, a
+cell in the report's Image artefacts table, an informational `<app>/not-collected`
+hunk) and that artefact is not compared. `HARNESS_REQUIRE_ARTEFACTS=static` (or one
+artefact: `=sbom`; the older `HARNESS_REQUIRE_STATIC=1` still means `static`) turns
+those hunks into failures, which is what a release pipeline that must never pass
+without an SBOM diff sets. The same convention covers every artefact:
+[docs/contract.md](contract.md#not-collected-one-convention).
 
 ### The vulnerability database
 

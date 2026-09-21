@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync } from "node:fs";
 import type { Exec } from "../images.ts";
 import { scannerEnv } from "../image-static/vulns.ts";
+import { requirements } from "../not-collected.ts";
 import { harnessHome, vulnDbDir } from "./home.ts";
 
 /**
@@ -170,7 +171,8 @@ export function realVulnDbDeps(env: NodeJS.ProcessEnv, exec: Exec): VulnDbDeps {
   return { exec, env, platform: process.platform, now: () => new Date(), mkdir: (p) => void mkdirSync(p, { recursive: true }), exists: existsSync, log: (l) => console.log(l) };
 }
 
-const isRequired = (env: NodeJS.ProcessEnv) => /^(1|true|yes)$/i.test(env.HARNESS_REQUIRE_STATIC ?? "");
+// The one rule of src/not-collected.ts: HARNESS_REQUIRE_ARTEFACTS naming vulns (or static, or all), or its alias HARNESS_REQUIRE_STATIC.
+const isRequired = (env: NodeJS.ProcessEnv) => requirements(env).required.has("vulns");
 const tailLine = (s: string) => s.trim().split(/\r?\n/).filter(Boolean).slice(-1)[0] ?? "";
 // eslint-disable-next-line no-control-regex -- strips the escape sequences grype colours its errors with
 const noAnsi = (s: string) => s.replace(/\u001b\[[0-9;]*m/g, "");
@@ -210,7 +212,7 @@ export function vulnDbUpdate(deps: VulnDbDeps): number {
 
 /**
  * `harness vuln-db status`: the database a scan would read, its build time, age and checksum. Exit 0 when a scan can use it;
- * when it cannot, 1 under HARNESS_REQUIRE_STATIC (the run would fail on it anyway) and 0 otherwise, as the scan is then
+ * when it cannot, 1 when the vulnerability artefact is required (HARNESS_REQUIRE_ARTEFACTS, or HARNESS_REQUIRE_STATIC; the run would fail on it anyway) and 0 otherwise, as the scan is then
  * informational. `requireUsable` (after an update) always exits 1 on an unusable database.
  */
 export function vulnDbStatus(deps: VulnDbDeps, o: { json: boolean; requireUsable?: boolean }): number {
@@ -227,7 +229,7 @@ export function vulnDbStatus(deps: VulnDbDeps, o: { json: boolean; requireUsable
     log(`  directory  ${dir ?? "grype's own default cache (no HARNESS_VULN_DB_DIR, and no HARNESS_HOME/vuln-db yet)"}`);
     log(`  ${verdict.detail}`);
     if (limit.invalid) log(`  HARNESS_VULN_DB_MAX_AGE_DAYS=${limit.invalid} is not a positive number: using ${limit.days}`);
-    if (!verdict.usable) log(`  fix: ${GRYPE_DB_FIX}${failing ? "" : "; until then the vulnerability artefact is 'not collected' (informational: HARNESS_REQUIRE_STATIC is not set)"}`);
+    if (!verdict.usable) log(`  fix: ${GRYPE_DB_FIX}${failing ? "" : "; until then the vulnerability artefact is 'not collected' (informational: the vulnerability artefact is not required; see HARNESS_REQUIRE_ARTEFACTS)"}`);
   }
   return failing ? 1 : 0;
 }

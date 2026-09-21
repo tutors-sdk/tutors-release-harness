@@ -1,5 +1,6 @@
 import { parse } from "yaml";
 import type { Exec } from "../images.ts";
+import { requirements } from "../not-collected.ts";
 import { LEGACY_PROJECT, composeProject, kindCluster } from "../project.ts";
 import { GRYPE_DB_FIX, GRYPE_INSTALL, MIN_GRYPE_VERSION, PINNED_GRYPE_VERSION, compareVersions, judgeDb, maxAgeDays, parseGrypeVersion, readDbStatus, vulnDbDirFromEnv } from "./vuln-db.ts";
 
@@ -260,16 +261,20 @@ export async function runDoctor(scopes: Scope[], deps: DoctorDeps): Promise<{ ok
   const syftSeverity = severity(selected, ["mutants"], ["nightly", "gate"]);
   if (syftSeverity) {
     const s = exec("syft", ["version"]);
-    checks.push(s.status === 0 ? ok("syft", "syft", (/^Version:\s*(\S+)/m.exec(s.stdout)?.[1] ?? "installed")) : bad(syftSeverity, "syft", "syft", syftSeverity === "fail" ? "not installed: the mutants generate SBOMs with it, and without it the added-package mutant escapes" : "not installed: SBOMs then come only from the registry's attestation, and an image without one is 'not collected'", FIX.syft));
+    // On a Windows host the default generator is syft in its own container (defaultSbomCmd), so no native syft is needed
+    // unless HARNESS_SBOM_CMD names one.
+    const containerSyft = win && !env.HARNESS_SBOM_CMD?.trim();
+    if (s.status !== 0 && containerSyft) checks.push(ok("syft", "syft", "not installed, and not needed: on Windows the default SBOM generator runs syft in its own container (Docker); set HARNESS_SBOM_CMD to use a native one"));
+    else checks.push(s.status === 0 ? ok("syft", "syft", (/^Version:\s*(\S+)/m.exec(s.stdout)?.[1] ?? "installed")) : bad(syftSeverity, "syft", "syft", syftSeverity === "fail" ? "not installed: the mutants generate SBOMs with it, and without it the added-package mutant escapes" : "not installed: SBOMs then come only from the registry's attestation, and an image without one is 'not collected'", FIX.syft));
   }
 
   const grypeSeverity = severity(selected, [], ["nightly", "gate", "mutants"]);
   if (grypeSeverity) {
     // A scanner that is not there, too old, or without a usable database makes the vulnerability artefact "not collected":
     // informational, and a failing hunk under HARNESS_REQUIRE_STATIC, so the doctor says fail exactly when a run would.
-    const required = /^(1|true|yes)$/i.test(env.HARNESS_REQUIRE_STATIC ?? "");
+    const required = requirements(env).required.has("vulns");
     const level = required ? "fail" : grypeSeverity;
-    const because = required ? ", and HARNESS_REQUIRE_STATIC makes that a failing hunk" : " (informational)";
+    const because = required ? ", and HARNESS_REQUIRE_ARTEFACTS (or HARNESS_REQUIRE_STATIC) makes that a failing hunk" : " (informational)";
     const g = exec("grype", ["version"]);
     const version = g.status === 0 ? parseGrypeVersion(g.stdout) : undefined;
     if (g.status !== 0) {

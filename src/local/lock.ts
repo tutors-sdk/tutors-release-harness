@@ -51,6 +51,12 @@ function readInfo(file: string): LockInfo | undefined {
   }
 }
 
+/** Who holds the lock right now: undefined when nobody does (no file, an unreadable one, or a holder that is no longer running). */
+export function lockHolder(file: string, deps: Pick<LockDeps, "isAlive"> = {}): LockInfo | undefined {
+  const holder = readInfo(file);
+  return holder && (deps.isAlive ?? processAlive)(holder.pid) ? holder : undefined;
+}
+
 /** Take the lock, or throw LockHeldError. Returns the function that releases it. */
 export function acquireLock(file: string, task: string, deps: LockDeps = {}): () => void {
   const pid = deps.pid ?? process.pid;

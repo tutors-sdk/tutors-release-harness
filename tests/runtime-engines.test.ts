@@ -96,7 +96,7 @@ describe("runtime posture", () => {
     const hunks = failing(diff(sideWithRuntime("a"), sideWithRuntime("b", { runtime: missing })));
     expect(hunks).toHaveLength(1);
     expect(hunks[0]).toMatchObject({ artefact: "runtime", scope: "catalogue/not-collected" });
-    expect(hunks[0]!.summary).toBe("catalogue: container posture not collected: docker inspect exited 1: no such container (side b)");
+    expect(hunks[0]!.summary).toBe("NOT COLLECTED: container posture of catalogue on side b: docker inspect exited 1: no such container");
     // …and it is claimable like any other difference, which is how a human waives it, with a reason.
     const claims = parseClaims('claims:\n  - artefact: runtime\n    scope: "*/not-collected"\n    reason: "docker inspect is unavailable on this runner, see #12"\n');
     const matched = matchClaims(compareCaptures(normalise(sideWithRuntime("a"), masks).capture, normalise(sideWithRuntime("b", { runtime: missing }), masks).capture, masks), claims);
@@ -106,16 +106,16 @@ describe("runtime posture", () => {
   it("degrades loudly: a whole artefact that could not be collected fails; switched off by an operator it is information", () => {
     const b = sideWithRuntime("b", { runtime: { collected: false, reason: "docker is not installed or not on PATH" } });
     const hunks = diff(sideWithRuntime("a"), b);
-    expect(failing(of(hunks, "runtime")).map((h) => h.summary)).toEqual(["container runtime posture not collected: docker is not installed or not on PATH (side b)"]);
+    expect(failing(of(hunks, "runtime")).map((h) => h.summary)).toEqual(["NOT COLLECTED: container runtime posture on side b: docker is not installed or not on PATH"]);
     const off = { collected: false as const, disabled: true, reason: "switched off with --no-runtime" };
     const quiet = of(diff(sideWithRuntime("a", { runtime: off }), sideWithRuntime("b", { runtime: off })), "runtime");
     expect(failing(quiet)).toEqual([]);
-    expect(quiet.map((h) => h.summary)).toEqual(["container runtime posture not collected: switched off with --no-runtime (side a)", "container runtime posture not collected: switched off with --no-runtime (side b)"]);
+    expect(quiet.map((h) => h.summary)).toEqual(["NOT COLLECTED: container runtime posture on side a: switched off with --no-runtime", "NOT COLLECTED: container runtime posture on side b: switched off with --no-runtime"]);
   });
 
   it("against a capture that predates the artefact, the newer side counts as unmatched, not as a pass", () => {
     const hunks = failing(diff(capture("a"), sideWithRuntime("b")));
-    expect(hunks.map((h) => h.summary)).toEqual(["container runtime posture not collected: the capture was recorded by a harness older than contract 1.2.0 (side a)", "startup time not collected: the capture was recorded by a harness older than contract 1.2.0 (side a)"]);
+    expect(hunks.map((h) => h.summary)).toEqual(["NOT COLLECTED: container runtime posture on side a: the capture was recorded by a harness older than contract 1.2.0", "NOT COLLECTED: startup time on side a: the capture was recorded by a harness older than contract 1.2.0"]);
   });
 });
 
@@ -193,7 +193,7 @@ describe("startup", () => {
     const hunks = failing(diff(sideWithRuntime("a"), sideWithRuntime("b", { startup: partial })));
     expect(hunks).toHaveLength(1);
     expect(hunks[0]).toMatchObject({ artefact: "startup", scope: "live/not-collected" });
-    expect(hunks[0]!.summary).toContain("not collected: no running container for compose service live-b");
+    expect(hunks[0]!.summary).toContain("NOT COLLECTED: startup time of live on side b: no running container for compose service live-b");
 
     const off = { collected: false as const, disabled: true, reason: "switched off with --startup-restarts 0" };
     const quiet = of(diff(sideWithRuntime("a", { startup: off }), sideWithRuntime("b", { startup: off })), "startup");

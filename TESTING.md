@@ -23,7 +23,7 @@ fail, and ratchets. This is the runway for the runway.
 | A backend leaks into a rule | the anonymous-write rule only works on Supabase REST; migration mode only on the Docker Postgres | Unit: a second, in-memory backend behind each seam (`tests/persistence-seam.test.ts`, `tests/migration-seam.test.ts`) drives the same collector, rule and rehearsal |
 | The bus collector is silent when absent, or fails a run it cannot judge | no bus configured reads as a clean bus; a live side with no recorder fails | Unit on the collector and engine with an in-memory transport (`tests/bus.test.ts`) |
 | The app ignores the frozen clock | a stat rendered from the wall clock differs run to run | Unit on `probeClock` (`tests/clock-probe.test.ts`); the decision is `docs/harness-now.md` |
-| A container's posture drifts, or an artefact silently stops being collected | a candidate whose image runs as root, adds a capability or a `VOLUME`, or writes outside `/tmp`; docker missing on the runner and the report saying nothing | Unit on the `runtime` engine, on the posture parsers and on the collectors with the process runner injected (a fake docker and kubectl); "not collected" is a failing hunk |
+| A container's posture drifts, or an artefact silently stops being collected | a candidate whose image runs as root, adds a capability or a `VOLUME`, or writes outside `/tmp`; docker missing on the runner and the report saying nothing | Unit on the `runtime` engine, on the posture parsers and on the collectors with the process runner injected (a fake docker and kubectl); "NOT COLLECTED" is a failing hunk, held to one convention across every artefact by `tests/not-collected.test.ts` |
 | Startup time regresses, or the sample cannot judge | a candidate that boots twice as slowly; three restarts a side reported as if judged | Unit on the `startup` engine (Mann-Whitney, the shift floor, "cannot reach alpha") and on the restart sampler with a fake clock |
 | A claim names a Rule that is not there, or that nobody can check | `rule: "0999"` with no such Rule; `rule` with no rules file; an unquoted `rule: 0031` read as 31; the claims that spell a Rule out in `reason` broken by the new key | Unit (`tests/rules.test.ts`): the A/A (a claims file with no `rule` reads exactly as before), the planted missing rule / missing file / malformed id, and the must-not-flag (free-text `Rule 0031:` claims, an unused Rule, extra keys in `rules.json`); through the process, exit 2 before any output directory exists |
 | Two checkouts share a stack, or the harness touches one that is not its own | two worktrees on one machine replacing each other's compose stack; a kind cluster called `tutors-harness` adopted or deleted; a doctor that hides the old stack | Unit on `src/project.ts` (`tests/project-name.test.ts`: the same path, the same name, two paths two names, Windows case, overrides, the refusal through the process) and on `harness doctor` with a fake Docker and kind (`tests/local-doctor.test.ts`: a legacy stack and a legacy cluster are reported as not touched, and nothing that changes a container is ever run) |
@@ -86,9 +86,12 @@ The fixtures are code the harness ships; they get tests like any other.
 
 ### Smoke (CI `two-stacks`, ~10 minutes, every PR)
 
-Both stacks up from the base tag, one journey, A/A, reports uploaded. Proves
-the substrate and the collectors end to end. Phase H0's exit criterion, kept
-running.
+Both stacks up from the base tag, one journey, A/A, reports uploaded, and the
+migration fixtures (the expanding one passes, the contracting one is rejected).
+Proves the substrate and the collectors end to end. Phase H0's exit criterion,
+kept running. CI and a maintainer run the same command: `pnpm smoke`
+(`harness local smoke`; `--dry-run` prints its four steps), which `ci.yml` calls, and
+`tests/local-parity.test.ts` holds the workflow to it.
 
 ### Mutants (`pnpm harness mutants`, ~15 minutes, weekly and on demand)
 
@@ -109,7 +112,7 @@ touches:
 
 | Paths | |
 | --- | --- |
-| `src/compare/**`, `src/gate.ts`, `src/claims/**` | engines, the gate, and the matcher that decides what is claimed |
+| `src/compare/**`, `src/gate.ts`, `src/not-collected.ts`, `src/claims/**` | engines, the gate, the "NOT COLLECTED" convention, and the matcher that decides what is claimed |
 | `normalise/**`, `src/normalise/**` | masks and how they are applied |
 | `src/collectors/**`, `src/runtime/**`, `src/image-static/**`, `src/persistence/**`, `src/migration/**`, `src/bus/**`, `src/clock-probe.ts` | what is captured: a report can change with no engine touched |
 | `src/run.ts`, `src/modes/**`, `src/noise.ts`, `src/stack.ts`, `src/substrate/**` | how a run, a mode and a stack are put together, and the noise rule the gate consults |
@@ -184,7 +187,8 @@ must fail with failures attributed to `b`.
 guards, the plans of `harness local ...` and how a plan runs (a fake executor:
 which failure stops which stream), the watch loop with a fake clock, the run
 lock, the override log, and the CLI through a real process for exit codes and
-`--dry-run`. Nothing starts Docker: the one thing they cannot prove is that the
+`--dry-run`, and `harness prune` on temp directories (what it may delete, what it must not,
+the lock, a file that cannot be removed). Nothing starts Docker: the one thing they cannot prove is that the
 Windows paths in `scripts/*.sh` and the tools' install locations hold on a real
 machine, which is what `harness doctor` and the first `harness local nightly` are
 for. Setup, scheduling and the parity matrix are in [docs/local.md](docs/local.md).
@@ -201,7 +205,7 @@ for. Setup, scheduling and the parity matrix are in [docs/local.md](docs/local.m
 | Masks in `normalise/masks.yaml` | grow only with review, in their own PR, and stay under ~40 | CODEOWNERS; CI "Masks land in their own PR (required)" |
 | Masks that never fire | → 0 | listed in every report as "silent" |
 | Engines without a planted-change test | 0 | review |
-| Artefacts that could not be collected in a nightly A/A | 0 | `not collected` is a failing hunk, so a dirty A/A |
+| Artefacts that could not be collected in a nightly A/A | 0 | `NOT COLLECTED` is a failing hunk for `runtime` and `startup` (required by default), so a dirty A/A; the others only when `HARNESS_REQUIRE_ARTEFACTS` names them |
 | Retries anywhere in the harness | 0 | `vitest.config.ts`, no Playwright retries |
 | Overrides of a harness FAIL | → 0 per quarter | `harness-override` issues; `docs/noise-burndown.md` |
 

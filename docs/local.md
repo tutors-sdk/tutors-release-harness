@@ -13,7 +13,7 @@ commands, and each piece of it has a local equivalent below.
 OpenShift is out of scope. The compose and kind substrates are what runs.
 
 - [Start here](#start-here)
-- [The four tasks](#the-four-tasks)
+- [The five tasks](#the-five-tasks)
 - [Parity matrix](#parity-matrix)
 - [Where state lives](#where-state-lives)
 - [The vulnerability database](#the-vulnerability-database)
@@ -43,7 +43,7 @@ run needs is missing, `2` is a usage error. `--json` prints the same as data;
 | Node >= 22, pnpm, git | the harness itself, the guards, the version stamp |
 | Docker daemon reachable, **Linux containers**, Compose v2, the daemon's clock against the host's | every stack; Docker Desktop's VM clock drifts after sleep and breaks pulls and signature checks |
 | cosign >= 3 | a registry image is not judged without a verified signature (exit 2); cosign 2 reads the monorepo's signatures as missing |
-| syft; grype (>= 0.96.0) and its database | mutants need syft; the vulnerability artefact is "not collected" without grype, and the harness switches database updates off during a run, so the doctor checks that the database directory exists, is intact, and how old it is (build time, age, checksum; a warning past `HARNESS_VULN_DB_MAX_AGE_DAYS`, default 5, and a failure instead when `HARNESS_REQUIRE_STATIC` is set); the fix is [`harness vuln-db update`](#the-vulnerability-database) |
+| syft; grype (>= 0.96.0) and its database | mutants need syft; the vulnerability artefact is "NOT COLLECTED" without grype (informational, unless `HARNESS_REQUIRE_ARTEFACTS` names `vulns`), and the harness switches database updates off during a run, so the doctor checks that the database directory exists, is intact, and how old it is (build time, age, checksum; a warning past `HARNESS_VULN_DB_MAX_AGE_DAYS`, default 5, and a failure instead when `HARNESS_REQUIRE_ARTEFACTS` names `vulns`, or its alias `HARNESS_REQUIRE_STATIC` is set); the fix is [`harness vuln-db update`](#the-vulnerability-database) |
 | Playwright's Chromium | every journey, including the post-deploy watch |
 | helper images already local: k6, `postgres:16-alpine`, the fixture stubs' `node:22-bookworm-slim` | a run that has to work offline |
 | free disk, `HARNESS_HOME` writable | images, SBOMs and captures |
@@ -52,15 +52,15 @@ run needs is missing, `2` is a usage error. `--json` prints the same as data;
 | a leftover compose project of this checkout (`tutors-harness-<8 hex>`) | a run replaces it, `--remove-orphans` included. A stack under the old default name `tutors-harness` is reported by `harness doctor` as "legacy stack, not touched" and never removed |
 | Windows: WSL's `bash` first on PATH, CRLF in `scripts/*.sh`, long paths off | see [Windows notes](#windows-notes) |
 
-## The four tasks
+## The five tasks
 
 Each is one command, planned as the list of `harness` commands the workflow
 runs. `--dry-run` prints the plan and starts nothing; each printed command line and the
 environment line are quoted for the shell you are in, so they can be pasted back (single
-quotes, a quote inside doubled in PowerShell and written `'\''` in bash, zsh and Git Bash;
+quotes, a quote inside doubled in PowerShell and written `'''` in bash, zsh and Git Bash;
 cmd.exe does not read single quotes). All of them take
-`--port-offset <n>` ([below](#running-beside-your-own-stack)); nightly, gate and
-mutants hold a lock so only one runs on the machine at a time; the environment
+`--port-offset <n>` ([below](#running-beside-your-own-stack)); nightly, gate,
+mutants and smoke hold a lock so only one runs on the machine at a time; the environment
 defaults are the workflows' (`HARNESS_IMAGE_PREFIX` defaults to
 `quay.io/tutors-sdk/tutors-{app}`, the production tag to `HARNESS_PRODUCTION_TAG`
 or `main`). Runs land in `<checkout>/out/`.
@@ -108,6 +108,25 @@ pnpm harness local mutants [--base 16.2.2] [--dry-run]
 `images ensure --a T --b T`, then `mutants --base T`: A/A first, then each of the
 ten planted regressions must FAIL and be attributed. The mutants are built
 locally; syft must be installed (`harness doctor --for mutants`).
+
+### The two-stacks smoke: `harness local smoke`
+
+```console
+pnpm smoke                                  # the same command
+pnpm harness local smoke [--tag 16.2.0] [--only stacks|migration] [--dry-run]
+```
+
+What the CI job "Two stacks boot and one journey runs (A/A)" does, and ci.yml now
+calls exactly this: `images ensure --a T --b T`; both stacks boot and one journey
+(`anonymous-student-reads-course`) runs A/A; the expanding migration fixture must
+pass; the contracting one (`b-bad`) must be **rejected**. That last step is the one
+that used to be `if cmd; then exit 1` in the workflow's shell: it is now a step that
+expects the FAIL verdict (exit 1), so accepting the fixture fails the smoke, and so
+does a harness error (exit 2), which is not a rejection. The first step that does not
+do what it must stops the rest. `--only stacks` or `--only migration` runs half;
+`--dry-run` prints the four commands. Roughly ten minutes; it needs what
+`harness doctor --for nightly` checks (Docker, cosign, Chromium), and `bash` on a
+machine whose registry lacks the tag.
 
 ### Post-deploy watch: `harness local watch`
 
@@ -159,7 +178,7 @@ commits that came with this document.
 | N4 | Save the cache if refreshed (`actions/cache/save`, `image_cache=` output) | GH | `images ensure` refreshes the directory itself | none. **Closed** |
 | N5 | A/A, 5 runs, `--load 20x30s --require-verified` | CLI | same | none. **Closed** |
 | N6 | Report in the job summary | GH | `out/<time>-noise/report.md` and `report.html` | none |
-| N7 | Upload `noise-status` and `noise-report` (8 days) | GH | `out/` | no retention and no pruning: `out/` grows with screenshots. **Open, low**: delete old run directories by hand |
+| N7 | Upload `noise-status` and `noise-report` (8 days) | GH | `out/` | the artifact expires on GitHub; locally `out/` grows with screenshots. **Closed**: [`harness prune`](#disk-harness-prune) |
 | N8 | History from the `noise` branch (`gh api`) | GH | `<HARNESS_HOME>/noise/noise-history.json` | none. **Closed** |
 | N9 | Record tonight, ratchet, summary (`noise-history.ts record`) | WF | `harness noise record` | none. **Closed** |
 | N10 | Force-push the `noise` branch | GH | the store directory is the publication | none. **Closed** |
@@ -183,7 +202,7 @@ commits that came with this document.
 | R7 | Override: `override_reason` input, actor from `github.triggering_actor` | GH | `--override-reason`, `--override-by` (default: git `user.name`) | none. **Closed** |
 | R8 | Record the override (`gh issue create`, label `harness-override`) | GH | `<HARNESS_HOME>/overrides.jsonl`, append-only and hash-chained; `harness override list [--since]` | tamper-evident, not tamper-proof: a person with the file can rewrite it. **Closed** |
 | R9 | "PR comment" (`report.md` into the job summary) | GH | `report.md` and `report.html` in each run directory, and `gate.md` | the contract forbids workflows any PR permission, so nothing is ever posted; to post by hand: `gh pr comment <n> --body-file out\<time>-gate\gate.md`. **Closed** |
-| R10 | `release-report` artifact (30 days) | GH | `out/` | as N7 |
+| R10 | `release-report` artifact (30 days) | GH | `out/` | as N7. **Closed** |
 | R11 | grype, its database, and `HARNESS_REQUIRE_STATIC=1` in the release job | GH + CLI | as N14 to N16 | none beyond those. **Closed** |
 
 ### post-deploy.yml
@@ -201,13 +220,13 @@ commits that came with this document.
 | # | Step | Today | Local equivalent | Gap, status |
 | --- | --- | --- | --- | --- |
 | M1 | syft from `anchore/sbom-action/download-syft` (pinned, v1.52.0) | GH | install syft; `HARNESS_SBOM_CMD` to point at it | `harness doctor`. **Closed**; on Windows see X12 |
-| M5 | grype and its database in the mutants job; no `HARNESS_REQUIRE_STATIC` there | GH + CLI | as N14 and N15 | none: the mutants job does not require it, and neither does a local run. **Closed** |
 | M2 | The ten mutants | CLI | `harness local mutants` | none. **Closed** |
 | M3 | Engine-change guard and version bump (`engine-change.ts`) | WF | `harness guard engine --base <ref>` | compares `<base>...HEAD`, so committed work only (it says so when the tree is dirty). **Closed** |
 | M4 | "Mutants re-run (required)": shell that combines two job results | WF + GH | the exit codes of `guard engine` and `local mutants` | nothing to port: a required status check is a GitHub setting. **n/a** |
+| M5 | grype and its database in the mutants job; no `HARNESS_REQUIRE_STATIC` there | GH + CLI | as N14 and N15 | none: the mutants job does not require it, and neither does a local run. **Closed** |
 | C1 | Masks land in their own PR (`mask-change.ts`) | WF | `harness guard masks --base <ref>` | as M3. **Closed** |
 | C2 | Typecheck, lint, unit and fixture tests | CLI | `pnpm typecheck`, `pnpm lint`, `pnpm test` | none |
-| C3 | Two-stacks smoke, including "the contracting fixture must be rejected" (`if cmd; then exit 1`) | WF | the commands in TESTING.md, the inversion by hand | no wrapper. **Open, low** |
+| C3 | Two-stacks smoke, including "the contracting fixture must be rejected" (`if cmd; then exit 1`) | CLI | `harness local smoke` (`pnpm smoke`); ci.yml calls it | the inversion is a step that expects the FAIL verdict. **Closed** |
 | C4 | Stack logs on failure | WF | `docker compose -p <project> -f compose.harness.yaml --profile upgrade logs`, where `<project>` is this checkout's compose project (`harness doctor` prints it) | CI pins `HARNESS_COMPOSE_PROJECT=tutors-harness`, one checkout per runner. **Documented** |
 | C5 | Claims hygiene | CLI | reported in every report that has claims; never gates | none |
 
@@ -220,20 +239,20 @@ commits that came with this document.
 | X3 | CRLF | `.gitattributes` forces LF on checkout; a copied or zipped tree can still bring CR into `scripts/*.sh` (`\r: command not found`) | `harness doctor` checks. **Closed** |
 | X4 | `pnpm` on Windows is `pnpm.cmd` | Node will not spawn it without a shell; the harness only spawns `docker`, `cosign`, `syft`, `grype`, `kind`, `kubectl`, `git`, `bash` (all `.exe`). A tool installed as a `.cmd` shim (npm-global) will not start | **Documented** |
 | X5 | Docker socket | the harness only shells out to the `docker` CLI, which follows its context. `syft docker:` reads the daemon itself; if it cannot connect, `DOCKER_HOST` from `docker context inspect --format '{{.Endpoints.docker.Host}}'` | **Verified** on Docker Desktop's `desktop-linux` context (syft 1.52.0 reached the daemon and listed the layers), but see X12 |
-| X12 | `syft docker:<image>` on Windows | syft 1.52.0 (Windows, Docker Desktop) fails on any image: `failed to fetch layer 2: unable to place layer cache ... The filename, directory name, or volume label syntax is incorrect`; it caches layers in files whose names contain `:` (`2-sha256:...`), which Windows forbids. `docker save` then `syft docker-archive:<tar>` fails the same way. Scanning the extracted root filesystem (`syft dir:<rootfs>`) works, and is how the SPDX fixtures of `tests/fixtures/real-tools` were made. `harness mutants` needs `syft docker:`, so **a local mutant run on Windows cannot generate SBOMs**: run it in WSL or on Linux (or in CI), or point `HARNESS_SBOM_CMD` at a generator that works | **Found, open**: a syft (stereoscope) limit, not the harness's; the nightly and release use attested SBOMs and are not affected |
 | X6 | k6 image | `grafana/k6:latest`, unpinned | `harness doctor` warns; pin with `HARNESS_K6_IMAGE` |
 | X7 | Time zone, `HARNESS_NOW` | no verdict depends on the host zone: the browser is pinned to Europe/Dublin, the frozen clock is a UTC instant, run directories and the noise status are UTC. `HARNESS_NOW` is read from the environment (PowerShell `$env:HARNESS_NOW = "..."`, cmd `set`), or `--now`. The **Docker VM's clock** is what drifts | `harness doctor` checks the skew and the value. **Closed** |
 | X8 | Parallel runs and a developer's own stack | see [below](#running-beside-your-own-stack) | project name and ports **configurable**; the subnet is **not**. **Open (compose file)** |
 | X9 | kind | cluster name: `HARNESS_KIND_CLUSTER`, then `HARNESS_PROJECT`, else `tutors-harness-<8 hex of the checkout's path>`: two checkouts get two clusters, and a cluster called plain `tutors-harness` (the pre-1.3.0 default, which may be yours) is refused by `harness kind up` and `down`, never adopted or deleted. Host ports 4100-4203 are fixed in `deploy/kind/kind-config.yaml`, so two clusters of two checkouts cannot run at once | `harness doctor --for kind` names the cluster, warns when it already exists, and reports a legacy `tutors-harness` cluster as not touched. **Closed** (names), ports **open, low** |
 | X10 | Playwright's Chromium | the host's Chromium takes the screenshots, not a container's, so fonts and anti-aliasing are the host's | [calibration](#the-noise-store-is-this-machines-calibration) |
 | X11 | CI-only environment assumptions in the code | none: `GITHUB_OUTPUT` is the only `GITHUB_*` variable read, and only to write to it when set | none |
+| X12 | `syft docker:<image>` on Windows | syft 1.52.0 (Windows, Docker Desktop) fails on any image: `failed to fetch layer 2: unable to place layer cache ... The filename, directory name, or volume label syntax is incorrect`; it caches layers in files whose names contain `:` (`2-sha256:...`), which Windows forbids. `docker save` then `syft docker-archive:<tar>` fails the same way. Scanning the extracted root filesystem (`syft dir:<rootfs>`) works, and is how the SPDX fixtures of `tests/fixtures/real-tools` were made. `harness mutants` needs `syft docker:`, which is what native syft cannot do on Windows, hence the container | **Fixed**: on a Windows host the default `HARNESS_SBOM_CMD` runs syft in its own `anchore/syft` container over the Docker socket (`defaultSbomCmd`), so a local mutant run generates its SBOMs and needs no native syft (`harness doctor` says so); the nightly and release use attested SBOMs and are not affected |
 
-Counts (before the vulnerability-database rows N14 to N16, R11, M5 and X12 were added, all closed or documented apart from X12). Of the 37 steps in the four workflows, 7 were already a harness command
-(**CLI**), 7 were **workflow-only logic**, 23 were **GitHub-only services**; the 11
-platform rows (X) are not steps. Across all 48 rows after this change: 34 closed or
-fixed, 7 documented as a limit that stays (N3, N12, N13, C4, X4, X5, X10), 2 not
-applicable (M4, X11), and 5 open: N7 and R10 (no pruning of `out/`), C3 (no smoke
-wrapper), X8 (the fixed subnet), X9 (kind's fixed ports). R1, R2 and P1 were the
+Counts. The matrix was written for 37 steps in the four workflows (7 were already a harness command
+(**CLI**), 7 were **workflow-only logic**, 23 were **GitHub-only services**); the vulnerability-database work
+added five more (N14 to N16, R11, M5), and there are 12 platform rows (X), which are not steps: 54 rows. Of them 42 are
+closed or fixed (N7 and R10 by `harness prune`, C3 by `harness local smoke`, X12 by running syft in a container on Windows), 8 documented
+as a limit that stays (N3, N12, N13, N16, C4, X4, X5, X10), 2 not applicable (M4, X11), and 2 open: X8 (the fixed subnet) and
+X9 (kind's fixed ports). R1, R2 and P1 were the
 monorepo's; its `release:harness` script and `deploy.yml` closed them.
 
 ## Where state lives
@@ -253,6 +272,47 @@ for example to a backed-up folder.
 | `image-provenance.json` | the ledger `images ensure` leaves for `run` (`HARNESS_PROVENANCE_FILE` still moves it) | a file on the runner |
 
 Run output stays in `<checkout>/out/<time>-<mode>/` (`--out` on `harness run`).
+
+### Disk: `harness prune`
+
+`out/` (screenshots, k6 output, captures) and the image cache (a `docker save` tar of
+the production images, a gigabyte or more) grow without bound. `harness prune` frees
+them:
+
+```
+pnpm harness prune                       # what would go, and how much it frees; deletes nothing
+pnpm harness prune --yes                 # delete it
+pnpm harness prune --older-than-days 7 --keep-last 2 --yes
+```
+
+It is a dry run unless you say `--yes`: deleting is the one thing it does that cannot be
+undone, and a dry run costs a second. (`--dry-run` is accepted, and wins over `--yes`.)
+
+A run directory (`<UTC time>-<mode>` directly under `out/`; nothing else in `out/` is
+touched) goes only when **all** of these hold:
+
+| Rule | Default | Why |
+| --- | --- | --- |
+| older than `--older-than-days` | 14 | the nightly makes one directory a day: a fortnight is what you look back through when a mask or a regression arrives; the noise store's history keeps the verdicts for longer |
+| not among the newest `--keep-last` of its mode | 5 | a mode that runs rarely (release, upgrade) keeps its last few runs however old they are |
+| not the newest release run that did not FAIL | always | it is what `harness local watch` compares production with |
+| not started or changed in the last 6 hours | always | `harness run` takes no lock and may be running; the flags cannot override this |
+
+`--older-than-days 0` makes age no reason to keep a directory; `--keep-last 0` makes
+"newest" none. The image cache (`<HARNESS_HOME>/image-cache`, or `--image-cache <dir>`)
+loses its `images.tar` and `manifest.json` when it was saved more than
+`--image-cache-days` (30) ago: the nightly rewrites it every night, so an older one means
+nothing refreshed it and it would no longer stand for production.
+
+It never touches the state that has to persist: the noise store, the release records, the
+override log, the rollbacks, the locks and the provenance ledger are not under `out/` and
+are not looked at. It refuses (exit 2, nothing removed) while a `harness local` task or a
+watch holds its lock, and holds the run lock itself while it deletes. Exit 1 means something
+could not be removed, on Windows usually a file another program has open: it is reported,
+left exactly as it was, and the rest goes on; close the program and run it again. Removal
+retries a busy file a few times before giving up and never forces it; long paths need no
+special handling (Node uses the extended-length path form itself), though the Windows notes above still
+advise a short checkout path.
 
 ## The vulnerability database
 
@@ -280,9 +340,9 @@ harness doctor --for nightly      # grype's version (CI pins 0.119.0), the direc
   changes the database, so a run's two sides are always scanned with the same one.
 - **Without it**, or without grype, the artefact is `NOT COLLECTED: <reason>`, with the
   command that fixes it in the reason, and informational. CI sets
-  `HARNESS_REQUIRE_STATIC=1` in the nightly and the release job (not in the mutants):
+  `HARNESS_REQUIRE_STATIC=1` (the alias for `HARNESS_REQUIRE_ARTEFACTS=static`) in the nightly and the release job (not in the mutants):
   a local run does not, because a laptop may lack grype or an attestation. Set it
-  (`$env:HARNESS_REQUIRE_STATIC = "1"`, `export HARNESS_REQUIRE_STATIC=1`) to judge with
+  (`$env:HARNESS_REQUIRE_ARTEFACTS = "static"`, `export HARNESS_REQUIRE_ARTEFACTS=static`, or `vulns` alone) to judge with
   CI's strictness; `harness doctor` then fails, instead of warning, on a missing
   grype or database, and `harness vuln-db status` exits 1 on an unusable one.
 - **Install grype** with no admin rights: on Windows, unzip

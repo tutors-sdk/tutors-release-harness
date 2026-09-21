@@ -3,6 +3,7 @@ import { runsAsRoot } from "../image-static/manifest.ts";
 import { splitPackageKey } from "../image-static/sbom.ts";
 import { IMAGE_APPS, type Collected, type ImageApp, type ImageManifest, type SbomData, type VulnData } from "../image-static/types.ts";
 import type { Artefact, Hunk, SideCapture } from "../types.ts";
+import { notCollectedHunk } from "../not-collected.ts";
 import { hunkId } from "./pages.ts";
 
 type Engine = (a: SideCapture, b: SideCapture, ctx: { config: EngineConfig }) => Hunk[];
@@ -17,8 +18,9 @@ type Engine = (a: SideCapture, b: SideCapture, ctx: { config: EngineConfig }) =>
  *
  * A side that has no `imageStatic` at all (an external side, a migration run, a
  * capture older than contract 1.2.0) is not compared. A side that has it but
- * could not collect a piece of it is NOT skipped: that is a hunk saying "not
- * collected: <reason>", informational unless HARNESS_REQUIRE_STATIC=1, so it is
+ * could not collect a piece of it is NOT skipped: that is a `<app>/not-collected`
+ * hunk (src/not-collected.ts), informational unless the artefact is required
+ * (HARNESS_REQUIRE_ARTEFACTS, or its alias HARNESS_REQUIRE_STATIC=1), so it is
  * never silently green.
  */
 
@@ -28,11 +30,6 @@ export const SIZE_TOLERANCE = { fraction: 0.1, bytes: 5 * 1024 * 1024 } as const
 /** Labels that legitimately differ on every build: what is in the report header already. */
 const VOLATILE_LABELS = new Set(["org.opencontainers.image.revision", "org.opencontainers.image.created", "org.opencontainers.image.version"]);
 const BASE_LABELS = new Set(["org.opencontainers.image.base.name", "org.opencontainers.image.base.digest"]);
-
-/** `HARNESS_REQUIRE_STATIC=1`: a static artefact that could not be collected fails instead of informing. */
-export function staticRequired(env: NodeJS.ProcessEnv = process.env): boolean {
-  return /^(1|true|yes)$/i.test(env.HARNESS_REQUIRE_STATIC ?? "");
-}
 
 const short = (d: string | undefined) => (d ? d.replace(/^sha256:/, "").slice(0, 12) : "none");
 const fmtBytes = (n: number) => `${(n / (1024 * 1024)).toFixed(1)} MB`;
@@ -143,15 +140,15 @@ export function diffVulns(app: ImageApp, a: VulnData, b: VulnData): Hunk[] {
 
 const NOT_COLLECTED_ARTEFACT = { manifest: "image-manifest", sbom: "sbom", vulns: "vulns" } as const;
 
-function notCollected(app: ImageApp, kind: keyof typeof NOT_COLLECTED_ARTEFACT, a: Collected<unknown>, b: Collected<unknown>, required: boolean): Hunk {
+function notCollected(app: ImageApp, kind: keyof typeof NOT_COLLECTED_ARTEFACT, a: Collected<unknown>, b: Collected<unknown>): Hunk {
   const why = [!a.ok ? `a: ${a.reason}` : undefined, !b.ok ? `b: ${b.reason}` : undefined].filter(Boolean).join("\n");
-  const sides = !a.ok && !b.ok ? "either side" : !a.ok ? "side a" : "side b";
-  return h(NOT_COLLECTED_ARTEFACT[kind], `${app}/not-collected`, required ? "fail" : "info", `${app}: ${kind} NOT COLLECTED on ${sides}, so it was not compared${required ? " (HARNESS_REQUIRE_STATIC is set)" : ""}`, why);
+  const side = !a.ok && !b.ok ? "both" : !a.ok ? "a" : "b";
+  const reason = !a.ok && !b.ok ? (a.reason === b.reason ? a.reason : `a: ${a.reason}; b: ${b.reason}`) : !a.ok ? a.reason : !b.ok ? b.reason : "";
+  return notCollectedHunk({ artefact: NOT_COLLECTED_ARTEFACT[kind], scopeSubject: app, what: kind, subject: app, side, reason, detail: why });
 }
 
 export const imageStatic: Engine = (a, b) => {
   if (!a.imageStatic || !b.imageStatic) return [];
-  const required = staticRequired();
   const hunks: Hunk[] = [];
   for (const app of IMAGE_APPS) {
     const sa = a.imageStatic[app];
@@ -159,11 +156,11 @@ export const imageStatic: Engine = (a, b) => {
     // A capture recorded before `time` joined the stack (contract 1.3.0) has nothing to compare it with.
     if (!sa || !sb) continue;
     if (sa.manifest.ok && sb.manifest.ok) hunks.push(...diffManifest(app, sa.manifest.data, sb.manifest.data));
-    else hunks.push(notCollected(app, "manifest", sa.manifest, sb.manifest, required));
+    else hunks.push(notCollected(app, "manifest", sa.manifest, sb.manifest));
     if (sa.sbom.ok && sb.sbom.ok) hunks.push(...diffSbom(app, sa.sbom.data, sb.sbom.data));
-    else hunks.push(notCollected(app, "sbom", sa.sbom, sb.sbom, required));
+    else hunks.push(notCollected(app, "sbom", sa.sbom, sb.sbom));
     if (sa.vulns.ok && sb.vulns.ok) hunks.push(...diffVulns(app, sa.vulns.data, sb.vulns.data));
-    else hunks.push(notCollected(app, "vulns", sa.vulns, sb.vulns, required));
+    else hunks.push(notCollected(app, "vulns", sa.vulns, sb.vulns));
   }
   return hunks;
 };

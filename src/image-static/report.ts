@@ -1,3 +1,4 @@
+import { notCollectedLines } from "../not-collected.ts";
 import type { SideCapture } from "../types.ts";
 import { IMAGE_APPS, type AppImageStatic, type Collected, type ImageArtefactKind, type ImageArtefactStatus, type SideImageArtefacts, type SideImageStatic } from "./types.ts";
 
@@ -31,20 +32,15 @@ export function imageArtefactsSection(a: SideCapture, b: SideCapture) {
  * release that passed without an SBOM diff must say so where the verdict is.
  */
 export function imageStaticReasons(a: SideCapture, b: SideCapture): string[] {
-  // Apps that failed for the same reason on the same side are one line.
-  const groups: { kind: string; side: string; reason: string; apps: string[] }[] = [];
+  // One line per artefact, side and reason: apps that failed the same way are listed together (src/not-collected.ts).
+  const gaps: Parameters<typeof notCollectedLines>[0] = [];
   for (const [side, capture] of [["a", a], ["b", b]] as const) {
     if (!capture.imageStatic) continue;
     for (const app of IMAGE_APPS) {
       const s = capture.imageStatic[app];
-      if (!s) continue;
-      for (const [kind, value] of [["manifest", s.manifest], ["sbom", s.sbom], ["vulns", s.vulns]] as const) {
-        if (value.ok) continue;
-        const group = groups.find((g) => g.kind === kind && g.side === side && g.reason === value.reason);
-        if (group) group.apps.push(app);
-        else groups.push({ kind, side, reason: value.reason, apps: [app] });
-      }
+      if (!s) continue; // `time` is optional in a report written before 1.3.0
+      for (const [kind, value] of [["manifest", s.manifest], ["sbom", s.sbom], ["vulns", s.vulns]] as const) if (!value.ok) gaps.push({ what: kind, subject: app, side, reason: value.reason });
     }
   }
-  return groups.map((g) => `NOT COLLECTED: ${g.kind} of ${g.apps.join(", ")} on side ${g.side}: ${g.reason}. It was not compared.`);
+  return notCollectedLines(gaps);
 }

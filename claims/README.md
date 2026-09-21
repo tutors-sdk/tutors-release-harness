@@ -90,7 +90,9 @@ A bumped package is one hunk (`name a-version → b-version`), so one claim
 covers it. A change that touches many packages (a framework bump) is many
 hunks: a glob such as `*/@sveltejs/*` claims them together. A `not-collected`
 hunk (`<app>/not-collected`) means an SBOM, manifest or scan could not be read
-from an image; fix that rather than claiming it.
+from an image; fix that rather than claiming it. The same scope shape,
+`<app>/not-collected` or `<artefact>/not-collected`, is what the `runtime`,
+`startup` and `bus` artefacts use when they could not be collected.
 
 Globs are `picomatch` with `dot: true` and case folding. Quote scopes with
 spaces or colons.
