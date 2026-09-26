@@ -198,6 +198,20 @@ jobs:
           gh api -H "Accept: application/vnd.github.raw" "repos/${GITHUB_REPOSITORY}/contents/noise-history.json?ref=noise" > publish/noise-history.json 2>/dev/null \
             || { echo "no noise branch yet: starting the history"; rm -f publish/noise-history.json; }
 
+      # The branch is rebuilt every night, so the reports it already keeps are carried over before tonight's is added.
+      - name: The reports kept so far, from the noise branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          remote="https://github.com/${GITHUB_REPOSITORY}.git"
+          auth="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          if git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth}" clone -q --depth 1 --branch noise "$remote" previous 2>/dev/null && [ -d previous/reports ]; then
+            cp -R previous/reports publish/reports
+          else
+            echo "no reports on the noise branch yet: starting them"
+          fi
+          rm -rf previous
+
       # Exit 1 means the ratchet is broken. It is reported after publishing, so the status that says so still reaches the branch.
       - name: Record tonight and check the ratchet
         id: record
@@ -210,6 +224,14 @@ jobs:
           pnpm harness noise record \
             --status "$status" --report "$report" --store publish \
             --tag "$TAG" --run-url "$RUN_URL" --summary "$GITHUB_STEP_SUMMARY"
+
+      # The last 14 nights' reports, readable at a raw URL after the artifact has expired (docs/contract.md, "Kept reports").
+      - name: Keep tonight's report
+        if: steps.record.outcome != 'skipped'
+        continue-on-error: true
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: pnpm harness reports keep --dir "$(ls tonight/*/report.json | head -1)" --store publish --run-url "$RUN_URL" --keep-last 14
 
       # One commit, forced, every night: the history lives in noise-history.json, not in git, so the branch never grows
       # and nothing can conflict. Release runs read noise-status.json from here (docs/noise-burndown.md).
@@ -227,6 +249,7 @@ jobs:
           - `noise-status.json`: the latest A/A result. `release.yml` and `post-deploy.yml` read it; the gate may FAIL a release only while it is clean, verified and no more than seven days old.
           - `noise-history.json`: one entry per night, for the ratchet.
           - `noise-summary.md`: tonight's summary.
+          - `reports/index.json`: the last 14 nights, newest first; `reports/<ranAt>-noise/report.{json,md,html}` for each.
 
           See `docs/noise-burndown.md` on the default branch.
           README
@@ -234,6 +257,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add README.md noise-status.json noise-history.json noise-summary.md
+          if [ -d reports ]; then git add reports; fi
           git commit -q -m "noise: A/A status $(date -u +%Y-%m-%d)"
           auth="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
           git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth}" push --force "https://github.com/${GITHUB_REPOSITORY}.git" noise

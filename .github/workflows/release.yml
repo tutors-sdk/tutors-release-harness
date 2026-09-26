@@ -269,6 +269,20 @@ jobs:
       group: release-records-branch
       cancel-in-progress: false
     steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          path: harness
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: harness/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: harness/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+        working-directory: harness
       - uses: actions/download-artifact@v4
         continue-on-error: true
         with:
@@ -294,6 +308,10 @@ jobs:
           mkdir -p publish/releases
           cp "$record" "publish/releases/${candidate}.json"
           if [ "$shippable" = yes ] && [ "$release" != "$candidate" ]; then cp "$record" "publish/releases/${release}.json"; fi
+          # The candidate's report beside its record, readable at a raw URL after the artifact has expired. Every candidate is kept.
+          run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          (cd harness && pnpm harness reports keep --dir "$(dirname "../$record")" --store ../publish --run-url "$run_url") \
+            || echo "::warning title=Report not kept::the release record is published without its report; the artifact still has it"
           cat > publish/README.md <<'README'
           # release-records
 
@@ -301,6 +319,7 @@ jobs:
 
           - `releases/<candidate>.json`: what release mode judged for that candidate (`docs/contract/release-record.schema.json`).
           - `releases/<release>.json`: the newest candidate of that release that could ship. `post-deploy.yml` reads this one.
+          - `reports/index.json`: every judged candidate, newest first; `reports/<ranAt>-release/report.{json,md,html}` for each.
 
           See `docs/contract.md`, "The release record", on the default branch.
           README
@@ -308,6 +327,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add README.md releases
+          if [ -d reports ]; then git add reports; fi
           if git diff --cached --quiet; then echo "the record is already published"; exit 0; fi
           git commit -q -m "release record: ${candidate} (${release})"
           git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth}" push "https://github.com/${GITHUB_REPOSITORY}.git" release-records

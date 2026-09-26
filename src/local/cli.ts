@@ -15,6 +15,7 @@ import { COMPARE_DEFAULTS, ReleaseResolutionError, planCompare, realFetch, rende
 import { realVulnDbDeps, vulnDbStatus, vulnDbUpdate } from "./vuln-db.ts";
 import { noiseHistoryCommand, noiseStatusCommand, recordNight } from "./noise-store.ts";
 import { PRUNE_DEFAULTS, prune, renderPrune } from "./prune.ts";
+import { keepReport } from "../ci/report-archive.ts";
 import { appendOverride, overrideFromReport, readOverrides } from "./override-log.ts";
 import {
   PRODUCTION_DEFAULT_TAG,
@@ -147,6 +148,19 @@ export function overrideCommand(sub: string | undefined, v: Values): number {
     for (const e of entries) console.log(`  #${e.seq} ${e.at} ${e.mode} ${e.a ?? "?"} -> ${e.b ?? "?"} by ${e.by}: ${e.reason}`);
     if (!log.chainIntact) for (const p of log.problems) console.log(`  WARNING: ${p}`);
   }
+  return 0;
+}
+
+// ---- harness reports ----------------------------------------------------------------------------------
+
+/** Keep a run's report where it outlives the artifact: the store's reports/ directory and its index.json (src/ci/report-archive.ts). */
+export function reportsCommand(sub: string | undefined, v: Values, log: (m: string) => void = (m) => console.log(m)): number {
+  if (sub !== "keep") throw new UsageError("reports keep --dir <run directory | report.json> [--store dir] [--run-url u] [--keep-last n]");
+  const dir = str(v, "dir");
+  if (!dir) throw new UsageError("reports keep needs --dir <run directory | report.json>");
+  const keepLast = v["keep-last"] === undefined ? undefined : integer(v, "keep-last", 0, 1);
+  const { entry, dropped } = keepReport({ dir, store: str(v, "store") ?? ".", ...(str(v, "run-url") ? { runUrl: str(v, "run-url")! } : {}), ...(keepLast ? { keepLast } : {}) });
+  log(`kept ${entry.mode} ${entry.ranAt} (${entry.verdict.toUpperCase()}): reports/${entry.id}/ ${entry.files.length} file(s)${dropped.length ? `; removed ${dropped.length} older` : ""}`);
   return 0;
 }
 
