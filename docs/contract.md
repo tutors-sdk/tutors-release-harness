@@ -857,6 +857,10 @@ Releases are git tags `v<harness version>` on `main`, cut by a maintainer.
   required: the A/A saw nothing of that journey's pages, so it is not clean
   evidence, and a release run will not trust it. Any other mode names such a
   journey in its `reasons`.
+- The scorecard's PRs are links to the monorepo's pull requests,
+  `[#313](https://github.com/tutors-sdk/tutors-mono-repo/pull/313)`: a bare `#313` in a
+  report kept in this repository linked to this repository's #313. The monorepo's
+  `pnpm release:rules --since` now fills each Rule's `prs` from the PRs that touched it.
 - A failing `screenshot` hunk's summary says where the pixels differ: `…% of
   pixels differ in W×H at (x, y) (threshold …)`, the box around every differing
   pixel. The diff image stays in `diff/`; the summary is what a CI log shows.
