@@ -167,6 +167,30 @@ describe("noise mode: the A/A that produces the status", () => {
     expect(status(run.dir).degraded).toBeUndefined();
   });
 
+  it("a journey that fails on both sides: the A/A saw nothing there, so it is degraded, not clean, and a release will not trust it", () => {
+    const withError = (side: "a" | "b", error: string) => {
+      const c = clone(capture(side, { provenance: verified }));
+      c.journeys[0]!.error = error;
+      return c;
+    };
+    const run = go({ mode: "noise", changed: false, requireVerified: true, a: withError("a", "locator.waitFor: Timeout 15000ms exceeded."), b: withError("b", "locator.waitFor: Timeout 15000ms exceeded.") });
+    expect(run.report.verdict).toBe("warn");
+    expect(run.report.reasons[0]).toMatch(/DEGRADED/);
+    const journey = capture("a").journeys[0]!.journey;
+    expect(status(run.dir)).toMatchObject({ clean: true, hunks: 0, degraded: [`journey "${journey}" failed on both sides, so this run saw nothing of its pages`] });
+    // without verification required too: a laptop's A/A is not clean while blind either
+    expect(go({ mode: "noise", changed: false, a: withError("a", "x"), b: withError("b", "x") }).report.verdict).toBe("warn");
+    // failing on one side only is a finding, not blindness
+    const oneSide = go({ mode: "noise", changed: false, requireVerified: true, a: capture("a", { provenance: verified }), b: withError("b", "x") });
+    expect(status(oneSide.dir).degraded).toBeUndefined();
+    expect(status(oneSide.dir).clean).toBe(false);
+    // a release run names the blind journey in its reasons, and trusts no nightly that was blind
+    const release = go({ noise: run.dir, a: withError("a", "x"), b: withError("b", "x") });
+    expect(release.report.reasons.join("\n")).toContain(`journey "${journey}" failed on both sides`);
+    expect(release.report.reasons.join("\n")).toMatch(/degraded and does not count/);
+    expect(release.report.verdict).toBe("warn");
+  });
+
   it("evidenceGaps names each side that was not fully pulled and verified", () => {
     expect(evidenceGaps(capture("a", { provenance: verified }), capture("b", { provenance: verified }))).toEqual([]);
     expect(evidenceGaps(capture("a", { provenance: verified }), capture("b", { provenance: cached }))).toEqual([expect.stringContaining("side b")]);
