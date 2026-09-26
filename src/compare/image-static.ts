@@ -30,6 +30,18 @@ export const SIZE_TOLERANCE = { fraction: 0.1, bytes: 5 * 1024 * 1024 } as const
 /** Labels that legitimately differ on every build: what is in the report header already. */
 const VOLATILE_LABELS = new Set(["org.opencontainers.image.revision", "org.opencontainers.image.created", "org.opencontainers.image.version"]);
 const BASE_LABELS = new Set(["org.opencontainers.image.base.name", "org.opencontainers.image.base.digest"]);
+/**
+ * Descriptive labels the publishing pipeline stamps over the Dockerfile's (docker/metadata-action in the
+ * monorepo's image-build.yml). An image built here from a ref has only the Dockerfile's, so when either side
+ * was built from a ref these differ because of where the image came from, not what it is: reported, never failing.
+ * A licence label is not among them: a licence change is worth a claim wherever the image came from.
+ */
+export const PIPELINE_LABELS = new Set(["org.opencontainers.image.title", "org.opencontainers.image.description", "org.opencontainers.image.url", "org.opencontainers.image.source", "org.opencontainers.image.vendor", "org.opencontainers.image.documentation", "org.opencontainers.image.authors"]);
+
+export interface ManifestDiffOptions {
+  /** Which sides ran an image built here from a monorepo ref rather than pulled from the registry. */
+  builtFromRef?: readonly ("a" | "b")[];
+}
 
 const short = (d: string | undefined) => (d ? d.replace(/^sha256:/, "").slice(0, 12) : "none");
 const fmtBytes = (n: number) => `${(n / (1024 * 1024)).toFixed(1)} MB`;
@@ -41,7 +53,7 @@ function h(artefact: Artefact, scope: string, severity: Hunk["severity"], summar
 
 // ---- image-manifest --------------------------------------------------------------------------
 
-export function diffManifest(app: ImageApp, a: ImageManifest, b: ImageManifest): Hunk[] {
+export function diffManifest(app: ImageApp, a: ImageManifest, b: ImageManifest, opts: ManifestDiffOptions = {}): Hunk[] {
   const hunks: Hunk[] = [];
   const A = "image-manifest" as const;
 
@@ -84,7 +96,10 @@ export function diffManifest(app: ImageApp, a: ImageManifest, b: ImageManifest):
     if (VOLATILE_LABELS.has(key) || BASE_LABELS.has(key) || a.labels[key] === b.labels[key]) continue;
     const from = a.labels[key];
     const to = b.labels[key];
-    hunks.push(h(A, `${app}/label/${key}`, "fail", from === undefined ? `${app}: label ${key} added (${to})` : to === undefined ? `${app}: label ${key} removed (was ${from})` : `${app}: label ${key} "${from}" → "${to}"`));
+    const summary = from === undefined ? `${app}: label ${key} added (${to})` : to === undefined ? `${app}: label ${key} removed (was ${from})` : `${app}: label ${key} "${from}" → "${to}"`;
+    const built = opts.builtFromRef ?? [];
+    if (built.length && PIPELINE_LABELS.has(key)) hunks.push(h(A, `${app}/label/${key}`, "info", `${summary}; side ${built.join(" and ")} was built here from a ref, and the publishing pipeline stamps this label`));
+    else hunks.push(h(A, `${app}/label/${key}`, "fail", summary));
   }
   return hunks;
 }
@@ -155,7 +170,8 @@ export const imageStatic: Engine = (a, b) => {
     const sb = b.imageStatic[app];
     // A capture recorded before `time` joined the stack (contract 1.3.0) has nothing to compare it with.
     if (!sa || !sb) continue;
-    if (sa.manifest.ok && sb.manifest.ok) hunks.push(...diffManifest(app, sa.manifest.data, sb.manifest.data));
+    const builtFromRef = ([a, b] as const).filter((s) => s.provenance?.images[app]?.provenance === "built-from-ref").map((s) => s.side);
+    if (sa.manifest.ok && sb.manifest.ok) hunks.push(...diffManifest(app, sa.manifest.data, sb.manifest.data, { builtFromRef }));
     else hunks.push(notCollected(app, "manifest", sa.manifest, sb.manifest));
     if (sa.sbom.ok && sb.sbom.ok) hunks.push(...diffSbom(app, sa.sbom.data, sb.sbom.data));
     else hunks.push(notCollected(app, "sbom", sa.sbom, sb.sbom));

@@ -844,6 +844,14 @@ Releases are git tags `v<harness version>` on `main`, cut by a maintainer.
 - `harness scorecard` (not stable): score, normalness, Rules and PRs, and what to
   test by hand, for one run. `reports keep` writes it beside each kept report
   and its headline into `index.json`. See [Kept reports](#kept-reports).
+- Pattern masks may name `focus`: each keyboard stop (its role and accessible
+  name) is rewritten like the ARIA snapshot. Before, a `focus` pattern mask
+  loaded but changed nothing.
+- `image-manifest`: when a side's image was built here from a monorepo ref, a
+  difference in a label the publishing pipeline stamps (`title`, `description`,
+  `url`, `source`, `vendor`, `documentation`, `authors`) is an `info` hunk, not a
+  failure: it says where the image came from, not what it is. Every other label,
+  `licenses` included, still fails.
 
 ### 1.4.0 (minor; the pinned vulnerability database, one "not collected" convention, housekeeping commands, clean exit 2, post-deploy on an external side)
 

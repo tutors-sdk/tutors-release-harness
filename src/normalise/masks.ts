@@ -116,6 +116,7 @@ function normalisePage(raw: PageCapture, masks: Mask[], hits: MaskHits, origins:
   const page = redactPage(raw);
   const own = (text: string) => rewriteOrigins(text, origins).text;
   let aria = own(page.aria);
+  let focus = page.focus.map(own);
   const headers: Record<string, string> = {};
   for (const [k, v] of Object.entries(page.headers)) headers[k.toLowerCase()] = canonicalHeaderValue(k, v);
   let network = page.network.map((n) => canonicalNetworkEntry({ ...n, url: own(n.url) }));
@@ -144,6 +145,8 @@ function normalisePage(raw: PageCapture, masks: Mask[], hits: MaskHits, origins:
         for (const [name, value] of Object.entries(headers)) headers[name] = applyPattern(value, mask, hits);
       }
       if (artefact === "dom" && mask.pattern) aria = applyPattern(aria, mask, hits);
+      // Each keyboard stop is its element's role and accessible name, the same text the ARIA snapshot carries.
+      if (artefact === "focus" && mask.pattern) focus = focus.map((stop) => applyPattern(stop, mask, hits));
       if (artefact === "network" && mask.pattern && !mask.header && mask.drop) {
         const re = new RegExp(mask.pattern);
         const kept = network.filter((n) => !re.test(n.url));
@@ -162,7 +165,7 @@ function normalisePage(raw: PageCapture, masks: Mask[], hits: MaskHits, origins:
       }
     }
   }
-  return { ...page, path: own(page.path), aria, headers, network, console: consoleEntries };
+  return { ...page, path: own(page.path), aria, focus, headers, network, console: consoleEntries };
 }
 
 /** Apply every mask that applies in `mode` to a capture. Pure: returns a new capture and the hit counts. */
