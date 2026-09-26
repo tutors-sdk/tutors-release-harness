@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { schemaHash, stripOrigins } from "../src/collectors/browser.ts";
+import { quiet, schemaHash, stripOrigins } from "../src/collectors/browser.ts";
 import { summariseK6 } from "../src/collectors/load.ts";
 import { summariseLogs } from "../src/collectors/logs.ts";
 import { parseMetrics } from "../src/collectors/metrics.ts";
@@ -112,5 +112,31 @@ describe("upgrade summary", () => {
     const onlyA = summariseUpgrade(line("edge_req_duration", 10, { upstream: "a", status: "200" }), 1, 2);
     expect(judgeUpgrade(onlyA).some((h) => h.severity === "fail" && h.scope === "b")).toBe(true);
     expect(judgeUpgrade(summariseUpgrade("", 1, 2))[0]!.summary).toMatch(/no requests/);
+  });
+});
+
+describe("quiet: wait for the requests a page starts late", () => {
+  it("waits until nothing has been in flight for the quiet window", async () => {
+    let inFlight = 1;
+    setTimeout(() => (inFlight = 0), 100);
+    const t0 = Date.now();
+    await quiet(() => inFlight, 100, 2_000, 10);
+    expect(Date.now() - t0).toBeGreaterThanOrEqual(190);
+    expect(Date.now() - t0).toBeLessThan(1_000);
+  });
+
+  it("a request that starts during the window restarts it", async () => {
+    let inFlight = 0;
+    setTimeout(() => (inFlight = 1), 50);
+    setTimeout(() => (inFlight = 0), 150);
+    const t0 = Date.now();
+    await quiet(() => inFlight, 100, 2_000, 10);
+    expect(Date.now() - t0).toBeGreaterThanOrEqual(240);
+  });
+
+  it("gives up at the bound when the page never goes quiet", async () => {
+    const t0 = Date.now();
+    await quiet(() => 1, 100, 200, 10);
+    expect(Date.now() - t0).toBeLessThan(600);
   });
 });
