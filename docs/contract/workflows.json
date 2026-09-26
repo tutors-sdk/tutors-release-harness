@@ -75,7 +75,7 @@
     "$comment": "Since 1.2.0. The stable home of the latest A/A status, so release.yml and post-deploy.yml can find it after the artifact has expired.",
     "branch": "noise",
     "writtenBy": "nightly-noise.yml",
-    "files": ["noise-status.json", "noise-history.json", "noise-summary.md", "README.md"],
+    "files": ["noise-status.json", "noise-history.json", "noise-summary.md", "README.md", "reports/index.json"],
     "readBy": ["release.yml", "post-deploy.yml"],
     "fetch": "gh api -H 'Accept: application/vnd.github.raw' repos/<repo>/contents/noise-status.json?ref=noise",
     "freshness": "the gate, not the fetch: a status is trusted only while clean, without degraded, and no more than 7 days old"
@@ -85,7 +85,7 @@
     "branch": "release-records",
     "writtenBy": "release.yml",
     "job": "publish-record",
-    "files": ["releases/<candidate>.json", "releases/<release>.json", "README.md"],
+    "files": ["releases/<candidate>.json", "releases/<release>.json", "README.md", "reports/index.json"],
     "readBy": ["post-deploy.yml"],
     "fetch": "gh api -H 'Accept: application/vnd.github.raw' repos/<repo>/contents/releases/<tag>.json?ref=release-records",
     "schema": "release-record.schema.json"

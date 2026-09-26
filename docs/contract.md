@@ -585,7 +585,7 @@ Full list: [`contract/cli.json`](contract/cli.json). Invoke as `pnpm harness
 <command>` from a checkout (Node ≥ 22, `pnpm install`, and for capturing modes
 `pnpm exec playwright install chromium` and Docker). Commands and flags marked
 `stable: true` there are the ones below; the rest (`harness stack`, `harness
-kind`, `harness journeys`, `harness override`, `harness local`, `harness prune`, `harness noise
+kind`, `harness journeys`, `harness override`, `harness local`, `harness prune`, `harness reports`, `harness noise
 history`, `--substrate`, `--now`, `--masks`, `--snapshot`,
 `--upgrade-*`, `--noise-max-age-days`, `--no-screenshots`, `--no-axe`,
 `--no-focus`, `--no-runtime` and `--startup-restarts` (both since 1.2.0),
@@ -737,6 +737,25 @@ otherwise — including on `warn`. Since 1.4.0 the run is titled for the candida
 dispatched `release-candidate` can find the run it started by title; a title matches only
 as a whole tag (`16.3.0-rc.1` is not `16.3.0-rc.10`).
 
+### Kept reports
+
+Since 1.5.0 (unreleased). An artifact expires, and reading one needs a token.
+So the branches the workflows already push also keep each run's `report.json`,
+`report.md` and `report.html` (no captures, screenshots or k6 output), with an
+index, readable by anyone at a raw URL:
+
+| Branch | Written by | Keeps |
+| --- | --- | --- |
+| `noise` | `nightly-noise.yml`, `publish` job | the last 14 nights |
+| `release-records` | `release.yml`, `publish-record` job | every judged candidate |
+
+`reports/index.json` is `{ "schemaVersion": 1, "runs": [...] }`, newest first. Each
+run has `id` (`<ranAt>-<mode>`, the colons as dashes: `2026-09-26T07-57-09Z-noise`),
+`mode`, `ranAt`, `verdict`, `reasons`, `sides`, `harnessVersion`, `runUrl` and
+`files`, paths relative to `reports/`. `harness reports keep` writes both (see
+[CLI](#cli)); keeping is best effort and never stops the status or record being
+published. No new branch, write permission or push.
+
 ## What the harness does to a pull request
 
 Nothing. The harness has no token for the monorepo and its workflows never
@@ -758,11 +777,12 @@ What it does instead:
   `harness-override` for each FAIL a person overrode;
 - since 1.2.0, in `nightly-noise.yml` only, the `publish` job, with
   `contents: write` on **this** repository: force-pushes the `noise` branch
-  (the latest A/A status, its history and summary);
+  (the latest A/A status, its history and summary, and since 1.5.0 the last 14
+  nights' reports);
 - since 1.3.0, in `release.yml` only, the `publish-record` job, with
   `contents: write` on **this** repository: pushes the `release-records` branch
   (`releases/<candidate>.json` and `releases/<release>.json`, see [the release
-  record](#the-release-record)). No other branch, no tag, no release, no other
+  record](#the-release-record), and since 1.5.0 each candidate's report). No other branch, no tag, no release, no other
   repository. A test lists these four write scopes and fails on any other.
 
 Post-deploy mode sends anonymous, read-only requests for the published
@@ -790,6 +810,15 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, cut by a maintainer.
 
 ## Changes
+
+### 1.5.0 (unreleased; minor; kept reports)
+
+- `harness reports keep` (not stable): copies a run's `report.json`, `report.md`
+  and `report.html` into `<store>/reports/<ranAt>-<mode>/` and lists it in
+  `<store>/reports/index.json`. See [Kept reports](#kept-reports).
+- `nightly-noise.yml` keeps the last 14 nights' reports on the `noise` branch;
+  `release.yml` keeps each candidate's report on the `release-records` branch.
+  Same branches, same jobs, same permissions.
 
 ### 1.4.0 (minor; the pinned vulnerability database, one "not collected" convention, housekeeping commands, clean exit 2, post-deploy on an external side)
 
