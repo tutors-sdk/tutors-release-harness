@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 1,
+  "mode": "release",
+  "ranAt": "2026-09-26T17:06:30.740Z",
+  "verdict": "fail",
+  "score": 40,
+  "grade": "D",
+  "deductions": [
+    {
+      "points": 60,
+      "why": "71 diff(s) no claim covers"
+    }
+  ],
+  "normalness": {
+    "state": "normal",
+    "source": "noise-status",
+    "hunks": 0,
+    "ranAt": "2026-09-26T07:57:09.931Z"
+  },
+  "rules": [
+    {
+      "rule": null,
+      "hunks": 71,
+      "artefacts": [
+        "dom",
+        "screenshot",
+        "network",
+        "console",
+        "focus",
+        "sbom",
+        "vulns"
+      ],
+      "scopes": [
+        "/topic/localhost:8080/unit-1/topic-01",
+        "/topic/reference-course/topic-07-reference",
+        "/lab/reference-course/topic-07-reference/book-a",
+        "/note/reference-course/topic-07-reference/note-1",
+        "/",
+        "/course/localhost:8080",
+        "/search/localhost:8080",
+        "reader/corepack",
+        "reader/node",
+        "reader/npm",
+        "reader/tar",
+        "reader/tutors-reader",
+        "reader/GHSA-23hp-3jrh-7fpw",
+        "reader/GHSA-8x88-c5mf-7j5w",
+        "reader/GHSA-gvwx-54wh-qm9j",
+        "reader/GHSA-r292-9mhp-454m",
+        "reader/GHSA-vmf3-w455-68vh",
+        "reader/GHSA-w8wr-v893-vjvp",
+        "catalogue/corepack",
+        "catalogue/node",
+        "catalogue/npm",
+        "catalogue/tar",
+        "catalogue/tutors-catalogue",
+        "catalogue/GHSA-23hp-3jrh-7fpw",
+        "catalogue/GHSA-8x88-c5mf-7j5w",
+        "catalogue/GHSA-gvwx-54wh-qm9j",
+        "catalogue/GHSA-r292-9mhp-454m",
+        "catalogue/GHSA-vmf3-w455-68vh",
+        "catalogue/GHSA-w8wr-v893-vjvp",
+        "live/corepack",
+        "live/node",
+        "live/npm",
+        "live/tar",
+        "live/tutors-live",
+        "live/GHSA-23hp-3jrh-7fpw",
+        "live/GHSA-8x88-c5mf-7j5w",
+        "live/GHSA-gvwx-54wh-qm9j",
+        "live/GHSA-r292-9mhp-454m",
+        "live/GHSA-vmf3-w455-68vh",
+        "live/GHSA-w8wr-v893-vjvp",
+        "time/corepack",
+        "time/node",
+        "time/npm",
+        "time/tar",
+        "time/tutors-time",
+        "time/GHSA-23hp-3jrh-7fpw",
+        "time/GHSA-8x88-c5mf-7j5w",
+        "time/GHSA-gvwx-54wh-qm9j",
+        "time/GHSA-r292-9mhp-454m",
+        "time/GHSA-vmf3-w455-68vh",
+        "time/GHSA-w8wr-v893-vjvp"
+      ],
+      "prs": [],
+      "status": "unclaimed"
+    }
+  ],
+  "manual": [
+    {
+      "scope": "/topic/localhost:8080/unit-1/topic-01",
+      "path": "/topic/localhost:8080/unit-1/topic-01",
+      "artefacts": [
+        "dom",
+        "screenshot",
+        "console",
+        "focus"
+      ],
+      "hunks": 8,
+      "why": "moved and no claim covers it"
+    },
+    {
+      "scope": "/topic/reference-course/topic-07-reference",
+      "path": "/topic/reference-course/topic-07-reference",
+      "artefacts": [
+        "dom",
+        "network"
+      ],
+      "hunks": 6,
+      "why": "moved and no claim covers it"
+    },
+    {
+      "scope": "/",
+      "path": "/",
+      "artefacts": [
+        "console",
+        "focus"
+      ],
+      "hunks": 5,
+      "why": "moved and no claim covers it"
+    },
+    {
+      "scope": "/course/localhost:8080",
+      "path": "/course/localhost:8080",
+      "artefacts": [
+        "console",
+        "focus"
+      ],
+      "hunks": 3,
+      "why": "moved and no claim covers it"
+    },
+    {
+      "scope": "/note/reference-course/topic-07-reference/note-1",
+      "path": "/note/reference-course/topic-07-reference/note-1",
+      "artefacts": [
+        "network"
+      ],
+      "hunks": 2,
+      "why": "moved and no claim covers it"
+    }
+  ]
+}

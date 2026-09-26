@@ -3,10 +3,10 @@
   "candidate": "16.2.2",
   "release": "16.2.2",
   "production": "16.2.1",
-  "recordedAt": "2026-09-26T12:38:31.993Z",
+  "recordedAt": "2026-09-26T17:06:30.746Z",
   "harness": {
     "version": "1.4.1",
-    "gitSha": "6648ea6660f2c0e004eba1112b35a08101683972",
+    "gitSha": "6487642c6f3f057e3c641098b48d18b046728e0c",
     "contractVersion": "1.4.0"
   },
   "verdict": "fail",

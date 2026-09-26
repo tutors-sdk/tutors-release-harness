@@ -1,0 +1,2218 @@
+{
+  "schemaVersion": 1,
+  "harness": {
+    "version": "1.4.1",
+    "gitSha": "6487642c6f3f057e3c641098b48d18b046728e0c",
+    "contractVersion": "1.4.0"
+  },
+  "harnessVersion": "1.4.1",
+  "mode": "release",
+  "substrate": "compose",
+  "ranAt": "2026-09-26T17:06:30.740Z",
+  "now": "2026-09-16T09:05:00.000Z",
+  "runs": 5,
+  "sides": {
+    "a": {
+      "reader": "quay.io/tutors-sdk/tutors-reader:16.2.1",
+      "catalogue": "quay.io/tutors-sdk/tutors-catalogue:16.2.1",
+      "live": "quay.io/tutors-sdk/tutors-live:16.2.1",
+      "time": "quay.io/tutors-sdk/tutors-time:16.2.1"
+    },
+    "b": {
+      "reader": "quay.io/tutors-sdk/tutors-reader:16.2.2",
+      "catalogue": "quay.io/tutors-sdk/tutors-catalogue:16.2.2",
+      "live": "quay.io/tutors-sdk/tutors-live:16.2.2",
+      "time": "quay.io/tutors-sdk/tutors-time:16.2.2"
+    }
+  },
+  "provenance": {
+    "a": {
+      "summary": "pulled+verified",
+      "images": {
+        "reader": {
+          "ref": "quay.io/tutors-sdk/tutors-reader:16.2.1",
+          "id": "sha256:7b1d95a072d93d19c5992229991b992fe77940ef2f680b711945015ed2eb5202",
+          "digest": "sha256:a1d772187c5a85d54975fd69830a97be0304864cfd2d9b576971f219f1534745",
+          "revision": "c2915322a0dcb6843b703ca6cbaaff9ee4273463",
+          "version": "16.2.1",
+          "created": "2026-09-26T16:15:50.040Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "catalogue": {
+          "ref": "quay.io/tutors-sdk/tutors-catalogue:16.2.1",
+          "id": "sha256:0e07412dad9de8ba47888c91ea247cbfd114f4af6e29d019a31fc8766db9ef83",
+          "digest": "sha256:4bd2e9bdae61cbde7ad8ff670488090c52882ff612bd5b775c64ebedcbfc7fad",
+          "revision": "c2915322a0dcb6843b703ca6cbaaff9ee4273463",
+          "version": "16.2.1",
+          "created": "2026-09-26T16:15:50.499Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "live": {
+          "ref": "quay.io/tutors-sdk/tutors-live:16.2.1",
+          "id": "sha256:e4b641f68fc986426240866a1d01f736b17cb8bb508d3a97b2bfa6540ddab45b",
+          "digest": "sha256:0f1b790f5116b47829216ac6ccdf6da5a5ae374e5f52a61fa0c86631483cff8b",
+          "revision": "c2915322a0dcb6843b703ca6cbaaff9ee4273463",
+          "version": "16.2.1",
+          "created": "2026-09-26T16:15:55.931Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "time": {
+          "ref": "quay.io/tutors-sdk/tutors-time:16.2.1",
+          "id": "sha256:b71d223cd9425fa92ae2e0bd2fa64c7378e6f08f5b99bccfeee2d50702da0dd8",
+          "digest": "sha256:87a87ac1c59b1e39e902934f67f65180858b74933fae0d248a133eab1535eb79",
+          "revision": "c2915322a0dcb6843b703ca6cbaaff9ee4273463",
+          "version": "16.2.1",
+          "created": "2026-09-26T16:16:02.005Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        }
+      }
+    },
+    "b": {
+      "summary": "pulled+verified",
+      "images": {
+        "reader": {
+          "ref": "quay.io/tutors-sdk/tutors-reader:16.2.2",
+          "id": "sha256:5251de773ba42df7b8a03cb204b1bb0fd3a7bf0696d8674ad5dc657e0410fe82",
+          "digest": "sha256:7567d5927767bd39b7991a586d594f6c310387471109a456d2cff49fa12488cb",
+          "revision": "caa53d021e63004ad6e52a76428f8acd95a87c21",
+          "version": "16.2.2",
+          "created": "2026-09-19T18:07:41.709Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "catalogue": {
+          "ref": "quay.io/tutors-sdk/tutors-catalogue:16.2.2",
+          "id": "sha256:2f807181869d5146e65711a562c609091d6555b4332c738efc252a4542629b5d",
+          "digest": "sha256:f6cdb7f6adaba1d227e2cf62260ec2fe7064c58114666774331da3530bf52187",
+          "revision": "caa53d021e63004ad6e52a76428f8acd95a87c21",
+          "version": "16.2.2",
+          "created": "2026-09-19T18:07:41.955Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "live": {
+          "ref": "quay.io/tutors-sdk/tutors-live:16.2.2",
+          "id": "sha256:274059f152dac50de544a7aa4e8bc791ffe9900c3683d5b458ec30682fce5a32",
+          "digest": "sha256:12ed5642e5cbec601790771a8f9fc85221f8202679a312a0e707622bb6e84e9a",
+          "revision": "caa53d021e63004ad6e52a76428f8acd95a87c21",
+          "version": "16.2.2",
+          "created": "2026-09-19T18:07:35.208Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "time": {
+          "ref": "quay.io/tutors-sdk/tutors-time:16.2.2",
+          "id": "sha256:a4298d01a6c1d0d88f7a23f732d23002669ac2af9ad4766cef9d72b253907320",
+          "digest": "sha256:ddf3ad22b79bbba96199791a49367677bf9ad0ebdd7542f3246d56e7879d5e4e",
+          "revision": "caa53d021e63004ad6e52a76428f8acd95a87c21",
+          "version": "16.2.2",
+          "created": "2026-09-19T18:07:57.488Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        }
+      }
+    }
+  },
+  "verdict": "fail",
+  "reasons": [
+    "71 unclaimed diff(s)"
+  ],
+  "noise": {
+    "schemaVersion": 1,
+    "ranAt": "2026-09-26T07:57:09.931Z",
+    "clean": true,
+    "hunks": 0
+  },
+  "compare": {
+    "hunks": [
+      {
+        "id": "dom:reader:topic:1",
+        "artefact": "dom",
+        "scope": "reader:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader:topic: semantic DOM differs (+5 −3 lines at line 41)",
+        "detail": "     - figure\n     - paragraph: Summary of this talk (appears on the talk card).\n-  - 'link \"Lab 1 ## Prerequisites\"':\n+  - link \"Lab 1 Prerequisites\":\n     - /url: /lab/localhost:8080/unit-1/topic-01/book-lab-01\n     - text: Lab 1\n     - figure\n-    - text: \"## Prerequisites\"\n+    - heading \"Prerequisites\" [level=2]:\n+      - link \"Prerequisites\":\n+        - /url: \"#prerequisites\"\n   - link \"Note 1 Summary of this note (appears on the note card).\":\n     - /url: /note/localhost:8080/unit-1/topic-01/note-01\n     - text: Note 1\n     - figure\n-    - text: Summary of this note (appears on the note card).\n+    - paragraph: Summary of this note (appears on the note card).\n - contentinfo \"Site footer\":\n   - img \"Tutors\""
+      },
+      {
+        "id": "dom:reader-auth:topic:2",
+        "artefact": "dom",
+        "scope": "reader-auth:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader-auth:topic: semantic DOM differs (+5 −3 lines at line 43)",
+        "detail": "     - figure\n     - paragraph: Summary of this talk (appears on the talk card).\n-  - 'link \"Lab 1 ## Prerequisites\"':\n+  - link \"Lab 1 Prerequisites\":\n     - /url: /lab/localhost:8080/unit-1/topic-01/book-lab-01\n     - text: Lab 1\n     - figure\n-    - text: \"## Prerequisites\"\n+    - heading \"Prerequisites\" [level=2]:\n+      - link \"Prerequisites\":\n+        - /url: \"#prerequisites\"\n   - link \"Note 1 Summary of this note (appears on the note card).\":\n     - /url: /note/localhost:8080/unit-1/topic-01/note-01\n     - text: Note 1\n     - figure\n-    - text: Summary of this note (appears on the note card).\n+    - paragraph: Summary of this note (appears on the note card).\n - contentinfo \"Site footer\":\n   - img \"Tutors\""
+      },
+      {
+        "id": "dom:reference:topic:3",
+        "artefact": "dom",
+        "scope": "reference:topic",
+        "path": "/topic/reference-course/topic-07-reference",
+        "severity": "fail",
+        "summary": "reference:topic: semantic DOM differs (+1 −1 lines at line 91)",
+        "detail": "     - figure:\n       - img \"Lab-07-(md)\"\n-    - text: A set of practical instructions or a walk-though\n+    - paragraph: A set of practical instructions or a walk-though\n   - link \"Note 3 This is an example of a note.\":\n     - /url: /note/reference-course/topic-07-reference/note-1"
+      },
+      {
+        "id": "dom:reference:topic:4",
+        "artefact": "dom",
+        "scope": "reference:topic",
+        "path": "/topic/reference-course/topic-07-reference",
+        "severity": "fail",
+        "summary": "reference:topic: semantic DOM differs (+1 −1 lines at line 97)",
+        "detail": "     - figure:\n       - img \"Note 3\"\n-    - text: This is an example of a note.\n+    - paragraph: This is an example of a note.\n   - link \"Note 4 This note has a linkable table of contents, generated automatically\":\n     - /url: /note/reference-course/topic-07-reference/note-2"
+      },
+      {
+        "id": "dom:reference:topic:5",
+        "artefact": "dom",
+        "scope": "reference:topic",
+        "path": "/topic/reference-course/topic-07-reference",
+        "severity": "fail",
+        "summary": "reference:topic: semantic DOM differs (+1 −1 lines at line 103)",
+        "detail": "     - figure:\n       - img \"Note 4\"\n-    - text: This note has a linkable table of contents, generated automatically\n+    - paragraph: This note has a linkable table of contents, generated automatically\n   - link \"Web Site 4 A web site of interest\":\n     - /url: https://tutors.dev"
+      },
+      {
+        "id": "dom:reference:topic:6",
+        "artefact": "dom",
+        "scope": "reference:topic",
+        "path": "/topic/reference-course/topic-07-reference",
+        "severity": "fail",
+        "summary": "reference:topic: semantic DOM differs (+1 −1 lines at line 126)",
+        "detail": "     - text: Lab-08 (jupyter)\n     - figure\n-    - text: An interactive Jupyter Notebook demonstrating Python fundamentals.\n+    - paragraph: An interactive Jupyter Notebook demonstrating Python fundamentals.\n   - link \"Whiteboard Demo A sample Excalidraw whiteboard showcasing the new whiteboard learning object type.\":\n     - /url: /whiteboard/reference-course/topic-07-reference/whiteboard-demo"
+      },
+      {
+        "id": "dom:reference:topic:7",
+        "artefact": "dom",
+        "scope": "reference:topic",
+        "path": "/topic/reference-course/topic-07-reference",
+        "severity": "fail",
+        "summary": "reference:topic: semantic DOM differs (+1 −1 lines at line 136)",
+        "detail": "     - text: Quiz Demo\n     - figure\n-    - text: \"This is a quiz learning object: an ordinary markdown document containing one\"\n+    - paragraph: \"This is a quiz learning object: an ordinary markdown document containing one\"\n - contentinfo \"Site footer\":\n   - img \"Tutors\""
+      },
+      {
+        "id": "screenshot:reader:topic:8",
+        "artefact": "screenshot",
+        "scope": "reader:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader:topic: 0.60% of pixels differ (threshold 0.10%)",
+        "detail": "diff image: diff/anonymous-student-reads-course-1/reader_topic.png"
+      },
+      {
+        "id": "screenshot:reader-auth:topic:9",
+        "artefact": "screenshot",
+        "scope": "reader-auth:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader-auth:topic: 0.60% of pixels differ (threshold 0.10%)",
+        "detail": "diff image: diff/student-signs-in-1/reader-auth_topic.png"
+      },
+      {
+        "id": "network:GET___course__/topic-07-reference/web-1/link.png:10",
+        "artefact": "network",
+        "scope": "GET {{course}}/topic-07-reference/web-1/link.png",
+        "path": "/topic/reference-course/topic-07-reference",
+        "severity": "fail",
+        "summary": "reference:topic: request no longer made on b: GET {{course}}/topic-07-reference/web-1/link.png"
+      },
+      {
+        "id": "network:GET___course__/topic-07-reference/web-1/link.png:11",
+        "artefact": "network",
+        "scope": "GET {{course}}/topic-07-reference/web-1/link.png",
+        "path": "/lab/reference-course/topic-07-reference/book-a",
+        "severity": "fail",
+        "summary": "reference:lab: new request on b: GET {{course}}/topic-07-reference/web-1/link.png"
+      },
+      {
+        "id": "network:GET___course__/topic-07-reference/note-1/note.png:12",
+        "artefact": "network",
+        "scope": "GET {{course}}/topic-07-reference/note-1/note.png",
+        "path": "/note/reference-course/topic-07-reference/note-1",
+        "severity": "fail",
+        "summary": "reference:note: GET {{course}}/topic-07-reference/note-1/note.png status changed: 304 → 200"
+      },
+      {
+        "id": "network:GET___course__/topic-07-reference/note-1/note.png:13",
+        "artefact": "network",
+        "scope": "GET {{course}}/topic-07-reference/note-1/note.png",
+        "path": "/note/reference-course/topic-07-reference/note-1",
+        "severity": "fail",
+        "summary": "reference:note: GET {{course}}/topic-07-reference/note-1/note.png content-type changed: ∅ → image/png"
+      },
+      {
+        "id": "console:catalogue:home:14",
+        "artefact": "console",
+        "scope": "catalogue:home",
+        "path": "/",
+        "severity": "fail",
+        "summary": "catalogue:home: new console message on b",
+        "detail": "error: {\"app\":\"tutors-catalogue\",\"environment\":\"production\",\"error\":\"Cannot read properties of undefined (reading 'from')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'from')\\n    at Object.getCatalogue ({{origin}}/_app/immutable/chunks/BmnCu8VZ.js:3:103512)\\n    at P ({{origin}}/_app/immutable/nodes/2.DuomUQQ9.js:1:461)\\n    at _t ({{origin}}/_app/immutable/chunks/Cq90ffwe.js:1:14189)\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Error fetching courses:\"}"
+      },
+      {
+        "id": "console:catalogue:home:15",
+        "artefact": "console",
+        "scope": "catalogue:home",
+        "path": "/",
+        "severity": "fail",
+        "summary": "catalogue:home: new console message on b",
+        "detail": "error: {\"app\":\"tutors-catalogue\",\"environment\":\"production\",\"error\":\"Cannot read properties of undefined (reading 'from')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'from')\\n    at Object.getStudentCount ({{origin}}/_app/immutable/chunks/BmnCu8VZ.js:3:103940)\\n    at {{origin}}/_app/immutable/nodes/2.DuomUQQ9.js:1:6090\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Error fetching course count:\"}"
+      },
+      {
+        "id": "console:catalogue:home:16",
+        "artefact": "console",
+        "scope": "catalogue:home",
+        "path": "/",
+        "severity": "info",
+        "summary": "catalogue:home: console message gone on b",
+        "detail": "error: {\"app\":\"tutors-catalogue\",\"environment\":\"production\",\"error\":\"Cannot read properties of undefined (reading 'from')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'from')\\n    at Object.getCatalogue ({{origin}}/_app/immutable/chunks/Dhd_Hme3.js:3:103521)\\n    at P ({{origin}}/_app/immutable/nodes/2.CFqBr9Rb.js:1:461)\\n    at _t ({{origin}}/_app/immutable/chunks/CyHZqhey.js:1:14189)\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Error fetching courses:\"}"
+      },
+      {
+        "id": "console:catalogue:home:17",
+        "artefact": "console",
+        "scope": "catalogue:home",
+        "path": "/",
+        "severity": "info",
+        "summary": "catalogue:home: console message gone on b",
+        "detail": "error: {\"app\":\"tutors-catalogue\",\"environment\":\"production\",\"error\":\"Cannot read properties of undefined (reading 'from')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'from')\\n    at Object.getStudentCount ({{origin}}/_app/immutable/chunks/Dhd_Hme3.js:3:103949)\\n    at {{origin}}/_app/immutable/nodes/2.CFqBr9Rb.js:1:6090\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Error fetching course count:\"}"
+      },
+      {
+        "id": "console:reader-auth:course:18",
+        "artefact": "console",
+        "scope": "reader-auth:course",
+        "path": "/course/localhost:8080",
+        "severity": "fail",
+        "summary": "reader-auth:course: new console message on b",
+        "detail": "error: {\"app\":\"tutors-reader\",\"environment\":\"production\",\"reason\":\"Cannot read properties of undefined (reading 'increment')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'increment')\\n    at s ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:1031)\\n    at async Promise.all (index 0)\\n    at async c ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:1122)\\n    at async m ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:2363)\\n    at async h ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:2406)\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Unhandled promise rejection\"}"
+      },
+      {
+        "id": "console:reader-auth:course:19",
+        "artefact": "console",
+        "scope": "reader-auth:course",
+        "path": "/course/localhost:8080",
+        "severity": "info",
+        "summary": "reader-auth:course: console message gone on b",
+        "detail": "error: {\"app\":\"tutors-reader\",\"environment\":\"production\",\"reason\":\"Cannot read properties of undefined (reading 'increment')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'increment')\\n    at s ({{origin}}/_app/immutable/chunks/G73rnFq8.js:1:1032)\\n    at async Promise.all (index 0)\\n    at async c ({{origin}}/_app/immutable/chunks/G73rnFq8.js:1:1123)\\n    at async m ({{origin}}/_app/immutable/chunks/G73rnFq8.js:1:2364)\\n    at async h ({{origin}}/_app/immutable/chunks/G73rnFq8.js:1:2407)\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Unhandled promise rejection\"}"
+      },
+      {
+        "id": "console:reader-auth:topic:20",
+        "artefact": "console",
+        "scope": "reader-auth:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader-auth:topic: new console message on b",
+        "detail": "error: {\"app\":\"tutors-reader\",\"environment\":\"production\",\"reason\":\"Cannot read properties of undefined (reading 'increment')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'increment')\\n    at s ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:1031)\\n    at async Promise.all (index 0)\\n    at async c ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:1122)\\n    at async m ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:2363)\\n    at async h ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:2406)\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Unhandled promise rejection\"}"
+      },
+      {
+        "id": "console:reader-auth:topic:21",
+        "artefact": "console",
+        "scope": "reader-auth:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader-auth:topic: new console message on b",
+        "detail": "error: Cannot read properties of undefined (reading 'increment')"
+      },
+      {
+        "id": "console:reference:topic:22",
+        "artefact": "console",
+        "scope": "reference:topic",
+        "path": "/topic/reference-course/topic-07-reference",
+        "severity": "info",
+        "summary": "reference:topic: console message gone on b",
+        "detail": "warning: {\"app\":\"tutors-reader\",\"environment\":\"production\",\"details\":\"step\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"warn\",\"message\":\"No type found for icon\"}"
+      },
+      {
+        "id": "focus:reader:home:23",
+        "artefact": "focus",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "fail",
+        "summary": "reader:home: keyboard order changed (12 stops on a, 12 on b)",
+        "detail": " a \"Live\"\n-a \"Tutors v:16.2.1\"\n+a \"Tutors v:16.2.2\"\n a \"Open Learning Web Toolkit\""
+      },
+      {
+        "id": "focus:reader:course:24",
+        "artefact": "focus",
+        "scope": "reader:course",
+        "path": "/course/localhost:8080",
+        "severity": "fail",
+        "summary": "reader:course: keyboard order changed (11 stops on a, 11 on b)",
+        "detail": " a \"Topic 2 Summary of this topic (this line\"\n-a \"Tutors v:16.2.1\"\n+a \"Tutors v:16.2.2\"\n a \"Open Learning Web Toolkit\""
+      },
+      {
+        "id": "focus:reader:topic:25",
+        "artefact": "focus",
+        "scope": "reader:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader:topic: keyboard order changed (12 stops on a, 12 on b)",
+        "detail": " a \"Talk 1 Summary of this talk (appears on \"\n-a \"Lab 1 ## Prerequisites\"\n+a \"Lab 1 Prerequisites\"\n+a \"Prerequisites\"\n a \"Note 1 Summary of this note (appears on \"\n-a \"Tutors v:16.2.1\"\n-a \"Open Learning Web Toolkit\"\n\\ No newline at end of file\n+a \"Tutors v:16.2.2\"\n\\ No newline at end of file"
+      },
+      {
+        "id": "focus:reader:search:26",
+        "artefact": "focus",
+        "scope": "reader:search",
+        "path": "/search/localhost:8080",
+        "severity": "fail",
+        "summary": "reader:search: keyboard order changed (6 stops on a, 6 on b)",
+        "detail": " input \"\"\n-a \"Tutors v:16.2.1\"\n+a \"Tutors v:16.2.2\"\n a \"Open Learning Web Toolkit\""
+      },
+      {
+        "id": "focus:reader:search-results:27",
+        "artefact": "focus",
+        "scope": "reader:search-results",
+        "path": "/search/localhost:8080",
+        "severity": "fail",
+        "summary": "reader:search-results: keyboard order changed (6 stops on a, 6 on b)",
+        "detail": " a \"Topic 2/ Note 2\"\n-a \"Tutors v:16.2.1\"\n+a \"Tutors v:16.2.2\"\n a \"Open Learning Web Toolkit\""
+      },
+      {
+        "id": "focus:catalogue:home:28",
+        "artefact": "focus",
+        "scope": "catalogue:home",
+        "path": "/",
+        "severity": "fail",
+        "summary": "catalogue:home: keyboard order changed (6 stops on a, 6 on b)",
+        "detail": " button \"Open Theme Menu\"\n-a \"Tutors v:16.2.1\"\n+a \"Tutors v:16.2.2\"\n a \"Open Learning Web Toolkit\""
+      },
+      {
+        "id": "focus:live:home:29",
+        "artefact": "focus",
+        "scope": "live:home",
+        "path": "/",
+        "severity": "fail",
+        "summary": "live:home: keyboard order changed (5 stops on a, 5 on b)",
+        "detail": " tabpanel \"\"\n-a \"Tutors v:16.2.1\"\n+a \"Tutors v:16.2.2\"\n a \"Open Learning Web Toolkit\""
+      },
+      {
+        "id": "focus:reader-auth:course:30",
+        "artefact": "focus",
+        "scope": "reader-auth:course",
+        "path": "/course/localhost:8080",
+        "severity": "fail",
+        "summary": "reader-auth:course: keyboard order changed (11 stops on a, 11 on b)",
+        "detail": " a \"Topic 2 Summary of this topic (this line\"\n-a \"Tutors v:16.2.1\"\n+a \"Tutors v:16.2.2\"\n a \"Open Learning Web Toolkit\""
+      },
+      {
+        "id": "focus:reader-auth:topic:31",
+        "artefact": "focus",
+        "scope": "reader-auth:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader-auth:topic: keyboard order changed (12 stops on a, 12 on b)",
+        "detail": " a \"Talk 1 Summary of this talk (appears on \"\n-a \"Lab 1 ## Prerequisites\"\n+a \"Lab 1 Prerequisites\"\n+a \"Prerequisites\"\n a \"Note 1 Summary of this note (appears on \"\n-a \"Tutors v:16.2.1\"\n-a \"Open Learning Web Toolkit\"\n\\ No newline at end of file\n+a \"Tutors v:16.2.2\"\n\\ No newline at end of file"
+      },
+      {
+        "id": "sbom:reader/corepack:32",
+        "artefact": "sbom",
+        "scope": "reader/corepack",
+        "severity": "fail",
+        "summary": "reader: package bumped: corepack 0.36.0 → 0.34.6"
+      },
+      {
+        "id": "sbom:reader/node:33",
+        "artefact": "sbom",
+        "scope": "reader/node",
+        "severity": "fail",
+        "summary": "reader: package bumped: node 22.23.3 → 22.23.2"
+      },
+      {
+        "id": "sbom:reader/npm:34",
+        "artefact": "sbom",
+        "scope": "reader/npm",
+        "severity": "fail",
+        "summary": "reader: package bumped: npm 10.9.9 → 10.9.8"
+      },
+      {
+        "id": "sbom:reader/tar:35",
+        "artefact": "sbom",
+        "scope": "reader/tar",
+        "severity": "fail",
+        "summary": "reader: package bumped: tar 1.34+dfsg-1.2+deb12u1, 7.5.22 → 1.34+dfsg-1.2+deb12u1, 7.5.11"
+      },
+      {
+        "id": "sbom:reader/tutors-reader:36",
+        "artefact": "sbom",
+        "scope": "reader/tutors-reader",
+        "severity": "fail",
+        "summary": "reader: package bumped: tutors-reader 16.2.1 → 16.2.2"
+      },
+      {
+        "id": "vulns:reader/GHSA-23hp-3jrh-7fpw:37",
+        "artefact": "vulns",
+        "scope": "reader/GHSA-23hp-3jrh-7fpw",
+        "severity": "fail",
+        "summary": "reader: new vulnerability on b: GHSA-23hp-3jrh-7fpw (Critical) in tar@7.5.11; fixed in 7.5.19"
+      },
+      {
+        "id": "vulns:reader/GHSA-8x88-c5mf-7j5w:38",
+        "artefact": "vulns",
+        "scope": "reader/GHSA-8x88-c5mf-7j5w",
+        "severity": "fail",
+        "summary": "reader: new vulnerability on b: GHSA-8x88-c5mf-7j5w (High) in tar@7.5.11; fixed in 7.5.18"
+      },
+      {
+        "id": "vulns:reader/GHSA-gvwx-54wh-qm9j:39",
+        "artefact": "vulns",
+        "scope": "reader/GHSA-gvwx-54wh-qm9j",
+        "severity": "fail",
+        "summary": "reader: new vulnerability on b: GHSA-gvwx-54wh-qm9j (Medium) in tar@7.5.11; fixed in 7.5.17"
+      },
+      {
+        "id": "vulns:reader/GHSA-r292-9mhp-454m:40",
+        "artefact": "vulns",
+        "scope": "reader/GHSA-r292-9mhp-454m",
+        "severity": "fail",
+        "summary": "reader: new vulnerability on b: GHSA-r292-9mhp-454m (High) in tar@7.5.11; fixed in 7.5.21"
+      },
+      {
+        "id": "vulns:reader/GHSA-vmf3-w455-68vh:41",
+        "artefact": "vulns",
+        "scope": "reader/GHSA-vmf3-w455-68vh",
+        "severity": "fail",
+        "summary": "reader: new vulnerability on b: GHSA-vmf3-w455-68vh (Medium) in tar@7.5.11; fixed in 7.5.16"
+      },
+      {
+        "id": "vulns:reader/GHSA-w8wr-v893-vjvp:42",
+        "artefact": "vulns",
+        "scope": "reader/GHSA-w8wr-v893-vjvp",
+        "severity": "fail",
+        "summary": "reader: new vulnerability on b: GHSA-w8wr-v893-vjvp (Medium) in tar@7.5.11; fixed in 7.5.18"
+      },
+      {
+        "id": "sbom:catalogue/corepack:43",
+        "artefact": "sbom",
+        "scope": "catalogue/corepack",
+        "severity": "fail",
+        "summary": "catalogue: package bumped: corepack 0.36.0 → 0.34.6"
+      },
+      {
+        "id": "sbom:catalogue/node:44",
+        "artefact": "sbom",
+        "scope": "catalogue/node",
+        "severity": "fail",
+        "summary": "catalogue: package bumped: node 22.23.3 → 22.23.2"
+      },
+      {
+        "id": "sbom:catalogue/npm:45",
+        "artefact": "sbom",
+        "scope": "catalogue/npm",
+        "severity": "fail",
+        "summary": "catalogue: package bumped: npm 10.9.9 → 10.9.8"
+      },
+      {
+        "id": "sbom:catalogue/tar:46",
+        "artefact": "sbom",
+        "scope": "catalogue/tar",
+        "severity": "fail",
+        "summary": "catalogue: package bumped: tar 1.34+dfsg-1.2+deb12u1, 7.5.22 → 1.34+dfsg-1.2+deb12u1, 7.5.11"
+      },
+      {
+        "id": "sbom:catalogue/tutors-catalogue:47",
+        "artefact": "sbom",
+        "scope": "catalogue/tutors-catalogue",
+        "severity": "fail",
+        "summary": "catalogue: package bumped: tutors-catalogue 16.2.1 → 16.2.2"
+      },
+      {
+        "id": "vulns:catalogue/GHSA-23hp-3jrh-7fpw:48",
+        "artefact": "vulns",
+        "scope": "catalogue/GHSA-23hp-3jrh-7fpw",
+        "severity": "fail",
+        "summary": "catalogue: new vulnerability on b: GHSA-23hp-3jrh-7fpw (Critical) in tar@7.5.11; fixed in 7.5.19"
+      },
+      {
+        "id": "vulns:catalogue/GHSA-8x88-c5mf-7j5w:49",
+        "artefact": "vulns",
+        "scope": "catalogue/GHSA-8x88-c5mf-7j5w",
+        "severity": "fail",
+        "summary": "catalogue: new vulnerability on b: GHSA-8x88-c5mf-7j5w (High) in tar@7.5.11; fixed in 7.5.18"
+      },
+      {
+        "id": "vulns:catalogue/GHSA-gvwx-54wh-qm9j:50",
+        "artefact": "vulns",
+        "scope": "catalogue/GHSA-gvwx-54wh-qm9j",
+        "severity": "fail",
+        "summary": "catalogue: new vulnerability on b: GHSA-gvwx-54wh-qm9j (Medium) in tar@7.5.11; fixed in 7.5.17"
+      },
+      {
+        "id": "vulns:catalogue/GHSA-r292-9mhp-454m:51",
+        "artefact": "vulns",
+        "scope": "catalogue/GHSA-r292-9mhp-454m",
+        "severity": "fail",
+        "summary": "catalogue: new vulnerability on b: GHSA-r292-9mhp-454m (High) in tar@7.5.11; fixed in 7.5.21"
+      },
+      {
+        "id": "vulns:catalogue/GHSA-vmf3-w455-68vh:52",
+        "artefact": "vulns",
+        "scope": "catalogue/GHSA-vmf3-w455-68vh",
+        "severity": "fail",
+        "summary": "catalogue: new vulnerability on b: GHSA-vmf3-w455-68vh (Medium) in tar@7.5.11; fixed in 7.5.16"
+      },
+      {
+        "id": "vulns:catalogue/GHSA-w8wr-v893-vjvp:53",
+        "artefact": "vulns",
+        "scope": "catalogue/GHSA-w8wr-v893-vjvp",
+        "severity": "fail",
+        "summary": "catalogue: new vulnerability on b: GHSA-w8wr-v893-vjvp (Medium) in tar@7.5.11; fixed in 7.5.18"
+      },
+      {
+        "id": "sbom:live/corepack:54",
+        "artefact": "sbom",
+        "scope": "live/corepack",
+        "severity": "fail",
+        "summary": "live: package bumped: corepack 0.36.0 → 0.34.6"
+      },
+      {
+        "id": "sbom:live/node:55",
+        "artefact": "sbom",
+        "scope": "live/node",
+        "severity": "fail",
+        "summary": "live: package bumped: node 22.23.3 → 22.23.2"
+      },
+      {
+        "id": "sbom:live/npm:56",
+        "artefact": "sbom",
+        "scope": "live/npm",
+        "severity": "fail",
+        "summary": "live: package bumped: npm 10.9.9 → 10.9.8"
+      },
+      {
+        "id": "sbom:live/tar:57",
+        "artefact": "sbom",
+        "scope": "live/tar",
+        "severity": "fail",
+        "summary": "live: package bumped: tar 1.34+dfsg-1.2+deb12u1, 7.5.22 → 1.34+dfsg-1.2+deb12u1, 7.5.11"
+      },
+      {
+        "id": "sbom:live/tutors-live:58",
+        "artefact": "sbom",
+        "scope": "live/tutors-live",
+        "severity": "fail",
+        "summary": "live: package bumped: tutors-live 16.2.1 → 16.2.2"
+      },
+      {
+        "id": "vulns:live/GHSA-23hp-3jrh-7fpw:59",
+        "artefact": "vulns",
+        "scope": "live/GHSA-23hp-3jrh-7fpw",
+        "severity": "fail",
+        "summary": "live: new vulnerability on b: GHSA-23hp-3jrh-7fpw (Critical) in tar@7.5.11; fixed in 7.5.19"
+      },
+      {
+        "id": "vulns:live/GHSA-8x88-c5mf-7j5w:60",
+        "artefact": "vulns",
+        "scope": "live/GHSA-8x88-c5mf-7j5w",
+        "severity": "fail",
+        "summary": "live: new vulnerability on b: GHSA-8x88-c5mf-7j5w (High) in tar@7.5.11; fixed in 7.5.18"
+      },
+      {
+        "id": "vulns:live/GHSA-gvwx-54wh-qm9j:61",
+        "artefact": "vulns",
+        "scope": "live/GHSA-gvwx-54wh-qm9j",
+        "severity": "fail",
+        "summary": "live: new vulnerability on b: GHSA-gvwx-54wh-qm9j (Medium) in tar@7.5.11; fixed in 7.5.17"
+      },
+      {
+        "id": "vulns:live/GHSA-r292-9mhp-454m:62",
+        "artefact": "vulns",
+        "scope": "live/GHSA-r292-9mhp-454m",
+        "severity": "fail",
+        "summary": "live: new vulnerability on b: GHSA-r292-9mhp-454m (High) in tar@7.5.11; fixed in 7.5.21"
+      },
+      {
+        "id": "vulns:live/GHSA-vmf3-w455-68vh:63",
+        "artefact": "vulns",
+        "scope": "live/GHSA-vmf3-w455-68vh",
+        "severity": "fail",
+        "summary": "live: new vulnerability on b: GHSA-vmf3-w455-68vh (Medium) in tar@7.5.11; fixed in 7.5.16"
+      },
+      {
+        "id": "vulns:live/GHSA-w8wr-v893-vjvp:64",
+        "artefact": "vulns",
+        "scope": "live/GHSA-w8wr-v893-vjvp",
+        "severity": "fail",
+        "summary": "live: new vulnerability on b: GHSA-w8wr-v893-vjvp (Medium) in tar@7.5.11; fixed in 7.5.18"
+      },
+      {
+        "id": "sbom:time/corepack:65",
+        "artefact": "sbom",
+        "scope": "time/corepack",
+        "severity": "fail",
+        "summary": "time: package bumped: corepack 0.36.0 → 0.34.6"
+      },
+      {
+        "id": "sbom:time/node:66",
+        "artefact": "sbom",
+        "scope": "time/node",
+        "severity": "fail",
+        "summary": "time: package bumped: node 22.23.3 → 22.23.2"
+      },
+      {
+        "id": "sbom:time/npm:67",
+        "artefact": "sbom",
+        "scope": "time/npm",
+        "severity": "fail",
+        "summary": "time: package bumped: npm 10.9.9 → 10.9.8"
+      },
+      {
+        "id": "sbom:time/tar:68",
+        "artefact": "sbom",
+        "scope": "time/tar",
+        "severity": "fail",
+        "summary": "time: package bumped: tar 1.34+dfsg-1.2+deb12u1, 7.5.22 → 1.34+dfsg-1.2+deb12u1, 7.5.11"
+      },
+      {
+        "id": "sbom:time/tutors-time:69",
+        "artefact": "sbom",
+        "scope": "time/tutors-time",
+        "severity": "fail",
+        "summary": "time: package bumped: tutors-time 16.2.1 → 16.2.2"
+      },
+      {
+        "id": "vulns:time/GHSA-23hp-3jrh-7fpw:70",
+        "artefact": "vulns",
+        "scope": "time/GHSA-23hp-3jrh-7fpw",
+        "severity": "fail",
+        "summary": "time: new vulnerability on b: GHSA-23hp-3jrh-7fpw (Critical) in tar@7.5.11; fixed in 7.5.19"
+      },
+      {
+        "id": "vulns:time/GHSA-8x88-c5mf-7j5w:71",
+        "artefact": "vulns",
+        "scope": "time/GHSA-8x88-c5mf-7j5w",
+        "severity": "fail",
+        "summary": "time: new vulnerability on b: GHSA-8x88-c5mf-7j5w (High) in tar@7.5.11; fixed in 7.5.18"
+      },
+      {
+        "id": "vulns:time/GHSA-gvwx-54wh-qm9j:72",
+        "artefact": "vulns",
+        "scope": "time/GHSA-gvwx-54wh-qm9j",
+        "severity": "fail",
+        "summary": "time: new vulnerability on b: GHSA-gvwx-54wh-qm9j (Medium) in tar@7.5.11; fixed in 7.5.17"
+      },
+      {
+        "id": "vulns:time/GHSA-r292-9mhp-454m:73",
+        "artefact": "vulns",
+        "scope": "time/GHSA-r292-9mhp-454m",
+        "severity": "fail",
+        "summary": "time: new vulnerability on b: GHSA-r292-9mhp-454m (High) in tar@7.5.11; fixed in 7.5.21"
+      },
+      {
+        "id": "vulns:time/GHSA-vmf3-w455-68vh:74",
+        "artefact": "vulns",
+        "scope": "time/GHSA-vmf3-w455-68vh",
+        "severity": "fail",
+        "summary": "time: new vulnerability on b: GHSA-vmf3-w455-68vh (Medium) in tar@7.5.11; fixed in 7.5.16"
+      },
+      {
+        "id": "vulns:time/GHSA-w8wr-v893-vjvp:75",
+        "artefact": "vulns",
+        "scope": "time/GHSA-w8wr-v893-vjvp",
+        "severity": "fail",
+        "summary": "time: new vulnerability on b: GHSA-w8wr-v893-vjvp (Medium) in tar@7.5.11; fixed in 7.5.18"
+      },
+      {
+        "id": "runtime:runtime/summary:76",
+        "artefact": "runtime",
+        "scope": "runtime/summary",
+        "severity": "info",
+        "summary": "container posture collected for catalogue, live, reader, reader-auth, time on both sides (compose)",
+        "detail": "catalogue: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n           b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nlive: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n        b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader-auth: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n             b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\ntime: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter"
+      },
+      {
+        "id": "startup:startup/summary:77",
+        "artefact": "startup",
+        "scope": "startup/summary",
+        "severity": "info",
+        "summary": "startup time collected on both sides (compose, 5 restart(s) per app)",
+        "detail": "catalogue: first healthy / 331 → 424 ms, ready 2394 → 2374 ms (median, a → b, n=5/5)\nlive: first healthy / 447 → 435 ms, ready 2396 → 2363 ms (median, a → b, n=5/5)\nreader: first healthy / 447 → 467 ms, ready 2327 → 2396 ms (median, a → b, n=5/5)\ntime: first healthy / 440 → 439 ms, ready 2287 → 2394 ms (median, a → b, n=5/5)"
+      }
+    ],
+    "matches": [
+      {
+        "hunk": {
+          "id": "dom:reader:topic:1",
+          "artefact": "dom",
+          "scope": "reader:topic",
+          "path": "/topic/localhost:8080/unit-1/topic-01",
+          "severity": "fail",
+          "summary": "reader:topic: semantic DOM differs (+5 −3 lines at line 41)",
+          "detail": "     - figure\n     - paragraph: Summary of this talk (appears on the talk card).\n-  - 'link \"Lab 1 ## Prerequisites\"':\n+  - link \"Lab 1 Prerequisites\":\n     - /url: /lab/localhost:8080/unit-1/topic-01/book-lab-01\n     - text: Lab 1\n     - figure\n-    - text: \"## Prerequisites\"\n+    - heading \"Prerequisites\" [level=2]:\n+      - link \"Prerequisites\":\n+        - /url: \"#prerequisites\"\n   - link \"Note 1 Summary of this note (appears on the note card).\":\n     - /url: /note/localhost:8080/unit-1/topic-01/note-01\n     - text: Note 1\n     - figure\n-    - text: Summary of this note (appears on the note card).\n+    - paragraph: Summary of this note (appears on the note card).\n - contentinfo \"Site footer\":\n   - img \"Tutors\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reader-auth:topic:2",
+          "artefact": "dom",
+          "scope": "reader-auth:topic",
+          "path": "/topic/localhost:8080/unit-1/topic-01",
+          "severity": "fail",
+          "summary": "reader-auth:topic: semantic DOM differs (+5 −3 lines at line 43)",
+          "detail": "     - figure\n     - paragraph: Summary of this talk (appears on the talk card).\n-  - 'link \"Lab 1 ## Prerequisites\"':\n+  - link \"Lab 1 Prerequisites\":\n     - /url: /lab/localhost:8080/unit-1/topic-01/book-lab-01\n     - text: Lab 1\n     - figure\n-    - text: \"## Prerequisites\"\n+    - heading \"Prerequisites\" [level=2]:\n+      - link \"Prerequisites\":\n+        - /url: \"#prerequisites\"\n   - link \"Note 1 Summary of this note (appears on the note card).\":\n     - /url: /note/localhost:8080/unit-1/topic-01/note-01\n     - text: Note 1\n     - figure\n-    - text: Summary of this note (appears on the note card).\n+    - paragraph: Summary of this note (appears on the note card).\n - contentinfo \"Site footer\":\n   - img \"Tutors\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reference:topic:3",
+          "artefact": "dom",
+          "scope": "reference:topic",
+          "path": "/topic/reference-course/topic-07-reference",
+          "severity": "fail",
+          "summary": "reference:topic: semantic DOM differs (+1 −1 lines at line 91)",
+          "detail": "     - figure:\n       - img \"Lab-07-(md)\"\n-    - text: A set of practical instructions or a walk-though\n+    - paragraph: A set of practical instructions or a walk-though\n   - link \"Note 3 This is an example of a note.\":\n     - /url: /note/reference-course/topic-07-reference/note-1"
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reference:topic:4",
+          "artefact": "dom",
+          "scope": "reference:topic",
+          "path": "/topic/reference-course/topic-07-reference",
+          "severity": "fail",
+          "summary": "reference:topic: semantic DOM differs (+1 −1 lines at line 97)",
+          "detail": "     - figure:\n       - img \"Note 3\"\n-    - text: This is an example of a note.\n+    - paragraph: This is an example of a note.\n   - link \"Note 4 This note has a linkable table of contents, generated automatically\":\n     - /url: /note/reference-course/topic-07-reference/note-2"
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reference:topic:5",
+          "artefact": "dom",
+          "scope": "reference:topic",
+          "path": "/topic/reference-course/topic-07-reference",
+          "severity": "fail",
+          "summary": "reference:topic: semantic DOM differs (+1 −1 lines at line 103)",
+          "detail": "     - figure:\n       - img \"Note 4\"\n-    - text: This note has a linkable table of contents, generated automatically\n+    - paragraph: This note has a linkable table of contents, generated automatically\n   - link \"Web Site 4 A web site of interest\":\n     - /url: https://tutors.dev"
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reference:topic:6",
+          "artefact": "dom",
+          "scope": "reference:topic",
+          "path": "/topic/reference-course/topic-07-reference",
+          "severity": "fail",
+          "summary": "reference:topic: semantic DOM differs (+1 −1 lines at line 126)",
+          "detail": "     - text: Lab-08 (jupyter)\n     - figure\n-    - text: An interactive Jupyter Notebook demonstrating Python fundamentals.\n+    - paragraph: An interactive Jupyter Notebook demonstrating Python fundamentals.\n   - link \"Whiteboard Demo A sample Excalidraw whiteboard showcasing the new whiteboard learning object type.\":\n     - /url: /whiteboard/reference-course/topic-07-reference/whiteboard-demo"
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reference:topic:7",
+          "artefact": "dom",
+          "scope": "reference:topic",
+          "path": "/topic/reference-course/topic-07-reference",
+          "severity": "fail",
+          "summary": "reference:topic: semantic DOM differs (+1 −1 lines at line 136)",
+          "detail": "     - text: Quiz Demo\n     - figure\n-    - text: \"This is a quiz learning object: an ordinary markdown document containing one\"\n+    - paragraph: \"This is a quiz learning object: an ordinary markdown document containing one\"\n - contentinfo \"Site footer\":\n   - img \"Tutors\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "screenshot:reader:topic:8",
+          "artefact": "screenshot",
+          "scope": "reader:topic",
+          "path": "/topic/localhost:8080/unit-1/topic-01",
+          "severity": "fail",
+          "summary": "reader:topic: 0.60% of pixels differ (threshold 0.10%)",
+          "detail": "diff image: diff/anonymous-student-reads-course-1/reader_topic.png"
+        }
+      },
+      {
+        "hunk": {
+          "id": "screenshot:reader-auth:topic:9",
+          "artefact": "screenshot",
+          "scope": "reader-auth:topic",
+          "path": "/topic/localhost:8080/unit-1/topic-01",
+          "severity": "fail",
+          "summary": "reader-auth:topic: 0.60% of pixels differ (threshold 0.10%)",
+          "detail": "diff image: diff/student-signs-in-1/reader-auth_topic.png"
+        }
+      },
+      {
+        "hunk": {
+          "id": "network:GET___course__/topic-07-reference/web-1/link.png:10",
+          "artefact": "network",
+          "scope": "GET {{course}}/topic-07-reference/web-1/link.png",
+          "path": "/topic/reference-course/topic-07-reference",
+          "severity": "fail",
+          "summary": "reference:topic: request no longer made on b: GET {{course}}/topic-07-reference/web-1/link.png"
+        }
+      },
+      {
+        "hunk": {
+          "id": "network:GET___course__/topic-07-reference/web-1/link.png:11",
+          "artefact": "network",
+          "scope": "GET {{course}}/topic-07-reference/web-1/link.png",
+          "path": "/lab/reference-course/topic-07-reference/book-a",
+          "severity": "fail",
+          "summary": "reference:lab: new request on b: GET {{course}}/topic-07-reference/web-1/link.png"
+        }
+      },
+      {
+        "hunk": {
+          "id": "network:GET___course__/topic-07-reference/note-1/note.png:12",
+          "artefact": "network",
+          "scope": "GET {{course}}/topic-07-reference/note-1/note.png",
+          "path": "/note/reference-course/topic-07-reference/note-1",
+          "severity": "fail",
+          "summary": "reference:note: GET {{course}}/topic-07-reference/note-1/note.png status changed: 304 → 200"
+        }
+      },
+      {
+        "hunk": {
+          "id": "network:GET___course__/topic-07-reference/note-1/note.png:13",
+          "artefact": "network",
+          "scope": "GET {{course}}/topic-07-reference/note-1/note.png",
+          "path": "/note/reference-course/topic-07-reference/note-1",
+          "severity": "fail",
+          "summary": "reference:note: GET {{course}}/topic-07-reference/note-1/note.png content-type changed: ∅ → image/png"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:catalogue:home:14",
+          "artefact": "console",
+          "scope": "catalogue:home",
+          "path": "/",
+          "severity": "fail",
+          "summary": "catalogue:home: new console message on b",
+          "detail": "error: {\"app\":\"tutors-catalogue\",\"environment\":\"production\",\"error\":\"Cannot read properties of undefined (reading 'from')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'from')\\n    at Object.getCatalogue ({{origin}}/_app/immutable/chunks/BmnCu8VZ.js:3:103512)\\n    at P ({{origin}}/_app/immutable/nodes/2.DuomUQQ9.js:1:461)\\n    at _t ({{origin}}/_app/immutable/chunks/Cq90ffwe.js:1:14189)\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Error fetching courses:\"}"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:catalogue:home:15",
+          "artefact": "console",
+          "scope": "catalogue:home",
+          "path": "/",
+          "severity": "fail",
+          "summary": "catalogue:home: new console message on b",
+          "detail": "error: {\"app\":\"tutors-catalogue\",\"environment\":\"production\",\"error\":\"Cannot read properties of undefined (reading 'from')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'from')\\n    at Object.getStudentCount ({{origin}}/_app/immutable/chunks/BmnCu8VZ.js:3:103940)\\n    at {{origin}}/_app/immutable/nodes/2.DuomUQQ9.js:1:6090\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Error fetching course count:\"}"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:catalogue:home:16",
+          "artefact": "console",
+          "scope": "catalogue:home",
+          "path": "/",
+          "severity": "info",
+          "summary": "catalogue:home: console message gone on b",
+          "detail": "error: {\"app\":\"tutors-catalogue\",\"environment\":\"production\",\"error\":\"Cannot read properties of undefined (reading 'from')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'from')\\n    at Object.getCatalogue ({{origin}}/_app/immutable/chunks/Dhd_Hme3.js:3:103521)\\n    at P ({{origin}}/_app/immutable/nodes/2.CFqBr9Rb.js:1:461)\\n    at _t ({{origin}}/_app/immutable/chunks/CyHZqhey.js:1:14189)\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Error fetching courses:\"}"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:catalogue:home:17",
+          "artefact": "console",
+          "scope": "catalogue:home",
+          "path": "/",
+          "severity": "info",
+          "summary": "catalogue:home: console message gone on b",
+          "detail": "error: {\"app\":\"tutors-catalogue\",\"environment\":\"production\",\"error\":\"Cannot read properties of undefined (reading 'from')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'from')\\n    at Object.getStudentCount ({{origin}}/_app/immutable/chunks/Dhd_Hme3.js:3:103949)\\n    at {{origin}}/_app/immutable/nodes/2.CFqBr9Rb.js:1:6090\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Error fetching course count:\"}"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader-auth:course:18",
+          "artefact": "console",
+          "scope": "reader-auth:course",
+          "path": "/course/localhost:8080",
+          "severity": "fail",
+          "summary": "reader-auth:course: new console message on b",
+          "detail": "error: {\"app\":\"tutors-reader\",\"environment\":\"production\",\"reason\":\"Cannot read properties of undefined (reading 'increment')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'increment')\\n    at s ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:1031)\\n    at async Promise.all (index 0)\\n    at async c ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:1122)\\n    at async m ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:2363)\\n    at async h ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:2406)\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Unhandled promise rejection\"}"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader-auth:course:19",
+          "artefact": "console",
+          "scope": "reader-auth:course",
+          "path": "/course/localhost:8080",
+          "severity": "info",
+          "summary": "reader-auth:course: console message gone on b",
+          "detail": "error: {\"app\":\"tutors-reader\",\"environment\":\"production\",\"reason\":\"Cannot read properties of undefined (reading 'increment')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'increment')\\n    at s ({{origin}}/_app/immutable/chunks/G73rnFq8.js:1:1032)\\n    at async Promise.all (index 0)\\n    at async c ({{origin}}/_app/immutable/chunks/G73rnFq8.js:1:1123)\\n    at async m ({{origin}}/_app/immutable/chunks/G73rnFq8.js:1:2364)\\n    at async h ({{origin}}/_app/immutable/chunks/G73rnFq8.js:1:2407)\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Unhandled promise rejection\"}"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader-auth:topic:20",
+          "artefact": "console",
+          "scope": "reader-auth:topic",
+          "path": "/topic/localhost:8080/unit-1/topic-01",
+          "severity": "fail",
+          "summary": "reader-auth:topic: new console message on b",
+          "detail": "error: {\"app\":\"tutors-reader\",\"environment\":\"production\",\"reason\":\"Cannot read properties of undefined (reading 'increment')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'increment')\\n    at s ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:1031)\\n    at async Promise.all (index 0)\\n    at async c ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:1122)\\n    at async m ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:2363)\\n    at async h ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:2406)\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Unhandled promise rejection\"}"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader-auth:topic:21",
+          "artefact": "console",
+          "scope": "reader-auth:topic",
+          "path": "/topic/localhost:8080/unit-1/topic-01",
+          "severity": "fail",
+          "summary": "reader-auth:topic: new console message on b",
+          "detail": "error: Cannot read properties of undefined (reading 'increment')"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reference:topic:22",
+          "artefact": "console",
+          "scope": "reference:topic",
+          "path": "/topic/reference-course/topic-07-reference",
+          "severity": "info",
+          "summary": "reference:topic: console message gone on b",
+          "detail": "warning: {\"app\":\"tutors-reader\",\"environment\":\"production\",\"details\":\"step\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"warn\",\"message\":\"No type found for icon\"}"
+        }
+      },
+      {
+        "hunk": {
+          "id": "focus:reader:home:23",
+          "artefact": "focus",
+          "scope": "reader:home",
+          "path": "/",
+          "severity": "fail",
+          "summary": "reader:home: keyboard order changed (12 stops on a, 12 on b)",
+          "detail": " a \"Live\"\n-a \"Tutors v:16.2.1\"\n+a \"Tutors v:16.2.2\"\n a \"Open Learning Web Toolkit\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "focus:reader:course:24",
+          "artefact": "focus",
+          "scope": "reader:course",
+          "path": "/course/localhost:8080",
+          "severity": "fail",
+          "summary": "reader:course: keyboard order changed (11 stops on a, 11 on b)",
+          "detail": " a \"Topic 2 Summary of this topic (this line\"\n-a \"Tutors v:16.2.1\"\n+a \"Tutors v:16.2.2\"\n a \"Open Learning Web Toolkit\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "focus:reader:topic:25",
+          "artefact": "focus",
+          "scope": "reader:topic",
+          "path": "/topic/localhost:8080/unit-1/topic-01",
+          "severity": "fail",
+          "summary": "reader:topic: keyboard order changed (12 stops on a, 12 on b)",
+          "detail": " a \"Talk 1 Summary of this talk (appears on \"\n-a \"Lab 1 ## Prerequisites\"\n+a \"Lab 1 Prerequisites\"\n+a \"Prerequisites\"\n a \"Note 1 Summary of this note (appears on \"\n-a \"Tutors v:16.2.1\"\n-a \"Open Learning Web Toolkit\"\n\\ No newline at end of file\n+a \"Tutors v:16.2.2\"\n\\ No newline at end of file"
+        }
+      },
+      {
+        "hunk": {
+          "id": "focus:reader:search:26",
+          "artefact": "focus",
+          "scope": "reader:search",
+          "path": "/search/localhost:8080",
+          "severity": "fail",
+          "summary": "reader:search: keyboard order changed (6 stops on a, 6 on b)",
+          "detail": " input \"\"\n-a \"Tutors v:16.2.1\"\n+a \"Tutors v:16.2.2\"\n a \"Open Learning Web Toolkit\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "focus:reader:search-results:27",
+          "artefact": "focus",
+          "scope": "reader:search-results",
+          "path": "/search/localhost:8080",
+          "severity": "fail",
+          "summary": "reader:search-results: keyboard order changed (6 stops on a, 6 on b)",
+          "detail": " a \"Topic 2/ Note 2\"\n-a \"Tutors v:16.2.1\"\n+a \"Tutors v:16.2.2\"\n a \"Open Learning Web Toolkit\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "focus:catalogue:home:28",
+          "artefact": "focus",
+          "scope": "catalogue:home",
+          "path": "/",
+          "severity": "fail",
+          "summary": "catalogue:home: keyboard order changed (6 stops on a, 6 on b)",
+          "detail": " button \"Open Theme Menu\"\n-a \"Tutors v:16.2.1\"\n+a \"Tutors v:16.2.2\"\n a \"Open Learning Web Toolkit\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "focus:live:home:29",
+          "artefact": "focus",
+          "scope": "live:home",
+          "path": "/",
+          "severity": "fail",
+          "summary": "live:home: keyboard order changed (5 stops on a, 5 on b)",
+          "detail": " tabpanel \"\"\n-a \"Tutors v:16.2.1\"\n+a \"Tutors v:16.2.2\"\n a \"Open Learning Web Toolkit\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "focus:reader-auth:course:30",
+          "artefact": "focus",
+          "scope": "reader-auth:course",
+          "path": "/course/localhost:8080",
+          "severity": "fail",
+          "summary": "reader-auth:course: keyboard order changed (11 stops on a, 11 on b)",
+          "detail": " a \"Topic 2 Summary of this topic (this line\"\n-a \"Tutors v:16.2.1\"\n+a \"Tutors v:16.2.2\"\n a \"Open Learning Web Toolkit\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "focus:reader-auth:topic:31",
+          "artefact": "focus",
+          "scope": "reader-auth:topic",
+          "path": "/topic/localhost:8080/unit-1/topic-01",
+          "severity": "fail",
+          "summary": "reader-auth:topic: keyboard order changed (12 stops on a, 12 on b)",
+          "detail": " a \"Talk 1 Summary of this talk (appears on \"\n-a \"Lab 1 ## Prerequisites\"\n+a \"Lab 1 Prerequisites\"\n+a \"Prerequisites\"\n a \"Note 1 Summary of this note (appears on \"\n-a \"Tutors v:16.2.1\"\n-a \"Open Learning Web Toolkit\"\n\\ No newline at end of file\n+a \"Tutors v:16.2.2\"\n\\ No newline at end of file"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:reader/corepack:32",
+          "artefact": "sbom",
+          "scope": "reader/corepack",
+          "severity": "fail",
+          "summary": "reader: package bumped: corepack 0.36.0 → 0.34.6"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:reader/node:33",
+          "artefact": "sbom",
+          "scope": "reader/node",
+          "severity": "fail",
+          "summary": "reader: package bumped: node 22.23.3 → 22.23.2"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:reader/npm:34",
+          "artefact": "sbom",
+          "scope": "reader/npm",
+          "severity": "fail",
+          "summary": "reader: package bumped: npm 10.9.9 → 10.9.8"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:reader/tar:35",
+          "artefact": "sbom",
+          "scope": "reader/tar",
+          "severity": "fail",
+          "summary": "reader: package bumped: tar 1.34+dfsg-1.2+deb12u1, 7.5.22 → 1.34+dfsg-1.2+deb12u1, 7.5.11"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:reader/tutors-reader:36",
+          "artefact": "sbom",
+          "scope": "reader/tutors-reader",
+          "severity": "fail",
+          "summary": "reader: package bumped: tutors-reader 16.2.1 → 16.2.2"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:reader/GHSA-23hp-3jrh-7fpw:37",
+          "artefact": "vulns",
+          "scope": "reader/GHSA-23hp-3jrh-7fpw",
+          "severity": "fail",
+          "summary": "reader: new vulnerability on b: GHSA-23hp-3jrh-7fpw (Critical) in tar@7.5.11; fixed in 7.5.19"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:reader/GHSA-8x88-c5mf-7j5w:38",
+          "artefact": "vulns",
+          "scope": "reader/GHSA-8x88-c5mf-7j5w",
+          "severity": "fail",
+          "summary": "reader: new vulnerability on b: GHSA-8x88-c5mf-7j5w (High) in tar@7.5.11; fixed in 7.5.18"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:reader/GHSA-gvwx-54wh-qm9j:39",
+          "artefact": "vulns",
+          "scope": "reader/GHSA-gvwx-54wh-qm9j",
+          "severity": "fail",
+          "summary": "reader: new vulnerability on b: GHSA-gvwx-54wh-qm9j (Medium) in tar@7.5.11; fixed in 7.5.17"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:reader/GHSA-r292-9mhp-454m:40",
+          "artefact": "vulns",
+          "scope": "reader/GHSA-r292-9mhp-454m",
+          "severity": "fail",
+          "summary": "reader: new vulnerability on b: GHSA-r292-9mhp-454m (High) in tar@7.5.11; fixed in 7.5.21"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:reader/GHSA-vmf3-w455-68vh:41",
+          "artefact": "vulns",
+          "scope": "reader/GHSA-vmf3-w455-68vh",
+          "severity": "fail",
+          "summary": "reader: new vulnerability on b: GHSA-vmf3-w455-68vh (Medium) in tar@7.5.11; fixed in 7.5.16"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:reader/GHSA-w8wr-v893-vjvp:42",
+          "artefact": "vulns",
+          "scope": "reader/GHSA-w8wr-v893-vjvp",
+          "severity": "fail",
+          "summary": "reader: new vulnerability on b: GHSA-w8wr-v893-vjvp (Medium) in tar@7.5.11; fixed in 7.5.18"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:catalogue/corepack:43",
+          "artefact": "sbom",
+          "scope": "catalogue/corepack",
+          "severity": "fail",
+          "summary": "catalogue: package bumped: corepack 0.36.0 → 0.34.6"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:catalogue/node:44",
+          "artefact": "sbom",
+          "scope": "catalogue/node",
+          "severity": "fail",
+          "summary": "catalogue: package bumped: node 22.23.3 → 22.23.2"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:catalogue/npm:45",
+          "artefact": "sbom",
+          "scope": "catalogue/npm",
+          "severity": "fail",
+          "summary": "catalogue: package bumped: npm 10.9.9 → 10.9.8"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:catalogue/tar:46",
+          "artefact": "sbom",
+          "scope": "catalogue/tar",
+          "severity": "fail",
+          "summary": "catalogue: package bumped: tar 1.34+dfsg-1.2+deb12u1, 7.5.22 → 1.34+dfsg-1.2+deb12u1, 7.5.11"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:catalogue/tutors-catalogue:47",
+          "artefact": "sbom",
+          "scope": "catalogue/tutors-catalogue",
+          "severity": "fail",
+          "summary": "catalogue: package bumped: tutors-catalogue 16.2.1 → 16.2.2"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:catalogue/GHSA-23hp-3jrh-7fpw:48",
+          "artefact": "vulns",
+          "scope": "catalogue/GHSA-23hp-3jrh-7fpw",
+          "severity": "fail",
+          "summary": "catalogue: new vulnerability on b: GHSA-23hp-3jrh-7fpw (Critical) in tar@7.5.11; fixed in 7.5.19"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:catalogue/GHSA-8x88-c5mf-7j5w:49",
+          "artefact": "vulns",
+          "scope": "catalogue/GHSA-8x88-c5mf-7j5w",
+          "severity": "fail",
+          "summary": "catalogue: new vulnerability on b: GHSA-8x88-c5mf-7j5w (High) in tar@7.5.11; fixed in 7.5.18"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:catalogue/GHSA-gvwx-54wh-qm9j:50",
+          "artefact": "vulns",
+          "scope": "catalogue/GHSA-gvwx-54wh-qm9j",
+          "severity": "fail",
+          "summary": "catalogue: new vulnerability on b: GHSA-gvwx-54wh-qm9j (Medium) in tar@7.5.11; fixed in 7.5.17"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:catalogue/GHSA-r292-9mhp-454m:51",
+          "artefact": "vulns",
+          "scope": "catalogue/GHSA-r292-9mhp-454m",
+          "severity": "fail",
+          "summary": "catalogue: new vulnerability on b: GHSA-r292-9mhp-454m (High) in tar@7.5.11; fixed in 7.5.21"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:catalogue/GHSA-vmf3-w455-68vh:52",
+          "artefact": "vulns",
+          "scope": "catalogue/GHSA-vmf3-w455-68vh",
+          "severity": "fail",
+          "summary": "catalogue: new vulnerability on b: GHSA-vmf3-w455-68vh (Medium) in tar@7.5.11; fixed in 7.5.16"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:catalogue/GHSA-w8wr-v893-vjvp:53",
+          "artefact": "vulns",
+          "scope": "catalogue/GHSA-w8wr-v893-vjvp",
+          "severity": "fail",
+          "summary": "catalogue: new vulnerability on b: GHSA-w8wr-v893-vjvp (Medium) in tar@7.5.11; fixed in 7.5.18"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:live/corepack:54",
+          "artefact": "sbom",
+          "scope": "live/corepack",
+          "severity": "fail",
+          "summary": "live: package bumped: corepack 0.36.0 → 0.34.6"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:live/node:55",
+          "artefact": "sbom",
+          "scope": "live/node",
+          "severity": "fail",
+          "summary": "live: package bumped: node 22.23.3 → 22.23.2"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:live/npm:56",
+          "artefact": "sbom",
+          "scope": "live/npm",
+          "severity": "fail",
+          "summary": "live: package bumped: npm 10.9.9 → 10.9.8"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:live/tar:57",
+          "artefact": "sbom",
+          "scope": "live/tar",
+          "severity": "fail",
+          "summary": "live: package bumped: tar 1.34+dfsg-1.2+deb12u1, 7.5.22 → 1.34+dfsg-1.2+deb12u1, 7.5.11"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:live/tutors-live:58",
+          "artefact": "sbom",
+          "scope": "live/tutors-live",
+          "severity": "fail",
+          "summary": "live: package bumped: tutors-live 16.2.1 → 16.2.2"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:live/GHSA-23hp-3jrh-7fpw:59",
+          "artefact": "vulns",
+          "scope": "live/GHSA-23hp-3jrh-7fpw",
+          "severity": "fail",
+          "summary": "live: new vulnerability on b: GHSA-23hp-3jrh-7fpw (Critical) in tar@7.5.11; fixed in 7.5.19"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:live/GHSA-8x88-c5mf-7j5w:60",
+          "artefact": "vulns",
+          "scope": "live/GHSA-8x88-c5mf-7j5w",
+          "severity": "fail",
+          "summary": "live: new vulnerability on b: GHSA-8x88-c5mf-7j5w (High) in tar@7.5.11; fixed in 7.5.18"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:live/GHSA-gvwx-54wh-qm9j:61",
+          "artefact": "vulns",
+          "scope": "live/GHSA-gvwx-54wh-qm9j",
+          "severity": "fail",
+          "summary": "live: new vulnerability on b: GHSA-gvwx-54wh-qm9j (Medium) in tar@7.5.11; fixed in 7.5.17"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:live/GHSA-r292-9mhp-454m:62",
+          "artefact": "vulns",
+          "scope": "live/GHSA-r292-9mhp-454m",
+          "severity": "fail",
+          "summary": "live: new vulnerability on b: GHSA-r292-9mhp-454m (High) in tar@7.5.11; fixed in 7.5.21"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:live/GHSA-vmf3-w455-68vh:63",
+          "artefact": "vulns",
+          "scope": "live/GHSA-vmf3-w455-68vh",
+          "severity": "fail",
+          "summary": "live: new vulnerability on b: GHSA-vmf3-w455-68vh (Medium) in tar@7.5.11; fixed in 7.5.16"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:live/GHSA-w8wr-v893-vjvp:64",
+          "artefact": "vulns",
+          "scope": "live/GHSA-w8wr-v893-vjvp",
+          "severity": "fail",
+          "summary": "live: new vulnerability on b: GHSA-w8wr-v893-vjvp (Medium) in tar@7.5.11; fixed in 7.5.18"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:time/corepack:65",
+          "artefact": "sbom",
+          "scope": "time/corepack",
+          "severity": "fail",
+          "summary": "time: package bumped: corepack 0.36.0 → 0.34.6"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:time/node:66",
+          "artefact": "sbom",
+          "scope": "time/node",
+          "severity": "fail",
+          "summary": "time: package bumped: node 22.23.3 → 22.23.2"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:time/npm:67",
+          "artefact": "sbom",
+          "scope": "time/npm",
+          "severity": "fail",
+          "summary": "time: package bumped: npm 10.9.9 → 10.9.8"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:time/tar:68",
+          "artefact": "sbom",
+          "scope": "time/tar",
+          "severity": "fail",
+          "summary": "time: package bumped: tar 1.34+dfsg-1.2+deb12u1, 7.5.22 → 1.34+dfsg-1.2+deb12u1, 7.5.11"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:time/tutors-time:69",
+          "artefact": "sbom",
+          "scope": "time/tutors-time",
+          "severity": "fail",
+          "summary": "time: package bumped: tutors-time 16.2.1 → 16.2.2"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:time/GHSA-23hp-3jrh-7fpw:70",
+          "artefact": "vulns",
+          "scope": "time/GHSA-23hp-3jrh-7fpw",
+          "severity": "fail",
+          "summary": "time: new vulnerability on b: GHSA-23hp-3jrh-7fpw (Critical) in tar@7.5.11; fixed in 7.5.19"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:time/GHSA-8x88-c5mf-7j5w:71",
+          "artefact": "vulns",
+          "scope": "time/GHSA-8x88-c5mf-7j5w",
+          "severity": "fail",
+          "summary": "time: new vulnerability on b: GHSA-8x88-c5mf-7j5w (High) in tar@7.5.11; fixed in 7.5.18"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:time/GHSA-gvwx-54wh-qm9j:72",
+          "artefact": "vulns",
+          "scope": "time/GHSA-gvwx-54wh-qm9j",
+          "severity": "fail",
+          "summary": "time: new vulnerability on b: GHSA-gvwx-54wh-qm9j (Medium) in tar@7.5.11; fixed in 7.5.17"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:time/GHSA-r292-9mhp-454m:73",
+          "artefact": "vulns",
+          "scope": "time/GHSA-r292-9mhp-454m",
+          "severity": "fail",
+          "summary": "time: new vulnerability on b: GHSA-r292-9mhp-454m (High) in tar@7.5.11; fixed in 7.5.21"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:time/GHSA-vmf3-w455-68vh:74",
+          "artefact": "vulns",
+          "scope": "time/GHSA-vmf3-w455-68vh",
+          "severity": "fail",
+          "summary": "time: new vulnerability on b: GHSA-vmf3-w455-68vh (Medium) in tar@7.5.11; fixed in 7.5.16"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:time/GHSA-w8wr-v893-vjvp:75",
+          "artefact": "vulns",
+          "scope": "time/GHSA-w8wr-v893-vjvp",
+          "severity": "fail",
+          "summary": "time: new vulnerability on b: GHSA-w8wr-v893-vjvp (Medium) in tar@7.5.11; fixed in 7.5.18"
+        }
+      },
+      {
+        "hunk": {
+          "id": "runtime:runtime/summary:76",
+          "artefact": "runtime",
+          "scope": "runtime/summary",
+          "severity": "info",
+          "summary": "container posture collected for catalogue, live, reader, reader-auth, time on both sides (compose)",
+          "detail": "catalogue: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n           b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nlive: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n        b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader-auth: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n             b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\ntime: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter"
+        }
+      },
+      {
+        "hunk": {
+          "id": "startup:startup/summary:77",
+          "artefact": "startup",
+          "scope": "startup/summary",
+          "severity": "info",
+          "summary": "startup time collected on both sides (compose, 5 restart(s) per app)",
+          "detail": "catalogue: first healthy / 331 → 424 ms, ready 2394 → 2374 ms (median, a → b, n=5/5)\nlive: first healthy / 447 → 435 ms, ready 2396 → 2363 ms (median, a → b, n=5/5)\nreader: first healthy / 447 → 467 ms, ready 2327 → 2396 ms (median, a → b, n=5/5)\ntime: first healthy / 440 → 439 ms, ready 2287 → 2394 ms (median, a → b, n=5/5)"
+        }
+      }
+    ],
+    "unclaimed": [
+      {
+        "id": "dom:reader:topic:1",
+        "artefact": "dom",
+        "scope": "reader:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader:topic: semantic DOM differs (+5 −3 lines at line 41)",
+        "detail": "     - figure\n     - paragraph: Summary of this talk (appears on the talk card).\n-  - 'link \"Lab 1 ## Prerequisites\"':\n+  - link \"Lab 1 Prerequisites\":\n     - /url: /lab/localhost:8080/unit-1/topic-01/book-lab-01\n     - text: Lab 1\n     - figure\n-    - text: \"## Prerequisites\"\n+    - heading \"Prerequisites\" [level=2]:\n+      - link \"Prerequisites\":\n+        - /url: \"#prerequisites\"\n   - link \"Note 1 Summary of this note (appears on the note card).\":\n     - /url: /note/localhost:8080/unit-1/topic-01/note-01\n     - text: Note 1\n     - figure\n-    - text: Summary of this note (appears on the note card).\n+    - paragraph: Summary of this note (appears on the note card).\n - contentinfo \"Site footer\":\n   - img \"Tutors\""
+      },
+      {
+        "id": "dom:reader-auth:topic:2",
+        "artefact": "dom",
+        "scope": "reader-auth:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader-auth:topic: semantic DOM differs (+5 −3 lines at line 43)",
+        "detail": "     - figure\n     - paragraph: Summary of this talk (appears on the talk card).\n-  - 'link \"Lab 1 ## Prerequisites\"':\n+  - link \"Lab 1 Prerequisites\":\n     - /url: /lab/localhost:8080/unit-1/topic-01/book-lab-01\n     - text: Lab 1\n     - figure\n-    - text: \"## Prerequisites\"\n+    - heading \"Prerequisites\" [level=2]:\n+      - link \"Prerequisites\":\n+        - /url: \"#prerequisites\"\n   - link \"Note 1 Summary of this note (appears on the note card).\":\n     - /url: /note/localhost:8080/unit-1/topic-01/note-01\n     - text: Note 1\n     - figure\n-    - text: Summary of this note (appears on the note card).\n+    - paragraph: Summary of this note (appears on the note card).\n - contentinfo \"Site footer\":\n   - img \"Tutors\""
+      },
+      {
+        "id": "dom:reference:topic:3",
+        "artefact": "dom",
+        "scope": "reference:topic",
+        "path": "/topic/reference-course/topic-07-reference",
+        "severity": "fail",
+        "summary": "reference:topic: semantic DOM differs (+1 −1 lines at line 91)",
+        "detail": "     - figure:\n       - img \"Lab-07-(md)\"\n-    - text: A set of practical instructions or a walk-though\n+    - paragraph: A set of practical instructions or a walk-though\n   - link \"Note 3 This is an example of a note.\":\n     - /url: /note/reference-course/topic-07-reference/note-1"
+      },
+      {
+        "id": "dom:reference:topic:4",
+        "artefact": "dom",
+        "scope": "reference:topic",
+        "path": "/topic/reference-course/topic-07-reference",
+        "severity": "fail",
+        "summary": "reference:topic: semantic DOM differs (+1 −1 lines at line 97)",
+        "detail": "     - figure:\n       - img \"Note 3\"\n-    - text: This is an example of a note.\n+    - paragraph: This is an example of a note.\n   - link \"Note 4 This note has a linkable table of contents, generated automatically\":\n     - /url: /note/reference-course/topic-07-reference/note-2"
+      },
+      {
+        "id": "dom:reference:topic:5",
+        "artefact": "dom",
+        "scope": "reference:topic",
+        "path": "/topic/reference-course/topic-07-reference",
+        "severity": "fail",
+        "summary": "reference:topic: semantic DOM differs (+1 −1 lines at line 103)",
+        "detail": "     - figure:\n       - img \"Note 4\"\n-    - text: This note has a linkable table of contents, generated automatically\n+    - paragraph: This note has a linkable table of contents, generated automatically\n   - link \"Web Site 4 A web site of interest\":\n     - /url: https://tutors.dev"
+      },
+      {
+        "id": "dom:reference:topic:6",
+        "artefact": "dom",
+        "scope": "reference:topic",
+        "path": "/topic/reference-course/topic-07-reference",
+        "severity": "fail",
+        "summary": "reference:topic: semantic DOM differs (+1 −1 lines at line 126)",
+        "detail": "     - text: Lab-08 (jupyter)\n     - figure\n-    - text: An interactive Jupyter Notebook demonstrating Python fundamentals.\n+    - paragraph: An interactive Jupyter Notebook demonstrating Python fundamentals.\n   - link \"Whiteboard Demo A sample Excalidraw whiteboard showcasing the new whiteboard learning object type.\":\n     - /url: /whiteboard/reference-course/topic-07-reference/whiteboard-demo"
+      },
+      {
+        "id": "dom:reference:topic:7",
+        "artefact": "dom",
+        "scope": "reference:topic",
+        "path": "/topic/reference-course/topic-07-reference",
+        "severity": "fail",
+        "summary": "reference:topic: semantic DOM differs (+1 −1 lines at line 136)",
+        "detail": "     - text: Quiz Demo\n     - figure\n-    - text: \"This is a quiz learning object: an ordinary markdown document containing one\"\n+    - paragraph: \"This is a quiz learning object: an ordinary markdown document containing one\"\n - contentinfo \"Site footer\":\n   - img \"Tutors\""
+      },
+      {
+        "id": "screenshot:reader:topic:8",
+        "artefact": "screenshot",
+        "scope": "reader:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader:topic: 0.60% of pixels differ (threshold 0.10%)",
+        "detail": "diff image: diff/anonymous-student-reads-course-1/reader_topic.png"
+      },
+      {
+        "id": "screenshot:reader-auth:topic:9",
+        "artefact": "screenshot",
+        "scope": "reader-auth:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader-auth:topic: 0.60% of pixels differ (threshold 0.10%)",
+        "detail": "diff image: diff/student-signs-in-1/reader-auth_topic.png"
+      },
+      {
+        "id": "network:GET___course__/topic-07-reference/web-1/link.png:10",
+        "artefact": "network",
+        "scope": "GET {{course}}/topic-07-reference/web-1/link.png",
+        "path": "/topic/reference-course/topic-07-reference",
+        "severity": "fail",
+        "summary": "reference:topic: request no longer made on b: GET {{course}}/topic-07-reference/web-1/link.png"
+      },
+      {
+        "id": "network:GET___course__/topic-07-reference/web-1/link.png:11",
+        "artefact": "network",
+        "scope": "GET {{course}}/topic-07-reference/web-1/link.png",
+        "path": "/lab/reference-course/topic-07-reference/book-a",
+        "severity": "fail",
+        "summary": "reference:lab: new request on b: GET {{course}}/topic-07-reference/web-1/link.png"
+      },
+      {
+        "id": "network:GET___course__/topic-07-reference/note-1/note.png:12",
+        "artefact": "network",
+        "scope": "GET {{course}}/topic-07-reference/note-1/note.png",
+        "path": "/note/reference-course/topic-07-reference/note-1",
+        "severity": "fail",
+        "summary": "reference:note: GET {{course}}/topic-07-reference/note-1/note.png status changed: 304 → 200"
+      },
+      {
+        "id": "network:GET___course__/topic-07-reference/note-1/note.png:13",
+        "artefact": "network",
+        "scope": "GET {{course}}/topic-07-reference/note-1/note.png",
+        "path": "/note/reference-course/topic-07-reference/note-1",
+        "severity": "fail",
+        "summary": "reference:note: GET {{course}}/topic-07-reference/note-1/note.png content-type changed: ∅ → image/png"
+      },
+      {
+        "id": "console:catalogue:home:14",
+        "artefact": "console",
+        "scope": "catalogue:home",
+        "path": "/",
+        "severity": "fail",
+        "summary": "catalogue:home: new console message on b",
+        "detail": "error: {\"app\":\"tutors-catalogue\",\"environment\":\"production\",\"error\":\"Cannot read properties of undefined (reading 'from')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'from')\\n    at Object.getCatalogue ({{origin}}/_app/immutable/chunks/BmnCu8VZ.js:3:103512)\\n    at P ({{origin}}/_app/immutable/nodes/2.DuomUQQ9.js:1:461)\\n    at _t ({{origin}}/_app/immutable/chunks/Cq90ffwe.js:1:14189)\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Error fetching courses:\"}"
+      },
+      {
+        "id": "console:catalogue:home:15",
+        "artefact": "console",
+        "scope": "catalogue:home",
+        "path": "/",
+        "severity": "fail",
+        "summary": "catalogue:home: new console message on b",
+        "detail": "error: {\"app\":\"tutors-catalogue\",\"environment\":\"production\",\"error\":\"Cannot read properties of undefined (reading 'from')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'from')\\n    at Object.getStudentCount ({{origin}}/_app/immutable/chunks/BmnCu8VZ.js:3:103940)\\n    at {{origin}}/_app/immutable/nodes/2.DuomUQQ9.js:1:6090\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Error fetching course count:\"}"
+      },
+      {
+        "id": "console:reader-auth:course:18",
+        "artefact": "console",
+        "scope": "reader-auth:course",
+        "path": "/course/localhost:8080",
+        "severity": "fail",
+        "summary": "reader-auth:course: new console message on b",
+        "detail": "error: {\"app\":\"tutors-reader\",\"environment\":\"production\",\"reason\":\"Cannot read properties of undefined (reading 'increment')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'increment')\\n    at s ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:1031)\\n    at async Promise.all (index 0)\\n    at async c ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:1122)\\n    at async m ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:2363)\\n    at async h ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:2406)\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Unhandled promise rejection\"}"
+      },
+      {
+        "id": "console:reader-auth:topic:20",
+        "artefact": "console",
+        "scope": "reader-auth:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader-auth:topic: new console message on b",
+        "detail": "error: {\"app\":\"tutors-reader\",\"environment\":\"production\",\"reason\":\"Cannot read properties of undefined (reading 'increment')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'increment')\\n    at s ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:1031)\\n    at async Promise.all (index 0)\\n    at async c ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:1122)\\n    at async m ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:2363)\\n    at async h ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:2406)\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Unhandled promise rejection\"}"
+      },
+      {
+        "id": "console:reader-auth:topic:21",
+        "artefact": "console",
+        "scope": "reader-auth:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader-auth:topic: new console message on b",
+        "detail": "error: Cannot read properties of undefined (reading 'increment')"
+      },
+      {
+        "id": "focus:reader:home:23",
+        "artefact": "focus",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "fail",
+        "summary": "reader:home: keyboard order changed (12 stops on a, 12 on b)",
+        "detail": " a \"Live\"\n-a \"Tutors v:16.2.1\"\n+a \"Tutors v:16.2.2\"\n a \"Open Learning Web Toolkit\""
+      },
+      {
+        "id": "focus:reader:course:24",
+        "artefact": "focus",
+        "scope": "reader:course",
+        "path": "/course/localhost:8080",
+        "severity": "fail",
+        "summary": "reader:course: keyboard order changed (11 stops on a, 11 on b)",
+        "detail": " a \"Topic 2 Summary of this topic (this line\"\n-a \"Tutors v:16.2.1\"\n+a \"Tutors v:16.2.2\"\n a \"Open Learning Web Toolkit\""
+      },
+      {
+        "id": "focus:reader:topic:25",
+        "artefact": "focus",
+        "scope": "reader:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader:topic: keyboard order changed (12 stops on a, 12 on b)",
+        "detail": " a \"Talk 1 Summary of this talk (appears on \"\n-a \"Lab 1 ## Prerequisites\"\n+a \"Lab 1 Prerequisites\"\n+a \"Prerequisites\"\n a \"Note 1 Summary of this note (appears on \"\n-a \"Tutors v:16.2.1\"\n-a \"Open Learning Web Toolkit\"\n\\ No newline at end of file\n+a \"Tutors v:16.2.2\"\n\\ No newline at end of file"
+      },
+      {
+        "id": "focus:reader:search:26",
+        "artefact": "focus",
+        "scope": "reader:search",
+        "path": "/search/localhost:8080",
+        "severity": "fail",
+        "summary": "reader:search: keyboard order changed (6 stops on a, 6 on b)",
+        "detail": " input \"\"\n-a \"Tutors v:16.2.1\"\n+a \"Tutors v:16.2.2\"\n a \"Open Learning Web Toolkit\""
+      },
+      {
+        "id": "focus:reader:search-results:27",
+        "artefact": "focus",
+        "scope": "reader:search-results",
+        "path": "/search/localhost:8080",
+        "severity": "fail",
+        "summary": "reader:search-results: keyboard order changed (6 stops on a, 6 on b)",
+        "detail": " a \"Topic 2/ Note 2\"\n-a \"Tutors v:16.2.1\"\n+a \"Tutors v:16.2.2\"\n a \"Open Learning Web Toolkit\""
+      },
+      {
+        "id": "focus:catalogue:home:28",
+        "artefact": "focus",
+        "scope": "catalogue:home",
+        "path": "/",
+        "severity": "fail",
+        "summary": "catalogue:home: keyboard order changed (6 stops on a, 6 on b)",
+        "detail": " button \"Open Theme Menu\"\n-a \"Tutors v:16.2.1\"\n+a \"Tutors v:16.2.2\"\n a \"Open Learning Web Toolkit\""
+      },
+      {
+        "id": "focus:live:home:29",
+        "artefact": "focus",
+        "scope": "live:home",
+        "path": "/",
+        "severity": "fail",
+        "summary": "live:home: keyboard order changed (5 stops on a, 5 on b)",
+        "detail": " tabpanel \"\"\n-a \"Tutors v:16.2.1\"\n+a \"Tutors v:16.2.2\"\n a \"Open Learning Web Toolkit\""
+      },
+      {
+        "id": "focus:reader-auth:course:30",
+        "artefact": "focus",
+        "scope": "reader-auth:course",
+        "path": "/course/localhost:8080",
+        "severity": "fail",
+        "summary": "reader-auth:course: keyboard order changed (11 stops on a, 11 on b)",
+        "detail": " a \"Topic 2 Summary of this topic (this line\"\n-a \"Tutors v:16.2.1\"\n+a \"Tutors v:16.2.2\"\n a \"Open Learning Web Toolkit\""
+      },
+      {
+        "id": "focus:reader-auth:topic:31",
+        "artefact": "focus",
+        "scope": "reader-auth:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader-auth:topic: keyboard order changed (12 stops on a, 12 on b)",
+        "detail": " a \"Talk 1 Summary of this talk (appears on \"\n-a \"Lab 1 ## Prerequisites\"\n+a \"Lab 1 Prerequisites\"\n+a \"Prerequisites\"\n a \"Note 1 Summary of this note (appears on \"\n-a \"Tutors v:16.2.1\"\n-a \"Open Learning Web Toolkit\"\n\\ No newline at end of file\n+a \"Tutors v:16.2.2\"\n\\ No newline at end of file"
+      },
+      {
+        "id": "sbom:reader/corepack:32",
+        "artefact": "sbom",
+        "scope": "reader/corepack",
+        "severity": "fail",
+        "summary": "reader: package bumped: corepack 0.36.0 → 0.34.6"
+      },
+      {
+        "id": "sbom:reader/node:33",
+        "artefact": "sbom",
+        "scope": "reader/node",
+        "severity": "fail",
+        "summary": "reader: package bumped: node 22.23.3 → 22.23.2"
+      },
+      {
+        "id": "sbom:reader/npm:34",
+        "artefact": "sbom",
+        "scope": "reader/npm",
+        "severity": "fail",
+        "summary": "reader: package bumped: npm 10.9.9 → 10.9.8"
+      },
+      {
+        "id": "sbom:reader/tar:35",
+        "artefact": "sbom",
+        "scope": "reader/tar",
+        "severity": "fail",
+        "summary": "reader: package bumped: tar 1.34+dfsg-1.2+deb12u1, 7.5.22 → 1.34+dfsg-1.2+deb12u1, 7.5.11"
+      },
+      {
+        "id": "sbom:reader/tutors-reader:36",
+        "artefact": "sbom",
+        "scope": "reader/tutors-reader",
+        "severity": "fail",
+        "summary": "reader: package bumped: tutors-reader 16.2.1 → 16.2.2"
+      },
+      {
+        "id": "vulns:reader/GHSA-23hp-3jrh-7fpw:37",
+        "artefact": "vulns",
+        "scope": "reader/GHSA-23hp-3jrh-7fpw",
+        "severity": "fail",
+        "summary": "reader: new vulnerability on b: GHSA-23hp-3jrh-7fpw (Critical) in tar@7.5.11; fixed in 7.5.19"
+      },
+      {
+        "id": "vulns:reader/GHSA-8x88-c5mf-7j5w:38",
+        "artefact": "vulns",
+        "scope": "reader/GHSA-8x88-c5mf-7j5w",
+        "severity": "fail",
+        "summary": "reader: new vulnerability on b: GHSA-8x88-c5mf-7j5w (High) in tar@7.5.11; fixed in 7.5.18"
+      },
+      {
+        "id": "vulns:reader/GHSA-gvwx-54wh-qm9j:39",
+        "artefact": "vulns",
+        "scope": "reader/GHSA-gvwx-54wh-qm9j",
+        "severity": "fail",
+        "summary": "reader: new vulnerability on b: GHSA-gvwx-54wh-qm9j (Medium) in tar@7.5.11; fixed in 7.5.17"
+      },
+      {
+        "id": "vulns:reader/GHSA-r292-9mhp-454m:40",
+        "artefact": "vulns",
+        "scope": "reader/GHSA-r292-9mhp-454m",
+        "severity": "fail",
+        "summary": "reader: new vulnerability on b: GHSA-r292-9mhp-454m (High) in tar@7.5.11; fixed in 7.5.21"
+      },
+      {
+        "id": "vulns:reader/GHSA-vmf3-w455-68vh:41",
+        "artefact": "vulns",
+        "scope": "reader/GHSA-vmf3-w455-68vh",
+        "severity": "fail",
+        "summary": "reader: new vulnerability on b: GHSA-vmf3-w455-68vh (Medium) in tar@7.5.11; fixed in 7.5.16"
+      },
+      {
+        "id": "vulns:reader/GHSA-w8wr-v893-vjvp:42",
+        "artefact": "vulns",
+        "scope": "reader/GHSA-w8wr-v893-vjvp",
+        "severity": "fail",
+        "summary": "reader: new vulnerability on b: GHSA-w8wr-v893-vjvp (Medium) in tar@7.5.11; fixed in 7.5.18"
+      },
+      {
+        "id": "sbom:catalogue/corepack:43",
+        "artefact": "sbom",
+        "scope": "catalogue/corepack",
+        "severity": "fail",
+        "summary": "catalogue: package bumped: corepack 0.36.0 → 0.34.6"
+      },
+      {
+        "id": "sbom:catalogue/node:44",
+        "artefact": "sbom",
+        "scope": "catalogue/node",
+        "severity": "fail",
+        "summary": "catalogue: package bumped: node 22.23.3 → 22.23.2"
+      },
+      {
+        "id": "sbom:catalogue/npm:45",
+        "artefact": "sbom",
+        "scope": "catalogue/npm",
+        "severity": "fail",
+        "summary": "catalogue: package bumped: npm 10.9.9 → 10.9.8"
+      },
+      {
+        "id": "sbom:catalogue/tar:46",
+        "artefact": "sbom",
+        "scope": "catalogue/tar",
+        "severity": "fail",
+        "summary": "catalogue: package bumped: tar 1.34+dfsg-1.2+deb12u1, 7.5.22 → 1.34+dfsg-1.2+deb12u1, 7.5.11"
+      },
+      {
+        "id": "sbom:catalogue/tutors-catalogue:47",
+        "artefact": "sbom",
+        "scope": "catalogue/tutors-catalogue",
+        "severity": "fail",
+        "summary": "catalogue: package bumped: tutors-catalogue 16.2.1 → 16.2.2"
+      },
+      {
+        "id": "vulns:catalogue/GHSA-23hp-3jrh-7fpw:48",
+        "artefact": "vulns",
+        "scope": "catalogue/GHSA-23hp-3jrh-7fpw",
+        "severity": "fail",
+        "summary": "catalogue: new vulnerability on b: GHSA-23hp-3jrh-7fpw (Critical) in tar@7.5.11; fixed in 7.5.19"
+      },
+      {
+        "id": "vulns:catalogue/GHSA-8x88-c5mf-7j5w:49",
+        "artefact": "vulns",
+        "scope": "catalogue/GHSA-8x88-c5mf-7j5w",
+        "severity": "fail",
+        "summary": "catalogue: new vulnerability on b: GHSA-8x88-c5mf-7j5w (High) in tar@7.5.11; fixed in 7.5.18"
+      },
+      {
+        "id": "vulns:catalogue/GHSA-gvwx-54wh-qm9j:50",
+        "artefact": "vulns",
+        "scope": "catalogue/GHSA-gvwx-54wh-qm9j",
+        "severity": "fail",
+        "summary": "catalogue: new vulnerability on b: GHSA-gvwx-54wh-qm9j (Medium) in tar@7.5.11; fixed in 7.5.17"
+      },
+      {
+        "id": "vulns:catalogue/GHSA-r292-9mhp-454m:51",
+        "artefact": "vulns",
+        "scope": "catalogue/GHSA-r292-9mhp-454m",
+        "severity": "fail",
+        "summary": "catalogue: new vulnerability on b: GHSA-r292-9mhp-454m (High) in tar@7.5.11; fixed in 7.5.21"
+      },
+      {
+        "id": "vulns:catalogue/GHSA-vmf3-w455-68vh:52",
+        "artefact": "vulns",
+        "scope": "catalogue/GHSA-vmf3-w455-68vh",
+        "severity": "fail",
+        "summary": "catalogue: new vulnerability on b: GHSA-vmf3-w455-68vh (Medium) in tar@7.5.11; fixed in 7.5.16"
+      },
+      {
+        "id": "vulns:catalogue/GHSA-w8wr-v893-vjvp:53",
+        "artefact": "vulns",
+        "scope": "catalogue/GHSA-w8wr-v893-vjvp",
+        "severity": "fail",
+        "summary": "catalogue: new vulnerability on b: GHSA-w8wr-v893-vjvp (Medium) in tar@7.5.11; fixed in 7.5.18"
+      },
+      {
+        "id": "sbom:live/corepack:54",
+        "artefact": "sbom",
+        "scope": "live/corepack",
+        "severity": "fail",
+        "summary": "live: package bumped: corepack 0.36.0 → 0.34.6"
+      },
+      {
+        "id": "sbom:live/node:55",
+        "artefact": "sbom",
+        "scope": "live/node",
+        "severity": "fail",
+        "summary": "live: package bumped: node 22.23.3 → 22.23.2"
+      },
+      {
+        "id": "sbom:live/npm:56",
+        "artefact": "sbom",
+        "scope": "live/npm",
+        "severity": "fail",
+        "summary": "live: package bumped: npm 10.9.9 → 10.9.8"
+      },
+      {
+        "id": "sbom:live/tar:57",
+        "artefact": "sbom",
+        "scope": "live/tar",
+        "severity": "fail",
+        "summary": "live: package bumped: tar 1.34+dfsg-1.2+deb12u1, 7.5.22 → 1.34+dfsg-1.2+deb12u1, 7.5.11"
+      },
+      {
+        "id": "sbom:live/tutors-live:58",
+        "artefact": "sbom",
+        "scope": "live/tutors-live",
+        "severity": "fail",
+        "summary": "live: package bumped: tutors-live 16.2.1 → 16.2.2"
+      },
+      {
+        "id": "vulns:live/GHSA-23hp-3jrh-7fpw:59",
+        "artefact": "vulns",
+        "scope": "live/GHSA-23hp-3jrh-7fpw",
+        "severity": "fail",
+        "summary": "live: new vulnerability on b: GHSA-23hp-3jrh-7fpw (Critical) in tar@7.5.11; fixed in 7.5.19"
+      },
+      {
+        "id": "vulns:live/GHSA-8x88-c5mf-7j5w:60",
+        "artefact": "vulns",
+        "scope": "live/GHSA-8x88-c5mf-7j5w",
+        "severity": "fail",
+        "summary": "live: new vulnerability on b: GHSA-8x88-c5mf-7j5w (High) in tar@7.5.11; fixed in 7.5.18"
+      },
+      {
+        "id": "vulns:live/GHSA-gvwx-54wh-qm9j:61",
+        "artefact": "vulns",
+        "scope": "live/GHSA-gvwx-54wh-qm9j",
+        "severity": "fail",
+        "summary": "live: new vulnerability on b: GHSA-gvwx-54wh-qm9j (Medium) in tar@7.5.11; fixed in 7.5.17"
+      },
+      {
+        "id": "vulns:live/GHSA-r292-9mhp-454m:62",
+        "artefact": "vulns",
+        "scope": "live/GHSA-r292-9mhp-454m",
+        "severity": "fail",
+        "summary": "live: new vulnerability on b: GHSA-r292-9mhp-454m (High) in tar@7.5.11; fixed in 7.5.21"
+      },
+      {
+        "id": "vulns:live/GHSA-vmf3-w455-68vh:63",
+        "artefact": "vulns",
+        "scope": "live/GHSA-vmf3-w455-68vh",
+        "severity": "fail",
+        "summary": "live: new vulnerability on b: GHSA-vmf3-w455-68vh (Medium) in tar@7.5.11; fixed in 7.5.16"
+      },
+      {
+        "id": "vulns:live/GHSA-w8wr-v893-vjvp:64",
+        "artefact": "vulns",
+        "scope": "live/GHSA-w8wr-v893-vjvp",
+        "severity": "fail",
+        "summary": "live: new vulnerability on b: GHSA-w8wr-v893-vjvp (Medium) in tar@7.5.11; fixed in 7.5.18"
+      },
+      {
+        "id": "sbom:time/corepack:65",
+        "artefact": "sbom",
+        "scope": "time/corepack",
+        "severity": "fail",
+        "summary": "time: package bumped: corepack 0.36.0 → 0.34.6"
+      },
+      {
+        "id": "sbom:time/node:66",
+        "artefact": "sbom",
+        "scope": "time/node",
+        "severity": "fail",
+        "summary": "time: package bumped: node 22.23.3 → 22.23.2"
+      },
+      {
+        "id": "sbom:time/npm:67",
+        "artefact": "sbom",
+        "scope": "time/npm",
+        "severity": "fail",
+        "summary": "time: package bumped: npm 10.9.9 → 10.9.8"
+      },
+      {
+        "id": "sbom:time/tar:68",
+        "artefact": "sbom",
+        "scope": "time/tar",
+        "severity": "fail",
+        "summary": "time: package bumped: tar 1.34+dfsg-1.2+deb12u1, 7.5.22 → 1.34+dfsg-1.2+deb12u1, 7.5.11"
+      },
+      {
+        "id": "sbom:time/tutors-time:69",
+        "artefact": "sbom",
+        "scope": "time/tutors-time",
+        "severity": "fail",
+        "summary": "time: package bumped: tutors-time 16.2.1 → 16.2.2"
+      },
+      {
+        "id": "vulns:time/GHSA-23hp-3jrh-7fpw:70",
+        "artefact": "vulns",
+        "scope": "time/GHSA-23hp-3jrh-7fpw",
+        "severity": "fail",
+        "summary": "time: new vulnerability on b: GHSA-23hp-3jrh-7fpw (Critical) in tar@7.5.11; fixed in 7.5.19"
+      },
+      {
+        "id": "vulns:time/GHSA-8x88-c5mf-7j5w:71",
+        "artefact": "vulns",
+        "scope": "time/GHSA-8x88-c5mf-7j5w",
+        "severity": "fail",
+        "summary": "time: new vulnerability on b: GHSA-8x88-c5mf-7j5w (High) in tar@7.5.11; fixed in 7.5.18"
+      },
+      {
+        "id": "vulns:time/GHSA-gvwx-54wh-qm9j:72",
+        "artefact": "vulns",
+        "scope": "time/GHSA-gvwx-54wh-qm9j",
+        "severity": "fail",
+        "summary": "time: new vulnerability on b: GHSA-gvwx-54wh-qm9j (Medium) in tar@7.5.11; fixed in 7.5.17"
+      },
+      {
+        "id": "vulns:time/GHSA-r292-9mhp-454m:73",
+        "artefact": "vulns",
+        "scope": "time/GHSA-r292-9mhp-454m",
+        "severity": "fail",
+        "summary": "time: new vulnerability on b: GHSA-r292-9mhp-454m (High) in tar@7.5.11; fixed in 7.5.21"
+      },
+      {
+        "id": "vulns:time/GHSA-vmf3-w455-68vh:74",
+        "artefact": "vulns",
+        "scope": "time/GHSA-vmf3-w455-68vh",
+        "severity": "fail",
+        "summary": "time: new vulnerability on b: GHSA-vmf3-w455-68vh (Medium) in tar@7.5.11; fixed in 7.5.16"
+      },
+      {
+        "id": "vulns:time/GHSA-w8wr-v893-vjvp:75",
+        "artefact": "vulns",
+        "scope": "time/GHSA-w8wr-v893-vjvp",
+        "severity": "fail",
+        "summary": "time: new vulnerability on b: GHSA-w8wr-v893-vjvp (Medium) in tar@7.5.11; fixed in 7.5.18"
+      }
+    ],
+    "staleClaims": [],
+    "broadUnapproved": []
+  },
+  "masksApplied": {
+    "response-date": 80,
+    "request-id": 80,
+    "etag": 80,
+    "metrics-process": 599,
+    "metrics-timing-histograms": 12,
+    "third-party-requests": 835,
+    "persistence-stub-requests": 215,
+    "realtime-rest-fallback-warning": 80,
+    "hashed-assets": 5320,
+    "footer-tutors-version": 220,
+    "transport-length": 80,
+    "transport-connection": 80,
+    "transport-encoding": 0,
+    "transport-transfer": 0,
+    "transport-keepalive": 80
+  },
+  "load": {
+    "a": {
+      "requests": 601,
+      "failed": 0,
+      "serverErrors": 0,
+      "p50": 1.21,
+      "p95": 2.2,
+      "rate": 20,
+      "duration": "30s"
+    },
+    "b": {
+      "requests": 601,
+      "failed": 0,
+      "serverErrors": 0,
+      "p50": 1.29,
+      "p95": 1.97,
+      "rate": 20,
+      "duration": "30s"
+    }
+  },
+  "imageArtefacts": {
+    "a": {
+      "reader": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "9 layers, 251.1 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "291 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "108 advisories, db built 2026-09-26T06:29:14Z schema v6.1.9"
+        }
+      },
+      "catalogue": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "9 layers, 230.4 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "277 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "108 advisories, db built 2026-09-26T06:29:14Z schema v6.1.9"
+        }
+      },
+      "live": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "9 layers, 230.4 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "277 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "108 advisories, db built 2026-09-26T06:29:14Z schema v6.1.9"
+        }
+      },
+      "time": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "9 layers, 231.7 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "287 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "108 advisories, db built 2026-09-26T06:29:14Z schema v6.1.9"
+        }
+      }
+    },
+    "b": {
+      "reader": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "9 layers, 251.5 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "291 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "114 advisories, db built 2026-09-26T06:29:14Z schema v6.1.9"
+        }
+      },
+      "catalogue": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "9 layers, 230.8 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "277 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "114 advisories, db built 2026-09-26T06:29:14Z schema v6.1.9"
+        }
+      },
+      "live": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "9 layers, 230.8 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "277 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "114 advisories, db built 2026-09-26T06:29:14Z schema v6.1.9"
+        }
+      },
+      "time": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "9 layers, 232.1 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "287 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "114 advisories, db built 2026-09-26T06:29:14Z schema v6.1.9"
+        }
+      }
+    }
+  }
+}
