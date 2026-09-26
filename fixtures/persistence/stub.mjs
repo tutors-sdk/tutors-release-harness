@@ -10,6 +10,7 @@
 //   DELETE /rest/v1/<table>        -> 204           recorded as a write
 //   POST   /rest/v1/rpc/<fn>       -> 200 []        recorded as an rpc call
 //   *      /auth/v1/*              -> 200 {}        (no sessions here; identity is fixtures/identity)
+//   POST   /realtime/v1/api/broadcast -> 202        accepted, not recorded (presence runs on timers)
 //   GET    /_harness/writes        -> the log, oldest first
 //   POST   /_harness/reset         -> clears the log
 //
@@ -84,6 +85,14 @@ const server = createServer(async (req, res) => {
   if (url.pathname.startsWith("/auth/v1/")) {
     await readBody(req);
     return send(200, {});
+  }
+  // Realtime's websocket is refused (no upgrade handler), so the client falls back to posting
+  // presence broadcasts over REST on a timer. Answering 404 made the browser log a "Failed to load
+  // resource ... 404" whose count per page depended on the timer, an A/A console diff. Accept them
+  // as Supabase does; they are presence, not writes, so the persistence artefact does not record them.
+  if (url.pathname === "/realtime/v1/api/broadcast" && req.method === "POST") {
+    await readBody(req);
+    return send(202);
   }
   if (url.pathname.startsWith("/storage/v1/")) return send(404, { message: "no storage in the harness" });
   return send(404, { message: "not found" });
