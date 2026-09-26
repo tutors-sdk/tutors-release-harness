@@ -857,6 +857,9 @@ Releases are git tags `v<harness version>` on `main`, cut by a maintainer.
   required: the A/A saw nothing of that journey's pages, so it is not clean
   evidence, and a release run will not trust it. Any other mode names such a
   journey in its `reasons`.
+- A failing `screenshot` hunk's summary says where the pixels differ: `…% of
+  pixels differ in W×H at (x, y) (threshold …)`, the box around every differing
+  pixel. The diff image stays in `diff/`; the summary is what a CI log shows.
 
 ### 1.4.0 (minor; the pinned vulnerability database, one "not collected" convention, housekeeping commands, clean exit 2, post-deploy on an external side)
 
