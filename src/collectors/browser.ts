@@ -247,6 +247,11 @@ export async function captureJourney(browser: Browser, spec: SideSpec, journey: 
         timing: isDocument ? timingOf(documentResponse) : timingOf(undefined)
       };
       if (opts.screenshots) {
+        // The course shell loads its typeface from Google Fonts with display=swap, so until the font
+        // arrives the page paints in the fallback face, and a screenshot taken on that race can differ
+        // between two identical sides. Wait for the fonts the page has asked for (bounded, so a
+        // font that never loads cannot hang the run; it then shows in the screenshot as it would to a person).
+        await page.evaluate(() => Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 5_000))])).catch(() => undefined);
         // No ":" in file names: NTFS reads "reader:home.png" as an alternate data stream of "reader".
         const file = join(shotDir, `${pageKey.replace(/[^a-z0-9-]/gi, "_")}.png`);
         await page.screenshot({ path: file, animations: "disabled", caret: "hide", fullPage: false });
