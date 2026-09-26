@@ -24,6 +24,12 @@ import { join, resolve } from "node:path";
 import type { Artefact, Claim, Hunk, RunReport } from "../types.ts";
 
 export const SCORECARD_VERSION = 1;
+
+/** Where the PRs a Rule names live. A bare "#313" in a report kept here would link to this repository's #313. */
+export const MONOREPO_PULLS = "https://github.com/tutors-sdk/tutors-mono-repo/pull/";
+
+/** A monorepo PR as a link that means the same wherever the Markdown is rendered. */
+export const prLink = (pr: number): string => `[#${pr}](${MONOREPO_PULLS}${pr})`;
 export const MANUAL_LIMIT = 5;
 
 /** Artefacts where a claimed difference still needs a person's eyes: a machine can say it moved, not that it is right. */
@@ -214,7 +220,7 @@ export function renderScorecard(s: Scorecard): string {
   lines.push(`**Normalness:** ${n.state}${n.hunks === undefined ? "" : ` (${n.hunks} A/A diff(s)${n.source === "noise-status" ? `, nightly of ${n.ranAt}` : ""})`}${n.degraded?.length ? `: ${n.degraded.join("; ")}` : ""}`, "");
   if (s.rules.length) {
     lines.push("### EARS Rules, diffs and PRs", "", "| Rule | status | diffs | artefacts | PRs |", "|---|---|---|---|---|");
-    for (const r of s.rules) lines.push(`| ${r.rule ? `${r.rule}${r.title ? ` ${r.title}` : ""}` : r.status === "unclaimed" ? "no Rule" : r.title ?? "CHANGELOG"} | ${r.status} | ${r.hunks} | ${r.artefacts.join(", ") || "—"} | ${r.prs.map((p) => `#${p}`).join(", ") || "—"} |`);
+    for (const r of s.rules) lines.push(`| ${r.rule ? `${r.rule}${r.title ? ` ${r.title}` : ""}` : r.status === "unclaimed" ? "no Rule" : r.title ?? "CHANGELOG"} | ${r.status} | ${r.hunks} | ${r.artefacts.join(", ") || "—"} | ${r.prs.map(prLink).join(", ") || "—"} |`);
     lines.push("");
   }
   lines.push("### Test by hand", "");
