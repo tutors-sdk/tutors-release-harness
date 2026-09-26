@@ -11,11 +11,14 @@
 //   POST   /rest/v1/rpc/<fn>       -> 200 []        recorded as an rpc call
 //   *      /auth/v1/*              -> 200 {}        (no sessions here; identity is fixtures/identity)
 //   POST   /realtime/v1/api/broadcast -> 202        accepted, not recorded (presence runs on timers)
+//   WS     /realtime/v1/websocket  -> a Phoenix socket that replies ok to every push (joins, heartbeats,
+//                                     presence) and never broadcasts; not recorded
 //   GET    /_harness/writes        -> the log, oldest first
 //   POST   /_harness/reset         -> clears the log
 //
 // Both sides get their own stub, so a write is attributable. The stub sends no
 // Date header and no ids: nothing here may differ between the sides.
+import { createHash } from "node:crypto";
 import { createServer } from "node:http";
 
 const port = Number(process.argv[2] ?? process.env.PORT ?? 8090);
@@ -113,6 +116,89 @@ function rowCount(text) {
   } catch {
     return 1;
   }
+}
+
+// Realtime. The reader's Supabase client opens a websocket here for presence. Refusing it made the client
+// log "WebSocket connection ... failed" and retry on a backoff timer, so whether a page's console held
+// that message depended on whether a retry fell inside the page's window: an A/A console diff. So the
+// stub accepts the socket and answers the Phoenix protocol (vsn 2.0.0: each text frame is
+// [join_ref, ref, topic, event, payload]) with an ok reply to every push that carries a ref. It never
+// sends anything unasked, so both sides see the same empty presence. Binary frames (user broadcasts,
+// no ack requested) are read and dropped.
+server.on("upgrade", (req, socket) => {
+  const url = new URL(req.url ?? "/", "http://localhost");
+  const key = req.headers["sec-websocket-key"];
+  if (url.pathname !== "/realtime/v1/websocket" || typeof key !== "string") {
+    socket.end("HTTP/1.1 404 Not Found\r\nconnection: close\r\n\r\n");
+    return;
+  }
+  const accept = createHash("sha1").update(`${key}258EAFA5-E914-47DA-95CA-C5AB0DC85B11`).digest("base64");
+  socket.write(`HTTP/1.1 101 Switching Protocols\r\nupgrade: websocket\r\nconnection: Upgrade\r\nsec-websocket-accept: ${accept}\r\n\r\n`);
+  socket.on("error", () => socket.destroy());
+  let buffer = Buffer.alloc(0);
+  socket.on("data", (chunk) => {
+    buffer = Buffer.concat([buffer, chunk]);
+    for (;;) {
+      const frame = readFrame(buffer);
+      if (!frame) return;
+      buffer = buffer.subarray(frame.length);
+      if (frame.opcode === 0x8) {
+        socket.end(frameOf(0x8, Buffer.alloc(0)));
+        return;
+      }
+      if (frame.opcode === 0x9) socket.write(frameOf(0xa, frame.payload));
+      if (frame.opcode === 0x1) {
+        const reply = phoenixReply(frame.payload.toString("utf8"));
+        if (reply) socket.write(frameOf(0x1, Buffer.from(reply)));
+      }
+    }
+  });
+});
+
+function phoenixReply(text) {
+  let message;
+  try {
+    message = JSON.parse(text);
+  } catch {
+    return undefined;
+  }
+  if (!Array.isArray(message)) return undefined;
+  const [joinRef, ref, topic, event] = message;
+  if (ref === null || ref === undefined) return undefined;
+  const response = event === "phx_join" ? { postgres_changes: [] } : {};
+  return JSON.stringify([joinRef ?? null, ref, topic, "phx_reply", { status: "ok", response }]);
+}
+
+/** One client frame from the start of the buffer (clients always mask), or undefined until it is all there. */
+function readFrame(buffer) {
+  if (buffer.length < 2) return undefined;
+  const opcode = buffer[0] & 0x0f;
+  const masked = (buffer[1] & 0x80) !== 0;
+  let length = buffer[1] & 0x7f;
+  let offset = 2;
+  if (length === 126) {
+    if (buffer.length < 4) return undefined;
+    length = buffer.readUInt16BE(2);
+    offset = 4;
+  } else if (length === 127) {
+    if (buffer.length < 10) return undefined;
+    length = Number(buffer.readBigUInt64BE(2));
+    offset = 10;
+  }
+  const maskAt = offset;
+  if (masked) offset += 4;
+  if (buffer.length < offset + length) return undefined;
+  const payload = Buffer.from(buffer.subarray(offset, offset + length));
+  if (masked) for (let i = 0; i < payload.length; i++) payload[i] ^= buffer[maskAt + (i % 4)];
+  return { opcode, payload, length: offset + length };
+}
+
+/** One unmasked, unfragmented server frame. */
+function frameOf(opcode, payload) {
+  const head = payload.length < 126 ? Buffer.from([0x80 | opcode, payload.length]) : payload.length < 65536 ? Buffer.from([0x80 | opcode, 126, 0, 0]) : Buffer.from([0x80 | opcode, 127, 0, 0, 0, 0, 0, 0, 0, 0]);
+  if (payload.length >= 126 && payload.length < 65536) head.writeUInt16BE(payload.length, 2);
+  if (payload.length >= 65536) head.writeBigUInt64BE(BigInt(payload.length), 2);
+  return Buffer.concat([head, payload]);
 }
 
 server.listen(port, () => console.log(JSON.stringify({ level: "info", message: "persistence stub listening", port })));
