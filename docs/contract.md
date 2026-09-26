@@ -852,6 +852,9 @@ Releases are git tags `v<harness version>` on `main`, cut by a maintainer.
   `url`, `source`, `vendor`, `documentation`, `authors`) is an `info` hunk, not a
   failure: it says where the image came from, not what it is. Every other label,
   `licenses` included, still fails.
+- A failing `screenshot` hunk's summary says where the pixels differ: `…% of
+  pixels differ in W×H at (x, y) (threshold …)`, the box around every differing
+  pixel. The diff image stays in `diff/`; the summary is what a CI log shows.
 
 ### 1.4.0 (minor; the pinned vulnerability database, one "not collected" convention, housekeeping commands, clean exit 2, post-deploy on an external side)
 

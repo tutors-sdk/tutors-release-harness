@@ -62,6 +62,31 @@ export const dom: Engine = (a, b) => {
 
 // ---- screenshot ------------------------------------------------------------------
 
+/**
+ * The box around every pixel pixelmatch marked as differing (drawn in its diff colour, pure red; the unchanged
+ * pixels are drawn grey and anti-aliasing yellow). Where on the page a diff is tells a reader what changed
+ * without the diff image, which lives in a CI artifact a log reader may not be able to open.
+ */
+export function diffRegion(diff: { width: number; height: number; data: Uint8Array | Buffer }): { x: number; y: number; width: number; height: number } | undefined {
+  let minX = Infinity, minY = Infinity, maxX = -1, maxY = -1;
+  for (let y = 0; y < diff.height; y++) {
+    for (let x = 0; x < diff.width; x++) {
+      const i = (y * diff.width + x) * 4;
+      if (diff.data[i] === 255 && diff.data[i + 1] === 0 && diff.data[i + 2] === 0) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+  return maxX < 0 ? undefined : { x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1 };
+}
+
+function regionText(r: ReturnType<typeof diffRegion>): string {
+  return r ? ` in ${r.width}×${r.height} at (${r.x}, ${r.y})` : "";
+}
+
 export const screenshot: Engine = (a, b, ctx) => {
   const hunks: Hunk[] = [];
   if (!ctx.captureDir) return hunks;
@@ -89,7 +114,7 @@ export const screenshot: Engine = (a, b, ctx) => {
         scope: pair.pageKey,
         path: pair.path,
         severity: "fail",
-        summary: `${pair.pageKey}: ${(ratio * 100).toFixed(2)}% of pixels differ (threshold ${(ctx.config.screenshot.maxDiffRatio * 100).toFixed(2)}%)`,
+        summary: `${pair.pageKey}: ${(ratio * 100).toFixed(2)}% of pixels differ${regionText(diffRegion(diffPng))} (threshold ${(ctx.config.screenshot.maxDiffRatio * 100).toFixed(2)}%)`,
         detail: `diff image: diff/${pair.a.screenshot}`
       });
     }
