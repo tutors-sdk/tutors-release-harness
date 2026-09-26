@@ -18,7 +18,7 @@ import { MODES, SUBSTRATES, type Mode, type Substrate } from "./types.ts";
 import { harnessInfo } from "./version.ts";
 import { helpFor, parseArgsErrorText } from "./local/usage.ts";
 import { RequirementError, requirements } from "./not-collected.ts";
-import { UsageError, doctorCommand, guardCommand, localCommand, noiseCommand, overrideCommand, pruneCommand, recordAppliedOverride, reportsCommand, vulnDbCommand } from "./local/cli.ts";
+import { UsageError, doctorCommand, guardCommand, localCommand, noiseCommand, overrideCommand, pruneCommand, recordAppliedOverride, reportsCommand, scorecardCommand, vulnDbCommand } from "./local/cli.ts";
 import { defaultNoise } from "./local/noise-store.ts";
 
 const USAGE = `tutors-release-harness
@@ -110,9 +110,12 @@ const USAGE = `tutors-release-harness
       change needs a version bump. Exit 1 on a violation, 2 when the ref does not exist.
   harness override list [--since <date>] [--json]
       The local, append-only record of every FAIL a person overrode.
-  harness reports keep --dir <run dir | report.json> [--store dir] [--run-url u] [--keep-last n]
-      Keep a run's report.json, report.md and report.html under <store>/reports/<ranAt>-<mode>/ and list it in
-      <store>/reports/index.json, newest first, so it outlives the artifact. --keep-last drops older runs. Not stable.
+  harness reports keep --dir <run dir | report.json> [--store dir] [--run-url u] [--keep-last n] [--rules f]
+      Keep a run's report.json, report.md and report.html, and its scorecard, under <store>/reports/<ranAt>-<mode>/ and
+      list it in <store>/reports/index.json, newest first, so it outlives the artifact. --keep-last drops older runs. Not stable.
+  harness scorecard --report <run dir | report.json> [--rules rules.json] [--json]
+      A 0-100 score with every deduction, the A/A normalness, EARS Rule -> diffs -> PRs, and at most five pages to test
+      by hand. PRs come from a Rule's "prs" in rules.json and "PR #n" in claim reasons. Never changes a verdict. Not stable.
   harness prune [--out dir] [--older-than-days 14] [--keep-last 5] [--image-cache dir] [--image-cache-days 30] [--yes] [--json]
       Free disk: remove run directories under out/ that are older than --older-than-days AND not among the newest
       --keep-last of their mode, and an image cache saved more than --image-cache-days ago. A dry run unless --yes.
@@ -430,6 +433,8 @@ async function main(argv: string[]): Promise<number> {
       return pruneCommand(values);
     case "reports":
       return reportsCommand(positionals[0], values);
+    case "scorecard":
+      return scorecardCommand(values);
     case "local":
       return localCommand(positionals[0], values);
     case "journeys":

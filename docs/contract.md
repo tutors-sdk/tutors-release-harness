@@ -585,7 +585,7 @@ Full list: [`contract/cli.json`](contract/cli.json). Invoke as `pnpm harness
 <command>` from a checkout (Node ≥ 22, `pnpm install`, and for capturing modes
 `pnpm exec playwright install chromium` and Docker). Commands and flags marked
 `stable: true` there are the ones below; the rest (`harness stack`, `harness
-kind`, `harness journeys`, `harness override`, `harness local`, `harness prune`, `harness reports`, `harness noise
+kind`, `harness journeys`, `harness override`, `harness local`, `harness prune`, `harness reports`, `harness scorecard`, `harness noise
 history`, `--substrate`, `--now`, `--masks`, `--snapshot`,
 `--upgrade-*`, `--noise-max-age-days`, `--no-screenshots`, `--no-axe`,
 `--no-focus`, `--no-runtime` and `--startup-restarts` (both since 1.2.0),
@@ -752,9 +752,31 @@ index, readable by anyone at a raw URL:
 `reports/index.json` is `{ "schemaVersion": 1, "runs": [...] }`, newest first. Each
 run has `id` (`<ranAt>-<mode>`, the colons as dashes: `2026-09-26T07-57-09Z-noise`),
 `mode`, `ranAt`, `verdict`, `reasons`, `sides`, `harnessVersion`, `runUrl` and
-`files`, paths relative to `reports/`. `harness reports keep` writes both (see
+`files`, paths relative to `reports/`, and `score` (`score`, `grade`, `normalness`,
+`manual`: the scorecard's headline). `harness reports keep` writes both (see
 [CLI](#cli)); keeping is best effort and never stops the status or record being
 published. No new branch, write permission or push.
+
+Each kept run also has `scorecard.json` and `scorecard.md` (`harness scorecard`,
+`src/ci/scorecard.ts`), derived from its `report.json` alone. **Informational:
+it never changes a verdict, an exit code or the gate.**
+
+- `score` 0-100 and `grade` (A ≥ 90, B ≥ 75, C ≥ 60, else D), with every
+  `deduction` and its reason: unclaimed diffs (15 each, at most 60; in noise mode
+  5 each, at most 40), an A/A status that is missing, noisy or degraded (10),
+  broad claims without an approver (10 each, at most 20), claims that matched
+  nothing (5 each, at most 15), claims flagged for covering many diffs (3 each, at
+  most 9), an overridden FAIL (20).
+- `normalness`: `normal`, `noisy`, `degraded` or `unknown`, from this run's own
+  diffs in noise mode, else from the `noise` status the run consulted.
+- `rules`: one row per EARS Rule a claim cited (by `rule`, or "Rule NNNN" in the
+  reason), per CHANGELOG reason, per stale claim, and one for unclaimed diffs, with
+  the diffs, artefacts, scopes and PRs. PRs are a Rule's `prs` in rules.json (an
+  optional key the monorepo may publish; the rules schema already allows unknown
+  keys) and "PR #n" in the claim's reason.
+- `manual`: at most five pages or scopes to test by hand: unclaimed diffs first,
+  then claimed diffs in `screenshot`, `axe`, `focus` or `dom`, then diffs covered
+  only by a broad claim.
 
 ## What the harness does to a pull request
 
@@ -819,6 +841,9 @@ Releases are git tags `v<harness version>` on `main`, cut by a maintainer.
 - `nightly-noise.yml` keeps the last 14 nights' reports on the `noise` branch;
   `release.yml` keeps each candidate's report on the `release-records` branch.
   Same branches, same jobs, same permissions.
+- `harness scorecard` (not stable): score, normalness, Rules and PRs, and what to
+  test by hand, for one run. `reports keep` writes it beside each kept report
+  and its headline into `index.json`. See [Kept reports](#kept-reports).
 
 ### 1.4.0 (minor; the pinned vulnerability database, one "not collected" convention, housekeeping commands, clean exit 2, post-deploy on an external side)
 
