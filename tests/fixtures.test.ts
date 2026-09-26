@@ -66,6 +66,14 @@ describe("persistence stub", () => {
     expect(await (await fetch(`${base}/_harness/writes`)).json()).toEqual([]);
   });
 
+  it("accepts realtime broadcasts over REST without recording them as writes", async () => {
+    await fetch(`${base}/_harness/reset`, { method: "POST" });
+    const broadcast = await fetch(`${base}/realtime/v1/api/broadcast?apikey=k&vsn=2.0.0`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ messages: [] }) });
+    expect(broadcast.status).toBe(202);
+    expect(await (await fetch(`${base}/_harness/writes`)).json()).toEqual([]);
+    expect((await fetch(`${base}/realtime/v1/websocket`)).status).toBe(404);
+  });
+
   it("answers CORS preflight and never sends a Date header", async () => {
     const preflight = await fetch(`${base}/rest/v1/x`, { method: "OPTIONS" });
     expect(preflight.status).toBe(204);
