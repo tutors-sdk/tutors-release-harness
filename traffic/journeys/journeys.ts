@@ -206,6 +206,9 @@ export const studentSignsIn: Journey = {
     // "Couldn't load preload assets" warning when the journey clicked on during that route).
     // The online status read is the reconnect's last await, so wait for it before capturing.
     const reconnected = page.waitForResponse((r) => /\/rest\/v1\/tutors-connect-users\?select=online_status\b/.test(r.url()), { timeout: 30_000 });
+    // Awaited below. If a step before that fails (a mutant that breaks the course), the page closes and
+    // this rejects with nobody listening, which would crash the run instead of failing the journey.
+    reconnected.catch(() => undefined);
     await button.click();
     // Auth.js -> identity stub -> callback -> session -> the course.
     await page.waitForURL(new RegExp(`/course/${urls.courseId}`), { timeout: 30_000 });
