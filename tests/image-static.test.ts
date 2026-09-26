@@ -90,6 +90,31 @@ describe("image-manifest engine", () => {
     expect(one({ size: 100 * 1024 * 1024 }).map((h) => h.severity)).toEqual(["info"]);
   });
 
+  it("a side built from a ref: labels the publishing pipeline stamps are reported, not failed; everything else still fails", () => {
+    const published = manifest({ labels: { ...manifest().labels, "org.opencontainers.image.url": "https://github.com/tutors-sdk/tutors-mono-repo", "org.opencontainers.image.description": "" } });
+    const local = manifest();
+    expect(scopes(diffManifest("reader", local, published))).toEqual(["image-manifest:reader/label/org.opencontainers.image.description:fail", "image-manifest:reader/label/org.opencontainers.image.url:fail"]);
+    const built = diffManifest("reader", local, published, { builtFromRef: ["a"] });
+    expect(scopes(built)).toEqual(["image-manifest:reader/label/org.opencontainers.image.description:info", "image-manifest:reader/label/org.opencontainers.image.url:info"]);
+    expect(built[0]!.summary).toMatch(/side a was built here from a ref/);
+    const licence = manifest({ labels: { ...manifest().labels, "org.opencontainers.image.licenses": "AGPL-3.0" } });
+    expect(scopes(diffManifest("reader", local, licence, { builtFromRef: ["a"] }))).toEqual(["image-manifest:reader/label/org.opencontainers.image.licenses:fail"]);
+    expect(scopes(diffManifest("reader", local, manifest({ user: "root" }), { builtFromRef: ["a"] }))).toEqual(["image-manifest:reader/user:fail"]);
+  });
+
+  it("the engine reads which side was built from a ref from each side's provenance", () => {
+    const published = manifest({ labels: { ...manifest().labels, "org.opencontainers.image.url": "https://github.com/tutors-sdk/tutors-mono-repo" } });
+    const a = withStatic("a", staticSide());
+    const b = withStatic("b", staticSide({ manifest: published }));
+    const reader = (hunks: Hunk[]) => scopes(staticHunks(hunks).filter((h) => h.scope.startsWith("reader/")));
+    expect(reader(imageStatic(a, b, { config: masks }))).toEqual(["image-manifest:reader/label/org.opencontainers.image.url:fail"]);
+    const built = { ...a, provenance: { summary: "built-from-ref v16.2.1", images: { reader: provenance({ provenance: "built-from-ref" }) } } } as typeof a;
+    const hunks = imageStatic(built, b, { config: masks });
+    expect(reader(hunks)).toEqual(["image-manifest:reader/label/org.opencontainers.image.url:info"]);
+    // Only the app whose image was built from a ref: the others were pulled, so their labels still count.
+    expect(scopes(staticHunks(hunks).filter((h) => h.scope.startsWith("live/")))).toEqual(["image-manifest:live/label/org.opencontainers.image.url:fail"]);
+  });
+
   it("the base label's own keys are handled once, as a base change, not again as labels", () => {
     const a = manifest({ baseDigest: D(1), labels: { ...manifest().labels, "org.opencontainers.image.base.digest": D(1) } });
     const b = manifest({ baseDigest: D(2), labels: { ...manifest().labels, "org.opencontainers.image.base.digest": D(2) } });

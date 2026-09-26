@@ -133,4 +133,15 @@ describe("normalise", () => {
     expect(out.journeys[0]!.pages[0]!.aria).toContain("{{title}}");
     expect(hits["course-title"]).toBe(1);
   });
+
+  it("applies a focus pattern mask to each keyboard stop, and a dom-only mask leaves the stops alone", () => {
+    const c = capture("a");
+    c.journeys[0]!.pages[0]!.focus = ['a "Home"', 'a "Tutors v:16.2.1"', 'a "Tutors v:16.2.1 notes"'];
+    const mask = { id: "stop-version", pattern: "16\\.2\\.1", replace: "{{version}}", reason: "test-only mask to prove focus stops are masked" };
+    const focusOnly = normalise(c, { ...masks, masks: [{ ...mask, artefact: ["focus" as const] }] });
+    expect(focusOnly.capture.journeys[0]!.pages[0]!.focus).toEqual(['a "Home"', 'a "Tutors v:{{version}}"', 'a "Tutors v:{{version}} notes"']);
+    expect(focusOnly.hits["stop-version"]).toBe(2);
+    const domOnly = normalise(c, { ...masks, masks: [{ ...mask, artefact: ["dom" as const] }] });
+    expect(domOnly.capture.journeys[0]!.pages[0]!.focus).toEqual(c.journeys[0]!.pages[0]!.focus);
+  });
 });
