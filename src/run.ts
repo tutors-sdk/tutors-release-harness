@@ -161,7 +161,8 @@ export function compareFromCaptures(input: CompareInput): RunOutcome {
   const compare = matchClaims(hunks, input.claims);
   const ranAt = new Date();
   const noise = readNoise(input.noise, input.log);
-  const degraded = input.mode === "noise" && input.requireVerified ? evidenceGaps(input.a, input.b) : [];
+  const blind = blindJourneys(input.a, input.b);
+  const degraded = input.mode === "noise" ? [...(input.requireVerified ? evidenceGaps(input.a, input.b) : []), ...blind] : [];
   // rollbackIssue only words the reason: HARNESS_ROLLBACK_ISSUE (or GitHub Actions) says a CI step opens the issue; a local run has none.
   const gated = gate({ mode: input.mode, compare, noiseWaived: noise.waived, noiseMaxAgeDays: input.noiseMaxAgeDays, ranAt, rollbackIssue: rollbackIssueConfigured(process.env), ...(degraded.length ? { degraded } : {}), ...(noise.status ? { noise: noise.status } : {}) });
   // Deployed images that are not the ones judged: loud, advisory. A FAIL stays a FAIL, and a PASS is not a clean one.
@@ -187,7 +188,7 @@ export function compareFromCaptures(input: CompareInput): RunOutcome {
     sides: { a: input.a.images, b: input.b.images },
     ...(input.a.provenance || input.b.provenance ? { provenance: { ...(input.a.provenance ? { a: input.a.provenance } : {}), ...(input.b.provenance ? { b: input.b.provenance } : {}) } } : {}),
     verdict: verdict.verdict,
-    reasons: [...(override ? [overrideLine(override)] : []), ...(deploymentLine ? [deploymentLine] : []), ...verdict.reasons, ...provenanceReasons(input.a, input.b), ...imageStaticReasons(input.a, input.b)],
+    reasons: [...(override ? [overrideLine(override)] : []), ...(deploymentLine ? [deploymentLine] : []), ...verdict.reasons, ...(input.mode === "noise" ? [] : blind), ...provenanceReasons(input.a, input.b), ...imageStaticReasons(input.a, input.b)],
     ...(noise.status ? { noise: noise.status } : {}),
     compare,
     masksApplied,
@@ -222,6 +223,18 @@ function provenanceReasons(a: SideCapture, b: SideCapture): string[] {
     if (built) reasons.push(`side ${side.side} was built here from monorepo ref ${built.builtFrom?.ref ?? "?"}, not pulled from the registry: it is not the image that ships`);
   }
   return [...new Set(reasons)];
+}
+
+/**
+ * Journeys that failed on BOTH sides. Each is an informational hunk (nothing differs), but the run saw
+ * nothing on those pages: a journey that times out before the page it visits leaves both captures equally
+ * empty. So an A/A with one is degraded rather than clean (it says nothing about those pages, and a release
+ * gated on it would be blind there), and any other run names them in its reasons.
+ */
+export function blindJourneys(a: SideCapture, b: SideCapture): string[] {
+  const failedOnB = new Set(b.journeys.filter((j) => j.error).map((j) => j.journey));
+  const names = [...new Set(a.journeys.filter((j) => j.error && failedOnB.has(j.journey)).map((j) => j.journey))];
+  return names.map((name) => `journey "${name}" failed on both sides, so this run saw nothing of its pages`);
 }
 
 /**

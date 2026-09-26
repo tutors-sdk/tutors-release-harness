@@ -307,7 +307,7 @@ Written next to `report.json` by `noise` mode only:
 | `ranAt` | the noise run's `report.json` `ranAt` |
 | `clean` | `true` exactly when `hunks` is `0` |
 | `hunks` | failing hunks the A/A produced |
-| `degraded` | optional, since 1.2.0: a non-empty list of reasons the evidence is weak even at `hunks: 0` — an image was not pulled and signature-verified in the run (a registry outage was survived from the runner's cache, or the images were built or already present locally). Written only by `noise` mode run with `--require-verified`, which the nightly always passes. Absent or empty means nothing was wrong. `clean` keeps its meaning (`hunks` is `0`); the gate additionally refuses a status that has `degraded` |
+| `degraded` | optional, since 1.2.0: a non-empty list of reasons the evidence is weak even at `hunks: 0` — an image was not pulled and signature-verified in the run (a registry outage was survived from the runner's cache, or the images were built or already present locally; written only with `--require-verified`, which the nightly always passes), or, since 1.5.0, a journey failed on both sides, so the run saw nothing of its pages (written by every `noise` run). Absent or empty means nothing was wrong. `clean` keeps its meaning (`hunks` is `0`); the gate additionally refuses a status that has `degraded` |
 
 `--noise <path>` takes the file, or a directory containing it (the noise run's
 output directory). A file that is not exactly this shape stops the run with
@@ -852,6 +852,14 @@ Releases are git tags `v<harness version>` on `main`, cut by a maintainer.
   `url`, `source`, `vendor`, `documentation`, `authors`) is an `info` hunk, not a
   failure: it says where the image came from, not what it is. Every other label,
   `licenses` included, still fails.
+- A journey that fails on both sides now makes a noise run DEGRADED (verdict
+  `warn`, `degraded` in `noise-status.json`), whether or not verification is
+  required: the A/A saw nothing of that journey's pages, so it is not clean
+  evidence, and a release run will not trust it. Any other mode names such a
+  journey in its `reasons`.
+- A failing `screenshot` hunk's summary says where the pixels differ: `…% of
+  pixels differ in W×H at (x, y) (threshold …)`, the box around every differing
+  pixel. The diff image stays in `diff/`; the summary is what a CI log shows.
 
 ### 1.4.0 (minor; the pinned vulnerability database, one "not collected" convention, housekeeping commands, clean exit 2, post-deploy on an external side)
 
