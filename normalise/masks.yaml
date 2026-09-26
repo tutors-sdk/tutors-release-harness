@@ -118,7 +118,7 @@ masks:
       chunks and stylesheets each page loads and their statuses; a bundle that grows or splits still shows.
 
   - id: footer-tutors-version
-    artefact: dom
+    artefact: [dom, focus]
     pattern: "(Tutors v:\\s*)\\d+\\.\\d+\\.\\d+(?:[-+][0-9A-Za-z.+-]+)?"
     replace: "$1{{version}}"
     reason: >-
@@ -127,6 +127,8 @@ masks:
       carries text but no attributes, so the mask keys on the label: only the semver token directly after
       "Tutors v:" is rewritten. Other footer text, other version-like strings, and the label itself still
       compare. The version is not a regression; whether the footer is present and worded the same is.
+      The footer's version is also a link, so it is a keyboard stop: the same rewrite applies to each
+      stop's accessible name, or every release reads as a changed keyboard order on every page.
 
   - id: transport-length
     artefact: headers
