@@ -1,0 +1,1534 @@
+{
+  "schemaVersion": 1,
+  "harness": {
+    "version": "1.4.1",
+    "gitSha": "6648ea6660f2c0e004eba1112b35a08101683972",
+    "contractVersion": "1.4.0"
+  },
+  "harnessVersion": "1.4.1",
+  "mode": "release",
+  "substrate": "compose",
+  "ranAt": "2026-09-26T12:38:31.986Z",
+  "now": "2026-09-16T09:05:00.000Z",
+  "runs": 5,
+  "sides": {
+    "a": {
+      "reader": "quay.io/tutors-sdk/tutors-reader:16.2.1",
+      "catalogue": "quay.io/tutors-sdk/tutors-catalogue:16.2.1",
+      "live": "quay.io/tutors-sdk/tutors-live:16.2.1",
+      "time": "quay.io/tutors-sdk/tutors-time:16.2.1"
+    },
+    "b": {
+      "reader": "quay.io/tutors-sdk/tutors-reader:16.2.2",
+      "catalogue": "quay.io/tutors-sdk/tutors-catalogue:16.2.2",
+      "live": "quay.io/tutors-sdk/tutors-live:16.2.2",
+      "time": "quay.io/tutors-sdk/tutors-time:16.2.2"
+    }
+  },
+  "provenance": {
+    "a": {
+      "summary": "built-from-ref v16.2.1@c2915322a0dc",
+      "images": {
+        "reader": {
+          "ref": "quay.io/tutors-sdk/tutors-reader:16.2.1",
+          "id": "sha256:467b3ac625f436347a664cecf85ff94b38b1cf96e85b911641501502379a29d8",
+          "revision": "c2915322a0dcb6843b703ca6cbaaff9ee4273463",
+          "version": "16.2.1",
+          "created": "2026-09-26T12:28:08Z",
+          "provenance": "built-from-ref",
+          "builtFrom": {
+            "ref": "v16.2.1",
+            "sha": "c2915322a0dcb6843b703ca6cbaaff9ee4273463"
+          }
+        },
+        "catalogue": {
+          "ref": "quay.io/tutors-sdk/tutors-catalogue:16.2.1",
+          "id": "sha256:cad48ee1aa6c56cf9843bc1844eeb906e10dcad46e60e19ab0f05ea39c3ff162",
+          "revision": "c2915322a0dcb6843b703ca6cbaaff9ee4273463",
+          "version": "16.2.1",
+          "created": "2026-09-26T12:29:34Z",
+          "provenance": "built-from-ref",
+          "builtFrom": {
+            "ref": "v16.2.1",
+            "sha": "c2915322a0dcb6843b703ca6cbaaff9ee4273463"
+          }
+        },
+        "live": {
+          "ref": "quay.io/tutors-sdk/tutors-live:16.2.1",
+          "id": "sha256:aa15c76b1af0b304c04e53a3970c92b00e392c5cda3e84ce8c9b32edd5b2fb5a",
+          "revision": "c2915322a0dcb6843b703ca6cbaaff9ee4273463",
+          "version": "16.2.1",
+          "created": "2026-09-26T12:30:26Z",
+          "provenance": "built-from-ref",
+          "builtFrom": {
+            "ref": "v16.2.1",
+            "sha": "c2915322a0dcb6843b703ca6cbaaff9ee4273463"
+          }
+        },
+        "time": {
+          "ref": "quay.io/tutors-sdk/tutors-time:16.2.1",
+          "id": "sha256:1443eecfa082ef0ac7b603948af105c01fde8c53d2d2ca58a8608f4a4abd7732",
+          "revision": "c2915322a0dcb6843b703ca6cbaaff9ee4273463",
+          "version": "16.2.1",
+          "created": "2026-09-26T12:31:19Z",
+          "provenance": "built-from-ref",
+          "builtFrom": {
+            "ref": "v16.2.1",
+            "sha": "c2915322a0dcb6843b703ca6cbaaff9ee4273463"
+          }
+        }
+      }
+    },
+    "b": {
+      "summary": "pulled+verified",
+      "images": {
+        "reader": {
+          "ref": "quay.io/tutors-sdk/tutors-reader:16.2.2",
+          "id": "sha256:5251de773ba42df7b8a03cb204b1bb0fd3a7bf0696d8674ad5dc657e0410fe82",
+          "digest": "sha256:7567d5927767bd39b7991a586d594f6c310387471109a456d2cff49fa12488cb",
+          "revision": "caa53d021e63004ad6e52a76428f8acd95a87c21",
+          "version": "16.2.2",
+          "created": "2026-09-19T18:07:41.709Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "catalogue": {
+          "ref": "quay.io/tutors-sdk/tutors-catalogue:16.2.2",
+          "id": "sha256:2f807181869d5146e65711a562c609091d6555b4332c738efc252a4542629b5d",
+          "digest": "sha256:f6cdb7f6adaba1d227e2cf62260ec2fe7064c58114666774331da3530bf52187",
+          "revision": "caa53d021e63004ad6e52a76428f8acd95a87c21",
+          "version": "16.2.2",
+          "created": "2026-09-19T18:07:41.955Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "live": {
+          "ref": "quay.io/tutors-sdk/tutors-live:16.2.2",
+          "id": "sha256:274059f152dac50de544a7aa4e8bc791ffe9900c3683d5b458ec30682fce5a32",
+          "digest": "sha256:12ed5642e5cbec601790771a8f9fc85221f8202679a312a0e707622bb6e84e9a",
+          "revision": "caa53d021e63004ad6e52a76428f8acd95a87c21",
+          "version": "16.2.2",
+          "created": "2026-09-19T18:07:35.208Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "time": {
+          "ref": "quay.io/tutors-sdk/tutors-time:16.2.2",
+          "id": "sha256:a4298d01a6c1d0d88f7a23f732d23002669ac2af9ad4766cef9d72b253907320",
+          "digest": "sha256:ddf3ad22b79bbba96199791a49367677bf9ad0ebdd7542f3246d56e7879d5e4e",
+          "revision": "caa53d021e63004ad6e52a76428f8acd95a87c21",
+          "version": "16.2.2",
+          "created": "2026-09-19T18:07:57.488Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        }
+      }
+    }
+  },
+  "verdict": "fail",
+  "reasons": [
+    "38 unclaimed diff(s)",
+    "side a was built here from monorepo ref v16.2.1, not pulled from the registry: it is not the image that ships",
+    "NOT COLLECTED: sbom of reader on side a: quay.io/tutors-sdk/tutors-reader:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself",
+    "NOT COLLECTED: vulns of reader on side a: nothing to scan: quay.io/tutors-sdk/tutors-reader:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself",
+    "NOT COLLECTED: sbom of catalogue on side a: quay.io/tutors-sdk/tutors-catalogue:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself",
+    "NOT COLLECTED: vulns of catalogue on side a: nothing to scan: quay.io/tutors-sdk/tutors-catalogue:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself",
+    "NOT COLLECTED: sbom of live on side a: quay.io/tutors-sdk/tutors-live:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself",
+    "NOT COLLECTED: vulns of live on side a: nothing to scan: quay.io/tutors-sdk/tutors-live:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself",
+    "NOT COLLECTED: sbom of time on side a: quay.io/tutors-sdk/tutors-time:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself",
+    "NOT COLLECTED: vulns of time on side a: nothing to scan: quay.io/tutors-sdk/tutors-time:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself"
+  ],
+  "noise": {
+    "schemaVersion": 1,
+    "ranAt": "2026-09-26T07:57:09.931Z",
+    "clean": true,
+    "hunks": 0
+  },
+  "compare": {
+    "hunks": [
+      {
+        "id": "dom:reader:topic:1",
+        "artefact": "dom",
+        "scope": "reader:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader:topic: semantic DOM differs (+5 −3 lines at line 41)",
+        "detail": "     - figure\n     - paragraph: Summary of this talk (appears on the talk card).\n-  - 'link \"Lab 1 ## Prerequisites\"':\n+  - link \"Lab 1 Prerequisites\":\n     - /url: /lab/localhost:8080/unit-1/topic-01/book-lab-01\n     - text: Lab 1\n     - figure\n-    - text: \"## Prerequisites\"\n+    - heading \"Prerequisites\" [level=2]:\n+      - link \"Prerequisites\":\n+        - /url: \"#prerequisites\"\n   - link \"Note 1 Summary of this note (appears on the note card).\":\n     - /url: /note/localhost:8080/unit-1/topic-01/note-01\n     - text: Note 1\n     - figure\n-    - text: Summary of this note (appears on the note card).\n+    - paragraph: Summary of this note (appears on the note card).\n - contentinfo \"Site footer\":\n   - img \"Tutors\""
+      },
+      {
+        "id": "dom:reader-auth:topic:2",
+        "artefact": "dom",
+        "scope": "reader-auth:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader-auth:topic: semantic DOM differs (+5 −3 lines at line 43)",
+        "detail": "     - figure\n     - paragraph: Summary of this talk (appears on the talk card).\n-  - 'link \"Lab 1 ## Prerequisites\"':\n+  - link \"Lab 1 Prerequisites\":\n     - /url: /lab/localhost:8080/unit-1/topic-01/book-lab-01\n     - text: Lab 1\n     - figure\n-    - text: \"## Prerequisites\"\n+    - heading \"Prerequisites\" [level=2]:\n+      - link \"Prerequisites\":\n+        - /url: \"#prerequisites\"\n   - link \"Note 1 Summary of this note (appears on the note card).\":\n     - /url: /note/localhost:8080/unit-1/topic-01/note-01\n     - text: Note 1\n     - figure\n-    - text: Summary of this note (appears on the note card).\n+    - paragraph: Summary of this note (appears on the note card).\n - contentinfo \"Site footer\":\n   - img \"Tutors\""
+      },
+      {
+        "id": "dom:reference:topic:3",
+        "artefact": "dom",
+        "scope": "reference:topic",
+        "path": "/topic/reference-course/topic-07-reference",
+        "severity": "fail",
+        "summary": "reference:topic: semantic DOM differs (+1 −1 lines at line 91)",
+        "detail": "     - figure:\n       - img \"Lab-07-(md)\"\n-    - text: A set of practical instructions or a walk-though\n+    - paragraph: A set of practical instructions or a walk-though\n   - link \"Note 3 This is an example of a note.\":\n     - /url: /note/reference-course/topic-07-reference/note-1"
+      },
+      {
+        "id": "dom:reference:topic:4",
+        "artefact": "dom",
+        "scope": "reference:topic",
+        "path": "/topic/reference-course/topic-07-reference",
+        "severity": "fail",
+        "summary": "reference:topic: semantic DOM differs (+1 −1 lines at line 97)",
+        "detail": "     - figure:\n       - img \"Note 3\"\n-    - text: This is an example of a note.\n+    - paragraph: This is an example of a note.\n   - link \"Note 4 This note has a linkable table of contents, generated automatically\":\n     - /url: /note/reference-course/topic-07-reference/note-2"
+      },
+      {
+        "id": "dom:reference:topic:5",
+        "artefact": "dom",
+        "scope": "reference:topic",
+        "path": "/topic/reference-course/topic-07-reference",
+        "severity": "fail",
+        "summary": "reference:topic: semantic DOM differs (+1 −1 lines at line 103)",
+        "detail": "     - figure:\n       - img \"Note 4\"\n-    - text: This note has a linkable table of contents, generated automatically\n+    - paragraph: This note has a linkable table of contents, generated automatically\n   - link \"Web Site 4 A web site of interest\":\n     - /url: https://tutors.dev"
+      },
+      {
+        "id": "dom:reference:topic:6",
+        "artefact": "dom",
+        "scope": "reference:topic",
+        "path": "/topic/reference-course/topic-07-reference",
+        "severity": "fail",
+        "summary": "reference:topic: semantic DOM differs (+1 −1 lines at line 126)",
+        "detail": "     - text: Lab-08 (jupyter)\n     - figure\n-    - text: An interactive Jupyter Notebook demonstrating Python fundamentals.\n+    - paragraph: An interactive Jupyter Notebook demonstrating Python fundamentals.\n   - link \"Whiteboard Demo A sample Excalidraw whiteboard showcasing the new whiteboard learning object type.\":\n     - /url: /whiteboard/reference-course/topic-07-reference/whiteboard-demo"
+      },
+      {
+        "id": "dom:reference:topic:7",
+        "artefact": "dom",
+        "scope": "reference:topic",
+        "path": "/topic/reference-course/topic-07-reference",
+        "severity": "fail",
+        "summary": "reference:topic: semantic DOM differs (+1 −1 lines at line 136)",
+        "detail": "     - text: Quiz Demo\n     - figure\n-    - text: \"This is a quiz learning object: an ordinary markdown document containing one\"\n+    - paragraph: \"This is a quiz learning object: an ordinary markdown document containing one\"\n - contentinfo \"Site footer\":\n   - img \"Tutors\""
+      },
+      {
+        "id": "screenshot:reader:topic:8",
+        "artefact": "screenshot",
+        "scope": "reader:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader:topic: 0.60% of pixels differ (threshold 0.10%)",
+        "detail": "diff image: diff/anonymous-student-reads-course-1/reader_topic.png"
+      },
+      {
+        "id": "screenshot:reader-auth:topic:9",
+        "artefact": "screenshot",
+        "scope": "reader-auth:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader-auth:topic: 0.60% of pixels differ (threshold 0.10%)",
+        "detail": "diff image: diff/student-signs-in-1/reader-auth_topic.png"
+      },
+      {
+        "id": "console:catalogue:home:10",
+        "artefact": "console",
+        "scope": "catalogue:home",
+        "path": "/",
+        "severity": "fail",
+        "summary": "catalogue:home: new console message on b",
+        "detail": "error: {\"app\":\"tutors-catalogue\",\"environment\":\"production\",\"error\":\"Cannot read properties of undefined (reading 'from')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'from')\\n    at Object.getCatalogue ({{origin}}/_app/immutable/chunks/BmnCu8VZ.js:3:103512)\\n    at P ({{origin}}/_app/immutable/nodes/2.DuomUQQ9.js:1:461)\\n    at _t ({{origin}}/_app/immutable/chunks/Cq90ffwe.js:1:14189)\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Error fetching courses:\"}"
+      },
+      {
+        "id": "console:catalogue:home:11",
+        "artefact": "console",
+        "scope": "catalogue:home",
+        "path": "/",
+        "severity": "fail",
+        "summary": "catalogue:home: new console message on b",
+        "detail": "error: {\"app\":\"tutors-catalogue\",\"environment\":\"production\",\"error\":\"Cannot read properties of undefined (reading 'from')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'from')\\n    at Object.getStudentCount ({{origin}}/_app/immutable/chunks/BmnCu8VZ.js:3:103940)\\n    at {{origin}}/_app/immutable/nodes/2.DuomUQQ9.js:1:6090\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Error fetching course count:\"}"
+      },
+      {
+        "id": "console:catalogue:home:12",
+        "artefact": "console",
+        "scope": "catalogue:home",
+        "path": "/",
+        "severity": "info",
+        "summary": "catalogue:home: console message gone on b",
+        "detail": "error: {\"app\":\"tutors-catalogue\",\"environment\":\"production\",\"error\":\"Cannot read properties of undefined (reading 'from')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'from')\\n    at Object.getCatalogue ({{origin}}/_app/immutable/chunks/Bwq2rGSa.js:3:103521)\\n    at P ({{origin}}/_app/immutable/nodes/2.C2jx2k7c.js:1:461)\\n    at _t ({{origin}}/_app/immutable/chunks/BQgnX8ni.js:1:14189)\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Error fetching courses:\"}"
+      },
+      {
+        "id": "console:catalogue:home:13",
+        "artefact": "console",
+        "scope": "catalogue:home",
+        "path": "/",
+        "severity": "info",
+        "summary": "catalogue:home: console message gone on b",
+        "detail": "error: {\"app\":\"tutors-catalogue\",\"environment\":\"production\",\"error\":\"Cannot read properties of undefined (reading 'from')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'from')\\n    at Object.getStudentCount ({{origin}}/_app/immutable/chunks/Bwq2rGSa.js:3:103949)\\n    at {{origin}}/_app/immutable/nodes/2.C2jx2k7c.js:1:6090\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Error fetching course count:\"}"
+      },
+      {
+        "id": "console:reader-auth:course:14",
+        "artefact": "console",
+        "scope": "reader-auth:course",
+        "path": "/course/localhost:8080",
+        "severity": "info",
+        "summary": "reader-auth:course: console message gone on b",
+        "detail": "error: {\"app\":\"tutors-reader\",\"environment\":\"production\",\"reason\":\"Cannot read properties of undefined (reading 'increment')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'increment')\\n    at s ({{origin}}/_app/immutable/chunks/WMSJz8hC.js:1:1031)\\n    at async Promise.all (index 0)\\n    at async c ({{origin}}/_app/immutable/chunks/WMSJz8hC.js:1:1122)\\n    at async m ({{origin}}/_app/immutable/chunks/WMSJz8hC.js:1:2363)\\n    at async h ({{origin}}/_app/immutable/chunks/WMSJz8hC.js:1:2406)\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Unhandled promise rejection\"}"
+      },
+      {
+        "id": "console:reader-auth:course:15",
+        "artefact": "console",
+        "scope": "reader-auth:course",
+        "path": "/course/localhost:8080",
+        "severity": "info",
+        "summary": "reader-auth:course: console message gone on b",
+        "detail": "error: Cannot read properties of undefined (reading 'increment')"
+      },
+      {
+        "id": "console:reader-auth:course:16",
+        "artefact": "console",
+        "scope": "reader-auth:course",
+        "path": "/course/localhost:8080",
+        "severity": "info",
+        "summary": "reader-auth:course: console message gone on b",
+        "detail": "error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+      },
+      {
+        "id": "console:reader-auth:topic:17",
+        "artefact": "console",
+        "scope": "reader-auth:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader-auth:topic: new console message on b",
+        "detail": "error: {\"app\":\"tutors-reader\",\"environment\":\"production\",\"reason\":\"Cannot read properties of undefined (reading 'increment')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'increment')\\n    at s ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:1031)\\n    at async Promise.all (index 0)\\n    at async c ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:1122)\\n    at async m ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:2363)\\n    at async h ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:2406)\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Unhandled promise rejection\"}"
+      },
+      {
+        "id": "console:reader-auth:topic:18",
+        "artefact": "console",
+        "scope": "reader-auth:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader-auth:topic: new console message on b",
+        "detail": "warning: {\"app\":\"tutors-reader\",\"environment\":\"production\",\"details\":\"step\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"warn\",\"message\":\"No type found for icon\"}"
+      },
+      {
+        "id": "console:reader-auth:topic:19",
+        "artefact": "console",
+        "scope": "reader-auth:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "info",
+        "summary": "reader-auth:topic: console message gone on b",
+        "detail": "error: {\"app\":\"tutors-reader\",\"environment\":\"production\",\"reason\":\"Cannot read properties of undefined (reading 'increment')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'increment')\\n    at s ({{origin}}/_app/immutable/chunks/WMSJz8hC.js:1:1031)\\n    at async Promise.all (index 0)\\n    at async c ({{origin}}/_app/immutable/chunks/WMSJz8hC.js:1:1122)\\n    at async m ({{origin}}/_app/immutable/chunks/WMSJz8hC.js:1:2363)\\n    at async h ({{origin}}/_app/immutable/chunks/WMSJz8hC.js:1:2406)\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Unhandled promise rejection\"}"
+      },
+      {
+        "id": "console:reader-auth:topic:20",
+        "artefact": "console",
+        "scope": "reader-auth:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "info",
+        "summary": "reader-auth:topic: console message gone on b",
+        "detail": "error: {\"app\":\"tutors-reader\",\"environment\":\"production\",\"reason\":\"Cannot read properties of undefined (reading 'increment')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'increment')\\n    at s ({{origin}}/_app/immutable/chunks/WMSJz8hC.js:1:1031)\\n    at async Promise.all (index 1)\\n    at async c ({{origin}}/_app/immutable/chunks/WMSJz8hC.js:1:1122)\\n    at async m ({{origin}}/_app/immutable/chunks/WMSJz8hC.js:1:2363)\\n    at async h ({{origin}}/_app/immutable/chunks/WMSJz8hC.js:1:2406)\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Unhandled promise rejection\"}"
+      },
+      {
+        "id": "focus:reader:home:21",
+        "artefact": "focus",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "fail",
+        "summary": "reader:home: keyboard order changed (12 stops on a, 12 on b)",
+        "detail": " a \"Live\"\n-a \"Tutors v:16.2.1\"\n+a \"Tutors v:16.2.2\"\n a \"Open Learning Web Toolkit\""
+      },
+      {
+        "id": "focus:reader:course:22",
+        "artefact": "focus",
+        "scope": "reader:course",
+        "path": "/course/localhost:8080",
+        "severity": "fail",
+        "summary": "reader:course: keyboard order changed (11 stops on a, 11 on b)",
+        "detail": " a \"Topic 2 Summary of this topic (this line\"\n-a \"Tutors v:16.2.1\"\n+a \"Tutors v:16.2.2\"\n a \"Open Learning Web Toolkit\""
+      },
+      {
+        "id": "focus:reader:topic:23",
+        "artefact": "focus",
+        "scope": "reader:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader:topic: keyboard order changed (12 stops on a, 12 on b)",
+        "detail": " a \"Talk 1 Summary of this talk (appears on \"\n-a \"Lab 1 ## Prerequisites\"\n+a \"Lab 1 Prerequisites\"\n+a \"Prerequisites\"\n a \"Note 1 Summary of this note (appears on \"\n-a \"Tutors v:16.2.1\"\n-a \"Open Learning Web Toolkit\"\n\\ No newline at end of file\n+a \"Tutors v:16.2.2\"\n\\ No newline at end of file"
+      },
+      {
+        "id": "focus:reader:search:24",
+        "artefact": "focus",
+        "scope": "reader:search",
+        "path": "/search/localhost:8080",
+        "severity": "fail",
+        "summary": "reader:search: keyboard order changed (6 stops on a, 6 on b)",
+        "detail": " input \"\"\n-a \"Tutors v:16.2.1\"\n+a \"Tutors v:16.2.2\"\n a \"Open Learning Web Toolkit\""
+      },
+      {
+        "id": "focus:reader:search-results:25",
+        "artefact": "focus",
+        "scope": "reader:search-results",
+        "path": "/search/localhost:8080",
+        "severity": "fail",
+        "summary": "reader:search-results: keyboard order changed (6 stops on a, 6 on b)",
+        "detail": " a \"Topic 2/ Note 2\"\n-a \"Tutors v:16.2.1\"\n+a \"Tutors v:16.2.2\"\n a \"Open Learning Web Toolkit\""
+      },
+      {
+        "id": "focus:catalogue:home:26",
+        "artefact": "focus",
+        "scope": "catalogue:home",
+        "path": "/",
+        "severity": "fail",
+        "summary": "catalogue:home: keyboard order changed (6 stops on a, 6 on b)",
+        "detail": " button \"Open Theme Menu\"\n-a \"Tutors v:16.2.1\"\n+a \"Tutors v:16.2.2\"\n a \"Open Learning Web Toolkit\""
+      },
+      {
+        "id": "focus:live:home:27",
+        "artefact": "focus",
+        "scope": "live:home",
+        "path": "/",
+        "severity": "fail",
+        "summary": "live:home: keyboard order changed (5 stops on a, 5 on b)",
+        "detail": " tabpanel \"\"\n-a \"Tutors v:16.2.1\"\n+a \"Tutors v:16.2.2\"\n a \"Open Learning Web Toolkit\""
+      },
+      {
+        "id": "focus:reader-auth:course:28",
+        "artefact": "focus",
+        "scope": "reader-auth:course",
+        "path": "/course/localhost:8080",
+        "severity": "fail",
+        "summary": "reader-auth:course: keyboard order changed (11 stops on a, 11 on b)",
+        "detail": " a \"Topic 2 Summary of this topic (this line\"\n-a \"Tutors v:16.2.1\"\n+a \"Tutors v:16.2.2\"\n a \"Open Learning Web Toolkit\""
+      },
+      {
+        "id": "focus:reader-auth:topic:29",
+        "artefact": "focus",
+        "scope": "reader-auth:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader-auth:topic: keyboard order changed (12 stops on a, 12 on b)",
+        "detail": " a \"Talk 1 Summary of this talk (appears on \"\n-a \"Lab 1 ## Prerequisites\"\n+a \"Lab 1 Prerequisites\"\n+a \"Prerequisites\"\n a \"Note 1 Summary of this note (appears on \"\n-a \"Tutors v:16.2.1\"\n-a \"Open Learning Web Toolkit\"\n\\ No newline at end of file\n+a \"Tutors v:16.2.2\"\n\\ No newline at end of file"
+      },
+      {
+        "id": "image-manifest:reader/label/org.opencontainers.image.description:30",
+        "artefact": "image-manifest",
+        "scope": "reader/label/org.opencontainers.image.description",
+        "severity": "fail",
+        "summary": "reader: label org.opencontainers.image.description added ()"
+      },
+      {
+        "id": "image-manifest:reader/label/org.opencontainers.image.url:31",
+        "artefact": "image-manifest",
+        "scope": "reader/label/org.opencontainers.image.url",
+        "severity": "fail",
+        "summary": "reader: label org.opencontainers.image.url added (https://github.com/tutors-sdk/tutors-mono-repo)"
+      },
+      {
+        "id": "sbom:reader/not-collected:32",
+        "artefact": "sbom",
+        "scope": "reader/not-collected",
+        "severity": "fail",
+        "summary": "NOT COLLECTED: sbom of reader on side a: quay.io/tutors-sdk/tutors-reader:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself (required by HARNESS_REQUIRE_ARTEFACTS)",
+        "detail": "a: quay.io/tutors-sdk/tutors-reader:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself"
+      },
+      {
+        "id": "vulns:reader/not-collected:33",
+        "artefact": "vulns",
+        "scope": "reader/not-collected",
+        "severity": "fail",
+        "summary": "NOT COLLECTED: vulns of reader on side a: nothing to scan: quay.io/tutors-sdk/tutors-reader:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself (required by HARNESS_REQUIRE_ARTEFACTS)",
+        "detail": "a: nothing to scan: quay.io/tutors-sdk/tutors-reader:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself"
+      },
+      {
+        "id": "image-manifest:catalogue/label/org.opencontainers.image.description:34",
+        "artefact": "image-manifest",
+        "scope": "catalogue/label/org.opencontainers.image.description",
+        "severity": "fail",
+        "summary": "catalogue: label org.opencontainers.image.description added ()"
+      },
+      {
+        "id": "image-manifest:catalogue/label/org.opencontainers.image.url:35",
+        "artefact": "image-manifest",
+        "scope": "catalogue/label/org.opencontainers.image.url",
+        "severity": "fail",
+        "summary": "catalogue: label org.opencontainers.image.url added (https://github.com/tutors-sdk/tutors-mono-repo)"
+      },
+      {
+        "id": "sbom:catalogue/not-collected:36",
+        "artefact": "sbom",
+        "scope": "catalogue/not-collected",
+        "severity": "fail",
+        "summary": "NOT COLLECTED: sbom of catalogue on side a: quay.io/tutors-sdk/tutors-catalogue:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself (required by HARNESS_REQUIRE_ARTEFACTS)",
+        "detail": "a: quay.io/tutors-sdk/tutors-catalogue:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself"
+      },
+      {
+        "id": "vulns:catalogue/not-collected:37",
+        "artefact": "vulns",
+        "scope": "catalogue/not-collected",
+        "severity": "fail",
+        "summary": "NOT COLLECTED: vulns of catalogue on side a: nothing to scan: quay.io/tutors-sdk/tutors-catalogue:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself (required by HARNESS_REQUIRE_ARTEFACTS)",
+        "detail": "a: nothing to scan: quay.io/tutors-sdk/tutors-catalogue:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself"
+      },
+      {
+        "id": "image-manifest:live/label/org.opencontainers.image.description:38",
+        "artefact": "image-manifest",
+        "scope": "live/label/org.opencontainers.image.description",
+        "severity": "fail",
+        "summary": "live: label org.opencontainers.image.description added ()"
+      },
+      {
+        "id": "image-manifest:live/label/org.opencontainers.image.url:39",
+        "artefact": "image-manifest",
+        "scope": "live/label/org.opencontainers.image.url",
+        "severity": "fail",
+        "summary": "live: label org.opencontainers.image.url added (https://github.com/tutors-sdk/tutors-mono-repo)"
+      },
+      {
+        "id": "sbom:live/not-collected:40",
+        "artefact": "sbom",
+        "scope": "live/not-collected",
+        "severity": "fail",
+        "summary": "NOT COLLECTED: sbom of live on side a: quay.io/tutors-sdk/tutors-live:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself (required by HARNESS_REQUIRE_ARTEFACTS)",
+        "detail": "a: quay.io/tutors-sdk/tutors-live:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself"
+      },
+      {
+        "id": "vulns:live/not-collected:41",
+        "artefact": "vulns",
+        "scope": "live/not-collected",
+        "severity": "fail",
+        "summary": "NOT COLLECTED: vulns of live on side a: nothing to scan: quay.io/tutors-sdk/tutors-live:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself (required by HARNESS_REQUIRE_ARTEFACTS)",
+        "detail": "a: nothing to scan: quay.io/tutors-sdk/tutors-live:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself"
+      },
+      {
+        "id": "image-manifest:time/label/org.opencontainers.image.description:42",
+        "artefact": "image-manifest",
+        "scope": "time/label/org.opencontainers.image.description",
+        "severity": "fail",
+        "summary": "time: label org.opencontainers.image.description added ()"
+      },
+      {
+        "id": "image-manifest:time/label/org.opencontainers.image.url:43",
+        "artefact": "image-manifest",
+        "scope": "time/label/org.opencontainers.image.url",
+        "severity": "fail",
+        "summary": "time: label org.opencontainers.image.url added (https://github.com/tutors-sdk/tutors-mono-repo)"
+      },
+      {
+        "id": "sbom:time/not-collected:44",
+        "artefact": "sbom",
+        "scope": "time/not-collected",
+        "severity": "fail",
+        "summary": "NOT COLLECTED: sbom of time on side a: quay.io/tutors-sdk/tutors-time:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself (required by HARNESS_REQUIRE_ARTEFACTS)",
+        "detail": "a: quay.io/tutors-sdk/tutors-time:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself"
+      },
+      {
+        "id": "vulns:time/not-collected:45",
+        "artefact": "vulns",
+        "scope": "time/not-collected",
+        "severity": "fail",
+        "summary": "NOT COLLECTED: vulns of time on side a: nothing to scan: quay.io/tutors-sdk/tutors-time:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself (required by HARNESS_REQUIRE_ARTEFACTS)",
+        "detail": "a: nothing to scan: quay.io/tutors-sdk/tutors-time:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself"
+      },
+      {
+        "id": "runtime:runtime/summary:46",
+        "artefact": "runtime",
+        "scope": "runtime/summary",
+        "severity": "info",
+        "summary": "container posture collected for catalogue, live, reader, reader-auth, time on both sides (compose)",
+        "detail": "catalogue: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n           b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nlive: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n        b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader-auth: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n             b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\ntime: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter"
+      },
+      {
+        "id": "startup:startup/summary:47",
+        "artefact": "startup",
+        "scope": "startup/summary",
+        "severity": "info",
+        "summary": "startup time collected on both sides (compose, 5 restart(s) per app)",
+        "detail": "catalogue: first healthy / 442 → 448 ms, ready 2374 → 2359 ms (median, a → b, n=5/5)\nlive: first healthy / 454 → 443 ms, ready 2374 → 2383 ms (median, a → b, n=5/5)\nreader: first healthy / 447 → 452 ms, ready 2325 → 2370 ms (median, a → b, n=5/5)\ntime: first healthy / 418 → 329 ms, ready 2383 → 2368 ms (median, a → b, n=5/5)"
+      }
+    ],
+    "matches": [
+      {
+        "hunk": {
+          "id": "dom:reader:topic:1",
+          "artefact": "dom",
+          "scope": "reader:topic",
+          "path": "/topic/localhost:8080/unit-1/topic-01",
+          "severity": "fail",
+          "summary": "reader:topic: semantic DOM differs (+5 −3 lines at line 41)",
+          "detail": "     - figure\n     - paragraph: Summary of this talk (appears on the talk card).\n-  - 'link \"Lab 1 ## Prerequisites\"':\n+  - link \"Lab 1 Prerequisites\":\n     - /url: /lab/localhost:8080/unit-1/topic-01/book-lab-01\n     - text: Lab 1\n     - figure\n-    - text: \"## Prerequisites\"\n+    - heading \"Prerequisites\" [level=2]:\n+      - link \"Prerequisites\":\n+        - /url: \"#prerequisites\"\n   - link \"Note 1 Summary of this note (appears on the note card).\":\n     - /url: /note/localhost:8080/unit-1/topic-01/note-01\n     - text: Note 1\n     - figure\n-    - text: Summary of this note (appears on the note card).\n+    - paragraph: Summary of this note (appears on the note card).\n - contentinfo \"Site footer\":\n   - img \"Tutors\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reader-auth:topic:2",
+          "artefact": "dom",
+          "scope": "reader-auth:topic",
+          "path": "/topic/localhost:8080/unit-1/topic-01",
+          "severity": "fail",
+          "summary": "reader-auth:topic: semantic DOM differs (+5 −3 lines at line 43)",
+          "detail": "     - figure\n     - paragraph: Summary of this talk (appears on the talk card).\n-  - 'link \"Lab 1 ## Prerequisites\"':\n+  - link \"Lab 1 Prerequisites\":\n     - /url: /lab/localhost:8080/unit-1/topic-01/book-lab-01\n     - text: Lab 1\n     - figure\n-    - text: \"## Prerequisites\"\n+    - heading \"Prerequisites\" [level=2]:\n+      - link \"Prerequisites\":\n+        - /url: \"#prerequisites\"\n   - link \"Note 1 Summary of this note (appears on the note card).\":\n     - /url: /note/localhost:8080/unit-1/topic-01/note-01\n     - text: Note 1\n     - figure\n-    - text: Summary of this note (appears on the note card).\n+    - paragraph: Summary of this note (appears on the note card).\n - contentinfo \"Site footer\":\n   - img \"Tutors\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reference:topic:3",
+          "artefact": "dom",
+          "scope": "reference:topic",
+          "path": "/topic/reference-course/topic-07-reference",
+          "severity": "fail",
+          "summary": "reference:topic: semantic DOM differs (+1 −1 lines at line 91)",
+          "detail": "     - figure:\n       - img \"Lab-07-(md)\"\n-    - text: A set of practical instructions or a walk-though\n+    - paragraph: A set of practical instructions or a walk-though\n   - link \"Note 3 This is an example of a note.\":\n     - /url: /note/reference-course/topic-07-reference/note-1"
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reference:topic:4",
+          "artefact": "dom",
+          "scope": "reference:topic",
+          "path": "/topic/reference-course/topic-07-reference",
+          "severity": "fail",
+          "summary": "reference:topic: semantic DOM differs (+1 −1 lines at line 97)",
+          "detail": "     - figure:\n       - img \"Note 3\"\n-    - text: This is an example of a note.\n+    - paragraph: This is an example of a note.\n   - link \"Note 4 This note has a linkable table of contents, generated automatically\":\n     - /url: /note/reference-course/topic-07-reference/note-2"
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reference:topic:5",
+          "artefact": "dom",
+          "scope": "reference:topic",
+          "path": "/topic/reference-course/topic-07-reference",
+          "severity": "fail",
+          "summary": "reference:topic: semantic DOM differs (+1 −1 lines at line 103)",
+          "detail": "     - figure:\n       - img \"Note 4\"\n-    - text: This note has a linkable table of contents, generated automatically\n+    - paragraph: This note has a linkable table of contents, generated automatically\n   - link \"Web Site 4 A web site of interest\":\n     - /url: https://tutors.dev"
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reference:topic:6",
+          "artefact": "dom",
+          "scope": "reference:topic",
+          "path": "/topic/reference-course/topic-07-reference",
+          "severity": "fail",
+          "summary": "reference:topic: semantic DOM differs (+1 −1 lines at line 126)",
+          "detail": "     - text: Lab-08 (jupyter)\n     - figure\n-    - text: An interactive Jupyter Notebook demonstrating Python fundamentals.\n+    - paragraph: An interactive Jupyter Notebook demonstrating Python fundamentals.\n   - link \"Whiteboard Demo A sample Excalidraw whiteboard showcasing the new whiteboard learning object type.\":\n     - /url: /whiteboard/reference-course/topic-07-reference/whiteboard-demo"
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reference:topic:7",
+          "artefact": "dom",
+          "scope": "reference:topic",
+          "path": "/topic/reference-course/topic-07-reference",
+          "severity": "fail",
+          "summary": "reference:topic: semantic DOM differs (+1 −1 lines at line 136)",
+          "detail": "     - text: Quiz Demo\n     - figure\n-    - text: \"This is a quiz learning object: an ordinary markdown document containing one\"\n+    - paragraph: \"This is a quiz learning object: an ordinary markdown document containing one\"\n - contentinfo \"Site footer\":\n   - img \"Tutors\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "screenshot:reader:topic:8",
+          "artefact": "screenshot",
+          "scope": "reader:topic",
+          "path": "/topic/localhost:8080/unit-1/topic-01",
+          "severity": "fail",
+          "summary": "reader:topic: 0.60% of pixels differ (threshold 0.10%)",
+          "detail": "diff image: diff/anonymous-student-reads-course-1/reader_topic.png"
+        }
+      },
+      {
+        "hunk": {
+          "id": "screenshot:reader-auth:topic:9",
+          "artefact": "screenshot",
+          "scope": "reader-auth:topic",
+          "path": "/topic/localhost:8080/unit-1/topic-01",
+          "severity": "fail",
+          "summary": "reader-auth:topic: 0.60% of pixels differ (threshold 0.10%)",
+          "detail": "diff image: diff/student-signs-in-1/reader-auth_topic.png"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:catalogue:home:10",
+          "artefact": "console",
+          "scope": "catalogue:home",
+          "path": "/",
+          "severity": "fail",
+          "summary": "catalogue:home: new console message on b",
+          "detail": "error: {\"app\":\"tutors-catalogue\",\"environment\":\"production\",\"error\":\"Cannot read properties of undefined (reading 'from')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'from')\\n    at Object.getCatalogue ({{origin}}/_app/immutable/chunks/BmnCu8VZ.js:3:103512)\\n    at P ({{origin}}/_app/immutable/nodes/2.DuomUQQ9.js:1:461)\\n    at _t ({{origin}}/_app/immutable/chunks/Cq90ffwe.js:1:14189)\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Error fetching courses:\"}"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:catalogue:home:11",
+          "artefact": "console",
+          "scope": "catalogue:home",
+          "path": "/",
+          "severity": "fail",
+          "summary": "catalogue:home: new console message on b",
+          "detail": "error: {\"app\":\"tutors-catalogue\",\"environment\":\"production\",\"error\":\"Cannot read properties of undefined (reading 'from')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'from')\\n    at Object.getStudentCount ({{origin}}/_app/immutable/chunks/BmnCu8VZ.js:3:103940)\\n    at {{origin}}/_app/immutable/nodes/2.DuomUQQ9.js:1:6090\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Error fetching course count:\"}"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:catalogue:home:12",
+          "artefact": "console",
+          "scope": "catalogue:home",
+          "path": "/",
+          "severity": "info",
+          "summary": "catalogue:home: console message gone on b",
+          "detail": "error: {\"app\":\"tutors-catalogue\",\"environment\":\"production\",\"error\":\"Cannot read properties of undefined (reading 'from')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'from')\\n    at Object.getCatalogue ({{origin}}/_app/immutable/chunks/Bwq2rGSa.js:3:103521)\\n    at P ({{origin}}/_app/immutable/nodes/2.C2jx2k7c.js:1:461)\\n    at _t ({{origin}}/_app/immutable/chunks/BQgnX8ni.js:1:14189)\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Error fetching courses:\"}"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:catalogue:home:13",
+          "artefact": "console",
+          "scope": "catalogue:home",
+          "path": "/",
+          "severity": "info",
+          "summary": "catalogue:home: console message gone on b",
+          "detail": "error: {\"app\":\"tutors-catalogue\",\"environment\":\"production\",\"error\":\"Cannot read properties of undefined (reading 'from')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'from')\\n    at Object.getStudentCount ({{origin}}/_app/immutable/chunks/Bwq2rGSa.js:3:103949)\\n    at {{origin}}/_app/immutable/nodes/2.C2jx2k7c.js:1:6090\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Error fetching course count:\"}"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader-auth:course:14",
+          "artefact": "console",
+          "scope": "reader-auth:course",
+          "path": "/course/localhost:8080",
+          "severity": "info",
+          "summary": "reader-auth:course: console message gone on b",
+          "detail": "error: {\"app\":\"tutors-reader\",\"environment\":\"production\",\"reason\":\"Cannot read properties of undefined (reading 'increment')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'increment')\\n    at s ({{origin}}/_app/immutable/chunks/WMSJz8hC.js:1:1031)\\n    at async Promise.all (index 0)\\n    at async c ({{origin}}/_app/immutable/chunks/WMSJz8hC.js:1:1122)\\n    at async m ({{origin}}/_app/immutable/chunks/WMSJz8hC.js:1:2363)\\n    at async h ({{origin}}/_app/immutable/chunks/WMSJz8hC.js:1:2406)\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Unhandled promise rejection\"}"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader-auth:course:15",
+          "artefact": "console",
+          "scope": "reader-auth:course",
+          "path": "/course/localhost:8080",
+          "severity": "info",
+          "summary": "reader-auth:course: console message gone on b",
+          "detail": "error: Cannot read properties of undefined (reading 'increment')"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader-auth:course:16",
+          "artefact": "console",
+          "scope": "reader-auth:course",
+          "path": "/course/localhost:8080",
+          "severity": "info",
+          "summary": "reader-auth:course: console message gone on b",
+          "detail": "error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader-auth:topic:17",
+          "artefact": "console",
+          "scope": "reader-auth:topic",
+          "path": "/topic/localhost:8080/unit-1/topic-01",
+          "severity": "fail",
+          "summary": "reader-auth:topic: new console message on b",
+          "detail": "error: {\"app\":\"tutors-reader\",\"environment\":\"production\",\"reason\":\"Cannot read properties of undefined (reading 'increment')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'increment')\\n    at s ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:1031)\\n    at async Promise.all (index 0)\\n    at async c ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:1122)\\n    at async m ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:2363)\\n    at async h ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:2406)\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Unhandled promise rejection\"}"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader-auth:topic:18",
+          "artefact": "console",
+          "scope": "reader-auth:topic",
+          "path": "/topic/localhost:8080/unit-1/topic-01",
+          "severity": "fail",
+          "summary": "reader-auth:topic: new console message on b",
+          "detail": "warning: {\"app\":\"tutors-reader\",\"environment\":\"production\",\"details\":\"step\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"warn\",\"message\":\"No type found for icon\"}"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader-auth:topic:19",
+          "artefact": "console",
+          "scope": "reader-auth:topic",
+          "path": "/topic/localhost:8080/unit-1/topic-01",
+          "severity": "info",
+          "summary": "reader-auth:topic: console message gone on b",
+          "detail": "error: {\"app\":\"tutors-reader\",\"environment\":\"production\",\"reason\":\"Cannot read properties of undefined (reading 'increment')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'increment')\\n    at s ({{origin}}/_app/immutable/chunks/WMSJz8hC.js:1:1031)\\n    at async Promise.all (index 0)\\n    at async c ({{origin}}/_app/immutable/chunks/WMSJz8hC.js:1:1122)\\n    at async m ({{origin}}/_app/immutable/chunks/WMSJz8hC.js:1:2363)\\n    at async h ({{origin}}/_app/immutable/chunks/WMSJz8hC.js:1:2406)\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Unhandled promise rejection\"}"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader-auth:topic:20",
+          "artefact": "console",
+          "scope": "reader-auth:topic",
+          "path": "/topic/localhost:8080/unit-1/topic-01",
+          "severity": "info",
+          "summary": "reader-auth:topic: console message gone on b",
+          "detail": "error: {\"app\":\"tutors-reader\",\"environment\":\"production\",\"reason\":\"Cannot read properties of undefined (reading 'increment')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'increment')\\n    at s ({{origin}}/_app/immutable/chunks/WMSJz8hC.js:1:1031)\\n    at async Promise.all (index 1)\\n    at async c ({{origin}}/_app/immutable/chunks/WMSJz8hC.js:1:1122)\\n    at async m ({{origin}}/_app/immutable/chunks/WMSJz8hC.js:1:2363)\\n    at async h ({{origin}}/_app/immutable/chunks/WMSJz8hC.js:1:2406)\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Unhandled promise rejection\"}"
+        }
+      },
+      {
+        "hunk": {
+          "id": "focus:reader:home:21",
+          "artefact": "focus",
+          "scope": "reader:home",
+          "path": "/",
+          "severity": "fail",
+          "summary": "reader:home: keyboard order changed (12 stops on a, 12 on b)",
+          "detail": " a \"Live\"\n-a \"Tutors v:16.2.1\"\n+a \"Tutors v:16.2.2\"\n a \"Open Learning Web Toolkit\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "focus:reader:course:22",
+          "artefact": "focus",
+          "scope": "reader:course",
+          "path": "/course/localhost:8080",
+          "severity": "fail",
+          "summary": "reader:course: keyboard order changed (11 stops on a, 11 on b)",
+          "detail": " a \"Topic 2 Summary of this topic (this line\"\n-a \"Tutors v:16.2.1\"\n+a \"Tutors v:16.2.2\"\n a \"Open Learning Web Toolkit\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "focus:reader:topic:23",
+          "artefact": "focus",
+          "scope": "reader:topic",
+          "path": "/topic/localhost:8080/unit-1/topic-01",
+          "severity": "fail",
+          "summary": "reader:topic: keyboard order changed (12 stops on a, 12 on b)",
+          "detail": " a \"Talk 1 Summary of this talk (appears on \"\n-a \"Lab 1 ## Prerequisites\"\n+a \"Lab 1 Prerequisites\"\n+a \"Prerequisites\"\n a \"Note 1 Summary of this note (appears on \"\n-a \"Tutors v:16.2.1\"\n-a \"Open Learning Web Toolkit\"\n\\ No newline at end of file\n+a \"Tutors v:16.2.2\"\n\\ No newline at end of file"
+        }
+      },
+      {
+        "hunk": {
+          "id": "focus:reader:search:24",
+          "artefact": "focus",
+          "scope": "reader:search",
+          "path": "/search/localhost:8080",
+          "severity": "fail",
+          "summary": "reader:search: keyboard order changed (6 stops on a, 6 on b)",
+          "detail": " input \"\"\n-a \"Tutors v:16.2.1\"\n+a \"Tutors v:16.2.2\"\n a \"Open Learning Web Toolkit\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "focus:reader:search-results:25",
+          "artefact": "focus",
+          "scope": "reader:search-results",
+          "path": "/search/localhost:8080",
+          "severity": "fail",
+          "summary": "reader:search-results: keyboard order changed (6 stops on a, 6 on b)",
+          "detail": " a \"Topic 2/ Note 2\"\n-a \"Tutors v:16.2.1\"\n+a \"Tutors v:16.2.2\"\n a \"Open Learning Web Toolkit\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "focus:catalogue:home:26",
+          "artefact": "focus",
+          "scope": "catalogue:home",
+          "path": "/",
+          "severity": "fail",
+          "summary": "catalogue:home: keyboard order changed (6 stops on a, 6 on b)",
+          "detail": " button \"Open Theme Menu\"\n-a \"Tutors v:16.2.1\"\n+a \"Tutors v:16.2.2\"\n a \"Open Learning Web Toolkit\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "focus:live:home:27",
+          "artefact": "focus",
+          "scope": "live:home",
+          "path": "/",
+          "severity": "fail",
+          "summary": "live:home: keyboard order changed (5 stops on a, 5 on b)",
+          "detail": " tabpanel \"\"\n-a \"Tutors v:16.2.1\"\n+a \"Tutors v:16.2.2\"\n a \"Open Learning Web Toolkit\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "focus:reader-auth:course:28",
+          "artefact": "focus",
+          "scope": "reader-auth:course",
+          "path": "/course/localhost:8080",
+          "severity": "fail",
+          "summary": "reader-auth:course: keyboard order changed (11 stops on a, 11 on b)",
+          "detail": " a \"Topic 2 Summary of this topic (this line\"\n-a \"Tutors v:16.2.1\"\n+a \"Tutors v:16.2.2\"\n a \"Open Learning Web Toolkit\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "focus:reader-auth:topic:29",
+          "artefact": "focus",
+          "scope": "reader-auth:topic",
+          "path": "/topic/localhost:8080/unit-1/topic-01",
+          "severity": "fail",
+          "summary": "reader-auth:topic: keyboard order changed (12 stops on a, 12 on b)",
+          "detail": " a \"Talk 1 Summary of this talk (appears on \"\n-a \"Lab 1 ## Prerequisites\"\n+a \"Lab 1 Prerequisites\"\n+a \"Prerequisites\"\n a \"Note 1 Summary of this note (appears on \"\n-a \"Tutors v:16.2.1\"\n-a \"Open Learning Web Toolkit\"\n\\ No newline at end of file\n+a \"Tutors v:16.2.2\"\n\\ No newline at end of file"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-manifest:reader/label/org.opencontainers.image.description:30",
+          "artefact": "image-manifest",
+          "scope": "reader/label/org.opencontainers.image.description",
+          "severity": "fail",
+          "summary": "reader: label org.opencontainers.image.description added ()"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-manifest:reader/label/org.opencontainers.image.url:31",
+          "artefact": "image-manifest",
+          "scope": "reader/label/org.opencontainers.image.url",
+          "severity": "fail",
+          "summary": "reader: label org.opencontainers.image.url added (https://github.com/tutors-sdk/tutors-mono-repo)"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:reader/not-collected:32",
+          "artefact": "sbom",
+          "scope": "reader/not-collected",
+          "severity": "fail",
+          "summary": "NOT COLLECTED: sbom of reader on side a: quay.io/tutors-sdk/tutors-reader:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself (required by HARNESS_REQUIRE_ARTEFACTS)",
+          "detail": "a: quay.io/tutors-sdk/tutors-reader:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:reader/not-collected:33",
+          "artefact": "vulns",
+          "scope": "reader/not-collected",
+          "severity": "fail",
+          "summary": "NOT COLLECTED: vulns of reader on side a: nothing to scan: quay.io/tutors-sdk/tutors-reader:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself (required by HARNESS_REQUIRE_ARTEFACTS)",
+          "detail": "a: nothing to scan: quay.io/tutors-sdk/tutors-reader:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-manifest:catalogue/label/org.opencontainers.image.description:34",
+          "artefact": "image-manifest",
+          "scope": "catalogue/label/org.opencontainers.image.description",
+          "severity": "fail",
+          "summary": "catalogue: label org.opencontainers.image.description added ()"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-manifest:catalogue/label/org.opencontainers.image.url:35",
+          "artefact": "image-manifest",
+          "scope": "catalogue/label/org.opencontainers.image.url",
+          "severity": "fail",
+          "summary": "catalogue: label org.opencontainers.image.url added (https://github.com/tutors-sdk/tutors-mono-repo)"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:catalogue/not-collected:36",
+          "artefact": "sbom",
+          "scope": "catalogue/not-collected",
+          "severity": "fail",
+          "summary": "NOT COLLECTED: sbom of catalogue on side a: quay.io/tutors-sdk/tutors-catalogue:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself (required by HARNESS_REQUIRE_ARTEFACTS)",
+          "detail": "a: quay.io/tutors-sdk/tutors-catalogue:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:catalogue/not-collected:37",
+          "artefact": "vulns",
+          "scope": "catalogue/not-collected",
+          "severity": "fail",
+          "summary": "NOT COLLECTED: vulns of catalogue on side a: nothing to scan: quay.io/tutors-sdk/tutors-catalogue:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself (required by HARNESS_REQUIRE_ARTEFACTS)",
+          "detail": "a: nothing to scan: quay.io/tutors-sdk/tutors-catalogue:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-manifest:live/label/org.opencontainers.image.description:38",
+          "artefact": "image-manifest",
+          "scope": "live/label/org.opencontainers.image.description",
+          "severity": "fail",
+          "summary": "live: label org.opencontainers.image.description added ()"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-manifest:live/label/org.opencontainers.image.url:39",
+          "artefact": "image-manifest",
+          "scope": "live/label/org.opencontainers.image.url",
+          "severity": "fail",
+          "summary": "live: label org.opencontainers.image.url added (https://github.com/tutors-sdk/tutors-mono-repo)"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:live/not-collected:40",
+          "artefact": "sbom",
+          "scope": "live/not-collected",
+          "severity": "fail",
+          "summary": "NOT COLLECTED: sbom of live on side a: quay.io/tutors-sdk/tutors-live:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself (required by HARNESS_REQUIRE_ARTEFACTS)",
+          "detail": "a: quay.io/tutors-sdk/tutors-live:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:live/not-collected:41",
+          "artefact": "vulns",
+          "scope": "live/not-collected",
+          "severity": "fail",
+          "summary": "NOT COLLECTED: vulns of live on side a: nothing to scan: quay.io/tutors-sdk/tutors-live:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself (required by HARNESS_REQUIRE_ARTEFACTS)",
+          "detail": "a: nothing to scan: quay.io/tutors-sdk/tutors-live:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-manifest:time/label/org.opencontainers.image.description:42",
+          "artefact": "image-manifest",
+          "scope": "time/label/org.opencontainers.image.description",
+          "severity": "fail",
+          "summary": "time: label org.opencontainers.image.description added ()"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-manifest:time/label/org.opencontainers.image.url:43",
+          "artefact": "image-manifest",
+          "scope": "time/label/org.opencontainers.image.url",
+          "severity": "fail",
+          "summary": "time: label org.opencontainers.image.url added (https://github.com/tutors-sdk/tutors-mono-repo)"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:time/not-collected:44",
+          "artefact": "sbom",
+          "scope": "time/not-collected",
+          "severity": "fail",
+          "summary": "NOT COLLECTED: sbom of time on side a: quay.io/tutors-sdk/tutors-time:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself (required by HARNESS_REQUIRE_ARTEFACTS)",
+          "detail": "a: quay.io/tutors-sdk/tutors-time:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:time/not-collected:45",
+          "artefact": "vulns",
+          "scope": "time/not-collected",
+          "severity": "fail",
+          "summary": "NOT COLLECTED: vulns of time on side a: nothing to scan: quay.io/tutors-sdk/tutors-time:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself (required by HARNESS_REQUIRE_ARTEFACTS)",
+          "detail": "a: nothing to scan: quay.io/tutors-sdk/tutors-time:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself"
+        }
+      },
+      {
+        "hunk": {
+          "id": "runtime:runtime/summary:46",
+          "artefact": "runtime",
+          "scope": "runtime/summary",
+          "severity": "info",
+          "summary": "container posture collected for catalogue, live, reader, reader-auth, time on both sides (compose)",
+          "detail": "catalogue: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n           b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nlive: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n        b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader-auth: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n             b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\ntime: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter"
+        }
+      },
+      {
+        "hunk": {
+          "id": "startup:startup/summary:47",
+          "artefact": "startup",
+          "scope": "startup/summary",
+          "severity": "info",
+          "summary": "startup time collected on both sides (compose, 5 restart(s) per app)",
+          "detail": "catalogue: first healthy / 442 → 448 ms, ready 2374 → 2359 ms (median, a → b, n=5/5)\nlive: first healthy / 454 → 443 ms, ready 2374 → 2383 ms (median, a → b, n=5/5)\nreader: first healthy / 447 → 452 ms, ready 2325 → 2370 ms (median, a → b, n=5/5)\ntime: first healthy / 418 → 329 ms, ready 2383 → 2368 ms (median, a → b, n=5/5)"
+        }
+      }
+    ],
+    "unclaimed": [
+      {
+        "id": "dom:reader:topic:1",
+        "artefact": "dom",
+        "scope": "reader:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader:topic: semantic DOM differs (+5 −3 lines at line 41)",
+        "detail": "     - figure\n     - paragraph: Summary of this talk (appears on the talk card).\n-  - 'link \"Lab 1 ## Prerequisites\"':\n+  - link \"Lab 1 Prerequisites\":\n     - /url: /lab/localhost:8080/unit-1/topic-01/book-lab-01\n     - text: Lab 1\n     - figure\n-    - text: \"## Prerequisites\"\n+    - heading \"Prerequisites\" [level=2]:\n+      - link \"Prerequisites\":\n+        - /url: \"#prerequisites\"\n   - link \"Note 1 Summary of this note (appears on the note card).\":\n     - /url: /note/localhost:8080/unit-1/topic-01/note-01\n     - text: Note 1\n     - figure\n-    - text: Summary of this note (appears on the note card).\n+    - paragraph: Summary of this note (appears on the note card).\n - contentinfo \"Site footer\":\n   - img \"Tutors\""
+      },
+      {
+        "id": "dom:reader-auth:topic:2",
+        "artefact": "dom",
+        "scope": "reader-auth:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader-auth:topic: semantic DOM differs (+5 −3 lines at line 43)",
+        "detail": "     - figure\n     - paragraph: Summary of this talk (appears on the talk card).\n-  - 'link \"Lab 1 ## Prerequisites\"':\n+  - link \"Lab 1 Prerequisites\":\n     - /url: /lab/localhost:8080/unit-1/topic-01/book-lab-01\n     - text: Lab 1\n     - figure\n-    - text: \"## Prerequisites\"\n+    - heading \"Prerequisites\" [level=2]:\n+      - link \"Prerequisites\":\n+        - /url: \"#prerequisites\"\n   - link \"Note 1 Summary of this note (appears on the note card).\":\n     - /url: /note/localhost:8080/unit-1/topic-01/note-01\n     - text: Note 1\n     - figure\n-    - text: Summary of this note (appears on the note card).\n+    - paragraph: Summary of this note (appears on the note card).\n - contentinfo \"Site footer\":\n   - img \"Tutors\""
+      },
+      {
+        "id": "dom:reference:topic:3",
+        "artefact": "dom",
+        "scope": "reference:topic",
+        "path": "/topic/reference-course/topic-07-reference",
+        "severity": "fail",
+        "summary": "reference:topic: semantic DOM differs (+1 −1 lines at line 91)",
+        "detail": "     - figure:\n       - img \"Lab-07-(md)\"\n-    - text: A set of practical instructions or a walk-though\n+    - paragraph: A set of practical instructions or a walk-though\n   - link \"Note 3 This is an example of a note.\":\n     - /url: /note/reference-course/topic-07-reference/note-1"
+      },
+      {
+        "id": "dom:reference:topic:4",
+        "artefact": "dom",
+        "scope": "reference:topic",
+        "path": "/topic/reference-course/topic-07-reference",
+        "severity": "fail",
+        "summary": "reference:topic: semantic DOM differs (+1 −1 lines at line 97)",
+        "detail": "     - figure:\n       - img \"Note 3\"\n-    - text: This is an example of a note.\n+    - paragraph: This is an example of a note.\n   - link \"Note 4 This note has a linkable table of contents, generated automatically\":\n     - /url: /note/reference-course/topic-07-reference/note-2"
+      },
+      {
+        "id": "dom:reference:topic:5",
+        "artefact": "dom",
+        "scope": "reference:topic",
+        "path": "/topic/reference-course/topic-07-reference",
+        "severity": "fail",
+        "summary": "reference:topic: semantic DOM differs (+1 −1 lines at line 103)",
+        "detail": "     - figure:\n       - img \"Note 4\"\n-    - text: This note has a linkable table of contents, generated automatically\n+    - paragraph: This note has a linkable table of contents, generated automatically\n   - link \"Web Site 4 A web site of interest\":\n     - /url: https://tutors.dev"
+      },
+      {
+        "id": "dom:reference:topic:6",
+        "artefact": "dom",
+        "scope": "reference:topic",
+        "path": "/topic/reference-course/topic-07-reference",
+        "severity": "fail",
+        "summary": "reference:topic: semantic DOM differs (+1 −1 lines at line 126)",
+        "detail": "     - text: Lab-08 (jupyter)\n     - figure\n-    - text: An interactive Jupyter Notebook demonstrating Python fundamentals.\n+    - paragraph: An interactive Jupyter Notebook demonstrating Python fundamentals.\n   - link \"Whiteboard Demo A sample Excalidraw whiteboard showcasing the new whiteboard learning object type.\":\n     - /url: /whiteboard/reference-course/topic-07-reference/whiteboard-demo"
+      },
+      {
+        "id": "dom:reference:topic:7",
+        "artefact": "dom",
+        "scope": "reference:topic",
+        "path": "/topic/reference-course/topic-07-reference",
+        "severity": "fail",
+        "summary": "reference:topic: semantic DOM differs (+1 −1 lines at line 136)",
+        "detail": "     - text: Quiz Demo\n     - figure\n-    - text: \"This is a quiz learning object: an ordinary markdown document containing one\"\n+    - paragraph: \"This is a quiz learning object: an ordinary markdown document containing one\"\n - contentinfo \"Site footer\":\n   - img \"Tutors\""
+      },
+      {
+        "id": "screenshot:reader:topic:8",
+        "artefact": "screenshot",
+        "scope": "reader:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader:topic: 0.60% of pixels differ (threshold 0.10%)",
+        "detail": "diff image: diff/anonymous-student-reads-course-1/reader_topic.png"
+      },
+      {
+        "id": "screenshot:reader-auth:topic:9",
+        "artefact": "screenshot",
+        "scope": "reader-auth:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader-auth:topic: 0.60% of pixels differ (threshold 0.10%)",
+        "detail": "diff image: diff/student-signs-in-1/reader-auth_topic.png"
+      },
+      {
+        "id": "console:catalogue:home:10",
+        "artefact": "console",
+        "scope": "catalogue:home",
+        "path": "/",
+        "severity": "fail",
+        "summary": "catalogue:home: new console message on b",
+        "detail": "error: {\"app\":\"tutors-catalogue\",\"environment\":\"production\",\"error\":\"Cannot read properties of undefined (reading 'from')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'from')\\n    at Object.getCatalogue ({{origin}}/_app/immutable/chunks/BmnCu8VZ.js:3:103512)\\n    at P ({{origin}}/_app/immutable/nodes/2.DuomUQQ9.js:1:461)\\n    at _t ({{origin}}/_app/immutable/chunks/Cq90ffwe.js:1:14189)\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Error fetching courses:\"}"
+      },
+      {
+        "id": "console:catalogue:home:11",
+        "artefact": "console",
+        "scope": "catalogue:home",
+        "path": "/",
+        "severity": "fail",
+        "summary": "catalogue:home: new console message on b",
+        "detail": "error: {\"app\":\"tutors-catalogue\",\"environment\":\"production\",\"error\":\"Cannot read properties of undefined (reading 'from')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'from')\\n    at Object.getStudentCount ({{origin}}/_app/immutable/chunks/BmnCu8VZ.js:3:103940)\\n    at {{origin}}/_app/immutable/nodes/2.DuomUQQ9.js:1:6090\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Error fetching course count:\"}"
+      },
+      {
+        "id": "console:reader-auth:topic:17",
+        "artefact": "console",
+        "scope": "reader-auth:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader-auth:topic: new console message on b",
+        "detail": "error: {\"app\":\"tutors-reader\",\"environment\":\"production\",\"reason\":\"Cannot read properties of undefined (reading 'increment')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'increment')\\n    at s ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:1031)\\n    at async Promise.all (index 0)\\n    at async c ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:1122)\\n    at async m ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:2363)\\n    at async h ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:2406)\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Unhandled promise rejection\"}"
+      },
+      {
+        "id": "console:reader-auth:topic:18",
+        "artefact": "console",
+        "scope": "reader-auth:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader-auth:topic: new console message on b",
+        "detail": "warning: {\"app\":\"tutors-reader\",\"environment\":\"production\",\"details\":\"step\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"warn\",\"message\":\"No type found for icon\"}"
+      },
+      {
+        "id": "focus:reader:home:21",
+        "artefact": "focus",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "fail",
+        "summary": "reader:home: keyboard order changed (12 stops on a, 12 on b)",
+        "detail": " a \"Live\"\n-a \"Tutors v:16.2.1\"\n+a \"Tutors v:16.2.2\"\n a \"Open Learning Web Toolkit\""
+      },
+      {
+        "id": "focus:reader:course:22",
+        "artefact": "focus",
+        "scope": "reader:course",
+        "path": "/course/localhost:8080",
+        "severity": "fail",
+        "summary": "reader:course: keyboard order changed (11 stops on a, 11 on b)",
+        "detail": " a \"Topic 2 Summary of this topic (this line\"\n-a \"Tutors v:16.2.1\"\n+a \"Tutors v:16.2.2\"\n a \"Open Learning Web Toolkit\""
+      },
+      {
+        "id": "focus:reader:topic:23",
+        "artefact": "focus",
+        "scope": "reader:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader:topic: keyboard order changed (12 stops on a, 12 on b)",
+        "detail": " a \"Talk 1 Summary of this talk (appears on \"\n-a \"Lab 1 ## Prerequisites\"\n+a \"Lab 1 Prerequisites\"\n+a \"Prerequisites\"\n a \"Note 1 Summary of this note (appears on \"\n-a \"Tutors v:16.2.1\"\n-a \"Open Learning Web Toolkit\"\n\\ No newline at end of file\n+a \"Tutors v:16.2.2\"\n\\ No newline at end of file"
+      },
+      {
+        "id": "focus:reader:search:24",
+        "artefact": "focus",
+        "scope": "reader:search",
+        "path": "/search/localhost:8080",
+        "severity": "fail",
+        "summary": "reader:search: keyboard order changed (6 stops on a, 6 on b)",
+        "detail": " input \"\"\n-a \"Tutors v:16.2.1\"\n+a \"Tutors v:16.2.2\"\n a \"Open Learning Web Toolkit\""
+      },
+      {
+        "id": "focus:reader:search-results:25",
+        "artefact": "focus",
+        "scope": "reader:search-results",
+        "path": "/search/localhost:8080",
+        "severity": "fail",
+        "summary": "reader:search-results: keyboard order changed (6 stops on a, 6 on b)",
+        "detail": " a \"Topic 2/ Note 2\"\n-a \"Tutors v:16.2.1\"\n+a \"Tutors v:16.2.2\"\n a \"Open Learning Web Toolkit\""
+      },
+      {
+        "id": "focus:catalogue:home:26",
+        "artefact": "focus",
+        "scope": "catalogue:home",
+        "path": "/",
+        "severity": "fail",
+        "summary": "catalogue:home: keyboard order changed (6 stops on a, 6 on b)",
+        "detail": " button \"Open Theme Menu\"\n-a \"Tutors v:16.2.1\"\n+a \"Tutors v:16.2.2\"\n a \"Open Learning Web Toolkit\""
+      },
+      {
+        "id": "focus:live:home:27",
+        "artefact": "focus",
+        "scope": "live:home",
+        "path": "/",
+        "severity": "fail",
+        "summary": "live:home: keyboard order changed (5 stops on a, 5 on b)",
+        "detail": " tabpanel \"\"\n-a \"Tutors v:16.2.1\"\n+a \"Tutors v:16.2.2\"\n a \"Open Learning Web Toolkit\""
+      },
+      {
+        "id": "focus:reader-auth:course:28",
+        "artefact": "focus",
+        "scope": "reader-auth:course",
+        "path": "/course/localhost:8080",
+        "severity": "fail",
+        "summary": "reader-auth:course: keyboard order changed (11 stops on a, 11 on b)",
+        "detail": " a \"Topic 2 Summary of this topic (this line\"\n-a \"Tutors v:16.2.1\"\n+a \"Tutors v:16.2.2\"\n a \"Open Learning Web Toolkit\""
+      },
+      {
+        "id": "focus:reader-auth:topic:29",
+        "artefact": "focus",
+        "scope": "reader-auth:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader-auth:topic: keyboard order changed (12 stops on a, 12 on b)",
+        "detail": " a \"Talk 1 Summary of this talk (appears on \"\n-a \"Lab 1 ## Prerequisites\"\n+a \"Lab 1 Prerequisites\"\n+a \"Prerequisites\"\n a \"Note 1 Summary of this note (appears on \"\n-a \"Tutors v:16.2.1\"\n-a \"Open Learning Web Toolkit\"\n\\ No newline at end of file\n+a \"Tutors v:16.2.2\"\n\\ No newline at end of file"
+      },
+      {
+        "id": "image-manifest:reader/label/org.opencontainers.image.description:30",
+        "artefact": "image-manifest",
+        "scope": "reader/label/org.opencontainers.image.description",
+        "severity": "fail",
+        "summary": "reader: label org.opencontainers.image.description added ()"
+      },
+      {
+        "id": "image-manifest:reader/label/org.opencontainers.image.url:31",
+        "artefact": "image-manifest",
+        "scope": "reader/label/org.opencontainers.image.url",
+        "severity": "fail",
+        "summary": "reader: label org.opencontainers.image.url added (https://github.com/tutors-sdk/tutors-mono-repo)"
+      },
+      {
+        "id": "sbom:reader/not-collected:32",
+        "artefact": "sbom",
+        "scope": "reader/not-collected",
+        "severity": "fail",
+        "summary": "NOT COLLECTED: sbom of reader on side a: quay.io/tutors-sdk/tutors-reader:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself (required by HARNESS_REQUIRE_ARTEFACTS)",
+        "detail": "a: quay.io/tutors-sdk/tutors-reader:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself"
+      },
+      {
+        "id": "vulns:reader/not-collected:33",
+        "artefact": "vulns",
+        "scope": "reader/not-collected",
+        "severity": "fail",
+        "summary": "NOT COLLECTED: vulns of reader on side a: nothing to scan: quay.io/tutors-sdk/tutors-reader:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself (required by HARNESS_REQUIRE_ARTEFACTS)",
+        "detail": "a: nothing to scan: quay.io/tutors-sdk/tutors-reader:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself"
+      },
+      {
+        "id": "image-manifest:catalogue/label/org.opencontainers.image.description:34",
+        "artefact": "image-manifest",
+        "scope": "catalogue/label/org.opencontainers.image.description",
+        "severity": "fail",
+        "summary": "catalogue: label org.opencontainers.image.description added ()"
+      },
+      {
+        "id": "image-manifest:catalogue/label/org.opencontainers.image.url:35",
+        "artefact": "image-manifest",
+        "scope": "catalogue/label/org.opencontainers.image.url",
+        "severity": "fail",
+        "summary": "catalogue: label org.opencontainers.image.url added (https://github.com/tutors-sdk/tutors-mono-repo)"
+      },
+      {
+        "id": "sbom:catalogue/not-collected:36",
+        "artefact": "sbom",
+        "scope": "catalogue/not-collected",
+        "severity": "fail",
+        "summary": "NOT COLLECTED: sbom of catalogue on side a: quay.io/tutors-sdk/tutors-catalogue:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself (required by HARNESS_REQUIRE_ARTEFACTS)",
+        "detail": "a: quay.io/tutors-sdk/tutors-catalogue:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself"
+      },
+      {
+        "id": "vulns:catalogue/not-collected:37",
+        "artefact": "vulns",
+        "scope": "catalogue/not-collected",
+        "severity": "fail",
+        "summary": "NOT COLLECTED: vulns of catalogue on side a: nothing to scan: quay.io/tutors-sdk/tutors-catalogue:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself (required by HARNESS_REQUIRE_ARTEFACTS)",
+        "detail": "a: nothing to scan: quay.io/tutors-sdk/tutors-catalogue:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself"
+      },
+      {
+        "id": "image-manifest:live/label/org.opencontainers.image.description:38",
+        "artefact": "image-manifest",
+        "scope": "live/label/org.opencontainers.image.description",
+        "severity": "fail",
+        "summary": "live: label org.opencontainers.image.description added ()"
+      },
+      {
+        "id": "image-manifest:live/label/org.opencontainers.image.url:39",
+        "artefact": "image-manifest",
+        "scope": "live/label/org.opencontainers.image.url",
+        "severity": "fail",
+        "summary": "live: label org.opencontainers.image.url added (https://github.com/tutors-sdk/tutors-mono-repo)"
+      },
+      {
+        "id": "sbom:live/not-collected:40",
+        "artefact": "sbom",
+        "scope": "live/not-collected",
+        "severity": "fail",
+        "summary": "NOT COLLECTED: sbom of live on side a: quay.io/tutors-sdk/tutors-live:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself (required by HARNESS_REQUIRE_ARTEFACTS)",
+        "detail": "a: quay.io/tutors-sdk/tutors-live:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself"
+      },
+      {
+        "id": "vulns:live/not-collected:41",
+        "artefact": "vulns",
+        "scope": "live/not-collected",
+        "severity": "fail",
+        "summary": "NOT COLLECTED: vulns of live on side a: nothing to scan: quay.io/tutors-sdk/tutors-live:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself (required by HARNESS_REQUIRE_ARTEFACTS)",
+        "detail": "a: nothing to scan: quay.io/tutors-sdk/tutors-live:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself"
+      },
+      {
+        "id": "image-manifest:time/label/org.opencontainers.image.description:42",
+        "artefact": "image-manifest",
+        "scope": "time/label/org.opencontainers.image.description",
+        "severity": "fail",
+        "summary": "time: label org.opencontainers.image.description added ()"
+      },
+      {
+        "id": "image-manifest:time/label/org.opencontainers.image.url:43",
+        "artefact": "image-manifest",
+        "scope": "time/label/org.opencontainers.image.url",
+        "severity": "fail",
+        "summary": "time: label org.opencontainers.image.url added (https://github.com/tutors-sdk/tutors-mono-repo)"
+      },
+      {
+        "id": "sbom:time/not-collected:44",
+        "artefact": "sbom",
+        "scope": "time/not-collected",
+        "severity": "fail",
+        "summary": "NOT COLLECTED: sbom of time on side a: quay.io/tutors-sdk/tutors-time:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself (required by HARNESS_REQUIRE_ARTEFACTS)",
+        "detail": "a: quay.io/tutors-sdk/tutors-time:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself"
+      },
+      {
+        "id": "vulns:time/not-collected:45",
+        "artefact": "vulns",
+        "scope": "time/not-collected",
+        "severity": "fail",
+        "summary": "NOT COLLECTED: vulns of time on side a: nothing to scan: quay.io/tutors-sdk/tutors-time:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself (required by HARNESS_REQUIRE_ARTEFACTS)",
+        "detail": "a: nothing to scan: quay.io/tutors-sdk/tutors-time:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself"
+      }
+    ],
+    "staleClaims": [],
+    "broadUnapproved": []
+  },
+  "masksApplied": {
+    "response-date": 80,
+    "request-id": 80,
+    "etag": 80,
+    "metrics-process": 599,
+    "metrics-timing-histograms": 12,
+    "third-party-requests": 825,
+    "persistence-stub-requests": 211,
+    "realtime-rest-fallback-warning": 80,
+    "hashed-assets": 5320,
+    "footer-tutors-version": 220,
+    "transport-length": 80,
+    "transport-connection": 80,
+    "transport-encoding": 0,
+    "transport-transfer": 0,
+    "transport-keepalive": 80
+  },
+  "load": {
+    "a": {
+      "requests": 600,
+      "failed": 0,
+      "serverErrors": 0,
+      "p50": 1.33,
+      "p95": 2.3,
+      "rate": 20,
+      "duration": "30s"
+    },
+    "b": {
+      "requests": 600,
+      "failed": 0,
+      "serverErrors": 0,
+      "p50": 1.28,
+      "p95": 2.04,
+      "rate": 20,
+      "duration": "30s"
+    }
+  },
+  "imageArtefacts": {
+    "a": {
+      "reader": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "9 layers, 251.1 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": false,
+          "reason": "quay.io/tutors-sdk/tutors-reader:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself"
+        },
+        "vulns": {
+          "collected": false,
+          "reason": "nothing to scan: quay.io/tutors-sdk/tutors-reader:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself"
+        }
+      },
+      "catalogue": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "9 layers, 230.4 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": false,
+          "reason": "quay.io/tutors-sdk/tutors-catalogue:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself"
+        },
+        "vulns": {
+          "collected": false,
+          "reason": "nothing to scan: quay.io/tutors-sdk/tutors-catalogue:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself"
+        }
+      },
+      "live": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "9 layers, 230.4 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": false,
+          "reason": "quay.io/tutors-sdk/tutors-live:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself"
+        },
+        "vulns": {
+          "collected": false,
+          "reason": "nothing to scan: quay.io/tutors-sdk/tutors-live:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself"
+        }
+      },
+      "time": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "9 layers, 231.7 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": false,
+          "reason": "quay.io/tutors-sdk/tutors-time:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself"
+        },
+        "vulns": {
+          "collected": false,
+          "reason": "nothing to scan: quay.io/tutors-sdk/tutors-time:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself"
+        }
+      }
+    },
+    "b": {
+      "reader": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "9 layers, 251.5 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "291 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "114 advisories, db built 2026-09-26T06:29:14Z schema v6.1.9"
+        }
+      },
+      "catalogue": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "9 layers, 230.8 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "277 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "114 advisories, db built 2026-09-26T06:29:14Z schema v6.1.9"
+        }
+      },
+      "live": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "9 layers, 230.8 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "277 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "114 advisories, db built 2026-09-26T06:29:14Z schema v6.1.9"
+        }
+      },
+      "time": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "9 layers, 232.1 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "287 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "114 advisories, db built 2026-09-26T06:29:14Z schema v6.1.9"
+        }
+      }
+    }
+  }
+}

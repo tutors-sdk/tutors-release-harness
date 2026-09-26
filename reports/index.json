@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "runs": [
+    {
+      "id": "2026-09-26T12-38-31Z-release",
+      "mode": "release",
+      "ranAt": "2026-09-26T12:38:31.986Z",
+      "verdict": "fail",
+      "reasons": [
+        "38 unclaimed diff(s)",
+        "side a was built here from monorepo ref v16.2.1, not pulled from the registry: it is not the image that ships",
+        "NOT COLLECTED: sbom of reader on side a: quay.io/tutors-sdk/tutors-reader:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself",
+        "NOT COLLECTED: vulns of reader on side a: nothing to scan: quay.io/tutors-sdk/tutors-reader:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself",
+        "NOT COLLECTED: sbom of catalogue on side a: quay.io/tutors-sdk/tutors-catalogue:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself",
+        "NOT COLLECTED: vulns of catalogue on side a: nothing to scan: quay.io/tutors-sdk/tutors-catalogue:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself",
+        "NOT COLLECTED: sbom of live on side a: quay.io/tutors-sdk/tutors-live:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself",
+        "NOT COLLECTED: vulns of live on side a: nothing to scan: quay.io/tutors-sdk/tutors-live:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself",
+        "NOT COLLECTED: sbom of time on side a: quay.io/tutors-sdk/tutors-time:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself",
+        "NOT COLLECTED: vulns of time on side a: nothing to scan: quay.io/tutors-sdk/tutors-time:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself"
+      ],
+      "sides": {
+        "a": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:16.2.1",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:16.2.1",
+          "live": "quay.io/tutors-sdk/tutors-live:16.2.1",
+          "time": "quay.io/tutors-sdk/tutors-time:16.2.1"
+        },
+        "b": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:16.2.2",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:16.2.2",
+          "live": "quay.io/tutors-sdk/tutors-live:16.2.2",
+          "time": "quay.io/tutors-sdk/tutors-time:16.2.2"
+        }
+      },
+      "harnessVersion": "1.4.1",
+      "runUrl": "https://github.com/tutors-sdk/tutors-release-harness/actions/runs/36241969041",
+      "files": [
+        "2026-09-26T12-38-31Z-release/report.json",
+        "2026-09-26T12-38-31Z-release/report.md",
+        "2026-09-26T12-38-31Z-release/report.html"
+      ]
+    }
+  ]
+}
