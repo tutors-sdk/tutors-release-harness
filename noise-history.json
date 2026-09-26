@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "entries": [
+    {
+      "ranAt": "2026-09-22T07:50:22.672Z",
+      "tag": "main",
+      "hunks": 2,
+      "degraded": [],
+      "harnessVersion": "1.4.1",
+      "digests": {
+        "reader": "sha256:e5f571030899a10f3ca018b7bb54021ac98157c182b19519ce7238d98c7d1ce7",
+        "catalogue": "sha256:47b5164744a84d1586861b5da312203e037495c7034ebefecd74689b6adbfa0b",
+        "live": "sha256:9081261956badf029db213c01fcee59340c6c0d786951d5820995991f4d2c00c",
+        "time": "sha256:6f48cddab832a2858f911876c343dc6eddb5bccf477f8ac8710efe4c74a65d85"
+      },
+      "masks": {
+        "total": 25,
+        "silent": 2
+      },
+      "runUrl": "https://github.com/tutors-sdk/tutors-release-harness/actions/runs/35700821788"
+    },
+    {
+      "ranAt": "2026-09-23T07:52:50.229Z",
+      "tag": "main",
+      "hunks": 13,
+      "degraded": [],
+      "harnessVersion": "1.4.1",
+      "digests": {
+        "reader": "sha256:e5f571030899a10f3ca018b7bb54021ac98157c182b19519ce7238d98c7d1ce7",
+        "catalogue": "sha256:47b5164744a84d1586861b5da312203e037495c7034ebefecd74689b6adbfa0b",
+        "live": "sha256:9081261956badf029db213c01fcee59340c6c0d786951d5820995991f4d2c00c",
+        "time": "sha256:6f48cddab832a2858f911876c343dc6eddb5bccf477f8ac8710efe4c74a65d85"
+      },
+      "masks": {
+        "total": 25,
+        "silent": 2
+      },
+      "runUrl": "https://github.com/tutors-sdk/tutors-release-harness/actions/runs/35833213285"
+    },
+    {
+      "ranAt": "2026-09-24T07:44:00.931Z",
+      "tag": "main",
+      "hunks": 1,
+      "degraded": [],
+      "harnessVersion": "1.4.1",
+      "digests": {
+        "reader": "sha256:e5f571030899a10f3ca018b7bb54021ac98157c182b19519ce7238d98c7d1ce7",
+        "catalogue": "sha256:47b5164744a84d1586861b5da312203e037495c7034ebefecd74689b6adbfa0b",
+        "live": "sha256:9081261956badf029db213c01fcee59340c6c0d786951d5820995991f4d2c00c",
+        "time": "sha256:6f48cddab832a2858f911876c343dc6eddb5bccf477f8ac8710efe4c74a65d85"
+      },
+      "masks": {
+        "total": 25,
+        "silent": 2
+      },
+      "runUrl": "https://github.com/tutors-sdk/tutors-release-harness/actions/runs/35970332443"
+    },
+    {
+      "ranAt": "2026-09-25T08:04:27.940Z",
+      "tag": "main",
+      "hunks": 0,
+      "degraded": [],
+      "harnessVersion": "1.4.1",
+      "digests": {
+        "reader": "sha256:caf1786e981f3a00d8ae8195bf39aefaefbae78ebd7195e7522c2fa639e552ce",
+        "catalogue": "sha256:597473364ff3c218ca64113ac1256a6358dd29929d918de208a56dbd4819df0e",
+        "live": "sha256:d3e1d0773520c36fe55328c7f2eb928f98fc181b42763041d84200ecc411ae0f",
+        "time": "sha256:0dc5872ebf1648a171cfb274a27014047c93be2712f62eab8c132993f45c9e19"
+      },
+      "masks": {
+        "total": 25,
+        "silent": 4
+      },
+      "runUrl": "https://github.com/tutors-sdk/tutors-release-harness/actions/runs/36109193253"
+    },
+    {
+      "ranAt": "2026-09-26T07:57:09.931Z",
+      "tag": "main",
+      "hunks": 0,
+      "degraded": [],
+      "harnessVersion": "1.4.1",
+      "digests": {
+        "reader": "sha256:caf1786e981f3a00d8ae8195bf39aefaefbae78ebd7195e7522c2fa639e552ce",
+        "catalogue": "sha256:597473364ff3c218ca64113ac1256a6358dd29929d918de208a56dbd4819df0e",
+        "live": "sha256:d3e1d0773520c36fe55328c7f2eb928f98fc181b42763041d84200ecc411ae0f",
+        "time": "sha256:0dc5872ebf1648a171cfb274a27014047c93be2712f62eab8c132993f45c9e19"
+      },
+      "masks": {
+        "total": 25,
+        "silent": 4
+      },
+      "runUrl": "https://github.com/tutors-sdk/tutors-release-harness/actions/runs/36227343048"
+    }
+  ]
+}
