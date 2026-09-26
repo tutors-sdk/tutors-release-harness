@@ -171,9 +171,13 @@ describe("edge proxy", () => {
   let upstreamB: Server;
   let child: ChildProcess;
   let base: string;
+  let slowArrived: () => void = () => {};
   beforeAll(async () => {
     const [pa, pb, pe] = await Promise.all([freePort(), freePort(), freePort()]);
-    upstreamA = createServer((_req, res) => setTimeout(() => res.writeHead(200, { "x-side": "a" }).end("a"), 200));
+    upstreamA = createServer((req, res) => {
+      if (req.url === "/slow") slowArrived();
+      setTimeout(() => res.writeHead(200, { "x-side": "a" }).end("a"), 200);
+    });
     upstreamB = createServer((_req, res) => res.writeHead(200, { "x-side": "b" }).end("b"));
     await new Promise<void>((r) => upstreamA.listen(pa, r));
     await new Promise<void>((r) => upstreamB.listen(pb, r));
@@ -191,8 +195,10 @@ describe("edge proxy", () => {
     expect(first.headers.get("x-harness-upstream")).toBe("a");
     expect(await first.text()).toBe("a");
 
+    const arrived = new Promise<void>((r) => (slowArrived = r));
     const inFlight = fetch(`${base}/slow`); // takes 200ms on a
-    await new Promise((r) => setTimeout(r, 50));
+    // Switch only once the request has reached a: a fixed sleep raced the proxy on a busy runner.
+    await arrived;
     const switched = await fetch(`${base}/_harness/switch?to=b`, { method: "POST" });
     expect(await switched.json()).toEqual({ upstream: "b" });
     const after = await fetch(`${base}/`);
