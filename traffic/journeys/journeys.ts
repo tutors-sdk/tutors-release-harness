@@ -34,9 +34,39 @@ export interface Journey {
 
 const VISIBLE = { state: "visible" as const, timeout: 15_000 };
 
-/** The lab step navigation that is visible at this viewport (sidebar on desktop, bottom bar on mobile). */
+/**
+ * The lab step navigation that is visible at this viewport. Up to 16.2.x it is the
+ * navigation "Lab steps" (sidebar on desktop, bottom bar on mobile); the course
+ * shell that replaced it (2026-09) lists the steps as the list "Steps" in the
+ * "Course navigation" sidebar.
+ */
 function labSteps(page: Page) {
-  return page.getByRole("navigation", { name: "Lab steps" }).filter({ visible: true }).first();
+  return page
+    .getByRole("navigation", { name: "Lab steps" })
+    .or(page.getByRole("complementary", { name: "Course navigation" }).getByRole("list", { name: "Steps" }))
+    .filter({ visible: true })
+    .first();
+}
+
+/** A lab step's link in the step navigation: "Step 1" up to 16.2.x, "02 Step 1" (numbered) in the course shell. */
+function stepLink(heading: string) {
+  return new RegExp(`^(?:\\d+\\s+)?${escapeRegExp(heading)}$`);
+}
+
+/**
+ * The heading that names the page being read: up to 16.2.x the banner's heading,
+ * in the course shell the main content's level-1 heading (the banner names the course).
+ */
+function pageHeading(page: Page, name: string) {
+  return page
+    .getByRole("banner")
+    .getByRole("heading", { name })
+    .or(page.getByRole("main").getByRole("heading", { level: 1, name }))
+    .first();
+}
+
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 // ---- fixture course, anonymous ------------------------------------------------------
@@ -58,7 +88,7 @@ export const anonymousStudentReadsCourse: Journey = {
 
     await page.getByRole("link", { name: new RegExp(`^${fixture.topicTitle}\\b`) }).click();
     await page.waitForURL(new RegExp(`/topic/${urls.courseId}/${fixture.topicPath}$`));
-    await page.getByRole("banner").getByRole("heading", { name: fixture.topicTitle }).waitFor(VISIBLE);
+    await pageHeading(page, fixture.topicTitle).waitFor(VISIBLE);
     await onPage("reader:topic");
 
     await page.getByRole("main").getByRole("link", { name: new RegExp(`^${fixture.labTitle}\\b`) }).first().click();
@@ -67,14 +97,18 @@ export const anonymousStudentReadsCourse: Journey = {
     await labSteps(page).waitFor(VISIBLE);
     await onPage("reader:lab-step");
 
-    // Keyboard: the lab advances on ArrowRight.
+    // Keyboard: the lab advances on ArrowRight. The course shell ignores the arrow keys
+    // while a link, button or field has focus (the capture's Tab walk leaves focus on
+    // one), so first click into the step's text, as a reader would, to put focus back
+    // on the page.
+    await page.getByRole("article").getByRole("paragraph").first().click();
     await page.keyboard.press("ArrowRight");
     await page.waitForURL(new RegExp(`/${fixture.labPath}/${fixture.secondStep.id}$`));
     await page.getByRole("article").getByRole("heading", { level: 1, name: fixture.secondStep.heading }).waitFor(VISIBLE);
     await onPage("reader:lab-step-2");
 
     // Pointer: jump back to the first step from the step navigation.
-    await labSteps(page).getByRole("link", { name: fixture.firstStep.heading, exact: true }).click();
+    await labSteps(page).getByRole("link", { name: stepLink(fixture.firstStep.heading) }).click();
     await page.waitForURL(new RegExp(`/${fixture.labPath}/${fixture.firstStep.id}$`));
   }
 };
@@ -89,15 +123,27 @@ export const anonymousStudentSearches: Journey = {
     await page.goto(`${urls.reader}/course/${urls.courseId}`);
     await page.getByRole("banner").getByRole("heading", { name: fixture.title }).waitFor(VISIBLE);
 
+    // Up to 16.2.x the button opens the search page; in the course shell it opens a
+    // quick-search dialog, whose "Open full search" link leads to the same page.
     await page.getByRole("button", { name: "Search this course" }).click();
-    await page.waitForURL(new RegExp(`/search/${urls.courseId}$`));
-    const box = page.getByRole("textbox", { name: "Enter search term:" });
+    const fullSearch = page.getByRole("dialog", { name: "Search this course" }).getByRole("link", { name: /^Open full search/ });
+    const searchPage = new RegExp(`/search/${urls.courseId}(\\?.*)?$`);
+    await Promise.race([page.waitForURL(searchPage), fullSearch.waitFor(VISIBLE)]);
+    if (!searchPage.test(page.url())) {
+      await fullSearch.click();
+      await page.waitForURL(searchPage);
+    }
+    // A textbox up to 16.2.x, a searchbox in the course shell.
+    const main = page.getByRole("main");
+    const box = main.getByRole("searchbox", { name: "Enter search term:" }).or(main.getByRole("textbox", { name: "Enter search term:" })).first();
     await box.waitFor(VISIBLE);
     await onPage("reader:search");
 
     await box.fill(fixture.searchTerm);
     await box.press("Enter");
-    await page.getByRole("main").getByRole("link", { name: fixture.searchResultTitle }).first().waitFor(VISIBLE);
+    await main.getByRole("link", { name: fixture.searchResultTitle }).first().waitFor(VISIBLE);
+    // The course shell lists every resource before a search: the results are in only once a non-match has gone.
+    await main.getByRole("link", { name: fixture.searchNonResultTitle }).first().waitFor({ ...VISIBLE, state: "hidden" });
     await onPage("reader:search-results");
   }
 };
@@ -110,7 +156,8 @@ export const catalogueLoads: Journey = {
   target: "reader",
   async run(page, urls, onPage) {
     await page.goto(`${urls.catalogue}/`);
-    await page.getByRole("main").getByText("Totals").first().waitFor(VISIBLE);
+    // "Totals: modules-0:students-0" up to 16.2.x, "0 modules · 0 students" in the course shell.
+    await page.getByRole("main").getByText(/Totals:|\d+ modules · \d+ students/).first().waitFor(VISIBLE);
     await onPage("catalogue:home");
   }
 };
@@ -151,15 +198,27 @@ export const studentSignsIn: Journey = {
     await button.waitFor(VISIBLE);
     await onPage("reader-auth:sign-in");
 
+    // Once the course has rendered, the reader reconnects the student in the background: it reads
+    // their sentiment, then their online status, and only then sets whether they share presence
+    // (which shows or hides the course shell's "Activity" group) and routes back to the course.
+    // The heading is visible before that, so a capture taken on the heading alone sometimes saw
+    // the page before the reconnect and sometimes after (an A/A diff on the sidebar, and a
+    // "Couldn't load preload assets" warning when the journey clicked on during that route).
+    // The online status read is the reconnect's last await, so wait for it before capturing.
+    const reconnected = page.waitForResponse((r) => /\/rest\/v1\/tutors-connect-users\?select=online_status\b/.test(r.url()), { timeout: 30_000 });
+    // Awaited below. If a step before that fails (a mutant that breaks the course), the page closes and
+    // this rejects with nobody listening, which would crash the run instead of failing the journey.
+    reconnected.catch(() => undefined);
     await button.click();
     // Auth.js -> identity stub -> callback -> session -> the course.
     await page.waitForURL(new RegExp(`/course/${urls.courseId}`), { timeout: 30_000 });
     await page.getByRole("banner").getByRole("heading", { name: fixture.title }).waitFor(VISIBLE);
+    await reconnected;
     await onPage("reader-auth:course");
 
     await page.getByRole("link", { name: new RegExp(`^${fixture.topicTitle}\\b`) }).click();
     await page.waitForURL(new RegExp(`/topic/${urls.courseId}/${fixture.topicPath}$`));
-    await page.getByRole("banner").getByRole("heading", { name: fixture.topicTitle }).waitFor(VISIBLE);
+    await pageHeading(page, fixture.topicTitle).waitFor(VISIBLE);
     await onPage("reader-auth:topic");
   }
 };
@@ -180,7 +239,7 @@ export const referenceCourseReads: Journey = {
 
     await page.getByRole("main").getByRole("link", { name: reference.topicLink }).first().click();
     await page.waitForURL(new RegExp(`/topic/${course}/${reference.topicPath}$`));
-    await page.getByRole("banner").getByRole("heading", { name: reference.topicTitle }).waitFor(VISIBLE);
+    await pageHeading(page, reference.topicTitle).waitFor(VISIBLE);
     await onPage("reference:topic");
 
     await page.getByRole("main").getByRole("link", { name: reference.labTitle }).first().click();

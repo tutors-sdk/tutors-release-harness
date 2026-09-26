@@ -66,6 +66,34 @@ describe("persistence stub", () => {
     expect(await (await fetch(`${base}/_harness/writes`)).json()).toEqual([]);
   });
 
+  it("accepts realtime broadcasts over REST without recording them as writes", async () => {
+    await fetch(`${base}/_harness/reset`, { method: "POST" });
+    const broadcast = await fetch(`${base}/realtime/v1/api/broadcast?apikey=k&vsn=2.0.0`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ messages: [] }) });
+    expect(broadcast.status).toBe(202);
+    expect(await (await fetch(`${base}/_harness/writes`)).json()).toEqual([]);
+  });
+
+  it("speaks just enough Phoenix on the realtime socket that the client connects once and never retries", async () => {
+    const ws = new WebSocket(`${base.replace("http", "ws")}/realtime/v1/websocket?apikey=k&vsn=2.0.0`);
+    const replies: unknown[] = [];
+    ws.addEventListener("message", (e) => replies.push(JSON.parse(String(e.data))));
+    await new Promise((resolve, reject) => {
+      ws.addEventListener("open", resolve);
+      ws.addEventListener("error", reject);
+    });
+    const two = new Promise<void>((resolve) => ws.addEventListener("message", () => replies.length >= 2 && resolve()));
+    ws.send(JSON.stringify(["1", "1", "realtime:course-x", "phx_join", { config: { broadcast: { self: false } } }]));
+    ws.send(JSON.stringify([null, "2", "phoenix", "heartbeat", {}]));
+    ws.send(JSON.stringify([null, null, "realtime:course-x", "broadcast", {}])); // no ref, no reply
+    await two;
+    expect(replies).toEqual([
+      ["1", "1", "realtime:course-x", "phx_reply", { status: "ok", response: { postgres_changes: [] } }],
+      [null, "2", "phoenix", "phx_reply", { status: "ok", response: {} }]
+    ]);
+    ws.close();
+    expect(await (await fetch(`${base}/_harness/writes`)).json()).toEqual([]);
+  });
+
   it("answers CORS preflight and never sends a Date header", async () => {
     const preflight = await fetch(`${base}/rest/v1/x`, { method: "OPTIONS" });
     expect(preflight.status).toBe(204);

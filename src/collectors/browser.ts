@@ -196,6 +196,21 @@ async function routeIdentity(context: BrowserContext) {
  * page it reaches. A journey that throws is recorded with its error and the
  * pages it did reach; the run continues with the next journey.
  */
+/**
+ * Resolve once `count()` has read 0 for `quietMs` in a row, or after `maxMs` whatever it reads (a page that
+ * polls forever still gets captured, as it is). Exported for its test.
+ */
+export async function quiet(count: () => number, quietMs: number, maxMs: number, tickMs = 50): Promise<void> {
+  const deadline = Date.now() + maxMs;
+  let idleSince = count() === 0 ? Date.now() : undefined;
+  while (Date.now() < deadline) {
+    if (count() > 0) idleSince = undefined;
+    else if (idleSince === undefined) idleSince = Date.now();
+    else if (Date.now() - idleSince >= quietMs) return;
+    await new Promise((r) => setTimeout(r, tickMs));
+  }
+}
+
 export async function captureJourney(browser: Browser, spec: SideSpec, journey: Journey, run: number, opts: BrowserCaptureOptions): Promise<JourneyCapture> {
   const context = await newContext(browser, opts.now);
   if (journey.target === "readerAuth") await routeIdentity(context);
@@ -216,6 +231,14 @@ export async function captureJourney(browser: Browser, spec: SideSpec, journey: 
     if (type === "error" || type === "warning") pendingConsole.push({ level: type, text: stripOrigins(message.text(), spec) });
   });
   page.on("pageerror", (error) => pendingConsole.push({ level: "error", text: stripOrigins(error.message, spec) }));
+  // Requests in flight right now. waitForLoadState("networkidle") resolves at once when the page reached
+  // idle earlier in its life, so it does not wait for requests a page starts later: the course shell's icons
+  // (Iconify, fetched from its API on first use) arrive after the heading, and a capture taken before them
+  // screenshotted the page with an icon missing on one side only.
+  let inFlight = 0;
+  page.on("request", () => inFlight++);
+  page.on("requestfinished", () => inFlight--);
+  page.on("requestfailed", () => inFlight--);
 
   const shotDir = join(opts.outDir, `${journey.name}-${run}`);
   if (opts.screenshots) mkdirSync(shotDir, { recursive: true });
@@ -226,6 +249,7 @@ export async function captureJourney(browser: Browser, spec: SideSpec, journey: 
     await journey.run(page, spec.urls, async (pageKey) => {
       // Let in-flight requests settle so the network set is the page's, not the race's.
       await page.waitForLoadState("networkidle", { timeout: 5_000 }).catch(() => undefined);
+      await quiet(() => inFlight, 500, 5_000);
       const network = (await Promise.all(pendingNetwork)).sort((x, y) => `${x.method} ${x.url}`.localeCompare(`${y.method} ${y.url}`));
       pendingNetwork = [];
       const consoleEntries = pendingConsole.sort((x, y) => `${x.level} ${x.text}`.localeCompare(`${y.level} ${y.text}`));
@@ -247,6 +271,13 @@ export async function captureJourney(browser: Browser, spec: SideSpec, journey: 
         timing: isDocument ? timingOf(documentResponse) : timingOf(undefined)
       };
       if (opts.screenshots) {
+        // The course shell loads its typeface from Google Fonts with display=swap, so until the font
+        // arrives the page paints in the fallback face, and a screenshot taken on that race can differ
+        // between two identical sides. Wait for the fonts the page has asked for (bounded, so a
+        // font that never loads cannot hang the run; it then shows in the screenshot as it would to a person).
+        await page.evaluate(() => Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 5_000))])).catch(() => undefined);
+        // And let what just arrived (an icon, a font swap) paint before the shot.
+        await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))).catch(() => undefined);
         // No ":" in file names: NTFS reads "reader:home.png" as an alternate data stream of "reader".
         const file = join(shotDir, `${pageKey.replace(/[^a-z0-9-]/gi, "_")}.png`);
         await page.screenshot({ path: file, animations: "disabled", caret: "hide", fullPage: false });
