@@ -10,7 +10,7 @@ const tmp = () => mkdtempSync(join(tmpdir(), "report-archive-"));
 function runDir(root: string, ranAt: string, mode = "noise", verdict = "pass", extra: string[] = []): string {
   const dir = join(root, `${ranAt.replace(/:/g, "-")}-${mode}`);
   mkdirSync(join(dir, "a"), { recursive: true });
-  const report = { schemaVersion: 1, harness: { version: "1.4.1", gitSha: null, contractVersion: "1.4.0" }, harnessVersion: "1.4.1", mode, ranAt, verdict, reasons: ["no unclaimed differences"], sides: { a: { reader: "16.2.2" }, b: { reader: "16.2.2" } } };
+  const report = { schemaVersion: 1, harness: { version: "1.4.1", gitSha: null, contractVersion: "1.4.0" }, harnessVersion: "1.4.1", mode, ranAt, verdict, reasons: ["no unclaimed differences"], compare: { hunks: [], matches: [], unclaimed: [], staleClaims: [], broadUnapproved: [] }, sides: { a: { reader: "16.2.2" }, b: { reader: "16.2.2" } } };
   writeFileSync(join(dir, "report.json"), JSON.stringify(report));
   writeFileSync(join(dir, "report.md"), `## ${mode} ${ranAt}\n`);
   writeFileSync(join(dir, "report.html"), "<p>report</p>");
@@ -59,10 +59,11 @@ describe("keeping a run's report", () => {
     const store = join(root, "store");
     const { entry: kept } = keepReport({ dir, store, runUrl: "https://github.com/o/r/actions/runs/1" });
     const target = join(store, "reports", "2026-09-26T07-57-09Z-noise");
-    expect(readdirSync(target).sort()).toEqual(["report.html", "report.json", "report.md"]);
+    expect(readdirSync(target).sort()).toEqual(["report.html", "report.json", "report.md", "scorecard.json", "scorecard.md"]);
     expect(readFileSync(join(target, "report.json"), "utf8")).toBe(readFileSync(join(dir, "report.json"), "utf8"));
     expect(kept).toMatchObject({ mode: "noise", verdict: "pass", harnessVersion: "1.4.1", runUrl: "https://github.com/o/r/actions/runs/1", sides: { a: { reader: "16.2.2" } } });
-    expect(kept.files).toEqual(["2026-09-26T07-57-09Z-noise/report.json", "2026-09-26T07-57-09Z-noise/report.md", "2026-09-26T07-57-09Z-noise/report.html"]);
+    expect(kept.files).toEqual(["report.json", "report.md", "report.html", "scorecard.json", "scorecard.md"].map((f) => `2026-09-26T07-57-09Z-noise/${f}`));
+    expect(kept.score).toEqual({ score: 100, grade: "A", normalness: "normal", manual: 0 });
     const index = parseIndex(readFileSync(join(store, "reports", "index.json"), "utf8"));
     expect(index.runs.map((r) => r.id)).toEqual(["2026-09-26T07-57-09Z-noise"]);
   });
@@ -106,6 +107,6 @@ describe("harness reports keep", () => {
     const lines: string[] = [];
     const code = reportsCommand("keep", { dir: runDir(root, "2026-09-26T07:57:09.931Z", "release", "warn"), store: join(root, "store"), "keep-last": "5" }, (m) => lines.push(m));
     expect(code).toBe(0);
-    expect(lines.join("\n")).toMatch(/kept release 2026-09-26T07:57:09.931Z \(WARN\): reports\/2026-09-26T07-57-09Z-release\/ 3 file\(s\)/);
+    expect(lines.join("\n")).toMatch(/kept release 2026-09-26T07:57:09.931Z \(WARN\): reports\/2026-09-26T07-57-09Z-release\/ 5 file\(s\), score 90 \(A\)/);
   });
 });

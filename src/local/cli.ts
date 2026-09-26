@@ -16,6 +16,7 @@ import { realVulnDbDeps, vulnDbStatus, vulnDbUpdate } from "./vuln-db.ts";
 import { noiseHistoryCommand, noiseStatusCommand, recordNight } from "./noise-store.ts";
 import { PRUNE_DEFAULTS, prune, renderPrune } from "./prune.ts";
 import { keepReport } from "../ci/report-archive.ts";
+import { readReport, readRulePrs, renderScorecard, scorecard } from "../ci/scorecard.ts";
 import { appendOverride, overrideFromReport, readOverrides } from "./override-log.ts";
 import {
   PRODUCTION_DEFAULT_TAG,
@@ -155,12 +156,23 @@ export function overrideCommand(sub: string | undefined, v: Values): number {
 
 /** Keep a run's report where it outlives the artifact: the store's reports/ directory and its index.json (src/ci/report-archive.ts). */
 export function reportsCommand(sub: string | undefined, v: Values, log: (m: string) => void = (m) => console.log(m)): number {
-  if (sub !== "keep") throw new UsageError("reports keep --dir <run directory | report.json> [--store dir] [--run-url u] [--keep-last n]");
+  if (sub !== "keep") throw new UsageError("reports keep --dir <run directory | report.json> [--store dir] [--run-url u] [--keep-last n] [--rules rules.json]");
   const dir = str(v, "dir");
   if (!dir) throw new UsageError("reports keep needs --dir <run directory | report.json>");
   const keepLast = v["keep-last"] === undefined ? undefined : integer(v, "keep-last", 0, 1);
-  const { entry, dropped } = keepReport({ dir, store: str(v, "store") ?? ".", ...(str(v, "run-url") ? { runUrl: str(v, "run-url")! } : {}), ...(keepLast ? { keepLast } : {}) });
-  log(`kept ${entry.mode} ${entry.ranAt} (${entry.verdict.toUpperCase()}): reports/${entry.id}/ ${entry.files.length} file(s)${dropped.length ? `; removed ${dropped.length} older` : ""}`);
+  const { entry, dropped } = keepReport({ dir, store: str(v, "store") ?? ".", ...(str(v, "run-url") ? { runUrl: str(v, "run-url")! } : {}), ...(keepLast ? { keepLast } : {}), ...(str(v, "rules") ? { rules: str(v, "rules")! } : {}) });
+  log(`kept ${entry.mode} ${entry.ranAt} (${entry.verdict.toUpperCase()}): reports/${entry.id}/ ${entry.files.length} file(s)${entry.score ? `, score ${entry.score.score} (${entry.score.grade})` : ""}${dropped.length ? `; removed ${dropped.length} older` : ""}`);
+  return 0;
+}
+
+// ---- harness scorecard --------------------------------------------------------------------------------
+
+/** Score, normalness, Rules and PRs, and what to test by hand, for one run's report (src/ci/scorecard.ts). Informational: exit 0 whatever the score. */
+export function scorecardCommand(v: Values, log: (m: string) => void = (m) => console.log(m)): number {
+  const where = str(v, "report") ?? str(v, "dir");
+  if (!where) throw new UsageError("scorecard needs --report <run directory | report.json> [--rules rules.json] [--json]");
+  const card = scorecard(readReport(where), readRulePrs(str(v, "rules")));
+  log(flag(v, "json") ? JSON.stringify(card, null, 2) : renderScorecard(card));
   return 0;
 }
 

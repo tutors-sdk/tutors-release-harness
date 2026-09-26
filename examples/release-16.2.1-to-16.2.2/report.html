@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Harness release fail</title>
+<style>
+  :root { color-scheme: light dark; --pass:#2f7a4f; --warn:#8a6119; --fail:#a12a2a; --rule:#8884; }
+  body { margin:0; padding:24px 16px; font:15px/1.5 system-ui, sans-serif; max-width: 64rem; margin-inline:auto; }
+  h1 { font-size:1.4rem; margin:0 0 4px; }
+  .verdict { display:inline-block; padding:2px 10px; border-radius:4px; color:#fff; font-weight:600; text-transform:uppercase; letter-spacing:.05em; }
+  .verdict.pass { background:var(--pass);} .verdict.warn { background:var(--warn);} .verdict.fail { background:var(--fail);}
+  table { border-collapse:collapse; width:100%; margin:12px 0 24px; font-size:14px; }
+  th, td { text-align:left; vertical-align:top; padding:6px 8px; border-bottom:1px solid var(--rule); }
+  th { font-size:12px; text-transform:uppercase; letter-spacing:.06em; opacity:.7; }
+  tr.info td { opacity:.75; }
+  tr.fail td:last-child strong { color:var(--fail); }
+  table.provenance td { font-size:13px; word-break:break-all; }
+  .loud { border-left:4px solid var(--warn); padding:6px 10px; font-weight:600; }
+  code, pre { font-family: ui-monospace, Menlo, Consolas, monospace; font-size:13px; }
+  pre { white-space:pre-wrap; margin:6px 0 0; padding:8px; background:#8881; border-radius:4px; }
+  details summary { cursor:pointer; font-size:13px; opacity:.8; }
+  ul { padding-left:1.2rem; }
+  footer { font-size:12px; opacity:.7; border-top:1px solid var(--rule); padding-top:12px; }
+</style>
+</head>
+<body>
+<h1>Tutors release harness — <code>release</code> <span class="verdict fail">fail</span></h1>
+<p><small>2026-09-26T12:38:31.986Z · clock 2026-09-16T09:05:00.000Z · 5 run(s) per side · harness 1.4.1</small></p>
+<p class="loud">Side a did not run signature-verified registry images (built-from-ref v16.2.1@c2915322a0dc). This run is not evidence about the images that ship.</p>
+
+<ul><li>38 unclaimed diff(s)</li><li>side a was built here from monorepo ref v16.2.1, not pulled from the registry: it is not the image that ships</li><li>NOT COLLECTED: sbom of reader on side a: quay.io/tutors-sdk/tutors-reader:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself</li><li>NOT COLLECTED: vulns of reader on side a: nothing to scan: quay.io/tutors-sdk/tutors-reader:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself</li><li>NOT COLLECTED: sbom of catalogue on side a: quay.io/tutors-sdk/tutors-catalogue:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself</li><li>NOT COLLECTED: vulns of catalogue on side a: nothing to scan: quay.io/tutors-sdk/tutors-catalogue:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself</li><li>NOT COLLECTED: sbom of live on side a: quay.io/tutors-sdk/tutors-live:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself</li><li>NOT COLLECTED: vulns of live on side a: nothing to scan: quay.io/tutors-sdk/tutors-live:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself</li><li>NOT COLLECTED: sbom of time on side a: quay.io/tutors-sdk/tutors-time:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself</li><li>NOT COLLECTED: vulns of time on side a: nothing to scan: quay.io/tutors-sdk/tutors-time:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself</li><li>A/A consulted: clean at 2026-09-26T07:57:09.931Z</li></ul>
+
+<table>
+<thead><tr><th></th><th>a</th><th>b</th></tr></thead>
+<tbody><tr><td>reader</td><td><code>quay.io/tutors-sdk/tutors-reader:16.2.1</code></td><td><code>quay.io/tutors-sdk/tutors-reader:16.2.2</code></td></tr><tr><td>catalogue</td><td><code>quay.io/tutors-sdk/tutors-catalogue:16.2.1</code></td><td><code>quay.io/tutors-sdk/tutors-catalogue:16.2.2</code></td></tr><tr><td>live</td><td><code>quay.io/tutors-sdk/tutors-live:16.2.1</code></td><td><code>quay.io/tutors-sdk/tutors-live:16.2.2</code></td></tr><tr><td>time</td><td><code>quay.io/tutors-sdk/tutors-time:16.2.1</code></td><td><code>quay.io/tutors-sdk/tutors-time:16.2.2</code></td></tr></tbody>
+</table>
+<table class="provenance">
+<thead><tr><th>provenance</th><th>a — built-from-ref v16.2.1@c2915322a0dc</th><th>b — pulled+verified</th></tr></thead>
+<tbody><tr><td>reader</td><td>id <code>467b3ac625f4</code> (no registry digest)<br>revision <code>c2915322a0dc</code><br>version <code>16.2.1</code></td><td>digest <code>sha256:7567d5927767bd39b7991a586d594f6c310387471109a456d2cff49fa12488cb</code><br>revision <code>caa53d021e63</code><br>version <code>16.2.2</code></td></tr><tr><td>catalogue</td><td>id <code>cad48ee1aa6c</code> (no registry digest)<br>revision <code>c2915322a0dc</code><br>version <code>16.2.1</code></td><td>digest <code>sha256:f6cdb7f6adaba1d227e2cf62260ec2fe7064c58114666774331da3530bf52187</code><br>revision <code>caa53d021e63</code><br>version <code>16.2.2</code></td></tr><tr><td>live</td><td>id <code>aa15c76b1af0</code> (no registry digest)<br>revision <code>c2915322a0dc</code><br>version <code>16.2.1</code></td><td>digest <code>sha256:12ed5642e5cbec601790771a8f9fc85221f8202679a312a0e707622bb6e84e9a</code><br>revision <code>caa53d021e63</code><br>version <code>16.2.2</code></td></tr><tr><td>time</td><td>id <code>1443eecfa082</code> (no registry digest)<br>revision <code>c2915322a0dc</code><br>version <code>16.2.1</code></td><td>digest <code>sha256:ddf3ad22b79bbba96199791a49367677bf9ad0ebdd7542f3246d56e7879d5e4e</code><br>revision <code>caa53d021e63</code><br>version <code>16.2.2</code></td></tr></tbody>
+</table>
+
+<h2>Image artefacts</h2><p><small>Collected from the images, not the running apps. A cell that says NOT COLLECTED was not compared.</small></p><table><thead><tr><th>app</th><th>artefact</th><th>a</th><th>b</th></tr></thead><tbody><tr><td>reader</td><td>manifest</td><td>9 layers, 251.1 MB, USER 1001, ports 3000/tcp (docker image inspect)</td><td>9 layers, 251.5 MB, USER 1001, ports 3000/tcp (docker image inspect)</td></tr><tr><td>reader</td><td>sbom</td><td class="loud">NOT COLLECTED: quay.io/tutors-sdk/tutors-reader:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself</td><td>291 distinct package(s) (cosign attestation (signature verified))</td></tr><tr><td>reader</td><td>vulns</td><td class="loud">NOT COLLECTED: nothing to scan: quay.io/tutors-sdk/tutors-reader:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself</td><td>114 advisories, db built 2026-09-26T06:29:14Z schema v6.1.9 (grype 0.119.0)</td></tr><tr><td>catalogue</td><td>manifest</td><td>9 layers, 230.4 MB, USER 1001, ports 3000/tcp (docker image inspect)</td><td>9 layers, 230.8 MB, USER 1001, ports 3000/tcp (docker image inspect)</td></tr><tr><td>catalogue</td><td>sbom</td><td class="loud">NOT COLLECTED: quay.io/tutors-sdk/tutors-catalogue:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself</td><td>277 distinct package(s) (cosign attestation (signature verified))</td></tr><tr><td>catalogue</td><td>vulns</td><td class="loud">NOT COLLECTED: nothing to scan: quay.io/tutors-sdk/tutors-catalogue:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself</td><td>114 advisories, db built 2026-09-26T06:29:14Z schema v6.1.9 (grype 0.119.0)</td></tr><tr><td>live</td><td>manifest</td><td>9 layers, 230.4 MB, USER 1001, ports 3000/tcp (docker image inspect)</td><td>9 layers, 230.8 MB, USER 1001, ports 3000/tcp (docker image inspect)</td></tr><tr><td>live</td><td>sbom</td><td class="loud">NOT COLLECTED: quay.io/tutors-sdk/tutors-live:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself</td><td>277 distinct package(s) (cosign attestation (signature verified))</td></tr><tr><td>live</td><td>vulns</td><td class="loud">NOT COLLECTED: nothing to scan: quay.io/tutors-sdk/tutors-live:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself</td><td>114 advisories, db built 2026-09-26T06:29:14Z schema v6.1.9 (grype 0.119.0)</td></tr><tr><td>time</td><td>manifest</td><td>9 layers, 231.7 MB, USER 1001, ports 3000/tcp (docker image inspect)</td><td>9 layers, 232.1 MB, USER 1001, ports 3000/tcp (docker image inspect)</td></tr><tr><td>time</td><td>sbom</td><td class="loud">NOT COLLECTED: quay.io/tutors-sdk/tutors-time:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself</td><td>287 distinct package(s) (cosign attestation (signature verified))</td></tr><tr><td>time</td><td>vulns</td><td class="loud">NOT COLLECTED: nothing to scan: quay.io/tutors-sdk/tutors-time:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself</td><td>114 advisories, db built 2026-09-26T06:29:14Z schema v6.1.9 (grype 0.119.0)</td></tr></tbody></table>
+
+
+
+<h2>Load (k6, 20 req/s for 30s)</h2><table><thead><tr><th>side</th><th>requests</th><th>failed</th><th>5xx</th><th>p50</th><th>p95</th></tr></thead><tbody><tr><td>a</td><td>600</td><td>0</td><td>0</td><td>1.33 ms</td><td>2.3 ms</td></tr><tr><td>b</td><td>600</td><td>0</td><td>0</td><td>1.28 ms</td><td>2.04 ms</td></tr></tbody></table>
+
+<h2>Differences (47; 38 unclaimed)</h2>
+<table><thead><tr><th>artefact</th><th>scope</th><th>what changed</th><th>claimed by</th></tr></thead><tbody><tr class="fail"><td><code>dom</code></td><td><code>reader:topic</code><br><small>/topic/localhost:8080/unit-1/topic-01</small></td><td>reader:topic: semantic DOM differs (+5 −3 lines at line 41)<details><summary>detail</summary><pre>     - figure
+     - paragraph: Summary of this talk (appears on the talk card).
+-  - 'link &quot;Lab 1 ## Prerequisites&quot;':
++  - link &quot;Lab 1 Prerequisites&quot;:
+     - /url: /lab/localhost:8080/unit-1/topic-01/book-lab-01
+     - text: Lab 1
+     - figure
+-    - text: &quot;## Prerequisites&quot;
++    - heading &quot;Prerequisites&quot; [level=2]:
++      - link &quot;Prerequisites&quot;:
++        - /url: &quot;#prerequisites&quot;
+   - link &quot;Note 1 Summary of this note (appears on the note card).&quot;:
+     - /url: /note/localhost:8080/unit-1/topic-01/note-01
+     - text: Note 1
+     - figure
+-    - text: Summary of this note (appears on the note card).
++    - paragraph: Summary of this note (appears on the note card).
+ - contentinfo &quot;Site footer&quot;:
+   - img &quot;Tutors&quot;</pre></details></td><td><strong>unclaimed</strong></td></tr>
+<tr class="fail"><td><code>dom</code></td><td><code>reader-auth:topic</code><br><small>/topic/localhost:8080/unit-1/topic-01</small></td><td>reader-auth:topic: semantic DOM differs (+5 −3 lines at line 43)<details><summary>detail</summary><pre>     - figure
+     - paragraph: Summary of this talk (appears on the talk card).
+-  - 'link &quot;Lab 1 ## Prerequisites&quot;':
++  - link &quot;Lab 1 Prerequisites&quot;:
+     - /url: /lab/localhost:8080/unit-1/topic-01/book-lab-01
+     - text: Lab 1
+     - figure
+-    - text: &quot;## Prerequisites&quot;
++    - heading &quot;Prerequisites&quot; [level=2]:
++      - link &quot;Prerequisites&quot;:
++        - /url: &quot;#prerequisites&quot;
+   - link &quot;Note 1 Summary of this note (appears on the note card).&quot;:
+     - /url: /note/localhost:8080/unit-1/topic-01/note-01
+     - text: Note 1
+     - figure
+-    - text: Summary of this note (appears on the note card).
++    - paragraph: Summary of this note (appears on the note card).
+ - contentinfo &quot;Site footer&quot;:
+   - img &quot;Tutors&quot;</pre></details></td><td><strong>unclaimed</strong></td></tr>
+<tr class="fail"><td><code>dom</code></td><td><code>reference:topic</code><br><small>/topic/reference-course/topic-07-reference</small></td><td>reference:topic: semantic DOM differs (+1 −1 lines at line 91)<details><summary>detail</summary><pre>     - figure:
+       - img &quot;Lab-07-(md)&quot;
+-    - text: A set of practical instructions or a walk-though
++    - paragraph: A set of practical instructions or a walk-though
+   - link &quot;Note 3 This is an example of a note.&quot;:
+     - /url: /note/reference-course/topic-07-reference/note-1</pre></details></td><td><strong>unclaimed</strong></td></tr>
+<tr class="fail"><td><code>dom</code></td><td><code>reference:topic</code><br><small>/topic/reference-course/topic-07-reference</small></td><td>reference:topic: semantic DOM differs (+1 −1 lines at line 97)<details><summary>detail</summary><pre>     - figure:
+       - img &quot;Note 3&quot;
+-    - text: This is an example of a note.
++    - paragraph: This is an example of a note.
+   - link &quot;Note 4 This note has a linkable table of contents, generated automatically&quot;:
+     - /url: /note/reference-course/topic-07-reference/note-2</pre></details></td><td><strong>unclaimed</strong></td></tr>
+<tr class="fail"><td><code>dom</code></td><td><code>reference:topic</code><br><small>/topic/reference-course/topic-07-reference</small></td><td>reference:topic: semantic DOM differs (+1 −1 lines at line 103)<details><summary>detail</summary><pre>     - figure:
+       - img &quot;Note 4&quot;
+-    - text: This note has a linkable table of contents, generated automatically
++    - paragraph: This note has a linkable table of contents, generated automatically
+   - link &quot;Web Site 4 A web site of interest&quot;:
+     - /url: https://tutors.dev</pre></details></td><td><strong>unclaimed</strong></td></tr>
+<tr class="fail"><td><code>dom</code></td><td><code>reference:topic</code><br><small>/topic/reference-course/topic-07-reference</small></td><td>reference:topic: semantic DOM differs (+1 −1 lines at line 126)<details><summary>detail</summary><pre>     - text: Lab-08 (jupyter)
+     - figure
+-    - text: An interactive Jupyter Notebook demonstrating Python fundamentals.
++    - paragraph: An interactive Jupyter Notebook demonstrating Python fundamentals.
+   - link &quot;Whiteboard Demo A sample Excalidraw whiteboard showcasing the new whiteboard learning object type.&quot;:
+     - /url: /whiteboard/reference-course/topic-07-reference/whiteboard-demo</pre></details></td><td><strong>unclaimed</strong></td></tr>
+<tr class="fail"><td><code>dom</code></td><td><code>reference:topic</code><br><small>/topic/reference-course/topic-07-reference</small></td><td>reference:topic: semantic DOM differs (+1 −1 lines at line 136)<details><summary>detail</summary><pre>     - text: Quiz Demo
+     - figure
+-    - text: &quot;This is a quiz learning object: an ordinary markdown document containing one&quot;
++    - paragraph: &quot;This is a quiz learning object: an ordinary markdown document containing one&quot;
+ - contentinfo &quot;Site footer&quot;:
+   - img &quot;Tutors&quot;</pre></details></td><td><strong>unclaimed</strong></td></tr>
+<tr class="fail"><td><code>screenshot</code></td><td><code>reader:topic</code><br><small>/topic/localhost:8080/unit-1/topic-01</small></td><td>reader:topic: 0.60% of pixels differ (threshold 0.10%)<details><summary>detail</summary><pre>diff image: diff/anonymous-student-reads-course-1/reader_topic.png</pre></details></td><td><strong>unclaimed</strong></td></tr>
+<tr class="fail"><td><code>screenshot</code></td><td><code>reader-auth:topic</code><br><small>/topic/localhost:8080/unit-1/topic-01</small></td><td>reader-auth:topic: 0.60% of pixels differ (threshold 0.10%)<details><summary>detail</summary><pre>diff image: diff/student-signs-in-1/reader-auth_topic.png</pre></details></td><td><strong>unclaimed</strong></td></tr>
+<tr class="fail"><td><code>console</code></td><td><code>catalogue:home</code><br><small>/</small></td><td>catalogue:home: new console message on b<details><summary>detail</summary><pre>error: {&quot;app&quot;:&quot;tutors-catalogue&quot;,&quot;environment&quot;:&quot;production&quot;,&quot;error&quot;:&quot;Cannot read properties of undefined (reading 'from')&quot;,&quot;stack&quot;:&quot;TypeError: Cannot read properties of undefined (reading 'from')\n    at Object.getCatalogue ({{origin}}/_app/immutable/chunks/BmnCu8VZ.js:3:103512)\n    at P ({{origin}}/_app/immutable/nodes/2.DuomUQQ9.js:1:461)\n    at _t ({{origin}}/_app/immutable/chunks/Cq90ffwe.js:1:14189)&quot;,&quot;timestamp&quot;:&quot;2026-09-16T09:05:00.000Z&quot;,&quot;level&quot;:&quot;error&quot;,&quot;message&quot;:&quot;Error fetching courses:&quot;}</pre></details></td><td><strong>unclaimed</strong></td></tr>
+<tr class="fail"><td><code>console</code></td><td><code>catalogue:home</code><br><small>/</small></td><td>catalogue:home: new console message on b<details><summary>detail</summary><pre>error: {&quot;app&quot;:&quot;tutors-catalogue&quot;,&quot;environment&quot;:&quot;production&quot;,&quot;error&quot;:&quot;Cannot read properties of undefined (reading 'from')&quot;,&quot;stack&quot;:&quot;TypeError: Cannot read properties of undefined (reading 'from')\n    at Object.getStudentCount ({{origin}}/_app/immutable/chunks/BmnCu8VZ.js:3:103940)\n    at {{origin}}/_app/immutable/nodes/2.DuomUQQ9.js:1:6090&quot;,&quot;timestamp&quot;:&quot;2026-09-16T09:05:00.000Z&quot;,&quot;level&quot;:&quot;error&quot;,&quot;message&quot;:&quot;Error fetching course count:&quot;}</pre></details></td><td><strong>unclaimed</strong></td></tr>
+<tr class="info"><td><code>console</code></td><td><code>catalogue:home</code><br><small>/</small></td><td>catalogue:home: console message gone on b<details><summary>detail</summary><pre>error: {&quot;app&quot;:&quot;tutors-catalogue&quot;,&quot;environment&quot;:&quot;production&quot;,&quot;error&quot;:&quot;Cannot read properties of undefined (reading 'from')&quot;,&quot;stack&quot;:&quot;TypeError: Cannot read properties of undefined (reading 'from')\n    at Object.getCatalogue ({{origin}}/_app/immutable/chunks/Bwq2rGSa.js:3:103521)\n    at P ({{origin}}/_app/immutable/nodes/2.C2jx2k7c.js:1:461)\n    at _t ({{origin}}/_app/immutable/chunks/BQgnX8ni.js:1:14189)&quot;,&quot;timestamp&quot;:&quot;2026-09-16T09:05:00.000Z&quot;,&quot;level&quot;:&quot;error&quot;,&quot;message&quot;:&quot;Error fetching courses:&quot;}</pre></details></td><td><em>informational</em></td></tr>
+<tr class="info"><td><code>console</code></td><td><code>catalogue:home</code><br><small>/</small></td><td>catalogue:home: console message gone on b<details><summary>detail</summary><pre>error: {&quot;app&quot;:&quot;tutors-catalogue&quot;,&quot;environment&quot;:&quot;production&quot;,&quot;error&quot;:&quot;Cannot read properties of undefined (reading 'from')&quot;,&quot;stack&quot;:&quot;TypeError: Cannot read properties of undefined (reading 'from')\n    at Object.getStudentCount ({{origin}}/_app/immutable/chunks/Bwq2rGSa.js:3:103949)\n    at {{origin}}/_app/immutable/nodes/2.C2jx2k7c.js:1:6090&quot;,&quot;timestamp&quot;:&quot;2026-09-16T09:05:00.000Z&quot;,&quot;level&quot;:&quot;error&quot;,&quot;message&quot;:&quot;Error fetching course count:&quot;}</pre></details></td><td><em>informational</em></td></tr>
+<tr class="info"><td><code>console</code></td><td><code>reader-auth:course</code><br><small>/course/localhost:8080</small></td><td>reader-auth:course: console message gone on b<details><summary>detail</summary><pre>error: {&quot;app&quot;:&quot;tutors-reader&quot;,&quot;environment&quot;:&quot;production&quot;,&quot;reason&quot;:&quot;Cannot read properties of undefined (reading 'increment')&quot;,&quot;stack&quot;:&quot;TypeError: Cannot read properties of undefined (reading 'increment')\n    at s ({{origin}}/_app/immutable/chunks/WMSJz8hC.js:1:1031)\n    at async Promise.all (index 0)\n    at async c ({{origin}}/_app/immutable/chunks/WMSJz8hC.js:1:1122)\n    at async m ({{origin}}/_app/immutable/chunks/WMSJz8hC.js:1:2363)\n    at async h ({{origin}}/_app/immutable/chunks/WMSJz8hC.js:1:2406)&quot;,&quot;timestamp&quot;:&quot;2026-09-16T09:05:00.000Z&quot;,&quot;level&quot;:&quot;error&quot;,&quot;message&quot;:&quot;Unhandled promise rejection&quot;}</pre></details></td><td><em>informational</em></td></tr>
+<tr class="info"><td><code>console</code></td><td><code>reader-auth:course</code><br><small>/course/localhost:8080</small></td><td>reader-auth:course: console message gone on b<details><summary>detail</summary><pre>error: Cannot read properties of undefined (reading 'increment')</pre></details></td><td><em>informational</em></td></tr>
+<tr class="info"><td><code>console</code></td><td><code>reader-auth:course</code><br><small>/course/localhost:8080</small></td><td>reader-auth:course: console message gone on b<details><summary>detail</summary><pre>error: Failed to load resource: the server responded with a status of 404 (Not Found)</pre></details></td><td><em>informational</em></td></tr>
+<tr class="fail"><td><code>console</code></td><td><code>reader-auth:topic</code><br><small>/topic/localhost:8080/unit-1/topic-01</small></td><td>reader-auth:topic: new console message on b<details><summary>detail</summary><pre>error: {&quot;app&quot;:&quot;tutors-reader&quot;,&quot;environment&quot;:&quot;production&quot;,&quot;reason&quot;:&quot;Cannot read properties of undefined (reading 'increment')&quot;,&quot;stack&quot;:&quot;TypeError: Cannot read properties of undefined (reading 'increment')\n    at s ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:1031)\n    at async Promise.all (index 0)\n    at async c ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:1122)\n    at async m ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:2363)\n    at async h ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:2406)&quot;,&quot;timestamp&quot;:&quot;2026-09-16T09:05:00.000Z&quot;,&quot;level&quot;:&quot;error&quot;,&quot;message&quot;:&quot;Unhandled promise rejection&quot;}</pre></details></td><td><strong>unclaimed</strong></td></tr>
+<tr class="fail"><td><code>console</code></td><td><code>reader-auth:topic</code><br><small>/topic/localhost:8080/unit-1/topic-01</small></td><td>reader-auth:topic: new console message on b<details><summary>detail</summary><pre>warning: {&quot;app&quot;:&quot;tutors-reader&quot;,&quot;environment&quot;:&quot;production&quot;,&quot;details&quot;:&quot;step&quot;,&quot;timestamp&quot;:&quot;2026-09-16T09:05:00.000Z&quot;,&quot;level&quot;:&quot;warn&quot;,&quot;message&quot;:&quot;No type found for icon&quot;}</pre></details></td><td><strong>unclaimed</strong></td></tr>
+<tr class="info"><td><code>console</code></td><td><code>reader-auth:topic</code><br><small>/topic/localhost:8080/unit-1/topic-01</small></td><td>reader-auth:topic: console message gone on b<details><summary>detail</summary><pre>error: {&quot;app&quot;:&quot;tutors-reader&quot;,&quot;environment&quot;:&quot;production&quot;,&quot;reason&quot;:&quot;Cannot read properties of undefined (reading 'increment')&quot;,&quot;stack&quot;:&quot;TypeError: Cannot read properties of undefined (reading 'increment')\n    at s ({{origin}}/_app/immutable/chunks/WMSJz8hC.js:1:1031)\n    at async Promise.all (index 0)\n    at async c ({{origin}}/_app/immutable/chunks/WMSJz8hC.js:1:1122)\n    at async m ({{origin}}/_app/immutable/chunks/WMSJz8hC.js:1:2363)\n    at async h ({{origin}}/_app/immutable/chunks/WMSJz8hC.js:1:2406)&quot;,&quot;timestamp&quot;:&quot;2026-09-16T09:05:00.000Z&quot;,&quot;level&quot;:&quot;error&quot;,&quot;message&quot;:&quot;Unhandled promise rejection&quot;}</pre></details></td><td><em>informational</em></td></tr>
+<tr class="info"><td><code>console</code></td><td><code>reader-auth:topic</code><br><small>/topic/localhost:8080/unit-1/topic-01</small></td><td>reader-auth:topic: console message gone on b<details><summary>detail</summary><pre>error: {&quot;app&quot;:&quot;tutors-reader&quot;,&quot;environment&quot;:&quot;production&quot;,&quot;reason&quot;:&quot;Cannot read properties of undefined (reading 'increment')&quot;,&quot;stack&quot;:&quot;TypeError: Cannot read properties of undefined (reading 'increment')\n    at s ({{origin}}/_app/immutable/chunks/WMSJz8hC.js:1:1031)\n    at async Promise.all (index 1)\n    at async c ({{origin}}/_app/immutable/chunks/WMSJz8hC.js:1:1122)\n    at async m ({{origin}}/_app/immutable/chunks/WMSJz8hC.js:1:2363)\n    at async h ({{origin}}/_app/immutable/chunks/WMSJz8hC.js:1:2406)&quot;,&quot;timestamp&quot;:&quot;2026-09-16T09:05:00.000Z&quot;,&quot;level&quot;:&quot;error&quot;,&quot;message&quot;:&quot;Unhandled promise rejection&quot;}</pre></details></td><td><em>informational</em></td></tr>
+<tr class="fail"><td><code>focus</code></td><td><code>reader:home</code><br><small>/</small></td><td>reader:home: keyboard order changed (12 stops on a, 12 on b)<details><summary>detail</summary><pre> a &quot;Live&quot;
+-a &quot;Tutors v:16.2.1&quot;
++a &quot;Tutors v:16.2.2&quot;
+ a &quot;Open Learning Web Toolkit&quot;</pre></details></td><td><strong>unclaimed</strong></td></tr>
+<tr class="fail"><td><code>focus</code></td><td><code>reader:course</code><br><small>/course/localhost:8080</small></td><td>reader:course: keyboard order changed (11 stops on a, 11 on b)<details><summary>detail</summary><pre> a &quot;Topic 2 Summary of this topic (this line&quot;
+-a &quot;Tutors v:16.2.1&quot;
++a &quot;Tutors v:16.2.2&quot;
+ a &quot;Open Learning Web Toolkit&quot;</pre></details></td><td><strong>unclaimed</strong></td></tr>
+<tr class="fail"><td><code>focus</code></td><td><code>reader:topic</code><br><small>/topic/localhost:8080/unit-1/topic-01</small></td><td>reader:topic: keyboard order changed (12 stops on a, 12 on b)<details><summary>detail</summary><pre> a &quot;Talk 1 Summary of this talk (appears on &quot;
+-a &quot;Lab 1 ## Prerequisites&quot;
++a &quot;Lab 1 Prerequisites&quot;
++a &quot;Prerequisites&quot;
+ a &quot;Note 1 Summary of this note (appears on &quot;
+-a &quot;Tutors v:16.2.1&quot;
+-a &quot;Open Learning Web Toolkit&quot;
+\ No newline at end of file
++a &quot;Tutors v:16.2.2&quot;
+\ No newline at end of file</pre></details></td><td><strong>unclaimed</strong></td></tr>
+<tr class="fail"><td><code>focus</code></td><td><code>reader:search</code><br><small>/search/localhost:8080</small></td><td>reader:search: keyboard order changed (6 stops on a, 6 on b)<details><summary>detail</summary><pre> input &quot;&quot;
+-a &quot;Tutors v:16.2.1&quot;
++a &quot;Tutors v:16.2.2&quot;
+ a &quot;Open Learning Web Toolkit&quot;</pre></details></td><td><strong>unclaimed</strong></td></tr>
+<tr class="fail"><td><code>focus</code></td><td><code>reader:search-results</code><br><small>/search/localhost:8080</small></td><td>reader:search-results: keyboard order changed (6 stops on a, 6 on b)<details><summary>detail</summary><pre> a &quot;Topic 2/ Note 2&quot;
+-a &quot;Tutors v:16.2.1&quot;
++a &quot;Tutors v:16.2.2&quot;
+ a &quot;Open Learning Web Toolkit&quot;</pre></details></td><td><strong>unclaimed</strong></td></tr>
+<tr class="fail"><td><code>focus</code></td><td><code>catalogue:home</code><br><small>/</small></td><td>catalogue:home: keyboard order changed (6 stops on a, 6 on b)<details><summary>detail</summary><pre> button &quot;Open Theme Menu&quot;
+-a &quot;Tutors v:16.2.1&quot;
++a &quot;Tutors v:16.2.2&quot;
+ a &quot;Open Learning Web Toolkit&quot;</pre></details></td><td><strong>unclaimed</strong></td></tr>
+<tr class="fail"><td><code>focus</code></td><td><code>live:home</code><br><small>/</small></td><td>live:home: keyboard order changed (5 stops on a, 5 on b)<details><summary>detail</summary><pre> tabpanel &quot;&quot;
+-a &quot;Tutors v:16.2.1&quot;
++a &quot;Tutors v:16.2.2&quot;
+ a &quot;Open Learning Web Toolkit&quot;</pre></details></td><td><strong>unclaimed</strong></td></tr>
+<tr class="fail"><td><code>focus</code></td><td><code>reader-auth:course</code><br><small>/course/localhost:8080</small></td><td>reader-auth:course: keyboard order changed (11 stops on a, 11 on b)<details><summary>detail</summary><pre> a &quot;Topic 2 Summary of this topic (this line&quot;
+-a &quot;Tutors v:16.2.1&quot;
++a &quot;Tutors v:16.2.2&quot;
+ a &quot;Open Learning Web Toolkit&quot;</pre></details></td><td><strong>unclaimed</strong></td></tr>
+<tr class="fail"><td><code>focus</code></td><td><code>reader-auth:topic</code><br><small>/topic/localhost:8080/unit-1/topic-01</small></td><td>reader-auth:topic: keyboard order changed (12 stops on a, 12 on b)<details><summary>detail</summary><pre> a &quot;Talk 1 Summary of this talk (appears on &quot;
+-a &quot;Lab 1 ## Prerequisites&quot;
++a &quot;Lab 1 Prerequisites&quot;
++a &quot;Prerequisites&quot;
+ a &quot;Note 1 Summary of this note (appears on &quot;
+-a &quot;Tutors v:16.2.1&quot;
+-a &quot;Open Learning Web Toolkit&quot;
+\ No newline at end of file
++a &quot;Tutors v:16.2.2&quot;
+\ No newline at end of file</pre></details></td><td><strong>unclaimed</strong></td></tr>
+<tr class="fail"><td><code>image-manifest</code></td><td><code>reader/label/org.opencontainers.image.description</code></td><td>reader: label org.opencontainers.image.description added ()</td><td><strong>unclaimed</strong></td></tr>
+<tr class="fail"><td><code>image-manifest</code></td><td><code>reader/label/org.opencontainers.image.url</code></td><td>reader: label org.opencontainers.image.url added (https://github.com/tutors-sdk/tutors-mono-repo)</td><td><strong>unclaimed</strong></td></tr>
+<tr class="fail"><td><code>sbom</code></td><td><code>reader/not-collected</code></td><td>NOT COLLECTED: sbom of reader on side a: quay.io/tutors-sdk/tutors-reader:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself (required by HARNESS_REQUIRE_ARTEFACTS)<details><summary>detail</summary><pre>a: quay.io/tutors-sdk/tutors-reader:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself</pre></details></td><td><strong>unclaimed</strong></td></tr>
+<tr class="fail"><td><code>vulns</code></td><td><code>reader/not-collected</code></td><td>NOT COLLECTED: vulns of reader on side a: nothing to scan: quay.io/tutors-sdk/tutors-reader:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself (required by HARNESS_REQUIRE_ARTEFACTS)<details><summary>detail</summary><pre>a: nothing to scan: quay.io/tutors-sdk/tutors-reader:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself</pre></details></td><td><strong>unclaimed</strong></td></tr>
+<tr class="fail"><td><code>image-manifest</code></td><td><code>catalogue/label/org.opencontainers.image.description</code></td><td>catalogue: label org.opencontainers.image.description added ()</td><td><strong>unclaimed</strong></td></tr>
+<tr class="fail"><td><code>image-manifest</code></td><td><code>catalogue/label/org.opencontainers.image.url</code></td><td>catalogue: label org.opencontainers.image.url added (https://github.com/tutors-sdk/tutors-mono-repo)</td><td><strong>unclaimed</strong></td></tr>
+<tr class="fail"><td><code>sbom</code></td><td><code>catalogue/not-collected</code></td><td>NOT COLLECTED: sbom of catalogue on side a: quay.io/tutors-sdk/tutors-catalogue:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself (required by HARNESS_REQUIRE_ARTEFACTS)<details><summary>detail</summary><pre>a: quay.io/tutors-sdk/tutors-catalogue:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself</pre></details></td><td><strong>unclaimed</strong></td></tr>
+<tr class="fail"><td><code>vulns</code></td><td><code>catalogue/not-collected</code></td><td>NOT COLLECTED: vulns of catalogue on side a: nothing to scan: quay.io/tutors-sdk/tutors-catalogue:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself (required by HARNESS_REQUIRE_ARTEFACTS)<details><summary>detail</summary><pre>a: nothing to scan: quay.io/tutors-sdk/tutors-catalogue:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself</pre></details></td><td><strong>unclaimed</strong></td></tr>
+<tr class="fail"><td><code>image-manifest</code></td><td><code>live/label/org.opencontainers.image.description</code></td><td>live: label org.opencontainers.image.description added ()</td><td><strong>unclaimed</strong></td></tr>
+<tr class="fail"><td><code>image-manifest</code></td><td><code>live/label/org.opencontainers.image.url</code></td><td>live: label org.opencontainers.image.url added (https://github.com/tutors-sdk/tutors-mono-repo)</td><td><strong>unclaimed</strong></td></tr>
+<tr class="fail"><td><code>sbom</code></td><td><code>live/not-collected</code></td><td>NOT COLLECTED: sbom of live on side a: quay.io/tutors-sdk/tutors-live:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself (required by HARNESS_REQUIRE_ARTEFACTS)<details><summary>detail</summary><pre>a: quay.io/tutors-sdk/tutors-live:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself</pre></details></td><td><strong>unclaimed</strong></td></tr>
+<tr class="fail"><td><code>vulns</code></td><td><code>live/not-collected</code></td><td>NOT COLLECTED: vulns of live on side a: nothing to scan: quay.io/tutors-sdk/tutors-live:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself (required by HARNESS_REQUIRE_ARTEFACTS)<details><summary>detail</summary><pre>a: nothing to scan: quay.io/tutors-sdk/tutors-live:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself</pre></details></td><td><strong>unclaimed</strong></td></tr>
+<tr class="fail"><td><code>image-manifest</code></td><td><code>time/label/org.opencontainers.image.description</code></td><td>time: label org.opencontainers.image.description added ()</td><td><strong>unclaimed</strong></td></tr>
+<tr class="fail"><td><code>image-manifest</code></td><td><code>time/label/org.opencontainers.image.url</code></td><td>time: label org.opencontainers.image.url added (https://github.com/tutors-sdk/tutors-mono-repo)</td><td><strong>unclaimed</strong></td></tr>
+<tr class="fail"><td><code>sbom</code></td><td><code>time/not-collected</code></td><td>NOT COLLECTED: sbom of time on side a: quay.io/tutors-sdk/tutors-time:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself (required by HARNESS_REQUIRE_ARTEFACTS)<details><summary>detail</summary><pre>a: quay.io/tutors-sdk/tutors-time:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself</pre></details></td><td><strong>unclaimed</strong></td></tr>
+<tr class="fail"><td><code>vulns</code></td><td><code>time/not-collected</code></td><td>NOT COLLECTED: vulns of time on side a: nothing to scan: quay.io/tutors-sdk/tutors-time:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself (required by HARNESS_REQUIRE_ARTEFACTS)<details><summary>detail</summary><pre>a: nothing to scan: quay.io/tutors-sdk/tutors-time:16.2.1 is built-from-ref, not a pulled image: there is no cosign attestation to read. Set HARNESS_SBOM_SOURCE=generate to generate an SBOM from the image itself</pre></details></td><td><strong>unclaimed</strong></td></tr>
+<tr class="info"><td><code>runtime</code></td><td><code>runtime/summary</code></td><td>container posture collected for catalogue, live, reader, reader-auth, time on both sides (compose)<details><summary>detail</summary><pre>catalogue: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+           b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+live: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+reader: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+        b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+reader-auth: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+             b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+time: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter</pre></details></td><td><em>informational</em></td></tr>
+<tr class="info"><td><code>startup</code></td><td><code>startup/summary</code></td><td>startup time collected on both sides (compose, 5 restart(s) per app)<details><summary>detail</summary><pre>catalogue: first healthy / 442 → 448 ms, ready 2374 → 2359 ms (median, a → b, n=5/5)
+live: first healthy / 454 → 443 ms, ready 2374 → 2383 ms (median, a → b, n=5/5)
+reader: first healthy / 447 → 452 ms, ready 2325 → 2370 ms (median, a → b, n=5/5)
+time: first healthy / 418 → 329 ms, ready 2383 → 2368 ms (median, a → b, n=5/5)</pre></details></td><td><em>informational</em></td></tr></tbody></table>
+
+
+
+
+
+
+
+<h2>Masks</h2>
+<p>Fired: <code>response-date</code>×80, <code>request-id</code>×80, <code>etag</code>×80, <code>metrics-process</code>×599, <code>metrics-timing-histograms</code>×12, <code>third-party-requests</code>×825, <code>persistence-stub-requests</code>×211, <code>realtime-rest-fallback-warning</code>×80, <code>hashed-assets</code>×5320, <code>footer-tutors-version</code>×220, <code>transport-length</code>×80, <code>transport-connection</code>×80, <code>transport-keepalive</code>×80.<br>
+Silent this run: <code>transport-encoding</code>, <code>transport-transfer</code> — a mask that never fires is a mask to delete.</p>
+
+<footer>Every masked field is listed in <code>normalise/masks.yaml</code> with a reason. A mask is a blind spot you chose.<br>harness 1.4.1 · 6648ea6660f2 · contract 1.4.0</footer>
+</body>
+</html>

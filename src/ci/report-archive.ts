@@ -15,6 +15,8 @@
  *   <store>/reports/<id>/report.json    the run's report, byte for byte
  *   <store>/reports/<id>/report.md
  *   <store>/reports/<id>/report.html
+ *   <store>/reports/<id>/scorecard.json   since 1.5.0: score, normalness, Rules and PRs, what to test by hand (src/ci/scorecard.ts)
+ *   <store>/reports/<id>/scorecard.md
  *
  * `<id>` is the run's ranAt and mode (`2026-09-26T07-57-09Z-noise`), so a re-run
  * of the same job replaces its entry and never duplicates it. With --keep-last
@@ -25,6 +27,7 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import type { Mode, RunReport, Verdict } from "../types.ts";
+import { readRulePrs, renderScorecard, scorecard, type Scorecard } from "./scorecard.ts";
 
 export const REPORTS_DIR = "reports";
 export const INDEX_FILE = "index.json";
@@ -42,6 +45,8 @@ export interface ReportEntry {
   sides: { a: Record<string, string>; b: Record<string, string> };
   harnessVersion: string;
   runUrl?: string;
+  /** The scorecard's headline, so a page can list runs without opening each one. */
+  score?: { score: number; grade: Scorecard["grade"]; normalness: Scorecard["normalness"]["state"]; manual: number };
   /** Paths relative to the store's reports/ directory. */
   files: string[];
 }
@@ -91,6 +96,8 @@ export interface KeepOptions {
   store: string;
   runUrl?: string;
   keepLast?: number;
+  /** rules.json, for the PRs a Rule names; optional. */
+  rules?: string;
 }
 
 export function keepReport(opts: KeepOptions): { entry: ReportEntry; dropped: string[] } {
@@ -112,6 +119,11 @@ export function keepReport(opts: KeepOptions): { entry: ReportEntry; dropped: st
     files.push(`${id}/${name}`);
   }
 
+  const card = scorecard(report, readRulePrs(opts.rules));
+  writeFileSync(join(target, "scorecard.json"), JSON.stringify(card, null, 2) + "\n");
+  writeFileSync(join(target, "scorecard.md"), renderScorecard(card));
+  files.push(`${id}/scorecard.json`, `${id}/scorecard.md`);
+
   const entry: ReportEntry = {
     id,
     mode: report.mode,
@@ -121,6 +133,7 @@ export function keepReport(opts: KeepOptions): { entry: ReportEntry; dropped: st
     sides: report.sides,
     harnessVersion: report.harness?.version ?? report.harnessVersion,
     ...(opts.runUrl ? { runUrl: opts.runUrl } : {}),
+    score: { score: card.score, grade: card.grade, normalness: card.normalness.state, manual: card.manual.length },
     files
   };
   const indexFile = join(root, INDEX_FILE);

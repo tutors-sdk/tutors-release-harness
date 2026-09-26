@@ -310,7 +310,10 @@ jobs:
           if [ "$shippable" = yes ] && [ "$release" != "$candidate" ]; then cp "$record" "publish/releases/${release}.json"; fi
           # The candidate's report beside its record, readable at a raw URL after the artifact has expired. Every candidate is kept.
           run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
-          (cd harness && pnpm harness reports keep --dir "$(dirname "../$record")" --store ../publish --run-url "$run_url") \
+          # The release's rules.json, for the PRs a Rule names in the scorecard; without it the PRs come from claim reasons only.
+          rules_flag=""
+          if [ -n "$RULES_URL" ] && curl -fsSL --max-time 30 "$RULES_URL" -o rules.json; then rules_flag="--rules ../rules.json"; fi
+          (cd harness && pnpm harness reports keep --dir "$(dirname "../$record")" --store ../publish --run-url "$run_url" $rules_flag) \
             || echo "::warning title=Report not kept::the release record is published without its report; the artifact still has it"
           cat > publish/README.md <<'README'
           # release-records

@@ -87,6 +87,7 @@ export const NON_ENGINE_PATHS: Readonly<Record<string, string>> = {
   "tests": "the tests; a change to one cannot change a report",
   "docs": "documentation",
   "claims": "an example claims file and its README, not read by the harness",
+  "examples": "real runs' reports and scorecards, checked in to read; not read by the harness (tests/examples.test.ts recomputes each scorecard)",
   "bin": "the executable shim that starts src/cli.ts",
   "package.json": "a version bump is the required change itself; dependencies are covered through pnpm-lock.yaml",
   "README.md": "documentation",
