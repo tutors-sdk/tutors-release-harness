@@ -137,6 +137,12 @@ describe("rendering and reading", () => {
     expect(md).toContain("- `a` (dom; 1 diff(s)): moved and no claim covers it");
   });
 
+  it("links each PR to the monorepo's pull request, not this repository's", () => {
+    const r = report({ matched: [[hunk("dom", "reader:lab"), claim("dom", "reader:lab", "Rule 0031: reading time", { rule: "0031", ruleTitle: "reading time" })]], noise: quiet });
+    const md = renderScorecard(scorecard(r, { "0031": { prs: [301, 305] } }));
+    expect(md).toContain("| 0031 reading time | covered | 1 | dom | [#301](https://github.com/tutors-sdk/tutors-mono-repo/pull/301), [#305](https://github.com/tutors-sdk/tutors-mono-repo/pull/305) |");
+  });
+
   it("reads PRs from rules.json and ignores what is not a PR number; a bad file gives none", () => {
     const dir = mkdtempSync(join(tmpdir(), "scorecard-"));
     writeFileSync(join(dir, "rules.json"), JSON.stringify({ version: 1, rules: { "0031": { title: "t", digest: "d", prs: [301, "x", -2] }, "0032": { title: "u" } } }));
