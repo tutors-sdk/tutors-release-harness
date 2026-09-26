@@ -17,14 +17,23 @@ function withAria(side: "a" | "b", aria: string): SideCapture {
   return c;
 }
 
+function withFocus(side: "a" | "b", stops: string[]): SideCapture {
+  const c = capture(side);
+  c.journeys[0]!.pages[0]!.focus = stops;
+  return c;
+}
+
+/** The keyboard walk of a page in the 16.2.1 -> 16.2.2 release run: the footer link is a stop. */
+const stops = (version: string, extra: string[] = []) => ['a "Live"', ...extra, `a "Tutors v:${version}"`, 'a "Open Learning Web Toolkit"'];
+
 function diff(a: SideCapture, b: SideCapture) {
   return compareCaptures(normalise(a, masks, "release").capture, normalise(b, masks, "release").capture, masks);
 }
 
 describe("footer-tutors-version mask", () => {
-  it("is narrow: dom only, keyed on the label, with a reason", () => {
+  it("is narrow: dom and keyboard order only, keyed on the label, with a reason", () => {
     const m = masks.masks.find((x) => x.id === "footer-tutors-version")!;
-    expect(m.artefact).toEqual(["dom"]);
+    expect(m.artefact).toEqual(["dom", "focus"]);
     expect(m.modes).toBeUndefined();
     expect(m.pattern).toContain("Tutors v:");
     expect(m.reason.length).toBeGreaterThanOrEqual(20);
@@ -60,5 +69,20 @@ describe("footer-tutors-version mask", () => {
   it("must still flag: the label itself changing, or the footer's version disappearing", () => {
     expect(diff(withAria("a", footer("16.2.0")), withAria("b", footer("16.2.0").replaceAll("Tutors v:", "Tutors ver:")))).not.toEqual([]);
     expect(diff(withAria("a", footer("16.2.0")), withAria("b", footer("")))).not.toEqual([]);
+  });
+
+  it("keyboard order: a different release version on the footer stop is NOT flagged", () => {
+    expect(diff(withFocus("a", stops("16.2.1")), withFocus("b", stops("16.2.2")))).toEqual([]);
+    const { hits } = normalise(withFocus("a", stops("16.2.1")), masks, "release");
+    expect(hits["footer-tutors-version"]).toBeGreaterThanOrEqual(1);
+  });
+
+  it("keyboard order must still flag: a stop added, or the version stop gone", () => {
+    const added = diff(withFocus("a", stops("16.2.1")), withFocus("b", stops("16.2.2", ['a "Prerequisites"'])));
+    expect(added).toHaveLength(1);
+    expect(added[0]).toMatchObject({ artefact: "focus", severity: "fail" });
+    expect(added[0]!.detail).toContain("Prerequisites");
+    expect(added[0]!.detail).not.toContain("16.2.2");
+    expect(diff(withFocus("a", stops("16.2.1")), withFocus("b", ['a "Live"', 'a "Open Learning Web Toolkit"']))).not.toEqual([]);
   });
 });
