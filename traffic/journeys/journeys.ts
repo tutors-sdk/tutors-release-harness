@@ -198,10 +198,19 @@ export const studentSignsIn: Journey = {
     await button.waitFor(VISIBLE);
     await onPage("reader-auth:sign-in");
 
+    // Once the course has rendered, the reader reconnects the student in the background: it reads
+    // their sentiment, then their online status, and only then sets whether they share presence
+    // (which shows or hides the course shell's "Activity" group) and routes back to the course.
+    // The heading is visible before that, so a capture taken on the heading alone sometimes saw
+    // the page before the reconnect and sometimes after (an A/A diff on the sidebar, and a
+    // "Couldn't load preload assets" warning when the journey clicked on during that route).
+    // The online status read is the reconnect's last await, so wait for it before capturing.
+    const reconnected = page.waitForResponse((r) => /\/rest\/v1\/tutors-connect-users\?select=online_status\b/.test(r.url()), { timeout: 30_000 });
     await button.click();
     // Auth.js -> identity stub -> callback -> session -> the course.
     await page.waitForURL(new RegExp(`/course/${urls.courseId}`), { timeout: 30_000 });
     await page.getByRole("banner").getByRole("heading", { name: fixture.title }).waitFor(VISIBLE);
+    await reconnected;
     await onPage("reader-auth:course");
 
     await page.getByRole("link", { name: new RegExp(`^${fixture.topicTitle}\\b`) }).click();
