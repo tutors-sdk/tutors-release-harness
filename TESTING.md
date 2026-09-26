@@ -126,7 +126,7 @@ touches:
 `src/ci` and `src/report` (the guards themselves; rendering, whose wording is a contract patch and which
 the mutants, asserting on the verdict, cannot exercise), `src/cli.ts` (parses and dispatches; behaviour
 lives in `src/run.ts`), `src/local` (the maintainer's wrappers and `harness doctor`; they run the stable commands, which are engine code), `src/project.ts` (names the compose project and kind cluster after the checkout), `src/override.ts` (records an override, never changes a verdict), `src/types.ts`,
-`src/version.ts`, `tests`, `docs`, `claims`, `bin`, `package.json` (the version bump is the required change;
+`src/version.ts`, `tests`, `docs`, `claims`, `examples`, `bin`, `package.json` (the version bump is the required change;
 dependencies are covered through the lock file), `README.md`, `TESTING.md`, `LICENSE`,
 `eslint.config.mjs`, `tsconfig.json` and `vitest.config.ts`. Workflows under `.github` are held to the
 contract by `tests/contract.test.ts` instead.
