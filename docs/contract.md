@@ -922,7 +922,7 @@ Releases are git tags `v<harness version>` on `main`, cut by a maintainer.
 
 ### 1.6.0 (minor; which build production serves)
 
-Additive for a consumer written against 1.5.0: one new optional `report.json`
+The release note is [releases/1.6.0.md](releases/1.6.0.md). Additive for a consumer written against 1.5.0: one new optional `report.json`
 field, nothing removed or changed. The harness version is 1.6.0 as well, because a
 contract minor moves the harness at least as far ([Compatibility](#compatibility)).
 
