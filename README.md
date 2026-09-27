@@ -64,6 +64,7 @@ Every run writes `out/<timestamp>-<mode>/` with `a/` and `b/` captures
 
 Docs: [where the A and B images come from](docs/images.md) ·
 [the integration contract](docs/contract.md) ·
+[Lean in the harness](docs/lean.md) ·
 [modes](docs/modes.md) · [claims](claims/README.md) ·
 [what the monorepo needs to do](docs/monorepo/README.md) ·
 [kind substrate](deploy/kind/README.md) · [testing the harness](TESTING.md) ·
