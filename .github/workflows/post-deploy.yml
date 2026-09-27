@@ -168,11 +168,23 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        # One open rollback issue at a time. The monitor runs on a schedule and finds the same differences until someone acts,
+        # so a run whose differences an open issue already carries (the signature of the report's "Unclaimed differences"
+        # section) adds nothing; different differences are a comment on that issue; with none open, a new issue.
         run: |
-          { cat out/*-post-deploy/report.md; echo; echo "Report artifact: ${RUN_URL}"; } > body.md
+          report="$(find out -path '*-post-deploy/report.md' | head -1)"
+          signature="$(sed -n '/^### Unclaimed differences/,/^### /p' "$report" | sha256sum | cut -c1-16)"
+          { cat "$report"; echo; echo "Report artifact: ${RUN_URL}"; echo; echo "<!-- rollback-signature: ${signature} -->"; } > body.md
           gh label create rollback --color B60205 --description "Production differs from the tested release" 2>/dev/null || true
-          gh issue create --title "Rollback candidate: production differs from the tested release ($(date -u +%Y-%m-%dT%H:%MZ))" \
-            --label rollback --body-file body.md
+          open="$(gh issue list --label rollback --state open --limit 1 --json number --jq '.[0].number // empty')"
+          if [ -z "$open" ]; then
+            gh issue create --title "Rollback candidate: production differs from the tested release ($(date -u +%Y-%m-%dT%H:%MZ))" \
+              --label rollback --body-file body.md
+          elif gh issue view "$open" --json body,comments --jq '([.body] + [.comments[].body]) | join("\n")' | grep -qF "rollback-signature: ${signature}"; then
+            echo "The open rollback issue #${open} already carries these differences: nothing added." >> "$GITHUB_STEP_SUMMARY"
+          else
+            gh issue comment "$open" --body-file body.md
+          fi
 
       # Saved under the hash of its content, and only when this run recorded something the restored copy did not have.
       - name: Keep the recorded third-party responses for later runs
