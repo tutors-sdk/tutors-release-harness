@@ -33,8 +33,12 @@ permissions:
   actions: read
   issues: write
 
+# One group per trigger. A group holds one running and one pending run, and a newer pending run replaces the
+# pending one: with a single group, the next quarter-hour's scheduled run could cancel a `deployed` dispatch that
+# was waiting behind a monitor run, and the check of that deployment would never run. Split by event, a scheduled
+# run only ever replaces another scheduled run, and a dispatch waits for (or replaces) only another dispatch.
 concurrency:
-  group: post-deploy
+  group: post-deploy-${{ github.event_name }}
   cancel-in-progress: false
 
 jobs:
@@ -50,11 +54,11 @@ jobs:
       # default of a local run is HARNESS_HOME/third-party-cache, the same place.
       HARNESS_THIRD_PARTY_CACHE_DIR: ${{ github.workspace }}/.harness/third-party-cache
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
           cache: pnpm
@@ -66,7 +70,7 @@ jobs:
       # nothing (docs/noise-burndown.md). The key never matches exactly; restore-keys picks the newest entry.
       - name: Restore the recorded third-party responses
         id: third-party-cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .harness/third-party-cache
           key: third-party-v1-${{ github.run_id }}
@@ -77,7 +81,7 @@ jobs:
       # release has passed in the artifact's 30 days), and then there is nothing to compare production with: the
       # monitor says so in the summary and stands down, rather than failing every run and teaching people to ignore it.
       - name: Fetch the recorded release run
-        uses: dawidd6/action-download-artifact@v6
+        uses: dawidd6/action-download-artifact@634d83b91986fcec9be314054943fa5c976aeb0e # v25
         with:
           workflow: release.yml
           name: release-report
@@ -130,7 +134,7 @@ jobs:
           NOISE_FILE: ${{ steps.noise.outputs.noise_file }}
         # The exit code is kept for the steps below: 1 is a difference (a rollback issue), 2 is "could not judge" (no issue).
         run: |
-          recorded="$(ls -d recorded/*-release | head -1)"
+          recorded="$(find recorded -mindepth 1 -maxdepth 1 -type d -name '*-release' | sort | head -1)"
           set +e
           pnpm harness run --mode post-deploy --recorded "$recorded" --production "$PRODUCTION_URLS" ${NOISE_FILE:+--noise "$NOISE_FILE"} \
             ${DEPLOYED:+--deployed "$DEPLOYED" --release-record releases} ${DEPLOYED_DIGESTS:+--deployed-digests "$DEPLOYED_DIGESTS"}
@@ -139,7 +143,7 @@ jobs:
           echo "exit_code=$code" >> "$GITHUB_OUTPUT"
           exit "$code"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always() && steps.recording.outputs.found == 'true'
         with:
           name: post-deploy-report
@@ -173,7 +177,7 @@ jobs:
       # Saved under the hash of its content, and only when this run recorded something the restored copy did not have.
       - name: Keep the recorded third-party responses for later runs
         if: always() && hashFiles('.harness/third-party-cache/*.json') != '' && steps.third-party-cache.outputs.cache-matched-key != format('third-party-v1-{0}', hashFiles('.harness/third-party-cache/*.json'))
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .harness/third-party-cache
           key: third-party-v1-${{ hashFiles('.harness/third-party-cache/*.json') }}

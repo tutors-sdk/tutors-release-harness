@@ -34,13 +34,13 @@ jobs:
     outputs:
       run_mutants: ${{ steps.detect.outputs.engine_changed || 'true' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           fetch-depth: 0
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
         if: github.event_name == 'pull_request'
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         if: github.event_name == 'pull_request'
         with:
           node-version: 22
@@ -57,7 +57,10 @@ jobs:
   mutants:
     needs: changes
     if: needs.changes.outputs.run_mutants == 'true'
-    runs-on: ubuntu-latest
+    # Pinned, not ubuntu-latest: the A/A measures the noise floor of THIS runner image (fonts, anti-aliasing,
+    # timing), and this job runs journeys the same way; nightly-noise.yml pins the same one. Move them all together,
+    # in one PR, and expect a fresh burn-down after (docs/noise-burndown.md).
+    runs-on: ubuntu-24.04
     timeout-minutes: 120
     env:
       HARNESS_IMAGE_PREFIX: ${{ vars.HARNESS_IMAGE_PREFIX || 'quay.io/tutors-sdk/tutors-{app}' }}
@@ -74,11 +77,11 @@ jobs:
       # default of a local run is HARNESS_HOME/third-party-cache, the same place.
       HARNESS_THIRD_PARTY_CACHE_DIR: ${{ github.workspace }}/.harness/third-party-cache
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
           cache: pnpm
@@ -90,7 +93,7 @@ jobs:
       # nothing (docs/noise-burndown.md). The key never matches exactly; restore-keys picks the newest entry.
       - name: Restore the recorded third-party responses
         id: third-party-cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .harness/third-party-cache
           key: third-party-v1-${{ github.run_id }}
@@ -99,29 +102,34 @@ jobs:
 
       # `images ensure` verifies the cosign signature of every image it pulls (docs/images.md).
       # The images are signed with cosign 3, and verifying them needs cosign >= 3: installer v4 installs it.
-      - uses: sigstore/cosign-installer@v4.1.2
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
 
       # The image-level mutants (base-swap, added-package) are built locally and have no attestation, so `harness mutants`
       # generates their SBOMs with syft on both sides (HARNESS_SBOM_SOURCE=generate). Without syft added-package escapes.
       # `download-syft` takes the tag with its `v` (syft-version) and prints the path of the binary as `cmd`.
-      - uses: anchore/sbom-action/download-syft@v0
+      - uses: anchore/sbom-action/download-syft@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
         id: syft
         with:
           syft-version: ${{ env.SYFT_VERSION }}
       - name: Point the harness at the downloaded syft
-        run: echo "HARNESS_SBOM_CMD=${{ steps.syft.outputs.cmd }} docker:{image} -o spdx-json" >> "$GITHUB_ENV"
+        env:
+          SYFT_CMD: ${{ steps.syft.outputs.cmd }}
+        run: echo "HARNESS_SBOM_CMD=${SYFT_CMD} docker:{image} -o spdx-json" >> "$GITHUB_ENV"
 
       # The `vulns` artefact: each image's SBOM, scanned by grype (informational here: without HARNESS_REQUIRE_STATIC a scan that cannot run is 'not collected', not a failure).
       # Grype is pinned, and so is its database: fetched ONCE, here, into HARNESS_VULN_DB_DIR, restored from a cache with one
       # entry per UTC day and grype version, and never updated during the run (the harness switches every scanner update off).
       # Both sides of every comparison are scanned with the same database (docs/images.md, "The vulnerability database").
       # download-grype takes the tag with its `v` and prints the absolute path of the binary as `cmd`; it is not on PATH.
-      - uses: anchore/scan-action/download-grype@v7.4.2
+      - uses: anchore/scan-action/download-grype@27805bf3b4e84b4a5c980df22ed233c00390a439 # v7.4.2
         id: grype
         with:
           grype-version: ${{ env.GRYPE_VERSION }}
       - name: Put the pinned grype on PATH
-        run: dirname "${{ steps.grype.outputs.cmd }}" >> "$GITHUB_PATH"
+        # Through env, not expanded into the script: an output is data, never code.
+        env:
+          GRYPE_CMD: ${{ steps.grype.outputs.cmd }}
+        run: dirname "$GRYPE_CMD" >> "$GITHUB_PATH"
 
       - name: Which day's vulnerability database
         id: vulndb
@@ -130,7 +138,7 @@ jobs:
       # servers are down; grype itself refuses one older than HARNESS_VULN_DB_MAX_AGE_DAYS (default 5).
       - name: Restore the vulnerability database
         id: vulndb-cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .harness/vuln-db
           key: vuln-db-grype-${{ env.GRYPE_VERSION }}-${{ steps.vulndb.outputs.day }}
@@ -143,7 +151,7 @@ jobs:
         run: pnpm harness vuln-db update
       - name: Keep today's vulnerability database for the other runs
         if: steps.vulndb-fetch.outcome == 'success'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .harness/vuln-db
           key: vuln-db-grype-${{ env.GRYPE_VERSION }}-${{ steps.vulndb.outputs.day }}
@@ -161,7 +169,7 @@ jobs:
       # report itself, so the failure can be read without downloading every mutant's screenshots. Reports and captures only.
       - name: Upload the A/A report of a failed self-test
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: mutant-noise-report
           path: |
@@ -173,7 +181,7 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: mutant-reports
@@ -183,7 +191,7 @@ jobs:
       # Saved under the hash of its content, and only when this run recorded something the restored copy did not have.
       - name: Keep the recorded third-party responses for later runs
         if: always() && hashFiles('.harness/third-party-cache/*.json') != '' && steps.third-party-cache.outputs.cache-matched-key != format('third-party-v1-{0}', hashFiles('.harness/third-party-cache/*.json'))
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .harness/third-party-cache
           key: third-party-v1-${{ hashFiles('.harness/third-party-cache/*.json') }}

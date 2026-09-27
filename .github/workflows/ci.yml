@@ -18,11 +18,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
           cache: pnpm
@@ -36,6 +36,41 @@ jobs:
         run: |
           { echo "### Coverage"; echo '```'; cat coverage/summary.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
 
+  # The workflows themselves: actionlint (syntax, expressions, and shellcheck on every `run:`) and zizmor (injection,
+  # unpinned actions, dangerous triggers, credentials; .github/zizmor.yml says what is ignored and why). Both are
+  # pinned by version and checked against a hash before they run; the runner image is pinned so shellcheck is too.
+  workflow-lint:
+    name: Workflow lint (actionlint, zizmor)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      ACTIONLINT_VERSION: 1.7.12
+      ACTIONLINT_SHA256: 8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
+      ZIZMOR_VERSION: 1.30.1
+      ZIZMOR_SHA256: eee12266b793cb87ad4a7e3af2e72404f8a63e3de5eb099b80bf7b1cfd232a8e
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: actionlint
+        run: |
+          tarball="actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          curl -fsSL -o "$RUNNER_TEMP/$tarball" "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/$tarball"
+          echo "$ACTIONLINT_SHA256  $RUNNER_TEMP/$tarball" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/$tarball" -C "$RUNNER_TEMP" actionlint
+          shellcheck --version | head -2
+          "$RUNNER_TEMP/actionlint" -color
+      - name: zizmor
+        env:
+          # For the online audits: a SHA that is not in the action's repository, a `# vX.Y.Z` that is not that SHA's
+          # release, a known-vulnerable action. Read-only, public repositories.
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 -m venv "$RUNNER_TEMP/zizmor"
+          echo "zizmor==${ZIZMOR_VERSION} --hash=sha256:${ZIZMOR_SHA256}" > "$RUNNER_TEMP/zizmor.txt"
+          "$RUNNER_TEMP/zizmor/bin/pip" install --quiet --disable-pip-version-check --require-hashes --only-binary :all: -r "$RUNNER_TEMP/zizmor.txt"
+          "$RUNNER_TEMP/zizmor/bin/zizmor" --format github --config .github/zizmor.yml .
+
   # A mask is a blind spot you chose: a PR that adds or loosens one changes nothing else (`harness guard masks`, src/ci/mask-change.ts),
   # and a mask list past ~40 is flagged. Always reports on a pull request, so it can be a required check.
   masks:
@@ -44,12 +79,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           fetch-depth: 0
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
           cache: pnpm
@@ -65,7 +100,10 @@ jobs:
   # from the monorepo ref, and the report header says so (docs/images.md).
   two-stacks:
     name: Two stacks boot and one journey runs (A/A)
-    runs-on: ubuntu-latest
+    # Pinned, not ubuntu-latest: the A/A measures the noise floor of THIS runner image (fonts, anti-aliasing,
+    # timing), and this job runs journeys the same way; nightly-noise.yml pins the same one. Move them all together,
+    # in one PR, and expect a fresh burn-down after (docs/noise-burndown.md).
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
       HARNESS_IMAGE_PREFIX: ${{ vars.HARNESS_IMAGE_PREFIX || 'quay.io/tutors-sdk/tutors-{app}' }}
@@ -79,11 +117,11 @@ jobs:
       # default of a local run is HARNESS_HOME/third-party-cache, the same place.
       HARNESS_THIRD_PARTY_CACHE_DIR: ${{ github.workspace }}/.harness/third-party-cache
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
           cache: pnpm
@@ -95,7 +133,7 @@ jobs:
       # nothing (docs/noise-burndown.md). The key never matches exactly; restore-keys picks the newest entry.
       - name: Restore the recorded third-party responses
         id: third-party-cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .harness/third-party-cache
           key: third-party-v1-${{ github.run_id }}
@@ -104,7 +142,7 @@ jobs:
 
       # `images ensure` verifies the cosign signature of every image it pulls (docs/images.md).
       # The images are signed with cosign 3, and verifying them needs cosign >= 3: installer v4 installs it.
-      - uses: sigstore/cosign-installer@v4.1.2
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
 
       # The whole smoke is one command, the one a maintainer runs locally (`pnpm smoke`, docs/local.md): pull and verify
       # or build the images, boot both stacks and run one journey A/A, then the migration fixtures (the expanding one must
@@ -116,7 +154,7 @@ jobs:
         if: failure()
         run: docker compose -p "$HARNESS_COMPOSE_PROJECT" -f compose.harness.yaml --profile upgrade logs --no-color || true
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: harness-ci
@@ -126,7 +164,7 @@ jobs:
       # Saved under the hash of its content, and only when this run recorded something the restored copy did not have.
       - name: Keep the recorded third-party responses for later runs
         if: always() && hashFiles('.harness/third-party-cache/*.json') != '' && steps.third-party-cache.outputs.cache-matched-key != format('third-party-v1-{0}', hashFiles('.harness/third-party-cache/*.json'))
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .harness/third-party-cache
           key: third-party-v1-${{ hashFiles('.harness/third-party-cache/*.json') }}

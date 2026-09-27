@@ -37,8 +37,9 @@ concurrency:
 jobs:
   noise:
     # Pinned, not ubuntu-latest: the A/A measures the noise floor of THIS runner image (fonts, anti-aliasing,
-    # timing), and release.yml and post-deploy.yml run on the same one. Move all three together, in one PR,
-    # and expect a fresh burn-down after (docs/noise-burndown.md).
+    # timing), and the jobs that run journeys (release.yml, post-deploy.yml, main-preview.yml, ci.yml's
+    # two-stacks, weekly-mutants.yml's mutants) run on the same one. Move them all together, in one PR, and
+    # expect a fresh burn-down after (docs/noise-burndown.md).
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     env:
@@ -58,11 +59,11 @@ jobs:
       # default of a local run is HARNESS_HOME/third-party-cache, the same place.
       HARNESS_THIRD_PARTY_CACHE_DIR: ${{ github.workspace }}/.harness/third-party-cache
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
           cache: pnpm
@@ -74,7 +75,7 @@ jobs:
       # nothing (docs/noise-burndown.md). The key never matches exactly; restore-keys picks the newest entry.
       - name: Restore the recorded third-party responses
         id: third-party-cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .harness/third-party-cache
           key: third-party-v1-${{ github.run_id }}
@@ -83,19 +84,22 @@ jobs:
 
       # `images ensure` verifies the cosign signature of every image it pulls (docs/images.md).
       # The images are signed with cosign 3, and verifying them needs cosign >= 3: installer v4 installs it.
-      - uses: sigstore/cosign-installer@v4.1.2
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
 
       # The `vulns` artefact: each image's SBOM, scanned by grype (HARNESS_REQUIRE_STATIC=1: no database, no scan, no pass).
       # Grype is pinned, and so is its database: fetched ONCE, here, into HARNESS_VULN_DB_DIR, restored from a cache with one
       # entry per UTC day and grype version, and never updated during the run (the harness switches every scanner update off).
       # Both sides of every comparison are scanned with the same database (docs/images.md, "The vulnerability database").
       # download-grype takes the tag with its `v` and prints the absolute path of the binary as `cmd`; it is not on PATH.
-      - uses: anchore/scan-action/download-grype@v7.4.2
+      - uses: anchore/scan-action/download-grype@27805bf3b4e84b4a5c980df22ed233c00390a439 # v7.4.2
         id: grype
         with:
           grype-version: ${{ env.GRYPE_VERSION }}
       - name: Put the pinned grype on PATH
-        run: dirname "${{ steps.grype.outputs.cmd }}" >> "$GITHUB_PATH"
+        # Through env, not expanded into the script: an output is data, never code.
+        env:
+          GRYPE_CMD: ${{ steps.grype.outputs.cmd }}
+        run: dirname "$GRYPE_CMD" >> "$GITHUB_PATH"
 
       - name: Which day's vulnerability database
         id: vulndb
@@ -104,7 +108,7 @@ jobs:
       # servers are down; grype itself refuses one older than HARNESS_VULN_DB_MAX_AGE_DAYS (default 5).
       - name: Restore the vulnerability database
         id: vulndb-cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .harness/vuln-db
           key: vuln-db-grype-${{ env.GRYPE_VERSION }}-${{ steps.vulndb.outputs.day }}
@@ -117,7 +121,7 @@ jobs:
         run: pnpm harness vuln-db update
       - name: Keep today's vulnerability database for the other runs
         if: steps.vulndb-fetch.outcome == 'success'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .harness/vuln-db
           key: vuln-db-grype-${{ env.GRYPE_VERSION }}-${{ steps.vulndb.outputs.day }}
@@ -128,7 +132,7 @@ jobs:
       # Last night's verified production images, for a night the registry is down or rate-limiting.
       # The key never matches exactly (it ends in this run's id); restore-keys picks the newest earlier one.
       - name: Restore the last verified production images
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .harness/image-cache
           key: production-images-${{ env.TAG }}-${{ github.run_id }}
@@ -143,7 +147,7 @@ jobs:
 
       - name: Keep the verified images for a night the registry is down
         if: steps.ensure.outputs.image_cache == 'refreshed'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .harness/image-cache
           key: production-images-${{ env.TAG }}-${{ github.run_id }}
@@ -159,14 +163,14 @@ jobs:
           if ls out/*-noise/report.md > /dev/null 2>&1; then cat out/*-noise/report.md >> "$GITHUB_STEP_SUMMARY"; else echo "### A/A: could not judge (no report: the run stopped before a verdict, see the step log)" >> "$GITHUB_STEP_SUMMARY"; fi
 
       - name: Publish the noise status for release runs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: noise-status
           path: out/*/noise-status.json
           retention-days: 8
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: noise-report
@@ -176,7 +180,7 @@ jobs:
       # Saved under the hash of its content, and only when this run recorded something the restored copy did not have.
       - name: Keep the recorded third-party responses for later runs
         if: always() && hashFiles('.harness/third-party-cache/*.json') != '' && steps.third-party-cache.outputs.cache-matched-key != format('third-party-v1-{0}', hashFiles('.harness/third-party-cache/*.json'))
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .harness/third-party-cache
           key: third-party-v1-${{ hashFiles('.harness/third-party-cache/*.json') }}
@@ -198,17 +202,17 @@ jobs:
     env:
       TAG: ${{ inputs.tag || vars.HARNESS_PRODUCTION_TAG || 'main' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: noise-report
           path: tonight
@@ -242,8 +246,8 @@ jobs:
         env:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          status="$(ls tonight/*/noise-status.json | head -1)"
-          report="$(ls tonight/*/report.json | head -1)"
+          status="$(find tonight -mindepth 2 -maxdepth 2 -name noise-status.json | sort | head -1)"
+          report="$(find tonight -mindepth 2 -maxdepth 2 -name report.json | sort | head -1)"
           pnpm harness noise record \
             --status "$status" --report "$report" --store publish \
             --tag "$TAG" --run-url "$RUN_URL" --summary "$GITHUB_STEP_SUMMARY"
@@ -254,7 +258,7 @@ jobs:
         continue-on-error: true
         env:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: pnpm harness reports keep --dir "$(ls tonight/*/report.json | head -1)" --store publish --run-url "$RUN_URL" --keep-last 14
+        run: pnpm harness reports keep --dir "$(find tonight -mindepth 2 -maxdepth 2 -name report.json | sort | head -1)" --store publish --run-url "$RUN_URL" --keep-last 14
 
       # One commit, forced, every night: the history lives in noise-history.json, not in git, so the branch never grows
       # and nothing can conflict. Release runs read noise-status.json from here (docs/noise-burndown.md).

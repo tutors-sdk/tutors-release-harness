@@ -27,6 +27,7 @@ interface Step {
   run?: string;
   "continue-on-error"?: boolean;
   with?: Record<string, string>;
+  env?: Record<string, string>;
 }
 interface Job {
   name?: string;
@@ -67,17 +68,22 @@ describe("one pinned grype", () => {
       const at = `${f}:${id}`;
       expect(job.env?.GRYPE_VERSION, at).toBe(PINNED_GRYPE_VERSION);
       const step = job.steps.find((s) => s.uses?.startsWith("anchore/scan-action/download-grype@"))!;
-      // a full version, never a moving major: the action's own default moves with its release
-      expect(step.uses, at).toMatch(/@v\d+\.\d+\.\d+$/);
+      // a commit, named by its full release in the comment, never a moving major: the action's own default moves with its release
+      expect(step.uses, at).toMatch(/@[0-9a-f]{40}$/);
+      expect(text[f], at).toContain(`${step.uses} # v`);
+      expect(text[f]!.split(`${step.uses} # `)[1], at).toMatch(/^v\d+\.\d+\.\d+\n/);
       expect(step.with?.["grype-version"], at).toBe("${{ env.GRYPE_VERSION }}");
       expect(step.id, at).toBe("grype");
       // the action prints the binary's absolute path as `cmd`; it is not on PATH, and the harness runs `grype`
-      const path = job.steps.find((s) => s.run?.includes("$GITHUB_PATH") && s.run.includes("steps.grype.outputs.cmd"));
+      // (through env, so the output is never expanded into the script: zizmor's template-injection)
+      const path = job.steps.find((s) => s.run?.includes("$GITHUB_PATH") && s.env?.GRYPE_CMD === "${{ steps.grype.outputs.cmd }}" && s.run.includes('"$GRYPE_CMD"'));
       expect(path, at).toBeDefined();
       expect(idx(job, (s) => s === path), at).toBeGreaterThan(idx(job, (s) => s === step));
     }
     // the same version appears nowhere else as a literal, so a bump is one edit per job and one constant
-    for (const f of files) expect([...text[f]!.matchAll(/\bv0\.\d+\.\d+\b/g)].map((m) => m[0]).filter((v) => v !== PINNED_GRYPE_VERSION), f).toEqual([]);
+    // (the `# vX.Y.Z` after a pinned `uses:` names that action's release, not a tool's version)
+    const withoutPins = (t: string) => t.replace(/uses: \S+ # v[\d.]+/g, "");
+    for (const f of files) expect([...withoutPins(text[f]!).matchAll(/\bv0\.\d+\.\d+\b/g)].map((m) => m[0]).filter((v) => v !== PINNED_GRYPE_VERSION), f).toEqual([]);
   });
 
   it("syft is pinned too, in the one job that generates SBOMs (the others read the images' SBOM attestation)", () => {
