@@ -41,7 +41,7 @@
     "@types/diff": "^8.0.0",
     "@types/node": "^22.19.0",
     "@types/picomatch": "^4.0.2",
-    "@types/pixelmatch": "^5.2.6",
+    "@types/pixelmatch": "^7.1.0",
     "@types/pngjs": "^6.0.5",
     "ajv": "^8.20.0",
     "eslint": "^9.39.1",
