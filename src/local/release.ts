@@ -8,6 +8,8 @@ import type { Confidence, GateWord } from "../score/confidence.ts";
 import { scoreAndWrite } from "../score/read.ts";
 import { rcsLine, renderDeductionsMarkdown, renderScoreHtml, renderScoreMarkdown } from "../score/render.ts";
 import type { NoiseStatus, RunReport } from "../types.ts";
+import { renderAppended } from "../scoreboard/render.ts";
+import { appendRun, readTrends } from "../scoreboard/store.ts";
 import { formatElapsed } from "./compare.ts";
 import { readStatus, type StatusReport } from "./noise-store.ts";
 import {
@@ -40,7 +42,9 @@ import {
  *   rehearse   migration, then upgrade (skipped only with --fast)
  *   score      confidence.json: the Release Confidence Score (C0) from the release, migration and upgrade runs; the
  *              glance (C3) and the 5 Whys stubs (C4) are not built yet
- *   report     report.md, report.html, gate.md, gate.json in the same directory, led by the Gate, then the RCS
+ *   report     report.md, report.html, gate.md, gate.json in the same directory, led by the Gate, then the RCS; before
+ *              them the scoreboard line (C2) is appended to HARNESS_HOME/scoreboard/releases.jsonl (or --scoreboard), and
+ *              the line and any run rule firing are printed after the score
  *
  * Jidoka: a stage that cannot hand good work to the next stops the line (missing images, a dirty A/A before any A/B, a
  * gate FAIL), and the terminal and the summary say "line stopped at <stage>: <why>" and the next standard step. The
@@ -159,6 +163,8 @@ export interface ReleaseOptions {
   score?: ScoreExtras;
   /** The monorepo checkout (--monorepo or HARNESS_MONOREPO_DIR): where `harness changes` reads git. */
   monorepo?: string;
+  /** Where the scoreboard line goes (HARNESS_HOME/scoreboard/releases.jsonl, or --scoreboard), and the noise history its self-health reads. */
+  scoreboard?: { file: string; noiseHistory?: string };
 }
 
 /** The score's optional inputs: files a later phase or the monorepo writes. */
@@ -229,7 +235,7 @@ export function planRelease(o: ReleaseOptions, noise: NoiseDecision): PlannedSta
 }
 
 /** `--dry-run`: the baseline, the noise decision and every command, and nothing pulled or run. */
-export function renderReleasePlan(o: { candidate: string; baseline: Baseline; fast: boolean; stages: PlannedStage[]; env: Record<string, string>; platform?: NodeJS.Platform }): string {
+export function renderReleasePlan(o: { candidate: string; baseline: Baseline; fast: boolean; stages: PlannedStage[]; env: Record<string, string>; platform?: NodeJS.Platform; scoreboard?: string }): string {
   const lines = [`harness release: ${o.candidate} beside ${o.baseline.tag} (${o.baseline.how})${o.fast ? `\n${FAST_BANNER}` : ""}`, ""];
   const set = Object.entries(o.env);
   if (set.length) lines.push(`environment: ${set.map(([k, v]) => `${k}=${commandLine([v], o.platform)}`).join(" ")}`, "");
@@ -238,6 +244,7 @@ export function renderReleasePlan(o: { candidate: string; baseline: Baseline; fa
     if (s.skip && !s.steps.length && s.skip !== s.title) lines.push(`       skipped: ${s.skip}`);
     for (const step of s.steps) lines.push(`       harness ${commandLine(step.argv, o.platform)}`);
   });
+  if (o.scoreboard) lines.push("", o.fast ? "scoreboard: not appended (--fast)" : `scoreboard: the line is appended to ${o.scoreboard}`);
   lines.push("", `dry run: nothing was pulled or run (${o.candidate} beside ${o.baseline.tag})`);
   return lines.join("\n");
 }
@@ -393,6 +400,23 @@ export function scoreStage(i: SeamInput): SeamResult {
   const { confidence: c } = scoreAndWrite({ outDir: i.dir, gate: i.gate, release, ...(migration ? { migration } : {}), ...(upgrade ? { upgrade } : {}), ...i.score, ...(changeRisk ? { changeRisk } : {}), candidate: i.candidate, baseline: i.baseline.tag });
   const measured = c.dimensions.filter((d) => d.status === "measured").length;
   return { state: "done", note: `${c.rcs === null ? `no RCS (Gate ${c.gate})` : `RCS ${c.rcs} ${c.band}`}; ${measured} of ${c.dimensions.length} dimensions measured; confidence.json`, markdown: renderDeductionsMarkdown(c), confidence: c };
+}
+
+/**
+ * C2: append this run's line to the scoreboard and read the run rules back. After the score, never before the exit code,
+ * and never into the repository checkout unasked. A --fast run is not a go decision, so it is not put on the board; a
+ * run with no score has no line. Returns the lines to print after the score (and to put in report.md).
+ */
+export function scoreboardStage(o: { dir: string; fast: boolean; scoreboard?: ReleaseRun["scoreboard"]; confidence?: Confidence; now: Date }): string[] {
+  if (!o.scoreboard) return [];
+  if (o.fast) return ["scoreboard: not appended (--fast: this report cannot be used for a go decision)"];
+  if (!o.confidence) return ["scoreboard: not appended (no score)"];
+  try {
+    const { line, file } = appendRun({ run: o.dir, file: o.scoreboard.file, now: o.now });
+    return renderAppended(line, file, readTrends({ file, ...(o.scoreboard.noiseHistory ? { noiseHistory: o.scoreboard.noiseHistory } : {}), now: o.now }));
+  } catch (e) {
+    return [`scoreboard: not appended, and nothing else changes: ${e instanceof Error ? e.message : String(e)}`];
+  }
 }
 
 /** A seam that throws is a finding about the seam, never about the release: it is reported and the exit code is left alone. Ctrl-C still ends the plan. */
@@ -619,6 +643,8 @@ export function runRelease(r: ReleaseRun, deps: ReleaseDeps): ReleaseOutcome {
   }
   const conf = seams.score?.confidence;
   const changes = seams.changes?.changes;
+  // scoreboard: C2, after the score. What it says is printed and reported; it cannot reach `code` or `gate`, decided above.
+  const board = interrupted ? [] : scoreboardStage({ dir, fast: r.fast, ...(r.scoreboard ? { scoreboard: r.scoreboard } : {}), ...(conf ? { confidence: conf } : {}), now: deps.now() });
 
   // report: always.
   progress.start("report");
@@ -628,12 +654,13 @@ export function runRelease(r: ReleaseRun, deps: ReleaseDeps): ReleaseOutcome {
   const md = join(dir, "report.md");
   const html = join(dir, "report.html");
   const gateMd = readFileSync(gateFiles.md, "utf8");
-  writeFileSync(md, renderReleaseMarkdown({ gateMd, status: progress.status, code, review, seams }));
-  writeFileSync(html, renderReleaseHtml({ dir, gate, fast: r.fast, candidate: r.candidate, baseline: r.baseline, code, entries, status: progress.status, review, seams }));
+  writeFileSync(md, renderReleaseMarkdown({ gateMd, status: progress.status, code, review, seams, board }));
+  writeFileSync(html, renderReleaseHtml({ dir, gate, fast: r.fast, candidate: r.candidate, baseline: r.baseline, code, entries, status: progress.status, review, seams, board }));
   progress.end("report", "done", `report.md, report.html, gate.md, gate.json${conf ? ", confidence.json" : ""}${changes ? ", changes.json" : ""}`);
   progress.finish(interrupted ? "interrupted" : "finished", code);
   deps.say(`gate: ${gate}${r.fast ? " (--fast: not for a go decision)" : ""} -> exit ${code}`);
   if (conf) deps.say(`confidence: ${rcsLine(conf)}`);
+  for (const line of board) deps.say(line);
   deps.say(`report: ${html}`);
   if (r.fast) deps.say(FAST_BANNER);
   if (deps.open) deps.open(html);
@@ -645,7 +672,7 @@ export function runRelease(r: ReleaseRun, deps: ReleaseDeps): ReleaseOutcome {
 type Seams = Partial<Record<"changes" | "score", SeamResult>>;
 
 /** report.md: the gate first (the andon), the RCS and its dimensions under it (in gate.md), then where the line stopped, the stages, and the seams still to be filled. */
-export function renderReleaseMarkdown(o: { gateMd: string; status: ReleaseStatus; code: number; review: string[]; seams: Seams }): string {
+export function renderReleaseMarkdown(o: { gateMd: string; status: ReleaseStatus; code: number; review: string[]; seams: Seams; board?: string[] }): string {
   const lines = [o.gateMd.trimEnd(), ""];
   if (o.status.stopped) lines.push(`### Line stopped at ${o.status.stopped.stage}`, "", o.status.stopped.why, "", `Next standard step: ${o.status.stopped.next}`, "");
   if (o.review.length) lines.push("#### The A/A differences (each needs a mask reviewed or a determinism fix)", "", ...o.review.map((l) => `- ${l}`), "");
@@ -653,6 +680,7 @@ export function renderReleaseMarkdown(o: { gateMd: string; status: ReleaseStatus
   for (const s of o.status.stages.filter((x) => x.stage !== "report")) lines.push(`| ${s.stage} | ${s.state} | ${s.elapsed === undefined ? "" : formatElapsed(s.elapsed)} | ${(s.note ?? "").replaceAll("|", "\\|")} |`);
   lines.push("");
   lines.push("### Score (visual management): where the points went", "", o.seams.score?.markdown ?? `Not computed: ${o.seams.score?.note ?? "the score stage did not run"}. Never an input to the gate or the exit code.`, "");
+  if (o.board?.length) lines.push("### Scoreboard (visual management over time)", "", ...o.board.map((l) => `- ${l.trim()}`), "");
   lines.push("### Glance (gemba)", "", `Not shown: ${NOT_BUILT.glance}.`, "");
   lines.push("### 5 Whys (kaizen)", "", `Not opened: ${NOT_BUILT.whys}.${o.code === 1 ? " This FAIL is a trigger once it is." : ""}`, "");
   // The per-PR table sits under the score when there is one; without a score it is shown here.
@@ -664,7 +692,7 @@ export function renderReleaseMarkdown(o: { gateMd: string; status: ReleaseStatus
 const esc = (s: string) => s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
 
 /** report.html: self-contained (no scripts, no external requests), the same order as report.md, links to each run's own report. */
-export function renderReleaseHtml(o: { dir: string; gate: string; fast: boolean; candidate: string; baseline: Baseline; code: number; entries: GateSummaryEntry[]; status: ReleaseStatus; review: string[]; seams: Seams }): string {
+export function renderReleaseHtml(o: { dir: string; gate: string; fast: boolean; candidate: string; baseline: Baseline; code: number; entries: GateSummaryEntry[]; status: ReleaseStatus; review: string[]; seams: Seams; board?: string[] }): string {
   const tone = o.code === 0 ? "pass" : o.code === 1 ? "fail" : "none";
   const link = (runDir: string | undefined) => (runDir ? `<a href="${esc(relative(o.dir, join(runDir, "report.html")).replaceAll("\\", "/"))}">report</a>` : "");
   const rows = o.entries.map((e) => `<tr><td>${esc(e.title)}</td><td>${esc(e.code === "skipped" ? "not run" : e.verdict ? `${e.verdict.toUpperCase()}${e.overridden ? " (OVERRIDDEN)" : ""}` : e.code === 0 ? "ok" : `exit ${e.code}`)}</td><td>${link(e.runDir)}</td></tr>`).join("\n");
@@ -698,6 +726,7 @@ ${rows}
 ${stages}
 </tbody></table>
 <h2>Score (visual management)</h2><p class="seam">${esc(o.seams.score?.note ?? "the score stage did not run")}; never an input to the gate or the exit code.${o.seams.score?.confidence ? ' Every deduction and its evidence is in <a href="confidence.json">confidence.json</a>.' : ""}</p>
+${o.board?.length ? `<h2>Scoreboard (visual management over time)</h2><ul class="seam">${o.board.map((l) => `<li>${esc(l.trim())}</li>`).join("")}</ul>` : ""}
 <h2>Glance (gemba)</h2><p class="seam">${esc(NOT_BUILT.glance)}</p>
 <h2>5 Whys (kaizen)</h2><p class="seam">${esc(NOT_BUILT.whys)}</p>
 <h2>Changes</h2><p class="seam">${esc(o.seams.changes?.note ?? NO_MONOREPO)}</p>

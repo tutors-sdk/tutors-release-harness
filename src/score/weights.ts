@@ -7,6 +7,8 @@
  * src/run.ts, and nothing here can change a verdict or an exit code (tests/confidence.test.ts holds both).
  */
 
+import { createHash } from "node:crypto";
+
 export const DIMENSION_IDS = ["claim-coverage", "noise-health", "statistical-margin", "rehearsals", "test-signal", "traceability", "change-risk", "post-deploy"] as const;
 export type DimensionId = (typeof DIMENSION_IDS)[number];
 
@@ -82,3 +84,13 @@ export const RULES = {
   },
   postDeploy: { failed: 100, warned: 20 }
 } as const;
+
+/**
+ * Which weights, floors, bands and deduction rules made a score: the first 12 hex of a SHA-256 over all of them. Any
+ * change here gives a new value, with nothing to remember to bump, so the scoreboard shows the discontinuity on the
+ * first release scored under the new rules (docs/lean.md, "Guardrails") and the run rules can say a window spans it.
+ */
+export const WEIGHTS_VERSION = createHash("sha256")
+  .update(JSON.stringify({ dimensions: DIMENSIONS.map((d) => [d.id, d.weight, d.floor]), floorCap: FLOOR_CAP, bands: BANDS.map((b) => [b.band, b.min]), rules: RULES }))
+  .digest("hex")
+  .slice(0, 12);

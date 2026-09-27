@@ -2,11 +2,15 @@
  * What a CI log and a failed job carry when the mutant self-test's A/A is not clean: the hunks themselves, in the log, and the
  * noise report as a small artifact. Both were missing once, and it cost hours to find out which twelve differences had failed.
  */
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parse } from "yaml";
-import { NOISE_HUNK_LOG_CAP, describeNoiseHunks } from "../src/mutants.ts";
+import { NOISE_HUNK_LOG_CAP, describeNoiseHunks, writeMutantsSummary } from "../src/mutants.ts";
+import { recordMutants } from "../src/scoreboard/store.ts";
+import { HARNESS_VERSION } from "../src/version.ts";
 import type { Hunk } from "../src/types.ts";
 
 const hunk = (n: number, over: Partial<Hunk> = {}): Hunk => ({ id: `h${n}`, artefact: "dom", scope: `reader:page-${n}`, summary: `change ${n}`, severity: "fail", ...over });
@@ -58,5 +62,26 @@ describe("the mutants workflow", () => {
     expect(paths.join(" ")).not.toMatch(/png|screenshot/);
     // After the step that fails, so failure() is about the mutants run.
     expect(steps.indexOf(upload!)).toBeGreaterThan(steps.findIndex((s) => s.run?.includes("harness mutants")));
+  });
+});
+
+describe("mutants.json: the week's self-test, for the scoreboard (1.11.0)", () => {
+  it("is written into --out, whatever happened, and the scoreboard records it", () => {
+    const out = mkdtempSync(join(tmpdir(), "harness-mutants-"));
+    writeMutantsSummary(out, { ranAt: "2026-09-21T03:41:00Z", base: "16.2.2", caught: null, total: 12, escaped: [], note: "the A/A on the base was not clean, so no mutant ran" });
+    expect(JSON.parse(readFileSync(join(out, "mutants.json"), "utf8"))).toEqual({ schemaVersion: 1, ranAt: "2026-09-21T03:41:00Z", base: "16.2.2", caught: null, total: 12, escaped: [], note: "the A/A on the base was not clean, so no mutant ran", harnessVersion: HARNESS_VERSION });
+    const file = join(out, "mutants.jsonl");
+    recordMutants({ from: out, file });
+    expect(JSON.parse(readFileSync(file, "utf8"))).toMatchObject({ caught: null, total: 12 });
+  });
+
+  it("the workflow uploads it on its own and records it on the scoreboard branch, never from a pull request", () => {
+    const workflow = parse(readFileSync(resolve(import.meta.dirname, "..", ".github", "workflows", "weekly-mutants.yml"), "utf8")) as { jobs: Record<string, { if?: string; needs?: string; steps?: { uses?: string; run?: string; with?: { name?: string; path?: string } }[] }> };
+    const upload = workflow.jobs.mutants!.steps!.find((s) => s.with?.name === "mutants-summary");
+    expect(upload?.with?.path).toBe("out/mutants.json");
+    const record = workflow.jobs.record!;
+    expect(record.needs).toBe("mutants");
+    expect(record.if).toContain("github.event_name != 'pull_request'");
+    expect(record.steps!.map((s) => s.run ?? "").join("\n")).toContain("pnpm harness scoreboard mutants --run ../summary/mutants.json --file ../publish/scoreboard/mutants.jsonl");
   });
 });

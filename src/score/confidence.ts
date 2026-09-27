@@ -17,7 +17,7 @@
  */
 import { isBroad, normalnessOf } from "../ci/scorecard.ts";
 import type { Hunk, RunReport } from "../types.ts";
-import { DIMENSIONS, FLOOR_CAP, RULES, bandOf, type Band, type DimensionId } from "./weights.ts";
+import { DIMENSIONS, FLOOR_CAP, RULES, WEIGHTS_VERSION, bandOf, type Band, type DimensionId } from "./weights.ts";
 
 export const CONFIDENCE_SCHEMA_VERSION = 1 as const;
 
@@ -65,6 +65,8 @@ export interface Confidence {
   mean: number | null;
   /** The weights the mean used, renormalised to sum to 100 over the measured dimensions. */
   weightsUsed: Partial<Record<DimensionId, number>>;
+  /** Since 1.11.0: which weights, floors, bands and rules scored it (src/score/weights.ts, WEIGHTS_VERSION). */
+  weightsVersion?: string;
   dimensions: DimensionScore[];
   /** The reviewer's glance (C3): empty until it is built. */
   glance: never[];
@@ -386,7 +388,7 @@ export function weightedMean(dims: DimensionScore[]): { mean: number | null; wei
 export function confidence(i: ScoreInputs): Confidence {
   const dimensions = [claimCoverage(i.release), noiseHealth(i.release), statisticalMargin(i.release), rehearsals(i.migration, i.upgrade), testSignal(i.testSignal), traceability(i.traceability, i.changeRisk), changeRisk(i.changeRisk), postDeploy(i.postDeploy)];
   const { mean, weightsUsed } = weightedMean(dimensions);
-  const base = { schemaVersion: CONFIDENCE_SCHEMA_VERSION, gate: i.gate, weightsUsed, dimensions, glance: [] as never[], run: i.run };
+  const base = { schemaVersion: CONFIDENCE_SCHEMA_VERSION, gate: i.gate, weightsUsed, weightsVersion: WEIGHTS_VERSION, dimensions, glance: [] as never[], run: i.run };
   if (i.gate !== "PASS" && i.gate !== "WARN") {
     const why = i.gate === "NOT JUDGED" ? "The Gate did not judge, so there is nothing to put a number on." : "The Gate wins: no number talks a FAIL back on. The dimensions are shown for the 5 Whys, not for a decision.";
     return { ...base, rcs: null, band: null, mean: null, note: `No RCS: Gate ${i.gate}. ${why}` };

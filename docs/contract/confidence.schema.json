@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/tutors-sdk/tutors-release-harness/blob/main/docs/contract/confidence.schema.json",
-  "title": "confidence.json: the Release Confidence Score (contract 1.10.0, not stable)",
+  "title": "confidence.json: the Release Confidence Score (contract 1.11.0, not stable)",
   "description": "Since 1.9.0. Written by `harness confidence` beside the run it scores, and by `harness release` in out/<timestamp>-release-command/. The Gate first, then the RCS (only when the Gate is PASS or WARN) and its band, then eight dimensions, each with every point lost and its evidence. Advisory: never an input to the gate, a verdict or an exit code. Derived from Confidence in src/score/confidence.ts. Not stable: it may change in a minor release.",
   "type": "object",
   "additionalProperties": false,
@@ -61,6 +61,7 @@
         "post-deploy": { "type": "number" }
       }
     },
+    "weightsVersion": { "type": "string", "pattern": "^[0-9a-f]{12}$", "description": "Since 1.11.0. Which weights, floors, bands and deduction rules scored it: 12 hex of a SHA-256 over them (src/score/weights.ts, WEIGHTS_VERSION). A new value is a discontinuity the scoreboard shows. Absent in a confidence.json written before 1.11.0." },
     "dimensions": { "type": "array", "minItems": 8, "maxItems": 8, "items": { "$ref": "#/definitions/dimension" } },
     "glance": { "type": "array", "maxItems": 0, "description": "The reviewer's glance (C3). Empty until it is built." },
     "run": {

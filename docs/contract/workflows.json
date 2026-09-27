@@ -1,6 +1,6 @@
 {
   "$comment": "What the harness's workflows accept from outside and publish, machine-readable. tests/contract.test.ts fails when this and .github/workflows disagree.",
-  "contractVersion": "1.10.0",
+  "contractVersion": "1.11.0",
   "repositoryDispatch": {
     "release-candidate": {
       "workflow": "release.yml",
@@ -42,6 +42,7 @@
     "noise-report": { "workflow": "nightly-noise.yml", "retentionDays": 8 },
     "mutant-reports": { "workflow": "weekly-mutants.yml", "retentionDays": 14 },
     "mutant-noise-report": { "workflow": "weekly-mutants.yml", "retentionDays": 7 },
+    "mutants-summary": { "workflow": "weekly-mutants.yml", "retentionDays": 14 },
     "harness-ci": { "workflow": "ci.yml", "retentionDays": 7 },
     "main-preview-report": { "workflow": "main-preview.yml", "retentionDays": 14 }
   },
@@ -81,7 +82,8 @@
     "nightly-noise.yml": { "publish": ["contents"], "why": "force-pushes the `noise` branch: noise-status.json, noise-history.json, noise-summary.md" },
     "post-deploy.yml": { "<workflow>": ["issues"], "why": "opens the `rollback` issue when post-deploy mode exits 1" },
     "tags.yml": { "tag": ["contents"], "why": "since 1.7.0, creates the tag v<version> on the first commit of main that carries each version (scripts/release-tags.sh); never moves a tag or writes a branch" },
-    "release.yml": { "override-record": ["issues"], "publish-record": ["contents"], "why": "override-record opens a `harness-override` issue for each FAIL that a person overrode with override_reason; publish-record (since 1.3.0) pushes the release record to the `release-records` branch" }
+    "release.yml": { "override-record": ["issues"], "publish-record": ["contents"], "scoreboard": ["contents"], "why": "override-record opens a `harness-override` issue for each FAIL that a person overrode with override_reason; publish-record (since 1.3.0) pushes the release record to the `release-records` branch; scoreboard (since 1.11.0) appends the run's line to the `scoreboard` branch" },
+    "weekly-mutants.yml": { "record": ["contents"], "why": "since 1.11.0, appends a scheduled or dispatched self-test's mutants caught to the `scoreboard` branch; never on a pull request" }
   },
   "noiseBranch": {
     "$comment": "Since 1.2.0. The stable home of the latest A/A status, so release.yml and post-deploy.yml can find it after the artifact has expired.",
@@ -110,6 +112,16 @@
     "files": ["README.md", "reports/index.json"],
     "readBy": ["main-preview.yml"],
     "fetch": "gh api -H 'Accept: application/vnd.github.raw' repos/<repo>/contents/reports/index.json?ref=main-preview"
+  },
+  "scoreboardBranch": {
+    "$comment": "Since 1.11.0. The release scoreboard, kept on a data branch because main takes changes only through a pull request. Append-only and never forced: one commit per line, and each job checks the file before its push is exactly the start of the file after. A PR may copy the files to scoreboard/ on main, where `harness guard scoreboard` lets it only add lines.",
+    "branch": "scoreboard",
+    "writtenBy": ["release.yml", "weekly-mutants.yml"],
+    "jobs": { "release.yml": "scoreboard", "weekly-mutants.yml": "record" },
+    "files": ["scoreboard/releases.jsonl", "scoreboard/mutants.jsonl", "README.md"],
+    "readBy": ["pages.yml"],
+    "fetch": "gh api -H 'Accept: application/vnd.github.raw' repos/<repo>/contents/scoreboard/releases.jsonl?ref=scoreboard",
+    "schema": "scoreboard-line.schema.json"
   },
   "runNames": {
     "$comment": "Since 1.4.0. The title of a run (the API's display_title), so the monorepo's release-harness-report workflow can find the run a release-candidate dispatch started. Matched as a whole tag: rc.1 does not match rc.10.",

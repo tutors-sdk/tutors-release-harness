@@ -64,7 +64,7 @@ describe("through the process", () => {
   it("a command's --help exits 0 with that command's usage", () => {
     const r = harness(["guard", "--help"]);
     expect(r.code).toBe(0);
-    expect(r.out).toContain("harness guard masks|engine|all");
+    expect(r.out).toContain("harness guard masks|engine|scoreboard|all");
     expect(r.out).not.toContain("harness run");
   });
 

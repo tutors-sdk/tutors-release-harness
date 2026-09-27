@@ -46,7 +46,7 @@ describe("usage errors are a message and exit 2, not a stack trace", () => {
     await expect(localCommand("teleport", {})).rejects.toThrow(/local nightly\|gate\|mutants\|watch/);
     expect(() => noiseCommand("record", {})).toThrow(UsageError);
     expect(() => noiseCommand("bogus", {})).toThrow(/noise record\|status\|history/);
-    expect(() => guardCommand("nothing", {})).toThrow(/guard masks\|engine\|all --base/);
+    expect(() => guardCommand("nothing", {})).toThrow(/guard masks\|engine\|scoreboard\|all --base/);
     expect(() => overrideCommand("delete", {})).toThrow(/override list/);
     expect(() => overrideCommand("list", { since: "yesterday" })).toThrow(/ISO date/);
     await expect(doctorCommand({ for: "everything" })).rejects.toThrow(/--for takes/);

@@ -188,6 +188,16 @@ jobs:
           path: out/
           retention-days: 14
 
+      # The self-test's result in one small file (`harness mutants` writes out/mutants.json whatever happened), for the
+      # scoreboard's "mutants caught per week" (the record job below).
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: mutants-summary
+          path: out/mutants.json
+          retention-days: 14
+          if-no-files-found: ignore
+
       # Saved under the hash of its content, and only when this run recorded something the restored copy did not have.
       - name: Keep the recorded third-party responses for later runs
         if: always() && hashFiles('.harness/third-party-cache/*.json') != '' && steps.third-party-cache.outputs.cache-matched-key != format('third-party-v1-{0}', hashFiles('.harness/third-party-cache/*.json'))
@@ -195,6 +205,67 @@ jobs:
         with:
           path: .harness/third-party-cache
           key: third-party-v1-${{ hashFiles('.harness/third-party-cache/*.json') }}
+
+  # The harness's own health beside the release trends: this week's mutants caught, appended to scoreboard/mutants.jsonl on the
+  # `scoreboard` branch (the one release.yml appends release lines to). Scheduled and dispatched runs only: a pull request's
+  # re-run is a check on that PR, not a week of the harness. One commit per self-test, never forced.
+  record:
+    name: Record the week's mutants on the scoreboard
+    needs: mutants
+    if: always() && github.event_name != 'pull_request' && needs.mutants.result != 'skipped'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      # Pushes this repository's `scoreboard` branch and nothing else.
+      contents: write
+    concurrency:
+      group: scoreboard-branch
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          path: harness
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          package_json_file: harness/package.json
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: harness/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+        working-directory: harness
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        continue-on-error: true
+        with:
+          name: mutants-summary
+          path: summary
+      - name: Append the self-test to the scoreboard branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ ! -f summary/mutants.json ]; then echo "the self-test wrote no mutants.json (it stopped before the A/A): nothing to record"; exit 0; fi
+          remote="https://github.com/${GITHUB_REPOSITORY}.git"
+          auth="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          if git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth}" ls-remote --exit-code --heads "$remote" scoreboard > /dev/null 2>&1; then
+            git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth}" clone -q --depth 1 --branch scoreboard "$remote" publish
+          else
+            git init -q -b scoreboard publish
+          fi
+          mkdir -p publish/scoreboard
+          touch publish/scoreboard/mutants.jsonl
+          cp publish/scoreboard/mutants.jsonl before.jsonl
+          (cd harness && pnpm harness scoreboard mutants --run ../summary/mutants.json --file ../publish/scoreboard/mutants.jsonl --run-url "$RUN_URL")
+          head -c "$(wc -c < before.jsonl)" publish/scoreboard/mutants.jsonl | cmp -s - before.jsonl || { echo "the mutants record would lose or change a line: refusing to push" >&2; exit 1; }
+          cd publish
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scoreboard/mutants.jsonl
+          if git diff --cached --quiet; then echo "this self-test is already recorded"; exit 0; fi
+          git commit -q -m "scoreboard: mutants $(date -u +%Y-%m-%d)"
+          git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth}" push "https://github.com/${GITHUB_REPOSITORY}.git" scoreboard
 
   required:
     name: Mutants re-run (required)

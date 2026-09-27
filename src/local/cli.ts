@@ -21,6 +21,9 @@ import { renderBoard } from "../score/render.ts";
 import { harnessInfo } from "../version.ts";
 import { CHANGES_DEFAULTS, ChangesInputError, renderChangesBoard, runChanges, type ChangesDeps } from "../changes/command.ts";
 import { PRUNE_DEFAULTS, prune, renderPrune } from "./prune.ts";
+import { ScoreboardInputError } from "../scoreboard/line.ts";
+import { appendRun, defaultScoreboardFile, mutantsFileBeside, readTrends, recordMutants } from "../scoreboard/store.ts";
+import { renderSite, renderTrends } from "../scoreboard/render.ts";
 import { keepReport } from "../ci/report-archive.ts";
 import { readReport, readRulePrs, renderScorecard, scorecard } from "../ci/scorecard.ts";
 import { appendOverride, overrideFromReport, readOverrides } from "./override-log.ts";
@@ -135,7 +138,7 @@ export function noiseCommand(sub: string | undefined, v: Values): number {
 // ---- harness guard ------------------------------------------------------------------------------------
 
 export function guardCommand(sub: string | undefined, v: Values): number {
-  if (sub !== "masks" && sub !== "engine" && sub !== "all") throw new UsageError(`guard ${Object.keys(GUARDS).join("|")}|all --base <ref>`);
+  if (sub !== "masks" && sub !== "engine" && sub !== "scoreboard" && sub !== "all") throw new UsageError(`guard ${Object.keys(GUARDS).join("|")}|all --base <ref>`);
   return runGuard(sub as GuardKind | "all", str(v, "base"), { git: realGit, script: realScript, env: process.env, log: (m) => console.log(m) });
 }
 
@@ -258,6 +261,63 @@ export async function changesCommand(v: Values, deps: ChangesDeps & { log?: (m: 
   }
   log(flag(v, "json") ? JSON.stringify(result.changes, null, 2) : renderChangesBoard(result.changes, result.file));
   return 0;
+}
+
+// ---- harness scoreboard ------------------------------------------------------------------------------
+
+export interface ScoreboardDeps {
+  home?: string;
+  now?: () => Date;
+  log?: (m: string) => void;
+}
+
+/**
+ * `harness scoreboard append|trends|mutants`: the release scoreboard (src/scoreboard/). The file defaults to
+ * HARNESS_HOME/scoreboard/releases.jsonl, the local copy; CI passes the `scoreboard` branch's with --file. Advisory:
+ * exit 0 when done, 2 for what it cannot read. Nothing here reaches a verdict or an exit code of a run.
+ */
+export function scoreboardCommand(sub: string | undefined, v: Values, deps: ScoreboardDeps = {}): number {
+  const log = deps.log ?? ((m: string) => console.log(m));
+  const now = (deps.now ?? (() => new Date()))();
+  const home = deps.home ?? harnessHome();
+  const file = resolve(str(v, "file") ?? defaultScoreboardFile(home));
+  const at = (name: string) => (str(v, name) ? resolve(str(v, name)!) : undefined);
+  try {
+    switch (sub) {
+      case "append": {
+        const run = str(v, "run");
+        if (!run) throw new UsageError("scoreboard append needs --run <harness release dir | confidence.json> [--file releases.jsonl] [--mutants mutants.jsonl] [--tag T] [--run-url u]");
+        const { line } = appendRun({ run, file, ...(at("mutants") ? { mutants: at("mutants")! } : {}), ...(str(v, "tag") ? { tag: str(v, "tag")! } : {}), ...(str(v, "run-url") ? { runUrl: str(v, "run-url")! } : {}), now });
+        log(flag(v, "json") ? JSON.stringify(line) : `appended ${line.tag} run ${line.run} (Gate ${line.gate}, ${line.rcs === null ? "no RCS" : `RCS ${line.rcs} ${line.band}`}) to ${file}`);
+        return 0;
+      }
+      case "mutants": {
+        const run = str(v, "run");
+        if (!run) throw new UsageError("scoreboard mutants needs --run <harness mutants --out dir | mutants.json> [--file mutants.jsonl] [--run-url u]");
+        const target = at("file") ?? mutantsFileBeside(defaultScoreboardFile(home));
+        const { record } = recordMutants({ from: run, file: target, ...(str(v, "run-url") ? { runUrl: str(v, "run-url")! } : {}) });
+        log(flag(v, "json") ? JSON.stringify(record) : `recorded the mutants self-test in ${target}`);
+        return 0;
+      }
+      case "trends": {
+        const noiseHistory = at("noise-history") ?? join(noiseDir(home), "noise-history.json");
+        const t = readTrends({ file, ...(at("mutants") ? { mutants: at("mutants")! } : {}), noiseHistory, now });
+        const site = at("site");
+        if (site) {
+          mkdirSync(site, { recursive: true });
+          writeFileSync(join(site, "scoreboard.json"), `${JSON.stringify(t, null, 2)}\n`);
+          writeFileSync(join(site, "scoreboard.html"), renderSite(t));
+        }
+        log(flag(v, "json") ? JSON.stringify(t, null, 2) : `${renderTrends(t, file)}${site ? `\nsite: ${join(site, "scoreboard.html")}, ${join(site, "scoreboard.json")}` : ""}`);
+        return 0;
+      }
+      default:
+        throw new UsageError("scoreboard append|trends|mutants");
+    }
+  } catch (e) {
+    if (e instanceof ScoreboardInputError) throw new UsageError(e.message);
+    throw e;
+  }
 }
 
 // ---- harness prune ------------------------------------------------------------------------------------
@@ -636,9 +696,11 @@ export function releaseCommand(v: Values, deps: ReleaseCommandDeps = {}): number
   const noise = decideNoise(describeStatus(noiseDir(home), now(), RELEASE_DEFAULTS.noiseMaxAgeDays), fast);
   const planEnv = { ...workflowEnv(env), ...portEnv(integer(v, "port-offset", 0), env) };
   const extras = scoreExtras(v);
-  const options = { candidate, baseline, fast, ...(claims ? { claims } : {}), ...(rules ? { rules } : {}), ...(out ? { out } : {}), ...(Object.keys(extras).length ? { score: extras } : {}), ...(monorepo ? { monorepo: resolve(monorepo) } : {}) };
+  // The scoreboard line goes to the local store unless --scoreboard names a file: never into the repository checkout unasked.
+  const scoreboard = { file: str(v, "scoreboard") ? resolve(str(v, "scoreboard")!) : defaultScoreboardFile(home), noiseHistory: join(noiseDir(home), "noise-history.json") };
+  const options = { candidate, baseline, fast, ...(claims ? { claims } : {}), ...(rules ? { rules } : {}), ...(out ? { out } : {}), ...(Object.keys(extras).length ? { score: extras } : {}), ...(monorepo ? { monorepo: resolve(monorepo) } : {}), scoreboard };
   if (flag(v, "dry-run")) {
-    say(renderReleasePlan({ candidate, baseline, fast, stages: planRelease(options, noise), env: planEnv }));
+    say(renderReleasePlan({ candidate, baseline, fast, stages: planRelease(options, noise), env: planEnv, scoreboard: scoreboard.file }));
     return 0;
   }
   mkdirSync(home, { recursive: true });

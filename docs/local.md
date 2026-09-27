@@ -323,13 +323,14 @@ The view behind this table is [lean.md](lean.md).
 | Idea | Where it is in `harness release` | Still to come |
 | --- | --- | --- |
 | Jidoka (stop the line) | a stage that cannot hand good work on stops it: missing images at resolve, a dirty A/A at noise (before any A/B), a gate FAIL at release. The terminal and the report say `line stopped at <stage>: <why>` and the next standard step, not a generic error. The Gate is always shown first and no number talks it back on | the 5 Whys it triggers (C4) |
-| Andon, visual management (**live since 1.9.0**) | the report opens with the Gate in one word (PASS, WARN, FAIL or NOT JUDGED), then the Release Confidence Score and its band with what the band means (Green: ship on the captain's say; Amber: ship only after the reviewer's glance is recorded verified; Red: hold, open a 5 Whys, do not re-run hoping for a better number), then the eight dimensions, each with every point lost and where. `confidence.json` and `status.json` are the boards a dashboard reads | the scoreboard of releases and its run rules (C2); the four dimensions not measured yet get their inputs (C1 change risk; the monorepo's test signal, traceability, post-deploy record) |
+| Andon, visual management (**live since 1.9.0; over time since 1.11.0**) | the report opens with the Gate in one word (PASS, WARN, FAIL or NOT JUDGED), then the Release Confidence Score and its band with what the band means (Green: ship on the captain's say; Amber: ship only after the reviewer's glance is recorded verified; Red: hold, open a 5 Whys, do not re-run hoping for a better number), then the eight dimensions, each with every point lost and where. `confidence.json` and `status.json` are the boards a dashboard reads. Since 1.11.0 each run appends one line to the scoreboard (`HARNESS_HOME/scoreboard/releases.jsonl`, or `--scoreboard`), and the terminal and the report show the line and any **run rule** firing right after the RCS: three consecutive declines, or two of three releases below 75, in a dimension or the RCS, is the andon for a trend, and opens a kaizen item naming the dimension. `harness scoreboard trends` and the reports site's `scoreboard.html` draw the six trend views beside the harness's own health | the Release Hub reading the same file; the monorepo's test signal, traceability and post-deploy record for the three dimensions still not measured |
 | Standard work | one command, the same stages in the same order every time, the same steps CI runs, and a named next step for each stop | the SOP in the monorepo (C3) |
 | Gemba (**change risk live since 1.10.0**) | each gate row links to that run's own `report.html`, the artefacts themselves; each change-risk deduction links to the exact file in the exact PR's diff on GitHub, so a reviewer with fifteen minutes opens the hunk, not the release | the glance: at most seven ranked places to look (C3), which will draw hotspot-meets-first-contribution and major bumps from `changes.json` |
-| Kaizen | every FAIL is marked as a trigger in the report; `changes.json` keeps a risk line per PR and a deduction per file, the raw material for "the same file every release" and per-file trends | `harness why`, the 5 Whys stub and the countermeasure register (C4); the trends themselves (C2) |
+| Kaizen (**trends live since 1.11.0**) | every FAIL is marked as a trigger in the report; `changes.json` keeps a risk line per PR and a deduction per file, and the scoreboard turns them into hotspot recurrence (the same file every release: a refactor candidate) and per-file risk over time. A run rule firing names the kaizen item it opens; a re-run is a logged deviation, listed with its first and latest RCS, never a quiet replacement. The harness's own health (mutants caught per week, clean A/A nights, days since the last A/A failure) sits beside the product's, so a harness that is quietly decaying shows in the same picture | `harness why`, the 5 Whys stub and the countermeasure register (C4), which will write the kaizen items the run rules open and give "open countermeasures only rising" its numbers |
 
-The seams are functions (`changesStage`, `scoreStage` in `src/local/release.ts`); `changesStage`
-now runs `harness changes` and `scoreStage` writes `confidence.json`. Whatever they return, the
+The seams are functions (`changesStage`, `scoreStage`, `scoreboardStage` in `src/local/release.ts`);
+`changesStage` runs `harness changes`, `scoreStage` writes `confidence.json` and `scoreboardStage`
+appends the scoreboard line. Whatever they return, the
 gate wins: nothing in them can change a verdict or an exit code.
 
 ### The Release Confidence Score: `harness confidence`
@@ -433,6 +434,46 @@ Change risk 90 (100 − 10), v16.2.1..v16.2.2: 5 of 5 PRs carry a finding; floor
   monorepo lacks, an unusable `--changelog`). Orphans are reported, never fatal. The fields are
   in [contract.md](contract.md#changesjson-the-change-signals).
 
+### The scoreboard: `harness scoreboard`
+
+```console
+pnpm harness scoreboard trends                       # HARNESS_HOME/scoreboard/releases.jsonl, the local copy
+pnpm harness scoreboard trends --file scoreboard.jsonl --site site-out --json
+pnpm harness scoreboard append --run out\<time>-release-command     # or its confidence.json; harness release does this for you
+pnpm harness scoreboard mutants --run out                           # the mutants.json harness mutants wrote
+```
+
+Visual management over time. Every release run is one line of `releases.jsonl`: the Gate, the
+RCS and its band, the eight dimension scores, the masks and those that never fired, claims and
+stale claims, journeys passed, the week's mutants, and the per-PR risk lines of `changes.json`.
+**Append-only**: a re-run of a candidate is a new line with the same tag and the next run number,
+never an edit; `harness guard scoreboard --base <ref>` fails a branch that changes or removes a
+line of `scoreboard/*.jsonl`. `harness release` appends to `HARNESS_HOME/scoreboard/` and never
+to the checkout unless `--scoreboard <file>` says so; a `--fast` run is never appended. CI keeps
+its own copy on the `scoreboard` branch (release.yml and weekly-mutants.yml append there, because
+`main` takes changes only through a pull request).
+
+`trends` draws six views, one point per release (its latest run):
+
+| View | Why it is on the board |
+| --- | --- |
+| RCS per release, the Green/Amber/Red bands shaded | the one number, over time |
+| the eight dimensions, as small multiples | a slow slide in one shows before the total moves |
+| masks, and masks that never fired | both growing means the harness is going blind |
+| claims, and stale claims | a rising stale count means changelogs are drifting from the code |
+| hotspot recurrence: the five files touched by the most releases | a file in every release is a refactor candidate |
+| per-file risk over time (and per contributor, **for trends only**) | where change risk keeps landing; never for reviewing a person |
+
+**Run rules** act on trends, not on one bad release (a Red band already opens a 5 Whys): three
+consecutive declines, or two of three releases below 75, in any dimension or the RCS. A firing at
+the newest release is printed after the score by `harness release` and marked on the page; each
+opens a kaizen item naming the dimension (by hand until `harness why` exists, C4). A window that
+spans a change of weights or rules says so. Beside it all, **the harness's own health**: mutants
+caught per week, clean nights of the last 30 A/As, and days since the last A/A failure (from the
+local noise store, or `--noise-history`). Advisory: nothing here reaches a verdict or an exit
+code; exit `0` when done, `2` for what it cannot read. The fields are in
+[contract.md](contract.md#the-scoreboard).
+
 ## Parity matrix
 
 Where each step runs today, and what runs it locally. **CLI** is a harness
@@ -476,6 +517,7 @@ commits that came with this document.
 | R9 | "PR comment" (`report.md` into the job summary) | GH | `report.md` and `report.html` in each run directory, and `gate.md` | the contract forbids workflows any PR permission, so nothing is ever posted; to post by hand: `gh pr comment <n> --body-file out\<time>-gate\gate.md`. **Closed** |
 | R10 | `release-report` artifact (30 days) | GH | `out/` | as N7. **Closed** |
 | R11 | grype, its database, and `HARNESS_REQUIRE_STATIC=1` in the release job | GH + CLI | as N14 to N16 | none beyond those. **Closed** |
+| R12 | The scoreboard line (`scoreboard` job: `harness changes`, `harness confidence`, `harness scoreboard append`, pushed to the `scoreboard` branch) | GH + CLI | `harness release` appends to `HARNESS_HOME/scoreboard/releases.jsonl` | the local file and the branch are two histories; a PR can copy lines to `scoreboard/` on main, append-only. **Closed** |
 
 ### post-deploy.yml
 
@@ -496,7 +538,9 @@ commits that came with this document.
 | M3 | Engine-change guard and version bump (`engine-change.ts`) | WF | `harness guard engine --base <ref>` | compares `<base>...HEAD`, so committed work only (it says so when the tree is dirty). **Closed** |
 | M4 | "Mutants re-run (required)": shell that combines two job results | WF + GH | the exit codes of `guard engine` and `local mutants` | nothing to port: a required status check is a GitHub setting. **n/a** |
 | M5 | grype and its database in the mutants job; no `HARNESS_REQUIRE_STATIC` there | GH + CLI | as N14 and N15 | none: the mutants job does not require it, and neither does a local run. **Closed** |
+| M6 | The week's mutants on the scoreboard (`record` job: `harness scoreboard mutants`, pushed to the `scoreboard` branch) | GH + CLI | `harness scoreboard mutants --run out` after `harness local mutants` | by hand locally. **Closed** |
 | C1 | Masks land in their own PR (`mask-change.ts`) | WF | `harness guard masks --base <ref>` | as M3. **Closed** |
+| C6 | The scoreboard only gains lines (`scoreboard-append.ts`, in the masks job) | WF | `harness guard scoreboard --base <ref>` | as M3. **Closed** |
 | C2 | Typecheck, lint, unit and fixture tests | CLI | `pnpm typecheck`, `pnpm lint`, `pnpm test:coverage` (`pnpm test` without the floor) | none |
 | C3 | Two-stacks smoke, including "the contracting fixture must be rejected" (`if cmd; then exit 1`) | CLI | `harness local smoke` (`pnpm smoke`); ci.yml calls it | the inversion is a step that expects the FAIL verdict. **Closed** |
 | C4 | Stack logs on failure | WF | `docker compose -p <project> -f compose.harness.yaml --profile upgrade logs`, where `<project>` is this checkout's compose project (`harness doctor` prints it) | CI pins `HARNESS_COMPOSE_PROJECT=tutors-harness`, one checkout per runner. **Documented** |
@@ -541,6 +585,7 @@ for example to a backed-up folder.
 | `overrides.jsonl` | every applied override, one JSON line each, hash-chained | `harness-override` issues |
 | `releases/<candidate>.json`, `releases/<release>.json` | what release mode judged: the digests of the candidate's images, and the verdict. Written by every release-mode run; `--deployed <release>` in post-deploy mode checks a deployment against it | the `release-records` branch |
 | `rollbacks/` | what a failing watch would have opened as an issue | `rollback` issues |
+| `scoreboard/releases.jsonl`, `scoreboard/mutants.jsonl` | one line per `harness release` run (since 1.11.0), append-only; `harness scoreboard mutants` adds a self-test | the `scoreboard` branch |
 | `locks/run.lock`, `locks/watch.lock` | one heavy run per machine; one watch | `concurrency:` groups |
 | `image-provenance.json` | the ledger `images ensure` leaves for `run` (`HARNESS_PROVENANCE_FILE` still moves it) | a file on the runner |
 

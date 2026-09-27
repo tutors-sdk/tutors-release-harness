@@ -73,13 +73,16 @@ describe("running the guards", () => {
     const e = fake();
     expect(runGuard("engine", "main", e.deps)).toBe(0);
     expect(e.ran).toEqual(["src/ci/engine-change.ts --base main"]);
-    expect(GUARDS).toEqual({ masks: "src/ci/mask-change.ts", engine: "src/ci/engine-change.ts" });
+    const s = fake();
+    expect(runGuard("scoreboard", "main", s.deps)).toBe(0);
+    expect(s.ran).toEqual(["src/ci/scoreboard-append.ts --base main"]);
+    expect(GUARDS).toEqual({ masks: "src/ci/mask-change.ts", engine: "src/ci/engine-change.ts", scoreboard: "src/ci/scoreboard-append.ts" });
   });
 
-  it("all runs both, and the worst exit code wins (a violation is 1, and does not stop the other)", () => {
+  it("all runs every guard, and the worst exit code wins (a violation is 1, and does not stop the others)", () => {
     const f = fake({ exits: { "src/ci/mask-change.ts": 1 } });
     expect(runGuard("all", "main", f.deps)).toBe(1);
-    expect(f.ran).toHaveLength(2);
+    expect(f.ran).toHaveLength(3);
   });
 
   it("a ref that does not exist is exit 2 and runs nothing: not a violation, not a pass", () => {
@@ -100,6 +103,10 @@ describe("against a real repository", () => {
     // the harness checkout's own history: HEAD is a commit whatever branch this runs on
     expect(resolveBase("HEAD", { git: realGit, env: {} })).toEqual({ ok: true, ref: "HEAD" });
     expect(resolveBase("no-such-ref-anywhere", { git: realGit, env: {} })).toMatchObject({ ok: false });
+  });
+
+  it("runs the real scoreboard guard against HEAD: nothing changed since HEAD, so nothing to object to", () => {
+    expect(runGuard("scoreboard", "HEAD", { git: realGit, script: realScript, env: {}, log: () => {} })).toBe(0);
   });
 
   it("runs the real masks guard against HEAD: nothing changed since HEAD, so nothing to object to", () => {

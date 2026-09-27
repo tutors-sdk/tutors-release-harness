@@ -208,7 +208,7 @@ describe("report.json", () => {
     const cli = json("docs/contract/cli.json");
     for (const flag of cli.flags.filter((f: { since?: string }) => f.since === "1.2.0")) expect(changes, flag.name).toContain(`--${flag.name === "runtime" ? "no-runtime" : flag.name}`);
     for (const [name, v] of Object.entries(cli.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.2.0")) expect(changes, name).toContain(name);
-    expect(CONTRACT_VERSION).toBe("1.10.0");
+    expect(CONTRACT_VERSION).toBe("1.11.0");
     // The harness version is package.json's and moves at least as far as the contract's (docs/contract.md, Versioning):
     // a mask or engine PR bumps the patch of the harness alone, so do not pin a literal here.
     expect(json("package.json").version).toBe(HARNESS_VERSION);
@@ -278,6 +278,22 @@ describe("report.json", () => {
     for (const command of cliJson.commands.filter((c: { since?: string }) => c.since === "1.5.0")) expect(changes, command.name).toContain(command.name);
     for (const [name, v] of Object.entries(cliJson.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.5.0")) expect(changes, name).toContain(name);
     for (const workflow of ["main-preview.yml", "pages.yml"]) expect(changes, workflow).toContain(workflow);
+  });
+
+  it("1.11.0: its changelog and release note list the command, every flag, the scoreboard file, its schema and branch", () => {
+    const start = contractMd.indexOf("### 1.11.0");
+    const end = contractMd.indexOf("### 1.10.0");
+    expect(start).toBeGreaterThan(0);
+    expect(end).toBeGreaterThan(start);
+    const changes = contractMd.slice(start, end);
+    expect(changes).toContain("releases/1.11.0.md");
+    expect(existsSync(resolve(ROOT, "docs/releases/1.11.0.md"))).toBe(true);
+    const cliJson = json("docs/contract/cli.json");
+    for (const flag of cliJson.flags.filter((f: { since?: string }) => f.since === "1.11.0")) expect(changes, flag.name).toContain(`--${flag.name}`);
+    for (const command of cliJson.commands.filter((c: { since?: string }) => c.since === "1.11.0")) for (const sub of command.subcommands) expect(changes, `${command.name} ${sub}`).toContain(`harness ${command.name} ${sub}`);
+    for (const item of ["scoreboard/releases.jsonl", "scoreboard-line.schema.json", "harness guard scoreboard", "weightsVersion", "mutants-summary", "run rules", "`scoreboard` branch"]) expect(changes, item).toContain(item);
+    expect(contractMd).toContain("| [`scoreboard-line.schema.json`](contract/scoreboard-line.schema.json) |");
+    expect(existsSync(resolve(ROOT, "scoreboard/releases.jsonl"))).toBe(true);
   });
 
   it("1.10.0: its changelog and release note list the command, every flag, changes.json and its schema", () => {
@@ -738,8 +754,9 @@ describe("CLI", () => {
     for (const name of ["local", "override"]) expect(byName[name]!.stable, name).toBe(false);
     expect(byName.noise!.subcommands).toEqual(["record", "status", "history"]);
     expect(byName.noise!.unstableSubcommands).toEqual(["history"]);
-    expect(byName.guard!.subcommands).toEqual(["masks", "engine", "all"]);
-    expect(byName.guard!.unstableSubcommands).toBeUndefined();
+    // since 1.11.0 guard has a fourth, not stable: scoreboard (the scoreboard is append-only)
+    expect(byName.guard!.subcommands).toEqual(["masks", "engine", "scoreboard", "all"]);
+    expect(byName.guard!.unstableSubcommands).toEqual(["scoreboard"]);
     for (const sub of byName.noise!.subcommands!.filter((s) => !byName.noise!.unstableSubcommands!.includes(s))) expect(contractMd, sub).toContain(`harness noise ${sub}`);
     expect(contractMd).toContain("harness guard masks");
     // the flags a stable command takes are stable with it, and every one of them is in the table
@@ -958,21 +975,28 @@ describe("workflows", () => {
     expect(contractMd).toContain("tags.yml");
   });
 
-  it("nothing pushes, tags or releases anywhere but the noise, release-records and main-preview branches of this repository, each from its own workflow", () => {
-    const branchOf: Record<string, string> = { "nightly-noise.yml": "noise", "release.yml": "release-records", "main-preview.yml": "main-preview" };
-    let pushes = 0;
+  it("nothing pushes, tags or releases anywhere but the noise, release-records, main-preview and scoreboard branches of this repository, each from its own workflows", () => {
+    const branchesOf: Record<string, string[]> = { "nightly-noise.yml": ["noise"], "release.yml": ["release-records", "scoreboard"], "main-preview.yml": ["main-preview"], "weekly-mutants.yml": ["scoreboard"] };
+    const seen: string[] = [];
     for (const f of files) {
       for (const m of text[f]!.matchAll(/git (?:-c [^\n]*?)?push[^\n]*/g)) {
-        pushes += 1;
-        expect(Object.keys(branchOf), m[0]).toContain(f);
+        expect(Object.keys(branchesOf), m[0]).toContain(f);
         expect(m[0]).toContain("${GITHUB_REPOSITORY}");
-        expect(m[0]).toMatch(new RegExp(` ${branchOf[f]}$`));
-        // the noise branch is forced every night; the release records and the forecasts are never forced: no record is lost
+        const branch = branchesOf[f]!.find((b) => m[0].endsWith(` ${b}`));
+        expect(branch, m[0]).toBeDefined();
+        seen.push(`${f}:${branch}`);
+        // the noise branch is forced every night; the release records, the forecasts and the scoreboard are never forced: nothing is lost
         expect(/--force/.test(m[0]), m[0]).toBe(f === "nightly-noise.yml");
       }
       expect(text[f], f).not.toMatch(/git tag|gh release|gh pr |gh api [^\n]*-X (?:POST|PUT|PATCH|DELETE)/);
     }
-    expect(pushes).toBe(Object.keys(branchOf).length);
+    expect(seen.sort()).toEqual(Object.entries(branchesOf).flatMap(([f, bs]) => bs.map((b) => `${f}:${b}`)).sort());
+    // the scoreboard branch is written by exactly the jobs the contract names, each checking the file only grew before it pushes
+    for (const [f, job] of Object.entries((workflowsContract as unknown as { scoreboardBranch: { jobs: Record<string, string> } }).scoreboardBranch.jobs)) {
+      const body = text[f]!.slice(text[f]!.indexOf(`\n  ${job}:\n`));
+      expect(body, `${f}: ${job}`).toContain("cmp -s - before.jsonl");
+      expect(body, `${f}: ${job}`).toContain("group: scoreboard-branch");
+    }
   });
 
   it("the monitor keeps one open rollback issue: the same differences add nothing, new ones are a comment", () => {

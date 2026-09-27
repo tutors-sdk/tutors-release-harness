@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { parse } from "yaml";
 import { z } from "zod";
@@ -9,6 +9,8 @@ import { osTempFiles } from "./image-static/command.ts";
 import { DEFAULT_ALT_BASE, MUTANT_KINDS, buildMutantImage } from "./mutant-build.ts";
 import { ROOT } from "./stack.ts";
 import { ARTEFACTS, type Hunk } from "./types.ts";
+import { HARNESS_VERSION } from "./version.ts";
+import { MUTANTS_SUMMARY } from "./scoreboard/line.ts";
 
 const MutantsFileSchema = z.object({
   mutants: z.array(
@@ -56,6 +58,26 @@ export function describeNoiseHunks(hunks: Hunk[], cap = NOISE_HUNK_LOG_CAP): str
   return lines;
 }
 
+
+/** The self-test's result in one small file, `<out>/mutants.json`: what the scoreboard records as the week's mutants caught (since 1.11.0). */
+export interface MutantsSummary {
+  schemaVersion: 1;
+  ranAt: string;
+  base: string;
+  /** Caught AND attributed: the self-test's own pass rule. null when the A/A on the base was not clean and no mutant ran. */
+  caught: number | null;
+  total: number;
+  escaped: string[];
+  harnessVersion: string;
+  note?: string;
+}
+
+/** Written whatever happened, so a self-test that could not run is on record as that, not as missing. */
+export function writeMutantsSummary(outDir: string, s: Omit<MutantsSummary, "schemaVersion" | "harnessVersion">): void {
+  mkdirSync(outDir, { recursive: true });
+  writeFileSync(join(outDir, MUTANTS_SUMMARY), `${JSON.stringify({ schemaVersion: 1, ...s, harnessVersion: HARNESS_VERSION }, null, 2)}\n`);
+}
+
 export interface MutantsOptions extends Omit<RunOptions, "mode" | "a" | "b"> {
   base: string;
 }
@@ -77,6 +99,7 @@ export async function runMutants(options: MutantsOptions): Promise<boolean> {
   const mutants = loadMutants();
   const baseImages = imagesFor(opts.base, opts.imagePrefix);
   const baseSpec = specFor(baseImages);
+  const ranAt = new Date().toISOString();
 
   // The fixture and signed-in journeys are enough to catch every mutant, and
   // they need nothing outside this stack.
@@ -91,6 +114,7 @@ export async function runMutants(options: MutantsOptions): Promise<boolean> {
     for (const reason of noise.report.reasons) opts.log(`  reason: ${reason}`);
     for (const line of describeNoiseHunks(noise.report.compare.hunks)) opts.log(line);
     opts.log(`A/A is not clean (${noise.report.compare.hunks.length} diff(s)); the mutant self-test cannot be trusted. Report: ${noise.files.html}`);
+    writeMutantsSummary(opts.outDir, { ranAt, base: opts.base, caught: null, total: mutants.length, escaped: [], note: "the A/A on the base was not clean, so no mutant ran" });
     return false;
   }
 
@@ -122,6 +146,7 @@ export async function runMutants(options: MutantsOptions): Promise<boolean> {
     opts.log(`${r.name.padEnd(16)} ${(r.caught ? "yes" : "NO").padEnd(7)} ${(r.attributed ? "yes" : "NO").padEnd(11)} ${r.artefacts.join(", ") || "—"}`);
   }
   const failed = results.filter((r) => !r.caught || !r.attributed);
+  writeMutantsSummary(opts.outDir, { ranAt, base: opts.base, caught: results.length - failed.length, total: results.length, escaped: failed.map((r) => r.name) });
   if (failed.length) {
     opts.log("");
     for (const r of failed) opts.log(`escaped: ${r.name} (verdict ${r.verdict}) — ${r.report}`);

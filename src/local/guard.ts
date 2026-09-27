@@ -3,11 +3,12 @@ import { join } from "node:path";
 import { ROOT } from "../stack.ts";
 
 /**
- * `harness guard masks|engine|all --base <ref>`: the two PR guards of CI as
+ * `harness guard masks|engine|scoreboard|all --base <ref>`: the PR guards of CI as
  * commands against local refs.
  *
  *   masks   src/ci/mask-change.ts    a PR that adds or loosens a mask changes nothing else
  *   engine  src/ci/engine-change.ts  a change to an engine, mask, journey, the gate or a mutant needs a version bump
+ *   scoreboard  src/ci/scoreboard-append.ts  scoreboard/*.jsonl only gains lines (since 1.11.0)
  *
  * This file only resolves and checks the ref, then runs the very script CI runs
  * (`ci.yml` and `weekly-mutants.yml` call this command), so the rule has one
@@ -17,7 +18,7 @@ import { ROOT } from "../stack.ts";
  *
  * Exit codes are the scripts': 0 ok, 1 a violation, 2 usage (no such ref).
  */
-export const GUARDS = { masks: "src/ci/mask-change.ts", engine: "src/ci/engine-change.ts" } as const;
+export const GUARDS = { masks: "src/ci/mask-change.ts", engine: "src/ci/engine-change.ts", scoreboard: "src/ci/scoreboard-append.ts" } as const;
 export type GuardKind = keyof typeof GUARDS;
 
 export interface GitResult {
@@ -66,7 +67,7 @@ export function resolveBase(explicit: string | undefined, deps: Pick<GuardDeps, 
   return { ok: true, ref };
 }
 
-/** Run one guard, or both. The worst exit code wins. */
+/** Run one guard, or all of them. The worst exit code wins. */
 export function runGuard(kind: GuardKind | "all", explicitBase: string | undefined, deps: GuardDeps): number {
   const base = resolveBase(explicitBase, deps);
   if (!base.ok) {
@@ -75,7 +76,7 @@ export function runGuard(kind: GuardKind | "all", explicitBase: string | undefin
   }
   const dirty = deps.git(["status", "--porcelain"]).stdout.split(/\r?\n/).filter(Boolean).length;
   if (dirty) deps.log(`note: ${dirty} uncommitted change(s) are not compared; the guards look at ${base.ref}...HEAD, as CI does. Commit first to see them.`);
-  const kinds: GuardKind[] = kind === "all" ? ["masks", "engine"] : [kind];
+  const kinds: GuardKind[] = kind === "all" ? (Object.keys(GUARDS) as GuardKind[]) : [kind];
   let worst = 0;
   for (const k of kinds) {
     deps.log(`guard ${k} against ${base.ref}`);

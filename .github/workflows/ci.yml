@@ -93,6 +93,12 @@ jobs:
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: pnpm harness guard masks --base "$BASE_SHA"
+      # The scoreboard is the history of every release run: a PR may add lines to scoreboard/*.jsonl, never change or remove one
+      # (`harness guard scoreboard`, src/ci/scoreboard-append.ts). Here because this job already has the whole history.
+      - name: The scoreboard only gains lines
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: pnpm harness guard scoreboard --base "$BASE_SHA"
 
   # Phase H0 exit criterion, kept running: any two tags boot side by side and
   # one journey runs against both. Images are pulled from Quay and their
