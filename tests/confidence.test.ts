@@ -30,6 +30,7 @@ import { ScoreInputError, scoreInputs } from "../src/score/read.ts";
 import { renderBoard, renderScoreMarkdown } from "../src/score/render.ts";
 import { BANDS, DIMENSIONS, FLOOR_CAP, bandOf } from "../src/score/weights.ts";
 import type { Artefact, Claim, Hunk, RunReport } from "../src/types.ts";
+import { CONTRACT_VERSION } from "../src/version.ts";
 
 const ROOT = resolve(import.meta.dirname, "..");
 const tmp = (name: string) => mkdtempSync(join(tmpdir(), `harness-confidence-${name}-`));
@@ -89,6 +90,8 @@ const dim = (c: Confidence, id: DimensionScore["id"]) => c.dimensions.find((d) =
  * "A fictitious 16.3.0-rc.1: claim coverage 85 (one stale claim), noise health 90, statistical margin 100, rehearsals
  * 100, test signal 70 (mutation score 72% on reader), traceability 100, change risk 60 (a hotspot file touched by a new
  * contributor), post-deploy history 100." Built here from inputs that say exactly that, not from the eight numbers.
+ * Since 1.10.0 change risk follows the plan's own signal table ("Code-level change signals"): a hotspot touched by a first
+ * contribution is −10, not the −40 the worked example implies, so change risk is 90 and the RCS 89, still Amber.
  */
 function workedExample(): ScoreInputs {
   return inputs({
@@ -101,19 +104,19 @@ function workedExample(): ScoreInputs {
 }
 
 describe("the plan's worked example, 16.3.0-rc.1", () => {
-  it("scores each dimension from what the plan says happened: 85, 90, 100, 100, 70, 100, 60, 100", () => {
+  it("scores each dimension from what the plan says happened: 85, 90, 100, 100, 70, 100, 90 (the table's −10), 100", () => {
     const c = confidence(workedExample());
-    expect(c.dimensions.map((d) => d.score)).toEqual([85, 90, 100, 100, 70, 100, 60, 100]);
+    expect(c.dimensions.map((d) => d.score)).toEqual([85, 90, 100, 100, 70, 100, 90, 100]);
     expect(c.dimensions.every((d) => d.status === "measured" && !d.floorBreached)).toBe(true);
     expect(dim(c, "claim-coverage").deductions).toEqual([{ points: 15, why: "stale claim dom reader:old: matched nothing (Rule 0040: removed banner)", evidence: "report.html#stale-claims" }]);
     expect(dim(c, "test-signal").deductions[0]).toMatchObject({ points: 30, why: "mutation score 72% on reader, below 80%", evidence: "test-signal.json" });
-    expect(dim(c, "change-risk").deductions[0]).toMatchObject({ points: 40, why: "PR #412, a first contribution, touches hotspot packages/reader/src/lib/course.ts", evidence: "PR #412" });
+    expect(dim(c, "change-risk").deductions[0]).toMatchObject({ points: 10, why: "PR #412, a first contribution, touches hotspot packages/reader/src/lib/course.ts", evidence: "PR #412" });
   });
 
-  it("is Amber: the glance is mandatory. The weights give a mean of 85.00 (the plan's text says 84.5, an arithmetic slip), so RCS 85", () => {
-    // 20*85 + 15*90 + 10*100 + 10*100 + 15*70 + 10*100 + 15*60 + 5*100 = 8500, over 100. Same band either way.
+  it("is Amber: the glance is mandatory. The weights give a mean of 89.50 (the plan's text says 84.5 from change risk 60), so RCS 89", () => {
+    // 20*85 + 15*90 + 10*100 + 10*100 + 15*70 + 10*100 + 15*90 + 5*100 = 8950, over 100. Same band either way.
     const c = confidence(workedExample());
-    expect(c).toMatchObject({ gate: "PASS", mean: 85, rcs: 85, band: "Amber", meaning: "ship only after the reviewer's glance is recorded verified" });
+    expect(c).toMatchObject({ gate: "PASS", mean: 89.5, rcs: 89, band: "Amber", meaning: "ship only after the reviewer's glance is recorded verified" });
     expect(c.weightsUsed).toEqual(Object.fromEntries(DIMENSIONS.map((d) => [d.id, d.weight])));
     expect(c.glance).toEqual([]);
   });
@@ -216,7 +219,7 @@ describe("a dimension without its input is not measured, never 100", () => {
   it("a measured dimension says what it could not look at", () => {
     const c = confidence(workedExample());
     expect(dim(c, "noise-health").gaps).toEqual([expect.stringContaining("masks added this release")]);
-    expect(dim(c, "change-risk").gaps).toEqual(["churn between the two tags"]);
+    expect(dim(c, "change-risk").gaps).toEqual(["churn, ownership, orphans, tests and dependencies (a --change-risk with only prs; harness changes measures them)"]);
     expect(testSignal(at({ packages: [] }, "t.json")).gaps).toEqual(["the weekly harness mutants (none given)"]);
   });
 });
@@ -276,7 +279,7 @@ describe("every point lost names where it went", () => {
 
   it("change risk names the PR and the file, never the person", () => {
     const d = changeRisk(at({ prs: [{ number: 7, url: "https://github.com/tutors-sdk/tutors-mono-repo/pull/7", reviewed: true, firstTimeContributor: true, hotspots: ["a.ts"] }] }, "c.json"));
-    expect(d.deductions).toEqual([{ points: 40, why: "PR #7, a first contribution, touches hotspot a.ts", evidence: "https://github.com/tutors-sdk/tutors-mono-repo/pull/7" }]);
+    expect(d.deductions).toEqual([{ points: 10, why: "PR #7, a first contribution, touches hotspot a.ts", evidence: "https://github.com/tutors-sdk/tutors-mono-repo/pull/7" }]);
   });
 });
 
@@ -304,8 +307,8 @@ describe("the board", () => {
 
   it("the Markdown lead: RCS and band in bold, then the dimension table", () => {
     const md = renderScoreMarkdown(confidence(workedExample()));
-    expect(md.split("\n")[0]).toBe("**RCS 85 Amber: ship only after the reviewer's glance is recorded verified**");
-    expect(md).toContain("| Change risk | 15 | **60** |  | −40 PR #412, a first contribution, touches hotspot packages/reader/src/lib/course.ts |");
+    expect(md.split("\n")[0]).toBe("**RCS 89 Amber: ship only after the reviewer's glance is recorded verified**");
+    expect(md).toContain("| Change risk | 15 | **90** |  | −10 PR #412, a first contribution, touches hotspot packages/reader/src/lib/course.ts |");
   });
 });
 
@@ -339,7 +342,7 @@ describe("harness confidence", () => {
     expect(confidenceCommand({ run: join(rel, "report.json"), migration: mig }, (m) => out.push(m))).toBe(0);
     const c = JSON.parse(readFileSync(join(rel, "confidence.json"), "utf8")) as Confidence;
     expect(c).toMatchObject({ gate: "PASS", rcs: 74, band: "Red", run: { candidate: "16.3.0-rc.1", baseline: "16.2.2", reports: { release: "report.json", migration: "../2026-09-27T10-30-00-migration/report.json" } } });
-    expect(c.run.harness?.contractVersion).toBe("1.9.0");
+    expect(c.run.harness?.contractVersion).toBe(CONTRACT_VERSION);
     expect(out[0]!.split("\n")[0]).toBe("Gate: PASS");
     validate(c);
     expect(validate.errors ?? []).toEqual([]);

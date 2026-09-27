@@ -153,7 +153,7 @@ touches:
 **Deliberately not engine** (each with its reason in `NON_ENGINE_PATHS`, `src/ci/engine-change.ts`):
 `src/ci` and `src/report` (the guards themselves; rendering, whose wording is a contract patch and which
 the mutants, asserting on the verdict, cannot exercise), `src/cli.ts` (parses and dispatches; behaviour
-lives in `src/run.ts`), `src/local` (the maintainer's wrappers and `harness doctor`; they run the stable commands, which are engine code), `src/score` (the Release Confidence Score: reads finished reports, writes `confidence.json`, and is never an input to the gate or a run), `src/project.ts` (names the compose project and kind cluster after the checkout), `src/override.ts` (records an override, never changes a verdict), `src/types.ts`,
+lives in `src/run.ts`), `src/local` (the maintainer's wrappers and `harness doctor`; they run the stable commands, which are engine code), `src/changes` (`harness changes`: reads git and GitHub between two monorepo tags, writes `changes.json`, and is never an input to the gate or a run), `src/score` (the Release Confidence Score: reads finished reports, writes `confidence.json`, and is never an input to the gate or a run), `src/project.ts` (names the compose project and kind cluster after the checkout), `src/override.ts` (records an override, never changes a verdict), `src/types.ts`,
 `src/version.ts`, `tests`, `docs`, `claims`, `examples`, `site`, `bin`, `package.json` (the version bump is the required change;
 dependencies are covered through the lock file), `README.md`, `TESTING.md`, `LICENSE`,
 `eslint.config.mjs`, `tsconfig.json` and `vitest.config.ts`. Workflows under `.github` are held to the

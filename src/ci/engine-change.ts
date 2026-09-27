@@ -80,6 +80,7 @@ export const NON_ENGINE_PATHS: Readonly<Record<string, string>> = {
   "src/report": "renders what the engines decided; wording is a contract patch, and the mutants assert on the verdict, not the rendering (tests/report.test.ts and the schema tests hold it)",
   "src/cli.ts": "parses arguments and dispatches; the defaults and behaviour live in src/run.ts (engine); the flag surface is held by tests/contract.test.ts",
   "src/local": "the maintainer's wrappers and `harness doctor`: they plan and run the stable commands (which are engine code) and report what a machine lacks; a change here cannot alter what a run captures, compares or decides",
+  "src/changes": "harness changes: reads git and GitHub between two monorepo tags and writes changes.json for the score's change risk; advisory, never an input to src/gate.ts or src/run.ts, so it cannot alter a capture, a hunk or a verdict",
   "src/score": "the Release Confidence Score: reads finished reports and writes confidence.json; advisory, never an input to src/gate.ts or src/run.ts (tests/confidence.test.ts holds that), so it cannot alter a capture, a hunk or a verdict",
   "src/project.ts": "names the compose project and the kind cluster after the checkout; a name alters no capture, hunk or verdict",
   "src/override.ts": "records that a FAIL was overridden; the verdict stays what the gate decided",

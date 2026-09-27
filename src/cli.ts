@@ -19,7 +19,7 @@ import { harnessInfo } from "./version.ts";
 import { helpFor, parseArgsErrorText } from "./local/usage.ts";
 import { RequirementError, requirements } from "./not-collected.ts";
 import { previewResolve } from "./ci/main-preview.ts";
-import { UsageError, confidenceCommand, doctorCommand, guardCommand, localCommand, noiseCommand, overrideCommand, pruneCommand, recordAppliedOverride, releaseCommand, reportsCommand, scorecardCommand, vulnDbCommand } from "./local/cli.ts";
+import { UsageError, changesCommand, confidenceCommand, doctorCommand, guardCommand, localCommand, noiseCommand, overrideCommand, pruneCommand, recordAppliedOverride, releaseCommand, reportsCommand, scorecardCommand, vulnDbCommand } from "./local/cli.ts";
 import { defaultNoise } from "./local/noise-store.ts";
 
 const USAGE = `tutors-release-harness
@@ -150,7 +150,8 @@ const USAGE = `tutors-release-harness
   harness release --candidate <tag> [--baseline <tag|prod>] [--monorepo dir] [--claims f] [--rules f] [--fast] [--open] [--out dir] [--dry-run]
                   [--test-signal f] [--traceability f] [--change-risk f] [--post-deploy dir]
       A pushed candidate to a report, asking nothing: resolve (the baseline, images ensure), noise (the local store's A/A
-      when clean and at most 7 days old, else an A/A of the baseline, 3 runs), changes (not built yet), release (3 runs,
+      when clean and at most 7 days old, else an A/A of the baseline, 3 runs), changes (harness changes in the monorepo
+      checkout: changes.json, fed to the score's change risk; skipped without a checkout), release (3 runs,
       k6 20x30s, claims, rules), rehearse (migration, upgrade), score (confidence.json, as harness confidence), report,
       led by the Gate, then the RCS and its band. --baseline prod or none reads
       release/deployed.json in the monorepo checkout (--monorepo or HARNESS_MONOREPO_DIR), else HARNESS_PRODUCTION_TAG, else
@@ -165,7 +166,16 @@ const USAGE = `tutors-release-harness
       RCS (0-100, only when the Gate is PASS or WARN) and its band (Green >= 90, Amber 75-89, Red < 75), then eight
       dimensions, each with every point lost and where. A dimension without its input is "not measured" and left out of
       the mean; a breached floor caps the RCS at 74. The optional inputs are JSON files (docs/contract.md). Never changes
-      a verdict or an exit code: exit 0 when written, 2 for an input it cannot read. Not stable.
+      a verdict or an exit code: exit 0 when written, 2 for an input it cannot read. --change-risk also takes a
+      changes.json. Not stable.
+  harness changes --a <tag> --b <tag> [--monorepo dir] [--history 6] [--changelog f] [--json] [--out file]
+      What changed between two tags of the monorepo (git log A..B in the checkout: --monorepo or HARNESS_MONOREPO_DIR;
+      16.2.2 finds v16.2.2), one risk line per PR: churn per app against its median over the last --history releases,
+      hotspots (files changed in 3 of them), files with 3+ authors, orphan changes (CHANGELOG.md, or --changelog, the
+      output of pnpm release:changelog --json), test lines per production line, approving reviews (GitHub, with
+      GITHUB_TOKEN or GH_TOKEN), major dependency bumps. Change risk is 100 minus the sum of the PRs' deductions. A
+      signal it cannot read is "not measured", never clean. --out writes changes.json. Advisory: exit 0 whatever it
+      found, 2 for what it cannot read. Not stable.
 `;
 
 function fail(message: string): never {
@@ -272,6 +282,8 @@ async function main(argv: string[]): Promise<number> {
       traceability: { type: "string" },
       "change-risk": { type: "string" },
       "post-deploy": { type: "string" },
+      history: { type: "string" },
+      changelog: { type: "string" },
       screenshots: { type: "boolean", default: true },
       axe: { type: "boolean", default: true },
       focus: { type: "boolean", default: true },
@@ -482,6 +494,8 @@ async function main(argv: string[]): Promise<number> {
       return releaseCommand(values);
     case "confidence":
       return confidenceCommand(values);
+    case "changes":
+      return changesCommand(values);
     case "journeys":
       for (const j of journeys) console.log(`${j.name.padEnd(34)} set=${j.set.padEnd(9)} ${j.anonymous ? "anonymous" : "signed-in"}`);
       return 0;

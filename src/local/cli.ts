@@ -19,6 +19,7 @@ import { BaselineError, RELEASE_DEFAULTS, decideNoise, gateWord, openerFor, plan
 import { ScoreInputError, runDirOf, scoreAndWrite, type ScoreSources } from "../score/read.ts";
 import { renderBoard } from "../score/render.ts";
 import { harnessInfo } from "../version.ts";
+import { CHANGES_DEFAULTS, ChangesInputError, renderChangesBoard, runChanges, type ChangesDeps } from "../changes/command.ts";
 import { PRUNE_DEFAULTS, prune, renderPrune } from "./prune.ts";
 import { keepReport } from "../ci/report-archive.ts";
 import { readReport, readRulePrs, renderScorecard, scorecard } from "../ci/scorecard.ts";
@@ -228,6 +229,34 @@ export function confidenceCommand(v: Values, log: (m: string) => void = (m) => c
     throw e;
   }
   log(flag(v, "json") ? JSON.stringify(result.confidence, null, 2) : renderBoard(result.confidence, result.file));
+  return 0;
+}
+
+// ---- harness changes ----------------------------------------------------------------------------------
+
+/**
+ * `harness changes --a <tag> --b <tag> [--monorepo dir] [--history 6] [--changelog f] [--json] [--out file]`: the change
+ * signals between two tags of the monorepo and the change risk they add up to. Exit 0 whatever it found; 2 for what it
+ * cannot read (no checkout, a tag the monorepo lacks, an unusable --changelog).
+ */
+export async function changesCommand(v: Values, deps: ChangesDeps & { log?: (m: string) => void } = {}): Promise<number> {
+  const log = deps.log ?? ((m: string) => console.log(m));
+  const a = str(v, "a");
+  const b = str(v, "b");
+  if (!a || !b) throw new UsageError("changes needs --a <older tag> --b <newer tag> [--monorepo dir] [--history 6] [--changelog f] [--json] [--out file]");
+  const env = deps.env ?? process.env;
+  const monorepo = str(v, "monorepo") ?? env.HARNESS_MONOREPO_DIR?.trim();
+  if (!monorepo) throw new UsageError("changes reads git in the monorepo checkout: pass --monorepo <dir> or set HARNESS_MONOREPO_DIR");
+  const history = integer(v, "history", CHANGES_DEFAULTS.history, 1);
+  const harness = (({ version, contractVersion }) => ({ version, contractVersion }))(harnessInfo());
+  let result: Awaited<ReturnType<typeof runChanges>>;
+  try {
+    result = await runChanges({ a, b, monorepo, history, ...(str(v, "changelog") ? { changelog: str(v, "changelog")! } : {}), ...(str(v, "out") ? { out: str(v, "out")! } : {}), harness }, { ...deps, env });
+  } catch (e) {
+    if (e instanceof ChangesInputError) throw new UsageError(e.message);
+    throw e;
+  }
+  log(flag(v, "json") ? JSON.stringify(result.changes, null, 2) : renderChangesBoard(result.changes, result.file));
   return 0;
 }
 
@@ -607,7 +636,7 @@ export function releaseCommand(v: Values, deps: ReleaseCommandDeps = {}): number
   const noise = decideNoise(describeStatus(noiseDir(home), now(), RELEASE_DEFAULTS.noiseMaxAgeDays), fast);
   const planEnv = { ...workflowEnv(env), ...portEnv(integer(v, "port-offset", 0), env) };
   const extras = scoreExtras(v);
-  const options = { candidate, baseline, fast, ...(claims ? { claims } : {}), ...(rules ? { rules } : {}), ...(out ? { out } : {}), ...(Object.keys(extras).length ? { score: extras } : {}) };
+  const options = { candidate, baseline, fast, ...(claims ? { claims } : {}), ...(rules ? { rules } : {}), ...(out ? { out } : {}), ...(Object.keys(extras).length ? { score: extras } : {}), ...(monorepo ? { monorepo: resolve(monorepo) } : {}) };
   if (flag(v, "dry-run")) {
     say(renderReleasePlan({ candidate, baseline, fast, stages: planRelease(options, noise), env: planEnv }));
     return 0;

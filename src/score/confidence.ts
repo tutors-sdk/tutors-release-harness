@@ -102,9 +102,19 @@ export interface Traceability {
   evidence?: string;
 }
 
-/** `--change-risk <json>`: the PRs between the two tags (C1, `harness changes`, will write this). */
+/**
+ * `--change-risk <json>`: the PRs between the two tags. `harness changes` (C1) writes it as the `changeRisk` block of
+ * changes.json, with every deduction already made (its rules are in src/changes/signals.ts); a file with only `prs`
+ * (the 1.9.0 shape) is still read, and scored from them by the same rules.
+ */
 export interface ChangeRisk {
-  prs: { number: number; url?: string; reviewed: boolean; firstTimeContributor?: boolean; hotspots?: string[] }[];
+  prs: { number: number; url?: string; reviewed: boolean | null; firstTimeContributor?: boolean; hotspots?: string[] }[];
+  /** Every point lost, one per finding, each naming its PR and file (C1). Present, they are the score. */
+  deductions?: { points: number; why: string; evidence: string; floor?: true; pr?: number | null; file?: string }[];
+  /** What the change signals could not look at (a signal not measured, and why). */
+  gaps?: string[];
+  /** Orphan changes (a changelog entry with no diff, a diff with no entry): a floor signal for traceability. */
+  orphans?: number;
   evidence?: string;
 }
 
@@ -296,12 +306,18 @@ export function testSignal(t: Located<TestSignal> | undefined): DimensionScore {
   return measured("test-signal", d, [src], gaps);
 }
 
-/** Requirements traceability: changelog entries against EARS files and claims (`--traceability`). */
-export function traceability(t: Located<Traceability> | undefined): DimensionScore {
-  if (!t) return notMeasured("traceability", "needs the changelog, the EARS files and the claims side by side: pass --traceability <json>");
+/**
+ * Requirements traceability: changelog entries against EARS files and claims (`--traceability`). The orphan changes
+ * change risk found (C1) are a floor signal here too: an orphan is a change the claims matcher could not match.
+ */
+export function traceability(t: Located<Traceability> | undefined, change?: Located<ChangeRisk>): DimensionScore {
+  const orphans = change?.data.orphans ?? 0;
+  const orphanWhy = `${plural(orphans, "orphan change")} between the tags (a changelog entry with no diff, or a diff with no entry)`;
+  if (!t) return notMeasured("traceability", `needs the changelog, the EARS files and the claims side by side: pass --traceability <json>${orphans ? `; ${change!.data.evidence ?? change!.where} already reports ${orphanWhy}, a floor breach once it is measured` : ""}`);
   const R = RULES.traceability;
   const d: Deduction[] = [];
   const src = t.data.evidence ?? t.where;
+  if (orphans) d.push({ points: 0, why: `${orphanWhy}; each costs change risk its points`, evidence: change!.data.evidence ?? change!.where, floor: true });
   for (const e of t.data.entries) {
     if (!e.ears) d.push({ points: R.noEars, why: `changelog entry "${e.entry}" has no EARS file`, evidence: e.evidence ?? src, ...(e.kind === "feature" ? { floor: true as const } : {}) });
     if (e.claimed === false) d.push({ points: R.noClaim, why: `changelog entry "${e.entry}" has no claim`, evidence: e.evidence ?? src });
@@ -310,19 +326,31 @@ export function traceability(t: Located<Traceability> | undefined): DimensionSco
   return measured("traceability", d, [src]);
 }
 
-/** Change risk: the PRs between the two tags (`--change-risk`; C1 writes it). */
+/**
+ * Change risk: the PRs between the two tags (`--change-risk`, or the changes stage of `harness release`). From
+ * changes.json the deductions are taken as `harness changes` made them, one per finding on the PR that carries it, and
+ * summed (never averaged); its gaps are this dimension's gaps. A file with only `prs` is scored from them by the same
+ * rules, as far as they go: reviews and hotspots, with churn, ownership, orphans, tests and dependencies as gaps.
+ */
 export function changeRisk(t: Located<ChangeRisk> | undefined): DimensionScore {
-  if (!t) return notMeasured("change-risk", "needs the PRs between the two tags (C1, harness changes, is not built yet): pass --change-risk <json>");
+  if (!t) return notMeasured("change-risk", "needs the PRs between the two tags: run harness changes (or harness release with --monorepo) and pass --change-risk <changes.json>");
   const R = RULES.changeRisk;
-  const d: Deduction[] = [];
   const src = t.data.evidence ?? t.where;
+  if (t.data.deductions) {
+    const d = t.data.deductions.map((x) => ({ points: x.points, why: x.why, evidence: x.evidence, ...(x.floor ? { floor: true as const } : {}) }));
+    return measured("change-risk", d, [src], t.data.gaps ?? []);
+  }
+  const d: Deduction[] = [];
+  const gaps: string[] = ["churn, ownership, orphans, tests and dependencies (a --change-risk with only prs; harness changes measures them)"];
   for (const pr of t.data.prs) {
     const at = pr.url ?? `PR #${pr.number}`;
-    if (!pr.reviewed) d.push({ points: R.unreviewed, why: `PR #${pr.number} was merged without review`, evidence: at, floor: true });
+    if (pr.reviewed === false) d.push({ points: R.unreviewed, why: `PR #${pr.number} was merged with no approving review`, evidence: at, floor: true });
     // The PR and the file, never the person: contributor lines are for trends and glances, not for reviews of people.
-    if (pr.firstTimeContributor && pr.hotspots?.length) d.push({ points: R.hotspotFirstTime, why: `PR #${pr.number}, a first contribution, touches hotspot ${pr.hotspots.join(", ")}`, evidence: at });
+    if (pr.hotspots?.length) d.push({ points: pr.firstTimeContributor ? R.hotspotFirstTime : R.hotspot, why: `PR #${pr.number}${pr.firstTimeContributor ? ", a first contribution," : ""} touches hotspot ${pr.hotspots.join(", ")}`, evidence: at });
   }
-  return measured("change-risk", d, [src], ["churn between the two tags"]);
+  const unknown = t.data.prs.filter((pr) => pr.reviewed === null);
+  if (unknown.length) gaps.push(`review coverage of ${unknown.map((pr) => `PR #${pr.number}`).join(", ")} (not known)`);
+  return measured("change-risk", d, [src], gaps);
 }
 
 /** Post-deploy history: the last release's post-deploy run (`--post-deploy`). */
@@ -356,7 +384,7 @@ export function weightedMean(dims: DimensionScore[]): { mean: number | null; wei
 }
 
 export function confidence(i: ScoreInputs): Confidence {
-  const dimensions = [claimCoverage(i.release), noiseHealth(i.release), statisticalMargin(i.release), rehearsals(i.migration, i.upgrade), testSignal(i.testSignal), traceability(i.traceability), changeRisk(i.changeRisk), postDeploy(i.postDeploy)];
+  const dimensions = [claimCoverage(i.release), noiseHealth(i.release), statisticalMargin(i.release), rehearsals(i.migration, i.upgrade), testSignal(i.testSignal), traceability(i.traceability, i.changeRisk), changeRisk(i.changeRisk), postDeploy(i.postDeploy)];
   const { mean, weightsUsed } = weightedMean(dimensions);
   const base = { schemaVersion: CONFIDENCE_SCHEMA_VERSION, gate: i.gate, weightsUsed, dimensions, glance: [] as never[], run: i.run };
   if (i.gate !== "PASS" && i.gate !== "WARN") {

@@ -1,0 +1,132 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/tutors-sdk/tutors-release-harness/blob/main/docs/contract/changes.schema.json",
+  "title": "changes.json: the change signals between two tags (contract 1.10.0, not stable)",
+  "description": "Since 1.10.0. Written by `harness changes --out` and by the changes stage of `harness release` in out/<timestamp>-release-command/. One risk line per PR (or commit straight to main), the release-level signals, and the changeRisk block `harness confidence --change-risk` reads. Advisory: never an input to the gate, a verdict or an exit code. Derived from Changes in src/changes/signals.ts. Not stable: it may change in a minor release.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "a", "b", "refs", "version", "history", "score", "lost", "floorBreached", "prs", "signals", "notMeasured", "changeRisk"],
+  "definitions": {
+    "rule": { "enum": ["review", "hotspot", "tests", "churn", "ownership", "orphan", "dependency"] },
+    "deduction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["points", "why", "evidence", "rule", "pr"],
+      "properties": {
+        "points": { "type": "number", "minimum": 0, "description": "Points lost; 0 only with floor (a PR with no approving review, a commit straight to main)." },
+        "why": { "type": "string", "minLength": 1, "description": "Names the PR (or commit) and the file; never the author." },
+        "evidence": { "type": "string", "minLength": 1, "description": "The file in the PR's diff on GitHub (…/pull/<n>/files#diff-<sha256 of the path>), the commit, or CHANGELOG.md at the newer tag; without a GitHub remote, the PR and the file in words." },
+        "floor": { "const": true },
+        "rule": { "$ref": "#/definitions/rule" },
+        "pr": { "type": ["integer", "null"], "description": "The PR the point lands on; null for a commit straight to main (see commit) or a finding no PR between the tags carries." },
+        "commit": { "type": "string" },
+        "file": { "type": "string" },
+        "author": { "type": "string", "description": "A fact for the scoreboard's trends; never part of why, never shown in the report." }
+      }
+    },
+    "packageTests": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["package", "production", "tests", "ratio"],
+      "properties": { "package": { "type": "string" }, "production": { "type": "integer" }, "tests": { "type": "integer" }, "ratio": { "type": "number" }, "below": { "type": "boolean" } }
+    },
+    "signal": {
+      "type": "object",
+      "required": ["status"],
+      "properties": { "status": { "enum": ["measured", "not measured"] }, "reason": { "type": "string" } }
+    }
+  },
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "a": { "type": "string", "description": "The older tag as given (the baseline)." },
+    "b": { "type": "string", "description": "The newer tag as given (the candidate)." },
+    "refs": { "type": "object", "additionalProperties": false, "required": ["a", "b"], "properties": { "a": { "type": "string" }, "b": { "type": "string" } }, "description": "The tags as the monorepo names them (v16.2.2)." },
+    "version": { "type": "string", "description": "The version the changelog files this release under (16.3.0 for v16.3.0-rc.1)." },
+    "repo": { "type": "string", "description": "owner/repo on GitHub, from the checkout's origin." },
+    "history": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["asked", "releases"],
+      "properties": {
+        "asked": { "type": "integer", "minimum": 1 },
+        "releases": { "type": "array", "items": { "type": "object", "additionalProperties": false, "required": ["from", "to"], "properties": { "from": { "type": "string" }, "to": { "type": "string" } } }, "description": "The releases before this one, newest first: plain X.Y.Z tags, rc tags ignored." }
+      }
+    },
+    "score": { "type": "integer", "minimum": 0, "maximum": 100, "description": "Change risk: 100 minus lost, floored at 0." },
+    "lost": { "type": "number", "minimum": 0, "description": "The sum of every deduction, on every line: a sum, not an average." },
+    "floorBreached": { "type": "boolean" },
+    "prs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["pr", "sha", "title", "direct", "release", "author", "firstContribution", "files", "churn", "hotspotsTouched", "testDelta", "reviewed", "points", "deductions"],
+        "properties": {
+          "pr": { "type": ["integer", "null"] },
+          "sha": { "type": "string" },
+          "title": { "type": "string" },
+          "url": { "type": "string" },
+          "direct": { "type": "boolean", "description": "A commit that reached main without a pull request." },
+          "release": { "type": "boolean", "description": "A release/* branch coming back to main: bookkeeping." },
+          "author": { "type": "string", "description": "A fact for trends, never a reason." },
+          "firstContribution": { "type": "boolean", "description": "A fact: nothing by this author is reachable from the older tag. Costs nothing on its own." },
+          "files": { "type": "array", "items": { "type": "string" } },
+          "churn": { "type": "integer", "minimum": 0 },
+          "hotspotsTouched": { "type": "array", "items": { "type": "string" } },
+          "testDelta": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["production", "tests", "ratio", "packages"],
+            "properties": { "production": { "type": "integer" }, "tests": { "type": "integer" }, "ratio": { "type": ["number", "null"] }, "packages": { "type": "array", "items": { "$ref": "#/definitions/packageTests" } } }
+          },
+          "reviewed": { "type": ["boolean", "null"], "description": "null: not measured (no token), or GitHub could not say." },
+          "points": { "type": "number", "minimum": 0 },
+          "deductions": { "type": "array", "items": { "$ref": "#/definitions/deduction" } }
+        }
+      }
+    },
+    "signals": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["churn", "hotspots", "ownership", "orphans", "tests", "reviews", "dependencies"],
+      "properties": {
+        "churn": { "$ref": "#/definitions/signal" },
+        "hotspots": { "$ref": "#/definitions/signal" },
+        "ownership": { "type": "object", "required": ["files"], "properties": { "files": { "type": "array", "items": { "type": "object", "required": ["path", "authors", "prs"], "properties": { "path": { "type": "string" }, "authors": { "type": "integer", "minimum": 3 }, "prs": { "type": "array" } } } } } },
+        "orphans": { "type": "object", "required": ["diffs", "entries"], "properties": { "diffs": { "$ref": "#/definitions/signal" }, "entries": { "$ref": "#/definitions/signal" } } },
+        "tests": { "type": "object", "required": ["packages"], "properties": { "packages": { "type": "array", "items": { "$ref": "#/definitions/packageTests" } } } },
+        "reviews": { "type": "object", "required": ["status", "direct"], "properties": { "status": { "enum": ["measured", "not measured"] }, "reason": { "type": "string" }, "direct": { "type": "array", "items": { "type": "string" }, "description": "Commits straight to main: unreviewed by definition, token or not." } } },
+        "dependencies": { "$ref": "#/definitions/signal" }
+      }
+    },
+    "notMeasured": {
+      "type": "array",
+      "items": { "type": "object", "additionalProperties": false, "required": ["signal", "reason"], "properties": { "signal": { "type": "string" }, "reason": { "type": "string", "minLength": 1 } } },
+      "description": "Every signal that could not be read, and why. Never scored as clean."
+    },
+    "changeRisk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["score", "prs", "direct", "deductions", "gaps", "orphans", "evidence"],
+      "description": "What `harness confidence --change-risk` reads (it takes the whole changes.json): the deductions are the change-risk dimension's, summed.",
+      "properties": {
+        "score": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "prs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["number", "reviewed", "firstTimeContributor", "hotspots"],
+            "properties": { "number": { "type": "integer" }, "url": { "type": "string" }, "reviewed": { "type": ["boolean", "null"] }, "firstTimeContributor": { "type": "boolean" }, "hotspots": { "type": "array", "items": { "type": "string" } } }
+          }
+        },
+        "direct": { "type": "array", "items": { "type": "object", "additionalProperties": false, "required": ["sha", "title"], "properties": { "sha": { "type": "string" }, "title": { "type": "string" } } } },
+        "deductions": { "type": "array", "items": { "$ref": "#/definitions/deduction" } },
+        "gaps": { "type": "array", "items": { "type": "string" } },
+        "orphans": { "type": "integer", "minimum": 0, "description": "Orphan changes found: a floor signal for requirements traceability." },
+        "evidence": { "const": "changes.json" }
+      }
+    },
+    "harness": { "type": "object", "additionalProperties": false, "required": ["version", "contractVersion"], "properties": { "version": { "type": "string" }, "contractVersion": { "type": "string" } } }
+  }
+}
