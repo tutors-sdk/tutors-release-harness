@@ -760,6 +760,13 @@ run has `id` (`<ranAt>-<mode>`, the colons as dashes: `2026-09-26T07-57-09Z-nois
 published. No new branch, write permission or push, apart from `main-preview`
 below.
 
+Since 1.5.0 the same reports are also a website:
+[tutors-sdk.github.io/tutors-release-harness](https://tutors-sdk.github.io/tutors-release-harness/).
+`pages.yml` copies each branch's `reports/` beside `site/index.html`, which lists
+them newest first with each run's verdict, score and scorecard, and deploys the
+lot to GitHub Pages after every workflow that keeps a report. Its `deploy` job
+holds `pages: write` and `id-token: write`, and writes no branch.
+
 Each kept run also has `scorecard.json` and `scorecard.md` (`harness scorecard`,
 `src/ci/scorecard.ts`), derived from its `report.json` alone. **Informational:
 it never changes a verdict, an exit code or the gate.**
@@ -838,8 +845,11 @@ What it does instead:
   record](#the-release-record), and since 1.5.0 each candidate's report);
 - since 1.5.0, in `main-preview.yml` only, the `publish` job, with
   `contents: write` on **this** repository: pushes the `main-preview` branch
-  ([Main to RC](#main-to-rc)). No other branch, no tag, no release, no other
-  repository. A test lists these five write scopes and fails on any other.
+  ([Main to RC](#main-to-rc));
+- since 1.5.0, in `pages.yml` only, the `deploy` job, with `pages: write` and
+  `id-token: write` on **this** repository: publishes the kept reports to GitHub
+  Pages ([Kept reports](#kept-reports)). No other branch, no tag, no release, no other
+  repository. A test lists these write scopes and fails on any other.
 
 Post-deploy mode sends anonymous, read-only requests for the published
 reference course to the production URLs. It never signs in and never writes.
@@ -908,6 +918,9 @@ Releases are git tags `v<harness version>` on `main`, cut by a maintainer.
   renderer could hold a run until the job timed out. `harness mutants` prints each
   mutant's result as it finishes, and a mutant whose run throws counts as escaped
   instead of ending the self-test.
+- The kept reports are published to GitHub Pages by a new `pages.yml`
+  (`pages: write`, `id-token: write`), with `site/index.html` listing every run
+  of every branch. See [Kept reports](#kept-reports).
 - A failing `screenshot` hunk's summary says where the pixels differ: `…% of
   pixels differ in W×H at (x, y) (threshold …)`, the box around every differing
   pixel. The diff image stays in `diff/`; the summary is what a CI log shows.

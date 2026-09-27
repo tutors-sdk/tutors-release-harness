@@ -69,6 +69,7 @@
   "writePermissions": {
     "$comment": "The only `write` scopes any workflow or job holds, all on THIS repository (since 1.2.0 for nightly-noise.yml and release.yml). the key <workflow> means the workflow-level permissions. tests/contract.test.ts fails on any other.",
     "main-preview.yml": { "publish": ["contents"], "why": "since 1.5.0, pushes the `main-preview` branch: each Main to RC forecast's report and scorecard (reports/index.json)" },
+    "pages.yml": { "deploy": ["id-token", "pages"], "why": "since 1.5.0, deploys the kept reports of the release-records, main-preview and noise branches to GitHub Pages; writes no branch" },
     "nightly-noise.yml": { "publish": ["contents"], "why": "force-pushes the `noise` branch: noise-status.json, noise-history.json, noise-summary.md" },
     "post-deploy.yml": { "<workflow>": ["issues"], "why": "opens the `rollback` issue when post-deploy mode exits 1" },
     "release.yml": { "override-record": ["issues"], "publish-record": ["contents"], "why": "override-record opens a `harness-override` issue for each FAIL that a person overrode with override_reason; publish-record (since 1.3.0) pushes the release record to the `release-records` branch" }

@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tutors harness reports</title>
+<!--
+  The GitHub Pages index of the release harness's kept reports (.github/workflows/pages.yml).
+  Each stream is a branch's reports/index.json, copied beside this page with its reports; nothing here is generated,
+  so the page reads them in the browser. Styled like report.html, which every link opens.
+-->
+<style>
+  :root { color-scheme: light dark; --pass:#2f7a4f; --warn:#8a6119; --fail:#a12a2a; --rule:#8884; --muted:#8888; }
+  body { margin:0; padding:24px 16px 48px; font:15px/1.5 system-ui, sans-serif; max-width: 64rem; margin-inline:auto; }
+  h1 { font-size:1.4rem; margin:0 0 4px; }
+  h2 { font-size:1.1rem; margin:32px 0 2px; }
+  p.about { margin:0 0 4px; max-width:70ch; }
+  .note { font-size:13px; opacity:.75; margin:0; }
+  .verdict { display:inline-block; padding:1px 8px; border-radius:4px; color:#fff; font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.05em; }
+  .verdict.pass { background:var(--pass);} .verdict.warn { background:var(--warn);} .verdict.fail { background:var(--fail);}
+  .scroll { overflow-x:auto; }
+  table { border-collapse:collapse; width:100%; margin:10px 0 0; font-size:14px; }
+  th, td { text-align:left; vertical-align:top; padding:6px 8px; border-bottom:1px solid var(--rule); }
+  th { font-size:12px; text-transform:uppercase; letter-spacing:.06em; opacity:.7; white-space:nowrap; }
+  td.num { font-variant-numeric: tabular-nums; white-space:nowrap; }
+  code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size:13px; }
+  details summary { cursor:pointer; font-size:13px; }
+  details ul { margin:6px 0 4px; padding-left:1.2rem; font-size:13px; }
+  a:focus-visible, summary:focus-visible { outline:2px solid currentColor; outline-offset:2px; }
+  .empty { font-size:14px; opacity:.75; margin-top:10px; }
+  footer { font-size:12px; opacity:.7; border-top:1px solid var(--rule); padding-top:12px; margin-top:40px; }
+</style>
+</head>
+<body>
+<h1>Tutors release harness reports</h1>
+<p class="about">Every report the <a href="https://github.com/tutors-sdk/tutors-release-harness">release harness</a> keeps, newest first. A report compares two sets of Tutors images and fails on any observable difference no claim covers. The score is informational and never changes a verdict.</p>
+
+<section id="release-records">
+  <h2>Release candidates</h2>
+  <p class="note">Release mode on each candidate the monorepo cut, against production. The verdict that gates the release.</p>
+</section>
+<section id="main-preview">
+  <h2>Main to RC</h2>
+  <p class="note">Each morning, main's newest signed images judged as if main were a release candidate. A forecast, never a gate: every unclaimed diff is a claim or a fix the next release will need.</p>
+</section>
+<section id="noise">
+  <h2>Nightly noise</h2>
+  <p class="note">Production against itself. Any diff here is noise the harness must learn to ignore; a release can only fail on a clean, fresh night.</p>
+</section>
+
+<footer>Built from the <code>release-records</code>, <code>main-preview</code> and <code>noise</code> branches by <code>.github/workflows/pages.yml</code>. See <a href="https://github.com/tutors-sdk/tutors-release-harness/blob/main/docs/contract.md#kept-reports">Kept reports</a> in the contract. <span id="built"></span></footer>
+
+<script>
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+const tag = (ref) => (ref ? ref.slice(ref.lastIndexOf(":") + 1) : "");
+const when = (iso) => new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }) + " UTC";
+const VERDICTS = ["pass", "warn", "fail"];
+
+async function scorecardDetails(base, run) {
+  const file = run.files.find((f) => f.endsWith("/scorecard.json"));
+  if (!file) return "";
+  try {
+    const card = await (await fetch(`${base}/${file}`)).json();
+    const lines = [
+      ...card.deductions.map((d) => `−${d.points}: ${esc(d.why)}`),
+      ...card.rules.map((r) => `${r.rule ? `Rule ${esc(r.rule)}${r.title ? `: ${esc(r.title)}` : ""}` : r.status === "changelog" ? "CHANGELOG" : "no Rule"} (${esc(r.status)}): ${r.hunks} diff(s) in ${esc(r.artefacts.join(", "))}${r.prs?.length ? `, PRs ${r.prs.map((n) => `<a href="https://github.com/tutors-sdk/tutors-mono-repo/pull/${n}">#${n}</a>`).join(" ")}` : ""}`),
+      ...card.manual.map((m) => `Test by hand: <code>${esc(m.scope)}</code> (${esc(m.artefacts.join(", "))}; ${m.hunks} diff(s)): ${esc(m.why)}`)
+    ];
+    return lines.length ? `<details><summary>Scorecard</summary><ul>${lines.map((l) => `<li>${l}</li>`).join("")}</ul></details>` : "";
+  } catch {
+    return "";
+  }
+}
+
+async function stream(id) {
+  const section = document.getElementById(id);
+  const base = `${id}/reports`;
+  let runs = [];
+  try {
+    const res = await fetch(`${base}/index.json`);
+    if (res.ok) runs = (await res.json()).runs ?? [];
+  } catch {}
+  if (!runs.length) {
+    section.insertAdjacentHTML("beforeend", `<p class="empty">No kept reports yet.</p>`);
+    return;
+  }
+  const rows = await Promise.all(runs.map(async (run) => {
+    const html = run.files.find((f) => f.endsWith("/report.html"));
+    const verdict = VERDICTS.includes(run.verdict) ? run.verdict : "warn";
+    const a = tag(run.sides?.a?.reader), b = tag(run.sides?.b?.reader);
+    const sides = a === b ? `<code>${esc(a)}</code>` : `<code>${esc(a)}</code> → <code>${esc(b)}</code>`;
+    const score = run.score ? `${run.score.score} (${esc(run.score.grade)})` : "";
+    return `<tr>
+      <td class="num">${html ? `<a href="${base}/${esc(html)}">${esc(when(run.ranAt))}</a>` : esc(when(run.ranAt))}</td>
+      <td>${sides}</td>
+      <td><span class="verdict ${verdict}">${esc(run.verdict)}</span></td>
+      <td class="num">${score}</td>
+      <td>${run.reasons.slice(0, 2).map(esc).join("<br>")}${run.reasons.length > 2 ? `<details><summary>${run.reasons.length - 2} more</summary><ul>${run.reasons.slice(2).map((r) => `<li>${esc(r)}</li>`).join("")}</ul></details>` : ""}${await scorecardDetails(base, run)}</td>
+      <td class="num"><code>${esc(run.harnessVersion)}</code>${run.runUrl ? `<br><a href="${esc(run.runUrl)}">run</a>` : ""}</td>
+    </tr>`;
+  }));
+  section.insertAdjacentHTML("beforeend", `<div class="scroll"><table><thead><tr><th>Ran</th><th>Images</th><th>Verdict</th><th>Score</th><th>Why</th><th>Harness</th></tr></thead><tbody>${rows.join("")}</tbody></table></div>`);
+}
+
+["release-records", "main-preview", "noise"].forEach(stream);
+fetch("built.json").then((r) => r.json()).then((b) => { document.getElementById("built").textContent = `Last built ${when(b.builtAt)}.`; }).catch(() => {});
+</script>
+</body>
+</html>
