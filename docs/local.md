@@ -278,7 +278,8 @@ keep the checkout path short (run directories nest deep).
 
 ```console
 pnpm harness release --candidate 16.3.0-rc.1 [--baseline <tag|prod>] [--monorepo ..\tutors-mono-repo] \
-    [--claims f] [--rules f] [--fast] [--open] [--out dir] [--port-offset n] [--dry-run]
+    [--claims f] [--rules f] [--fast] [--open] [--out dir] [--port-offset n] [--dry-run] \
+    [--test-signal f] [--traceability f] [--change-risk f] [--post-deploy dir]
 ```
 
 From a pushed candidate to `report.html`, asking nothing. It is the release gate's plan
@@ -292,8 +293,8 @@ one line when it ends, with its elapsed time, and `status.json` records it as it
 | changes | a seam: not built yet (C1). Says so; never makes data up | never fails |
 | release | `--mode release --runs 3 --load 20x30s` with the claims (`--claims`, else `release/claims.yaml` in the monorepo checkout), the rules and that A/A | a FAIL stops the line for a go decision; the rehearsals still run for the evidence, the report is written, exit `1` |
 | rehearse | migration, then upgrade | skipped only with `--fast`, and the report says so |
-| score | a seam: the score (C0), the glance (C3) and the 5 Whys stubs (C4), not built yet | never fails, never changes the exit code |
-| report | `report.md`, `report.html`, `gate.md`, `gate.json` in `out/<timestamp>-release-command/`; `--open` opens `report.html` | always written |
+| score | `confidence.json`: the Release Confidence Score from the release, migration and upgrade runs ([below](#the-release-confidence-score-harness-confidence)). The glance (C3) and the 5 Whys stubs (C4) are not built yet | never fails, never changes the exit code: the exit code is decided before the score exists |
+| report | `report.md`, `report.html`, `gate.md`, `gate.json` in `out/<timestamp>-release-command/`, led by the Gate, then the RCS and its band, then the dimension table; `--open` opens `report.html` | always written |
 
 `status.json` ([schema](contract/release-status.schema.json)) holds the stage running now, and
 for each stage its `state`, `startedAt`, `elapsed` and the plan's `expected` seconds, so a
@@ -317,17 +318,67 @@ script and the deploy job's `release/deployed.json` come in a monorepo PR of the
 
 ### Lean in the harness
 
+The view behind this table is [lean.md](lean.md).
+
 | Idea | Where it is in `harness release` | Still to come |
 | --- | --- | --- |
-| Jidoka (stop the line) | a stage that cannot hand good work on stops it: missing images at resolve, a dirty A/A at noise (before any A/B), a gate FAIL at release. The terminal and the report say `line stopped at <stage>: <why>` and the next standard step, not a generic error | the 5 Whys it triggers (C4) |
-| Andon (visual management) | the report opens with the gate, one word: PASS, WARN, FAIL or NOT JUDGED; `status.json` is the board a dashboard reads | the score and its band beside the gate (C0), the scoreboard of releases (C2) |
+| Jidoka (stop the line) | a stage that cannot hand good work on stops it: missing images at resolve, a dirty A/A at noise (before any A/B), a gate FAIL at release. The terminal and the report say `line stopped at <stage>: <why>` and the next standard step, not a generic error. The Gate is always shown first and no number talks it back on | the 5 Whys it triggers (C4) |
+| Andon, visual management (**live since 1.9.0**) | the report opens with the Gate in one word (PASS, WARN, FAIL or NOT JUDGED), then the Release Confidence Score and its band with what the band means (Green: ship on the captain's say; Amber: ship only after the reviewer's glance is recorded verified; Red: hold, open a 5 Whys, do not re-run hoping for a better number), then the eight dimensions, each with every point lost and where. `confidence.json` and `status.json` are the boards a dashboard reads | the scoreboard of releases and its run rules (C2); the four dimensions not measured yet get their inputs (C1 change risk; the monorepo's test signal, traceability, post-deploy record) |
 | Standard work | one command, the same stages in the same order every time, the same steps CI runs, and a named next step for each stop | the SOP in the monorepo (C3) |
 | Gemba | each gate row links to that run's own `report.html`, the artefacts themselves | the glance: at most seven ranked places to look (C3) |
 | Kaizen | every FAIL is marked as a trigger in the report | `harness why`, the 5 Whys stub and the countermeasure register (C4) |
 
 The seams are functions (`changesStage`, `scoreStage` in `src/local/release.ts`) that the later
-phases fill. Whatever they return, the gate wins: nothing in them can change a verdict or an
-exit code.
+phases fill; `scoreStage` now writes `confidence.json`. Whatever they return, the gate wins:
+nothing in them can change a verdict or an exit code.
+
+### The Release Confidence Score: `harness confidence`
+
+```console
+pnpm harness confidence --run out/2026-09-27T10-00-00-release-command     # or a release run dir, or its report.json
+    [--migration dir] [--upgrade dir] [--test-signal f] [--traceability f] [--change-risk f] [--post-deploy dir] [--json]
+```
+
+`harness release` runs this for you in its score stage; run it by hand to re-score with an
+input you did not have then (a `--test-signal` from the monorepo's CI, say). It writes
+`confidence.json` beside what it scored and prints the board:
+
+```text
+Gate: PASS
+RCS 85 Amber: ship only after the reviewer's glance is recorded verified
+  weighted mean 85.00 over 8 of 8 dimensions measured (weight 100 of 100, renormalised).
+
+  dimension                  weight  score         floor, points lost
+  Claim coverage                 20  85            -15: 1 deduction(s)
+  Noise health                   15  90            -10: 2 deduction(s)
+  Statistical margin             10  100
+  Rehearsals                     10  100
+  Test signal                    15  70            -30: 1 deduction(s)
+  Requirements traceability      10  100
+  Change risk                    15  60            -40: 1 deduction(s)
+  Post-deploy history             5  100
+```
+
+followed by every deduction with its evidence, a link into the run's `report.html` (the hunk's
+row, the stale claims, the masks) or the input file or PR it came from.
+
+- **The Gate first, and it wins.** A FAIL (or an overridden FAIL, or NOT JUDGED) gets no RCS
+  and no band; the dimensions are still shown, for the 5 Whys, not for a decision.
+- **Eight dimensions, fixed weights** (claim coverage 20, noise health 15, statistical margin
+  10, rehearsals 10, test signal 15, requirements traceability 10, change risk 15, post-deploy
+  history 5), each 0-100. The RCS is their weighted mean, rounded down. A breached floor caps
+  it at 74 (Red), so one hollow dimension cannot hide behind seven strong ones. Bands: Green
+  ≥ 90, Amber 75-89, Red < 75. The rules and the input shapes are in
+  [contract.md](contract.md#confidencejson-the-release-confidence-score).
+- **Not measured is not 100.** Today a `harness release` run measures the first four from its
+  own runs. Test signal, traceability and post-deploy history need the monorepo's data
+  (`--test-signal`, `--traceability`, `--post-deploy`), and change risk needs C1
+  (`--change-risk`). Without their input they are "not measured", say which flag would measure
+  them, and are left out of the mean, whose weights are renormalised and recorded.
+- **Advisory.** The exit code is `0` whenever `confidence.json` was written, whatever the score
+  or the Gate, and `2` for an input it cannot read. Three real releases show whether the
+  weights match the team's judgement before a band holds anything; the weights and bands
+  change only by a PR with a 5 Whys attached (`src/score/weights.ts`).
 
 ## Parity matrix
 

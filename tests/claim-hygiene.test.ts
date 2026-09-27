@@ -98,7 +98,7 @@ describe("in the PR comment and the html", () => {
   });
 
   it("html carries it too", () => {
-    expect(renderHtml(report())).toContain("<h2>Claim hygiene</h2>");
+    expect(renderHtml(report())).toContain(`<h2 id="claim-hygiene">Claim hygiene</h2>`);
   });
 });
 

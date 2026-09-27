@@ -83,7 +83,7 @@ describe("image provenance in the report header", () => {
     expect(html).toContain(`digest <code>${digest(2)}</code>`);
     expect(html).toContain("version <code>16.3.0-rc.1</code>");
     expect(html).toContain('<p class="loud">Side b did not run signature-verified registry images');
-    expect(html.indexOf("provenance")).toBeLessThan(html.indexOf("<h2>Differences"));
+    expect(html.indexOf("provenance")).toBeLessThan(html.indexOf(`<h2 id="differences">Differences`));
   });
 
   it("a locally built side is announced before anything else in both reports: above the reasons and the tables, not just in a table cell", () => {

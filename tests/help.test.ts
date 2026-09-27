@@ -45,7 +45,7 @@ describe("helpFor", () => {
   });
 
   it("every command the CLI dispatches has usage of its own", () => {
-    for (const c of ["run", "compare", "images", "stack", "kind", "mutants", "journeys", "version", "doctor", "noise", "guard", "override", "local", "release"]) {
+    for (const c of ["run", "compare", "images", "stack", "kind", "mutants", "journeys", "version", "doctor", "noise", "guard", "override", "local", "release", "confidence"]) {
       expect(usageFor(c, USAGE), c).toContain(`harness ${c}`);
     }
   });

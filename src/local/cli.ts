@@ -15,7 +15,10 @@ import { COMPARE_DEFAULTS, ReleaseResolutionError, planCompare, realFetch, rende
 import { realVulnDbDeps, vulnDbStatus, vulnDbUpdate } from "./vuln-db.ts";
 import { describeStatus, noiseHistoryCommand, noiseStatusCommand, recordNight } from "./noise-store.ts";
 import { isTag } from "../release-record.ts";
-import { BaselineError, RELEASE_DEFAULTS, decideNoise, openerFor, planRelease, renderReleasePlan, resolveBaseline, runRelease, type Baseline } from "./release.ts";
+import { BaselineError, RELEASE_DEFAULTS, decideNoise, gateWord, openerFor, planRelease, renderReleasePlan, resolveBaseline, runRelease, type Baseline, type ScoreExtras } from "./release.ts";
+import { ScoreInputError, runDirOf, scoreAndWrite, type ScoreSources } from "../score/read.ts";
+import { renderBoard } from "../score/render.ts";
+import { harnessInfo } from "../version.ts";
 import { PRUNE_DEFAULTS, prune, renderPrune } from "./prune.ts";
 import { keepReport } from "../ci/report-archive.ts";
 import { readReport, readRulePrs, renderScorecard, scorecard } from "../ci/scorecard.ts";
@@ -175,6 +178,56 @@ export function scorecardCommand(v: Values, log: (m: string) => void = (m) => co
   if (!where) throw new UsageError("scorecard needs --report <run directory | report.json> [--rules rules.json] [--json]");
   const card = scorecard(readReport(where), readRulePrs(str(v, "rules")));
   log(flag(v, "json") ? JSON.stringify(card, null, 2) : renderScorecard(card));
+  return 0;
+}
+
+// ---- harness confidence -------------------------------------------------------------------------------
+
+/** --test-signal, --traceability, --change-risk, --post-deploy: resolved from where the command was run. */
+function scoreExtras(v: Values): ScoreExtras {
+  const at = (name: string) => (str(v, name) ? resolve(str(v, name)!) : undefined);
+  const x = { testSignal: at("test-signal"), traceability: at("traceability"), changeRisk: at("change-risk"), postDeploy: at("post-deploy") };
+  return Object.fromEntries(Object.entries(x).filter(([, p]) => p !== undefined)) as ScoreExtras;
+}
+
+/**
+ * Where `--run` points: a `harness release` directory (gate.json names its runs and the Gate) or one release run
+ * (its directory or report.json; the Gate is then worded from the reports given). confidence.json goes beside it.
+ */
+export function confidenceSources(v: Values): ScoreSources {
+  const where = str(v, "run");
+  if (!where) throw new UsageError("confidence needs --run <release run dir | report.json | harness release dir> [--migration dir] [--upgrade dir] [--json]");
+  const dir = runDirOf(where);
+  const gateFile = join(dir, "gate.json");
+  const explicit = { ...(str(v, "migration") ? { migration: resolve(str(v, "migration")!) } : {}), ...(str(v, "upgrade") ? { upgrade: resolve(str(v, "upgrade")!) } : {}), ...scoreExtras(v) };
+  const harness = (({ version, contractVersion }) => ({ version, contractVersion }))(harnessInfo());
+  if (!existsSync(join(dir, "report.json")) && existsSync(gateFile)) {
+    let g: { production?: string; candidate?: string; code: number; steps: (Parameters<typeof gateWord>[1][number])[] };
+    try {
+      g = JSON.parse(readFileSync(gateFile, "utf8"));
+    } catch {
+      throw new UsageError(`${gateFile} is not JSON`);
+    }
+    const runDir = (id: string) => g.steps.find((s) => s.id === id)?.runDir;
+    const release = runDir("release");
+    if (!release) throw new UsageError(`${gateFile}: the release step has no run directory, so there is nothing to score`);
+    const migration = runDir("migration");
+    const upgrade = runDir("upgrade");
+    return { outDir: dir, gate: gateWord(g.code, g.steps), release, ...(migration ? { migration } : {}), ...(upgrade ? { upgrade } : {}), ...explicit, ...(g.candidate ? { candidate: g.candidate } : {}), ...(g.production ? { baseline: g.production } : {}), harness };
+  }
+  return { outDir: dir, release: where, ...explicit, harness };
+}
+
+/** `harness confidence --run …`: writes confidence.json and prints the board. Exit 0 whatever the score says; 2 for an input it cannot read. */
+export function confidenceCommand(v: Values, log: (m: string) => void = (m) => console.log(m)): number {
+  let result: ReturnType<typeof scoreAndWrite>;
+  try {
+    result = scoreAndWrite(confidenceSources(v));
+  } catch (e) {
+    if (e instanceof ScoreInputError) throw new UsageError(e.message);
+    throw e;
+  }
+  log(flag(v, "json") ? JSON.stringify(result.confidence, null, 2) : renderBoard(result.confidence, result.file));
   return 0;
 }
 
@@ -553,7 +606,8 @@ export function releaseCommand(v: Values, deps: ReleaseCommandDeps = {}): number
   const home = deps.home ?? harnessHome(env);
   const noise = decideNoise(describeStatus(noiseDir(home), now(), RELEASE_DEFAULTS.noiseMaxAgeDays), fast);
   const planEnv = { ...workflowEnv(env), ...portEnv(integer(v, "port-offset", 0), env) };
-  const options = { candidate, baseline, fast, ...(claims ? { claims } : {}), ...(rules ? { rules } : {}), ...(out ? { out } : {}) };
+  const extras = scoreExtras(v);
+  const options = { candidate, baseline, fast, ...(claims ? { claims } : {}), ...(rules ? { rules } : {}), ...(out ? { out } : {}), ...(Object.keys(extras).length ? { score: extras } : {}) };
   if (flag(v, "dry-run")) {
     say(renderReleasePlan({ candidate, baseline, fast, stages: planRelease(options, noise), env: planEnv }));
     return 0;

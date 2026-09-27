@@ -19,7 +19,7 @@ import { harnessInfo } from "./version.ts";
 import { helpFor, parseArgsErrorText } from "./local/usage.ts";
 import { RequirementError, requirements } from "./not-collected.ts";
 import { previewResolve } from "./ci/main-preview.ts";
-import { UsageError, doctorCommand, guardCommand, localCommand, noiseCommand, overrideCommand, pruneCommand, recordAppliedOverride, releaseCommand, reportsCommand, scorecardCommand, vulnDbCommand } from "./local/cli.ts";
+import { UsageError, confidenceCommand, doctorCommand, guardCommand, localCommand, noiseCommand, overrideCommand, pruneCommand, recordAppliedOverride, releaseCommand, reportsCommand, scorecardCommand, vulnDbCommand } from "./local/cli.ts";
 import { defaultNoise } from "./local/noise-store.ts";
 
 const USAGE = `tutors-release-harness
@@ -148,15 +148,24 @@ const USAGE = `tutors-release-harness
       All take --port-offset <n> to move the compose stack's host ports beside a stack of your own.
       A run holds a lock: one per machine at a time.
   harness release --candidate <tag> [--baseline <tag|prod>] [--monorepo dir] [--claims f] [--rules f] [--fast] [--open] [--out dir] [--dry-run]
+                  [--test-signal f] [--traceability f] [--change-risk f] [--post-deploy dir]
       A pushed candidate to a report, asking nothing: resolve (the baseline, images ensure), noise (the local store's A/A
       when clean and at most 7 days old, else an A/A of the baseline, 3 runs), changes (not built yet), release (3 runs,
-      k6 20x30s, claims, rules), rehearse (migration, upgrade), score (not built yet), report. --baseline prod or none reads
+      k6 20x30s, claims, rules), rehearse (migration, upgrade), score (confidence.json, as harness confidence), report,
+      led by the Gate, then the RCS and its band. --baseline prod or none reads
       release/deployed.json in the monorepo checkout (--monorepo or HARNESS_MONOREPO_DIR), else HARNESS_PRODUCTION_TAG, else
       exit 2; --claims defaults to release/claims.yaml there. A stage that stops the line (images missing, a dirty A/A,
       a gate FAIL) says so and the next step; the report is written whatever happened, into
       out/<timestamp>-release-command/ (report.md, report.html, gate.md, gate.json, status.json as it goes). Ctrl-C takes
       the stacks down first. --fast: one run, no load, no rehearsals, no A/A; its report says it cannot be used for a go
       decision. --open opens report.html. Exit 0 pass or warn, 1 FAIL, 2 not judged or usage. Not stable.
+  harness confidence --run <release run dir | report.json | harness release dir> [--migration dir] [--upgrade dir] [--json]
+                     [--test-signal f] [--traceability f] [--change-risk f] [--post-deploy dir]
+      The Release Confidence Score: writes confidence.json beside the run and prints the board. The Gate first, then the
+      RCS (0-100, only when the Gate is PASS or WARN) and its band (Green >= 90, Amber 75-89, Red < 75), then eight
+      dimensions, each with every point lost and where. A dimension without its input is "not measured" and left out of
+      the mean; a breached floor caps the RCS at 74. The optional inputs are JSON files (docs/contract.md). Never changes
+      a verdict or an exit code: exit 0 when written, 2 for an input it cannot read. Not stable.
 `;
 
 function fail(message: string): never {
@@ -256,6 +265,13 @@ async function main(argv: string[]): Promise<number> {
       candidate: { type: "string" },
       baseline: { type: "string" },
       monorepo: { type: "string" },
+      run: { type: "string" },
+      migration: { type: "string" },
+      upgrade: { type: "string" },
+      "test-signal": { type: "string" },
+      traceability: { type: "string" },
+      "change-risk": { type: "string" },
+      "post-deploy": { type: "string" },
       screenshots: { type: "boolean", default: true },
       axe: { type: "boolean", default: true },
       focus: { type: "boolean", default: true },
@@ -464,6 +480,8 @@ async function main(argv: string[]): Promise<number> {
       return localCommand(positionals[0], values);
     case "release":
       return releaseCommand(values);
+    case "confidence":
+      return confidenceCommand(values);
     case "journeys":
       for (const j of journeys) console.log(`${j.name.padEnd(34)} set=${j.set.padEnd(9)} ${j.anonymous ? "anonymous" : "signed-in"}`);
       return 0;

@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.8.0`
+Contract version: `1.9.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -16,6 +16,7 @@ The machine-readable half lives in [`docs/contract/`](contract/):
 | [`release-record.schema.json`](contract/release-record.schema.json) | the release record (since 1.3.0) |
 | [`rules.schema.json`](contract/rules.schema.json) | `rules.json`, the Rules a claim may name (since 1.3.0) |
 | [`release-status.schema.json`](contract/release-status.schema.json) | `status.json` of `harness release` (since 1.8.0, not stable) |
+| [`confidence.schema.json`](contract/confidence.schema.json) | `confidence.json`, the Release Confidence Score (since 1.9.0, not stable) |
 | [`cli.json`](contract/cli.json) | every command and flag, which are stable, the exit codes |
 | [`workflows.json`](contract/workflows.json) | dispatch events and payloads, repository variables, artifacts, permissions the workflows never hold |
 
@@ -31,9 +32,9 @@ Three numbers, all stamped where a reader can see them:
 
 ```console
 $ pnpm harness version
-harness 1.8.0 (3f2c…) · contract 1.8.0
+harness 1.9.0 (3f2c…) · contract 1.9.0
 $ pnpm harness version --json
-{"version":"1.8.0","gitSha":"3f2c…","contractVersion":"1.8.0"}
+{"version":"1.9.0","gitSha":"3f2c…","contractVersion":"1.9.0"}
 ```
 
 `gitSha` is `git rev-parse HEAD` of the harness checkout, or the
@@ -65,6 +66,7 @@ tag. Check `schemaVersion === 1` before reading a report.
 | `report.html` | every mode | the file exists and is self-contained (no scripts, no external requests); its content is for people |
 | `noise-status.json` | `noise` mode only | yes — below |
 | `release-record.json` | `release` mode only (since 1.3.0) | yes — [the release record](#the-release-record) |
+| `confidence.json` | `harness confidence --run <this run>` (since 1.9.0), never `harness run` | not stable: [`confidence.json`](#confidencejson-the-release-confidence-score) |
 | `a/capture.json`, `b/capture.json`, screenshots, `a/load/`, `b/load/` | capturing modes | no. The harness reads its own captures back (`harness compare`, `--recorded`); nobody else should. Each `capture.json` carries the same `harness` stamp as the report |
 
 `harness compare --dir <run dir>` rewrites the three reports (and, in noise
@@ -80,7 +82,8 @@ written whatever happened, a stopped line or Ctrl-C included:
 | `status.json` | not stable: [`release-status.schema.json`](contract/release-status.schema.json). Rewritten whole at every change: the stage running, each stage's `state`, `startedAt`, `elapsed` and `expected` seconds, where the line stopped (`stopped`: `stage`, `why`, `next`), and `exitCode` at the end |
 | `report.md` | the file exists and starts with the gate (`## Release gate: …`, then `**Gate: <word>**`); with `--fast` the next line is the banner that it cannot be used for a go decision. Its wording is for people |
 | `report.html` | the file exists and is self-contained; its content is for people |
-| `gate.md`, `gate.json` | the combined gate summary `harness local gate` writes to `<timestamp>-gate/` |
+| `gate.md`, `gate.json` | the combined gate summary `harness local gate` writes to `<timestamp>-gate/`; since 1.9.0 `gate.md` (and so `report.md`) has the RCS, its band and the dimension table right under the Gate |
+| `confidence.json` | since 1.9.0, not stable: [`confidence.json`](#confidencejson-the-release-confidence-score), from the release, migration and upgrade runs. Absent when there was no release run to score (a stopped line before the A/B, Ctrl-C) or when the score could not be computed (the score stage says why) |
 
 ## `report.json`
 
@@ -636,13 +639,80 @@ credentials). What the harness does with it, and nothing more:
   is what it intends. Matching, the stale-claim report and the broad-claim rule
   are exactly as before.
 
+## `confidence.json`: the Release Confidence Score
+
+Since 1.9.0, not stable: [`contract/confidence.schema.json`](contract/confidence.schema.json).
+Source of truth: `Confidence` in `src/score/confidence.ts`; the weights, floors and bands are
+constants in `src/score/weights.ts`. Written by `harness confidence --run <…>` beside the run
+it scores and by `harness release` in its `<timestamp>-release-command/` directory.
+
+**Advisory, and always second.** `gate` (`PASS`, `WARN`, `FAIL`, `FAIL (OVERRIDDEN)`, `NOT
+JUDGED`) is the Gate as the gate decided it. `rcs` (0-100) and `band` are computed only when
+the Gate is `PASS` or `WARN`; otherwise both are `null` and `note` says why. The score is never
+an input to `src/gate.ts` or `src/run.ts` (a test holds it), never changes a verdict, and never
+changes an exit code: `harness release` decides its exit code before the score exists.
+
+**The number.** Eight dimensions, each 0-100 (100 minus its deductions). `rcs` is the mean of
+the measured ones weighted by `weightsUsed`, **rounded down**; `mean` is the unrounded mean.
+When any measured dimension's floor is breached, `rcs` is capped at **74**. Bands, fixed:
+`Green` ≥ 90 (ship on the captain's say), `Amber` 75-89 (ship only after the reviewer's glance
+is recorded verified), `Red` < 75 (hold, open a 5 Whys, do not re-run hoping for a better
+number).
+
+| Dimension (`id`) | Weight | Read from | Floor (caps the RCS at 74) |
+| --- | --- | --- | --- |
+| Claim coverage (`claim-coverage`) | 20 | the release report: unclaimed failing hunks (−20 each, at most 100), broad claims (`*`/`**`, approved or not, −25 each), stale claims (−15 each), claims flagged as covering many hunks (−5 each, at most 15) | any broad claim, or more than 2 stale claims |
+| Noise health (`noise-health`) | 15 | the A/A the release run consulted (`report.noise`) and `masksApplied`: no A/A (−60), dirty or degraded (−40), older than 2 days (−10) or 7 (−40) when the release ran, each mask that fired nothing (−5, at most 20) | no A/A (none or `--noise skip`), a dirty or degraded one, or one older than 7 days |
+| Statistical margin (`statistical-margin`) | 10 | the timing and load hunks' p-values: 0.05-0.10 (−20), 0.10-0.20 (−10), moved but could not be judged (−10, at most 30); no k6 (−20); k6 failures or 5xx on the candidate (−30) | a p-value in 0.05-0.10, or a k6 failure rate above 0 |
+| Rehearsals (`rehearsals`) | 10 | the migration and upgrade reports: skipped (−50 each), FAIL (−50), WARN (−20), failed requests during the rollout (−50) | either rehearsal skipped |
+| Test signal (`test-signal`) | 15 | `--test-signal`: a changed package below 80% mutation score (−30 each), each harness mutant missed (−25) | a mutation score below 60%, or a harness mutant missed |
+| Requirements traceability (`traceability`) | 10 | `--traceability`: an entry with no EARS file (−20), with no claim (−10), a claim tracing to no entry (−10) | a `feature` entry with no EARS file |
+| Change risk (`change-risk`) | 15 | `--change-risk`: a PR merged without review (−40), a first contribution touching a hotspot (−40) | a PR merged without review |
+| Post-deploy history (`post-deploy`) | 5 | `--post-deploy`: the last release's post-deploy run FAILED (−100), WARNED (−20) | it FAILED (a rollback issue) |
+
+**Every point lost is a deduction** `{ points, why, evidence, floor? }`: `why` names the hunk,
+claim, PR, file or run, and `evidence` is where to look, relative to `confidence.json`: a
+section of a run's `report.html` (`…/report.html#hunk-<hunk id>`, `#differences`,
+`#stale-claims`, `#broad-claims`, `#claim-hygiene`, `#noise`, `#masks`, `#load`,
+`#migration`, `#upgrade`; since 1.9.0 `report.html` carries these ids), an input file, or a
+PR. A dimension's `gaps` list what its 100 could not check with what it was given (masks added
+this release, churn, a rollback issue opened after the post-deploy run).
+
+**A dimension without its input is `status: "not measured"`**, with `score: null` and a
+`reason` naming the flag that would measure it. It is left out of the mean: `weightsUsed`
+holds only the measured dimensions, renormalised to sum to 100. It is never scored 100. On a
+`harness release` run today the first four are measured and the last four are not unless their
+inputs are given.
+
+**The optional inputs** are small JSON files, validated on read; one that is given and cannot
+be used is exit `2` for `harness confidence` (and "failed, and changes nothing" in the score
+stage of `harness release`), never silently "not measured". `evidence` is optional everywhere
+and replaces the file name in a deduction (a CI run URL, a report):
+
+```jsonc
+// --test-signal: the monorepo's CI and Stryker, and this week's harness mutants. Either key may be left out.
+{ "packages": [{ "name": "reader", "mutationScore": 72, "changed": true, "evidence": "https://…" }],
+  "harnessMutants": { "caught": 8, "total": 8, "evidence": "https://…" } }
+// --traceability: the changelog against the EARS files and the claims.
+{ "entries": [{ "entry": "Reader: reading time on lab steps", "kind": "feature", "ears": "specs/0031.feature", "claimed": true }],
+  "untracedClaims": ["dom reader:lab"] }
+// --change-risk: the PRs between the two tags (the shape C1, `harness changes`, is to write; it may still change).
+{ "prs": [{ "number": 412, "url": "https://…/pull/412", "reviewed": true, "firstTimeContributor": true, "hotspots": ["packages/reader/src/lib/course.ts"] }] }
+```
+
+`--post-deploy` takes the last release's post-deploy run directory or its `report.json`.
+
+`glance` is empty until the reviewer's glance is built (C3). `run` names the candidate, the
+baseline, when the release ran, the reports and inputs read (relative paths) and the harness
+that scored it.
+
 ## CLI
 
 Full list: [`contract/cli.json`](contract/cli.json). Invoke as `pnpm harness
 <command>` from a checkout (Node ≥ 22, `pnpm install`, and for capturing modes
 `pnpm exec playwright install chromium` and Docker). Commands and flags marked
 `stable: true` there are the ones below; the rest (`harness stack`, `harness
-kind`, `harness journeys`, `harness override`, `harness local`, `harness release` (since 1.8.0), `harness prune`, `harness reports`, `harness scorecard`, `harness noise
+kind`, `harness journeys`, `harness override`, `harness local`, `harness release` (since 1.8.0), `harness confidence` (since 1.9.0), `harness prune`, `harness reports`, `harness scorecard`, `harness noise
 history`, `--substrate`, `--now`, `--masks`, `--snapshot`,
 `--upgrade-*`, `--noise-max-age-days`, `--no-screenshots`, `--no-axe`,
 `--no-focus`, `--no-runtime` and `--startup-restarts` (both since 1.2.0),
@@ -663,7 +733,9 @@ calls it) and the flags only they take (`--only`, `--migrations-a`, `--migration
 `--interval`, `--port-offset`, `--dry-run`, `--once`, `--record`, `--last`, `--since`,
 `--older-than-days`, `--keep-last`, `--image-cache-days`, `--yes`, `--strict`, `--no-load`) are not,
 and neither are `harness release` and the flags only it takes (`--candidate`, `--baseline`,
-`--monorepo`, `--fast`, `--open`; since 1.8.0).
+`--monorepo`, `--fast`, `--open`; since 1.8.0), nor `harness confidence` and the flags it takes
+(`--run`, `--migration`, `--upgrade`, `--test-signal`, `--traceability`, `--change-risk`,
+`--post-deploy`; since 1.9.0; `harness release` takes the last four too).
 
 | Command | Stable flags |
 | --- | --- |
@@ -937,6 +1009,31 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.9.0 (minor; the Release Confidence Score)
+
+The release note is [releases/1.9.0.md](releases/1.9.0.md). Additive for a consumer written
+against 1.8.0: no `report.json` field, verdict, or exit code of an existing command changes.
+
+- `harness confidence --run <release run dir | report.json | harness release dir>
+  [--migration dir] [--upgrade dir] [--test-signal f] [--traceability f] [--change-risk f]
+  [--post-deploy dir] [--json]` (not stable): writes `confidence.json` beside the run and
+  prints the board, the Gate first, then the RCS and its band, then the eight dimensions. Exit
+  `0` when written, whatever the score or the Gate; `2` for an input it cannot read.
+- `confidence.json` ([`confidence.schema.json`](contract/confidence.schema.json), not
+  stable): the Gate, the RCS (only when the Gate is PASS or WARN), the band, the weights used,
+  and each dimension with every deduction and its evidence
+  ([`confidence.json`](#confidencejson-the-release-confidence-score)).
+- `harness release`: the score stage is no longer a seam. It writes `confidence.json` into
+  `<timestamp>-release-command/`; `report.md`, `gate.md` and `report.html` lead with the Gate,
+  then the RCS and its band with the band's meaning, then the dimension table; the terminal
+  prints `confidence: RCS <n> <band>: <meaning>` after the gate line. The exit code is decided
+  before the score is computed and is unchanged. It takes `--test-signal`, `--traceability`,
+  `--change-risk` and `--post-deploy` too.
+- `report.html` of a run gains `id`s: each hunk's row (`hunk-<id>`) and the sections the
+  score links to. Nothing else in it changes.
+- New flags, not stable: `--run`, `--migration`, `--upgrade`, `--test-signal`,
+  `--traceability`, `--change-risk`, `--post-deploy`.
 
 ### 1.8.0 (minor; one command: `harness release`)
 
