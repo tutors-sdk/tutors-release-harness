@@ -850,6 +850,17 @@ describe("workflows", () => {
     expect(pushes).toBe(Object.keys(branchOf).length);
   });
 
+  it("the synthetic monitor stands down without a recording; a deploy or a named run without one still fails", () => {
+    const post = text["post-deploy.yml"]!;
+    expect(post).toContain("if_no_artifact_found: ${{ github.event_name == 'schedule' && 'ignore' || 'fail' }}");
+    // every step that needs the recording waits for it, so a stood-down monitor is green and says why in the summary
+    for (const step of ["Fetch the latest noise status", "Fetch the release record", "Post-deploy mode"]) {
+      const body = post.slice(post.indexOf(`- name: ${step}`)).split("\n      - ")[0]!;
+      expect(body, step).toContain("steps.recording.outputs.found == 'true'");
+    }
+    expect(post).toContain("Synthetic monitor: nothing to compare with");
+  });
+
   it("the latest noise status comes from the noise branch, vetted, not from an expiring artifact", () => {
     expect(workflowsContract.noiseBranch.branch).toBe("noise");
     for (const f of workflowsContract.noiseBranch.readBy) {
