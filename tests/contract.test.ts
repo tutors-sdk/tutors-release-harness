@@ -907,6 +907,15 @@ describe("workflows", () => {
     expect(pushes).toBe(Object.keys(branchOf).length);
   });
 
+  it("the monitor keeps one open rollback issue: the same differences add nothing, new ones are a comment", () => {
+    const post = text["post-deploy.yml"]!;
+    const step = post.slice(post.indexOf("- name: Open a rollback issue")).split("\n      - ")[0]!;
+    expect(step).toContain("gh issue list --label rollback --state open");
+    expect(step).toContain("rollback-signature: ${signature}");
+    expect(step).toContain('gh issue comment "$open"');
+    expect(step.match(/gh issue create/g)).toHaveLength(1);
+  });
+
   it("the synthetic monitor stands down without a recording; a deploy or a named run without one still fails", () => {
     const post = text["post-deploy.yml"]!;
     expect(post).toContain("if_no_artifact_found: ${{ github.event_name == 'schedule' && 'ignore' || 'fail' }}");
