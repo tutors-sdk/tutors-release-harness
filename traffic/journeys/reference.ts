@@ -13,11 +13,13 @@ export const reference = {
   courseId: "reference-course",
   host: "reference-course.netlify.app",
   title: "Reference Course",
-  /** Accessible name of the topic card: title then summary, whitespace-collapsed. */
-  topicLink: /^Reference Example of all learning resource/,
   topicTitle: "Reference",
+  /**
+   * The topic and lab cards are found by where they link, not by their accessible names: up to 16.2.x a card's link
+   * named it by title then summary, and since the new UI (monorepo main, Sept 2026) by title then type, with the
+   * summary outside the link. The href is the same in both, so the journey runs on production and on main alike.
+   */
   topicPath: "topic-07-reference",
-  labTitle: /^Lab-07/,
   labPath: "topic-07-reference/book-a",
   notePath: "topic-07-reference/note-1"
 };
