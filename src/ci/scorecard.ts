@@ -102,7 +102,8 @@ function ruleOf(claim: Claim): string | undefined {
   return claim.rule ?? claim.reason?.match(RULE_IN_REASON)?.[1];
 }
 
-function prsIn(text: string | undefined): number[] {
+/** The PRs a claim reason names ("PR #412"): the scorecard's rows and the glance's links read them the same way. */
+export function prsIn(text: string | undefined): number[] {
   return text ? [...text.matchAll(PR_IN_TEXT)].map((m) => Number(m[1])) : [];
 }
 

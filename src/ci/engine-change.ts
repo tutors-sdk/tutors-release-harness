@@ -83,6 +83,7 @@ export const NON_ENGINE_PATHS: Readonly<Record<string, string>> = {
   "src/changes": "harness changes: reads git and GitHub between two monorepo tags and writes changes.json for the score's change risk; advisory, never an input to src/gate.ts or src/run.ts, so it cannot alter a capture, a hunk or a verdict",
   "src/score": "the Release Confidence Score: reads finished reports and writes confidence.json; advisory, never an input to src/gate.ts or src/run.ts (tests/confidence.test.ts holds that), so it cannot alter a capture, a hunk or a verdict",
   "src/scoreboard": "the release scoreboard: reads finished scores (confidence.json, changes.json), appends one line per release run and draws the trends and run rules; advisory, never an input to src/gate.ts or src/run.ts, so it cannot alter a capture, a hunk or a verdict (src/mutants.ts imports only the name of its summary file from it)",
+  "src/glance": "the reviewer's glance: ranks places to look from finished reports, changes.json and the scoreboard into confidence.json, and records the Reviewer's marks; advisory, never an input to src/gate.ts or src/run.ts, so it cannot alter a capture, a hunk or a verdict",
   "src/project.ts": "names the compose project and the kind cluster after the checkout; a name alters no capture, hunk or verdict",
   "src/override.ts": "records that a FAIL was overridden; the verdict stays what the gate decided",
   "src/types.ts": "types only, no behaviour",

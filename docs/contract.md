@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.11.0`
+Contract version: `1.12.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -19,6 +19,7 @@ The machine-readable half lives in [`docs/contract/`](contract/):
 | [`confidence.schema.json`](contract/confidence.schema.json) | `confidence.json`, the Release Confidence Score (since 1.9.0, not stable) |
 | [`changes.schema.json`](contract/changes.schema.json) | `changes.json`, the change signals between two tags (since 1.10.0, not stable) |
 | [`scoreboard-line.schema.json`](contract/scoreboard-line.schema.json) | one line of `scoreboard/releases.jsonl`, the release scoreboard (since 1.11.0, not stable) |
+| [`glance-marks.schema.json`](contract/glance-marks.schema.json) | one line of `glance-marks.jsonl`, the Reviewer's marks on the glance (since 1.12.0, not stable) |
 | [`cli.json`](contract/cli.json) | every command and flag, which are stable, the exit codes |
 | [`workflows.json`](contract/workflows.json) | dispatch events and payloads, repository variables, artifacts, permissions the workflows never hold |
 
@@ -34,9 +35,9 @@ Three numbers, all stamped where a reader can see them:
 
 ```console
 $ pnpm harness version
-harness 1.11.0 (3f2c…) · contract 1.11.0
+harness 1.12.0 (3f2c…) · contract 1.12.0
 $ pnpm harness version --json
-{"version":"1.11.0","gitSha":"3f2c…","contractVersion":"1.11.0"}
+{"version":"1.12.0","gitSha":"3f2c…","contractVersion":"1.12.0"}
 ```
 
 `gitSha` is `git rev-parse HEAD` of the harness checkout, or the
@@ -91,6 +92,7 @@ written whatever happened, a stopped line or Ctrl-C included:
 | `report.html` | the file exists and is self-contained; its content is for people |
 | `gate.md`, `gate.json` | the combined gate summary `harness local gate` writes to `<timestamp>-gate/`; since 1.9.0 `gate.md` (and so `report.md`) has the RCS, its band and the dimension table right under the Gate |
 | `confidence.json` | since 1.9.0, not stable: [`confidence.json`](#confidencejson-the-release-confidence-score), from the release, migration and upgrade runs. Absent when there was no release run to score (a stopped line before the A/B, Ctrl-C) or when the score could not be computed (the score stage says why) |
+| `glance-marks.jsonl` | since 1.12.0, not stable: [`glance-marks.schema.json`](contract/glance-marks.schema.json), one line per mark `harness glance mark` records ([the reviewer's glance](#the-reviewers-glance)). Absent until the Reviewer marks an item. Since 1.12.0 `gate.md`, `report.md` and `report.html` carry the glance right under the RCS and its band, between `<!-- glance:start -->` and `<!-- glance:end -->`, which a mark re-renders in place |
 | `changes.json` | since 1.10.0, not stable: [`changes.json`](#changesjson-the-change-signals), written by the changes stage (`harness changes --a <baseline> --b <candidate>` in the monorepo checkout) and read by the score as change risk. Absent without a checkout (`--monorepo` or `HARNESS_MONOREPO_DIR`), or when `harness changes` could not run; the stage's note says which, and change risk is then not measured. Since 1.10.0 `gate.md` and `report.md` carry the per-PR table under the dimension table |
 
 Since 1.11.0 `harness release` writes no new file here: after the score it appends the run's
@@ -728,9 +730,60 @@ and are named in its `reason` while it is not). The board and the report show it
 
 `--post-deploy` takes the last release's post-deploy run directory or its `report.json`.
 
-`glance` is empty until the reviewer's glance is built (C3). `run` names the candidate, the
-baseline, when the release ran, the reports and inputs read (relative paths) and the harness
-that scored it.
+`glance` is the reviewer's glance (since 1.12.0; empty before), ranked after the score from the
+same inputs and never read back by it; `glanceBasis` says how it was ranked ([the reviewer's
+glance](#the-reviewers-glance)). `run` names the candidate, the baseline, when the release ran,
+the reports and inputs read (relative paths) and the harness that scored it.
+
+### The reviewer's glance
+
+Since 1.12.0, not stable. Source of truth: `glance` in `src/glance/rank.ts`; the marks are
+`src/glance/marks.ts`. Gemba: at most **seven** places to look, each a one-line `finding` with
+`links` straight to the artefact (`hunk`: the hunk or section in the run's `report.html`,
+relative to `confidence.json`; `claim`: the claim that covers it; `pr`: the PR that caused it;
+`diff`: the file in that PR's diff), for the Reviewer's fifteen minutes at SOP step 8.
+
+**The ranking** is `score` = `novelty` × `exposure`, highest first, ties in the order below, and
+it is written out (`basis.novelty`, `basis.exposure`, `glanceBasis.rule`) so it can be reviewed:
+
+- `novelty`: (n − seen + 1) ÷ (n + 1), where n is how many of the last six releases on the
+  scoreboard (`--scoreboard`, default `HARNESS_HOME/scoreboard/releases.jsonl`; each tag's
+  latest line, this tag's own runs left out) recorded this kind of finding, and `seen` how many
+  had this one (its `kind` and `key`). 1 with no history, and the item says "no history yet".
+  A line from before 1.12.0 has no glance record; it still tells for a first contribution on a
+  hotspot (its per-PR lines) and, once lines carry `maskIds`, for a mask.
+- `exposure`: the share of the journey set (the journeys in the release run's `a/` and `b/`
+  `capture.json`; without them the page groups of `report.json`'s hunks, and `glanceBasis.journeys.source`
+  says so) the finding touches. A finding that cannot be placed on a journey counts as the
+  whole set and says "unmapped", so what the harness cannot place is not ranked below what it can.
+
+| `kind` | A candidate is | Reads | `key` |
+| --- | --- | --- | --- |
+| `broad-claim` | a broad claim, with its `approvedBy` and every hunk it absorbed (`hunks`) | the release report | the claim's artefact and scope |
+| `mask-added` | a mask the run loaded that the last release on the scoreboard did not, with its reason and how many values it hid | the release report's `masksApplied`, the last line's `maskIds`, `normalise/masks.yaml` | the mask id |
+| `near-miss` | a timing or load hunk whose p-value is in 0.05-0.10, with both distributions (`detail`) | the release report, the captures, k6 | the hunk's scope |
+| `first-time-hotspot` | a PR by a first-time contributor that touches a hotspot, with its diff link | `changes.json` | the hotspot file |
+| `new-persistence` | a journey that wrote nothing on a and writes on b, even when claimed | the captures | the journey |
+| `fixed-on-b` | console errors or axe violations gone on b (an unclaimed fix can be a behaviour change) | the release report | the artefact and page |
+| `major-bump` | a major dependency bump and the journeys exercising the app it lands in (a package outside `apps/` is "unmapped") | `changes.json` | the package |
+| `duration-moved` | a journey whose median duration moved more than 20%, significant or not | the captures | the journey |
+
+A kind whose input is missing is listed in `glanceBasis.notChecked` with the reason, never
+made up; `glanceBasis.checked` counts the candidates of the rest, and `glanceBasis.seen` keeps
+every candidate's `kind:key` (at most 200) for the scoreboard.
+
+**Marks.** `harness glance mark --run <harness release dir> --item <n> --mark
+verified|disputed|escalated --by <name> [--note text]` appends one line to
+`glance-marks.jsonl` beside `confidence.json` ([schema](contract/glance-marks.schema.json)):
+`verified` (looked, agrees with the claim), `disputed` (becomes a new claim or a hold),
+`escalated` (becomes a 5 Whys; the line carries `whyWanted: true`, the seam for `harness why`).
+A changed mind is a new line; the latest line for a finding is its mark, matched by `kind` and
+`key`, so a re-score that reorders the glance keeps it. The mark is shown in each item's `mark`
+(null until there is one) and the glance is re-rendered in `report.md`, `gate.md` and
+`report.html`. `harness glance status --run <dir> [--json]` prints the glance with its marks and
+says whether an Amber release's glance is recorded verified (go only then, SOP step 9).
+**Marks never change the Gate, a verdict or an exit code**: `mark` exits `0` when recorded and
+`2` for what it cannot use; `status` exits `0` whatever it finds once `--run` is given.
 
 ## `changes.json`: the change signals
 
@@ -799,7 +852,13 @@ the journeys the candidate completed in every run, from `b/capture.json`), `muta
 line of `mutants.jsonl` beside the file, or `--mutants`; else `null`), and `prs`: the per-PR risk
 lines of `changes.json` (`pr`, `points`, `author`, `firstContribution`, `reviewed`, `files`, and
 each deduction's `rule`, `points`, `file`), `null` when change risk was not measured. A `--fast`
-run is refused (exit `2`): its report cannot be used for a go decision.
+run is refused (exit `2`): its report cannot be used for a go decision. Since 1.12.0, both
+optional (absent on older lines): `maskIds`, every mask the release run loaded, and `glance`:
+`items`, `marks` (`verified`, `disputed`, `escalated`, `unmarked`, from `glance-marks.jsonl`
+beside the run at the time of the append; `harness release` and CI both append when the run
+is scored, before step 8, so today the line reads them `unmarked` and `glance-marks.jsonl`
+holds the record), `checked` (the kinds the glance could check) and `seen` (every candidate's
+`kind:key`): what the next release's novelty reads.
 
 **Trends** (`harness scoreboard trends [--json] [--site dir]`): one point per release, its tag's
 latest run (every re-run is listed in `deviations` with its first and latest RCS), in the order
@@ -836,7 +895,7 @@ Full list: [`contract/cli.json`](contract/cli.json). Invoke as `pnpm harness
 <command>` from a checkout (Node ≥ 22, `pnpm install`, and for capturing modes
 `pnpm exec playwright install chromium` and Docker). Commands and flags marked
 `stable: true` there are the ones below; the rest (`harness stack`, `harness
-kind`, `harness journeys`, `harness override`, `harness local`, `harness release` (since 1.8.0), `harness confidence` (since 1.9.0), `harness changes` (since 1.10.0), `harness scoreboard` (since 1.11.0), `harness prune`, `harness reports`, `harness scorecard`, `harness noise
+kind`, `harness journeys`, `harness override`, `harness local`, `harness release` (since 1.8.0), `harness confidence` (since 1.9.0), `harness changes` (since 1.10.0), `harness scoreboard` (since 1.11.0), `harness glance` (since 1.12.0), `harness prune`, `harness reports`, `harness scorecard`, `harness noise
 history`, `--substrate`, `--now`, `--masks`, `--snapshot`,
 `--upgrade-*`, `--noise-max-age-days`, `--no-screenshots`, `--no-axe`,
 `--no-focus`, `--no-runtime` and `--startup-restarts` (both since 1.2.0),
@@ -863,8 +922,10 @@ and neither are `harness release` and the flags only it takes (`--candidate`, `-
 and the flags only it takes (`--history`, `--changelog`; since 1.10.0; it also takes `--a`, `--b`,
 `--monorepo`, `--json` and `--out`), nor `harness scoreboard` and the flags only it takes (`--file`,
 `--mutants`, `--noise-history`, `--site`; since 1.11.0; it also takes `--run`, `--tag`, `--run-url`
-and `--json`), nor `--scoreboard` of `harness release`, nor `harness guard scoreboard` (since
-1.11.0; `guard all` runs it too).
+and `--json`), nor `--scoreboard` of `harness release` (and, since 1.12.0, of `harness
+confidence`), nor `harness guard scoreboard` (since 1.11.0; `guard all` runs it too), nor
+`harness glance` and the flags only it takes (`--item`, `--mark`, `--by`, `--note`; since
+1.12.0; it also takes `--run` and `--json`).
 
 | Command | Stable flags |
 | --- | --- |
@@ -1145,6 +1206,31 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.12.0 (minor; the reviewer's glance: `harness glance`)
+
+The release note is [releases/1.12.0.md](releases/1.12.0.md). Additive for a consumer written
+against 1.11.0: no `report.json` field, verdict, or exit code of an existing command changes.
+
+- `confidence.json`: `glance` holds at most seven ranked items (`rank`, `kind`, `key`,
+  `finding`, `links` with `hunk`, `claim`, `pr`, `diff`, `novelty`, `exposure`, `score`,
+  `basis`, `mark`), and the new `glanceBasis` says how they were ranked and which kinds were
+  not checked, and why ([the reviewer's glance](#the-reviewers-glance)). `harness confidence`
+  and the score stage of `harness release` rank it; `harness confidence` takes `--scoreboard`
+  for the history novelty reads.
+- `harness glance mark --run <dir> --item <n> --mark verified|disputed|escalated --by <name>
+  [--note text]` and `harness glance status --run <dir> [--json]` (not stable): record the
+  Reviewer's marks in `glance-marks.jsonl` ([`glance-marks.schema.json`](contract/glance-marks.schema.json))
+  and read them back, with whether an Amber release's glance is recorded verified. Marks never
+  change the Gate or an exit code.
+- `harness release`: `report.md`, `gate.md` (the PR comment) and `report.html` show the glance
+  right under the Gate, the RCS and its band, with one line on how to mark, and for Amber that
+  the glance must be recorded verified before go; the terminal prints one line for it.
+- The scoreboard line: optional `maskIds` and `glance` (count, marks, checked kinds, seen keys);
+  older lines stay valid.
+- `release.yml`'s `scoreboard` job scores after it fetches the `scoreboard` branch and passes it
+  to `harness confidence --scoreboard`, so CI's glance has its history.
+- New flags, not stable: `--item`, `--mark`, `--by`, `--note`.
 
 ### 1.11.0 (minor; the scoreboard: `harness scoreboard`, the trends and the run rules)
 

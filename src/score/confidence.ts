@@ -16,6 +16,7 @@
  * Pure: the caller reads the files (src/score/read.ts) and passes their contents.
  */
 import { isBroad, normalnessOf } from "../ci/scorecard.ts";
+import type { GlanceBasis, GlanceItem } from "../glance/rank.ts";
 import type { Hunk, RunReport } from "../types.ts";
 import { DIMENSIONS, FLOOR_CAP, RULES, WEIGHTS_VERSION, bandOf, type Band, type DimensionId } from "./weights.ts";
 
@@ -68,8 +69,14 @@ export interface Confidence {
   /** Since 1.11.0: which weights, floors, bands and rules scored it (src/score/weights.ts, WEIGHTS_VERSION). */
   weightsVersion?: string;
   dimensions: DimensionScore[];
-  /** The reviewer's glance (C3): empty until it is built. */
-  glance: never[];
+  /**
+   * The reviewer's glance (C3, since 1.12.0): at most seven places to look, ranked by novelty × exposure, each with its
+   * links and a mark (null until the Reviewer records one). Filled by src/score/read.ts, which reads what it needs; the
+   * score itself never reads it. Empty in a confidence.json written before 1.12.0.
+   */
+  glance: GlanceItem[];
+  /** Since 1.12.0: how the glance was ranked and what it could not check, so the ranking can be reviewed. */
+  glanceBasis?: GlanceBasis;
   run: ConfidenceRun;
 }
 
@@ -388,7 +395,7 @@ export function weightedMean(dims: DimensionScore[]): { mean: number | null; wei
 export function confidence(i: ScoreInputs): Confidence {
   const dimensions = [claimCoverage(i.release), noiseHealth(i.release), statisticalMargin(i.release), rehearsals(i.migration, i.upgrade), testSignal(i.testSignal), traceability(i.traceability, i.changeRisk), changeRisk(i.changeRisk), postDeploy(i.postDeploy)];
   const { mean, weightsUsed } = weightedMean(dimensions);
-  const base = { schemaVersion: CONFIDENCE_SCHEMA_VERSION, gate: i.gate, weightsUsed, weightsVersion: WEIGHTS_VERSION, dimensions, glance: [] as never[], run: i.run };
+  const base = { schemaVersion: CONFIDENCE_SCHEMA_VERSION, gate: i.gate, weightsUsed, weightsVersion: WEIGHTS_VERSION, dimensions, glance: [] as GlanceItem[], run: i.run };
   if (i.gate !== "PASS" && i.gate !== "WARN") {
     const why = i.gate === "NOT JUDGED" ? "The Gate did not judge, so there is nothing to put a number on." : "The Gate wins: no number talks a FAIL back on. The dimensions are shown for the 5 Whys, not for a decision.";
     return { ...base, rcs: null, band: null, mean: null, note: `No RCS: Gate ${i.gate}. ${why}` };

@@ -12,6 +12,7 @@
 import { appendFileSync, existsSync, mkdirSync, readFileSync, statSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import type { Changes } from "../changes/signals.ts";
+import { MARKS_FILE, parseMarks, type MarkRecord } from "../glance/marks.ts";
 import { parseHistory, type HistoryEntry } from "../ci/noise-history.ts";
 import { readReport } from "../ci/scorecard.ts";
 import type { Confidence } from "../score/confidence.ts";
@@ -57,6 +58,8 @@ export interface RunFiles {
   release?: RunReport;
   candidate?: Pick<SideCapture, "journeys">;
   changes?: Changes;
+  /** The Reviewer's marks so far (glance-marks.jsonl beside confidence.json). */
+  marks: MarkRecord[];
   fast: boolean;
 }
 
@@ -94,7 +97,9 @@ export function readRun(where: string): RunFiles {
       break;
     }
   }
-  return { dir, confidence, ...(release ? { release } : {}), ...(candidate ? { candidate } : {}), ...(changes ? { changes } : {}), fast };
+  const marksFile = join(dir, MARKS_FILE);
+  const marks = existsSync(marksFile) ? parseMarks(readFileSync(marksFile, "utf8")) : [];
+  return { dir, confidence, ...(release ? { release } : {}), ...(candidate ? { candidate } : {}), ...(changes ? { changes } : {}), marks, fast };
 }
 
 export interface AppendOptions {
@@ -114,7 +119,7 @@ export function appendRun(o: AppendOptions): { line: ScoreboardLine; file: strin
   const file = resolve(o.file);
   const existing = readLines(file);
   const mutants = readMutants(o.mutants ?? mutantsFileBeside(file)).at(-1);
-  const line = buildLine({ confidence: run.confidence, ...(run.release ? { release: run.release } : {}), ...(run.candidate ? { candidate: run.candidate } : {}), ...(run.changes ? { changes: run.changes } : {}), ...(mutants ? { mutants } : {}), existing, ...(o.tag ? { tag: o.tag } : {}), now: o.now, ...(o.runUrl ? { runUrl: o.runUrl } : {}) });
+  const line = buildLine({ confidence: run.confidence, ...(run.release ? { release: run.release } : {}), ...(run.candidate ? { candidate: run.candidate } : {}), ...(run.changes ? { changes: run.changes } : {}), ...(mutants ? { mutants } : {}), marks: run.marks, existing, ...(o.tag ? { tag: o.tag } : {}), now: o.now, ...(o.runUrl ? { runUrl: o.runUrl } : {}) });
   appendLine(file, line);
   return { line, file };
 }
