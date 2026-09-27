@@ -5,7 +5,7 @@
  * no longer writes, a CLI flag or dispatch payload that is not written down.
  */
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { Ajv, type ValidateFunction } from "ajv";
@@ -199,7 +199,7 @@ describe("report.json", () => {
     const cli = json("docs/contract/cli.json");
     for (const flag of cli.flags.filter((f: { since?: string }) => f.since === "1.2.0")) expect(changes, flag.name).toContain(`--${flag.name === "runtime" ? "no-runtime" : flag.name}`);
     for (const [name, v] of Object.entries(cli.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.2.0")) expect(changes, name).toContain(name);
-    expect(CONTRACT_VERSION).toBe("1.4.0");
+    expect(CONTRACT_VERSION).toBe("1.5.0");
     // The harness version is package.json's and moves at least as far as the contract's (docs/contract.md, Versioning):
     // a mask or engine PR bumps the patch of the harness alone, so do not pin a literal here.
     expect(json("package.json").version).toBe(HARNESS_VERSION);
@@ -253,6 +253,22 @@ describe("report.json", () => {
     // what 1.3.0 already shipped is not claimed again, and what 1.4.0 adds is not folded into the 1.3.0 entry
     const old = contractMd.slice(end, contractMd.indexOf("### 1.2.0"));
     for (const item of ["HARNESS_REQUIRE_ARTEFACTS", "HARNESS_VULN_DB_MAX_AGE_DAYS", "HARNESS_ROLLBACK_ISSUE", "harness prune", "vuln-db", "mutant-noise-report"]) expect(old, item).not.toContain(item);
+  });
+
+  it("1.5.0 is released: its changelog lists everything new in it, and nothing still says unreleased", () => {
+    const start = contractMd.indexOf("### 1.5.0");
+    const end = contractMd.indexOf("### 1.4.0");
+    expect(start).toBeGreaterThan(0);
+    expect(end).toBeGreaterThan(start);
+    const changes = contractMd.slice(start, end);
+    expect(contractMd).not.toMatch(/unreleased/i);
+    expect(changes).toContain("releases/1.5.0.md");
+    expect(existsSync(resolve(ROOT, "docs/releases/1.5.0.md"))).toBe(true);
+    const cliJson = json("docs/contract/cli.json");
+    for (const flag of cliJson.flags.filter((f: { since?: string }) => f.since === "1.5.0")) expect(changes, flag.name).toContain(`--${flag.name}`);
+    for (const command of cliJson.commands.filter((c: { since?: string }) => c.since === "1.5.0")) expect(changes, command.name).toContain(command.name);
+    for (const [name, v] of Object.entries(cliJson.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.5.0")) expect(changes, name).toContain(name);
+    for (const workflow of ["main-preview.yml", "pages.yml"]) expect(changes, workflow).toContain(workflow);
   });
 
   it("a report written before 1.3.0, with no `time` anywhere, is still valid and still renders (a reader must tolerate its absence)", () => {
@@ -754,9 +770,11 @@ describe("workflows", () => {
       for (const field of used) expect(contractMd).toContain(`\`${field}\``);
     }
     const sample = read("docs/monorepo/release-dispatch.yml");
-    // The sender may spell the payload as `gh -F client_payload[x]=…` flags or as a jq object; both are read.
-    const jqObject = /client_payload:\s*\{([^}]*)\}/.exec(sample)?.[1] ?? "";
-    const sent = [...sample.matchAll(/client_payload\[([a-z_]+)\]/g), ...jqObject.matchAll(/([a-z_]+):\s*\$/g)].map((m) => m[1]!);
+    // The sender may spell the payload as `gh -F client_payload[x]=…` flags or as a jq object (optionally in parentheses,
+    // with the optional fields added as `+ (if … then {field: $field} …)`); all are read.
+    const jqObject = /client_payload:\s*\(?\{([^}]*)\}/.exec(sample)?.[1] ?? "";
+    const optional = [...sample.matchAll(/then \{([a-z_]+):\s*\$[a-z_]+\}/g)];
+    const sent = [...sample.matchAll(/client_payload\[([a-z_]+)\]/g), ...jqObject.matchAll(/([a-z_]+):\s*\$/g), ...optional].map((m) => m[1]!);
     expect(sent.length).toBeGreaterThan(0);
     const contractPayload = workflowsContract.repositoryDispatch["release-candidate"]!.clientPayload;
     for (const field of sent) expect(Object.keys(contractPayload)).toContain(field);

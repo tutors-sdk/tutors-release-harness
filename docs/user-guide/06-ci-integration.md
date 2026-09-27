@@ -17,14 +17,16 @@ OpenShift is out of scope; nothing here deploys anything.
 
 ## The workflows
 
-Five workflows live in this repository's `.github/workflows/`.
+Seven workflows live in this repository's `.github/workflows/`. Five judge or check something; `main-preview.yml` forecasts the next release; `pages.yml` only publishes what the others kept.
 
 | Workflow | Runs when | What it does |
 | --- | --- | --- |
 | `ci.yml` | every pull request, and pushes to `main` | Typecheck, lint, unit and fixture tests. **Masks land in their own PR (required)**: `harness guard masks --base <base sha>`. The two-stacks smoke is one command, `pnpm harness local smoke --tag "$TAG"`: `images ensure`, both stacks boot and one journey runs as an A/A, the expanding migration fixture passes and the contracting one is rejected. Stack logs on failure. Uploads `harness-ci` (7 days). |
 | `nightly-noise.yml` | nightly at 02:17 UTC, or by hand (`tag` input) | The A/A on the production tag, pulled from Quay. Job `noise`: install pinned grype (v0.119.0) and restore or fetch its database (`harness vuln-db update` on a cache miss, then `harness vuln-db status`), restore the last verified images, `images ensure ... --image-cache`, `run --mode noise --runs 5 --load 20x30s --require-verified` with `HARNESS_REQUIRE_STATIC=1`, upload `noise-status` and `noise-report` (8 days). Job `publish`: `noise record` into a working directory, force-push the `noise` branch, fail the night if the ratchet is broken. |
 | `release.yml` | `repository_dispatch` `release-candidate`, or by hand | The run is titled `release <candidate>`. Job `release`: pinned grype and its database, `images ensure`, fetch claims, fetch the noise status, `run --mode release ... --load 20x30s` with `HARNESS_REQUIRE_STATIC=1` (a release is not judged on an SBOM and vulnerability diff that could not be produced). Job `migration`: `run --mode migration`. Job `upgrade`: `images ensure`, `run --mode upgrade --set fixture --journey anonymous-student-reads-course`. Job `publish-record`: push the release record to the `release-records` branch. Job `override-record`: open a `harness-override` issue for each applied override. Each job's summary says `could not judge` when the run stopped before a verdict, instead of a report. |
-| `post-deploy.yml` | `repository_dispatch` `deployed`, every 15 minutes, or by hand (`recorded_run_id` input) | Download the `release-report` artifact of the latest release run, fetch the noise status and the release record, `run --mode post-deploy`. **Exit 1** (a difference) opens a `rollback` issue. **Exit 2** ("could not judge": an unusable input, an image that cannot be trusted, a run that stopped before a verdict) fails the workflow, says so in the job summary, and opens no issue, because nothing was found that says production is worse. |
+| `post-deploy.yml` | `repository_dispatch` `deployed`, every 15 minutes, or by hand (`recorded_run_id` input) | Download the `release-report` artifact of the latest release run, fetch the noise status and the release record, `run --mode post-deploy`. **Exit 1** (a difference) opens a `rollback` issue. **Exit 2** ("could not judge": an unusable input, an image that cannot be trusted, a run that stopped before a verdict) fails the workflow, says so in the job summary, and opens no issue, because nothing was found that says production is worse. On the 15-minute schedule, when no release run has kept a `release-report` to compare with, the monitor stands down green with a notice in the run summary instead of failing; a `deployed` dispatch or a `recorded_run_id` without a recording still fails. |
+| `main-preview.yml` (**Main to RC**) | daily at 04:23 UTC (after the nightly A/A), or by hand (`production`, `candidate`, `force` inputs) | "What would release mode say if main were cut as a release candidate today?" Job `resolve`: `harness preview resolve` picks side a (production: the reader overlay's `newTag` on the monorepo's `main`) and side b (`sha-<short>` of the newest commit on `main` whose images are signed), and skips the run when this harness version already judged that pair (unless `force`). Job `preview`: pinned grype and its database, `images ensure`, main's `release/claims.yaml` and Rules, the latest noise status, `run --mode release --runs 5 --load 20x30s` with `HARNESS_REQUIRE_STATIC=1`; uploads `main-preview-report` (14 days). PASS, WARN and FAIL all end green: a forecast, never a gate; only exit `2` fails it. Job `publish`: `harness reports keep` onto the `main-preview` branch (last 60 runs). It never writes `release-records`, so post-deploy cannot mistake a forecast for a judged candidate. |
+| `pages.yml` (**Report pages**) | after every run of the nightly, the release workflow and Main to RC, on a push to `main` that changes `site/`, or by hand | Copies the kept `reports/` of the `release-records`, `main-preview` and `noise` branches beside `site/index.html` and deploys them to GitHub Pages: [tutors-sdk.github.io/tutors-release-harness](https://tutors-sdk.github.io/tutors-release-harness/), every kept run newest first with its verdict, score and scorecard. Judges nothing and writes no branch. Needs the repository setting Pages, source "GitHub Actions". |
 | `weekly-mutants.yml` | Mondays 03:41 UTC, every pull request, or by hand (`tag` input) | Job `changes`: on a pull request, `harness guard engine --base <base sha>`. Job `mutants`: pinned syft (v1.52.0) and grype with its database, `images ensure`, `harness mutants --base <tag>` (only when an engine change was detected, or on the schedule). When the self-test fails it uploads `mutant-noise-report`. Job `required`, named **Mutants re-run (required)**, always reports so it can be a required check. Uploads `mutant-reports` (14 days). |
 
 The nightly, release and post-deploy jobs that produce screenshots run on the pinned `ubuntu-24.04`, not `ubuntu-latest`: the A/A measures the noise floor of that image (fonts, anti-aliasing), so release and post-deploy must run on the same one. Move all three together, in one pull request, and expect a fresh burn-down afterwards.
@@ -242,7 +244,7 @@ Details of the commands' outputs for workflows:
 - `guard` writes `masks_changed` and `engine_changed` to `GITHUB_OUTPUT` (the mutants job runs only when an engine change was detected).
 - `images ensure` exits 2 when an image may not be judged, even when another was merely unobtainable.
 
-Pin the harness by tag (`v1.4.1`) or sha, and check `schemaVersion === 1` before reading a report. Two reports are comparable only when their `harness.version` is the same.
+You do not pin the harness from the monorepo: a `repository_dispatch` runs this repository's workflows as they are on `main`. Every report records what ran in `harness.version` and `harness.gitSha`; released versions are marked by `v<version>` tags a maintainer creates by hand (no workflow tags or releases). Check `schemaVersion === 1` before reading a report. Two reports are comparable only when their `harness.version` is the same.
 
 ## Permissions and artifacts
 
@@ -254,8 +256,10 @@ The only `write` scopes any workflow or job holds, all on **this** repository:
 | `post-deploy.yml` | the workflow | `issues` | opens the `rollback` issue when post-deploy mode exits 1 |
 | `release.yml` | `override-record` | `issues` | opens a `harness-override` issue for each applied override |
 | `release.yml` | `publish-record` | `contents` | pushes the `release-records` branch |
+| `main-preview.yml` | `publish` | `contents` | pushes the `main-preview` branch: each Main to RC forecast's report and scorecard |
+| `pages.yml` | `deploy` | `pages`, `id-token` | deploys the kept reports to GitHub Pages; writes no branch |
 
-No other branch, no tag, no release, no other repository. A test lists these four and fails on any other.
+No other branch, no tag, no release, no other repository. A test lists these ([`workflows.json`](../contract/workflows.json) `writePermissions`) and fails on any other.
 
 Artifacts, each the run's whole `out/` directory unless noted (so a report is at `<timestamp>-<mode>/report.json` inside it). Download one with `gh run download <run id> -n <name> -D out`:
 
@@ -270,5 +274,6 @@ Artifacts, each the run's whole `out/` directory unless noted (so a report is at
 | `mutant-reports` | `weekly-mutants.yml` | 14 days |
 | `mutant-noise-report` (the A/A report of the base: `report.*`, `noise-status.json`, `capture.json`; only when the self-test failed) | `weekly-mutants.yml` | 7 days |
 | `harness-ci` | `ci.yml` | 7 days |
+| `main-preview-report` | `main-preview.yml` | 14 days |
 
 The `noise` and `release-records` branches carry what would otherwise expire: the noise status past its 8 days, and the release record past 30.
