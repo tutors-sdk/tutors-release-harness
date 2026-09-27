@@ -75,6 +75,26 @@ clean before the harness gates on these artefacts.
 Rules for a new engine or rule: it does not merge without (1) the A/A test,
 (2) a planted change it catches, (3) a change it must *not* flag.
 
+#### Coverage floor (`pnpm test:coverage`)
+
+`pnpm test:coverage` is `pnpm test` with v8 coverage over `src/**`, and it is what CI's unit job runs. It prints a summary,
+writes `coverage/coverage-summary.json` and an HTML and lcov report to `coverage/` (git-ignored; open
+`coverage/index.html`), and appends the summary to the job summary. It fails when any total drops under the floor in
+`vitest.config.ts`:
+
+| Metric | Measured when the floor was set | Floor |
+| --- | --- | --- |
+| Statements | 86.25% | 84% |
+| Branches | 87.35% | 85% |
+| Functions | 87.13% | 85% |
+| Lines | 86.25% | 84% |
+
+The floor is a ratchet, not a target: it sits a couple of points under what was measured, rounded down, so noise does not
+trip it but a change that leaves new code untested does. When coverage rises, raise the floor in the same PR; never lower
+it to make a PR pass. Excluded, each with its reason in `vitest.config.ts`: files that only declare types, `src/cli.ts`
+(tests run it as a child process, which coverage cannot see), and the real probes that need Docker or Postgres on the
+machine (`src/local/doctor-real.ts`, `src/migration/supabase-postgres.ts`).
+
 ### Fixture tests (`pnpm test`, seconds, every PR)
 
 `tests/fixtures.test.ts` starts each stub in-process on an ephemeral port and
@@ -207,6 +227,7 @@ for. Setup, scheduling and the parity matrix are in [docs/local.md](docs/local.m
 | Masks that never fire | → 0 | listed in every report as "silent" |
 | Engines without a planted-change test | 0 | review |
 | Artefacts that could not be collected in a nightly A/A | 0 | `NOT COLLECTED` is a failing hunk for `runtime` and `startup` (required by default), so a dirty A/A; the others only when `HARNESS_REQUIRE_ARTEFACTS` names them |
+| Unit test coverage of `src/**` (statements, branches, functions, lines) | never under the floor; the floor only goes up | `pnpm test:coverage` in CI's unit job, thresholds in `vitest.config.ts` |
 | Retries anywhere in the harness | 0 | `vitest.config.ts`, no Playwright retries |
 | Overrides of a harness FAIL | → 0 per quarter | `harness-override` issues; `docs/noise-burndown.md` |
 

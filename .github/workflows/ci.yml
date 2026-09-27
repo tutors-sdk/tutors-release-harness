@@ -29,7 +29,12 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
       - run: pnpm lint
-      - run: pnpm test
+      # The unit and fixture tests, with the coverage floor in vitest.config.ts (TESTING.md).
+      - run: pnpm test:coverage
+      - name: Coverage summary
+        if: always() && hashFiles('coverage/summary.txt') != ''
+        run: |
+          { echo "### Coverage"; echo '```'; cat coverage/summary.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
 
   # A mask is a blind spot you chose: a PR that adds or loosens one changes nothing else (`harness guard masks`, src/ci/mask-change.ts),
   # and a mask list past ~40 is flagged. Always reports on a pull request, so it can be a required check.
