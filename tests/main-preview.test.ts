@@ -114,6 +114,27 @@ describe("main-preview.yml", () => {
     expect(release).toContain('if [ "$code" -gt 1 ]; then exit "$code"; fi');
   });
 
+  it("runs when the nightly A/A on this repository's main finishes, not on a cron that a slow night could overtake", () => {
+    const raw = parse(readFileSync(resolve(ROOT, ".github/workflows/main-preview.yml"), "utf8")) as { on: Record<string, { workflows?: string[]; types?: string[] } | null> };
+    const nightly = parse(readFileSync(resolve(ROOT, ".github/workflows/nightly-noise.yml"), "utf8")) as { name: string };
+    expect(Object.keys(raw.on).sort()).toEqual(["workflow_dispatch", "workflow_run"]);
+    expect(raw.on.workflow_run).toEqual({ workflows: [nightly.name], types: ["completed"] });
+    // a nightly on another branch or from a fork, or a cancelled one, starts nothing
+    const gate = wf.jobs.resolve!.if!.replace(/\s+/g, " ");
+    expect(gate).toContain("github.event_name != 'workflow_run' ||");
+    expect(gate).toContain("github.event.workflow_run.head_branch == 'main'");
+    expect(gate).toContain("github.event.workflow_run.head_repository.full_name == github.repository");
+    expect(gate).not.toContain("cancelled");
+    // after a nightly there are no inputs: every input reaches `preview resolve` only when set, so it resolves main's own
+    const step = wf.jobs.resolve!.steps.find((s) => s.run?.includes("harness preview resolve"))!.run!;
+    expect(step).toContain('${PRODUCTION:+--a "$PRODUCTION"}');
+    expect(step).toContain('${CANDIDATE:+--b "$CANDIDATE"}');
+    expect(step).toContain('[ "$FORCE" = true ]');
+    // nothing of the triggering run is checked out or downloaded
+    const text = readFileSync(resolve(ROOT, ".github/workflows/main-preview.yml"), "utf8");
+    expect(text).not.toMatch(/workflow_run\.(head_sha|id)|run-id:|github-token:/);
+  });
+
   it("keeps each run on the main-preview branch, never on release-records: a forecast is not a release record", () => {
     const text = readFileSync(resolve(ROOT, ".github/workflows/main-preview.yml"), "utf8");
     expect(text).toContain("push \"https://github.com/${GITHUB_REPOSITORY}.git\" main-preview");

@@ -1,0 +1,39 @@
+# Weekly, grouped: one PR for the npm minor and patch bumps and one for the actions', so the harness's own
+# checks (CI, the mutants when an engine dependency moves) run once per batch, not once per package. A major
+# bump comes on its own, because it is the one that can change what the harness sees. Actions are pinned to a
+# commit (tests/contract.test.ts); Dependabot moves the SHA and its `# vX.Y.Z` comment together.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Etc/UTC
+    open-pull-requests-limit: 5
+    # A release a week old has had its bad publishes pulled; the harness gates releases, it can wait.
+    cooldown:
+      default-days: 7
+    groups:
+      npm-minor-and-patch:
+        update-types: [minor, patch]
+    labels: [dependencies]
+    commit-message:
+      prefix: deps
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Etc/UTC
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
+    groups:
+      actions-minor-and-patch:
+        update-types: [minor, patch]
+    labels: [dependencies]
+    commit-message:
+      prefix: ci

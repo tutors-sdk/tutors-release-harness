@@ -806,7 +806,8 @@ describe("workflows", () => {
     expect(using).toEqual(tools.usedBy);
     for (const f of using) {
       const ensures = [...text[f]!.matchAll(new RegExp(ensuring, "g"))].length;
-      const installs = [...text[f]!.matchAll(new RegExp(`uses: ${tools.action}@v(\\d+)`, "g"))];
+      // pinned by commit, with the release it is named in the comment (see "pin every action to a commit" below)
+      const installs = [...text[f]!.matchAll(new RegExp(`uses: ${tools.action}@[0-9a-f]{40} # v(\\d+)`, "g"))];
       expect(installs.length, f).toBe(ensures);
       // cosign-installer v4 is the first whose default is cosign 3.
       for (const m of installs) expect(Number(m[1]), f).toBeGreaterThanOrEqual(4);
@@ -815,6 +816,44 @@ describe("workflows", () => {
     for (const f of files) expect(text[f], f).not.toMatch(/allow-unsigned|HARNESS_ALLOW_UNSIGNED/);
     expect(workflowsContract.repositoryVariables.HARNESS_IMAGE_PREFIX!.default).toBe(QUAY_IMAGE_TEMPLATE);
     expect(workflowsContract.repositoryVariables.HARNESS_COSIGN_IDENTITY!.default).toBe(DEFAULT_COSIGN_IDENTITY);
+  });
+
+  it("pin every action to a commit, with the release it is in the comment, and name only workflows that exist", () => {
+    // A tag can be moved to other code; a commit cannot. Dependabot (.github/dependabot.yml) moves the SHA and the
+    // comment together. The comment is the full release, or the only tag the action publishes (dawidd6's `v25`).
+    let pinned = 0;
+    for (const f of files) {
+      for (const m of text[f]!.matchAll(/^\s*(?:-\s+)?uses:\s*(\S+)(.*)$/gm)) {
+        pinned += 1;
+        expect(m[1], `${f}: ${m[0].trim()}`).toMatch(/^[\w.-]+\/[\w./-]+@[0-9a-f]{40}$/);
+        expect(m[2], `${f}: ${m[0].trim()}`).toMatch(/^ # v\d+(\.\d+\.\d+)?$/);
+      }
+    }
+    expect(pinned).toBeGreaterThan(50);
+    // workflow_run matches on the other workflow's name: a rename would silently stop the trigger
+    const names = new Set(files.map((f) => (parsed[f] as unknown as { name: string }).name));
+    for (const f of files) {
+      const on = parsed[f]!.on as Record<string, { workflows?: string[] } | null>;
+      for (const name of on.workflow_run?.workflows ?? []) expect(names, `${f}: workflow_run on "${name}"`).toContain(name);
+    }
+  });
+
+  it("are linted on every PR by actionlint and zizmor, each pinned and checked against a hash before it runs", () => {
+    const job = (parsed["ci.yml"]!.jobs as Record<string, { env?: Record<string, string>; steps: { run?: string }[] }>)["workflow-lint"]!;
+    expect(job.env?.ACTIONLINT_VERSION).toMatch(/^\d+\.\d+\.\d+$/);
+    expect(job.env?.ZIZMOR_VERSION).toMatch(/^\d+\.\d+\.\d+$/);
+    for (const k of ["ACTIONLINT_SHA256", "ZIZMOR_SHA256"]) expect(job.env?.[k], k).toMatch(/^[0-9a-f]{64}$/);
+    const script = job.steps.map((s) => s.run ?? "").join("\n");
+    expect(script).toContain('sha256sum -c');
+    expect(script).toContain("--require-hashes");
+    expect(script).toContain("--config .github/zizmor.yml");
+    // every ignore in the zizmor config is one audit on named files, never a whole audit switched off
+    const config = parse(read(".github/zizmor.yml")) as { rules: Record<string, { ignore?: string[]; disable?: boolean }> };
+    for (const [audit, rule] of Object.entries(config.rules)) {
+      expect(rule.disable, audit).toBeUndefined();
+      expect(rule.ignore?.length, audit).toBeGreaterThan(0);
+      for (const f of rule.ignore!) expect(files, `${audit}: ${f}`).toContain(f.split(":")[0]);
+    }
   });
 
   it("publish exactly the artifacts the contract lists", () => {
@@ -900,6 +939,9 @@ describe("workflows", () => {
     expect(image("nightly-noise.yml")).toEqual(["ubuntu-24.04"]);
     expect(image("release.yml")).toContain("ubuntu-24.04");
     expect(image("post-deploy.yml")).toEqual(["ubuntu-24.04"]);
+    // every other job that runs journeys, so what it sees is measured against the same floor
+    const jobImage = (f: string, job: string) => (parsed[f]!.jobs[job] as { "runs-on"?: string })["runs-on"];
+    for (const [f, job] of [["main-preview.yml", "preview"], ["ci.yml", "two-stacks"], ["weekly-mutants.yml", "mutants"], ["release.yml", "release"]] as const) expect(jobImage(f, job), `${f}:${job}`).toBe("ubuntu-24.04");
     expect(nightly).toContain("actions/cache/restore@");
     expect(nightly).toContain("actions/cache/save@");
     expect(nightly).toContain("steps.ensure.outputs.image_cache == 'refreshed'");

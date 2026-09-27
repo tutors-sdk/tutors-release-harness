@@ -1,0 +1,16 @@
+# zizmor (the workflow-lint job in ci.yml) audits .github/workflows and .github/dependabot.yml. What is ignored
+# here is ignored narrowly, one audit and one file each, with the reason; a finding anywhere else fails the job.
+rules:
+  dangerous-triggers:
+    ignore:
+      # workflow_run is dangerous when it checks out or downloads what the triggering run produced. Neither does:
+      # main-preview.yml reads only the nightly's branch, repository and conclusion (and runs only for this
+      # repository's main); pages.yml checks out main and reads the kept reports from this repository's own
+      # branches, never an artifact of the run that triggered it.
+      - main-preview.yml
+      - pages.yml
+  use-trusted-publishing:
+    ignore:
+      # A false positive: `--store publish` names a local directory (the checkout of the `noise` branch), and
+      # nothing is published to a package registry.
+      - nightly-noise.yml
