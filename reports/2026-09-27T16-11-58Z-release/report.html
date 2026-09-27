@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Harness release pass</title>
+<style>
+  :root { color-scheme: light dark; --pass:#2f7a4f; --warn:#8a6119; --fail:#a12a2a; --rule:#8884; }
+  body { margin:0; padding:24px 16px; font:15px/1.5 system-ui, sans-serif; max-width: 64rem; margin-inline:auto; }
+  h1 { font-size:1.4rem; margin:0 0 4px; }
+  .verdict { display:inline-block; padding:2px 10px; border-radius:4px; color:#fff; font-weight:600; text-transform:uppercase; letter-spacing:.05em; }
+  .verdict.pass { background:var(--pass);} .verdict.warn { background:var(--warn);} .verdict.fail { background:var(--fail);}
+  table { border-collapse:collapse; width:100%; margin:12px 0 24px; font-size:14px; }
+  th, td { text-align:left; vertical-align:top; padding:6px 8px; border-bottom:1px solid var(--rule); }
+  th { font-size:12px; text-transform:uppercase; letter-spacing:.06em; opacity:.7; }
+  tr.info td { opacity:.75; }
+  tr.fail td:last-child strong { color:var(--fail); }
+  table.provenance td { font-size:13px; word-break:break-all; }
+  .loud { border-left:4px solid var(--warn); padding:6px 10px; font-weight:600; }
+  code, pre { font-family: ui-monospace, Menlo, Consolas, monospace; font-size:13px; }
+  pre { white-space:pre-wrap; margin:6px 0 0; padding:8px; background:#8881; border-radius:4px; }
+  details summary { cursor:pointer; font-size:13px; opacity:.8; }
+  ul { padding-left:1.2rem; }
+  footer { font-size:12px; opacity:.7; border-top:1px solid var(--rule); padding-top:12px; }
+</style>
+</head>
+<body>
+<h1>Tutors release harness — <code>release</code> <span class="verdict pass">pass</span></h1>
+<p><small>2026-09-27T16:11:58.711Z · clock 2026-09-16T09:05:00.000Z · 5 run(s) per side · harness 1.4.14</small></p>
+
+
+<ul><li>every difference is claimed</li><li>A/A consulted: clean at 2026-09-27T14:44:00.475Z</li></ul>
+
+<table>
+<thead><tr><th></th><th>a</th><th>b</th></tr></thead>
+<tbody><tr><td>reader</td><td><code>quay.io/tutors-sdk/tutors-reader:16.2.2</code></td><td><code>quay.io/tutors-sdk/tutors-reader:16.2.2</code></td></tr><tr><td>catalogue</td><td><code>quay.io/tutors-sdk/tutors-catalogue:16.2.2</code></td><td><code>quay.io/tutors-sdk/tutors-catalogue:16.2.2</code></td></tr><tr><td>live</td><td><code>quay.io/tutors-sdk/tutors-live:16.2.2</code></td><td><code>quay.io/tutors-sdk/tutors-live:16.2.2</code></td></tr><tr><td>time</td><td><code>quay.io/tutors-sdk/tutors-time:16.2.2</code></td><td><code>quay.io/tutors-sdk/tutors-time:16.2.2</code></td></tr></tbody>
+</table>
+<table class="provenance">
+<thead><tr><th>provenance</th><th>a — pulled+verified</th><th>b — pulled+verified</th></tr></thead>
+<tbody><tr><td>reader</td><td>digest <code>sha256:7567d5927767bd39b7991a586d594f6c310387471109a456d2cff49fa12488cb</code><br>revision <code>caa53d021e63</code><br>version <code>16.2.2</code></td><td>digest <code>sha256:7567d5927767bd39b7991a586d594f6c310387471109a456d2cff49fa12488cb</code><br>revision <code>caa53d021e63</code><br>version <code>16.2.2</code></td></tr><tr><td>catalogue</td><td>digest <code>sha256:f6cdb7f6adaba1d227e2cf62260ec2fe7064c58114666774331da3530bf52187</code><br>revision <code>caa53d021e63</code><br>version <code>16.2.2</code></td><td>digest <code>sha256:f6cdb7f6adaba1d227e2cf62260ec2fe7064c58114666774331da3530bf52187</code><br>revision <code>caa53d021e63</code><br>version <code>16.2.2</code></td></tr><tr><td>live</td><td>digest <code>sha256:12ed5642e5cbec601790771a8f9fc85221f8202679a312a0e707622bb6e84e9a</code><br>revision <code>caa53d021e63</code><br>version <code>16.2.2</code></td><td>digest <code>sha256:12ed5642e5cbec601790771a8f9fc85221f8202679a312a0e707622bb6e84e9a</code><br>revision <code>caa53d021e63</code><br>version <code>16.2.2</code></td></tr><tr><td>time</td><td>digest <code>sha256:ddf3ad22b79bbba96199791a49367677bf9ad0ebdd7542f3246d56e7879d5e4e</code><br>revision <code>caa53d021e63</code><br>version <code>16.2.2</code></td><td>digest <code>sha256:ddf3ad22b79bbba96199791a49367677bf9ad0ebdd7542f3246d56e7879d5e4e</code><br>revision <code>caa53d021e63</code><br>version <code>16.2.2</code></td></tr></tbody>
+</table>
+
+<h2>Image artefacts</h2><p><small>Collected from the images, not the running apps. A cell that says NOT COLLECTED was not compared.</small></p><table><thead><tr><th>app</th><th>artefact</th><th>a</th><th>b</th></tr></thead><tbody><tr><td>reader</td><td>manifest</td><td>9 layers, 251.5 MB, USER 1001, ports 3000/tcp (docker image inspect)</td><td>9 layers, 251.5 MB, USER 1001, ports 3000/tcp (docker image inspect)</td></tr><tr><td>reader</td><td>sbom</td><td>291 distinct package(s) (cosign attestation (signature verified))</td><td>291 distinct package(s) (cosign attestation (signature verified))</td></tr><tr><td>reader</td><td>vulns</td><td>114 advisories, db built 2026-09-27T06:30:30Z schema v6.1.9 (grype 0.119.0)</td><td>114 advisories, db built 2026-09-27T06:30:30Z schema v6.1.9 (grype 0.119.0)</td></tr><tr><td>catalogue</td><td>manifest</td><td>9 layers, 230.8 MB, USER 1001, ports 3000/tcp (docker image inspect)</td><td>9 layers, 230.8 MB, USER 1001, ports 3000/tcp (docker image inspect)</td></tr><tr><td>catalogue</td><td>sbom</td><td>277 distinct package(s) (cosign attestation (signature verified))</td><td>277 distinct package(s) (cosign attestation (signature verified))</td></tr><tr><td>catalogue</td><td>vulns</td><td>114 advisories, db built 2026-09-27T06:30:30Z schema v6.1.9 (grype 0.119.0)</td><td>114 advisories, db built 2026-09-27T06:30:30Z schema v6.1.9 (grype 0.119.0)</td></tr><tr><td>live</td><td>manifest</td><td>9 layers, 230.8 MB, USER 1001, ports 3000/tcp (docker image inspect)</td><td>9 layers, 230.8 MB, USER 1001, ports 3000/tcp (docker image inspect)</td></tr><tr><td>live</td><td>sbom</td><td>277 distinct package(s) (cosign attestation (signature verified))</td><td>277 distinct package(s) (cosign attestation (signature verified))</td></tr><tr><td>live</td><td>vulns</td><td>114 advisories, db built 2026-09-27T06:30:30Z schema v6.1.9 (grype 0.119.0)</td><td>114 advisories, db built 2026-09-27T06:30:30Z schema v6.1.9 (grype 0.119.0)</td></tr><tr><td>time</td><td>manifest</td><td>9 layers, 232.1 MB, USER 1001, ports 3000/tcp (docker image inspect)</td><td>9 layers, 232.1 MB, USER 1001, ports 3000/tcp (docker image inspect)</td></tr><tr><td>time</td><td>sbom</td><td>287 distinct package(s) (cosign attestation (signature verified))</td><td>287 distinct package(s) (cosign attestation (signature verified))</td></tr><tr><td>time</td><td>vulns</td><td>114 advisories, db built 2026-09-27T06:30:30Z schema v6.1.9 (grype 0.119.0)</td><td>114 advisories, db built 2026-09-27T06:30:30Z schema v6.1.9 (grype 0.119.0)</td></tr></tbody></table>
+
+
+
+<h2>Load (k6, 20 req/s for 30s)</h2><table><thead><tr><th>side</th><th>requests</th><th>failed</th><th>5xx</th><th>p50</th><th>p95</th></tr></thead><tbody><tr><td>a</td><td>601</td><td>0</td><td>0</td><td>1.29 ms</td><td>2.22 ms</td></tr><tr><td>b</td><td>600</td><td>0</td><td>0</td><td>1.29 ms</td><td>2.29 ms</td></tr></tbody></table>
+
+<h2>Differences (3; 0 unclaimed)</h2>
+<table><thead><tr><th>artefact</th><th>scope</th><th>what changed</th><th>claimed by</th></tr></thead><tbody><tr class="info"><td><code>console</code></td><td><code>reader-auth:course</code><br><small>/course/localhost:8080</small></td><td>reader-auth:course: console message gone on b<details><summary>detail</summary><pre>error: {&quot;app&quot;:&quot;tutors-reader&quot;,&quot;environment&quot;:&quot;production&quot;,&quot;reason&quot;:&quot;Cannot read properties of undefined (reading 'increment')&quot;,&quot;stack&quot;:&quot;TypeError: Cannot read properties of undefined (reading 'increment')\n    at s ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:1031)\n    at async Promise.all (index 1)\n    at async c ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:1122)\n    at async m ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:2363)\n    at async h ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:2406)&quot;,&quot;timestamp&quot;:&quot;2026-09-16T09:05:00.000Z&quot;,&quot;level&quot;:&quot;error&quot;,&quot;message&quot;:&quot;Unhandled promise rejection&quot;}</pre></details></td><td><em>informational</em></td></tr>
+<tr class="info"><td><code>runtime</code></td><td><code>runtime/summary</code></td><td>container posture collected for catalogue, live, reader, reader-auth, time on both sides (compose)<details><summary>detail</summary><pre>catalogue: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+           b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+live: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+reader: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+        b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+reader-auth: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+             b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+time: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter</pre></details></td><td><em>informational</em></td></tr>
+<tr class="info"><td><code>startup</code></td><td><code>startup/summary</code></td><td>startup time collected on both sides (compose, 5 restart(s) per app)<details><summary>detail</summary><pre>catalogue: first healthy / 327 → 280 ms, ready 2313 → 2309 ms (median, a → b, n=5/5)
+live: first healthy / 349 → 283 ms, ready 2292 → 2300 ms (median, a → b, n=5/5)
+reader: first healthy / 409 → 459 ms, ready 2315 → 2347 ms (median, a → b, n=5/5)
+time: first healthy / 285 → 266 ms, ready 2303 → 2293 ms (median, a → b, n=5/5)</pre></details></td><td><em>informational</em></td></tr></tbody></table>
+
+
+
+
+
+
+
+<h2>Masks</h2>
+<p>Fired: <code>response-date</code>×80, <code>request-id</code>×80, <code>etag</code>×80, <code>metrics-process</code>×599, <code>metrics-timing-histograms</code>×12, <code>third-party-requests</code>×872, <code>persistence-stub-requests</code>×220, <code>hashed-assets</code>×5320, <code>footer-tutors-version</code>×238, <code>transport-length</code>×80, <code>transport-connection</code>×80, <code>transport-keepalive</code>×80.<br>
+Silent this run: <code>realtime-rest-fallback-warning</code>, <code>transport-encoding</code>, <code>transport-transfer</code> — a mask that never fires is a mask to delete.</p>
+
+<footer>Every masked field is listed in <code>normalise/masks.yaml</code> with a reason. A mask is a blind spot you chose.<br>harness 1.4.14 · 912b40fcf8f4 · contract 1.4.0</footer>
+</body>
+</html>

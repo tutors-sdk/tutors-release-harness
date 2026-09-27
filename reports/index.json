@@ -2,6 +2,44 @@
   "schemaVersion": 1,
   "runs": [
     {
+      "id": "2026-09-27T16-11-58Z-release",
+      "mode": "release",
+      "ranAt": "2026-09-27T16:11:58.711Z",
+      "verdict": "pass",
+      "reasons": [
+        "every difference is claimed"
+      ],
+      "sides": {
+        "a": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:16.2.2",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:16.2.2",
+          "live": "quay.io/tutors-sdk/tutors-live:16.2.2",
+          "time": "quay.io/tutors-sdk/tutors-time:16.2.2"
+        },
+        "b": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:16.2.2",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:16.2.2",
+          "live": "quay.io/tutors-sdk/tutors-live:16.2.2",
+          "time": "quay.io/tutors-sdk/tutors-time:16.2.2"
+        }
+      },
+      "harnessVersion": "1.4.14",
+      "runUrl": "https://github.com/tutors-sdk/tutors-release-harness/actions/runs/36331720078",
+      "score": {
+        "score": 100,
+        "grade": "A",
+        "normalness": "normal",
+        "manual": 0
+      },
+      "files": [
+        "2026-09-27T16-11-58Z-release/report.json",
+        "2026-09-27T16-11-58Z-release/report.md",
+        "2026-09-27T16-11-58Z-release/report.html",
+        "2026-09-27T16-11-58Z-release/scorecard.json",
+        "2026-09-27T16-11-58Z-release/scorecard.md"
+      ]
+    },
+    {
       "id": "2026-09-26T17-06-30Z-release",
       "mode": "release",
       "ranAt": "2026-09-26T17:06:30.740Z",

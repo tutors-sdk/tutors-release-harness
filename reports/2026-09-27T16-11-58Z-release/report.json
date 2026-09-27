@@ -1,0 +1,374 @@
+{
+  "schemaVersion": 1,
+  "harness": {
+    "version": "1.4.14",
+    "gitSha": "912b40fcf8f4bc447fcfc4579cfeef1ab814a7f5",
+    "contractVersion": "1.4.0"
+  },
+  "harnessVersion": "1.4.14",
+  "mode": "release",
+  "substrate": "compose",
+  "ranAt": "2026-09-27T16:11:58.711Z",
+  "now": "2026-09-16T09:05:00.000Z",
+  "runs": 5,
+  "sides": {
+    "a": {
+      "reader": "quay.io/tutors-sdk/tutors-reader:16.2.2",
+      "catalogue": "quay.io/tutors-sdk/tutors-catalogue:16.2.2",
+      "live": "quay.io/tutors-sdk/tutors-live:16.2.2",
+      "time": "quay.io/tutors-sdk/tutors-time:16.2.2"
+    },
+    "b": {
+      "reader": "quay.io/tutors-sdk/tutors-reader:16.2.2",
+      "catalogue": "quay.io/tutors-sdk/tutors-catalogue:16.2.2",
+      "live": "quay.io/tutors-sdk/tutors-live:16.2.2",
+      "time": "quay.io/tutors-sdk/tutors-time:16.2.2"
+    }
+  },
+  "provenance": {
+    "a": {
+      "summary": "pulled+verified",
+      "images": {
+        "reader": {
+          "ref": "quay.io/tutors-sdk/tutors-reader:16.2.2",
+          "id": "sha256:5251de773ba42df7b8a03cb204b1bb0fd3a7bf0696d8674ad5dc657e0410fe82",
+          "digest": "sha256:7567d5927767bd39b7991a586d594f6c310387471109a456d2cff49fa12488cb",
+          "revision": "caa53d021e63004ad6e52a76428f8acd95a87c21",
+          "version": "16.2.2",
+          "created": "2026-09-19T18:07:41.709Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "catalogue": {
+          "ref": "quay.io/tutors-sdk/tutors-catalogue:16.2.2",
+          "id": "sha256:2f807181869d5146e65711a562c609091d6555b4332c738efc252a4542629b5d",
+          "digest": "sha256:f6cdb7f6adaba1d227e2cf62260ec2fe7064c58114666774331da3530bf52187",
+          "revision": "caa53d021e63004ad6e52a76428f8acd95a87c21",
+          "version": "16.2.2",
+          "created": "2026-09-19T18:07:41.955Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "live": {
+          "ref": "quay.io/tutors-sdk/tutors-live:16.2.2",
+          "id": "sha256:274059f152dac50de544a7aa4e8bc791ffe9900c3683d5b458ec30682fce5a32",
+          "digest": "sha256:12ed5642e5cbec601790771a8f9fc85221f8202679a312a0e707622bb6e84e9a",
+          "revision": "caa53d021e63004ad6e52a76428f8acd95a87c21",
+          "version": "16.2.2",
+          "created": "2026-09-19T18:07:35.208Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "time": {
+          "ref": "quay.io/tutors-sdk/tutors-time:16.2.2",
+          "id": "sha256:a4298d01a6c1d0d88f7a23f732d23002669ac2af9ad4766cef9d72b253907320",
+          "digest": "sha256:ddf3ad22b79bbba96199791a49367677bf9ad0ebdd7542f3246d56e7879d5e4e",
+          "revision": "caa53d021e63004ad6e52a76428f8acd95a87c21",
+          "version": "16.2.2",
+          "created": "2026-09-19T18:07:57.488Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        }
+      }
+    },
+    "b": {
+      "summary": "pulled+verified",
+      "images": {
+        "reader": {
+          "ref": "quay.io/tutors-sdk/tutors-reader:16.2.2",
+          "id": "sha256:5251de773ba42df7b8a03cb204b1bb0fd3a7bf0696d8674ad5dc657e0410fe82",
+          "digest": "sha256:7567d5927767bd39b7991a586d594f6c310387471109a456d2cff49fa12488cb",
+          "revision": "caa53d021e63004ad6e52a76428f8acd95a87c21",
+          "version": "16.2.2",
+          "created": "2026-09-19T18:07:41.709Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "catalogue": {
+          "ref": "quay.io/tutors-sdk/tutors-catalogue:16.2.2",
+          "id": "sha256:2f807181869d5146e65711a562c609091d6555b4332c738efc252a4542629b5d",
+          "digest": "sha256:f6cdb7f6adaba1d227e2cf62260ec2fe7064c58114666774331da3530bf52187",
+          "revision": "caa53d021e63004ad6e52a76428f8acd95a87c21",
+          "version": "16.2.2",
+          "created": "2026-09-19T18:07:41.955Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "live": {
+          "ref": "quay.io/tutors-sdk/tutors-live:16.2.2",
+          "id": "sha256:274059f152dac50de544a7aa4e8bc791ffe9900c3683d5b458ec30682fce5a32",
+          "digest": "sha256:12ed5642e5cbec601790771a8f9fc85221f8202679a312a0e707622bb6e84e9a",
+          "revision": "caa53d021e63004ad6e52a76428f8acd95a87c21",
+          "version": "16.2.2",
+          "created": "2026-09-19T18:07:35.208Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "time": {
+          "ref": "quay.io/tutors-sdk/tutors-time:16.2.2",
+          "id": "sha256:a4298d01a6c1d0d88f7a23f732d23002669ac2af9ad4766cef9d72b253907320",
+          "digest": "sha256:ddf3ad22b79bbba96199791a49367677bf9ad0ebdd7542f3246d56e7879d5e4e",
+          "revision": "caa53d021e63004ad6e52a76428f8acd95a87c21",
+          "version": "16.2.2",
+          "created": "2026-09-19T18:07:57.488Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        }
+      }
+    }
+  },
+  "verdict": "pass",
+  "reasons": [
+    "every difference is claimed"
+  ],
+  "noise": {
+    "schemaVersion": 1,
+    "ranAt": "2026-09-27T14:44:00.475Z",
+    "clean": true,
+    "hunks": 0
+  },
+  "compare": {
+    "hunks": [
+      {
+        "id": "console:reader-auth:course:1",
+        "artefact": "console",
+        "scope": "reader-auth:course",
+        "path": "/course/localhost:8080",
+        "severity": "info",
+        "summary": "reader-auth:course: console message gone on b",
+        "detail": "error: {\"app\":\"tutors-reader\",\"environment\":\"production\",\"reason\":\"Cannot read properties of undefined (reading 'increment')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'increment')\\n    at s ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:1031)\\n    at async Promise.all (index 1)\\n    at async c ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:1122)\\n    at async m ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:2363)\\n    at async h ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:2406)\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Unhandled promise rejection\"}"
+      },
+      {
+        "id": "runtime:runtime/summary:2",
+        "artefact": "runtime",
+        "scope": "runtime/summary",
+        "severity": "info",
+        "summary": "container posture collected for catalogue, live, reader, reader-auth, time on both sides (compose)",
+        "detail": "catalogue: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n           b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nlive: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n        b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader-auth: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n             b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\ntime: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter"
+      },
+      {
+        "id": "startup:startup/summary:3",
+        "artefact": "startup",
+        "scope": "startup/summary",
+        "severity": "info",
+        "summary": "startup time collected on both sides (compose, 5 restart(s) per app)",
+        "detail": "catalogue: first healthy / 327 → 280 ms, ready 2313 → 2309 ms (median, a → b, n=5/5)\nlive: first healthy / 349 → 283 ms, ready 2292 → 2300 ms (median, a → b, n=5/5)\nreader: first healthy / 409 → 459 ms, ready 2315 → 2347 ms (median, a → b, n=5/5)\ntime: first healthy / 285 → 266 ms, ready 2303 → 2293 ms (median, a → b, n=5/5)"
+      }
+    ],
+    "matches": [
+      {
+        "hunk": {
+          "id": "console:reader-auth:course:1",
+          "artefact": "console",
+          "scope": "reader-auth:course",
+          "path": "/course/localhost:8080",
+          "severity": "info",
+          "summary": "reader-auth:course: console message gone on b",
+          "detail": "error: {\"app\":\"tutors-reader\",\"environment\":\"production\",\"reason\":\"Cannot read properties of undefined (reading 'increment')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'increment')\\n    at s ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:1031)\\n    at async Promise.all (index 1)\\n    at async c ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:1122)\\n    at async m ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:2363)\\n    at async h ({{origin}}/_app/immutable/chunks/BbMB2OFS.js:1:2406)\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Unhandled promise rejection\"}"
+        }
+      },
+      {
+        "hunk": {
+          "id": "runtime:runtime/summary:2",
+          "artefact": "runtime",
+          "scope": "runtime/summary",
+          "severity": "info",
+          "summary": "container posture collected for catalogue, live, reader, reader-auth, time on both sides (compose)",
+          "detail": "catalogue: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n           b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nlive: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n        b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader-auth: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n             b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\ntime: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter"
+        }
+      },
+      {
+        "hunk": {
+          "id": "startup:startup/summary:3",
+          "artefact": "startup",
+          "scope": "startup/summary",
+          "severity": "info",
+          "summary": "startup time collected on both sides (compose, 5 restart(s) per app)",
+          "detail": "catalogue: first healthy / 327 → 280 ms, ready 2313 → 2309 ms (median, a → b, n=5/5)\nlive: first healthy / 349 → 283 ms, ready 2292 → 2300 ms (median, a → b, n=5/5)\nreader: first healthy / 409 → 459 ms, ready 2315 → 2347 ms (median, a → b, n=5/5)\ntime: first healthy / 285 → 266 ms, ready 2303 → 2293 ms (median, a → b, n=5/5)"
+        }
+      }
+    ],
+    "unclaimed": [],
+    "staleClaims": [],
+    "broadUnapproved": []
+  },
+  "masksApplied": {
+    "response-date": 80,
+    "request-id": 80,
+    "etag": 80,
+    "metrics-process": 599,
+    "metrics-timing-histograms": 12,
+    "third-party-requests": 872,
+    "persistence-stub-requests": 220,
+    "realtime-rest-fallback-warning": 0,
+    "hashed-assets": 5320,
+    "footer-tutors-version": 238,
+    "transport-length": 80,
+    "transport-connection": 80,
+    "transport-encoding": 0,
+    "transport-transfer": 0,
+    "transport-keepalive": 80
+  },
+  "load": {
+    "a": {
+      "requests": 601,
+      "failed": 0,
+      "serverErrors": 0,
+      "p50": 1.29,
+      "p95": 2.22,
+      "rate": 20,
+      "duration": "30s"
+    },
+    "b": {
+      "requests": 600,
+      "failed": 0,
+      "serverErrors": 0,
+      "p50": 1.29,
+      "p95": 2.29,
+      "rate": 20,
+      "duration": "30s"
+    }
+  },
+  "imageArtefacts": {
+    "a": {
+      "reader": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "9 layers, 251.5 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "291 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "114 advisories, db built 2026-09-27T06:30:30Z schema v6.1.9"
+        }
+      },
+      "catalogue": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "9 layers, 230.8 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "277 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "114 advisories, db built 2026-09-27T06:30:30Z schema v6.1.9"
+        }
+      },
+      "live": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "9 layers, 230.8 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "277 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "114 advisories, db built 2026-09-27T06:30:30Z schema v6.1.9"
+        }
+      },
+      "time": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "9 layers, 232.1 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "287 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "114 advisories, db built 2026-09-27T06:30:30Z schema v6.1.9"
+        }
+      }
+    },
+    "b": {
+      "reader": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "9 layers, 251.5 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "291 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "114 advisories, db built 2026-09-27T06:30:30Z schema v6.1.9"
+        }
+      },
+      "catalogue": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "9 layers, 230.8 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "277 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "114 advisories, db built 2026-09-27T06:30:30Z schema v6.1.9"
+        }
+      },
+      "live": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "9 layers, 230.8 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "277 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "114 advisories, db built 2026-09-27T06:30:30Z schema v6.1.9"
+        }
+      },
+      "time": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "9 layers, 232.1 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "287 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "114 advisories, db built 2026-09-27T06:30:30Z schema v6.1.9"
+        }
+      }
+    }
+  }
+}
