@@ -15,6 +15,7 @@ OpenShift is out of scope. The compose and kind substrates are what runs.
 - [Start here](#start-here)
 - [The five tasks](#the-five-tasks)
 - [Compare main with the last release](#compare-main-with-the-last-release)
+- [One command for a release: `harness release`](#one-command-for-a-release-harness-release)
 - [Parity matrix](#parity-matrix)
 - [Where state lives](#where-state-lives)
 - [The vulnerability database](#the-vulnerability-database)
@@ -272,6 +273,61 @@ worktree (the run fails with "Pool overlaps", exit `2`): check `docker network l
 cluster's ports). Your own `tutors-*` and `supabase_*` containers are never touched; a run
 only stops the compose project named for this checkout. Run `pnpm harness doctor` first, and
 keep the checkout path short (run directories nest deep).
+
+## One command for a release: `harness release`
+
+```console
+pnpm harness release --candidate 16.3.0-rc.1 [--baseline <tag|prod>] [--monorepo ..\tutors-mono-repo] \
+    [--claims f] [--rules f] [--fast] [--open] [--out dir] [--port-offset n] [--dry-run]
+```
+
+From a pushed candidate to `report.html`, asking nothing. It is the release gate's plan
+(`planGate`, the steps `local gate` and `release.yml` run) cut into seven stages; each prints
+one line when it ends, with its elapsed time, and `status.json` records it as it goes:
+
+| Stage | What happens | On failure |
+| --- | --- | --- |
+| resolve | the baseline: `--baseline <tag>`; `prod` or nothing reads `tag` (and `digests`, which pin production) from `release/deployed.json` in the monorepo checkout (`--monorepo`, else `HARNESS_MONOREPO_DIR`), else `HARNESS_PRODUCTION_TAG` (not `main`), else exit `2` before anything runs. Then `images ensure` for both sides | the line stops at resolve, exit `2` |
+| noise | the local noise store's A/A when it is clean, verified and at most 7 days old; else an A/A of the baseline, 3 runs, k6 `20x30s` | a dirty A/A stops the line before any A/B, exit `2`; the report lists each difference that needs a mask reviewed or a determinism fix |
+| changes | a seam: not built yet (C1). Says so; never makes data up | never fails |
+| release | `--mode release --runs 3 --load 20x30s` with the claims (`--claims`, else `release/claims.yaml` in the monorepo checkout), the rules and that A/A | a FAIL stops the line for a go decision; the rehearsals still run for the evidence, the report is written, exit `1` |
+| rehearse | migration, then upgrade | skipped only with `--fast`, and the report says so |
+| score | a seam: the score (C0), the glance (C3) and the 5 Whys stubs (C4), not built yet | never fails, never changes the exit code |
+| report | `report.md`, `report.html`, `gate.md`, `gate.json` in `out/<timestamp>-release-command/`; `--open` opens `report.html` | always written |
+
+`status.json` ([schema](contract/release-status.schema.json)) holds the stage running now, and
+for each stage its `state`, `startedAt`, `elapsed` and the plan's `expected` seconds, so a
+dashboard can say "running: release, 14 of 25 min". Exit codes are the gate's: `0` pass or
+warn, `1` FAIL, `2` not judged (a stopped line before the A/B, Ctrl-C) or a usage error.
+
+**The coffee contract.** It asks nothing, retries nothing silently, and leaves a report behind
+whatever happened. Ctrl-C takes the stacks down (`harness stack down`) before it exits `2`,
+and the report says where it was. It holds the run lock like `local gate`.
+
+**`--fast`** is one run, no load, no rehearsals and no A/A of its own (a clean store is still
+used; otherwise the release step is advisory). It is for a branch, and every place the verdict
+appears (the terminal, `report.md`, `report.html`, `status.json`) says it cannot be used for a
+go decision.
+
+**In a workflow.** The harness's `release.yml` can become `pnpm harness release --candidate
+$TAG` with the run directory uploaded as the artifact and `report.md` as the PR comment; local
+and CI runs write the same files. Posting the comment is not built yet: with `GITHUB_TOKEN` set
+the command says where `report.md` is and posts nothing. The monorepo's `release:candidate`
+script and the deploy job's `release/deployed.json` come in a monorepo PR of their own.
+
+### Lean in the harness
+
+| Idea | Where it is in `harness release` | Still to come |
+| --- | --- | --- |
+| Jidoka (stop the line) | a stage that cannot hand good work on stops it: missing images at resolve, a dirty A/A at noise (before any A/B), a gate FAIL at release. The terminal and the report say `line stopped at <stage>: <why>` and the next standard step, not a generic error | the 5 Whys it triggers (C4) |
+| Andon (visual management) | the report opens with the gate, one word: PASS, WARN, FAIL or NOT JUDGED; `status.json` is the board a dashboard reads | the score and its band beside the gate (C0), the scoreboard of releases (C2) |
+| Standard work | one command, the same stages in the same order every time, the same steps CI runs, and a named next step for each stop | the SOP in the monorepo (C3) |
+| Gemba | each gate row links to that run's own `report.html`, the artefacts themselves | the glance: at most seven ranked places to look (C3) |
+| Kaizen | every FAIL is marked as a trigger in the report | `harness why`, the 5 Whys stub and the countermeasure register (C4) |
+
+The seams are functions (`changesStage`, `scoreStage` in `src/local/release.ts`) that the later
+phases fill. Whatever they return, the gate wins: nothing in them can change a verdict or an
+exit code.
 
 ## Parity matrix
 

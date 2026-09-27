@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.7.0`
+Contract version: `1.8.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -15,6 +15,7 @@ The machine-readable half lives in [`docs/contract/`](contract/):
 | [`noise-status.schema.json`](contract/noise-status.schema.json) | `noise-status.json` |
 | [`release-record.schema.json`](contract/release-record.schema.json) | the release record (since 1.3.0) |
 | [`rules.schema.json`](contract/rules.schema.json) | `rules.json`, the Rules a claim may name (since 1.3.0) |
+| [`release-status.schema.json`](contract/release-status.schema.json) | `status.json` of `harness release` (since 1.8.0, not stable) |
 | [`cli.json`](contract/cli.json) | every command and flag, which are stable, the exit codes |
 | [`workflows.json`](contract/workflows.json) | dispatch events and payloads, repository variables, artifacts, permissions the workflows never hold |
 
@@ -30,9 +31,9 @@ Three numbers, all stamped where a reader can see them:
 
 ```console
 $ pnpm harness version
-harness 1.7.0 (3f2c…) · contract 1.7.0
+harness 1.8.0 (3f2c…) · contract 1.8.0
 $ pnpm harness version --json
-{"version":"1.7.0","gitSha":"3f2c…","contractVersion":"1.7.0"}
+{"version":"1.8.0","gitSha":"3f2c…","contractVersion":"1.8.0"}
 ```
 
 `gitSha` is `git rev-parse HEAD` of the harness checkout, or the
@@ -68,6 +69,18 @@ tag. Check `schemaVersion === 1` before reading a report.
 
 `harness compare --dir <run dir>` rewrites the three reports (and, in noise
 mode, the status) in place.
+
+Since 1.8.0 `harness release` also writes `<--out, default ./out>/<UTC
+timestamp>-release-command/` beside the run directories of its steps (the
+suffix is not `-release`, so it is never taken for a release-mode run). It is
+written whatever happened, a stopped line or Ctrl-C included:
+
+| Path | Part of the contract |
+| --- | --- |
+| `status.json` | not stable: [`release-status.schema.json`](contract/release-status.schema.json). Rewritten whole at every change: the stage running, each stage's `state`, `startedAt`, `elapsed` and `expected` seconds, where the line stopped (`stopped`: `stage`, `why`, `next`), and `exitCode` at the end |
+| `report.md` | the file exists and starts with the gate (`## Release gate: …`, then `**Gate: <word>**`); with `--fast` the next line is the banner that it cannot be used for a go decision. Its wording is for people |
+| `report.html` | the file exists and is self-contained; its content is for people |
+| `gate.md`, `gate.json` | the combined gate summary `harness local gate` writes to `<timestamp>-gate/` |
 
 ## `report.json`
 
@@ -629,7 +642,7 @@ Full list: [`contract/cli.json`](contract/cli.json). Invoke as `pnpm harness
 <command>` from a checkout (Node ≥ 22, `pnpm install`, and for capturing modes
 `pnpm exec playwright install chromium` and Docker). Commands and flags marked
 `stable: true` there are the ones below; the rest (`harness stack`, `harness
-kind`, `harness journeys`, `harness override`, `harness local`, `harness prune`, `harness reports`, `harness scorecard`, `harness noise
+kind`, `harness journeys`, `harness override`, `harness local`, `harness release` (since 1.8.0), `harness prune`, `harness reports`, `harness scorecard`, `harness noise
 history`, `--substrate`, `--now`, `--masks`, `--snapshot`,
 `--upgrade-*`, `--noise-max-age-days`, `--no-screenshots`, `--no-axe`,
 `--no-focus`, `--no-runtime` and `--startup-restarts` (both since 1.2.0),
@@ -648,7 +661,9 @@ text; the file `noise-history.json` is what a program reads), `harness prune` (d
 old run directories and an old image cache: a dry run unless `--yes`, and no workflow
 calls it) and the flags only they take (`--only`, `--migrations-a`, `--migrations-b`,
 `--interval`, `--port-offset`, `--dry-run`, `--once`, `--record`, `--last`, `--since`,
-`--older-than-days`, `--keep-last`, `--image-cache-days`, `--yes`, `--strict`, `--no-load`) are not.
+`--older-than-days`, `--keep-last`, `--image-cache-days`, `--yes`, `--strict`, `--no-load`) are not,
+and neither are `harness release` and the flags only it takes (`--candidate`, `--baseline`,
+`--monorepo`, `--fast`, `--open`; since 1.8.0).
 
 | Command | Stable flags |
 | --- | --- |
@@ -705,6 +720,7 @@ Environment variables in the contract, all since 1.1.0 unless the row says other
 | `HARNESS_VULN_DB_MAX_AGE_DAYS` | `5` | since 1.4.0. Days since the vulnerability database was built beyond which `harness doctor` warns; also passed to grype as its own limit (`GRYPE_DB_MAX_ALLOWED_BUILT_AGE`), so a scan and the doctor agree. 5 days is grype's own default |
 | `HARNESS_ROLLBACK_ISSUE` | unset | since 1.4.0. Post-deploy wording only: `1`, `true` or `yes` says a CI step opens a rollback issue on a FAIL (the reason says `open a rollback issue`); `0`, `false` or `no` says none does (`decide whether to roll back`). Unset: GitHub Actions has the step, anything else does not |
 | `HARNESS_REQUIRE_ARTEFACTS` | unset | since 1.4.0. A comma separated list of artefacts (`image-manifest`, `sbom`, `vulns`, `runtime`, `startup`, `bus`), or `static` (the first three), or `all`, whose "not collected" gap is a failing hunk instead of an informational one. It only adds to what is already required (`runtime` and `startup`); a name it does not know is an error (exit 2), so a typo cannot loosen a gate. See [Not collected](#not-collected-one-convention) |
+| `HARNESS_MONOREPO_DIR` | unset | since 1.8.0. The monorepo checkout `harness release` reads `release/deployed.json` (the baseline, when `--baseline` is `prod` or omitted) and `release/claims.yaml` (when `--claims` is omitted) from; `--monorepo` overrides |
 | `HARNESS_REQUIRE_STATIC` | unset | `1`, `true` or `yes`, since 1.2.0: the same as `HARNESS_REQUIRE_ARTEFACTS=static`, kept as an alias; the two add up |
 
 Stdout is for people, except `harness version --json`. The last lines of
@@ -921,6 +937,35 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.8.0 (minor; one command: `harness release`)
+
+The release note is [releases/1.8.0.md](releases/1.8.0.md). Additive for a consumer
+written against 1.7.0: no `report.json` field, exit code of an existing command, flag
+or payload changes.
+
+- `harness release --candidate <tag> [--baseline <tag|prod>] [--monorepo <dir>]
+  [--claims f] [--rules f] [--fast] [--open] [--out dir] [--dry-run]` (not stable): the
+  gate's plan as seven stages (resolve, noise, changes, release, rehearse, score,
+  report), asking nothing. The baseline is `--baseline`, else `tag` in
+  `release/deployed.json` of the monorepo checkout (`--monorepo`, else
+  `HARNESS_MONOREPO_DIR`; its `digests` pin production), else
+  `HARNESS_PRODUCTION_TAG`, else exit `2`. The local noise store's A/A is reused when
+  it licenses a FAIL; otherwise an A/A of the baseline (3 runs) runs first, and a
+  dirty one stops the line before any A/B (exit `2`, with each difference that needs
+  a mask reviewed). The release step is 3 runs with k6 `20x30s`; a FAIL still writes
+  the report and exits `1`. `--fast` is one run, no load, no rehearsals and no A/A,
+  with a banner that the report cannot be used for a go decision. Ctrl-C takes the
+  stacks down (`harness stack down`) and exits `2`. `changes` and `score` are seams
+  that report "not built yet" and can never change the exit code.
+- A new output directory, `<timestamp>-release-command/`, with `status.json`
+  ([`release-status.schema.json`](contract/release-status.schema.json)),
+  `report.md`, `report.html`, `gate.md` and `gate.json`
+  ([Output directory](#output-directory)).
+- New flags, not stable: `--candidate`, `--baseline`, `--monorepo`, `--fast`,
+  `--open`. New environment variable: `HARNESS_MONOREPO_DIR`.
+- `pnpm release` is unchanged (it is still `harness run --mode release`); the one
+  command is `pnpm harness release`.
 
 ### 1.7.0 (minor; release tags from a workflow)
 

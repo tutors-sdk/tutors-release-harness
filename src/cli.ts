@@ -19,7 +19,7 @@ import { harnessInfo } from "./version.ts";
 import { helpFor, parseArgsErrorText } from "./local/usage.ts";
 import { RequirementError, requirements } from "./not-collected.ts";
 import { previewResolve } from "./ci/main-preview.ts";
-import { UsageError, doctorCommand, guardCommand, localCommand, noiseCommand, overrideCommand, pruneCommand, recordAppliedOverride, reportsCommand, scorecardCommand, vulnDbCommand } from "./local/cli.ts";
+import { UsageError, doctorCommand, guardCommand, localCommand, noiseCommand, overrideCommand, pruneCommand, recordAppliedOverride, releaseCommand, reportsCommand, scorecardCommand, vulnDbCommand } from "./local/cli.ts";
 import { defaultNoise } from "./local/noise-store.ts";
 
 const USAGE = `tutors-release-harness
@@ -147,6 +147,16 @@ const USAGE = `tutors-release-harness
       Each is what its workflow does, as one command, from the same harness commands (--dry-run prints them).
       All take --port-offset <n> to move the compose stack's host ports beside a stack of your own.
       A run holds a lock: one per machine at a time.
+  harness release --candidate <tag> [--baseline <tag|prod>] [--monorepo dir] [--claims f] [--rules f] [--fast] [--open] [--out dir] [--dry-run]
+      A pushed candidate to a report, asking nothing: resolve (the baseline, images ensure), noise (the local store's A/A
+      when clean and at most 7 days old, else an A/A of the baseline, 3 runs), changes (not built yet), release (3 runs,
+      k6 20x30s, claims, rules), rehearse (migration, upgrade), score (not built yet), report. --baseline prod or none reads
+      release/deployed.json in the monorepo checkout (--monorepo or HARNESS_MONOREPO_DIR), else HARNESS_PRODUCTION_TAG, else
+      exit 2; --claims defaults to release/claims.yaml there. A stage that stops the line (images missing, a dirty A/A,
+      a gate FAIL) says so and the next step; the report is written whatever happened, into
+      out/<timestamp>-release-command/ (report.md, report.html, gate.md, gate.json, status.json as it goes). Ctrl-C takes
+      the stacks down first. --fast: one run, no load, no rehearsals, no A/A; its report says it cannot be used for a go
+      decision. --open opens report.html. Exit 0 pass or warn, 1 FAIL, 2 not judged or usage. Not stable.
 `;
 
 function fail(message: string): never {
@@ -243,6 +253,9 @@ async function main(argv: string[]): Promise<number> {
       "older-than-days": { type: "string" },
       "keep-last": { type: "string" },
       "image-cache-days": { type: "string" },
+      candidate: { type: "string" },
+      baseline: { type: "string" },
+      monorepo: { type: "string" },
       screenshots: { type: "boolean", default: true },
       axe: { type: "boolean", default: true },
       focus: { type: "boolean", default: true },
@@ -259,6 +272,8 @@ async function main(argv: string[]): Promise<number> {
       strict: { type: "boolean", default: false },
       "no-load": { type: "boolean", default: false },
       force: { type: "boolean", default: false },
+      open: { type: "boolean", default: false },
+      fast: { type: "boolean", default: false },
       json: { type: "boolean", default: false },
       help: { type: "boolean", short: "h", default: false }
     },
@@ -447,6 +462,8 @@ async function main(argv: string[]): Promise<number> {
       return previewResolve(values);
     case "local":
       return localCommand(positionals[0], values);
+    case "release":
+      return releaseCommand(values);
     case "journeys":
       for (const j of journeys) console.log(`${j.name.padEnd(34)} set=${j.set.padEnd(9)} ${j.anonymous ? "anonymous" : "signed-in"}`);
       return 0;

@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { userInfo } from "node:os";
 import { basename, join, resolve } from "node:path";
@@ -13,7 +13,9 @@ import { LockHeldError, acquireLock, lockHolder } from "./lock.ts";
 import { realExec } from "../images.ts";
 import { COMPARE_DEFAULTS, ReleaseResolutionError, planCompare, realFetch, renderDryRun, resolveLastRelease, runCompare, type FetchLike } from "./compare.ts";
 import { realVulnDbDeps, vulnDbStatus, vulnDbUpdate } from "./vuln-db.ts";
-import { noiseHistoryCommand, noiseStatusCommand, recordNight } from "./noise-store.ts";
+import { describeStatus, noiseHistoryCommand, noiseStatusCommand, recordNight } from "./noise-store.ts";
+import { isTag } from "../release-record.ts";
+import { BaselineError, RELEASE_DEFAULTS, decideNoise, openerFor, planRelease, renderReleasePlan, resolveBaseline, runRelease, type Baseline } from "./release.ts";
 import { PRUNE_DEFAULTS, prune, renderPrune } from "./prune.ts";
 import { keepReport } from "../ci/report-archive.ts";
 import { readReport, readRulePrs, renderScorecard, scorecard } from "../ci/scorecard.ts";
@@ -229,15 +231,20 @@ export function pruneCommand(v: Values, deps: { home?: string; now?: Date; log?:
 
 const outRoot = () => resolve(ROOT, "out");
 
-/** `toStderr`: a child's stdout goes to stderr too (`local compare --json` keeps stdout for its one JSON document). */
-function realExecutor(log: (m: string) => void, toStderr = false): Executor {
+/**
+ * `toStderr`: a child's stdout goes to stderr too (`local compare --json` keeps stdout for its one JSON document).
+ * `root`: where the children write their run directories (`--out`). `onSignal`: a child ended by a signal (Ctrl-C reaches it too).
+ */
+function realExecutor(log: (m: string) => void, o: { toStderr?: boolean; root?: string; onSignal?: (signal: NodeJS.Signals) => void } = {}): Executor {
+  const root = o.root ?? outRoot();
   return {
     harness: (argv, env) => {
-      const r = spawnSync(process.execPath, [join(ROOT, "bin", "harness.mjs"), ...argv], { cwd: ROOT, stdio: toStderr ? ["inherit", 2, 2] : "inherit", env: { ...process.env, ...env } });
+      const r = spawnSync(process.execPath, [join(ROOT, "bin", "harness.mjs"), ...argv], { cwd: ROOT, stdio: o.toStderr ? ["inherit", 2, 2] : "inherit", env: { ...process.env, ...env } });
+      if (r.signal) o.onSignal?.(r.signal);
       return r.status ?? 2;
     },
-    latestRun: (mode, since) => latestRunIn(outRoot(), mode, since),
-    latestRecorded: () => latestRecordedIn(outRoot()),
+    latestRun: (mode, since) => latestRunIn(root, mode, since),
+    latestRecorded: () => latestRecordedIn(root),
     log
   };
 }
@@ -491,7 +498,7 @@ export async function compareCommand(v: Values, deps: CompareDeps = {}): Promise
   return runCompare({
     plan,
     env: planEnv,
-    ex: deps.ex ?? realExecutor(say, json),
+    ex: deps.ex ?? realExecutor(say, { toStderr: json }),
     lock: () => acquireLock(join(locksDir(home), "run.lock"), "harness local compare"),
     a,
     b: options.candidate,
@@ -502,4 +509,95 @@ export async function compareCommand(v: Values, deps: CompareDeps = {}): Promise
     say,
     emit
   });
+}
+
+// ---- harness release ----------------------------------------------------------------------------------
+
+export interface ReleaseCommandDeps {
+  env?: NodeJS.ProcessEnv;
+  ex?: Executor;
+  home?: string;
+  now?: () => Date;
+  say?: (message: string) => void;
+  /** Ctrl-C, for a test; the real one is SIGINT, or a child that SIGINT ended. */
+  interrupted?: () => boolean;
+  open?: (file: string) => void;
+}
+
+/**
+ * `harness release --candidate <tag>`: resolve, noise, changes, release, rehearse, score, report (src/local/release.ts).
+ * Every flag and the baseline are checked before anything is pulled; a usage error writes nothing.
+ */
+export function releaseCommand(v: Values, deps: ReleaseCommandDeps = {}): number {
+  const env = deps.env ?? process.env;
+  const say = deps.say ?? ((m: string) => console.log(m));
+  const now = deps.now ?? (() => new Date());
+  const candidate = str(v, "candidate");
+  if (!candidate) throw new UsageError("release needs --candidate <tag> (the pushed candidate, e.g. 16.3.0-rc.1)");
+  if (!isTag(candidate)) throw new UsageError(`--candidate takes a tag (e.g. 16.3.0-rc.1), not "${candidate}"`);
+  let baseline: Baseline;
+  try {
+    baseline = resolveBaseline({ ...(str(v, "baseline") ? { baseline: str(v, "baseline")! } : {}), ...(str(v, "monorepo") ? { monorepo: resolve(str(v, "monorepo")!) } : {}), env });
+  } catch (e) {
+    if (e instanceof BaselineError) throw new UsageError(e.message);
+    throw e;
+  }
+  const monorepo = str(v, "monorepo") ?? env.HARNESS_MONOREPO_DIR?.trim();
+  // The claims the release carries: --claims, else release/claims.yaml in the monorepo checkout, when there is one.
+  const monorepoClaims = monorepo ? resolve(monorepo, "release", "claims.yaml") : undefined;
+  const claims = str(v, "claims") ? resolve(str(v, "claims")!) : monorepoClaims && existsSync(monorepoClaims) ? monorepoClaims : undefined;
+  const rulesArg = str(v, "rules");
+  const rules = rulesArg ? (isUrl(rulesArg) ? rulesArg : resolve(rulesArg)) : undefined;
+  const fast = flag(v, "fast");
+  const out = str(v, "out") ? resolve(str(v, "out")!) : undefined;
+  const home = deps.home ?? harnessHome(env);
+  const noise = decideNoise(describeStatus(noiseDir(home), now(), RELEASE_DEFAULTS.noiseMaxAgeDays), fast);
+  const planEnv = { ...workflowEnv(env), ...portEnv(integer(v, "port-offset", 0), env) };
+  const options = { candidate, baseline, fast, ...(claims ? { claims } : {}), ...(rules ? { rules } : {}), ...(out ? { out } : {}) };
+  if (flag(v, "dry-run")) {
+    say(renderReleasePlan({ candidate, baseline, fast, stages: planRelease(options, noise), env: planEnv }));
+    return 0;
+  }
+  mkdirSync(home, { recursive: true });
+  let release: () => void;
+  try {
+    release = acquireLock(join(locksDir(home), "run.lock"), "harness release");
+  } catch (e) {
+    if (!(e instanceof LockHeldError)) throw e;
+    console.error(e.message);
+    return 2;
+  }
+  let stop = false;
+  const onSigint = () => {
+    stop = true;
+  };
+  process.on("SIGINT", onSigint);
+  try {
+    say(`harness release: ${candidate} beside ${baseline.tag} (${baseline.how}); state in ${home}`);
+    if (claims) say(`claims: ${claims}`);
+    const outcome = runRelease(
+      { ...options, outRoot: out ?? outRoot(), noise },
+      {
+        ex: deps.ex ?? realExecutor(say, { root: out ?? outRoot(), onSignal: (signal) => (stop ||= signal === "SIGINT") }),
+        env: planEnv,
+        now,
+        say,
+        interrupted: deps.interrupted ?? (() => stop),
+        ...(flag(v, "open") ? { open: deps.open ?? ((file: string) => realOpen(file, say)) } : {})
+      }
+    );
+    if (env.GITHUB_TOKEN) say(`GITHUB_TOKEN is set, but posting to a pull request is not built yet; the comment is ${outcome.files.md}`);
+    return outcome.code;
+  } finally {
+    process.off("SIGINT", onSigint);
+    release();
+  }
+}
+
+/** --open: the platform's opener, detached; a machine without one says so and goes on. */
+function realOpen(file: string, say: (m: string) => void): void {
+  const { command, args } = openerFor(process.platform, file);
+  const child = spawn(command, args, { detached: true, stdio: "ignore", windowsVerbatimArguments: process.platform === "win32" });
+  child.on("error", (e) => say(`--open: could not run ${command} (${e.message}); open ${file} yourself`));
+  child.unref();
 }
