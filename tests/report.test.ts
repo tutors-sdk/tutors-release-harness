@@ -140,3 +140,24 @@ describe("writeReports", () => {
     expect(readFileSync(files.md, "utf8")).toContain("FAIL");
   });
 });
+
+describe("report.md: the detail of each unclaimed difference", () => {
+  it("shows what changed under the table, collapsed, fenced so the detail cannot break out", async () => {
+    const { detailsMarkdown } = await import("../src/report/markdown.ts");
+    const md = renderMarkdown({ ...report, compare: matchClaims(hunks, []) });
+    expect(md).toContain("<details><summary>Detail of 1 difference(s)</summary>");
+    expect(md).toContain('+ - note "<planted>"');
+    expect(renderMarkdown(report)).not.toContain("Detail of"); // the only hunk with a detail is claimed
+    const fenced = detailsMarkdown([{ artefact: "console", scope: "reader:note", detail: "a ``` inside" }]).join("\n");
+    expect(fenced).toContain("````\na ``` inside\n````");
+  });
+
+  it("cuts a long detail and says where the rest is, and lists no more than twenty", async () => {
+    const { detailsMarkdown, DETAIL_CHARS, DETAIL_HUNKS } = await import("../src/report/markdown.ts");
+    const long = detailsMarkdown([{ artefact: "focus", scope: "reader:course", detail: "x".repeat(DETAIL_CHARS + 10) }]).join("\n");
+    expect(long).toContain("… (10 more characters in report.json)");
+    const many = detailsMarkdown(Array.from({ length: DETAIL_HUNKS + 3 }, (_, i) => ({ artefact: "console", scope: `p${i}`, detail: "m" })));
+    expect(many.join("\n")).toContain("… and 3 more in report.json.");
+    expect(detailsMarkdown([{ artefact: "dom", scope: "x" }])).toEqual([]);
+  });
+});

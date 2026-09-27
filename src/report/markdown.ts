@@ -51,6 +51,7 @@ export function renderMarkdown(report: RunReport): string {
     lines.push("|---|---|---|");
     for (const h of compare.unclaimed) lines.push(`| \`${h.artefact}\` | \`${h.scope}\` | ${escape(h.summary)} |`);
     lines.push("");
+    lines.push(...detailsMarkdown(compare.unclaimed));
     lines.push("Claim each one in the release's `claims.yaml` with the Rule or changelog entry that intends it, or fix it.");
     lines.push("");
   }
@@ -152,4 +153,27 @@ export function renderMarkdown(report: RunReport): string {
 
 function escape(text: string): string {
   return text.replaceAll("|", "\\|").replaceAll("\n", " ");
+}
+
+/** How many unclaimed hunks show their detail in report.md, and how much of each: the full detail stays in report.json and report.html. */
+export const DETAIL_HUNKS = 20;
+export const DETAIL_CHARS = 1500;
+
+/**
+ * The detail of each unclaimed difference (the console message, the keyboard order's diff), collapsed. The table's summary
+ * says what kind of difference it is; this says what it is, which is what a rollback issue or a PR comment needs to be
+ * acted on without the report artifact.
+ */
+export function detailsMarkdown(hunks: { artefact: string; scope: string; detail?: string }[]): string[] {
+  const withDetail = hunks.filter((h) => h.detail);
+  if (!withDetail.length) return [];
+  const lines = [`<details><summary>Detail of ${withDetail.length} difference(s)</summary>`, ""];
+  for (const h of withDetail.slice(0, DETAIL_HUNKS)) {
+    const text = h.detail!.length > DETAIL_CHARS ? `${h.detail!.slice(0, DETAIL_CHARS)}\n… (${h.detail!.length - DETAIL_CHARS} more characters in report.json)` : h.detail!;
+    const fence = "`".repeat(Math.max(3, ...[...text.matchAll(/`+/g)].map((m) => m[0].length + 1)));
+    lines.push(`\`${h.artefact}\` \`${h.scope}\``, "", fence, text, fence, "");
+  }
+  if (withDetail.length > DETAIL_HUNKS) lines.push(`… and ${withDetail.length - DETAIL_HUNKS} more in report.json.`, "");
+  lines.push("</details>", "");
+  return lines;
 }
