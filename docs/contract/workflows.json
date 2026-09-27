@@ -25,8 +25,8 @@
     }
   },
   "repositoryVariables": {
-    "HARNESS_IMAGE_PREFIX": { "default": "quay.io/tutors-sdk/tutors-{app}", "usedBy": ["ci.yml", "nightly-noise.yml", "release.yml", "weekly-mutants.yml"] },
-    "HARNESS_COSIGN_IDENTITY": { "default": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@", "usedBy": ["ci.yml", "nightly-noise.yml", "release.yml", "weekly-mutants.yml"] },
+    "HARNESS_IMAGE_PREFIX": { "default": "quay.io/tutors-sdk/tutors-{app}", "usedBy": ["ci.yml", "main-preview.yml", "nightly-noise.yml", "release.yml", "weekly-mutants.yml"] },
+    "HARNESS_COSIGN_IDENTITY": { "default": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@", "usedBy": ["ci.yml", "main-preview.yml", "nightly-noise.yml", "release.yml", "weekly-mutants.yml"] },
     "HARNESS_PRODUCTION_TAG": { "default": "main", "usedBy": ["ci.yml", "nightly-noise.yml", "weekly-mutants.yml"] },
     "HARNESS_PRODUCTION_URLS": {
       "default": "reader=https://tutors.dev,catalogue=https://catalogue.tutors.dev,live=https://live.tutors.dev",
@@ -42,17 +42,18 @@
     "noise-report": { "workflow": "nightly-noise.yml", "retentionDays": 8 },
     "mutant-reports": { "workflow": "weekly-mutants.yml", "retentionDays": 14 },
     "mutant-noise-report": { "workflow": "weekly-mutants.yml", "retentionDays": 7 },
-    "harness-ci": { "workflow": "ci.yml", "retentionDays": 7 }
+    "harness-ci": { "workflow": "ci.yml", "retentionDays": 7 },
+    "main-preview-report": { "workflow": "main-preview.yml", "retentionDays": 14 }
   },
   "tools": {
     "$comment": "Installed by every job that runs `harness images ensure`. Verifying the monorepo's signatures needs cosign >= 3.",
-    "cosign": { "action": "sigstore/cosign-installer", "minimumMajor": 3, "usedBy": ["ci.yml", "nightly-noise.yml", "release.yml", "weekly-mutants.yml"] },
+    "cosign": { "action": "sigstore/cosign-installer", "minimumMajor": 3, "usedBy": ["ci.yml", "main-preview.yml", "nightly-noise.yml", "release.yml", "weekly-mutants.yml"] },
     "grype": {
       "$comment": "Since 1.4.0. Installed, at one pinned version, by the jobs that judge images: nightly noise job, release job, mutants job. Not ci.yml (a smoke run) or post-deploy.yml (no images), and not the release workflow's migration and upgrade jobs (the release job judges the images).",
       "action": "anchore/scan-action/download-grype",
       "version": "v0.119.0",
-      "usedBy": ["nightly-noise.yml", "release.yml", "weekly-mutants.yml"],
-      "requireStatic": { "nightly-noise.yml": true, "release.yml": true, "weekly-mutants.yml": false }
+      "usedBy": ["main-preview.yml", "nightly-noise.yml", "release.yml", "weekly-mutants.yml"],
+      "requireStatic": { "main-preview.yml": true, "nightly-noise.yml": true, "release.yml": true, "weekly-mutants.yml": false }
     },
     "syft": { "$comment": "Since 1.4.0: pinned. Generates the mutants' SBOMs; the images of a nightly and a release carry an SBOM attestation.", "action": "anchore/sbom-action/download-syft", "version": "v1.52.0", "usedBy": ["weekly-mutants.yml"] }
   },
@@ -67,6 +68,7 @@
   "forbiddenPermissions": ["pull-requests", "checks", "statuses", "deployments"],
   "writePermissions": {
     "$comment": "The only `write` scopes any workflow or job holds, all on THIS repository (since 1.2.0 for nightly-noise.yml and release.yml). the key <workflow> means the workflow-level permissions. tests/contract.test.ts fails on any other.",
+    "main-preview.yml": { "publish": ["contents"], "why": "since 1.5.0, pushes the `main-preview` branch: each Main to RC forecast's report and scorecard (reports/index.json)" },
     "pages.yml": { "deploy": ["id-token", "pages"], "why": "since 1.5.0, deploys the kept reports of the release-records, main-preview and noise branches to GitHub Pages; writes no branch" },
     "nightly-noise.yml": { "publish": ["contents"], "why": "force-pushes the `noise` branch: noise-status.json, noise-history.json, noise-summary.md" },
     "post-deploy.yml": { "<workflow>": ["issues"], "why": "opens the `rollback` issue when post-deploy mode exits 1" },
@@ -90,6 +92,15 @@
     "readBy": ["post-deploy.yml"],
     "fetch": "gh api -H 'Accept: application/vnd.github.raw' repos/<repo>/contents/releases/<tag>.json?ref=release-records",
     "schema": "release-record.schema.json"
+  },
+  "mainPreviewBranch": {
+    "$comment": "Since 1.5.0. Main to RC: release mode with production on side a and the monorepo's main on side b, a forecast kept apart from the release records so post-deploy never mistakes it for a judged candidate. Not force-pushed; the last 60 runs are kept.",
+    "branch": "main-preview",
+    "writtenBy": "main-preview.yml",
+    "job": "publish",
+    "files": ["README.md", "reports/index.json"],
+    "readBy": ["main-preview.yml"],
+    "fetch": "gh api -H 'Accept: application/vnd.github.raw' repos/<repo>/contents/reports/index.json?ref=main-preview"
   },
   "runNames": {
     "$comment": "Since 1.4.0. The title of a run (the API's display_title), so the monorepo's release-harness-report workflow can find the run a release-candidate dispatch started. Matched as a whole tag: rc.1 does not match rc.10.",
