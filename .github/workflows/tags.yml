@@ -33,7 +33,9 @@ jobs:
       - name: Tag each version that has no tag
         env:
           GH_TOKEN: ${{ github.token }}
+          GITHUB_API_REPO: ${{ github.repository }}
         run: |
+          set -o pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           AUTH="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)" \

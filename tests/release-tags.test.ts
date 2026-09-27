@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -59,6 +59,34 @@ describe("scripts/release-tags.sh", () => {
     run(dir);
     expect(git(dir, "rev-parse", "v1.0.0^{commit}")).toBe(commits.onBranch);
     expect(run(dir).stdout.trim()).toBe("");
+  });
+
+  /** A bare remote whose pre-receive hook refuses the named tags, as GitHub refuses a workflow token's tag on a commit with other workflows. */
+  function refusingRemote(...refused: string[]): string {
+    const remote = mkdtempSync(join(tmpdir(), "release-tags-remote-"));
+    git(remote, "init", "-q", "--bare");
+    const hook = join(remote, "hooks", "pre-receive");
+    writeFileSync(hook, `#!/bin/sh\nwhile read old new ref; do case "$ref" in ${refused.map((t) => `refs/tags/${t}`).join("|")}) echo "refusing $ref" >&2; exit 1;; esac; done\n`);
+    chmodSync(hook, 0o755);
+    return remote;
+  }
+  const push = (dir: string, remote: string) => spawnSync("bash", [SCRIPT], { cwd: dir, encoding: "utf8", env: { ...process.env, GIT_COMMITTER_NAME: "t", GIT_COMMITTER_EMAIL: "t@t", REMOTE: remote, AUTH: "", GITHUB_API_REPO: "", GH_TOKEN: "" } });
+
+  it("an older version the remote refuses is named and skipped, and the rest are still tagged", () => {
+    const { dir } = repo();
+    const remote = refusingRemote("v1.0.0");
+    const r = push(dir, remote);
+    expect(r.status, r.stderr).toBe(0);
+    expect(r.stderr).toContain("not tagged: v1.0.0");
+    expect(git(remote, "tag", "-l")).toBe("v1.1.0");
+    expect(git(dir, "tag", "-l")).toBe("v1.1.0"); // the refused tag is not left behind locally, so a later run tries again
+  });
+
+  it("fails when the newest version cannot be tagged", () => {
+    const { dir } = repo();
+    const r = push(dir, refusingRemote("v1.1.0"));
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain("the newest version, v1.1.0, could not be tagged");
   });
 
   it("pushes each new tag to REMOTE", () => {
