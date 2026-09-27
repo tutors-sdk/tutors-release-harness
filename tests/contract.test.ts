@@ -208,7 +208,7 @@ describe("report.json", () => {
     const cli = json("docs/contract/cli.json");
     for (const flag of cli.flags.filter((f: { since?: string }) => f.since === "1.2.0")) expect(changes, flag.name).toContain(`--${flag.name === "runtime" ? "no-runtime" : flag.name}`);
     for (const [name, v] of Object.entries(cli.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.2.0")) expect(changes, name).toContain(name);
-    expect(CONTRACT_VERSION).toBe("1.6.0");
+    expect(CONTRACT_VERSION).toBe("1.7.0");
     // The harness version is package.json's and moves at least as far as the contract's (docs/contract.md, Versioning):
     // a mask or engine PR bumps the patch of the harness alone, so do not pin a literal here.
     expect(json("package.json").version).toBe(HARNESS_VERSION);
@@ -897,6 +897,15 @@ describe("workflows", () => {
     }
     const declared = Object.fromEntries(Object.entries(workflowsContract.writePermissions).filter(([k]) => !k.startsWith("$")).map(([f, v]) => [f, Object.fromEntries(Object.entries(v).filter(([k]) => k !== "why"))]));
     expect(actual).toEqual(declared);
+  });
+
+  it("release tags come from tags.yml alone, through scripts/release-tags.sh, which never moves or re-makes a tag", () => {
+    const users = files.filter((f) => text[f]!.includes("release-tags.sh"));
+    expect(users).toEqual(["tags.yml"]);
+    const script = readFileSync(resolve(ROOT, "scripts/release-tags.sh"), "utf8");
+    expect(script).not.toMatch(/--force|-f\b|git tag -d|:refs\/tags/);
+    expect(script).toContain('git rev-parse -q --verify "refs/tags/${tag}"');
+    expect(contractMd).toContain("tags.yml");
   });
 
   it("nothing pushes, tags or releases anywhere but the noise, release-records and main-preview branches of this repository, each from its own workflow", () => {
