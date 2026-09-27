@@ -1,0 +1,79 @@
+# The kept reports, as a website anyone can open and share: GitHub Pages.
+#
+# The branches the other workflows push already keep every report.html with a
+# reports/index.json (docs/contract.md, "Kept reports"). This copies each
+# branch's reports/ beside site/index.html, which lists them, and deploys the
+# lot. Nothing is generated or judged here, and no branch is written.
+#
+#   <pages>/                                  site/index.html
+#   <pages>/release-records/reports/...       release candidates
+#   <pages>/main-preview/reports/...          Main to RC forecasts
+#   <pages>/noise/reports/...                 nightly A/A
+#
+# Rebuilt after every workflow that keeps a report, when the page changes on
+# main, and by hand. Repository setting: Pages, source "GitHub Actions".
+name: Report pages
+
+on:
+  workflow_run:
+    workflows: ["Nightly noise (A/A)", "Release harness", "Main to RC"]
+    types: [completed]
+  push:
+    branches: [main]
+    paths: ["site/**", ".github/workflows/pages.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Collect the kept reports
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: site
+      - name: Copy each branch's reports beside the index
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p _site
+          cp site/index.html _site/
+          remote="https://github.com/${GITHUB_REPOSITORY}.git"
+          auth="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          for branch in release-records main-preview noise; do
+            if git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth}" clone -q --depth 1 --branch "$branch" "$remote" "src-$branch" 2>/dev/null && [ -f "src-$branch/reports/index.json" ]; then
+              mkdir -p "_site/$branch" && cp -R "src-$branch/reports" "_site/$branch/reports"
+              echo "$branch: $(jq '.runs | length' "_site/$branch/reports/index.json") report(s)"
+            else
+              echo "$branch: no kept reports yet"
+            fi
+          done
+          jq -n --arg at "$(date -u +%FT%TZ)" '{builtAt: $at}' > _site/built.json
+          touch _site/.nojekyll
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    name: Publish to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Deploys the site and nothing else: no branch, tag, issue or other repository.
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
