@@ -86,6 +86,11 @@ export interface ScoreboardLine {
   maskIds?: string[];
   /** Since 1.12.0: the reviewer's glance as the line was appended: its items, their marks so far, and what it looked at. */
   glance?: GlanceSummary;
+  /**
+   * Since 1.13.0: the countermeasures open in the kaizen register (kaizen/README.md, `harness why register`) when the line
+   * was appended. Over releases, a count that only rises is the register's own run rule: the loop is not closing.
+   */
+  openCountermeasures?: number;
   runUrl?: string;
 }
 
@@ -115,6 +120,8 @@ export interface LineSources {
   tag?: string;
   now: Date;
   runUrl?: string;
+  /** Open countermeasures in the kaizen register, when it was read. */
+  openCountermeasures?: number;
 }
 
 export class ScoreboardInputError extends Error {}
@@ -181,6 +188,7 @@ export function buildLine(s: LineSources): ScoreboardLine {
     prs: s.changes ? prLines(s.changes) : null,
     ...(masksApplied ? { maskIds: masksApplied.map(([id]) => id).sort() } : {}),
     ...(c.glanceBasis ? { glance: glanceSummary(c, s.marks ?? []) } : {}),
+    ...(s.openCountermeasures !== undefined ? { openCountermeasures: s.openCountermeasures } : {}),
     ...(s.runUrl ? { runUrl: s.runUrl } : {})
   };
 }

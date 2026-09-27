@@ -62,7 +62,7 @@ export interface RunRuleFiring {
   current: boolean;
   /** The window spans a change of weights or rules, so part of the movement may be the rules, not the product. */
   acrossWeightsChange: boolean;
-  /** The kaizen item it opens (C4 writes it into kaizen/README.md; until then it is opened by hand). */
+  /** The kaizen item it opens: `harness release` writes it as a 5 Whys stub (`harness why --finding <rule>:<series>`, since 1.13.0). */
   kaizen: string;
 }
 
@@ -143,15 +143,25 @@ export function runRules(series: SeriesId, points: { tag: string; value: number 
   return out;
 }
 
+/** Why the register's rule has nothing to read: no line has recorded the open countermeasures yet. */
+export const NO_COUNTERMEASURES = "no scoreboard line records openCountermeasures yet (since 1.13.0, from the kaizen register, kaizen/README.md)";
+
 /**
  * The kaizen loop's own run rule (C4): open countermeasures that only rise mean the loop is not closing. Fires on three
- * consecutive rises. Without a register there is nothing to count, and it says so.
+ * consecutive rises (four releases, each higher than the one before). The counts are each release's `openCountermeasures`
+ * (its latest run), releases without one left out. Without any there is nothing to count, and it says so.
  */
-export function countermeasuresRising(counts: number[] | undefined, reason = "kaizen/README.md does not exist yet: the register comes with C4 (harness why)"): Trends["runRules"]["countermeasures"] {
+export function countermeasuresRising(counts: number[] | undefined, reason = NO_COUNTERMEASURES): Trends["runRules"]["countermeasures"] {
   if (!counts) return { status: "not measured", reason };
   const last = counts.slice(-(RUN_RULE_DECLINES + 1));
   const rising = last.length === RUN_RULE_DECLINES + 1 && last.every((x, i) => i === 0 || x > last[i - 1]!);
   return { status: "measured", rising, counts };
+}
+
+/** Each release's open countermeasures, oldest first; undefined when no line has recorded one. */
+export function openCounts(lines: Pick<ScoreboardLine, "openCountermeasures">[]): number[] | undefined {
+  const counts = lines.map((l) => l.openCountermeasures).filter((n): n is number => typeof n === "number");
+  return counts.length ? counts : undefined;
 }
 
 // ---- self-health -------------------------------------------------------------------------------------------
@@ -251,7 +261,7 @@ export function trends(i: TrendsInputs): Trends {
         contributors: { note: CONTRIBUTOR_NOTE, rows: rows(authorRows).map(({ key, ...r }) => ({ author: key, ...r })) }
       }
     },
-    runRules: { firings, current: firings.filter((f) => f.current), countermeasures: countermeasuresRising(i.countermeasures, i.countermeasuresReason) },
+    runRules: { firings, current: firings.filter((f) => f.current), countermeasures: countermeasuresRising(i.countermeasures ?? openCounts(releases.map((r) => r.latest)), i.countermeasuresReason) },
     deviations: releases.filter((r) => r.runs > 1).map((r) => ({ tag: r.latest.tag, runs: r.runs, firstRcs: r.first.rcs, latestRcs: r.latest.rcs })),
     selfHealth: selfHealth(i.mutants ?? [], i.noise, i.now, i.noiseReason)
   };

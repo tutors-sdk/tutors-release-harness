@@ -192,12 +192,13 @@ describe("run rules", () => {
     expect(t.deviations).toEqual([{ tag: "4", runs: 2, firstRcs: 60, latestRcs: 83 }]);
   });
 
-  it("open countermeasures only rising is a hook for C4: not measured without the register, fires on three rises when it has one", () => {
+  it("open countermeasures only rising (C4): not measured until a line records the register's count, fires on three rises", () => {
     expect(countermeasuresRising(undefined)).toMatchObject({ status: "not measured", reason: expect.stringContaining("kaizen/README.md") });
     expect(countermeasuresRising([1, 2, 3, 4])).toMatchObject({ status: "measured", rising: true });
     expect(countermeasuresRising([1, 2, 3])).toMatchObject({ rising: false });
     expect(countermeasuresRising([1, 2, 2, 4])).toMatchObject({ rising: false });
-    expect(existsSync(resolve(ROOT, "kaizen/README.md"))).toBe(false);
+    // since 1.13.0 the register exists; its count reaches the rule through the scoreboard lines (tests/why.test.ts)
+    expect(existsSync(resolve(ROOT, "kaizen/README.md"))).toBe(true);
   });
 
   it("the lines harness release prints: each firing opens a kaizen item, or none fires", () => {

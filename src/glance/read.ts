@@ -14,7 +14,7 @@ import { GLANCE_KINDS, glance, type Glance, type GlanceInputs } from "./rank.ts"
 
 const readJson = (file: string): unknown => JSON.parse(readFileSync(file, "utf8"));
 
-function captures(runDir: string): NonNullable<GlanceInputs["captures"]> {
+export function captures(runDir: string): NonNullable<GlanceInputs["captures"]> {
   const out: NonNullable<GlanceInputs["captures"]> = {};
   const missing: string[] = [];
   for (const side of ["a", "b"] as const) {

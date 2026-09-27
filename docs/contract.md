@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.12.0`
+Contract version: `1.13.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -35,9 +35,9 @@ Three numbers, all stamped where a reader can see them:
 
 ```console
 $ pnpm harness version
-harness 1.12.0 (3f2c…) · contract 1.12.0
+harness 1.13.0 (3f2c…) · contract 1.13.0
 $ pnpm harness version --json
-{"version":"1.12.0","gitSha":"3f2c…","contractVersion":"1.12.0"}
+{"version":"1.13.0","gitSha":"3f2c…","contractVersion":"1.13.0"}
 ```
 
 `gitSha` is `git rev-parse HEAD` of the harness checkout, or the
@@ -93,6 +93,7 @@ written whatever happened, a stopped line or Ctrl-C included:
 | `gate.md`, `gate.json` | the combined gate summary `harness local gate` writes to `<timestamp>-gate/`; since 1.9.0 `gate.md` (and so `report.md`) has the RCS, its band and the dimension table right under the Gate |
 | `confidence.json` | since 1.9.0, not stable: [`confidence.json`](#confidencejson-the-release-confidence-score), from the release, migration and upgrade runs. Absent when there was no release run to score (a stopped line before the A/B, Ctrl-C) or when the score could not be computed (the score stage says why) |
 | `glance-marks.jsonl` | since 1.12.0, not stable: [`glance-marks.schema.json`](contract/glance-marks.schema.json), one line per mark `harness glance mark` records ([the reviewer's glance](#the-reviewers-glance)). Absent until the Reviewer marks an item. Since 1.12.0 `gate.md`, `report.md` and `report.html` carry the glance right under the RCS and its band, between `<!-- glance:start -->` and `<!-- glance:end -->`, which a mark re-renders in place |
+| `kaizen/` | since 1.13.0, not stable: one [5 Whys](#the-5-whys-and-the-kaizen-register) stub per trigger that fired, `<date>-<tag>-<finding>.md` (`gate` for a Gate FAIL, `band` for a Red band, `<rule>:<series>` slugged for a run rule firing at this release, `countermeasures-rising`), Why 1 answered from this run's trace; and one for each glance item marked `escalated` (`harness glance mark`). Absent when no trigger fired, and for a `--fast` run. `report.md` and `report.html` list them under "5 Whys (kaizen)" with the register's open and overdue counts |
 | `changes.json` | since 1.10.0, not stable: [`changes.json`](#changesjson-the-change-signals), written by the changes stage (`harness changes --a <baseline> --b <candidate>` in the monorepo checkout) and read by the score as change risk. Absent without a checkout (`--monorepo` or `HARNESS_MONOREPO_DIR`), or when `harness changes` could not run; the stage's note says which, and change risk is then not measured. Since 1.10.0 `gate.md` and `report.md` carry the per-PR table under the dimension table |
 
 Since 1.11.0 `harness release` writes no new file here: after the score it appends the run's
@@ -776,7 +777,8 @@ every candidate's `kind:key` (at most 200) for the scoreboard.
 verified|disputed|escalated --by <name> [--note text]` appends one line to
 `glance-marks.jsonl` beside `confidence.json` ([schema](contract/glance-marks.schema.json)):
 `verified` (looked, agrees with the claim), `disputed` (becomes a new claim or a hold),
-`escalated` (becomes a 5 Whys; the line carries `whyWanted: true`, the seam for `harness why`).
+`escalated` (becomes a 5 Whys; the line carries `whyWanted: true`, and since 1.13.0 the mark writes
+the stub `harness why --finding <kind>:<key>` would into `kaizen/` beside `confidence.json`).
 A changed mind is a new line; the latest line for a finding is its mark, matched by `kind` and
 `key`, so a re-score that reorders the glance keeps it. The mark is shown in each item's `mark`
 (null until there is one) and the glance is re-rendered in `report.md`, `gate.md` and
@@ -858,7 +860,10 @@ optional (absent on older lines): `maskIds`, every mask the release run loaded, 
 beside the run at the time of the append; `harness release` and CI both append when the run
 is scored, before step 8, so today the line reads them `unmarked` and `glance-marks.jsonl`
 holds the record), `checked` (the kinds the glance could check) and `seen` (every candidate's
-`kind:key`): what the next release's novelty reads.
+`kind:key`): what the next release's novelty reads. Since 1.13.0, optional: `openCountermeasures`,
+the countermeasures open in the kaizen register when the line was appended (`harness release` and
+`harness scoreboard append` read the checkout's `kaizen/`; `release.yml`'s `scoreboard` job runs in
+the harness checkout, so CI's lines carry it too).
 
 **Trends** (`harness scoreboard trends [--json] [--site dir]`): one point per release, its tag's
 latest run (every re-run is listed in `deviations` with its first and latest RCS), in the order
@@ -881,13 +886,79 @@ where the series has no value:
 
 Each firing names the series, the release, the window, whether the window spans a change of
 `weightsVersion`, and the kaizen item it opens (`kaizen`). `runRules.current` are those at the
-newest release: what `harness release` prints after the RCS. The kaizen register's own rule, open
-countermeasures only rising, is reported as not measured until `kaizen/README.md` exists (C4).
+newest release: what `harness release` prints after the RCS, and, since 1.13.0, what it opens a
+5 Whys for (`harness why --finding <rule>:<series>`). The kaizen register's own rule, open
+countermeasures only rising (`runRules.countermeasures`), reads each release's `openCountermeasures`
+and fires on three consecutive rises; until a line records one it is not measured, and says so.
 **Advisory: no run rule changes a verdict or an exit code.**
 
 `--site <dir>` writes `scoreboard.html` (self-contained, inline SVG, the bands shaded) and
 `scoreboard.json` (the trends, as `--json` prints them); `pages.yml` publishes both beside the
 kept reports.
+
+## The 5 Whys and the kaizen register
+
+Since 1.13.0, not stable. Source of truth: `src/why/` (`format.ts`: the file and the check;
+`trace.ts`: the stub; `register.ts`: the register). Kaizen: every escape or drop in confidence
+ends in a countermeasure to the system, never in blame.
+
+**Triggers.** The harness opens a 5 Whys, not a person remembering to:
+
+| Trigger (`Trigger:` in the file) | `--finding` | Opened by |
+| --- | --- | --- |
+| `Gate FAIL` | `gate` | `harness release`, on a release run that FAILED |
+| `Red band` | `band` | `harness release`, when the RCS is below 75 |
+| `rollback` | `rollback` | `post-deploy.yml`, in the body of the rollback issue (post-deploy mode exit `1`) |
+| `run rule` | `three-declines:<series>`, `two-of-three-below-75:<series>` (`rcs` or a dimension id), `countermeasures-rising` | `harness release`, for each run rule firing at this release |
+| `escalated glance mark` | `<glance kind>:<key>`, or `glance:<rank>` | `harness glance mark --mark escalated` |
+| `finding` | a hunk id from `report.json` | a person, by hand (in a post-deploy run it is `rollback`, after a Gate FAIL `Gate FAIL`) |
+
+A trigger that did not fire is refused (exit `2`, with the ids the run has): a 5 Whys starts
+from a fact.
+
+**`harness why --run <run dir | harness release dir> --finding <id> [--out kaizen/] [--tag T]
+[--scoreboard f] [--json]`** writes `<out>/<YYYY-MM-DD>-<tag>-<finding slug>.md` (the tag is
+`--tag`, else the run's candidate, else the deployed tag of a post-deploy run; `--scoreboard`,
+default `HARNESS_HOME/scoreboard/releases.jsonl`, is read for a run-rule finding). A file already
+there is left as it is. Exit `0` when written or found, `2` for what it cannot read.
+
+**The file.** Markdown with a shape `harness why check` reads:
+
+| Part | Written by `harness why` | Filled by people |
+| --- | --- | --- |
+| `# 5 Whys: <title>` and `- **Trigger:**`, `**Finding:**`, `**Release:**`, `**Run:**`, `**Opened:**` | yes | |
+| `## Why 1: <question>` | the harness's trace, each line a link or a file: the finding; its artefact and scope; the journeys that reach it (from the run's `capture.json`); the link to the hunk in `report.html`; the covering claim, or the nearest claim and why it did not cover (the matcher's rule: the artefact, then the scope glob against the scope, the route and the page); the PR (one the claim names, else those that changed the hunk's app, said as such) with its files and churn from `changes.json`, and a first contribution as a fact, never a cause (the author is never named); the glance rank and the Reviewer's mark. For `gate`, `band`, `rollback` and a run rule, the whole-release facts instead | corrections, never recollections |
+| `## Why 2` to `## Why 5` | a prompt (an HTML comment, which never counts as an answer) | the answers |
+| `- **Chain ends at:**` `Why 1` to `Why 5`, `- **Ends in:**` `process` or `tool` | | yes |
+| `- **Kind:**` exactly one of `mutant`, `journey`, `mask review`, `EARS spec`, `claim guidance`, `SOP change`, `glance rule`; `- **Countermeasure:**`; `- **Mutant:**` a path under `mutants/` (kind `mutant` only); `- **Owner:**`; `- **Due:**` `YYYY-MM-DD`; `- **Verified by:**` the release it was verified closed in, empty while open | the prompts | yes |
+
+**`harness why check <file|dir...> [--json]`** (a directory is every `.md` in it but
+`README.md`) exits `1` when a file is not ready for the register, naming each problem and its
+reason: an answer missing up to where the chain ends; an answer (or countermeasure) that is only
+"human error", carelessness, a mistake or a person's name (*"human error" is not an answer, it is
+the prompt for the next why*; *a person's name is not a cause: the register records
+countermeasures to the system*); no `Chain ends at`; `Ends in` not a process or a tool; not
+exactly one of the seven kinds; kind `mutant` without a path under `mutants/`; no owner; a due
+date that is not a date; `Verified by` that is not a release. Blame beside a checkable cause is an
+answer. `0` when every file is ready, `2` for a path that does not exist. A docs lint: never a
+release gate, never read by a run.
+
+**The register** is `kaizen/README.md` in this repository. People write its header; the table
+between `<!-- register:start -->` and `<!-- register:end -->` is generated by **`harness why
+register [--dir kaizen] [--write] [--json]`** from the files, one row each: the 5 Whys (linked),
+trigger, release, countermeasure (a `mutant` links its path), owner, due, and "closed in
+<release>" or "open" (with how many problems `why check` still finds). Rows are never edited by
+hand. Without `--write` it prints the table and the counts and exits `1` when `README.md` does not
+say what the files say; with it, it writes and exits `0`. Open is no `Verified by`; overdue is open
+with a due date before today; neither count is written into `README.md` (they would change with
+nothing changed), they are printed: by `harness why register`, and by `harness release` after the
+score (`register: N open countermeasure(s), M overdue …`, SOP step 12). CI's unit job runs `harness
+why check kaizen` and `harness why register --dir kaizen`.
+
+**Closing the loop.** Each scoreboard line records `openCountermeasures`; three consecutive rises
+fire the register's own run rule, which `harness release` opens as a 5 Whys
+(`countermeasures-rising`) listing what is open. **Nothing here changes a verdict, a Gate or an
+exit code**: `harness release` opens the stubs after its exit code is decided.
 
 ## CLI
 
@@ -895,7 +966,7 @@ Full list: [`contract/cli.json`](contract/cli.json). Invoke as `pnpm harness
 <command>` from a checkout (Node ≥ 22, `pnpm install`, and for capturing modes
 `pnpm exec playwright install chromium` and Docker). Commands and flags marked
 `stable: true` there are the ones below; the rest (`harness stack`, `harness
-kind`, `harness journeys`, `harness override`, `harness local`, `harness release` (since 1.8.0), `harness confidence` (since 1.9.0), `harness changes` (since 1.10.0), `harness scoreboard` (since 1.11.0), `harness glance` (since 1.12.0), `harness prune`, `harness reports`, `harness scorecard`, `harness noise
+kind`, `harness journeys`, `harness override`, `harness local`, `harness release` (since 1.8.0), `harness confidence` (since 1.9.0), `harness changes` (since 1.10.0), `harness scoreboard` (since 1.11.0), `harness glance` (since 1.12.0), `harness why` (since 1.13.0), `harness prune`, `harness reports`, `harness scorecard`, `harness noise
 history`, `--substrate`, `--now`, `--masks`, `--snapshot`,
 `--upgrade-*`, `--noise-max-age-days`, `--no-screenshots`, `--no-axe`,
 `--no-focus`, `--no-runtime` and `--startup-restarts` (both since 1.2.0),
@@ -925,7 +996,9 @@ and the flags only it takes (`--history`, `--changelog`; since 1.10.0; it also t
 and `--json`), nor `--scoreboard` of `harness release` (and, since 1.12.0, of `harness
 confidence`), nor `harness guard scoreboard` (since 1.11.0; `guard all` runs it too), nor
 `harness glance` and the flags only it takes (`--item`, `--mark`, `--by`, `--note`; since
-1.12.0; it also takes `--run` and `--json`).
+1.12.0; it also takes `--run` and `--json`), nor `harness why` and the flags only it takes
+(`--finding`, `--write`; since 1.13.0; it also takes `--run`, `--out`, `--tag`, `--scoreboard`,
+`--dir` and `--json`).
 
 | Command | Stable flags |
 | --- | --- |
@@ -1158,7 +1231,8 @@ What it does instead:
   conclusion into a check, is the monorepo's job, with the monorepo's token;
 - in `post-deploy.yml` only, and only with `issues: write` on **this**
   repository: opens an issue labelled `rollback` with `report.md` as its body
-  when post-deploy mode exits `1`;
+  when post-deploy mode exits `1` (since 1.13.0 followed, folded, by the 5 Whys stub
+  `harness why --finding rollback` writes; no new permission);
 - since 1.2.0, in `release.yml` only, the `override-record` job, with
   `issues: write` on **this** repository: opens an issue labelled
   `harness-override` for each FAIL a person overrode;
@@ -1206,6 +1280,36 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.13.0 (minor; the 5 Whys and the kaizen register: `harness why`)
+
+The release note is [releases/1.13.0.md](releases/1.13.0.md), which also sums up the Release
+Confidence companion from 1.8.0. Additive for a consumer written against 1.12.0: no `report.json`
+field, verdict, or exit code of an existing command changes.
+
+- `harness why --run <run dir | harness release dir> --finding <id> [--out kaizen/] [--tag T]
+  [--scoreboard f]` (not stable): writes `kaizen/<date>-<tag>-<finding>.md`, Why 1 answered from
+  the run's own trace, Whys 2-5 blank, the countermeasure one of seven kinds (mutant, journey,
+  mask review, EARS spec, claim guidance, SOP change, glance rule; [the 5 Whys and the kaizen
+  register](#the-5-whys-and-the-kaizen-register)). Finding ids: `gate`, `band`, `rollback`,
+  `<rule>:<series>`, `countermeasures-rising`, a glance item, a hunk id.
+- `harness why check <file|dir...>` (not stable): exit `1` for a 5 Whys not ready for the
+  register, each problem with its Lean reason.
+- `harness why register [--dir kaizen] [--write]` (not stable): the table of `kaizen/README.md`,
+  regenerated from the files; exit `1` without `--write` when it is out of date.
+- `kaizen/README.md`: the register, seeded with its header and an empty table. CI's unit job
+  checks every 5 Whys in `kaizen/` and that the table is regenerated.
+- `harness release`: a Gate FAIL, a Red band, each run rule firing at the release, and open
+  countermeasures only rising each write a stub into `<timestamp>-release-command/kaizen/`;
+  `report.md` and `report.html` list them under "5 Whys (kaizen)" with the register's open and
+  overdue counts, and the terminal prints the same. `harness glance mark --mark escalated` writes
+  the escalated item's stub. No exit code changes.
+- The scoreboard line: optional `openCountermeasures`; the register's run rule (open
+  countermeasures only rising) reads it and is measured from the first line that has it.
+  `harness scoreboard append` records it from the checkout's `kaizen/`.
+- `post-deploy.yml`: the rollback issue's body carries the `harness why --finding rollback` stub,
+  folded. No new permission.
+- New flags, not stable: `--finding`, `--write`.
 
 ### 1.12.0 (minor; the reviewer's glance: `harness glance`)
 

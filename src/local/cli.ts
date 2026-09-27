@@ -27,6 +27,9 @@ import { MARK_MEANS } from "../glance/rank.ts";
 import { renderGlanceBoard } from "../glance/render.ts";
 import { appendRun, defaultScoreboardFile, mutantsFileBeside, readTrends, recordMutants } from "../scoreboard/store.ts";
 import { renderSite, renderTrends } from "../scoreboard/render.ts";
+import { KAIZEN_DIR, checkFiles, openEscalated, openWhy, renderChecked } from "../why/command.ts";
+import { registerOf, registerSummary } from "../why/register.ts";
+import { WhyInputError } from "../why/trace.ts";
 import { keepReport } from "../ci/report-archive.ts";
 import { readReport, readRulePrs, renderScorecard, scorecard } from "../ci/scorecard.ts";
 import { appendOverride, overrideFromReport, readOverrides } from "./override-log.ts";
@@ -272,6 +275,8 @@ export async function changesCommand(v: Values, deps: ChangesDeps & { log?: (m: 
 
 export interface ScoreboardDeps {
   home?: string;
+  /** The kaizen register (default: this checkout's kaizen/): append records its open countermeasures on the line. */
+  kaizen?: string;
   now?: () => Date;
   log?: (m: string) => void;
 }
@@ -292,7 +297,8 @@ export function scoreboardCommand(sub: string | undefined, v: Values, deps: Scor
       case "append": {
         const run = str(v, "run");
         if (!run) throw new UsageError("scoreboard append needs --run <harness release dir | confidence.json> [--file releases.jsonl] [--mutants mutants.jsonl] [--tag T] [--run-url u]");
-        const { line } = appendRun({ run, file, ...(at("mutants") ? { mutants: at("mutants")! } : {}), ...(str(v, "tag") ? { tag: str(v, "tag")! } : {}), ...(str(v, "run-url") ? { runUrl: str(v, "run-url")! } : {}), now });
+        const kaizen = deps.kaizen ?? join(ROOT, KAIZEN_DIR);
+        const { line } = appendRun({ run, file, kaizen, ...(at("mutants") ? { mutants: at("mutants")! } : {}), ...(str(v, "tag") ? { tag: str(v, "tag")! } : {}), ...(str(v, "run-url") ? { runUrl: str(v, "run-url")! } : {}), now });
         log(flag(v, "json") ? JSON.stringify(line) : `appended ${line.tag} run ${line.run} (Gate ${line.gate}, ${line.rcs === null ? "no RCS" : `RCS ${line.rcs} ${line.band}`}) to ${file}`);
         return 0;
       }
@@ -330,6 +336,7 @@ export function scoreboardCommand(sub: string | undefined, v: Values, deps: Scor
 export interface GlanceDeps {
   now?: () => Date;
   log?: (m: string) => void;
+  home?: string;
 }
 
 /**
@@ -347,9 +354,22 @@ export function glanceCommand(sub: string | undefined, v: Values, deps: GlanceDe
       if (!run) throw new UsageError("glance mark needs --run <harness release dir> --item <n> --mark verified|disputed|escalated --by <name> [--note text]");
       try {
         const o = markItem({ run, item: str(v, "item"), mark: str(v, "mark"), by: str(v, "by"), ...(str(v, "note") ? { note: str(v, "note")! } : {}), now });
-        if (flag(v, "json")) log(JSON.stringify({ record: o.record, status: o.status, files: o.files, ...(o.warning ? { warning: o.warning } : {}) }, null, 2));
+        // Escalated: the harness opens the 5 Whys on why it could not show it (C4), beside the release; never a reason to fail the mark.
+        let why: { file?: string; error?: string } | undefined;
+        if (o.record.whyWanted) {
+          try {
+            const scoreboard = str(v, "scoreboard") ? resolve(str(v, "scoreboard")!) : defaultScoreboardFile(deps.home ?? harnessHome());
+            const w = openEscalated(run, o.record, { now, harness: harnessInfo().version, scoreboard });
+            why = { file: w.file };
+          } catch (e) {
+            why = { error: e instanceof Error ? e.message : String(e) };
+          }
+        }
+        if (flag(v, "json")) log(JSON.stringify({ record: o.record, status: o.status, files: o.files, ...(o.warning ? { warning: o.warning } : {}), ...(why ? { why } : {}) }, null, 2));
         else {
-          log(`item ${o.record.item} marked ${o.record.mark} by ${o.record.by} (${MARK_MEANS[o.record.mark].means}): ${o.record.becomes}${o.record.whyWanted ? " (whyWanted: harness why, C4, opens it)" : ""}`);
+          log(`item ${o.record.item} marked ${o.record.mark} by ${o.record.by} (${MARK_MEANS[o.record.mark].means}): ${o.record.becomes}`);
+          if (why?.file) log(`5 Whys opened (escalated glance mark): ${why.file}; Why 1 is the harness's trace, fill Whys 2-5 (harness why check <file>)`);
+          if (why?.error) log(`5 Whys: not opened (${why.error}); open it with harness why --run ${run} --finding ${o.record.kind}:${o.record.key}`);
           log(`  ${o.record.finding}`);
           log(o.status.go);
           log(`recorded in ${o.files[0]}; re-rendered ${o.files.slice(1).map((f) => basename(f)).join(", ")}`);
@@ -374,6 +394,62 @@ export function glanceCommand(sub: string | undefined, v: Values, deps: GlanceDe
     }
     default:
       throw new UsageError("glance mark|status");
+  }
+}
+
+// ---- harness why --------------------------------------------------------------------------------------
+
+export interface WhyDeps {
+  now?: () => Date;
+  log?: (m: string) => void;
+  home?: string;
+}
+
+/**
+ * `harness why --run <dir> --finding <id> [--out kaizen/] [--tag T] [--scoreboard f]`: open a 5 Whys, Why 1 answered from the
+ * run's own trace. `harness why check <file|dir...>`: exit 1 when a filled 5 Whys is not ready for the register (a docs
+ * lint, never a release gate). `harness why register [--dir kaizen] [--write]`: regenerate the register's table from the
+ * files; without --write, exit 1 when README.md does not say what the files say. 2 for what none of them can read.
+ */
+export function whyCommand(sub: string | undefined, positionals: string[], v: Values, deps: WhyDeps = {}): number {
+  const log = deps.log ?? ((m: string) => console.log(m));
+  const now = (deps.now ?? (() => new Date()))();
+  try {
+    switch (sub) {
+      case undefined: {
+        const run = str(v, "run");
+        const finding = str(v, "finding");
+        if (!run || !finding) throw new UsageError("why needs --run <run dir | harness release dir> --finding <gate | band | rollback | <rule>:<series> | <glance kind>:<key> | glance:<n> | hunk id> [--out kaizen/] [--tag T] [--scoreboard f]");
+        const scoreboard = str(v, "scoreboard") ? resolve(str(v, "scoreboard")!) : defaultScoreboardFile(deps.home ?? harnessHome());
+        const w = openWhy({ run, finding, out: str(v, "out") ?? KAIZEN_DIR, ...(str(v, "tag") ? { tag: str(v, "tag")! } : {}), scoreboard, now, harness: harnessInfo().version });
+        log(flag(v, "json") ? JSON.stringify(w) : `${w.written ? "5 Whys opened" : "5 Whys already there, left as it is"} (${w.trigger}): ${w.file}
+  Why 1 is the harness's trace; fill Whys 2-5, where the chain ends and the countermeasure, then: harness why check ${w.file}`);
+        return 0;
+      }
+      case "check": {
+        if (!positionals.length) throw new UsageError("why check <file|dir...>: the 5 Whys to check (a directory is every .md in it but README.md)");
+        const results = checkFiles(positionals);
+        log(flag(v, "json") ? JSON.stringify(results, null, 2) : renderChecked(results));
+        return results.some((r) => r.problems.length) ? 1 : 0;
+      }
+      case "register": {
+        const dir = resolve(str(v, "dir") ?? KAIZEN_DIR);
+        const r = registerOf(dir, flag(v, "write"));
+        const s = registerSummary(r.entries, now);
+        if (flag(v, "json")) log(JSON.stringify({ file: r.file, inSync: r.inSync || r.written, written: r.written, summary: s, entries: r.entries }, null, 2));
+        else {
+          log(r.block);
+          log(`${s.total} 5 Whys: ${s.open} open, ${s.overdue} overdue, ${s.closed} closed${s.unassigned ? `; ${s.unassigned} open without an owner or a due date` : ""}`);
+          log(r.written ? `wrote ${r.file}` : r.inSync ? `${r.file} is up to date` : `${r.file} does not say what the files say: run harness why register --dir ${dir} --write`);
+        }
+        return r.inSync || r.written ? 0 : 1;
+      }
+      default:
+        throw new UsageError("why [--run <dir> --finding <id>] | why check <file...> | why register [--dir kaizen] [--write]");
+    }
+  } catch (e) {
+    if (e instanceof WhyInputError) throw new UsageError(e.message);
+    throw e;
   }
 }
 
@@ -721,6 +797,8 @@ export interface ReleaseCommandDeps {
   /** Ctrl-C, for a test; the real one is SIGINT, or a child that SIGINT ended. */
   interrupted?: () => boolean;
   open?: (file: string) => void;
+  /** The kaizen register; default this checkout's kaizen/. */
+  kaizen?: string;
 }
 
 /**
@@ -755,9 +833,10 @@ export function releaseCommand(v: Values, deps: ReleaseCommandDeps = {}): number
   const extras = scoreExtras(v);
   // The scoreboard line goes to the local store unless --scoreboard names a file: never into the repository checkout unasked.
   const scoreboard = { file: str(v, "scoreboard") ? resolve(str(v, "scoreboard")!) : defaultScoreboardFile(home), noiseHistory: join(noiseDir(home), "noise-history.json") };
-  const options = { candidate, baseline, fast, ...(claims ? { claims } : {}), ...(rules ? { rules } : {}), ...(out ? { out } : {}), ...(Object.keys(extras).length ? { score: extras } : {}), ...(monorepo ? { monorepo: resolve(monorepo) } : {}), scoreboard };
+  const kaizen = deps.kaizen ?? join(ROOT, KAIZEN_DIR);
+  const options = { candidate, baseline, fast, ...(claims ? { claims } : {}), ...(rules ? { rules } : {}), ...(out ? { out } : {}), ...(Object.keys(extras).length ? { score: extras } : {}), ...(monorepo ? { monorepo: resolve(monorepo) } : {}), scoreboard, kaizen };
   if (flag(v, "dry-run")) {
-    say(renderReleasePlan({ candidate, baseline, fast, stages: planRelease(options, noise), env: planEnv, scoreboard: scoreboard.file }));
+    say(renderReleasePlan({ candidate, baseline, fast, stages: planRelease(options, noise), env: planEnv, scoreboard: scoreboard.file, kaizen }));
     return 0;
   }
   mkdirSync(home, { recursive: true });
