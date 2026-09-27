@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.4.0`
+Contract version: `1.5.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -30,17 +30,25 @@ Three numbers, all stamped where a reader can see them:
 
 ```console
 $ pnpm harness version
-harness 1.4.0 (3f2c…) · contract 1.4.0
+harness 1.5.0 (3f2c…) · contract 1.5.0
 $ pnpm harness version --json
-{"version":"1.4.0","gitSha":"3f2c…","contractVersion":"1.4.0"}
+{"version":"1.5.0","gitSha":"3f2c…","contractVersion":"1.5.0"}
 ```
 
 `gitSha` is `git rev-parse HEAD` of the harness checkout, or the
 `HARNESS_GIT_SHA` environment variable when set, or `null` when neither is
 available (a tarball).
 
-Pin the harness by tag (`v1.4.0`) or by sha, and check `schemaVersion === 1`
-before reading a report.
+Which harness judged a run is recorded, not chosen by the caller: a
+`repository_dispatch` runs this repository's workflows as they are on its
+default branch (`main`), so a dispatch always gets the harness on `main` at that
+moment. Every `report.json` and `capture.json` carries `harness.version` and
+`harness.gitSha`, which name exactly what ran. Released versions are marked by
+git tags `v<harness version>` on `main`; a maintainer creates them by hand (no
+workflow creates a tag or a GitHub release, and `tests/contract.test.ts` keeps it
+that way), so the newest tag can lag `main`. To reproduce a run, check out its
+`harness.gitSha`; to build against a released contract, read this file at the
+tag. Check `schemaVersion === 1` before reading a report.
 
 ## Output directory
 
@@ -461,7 +469,7 @@ run's output directory (so the `release-report` artifact carries it).
 ```json
 { "schemaVersion": 1, "candidate": "16.3.0-rc.4", "release": "16.3.0", "production": "16.2.0",
   "recordedAt": "2026-09-16T09:10:00.000Z",
-  "harness": { "version": "1.4.0", "gitSha": "3f2c…", "contractVersion": "1.4.0" },
+  "harness": { "version": "1.5.0", "gitSha": "3f2c…", "contractVersion": "1.5.0" },
   "verdict": "pass", "overridden": false, "pinned": true, "verified": true,
   "digests": { "reader": "sha256:…", "catalogue": "sha256:…", "live": "sha256:…", "time": "sha256:…" } }
 ```
@@ -740,7 +748,7 @@ as a whole tag (`16.3.0-rc.1` is not `16.3.0-rc.10`).
 
 ### Kept reports
 
-Since 1.5.0 (unreleased). An artifact expires, and reading one needs a token.
+Since 1.5.0. An artifact expires, and reading one needs a token.
 So the branches the workflows already push also keep each run's `report.json`,
 `report.md` and `report.html` (no captures, screenshots or k6 output), with an
 index, readable by anyone at a raw URL:
@@ -790,7 +798,7 @@ it never changes a verdict, an exit code or the gate.**
 
 ### Main to RC
 
-Since 1.5.0 (unreleased). `main-preview.yml` answers "what would release mode say
+Since 1.5.0. `main-preview.yml` answers "what would release mode say
 if main were cut as a release candidate today?", every day as soon as the nightly
 A/A on main finishes (`workflow_run`, whether it passed or failed; not a cancelled
 one, nor one on another branch) (and by hand, `workflow_dispatch` with optional `production`, `candidate` and
@@ -878,7 +886,12 @@ Releases are git tags `v<harness version>` on `main`, cut by a maintainer.
 
 ## Changes
 
-### 1.5.0 (unreleased; minor; kept reports)
+### 1.5.0 (minor; kept reports, the scorecard, Main to RC, report pages, one recorded copy of third-party hosts)
+
+The release note is [releases/1.5.0.md](releases/1.5.0.md). Additive for a consumer
+written against 1.4.0: no `report.json` or `noise-status.json` field, exit code
+meaning, stable command or flag, or dispatch payload field changes.
+
 
 - `harness reports keep` (not stable): copies a run's `report.json`, `report.md`
   and `report.html` into `<store>/reports/<ranAt>-<mode>/` and lists it in

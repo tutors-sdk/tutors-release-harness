@@ -19,6 +19,11 @@ did not build — and cannot be quietly weakened by the PR it is judging. It
 verifies the signature of every image it pulls, and every report says where
 each side's images came from.
 
+Every kept report (release candidates, the nightly A/A, and **Main to RC**, a
+daily forecast of what release mode would say if `main` were cut as a release
+candidate today) is published at
+[tutors-sdk.github.io/tutors-release-harness](https://tutors-sdk.github.io/tutors-release-harness/).
+
 ## Quick start
 
 ```bash
