@@ -90,7 +90,7 @@ writes `coverage/coverage-summary.json` and an HTML and lcov report to `coverage
 | Functions | 84.25% | 82% |
 | Lines | 85.42% | 83% |
 
-Re-measured in 1.5.2, when Vitest moved from 3 to 5: its v8 provider now maps coverage through the source's AST, so
+Re-measured in 1.5.3, when Vitest moved from 3 to 5: its v8 provider now maps coverage through the source's AST, so
 code in functions that never run counts its own branches and functions (in 1.5.1 `src/collectors/index.ts` reported 0
 branches, now 38, all unrun). The same 86 files and the same 1046 tests measure lower under the stricter counter, not
 less tested; the floor was reset against the new numbers by the same rule (measured, minus two, rounded down). It was
