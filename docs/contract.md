@@ -791,8 +791,9 @@ it never changes a verdict, an exit code or the gate.**
 ### Main to RC
 
 Since 1.5.0 (unreleased). `main-preview.yml` answers "what would release mode say
-if main were cut as a release candidate today?", every day after the nightly A/A
-(and by hand, `workflow_dispatch` with optional `production`, `candidate` and
+if main were cut as a release candidate today?", every day as soon as the nightly
+A/A on main finishes (`workflow_run`, whether it passed or failed; not a cancelled
+one, nor one on another branch) (and by hand, `workflow_dispatch` with optional `production`, `candidate` and
 `force`). It is a **forecast, never a gate**: it tags, records and deploys nothing,
 and it cannot be mistaken for a judged candidate, because it never writes the
 `release-records` branch that post-deploy reads.
