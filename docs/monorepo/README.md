@@ -125,7 +125,9 @@ harness must change with it:
 
 What the harness accepts, writes and promises — event types, payload fields,
 `report.json`, exit codes, what it will never do to a PR — is in
-[the contract](../contract.md). Pin the harness by tag (`v1.4.0`).
+[the contract](../contract.md). A dispatch runs the harness on its default branch;
+every report names what ran (`harness.version`, `harness.gitSha`), and released
+versions are tagged `v<version>` by a maintainer ([the contract](../contract.md#versions)).
 
 On the harness side, set the repository variables:
 
