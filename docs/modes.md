@@ -133,7 +133,11 @@ A difference means production is not behaving as the tested candidate did:
 the workflow opens a rollback issue with `report.md`.
 
 The same command on a 15-minute schedule is the synthetic monitor
-(the schedule in `.github/workflows/post-deploy.yml`).
+(the schedule in `.github/workflows/post-deploy.yml`). The monitor needs a
+recording: when no successful release run has kept a `release-report`
+artifact (30 days), it stands down, green, with a notice in the run summary,
+and resumes after the next release run that passes. A deploy, or a run named
+with `recorded_run_id`, without a recording still fails.
 
 ## Re-comparing
 

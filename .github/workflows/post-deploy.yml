@@ -73,6 +73,9 @@ jobs:
           restore-keys: |
             third-party-v1-
 
+      # A deploy, or a person naming a run, must have a recording: none fails the job. The schedule may have none (no
+      # release has passed in the artifact's 30 days), and then there is nothing to compare production with: the
+      # monitor says so in the summary and stands down, rather than failing every run and teaching people to ignore it.
       - name: Fetch the recorded release run
         uses: dawidd6/action-download-artifact@v6
         with:
@@ -80,11 +83,28 @@ jobs:
           name: release-report
           path: recorded
           run_id: ${{ inputs.recorded_run_id }}
-          if_no_artifact_found: fail
+          if_no_artifact_found: ${{ github.event_name == 'schedule' && 'ignore' || 'fail' }}
+
+      - name: Check there is a recording to compare with
+        id: recording
+        run: |
+          if ls -d recorded/*-release >/dev/null 2>&1; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "### Synthetic monitor: nothing to compare with"
+              echo
+              echo "No successful release run has a \`release-report\` artifact (kept 30 days), so production was not checked."
+              echo "The monitor resumes by itself after the next release run that passes."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::notice title=Synthetic monitor stood down::no recorded release run to compare production with"
+          fi
 
       # The latest status the nightly published to the `noise` branch (see release.yml). Missing or unusable: WARN, never FAIL.
       - name: Fetch the latest noise status
         id: noise
+        if: steps.recording.outputs.found == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -95,7 +115,7 @@ jobs:
       # The release record of what was deployed, from the `release-records` branch. Missing is not an error: the run
       # then says so, loudly, as a warning. The tag is checked before it names a file.
       - name: Fetch the release record
-        if: env.DEPLOYED != ''
+        if: steps.recording.outputs.found == 'true' && env.DEPLOYED != ''
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -105,6 +125,7 @@ jobs:
 
       - name: Post-deploy mode
         id: run
+        if: steps.recording.outputs.found == 'true'
         env:
           NOISE_FILE: ${{ steps.noise.outputs.noise_file }}
         # The exit code is kept for the steps below: 1 is a difference (a rollback issue), 2 is "could not judge" (no issue).
@@ -119,7 +140,7 @@ jobs:
           exit "$code"
 
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: always() && steps.recording.outputs.found == 'true'
         with:
           name: post-deploy-report
           path: out/

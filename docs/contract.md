@@ -938,6 +938,10 @@ Releases are git tags `v<harness version>` on `main`, cut by a maintainer.
   how many times (harness 1.4.14). The browser fetches a video in as many range
   requests as its buffering needs, so "requested 4× on a, 5× on b" was timing.
   A video one side never requests is still a `network` hunk.
+- The scheduled synthetic monitor (`post-deploy.yml`) stands down, green, with a
+  notice in the run summary, when no release run has kept a `release-report`
+  artifact to compare production with; before, every scheduled run failed. A
+  `deployed` dispatch or a `recorded_run_id` without a recording still fails.
 
 ### 1.4.0 (minor; the pinned vulnerability database, one "not collected" convention, housekeeping commands, clean exit 2, post-deploy on an external side)
 
