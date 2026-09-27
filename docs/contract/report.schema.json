@@ -53,6 +53,21 @@
         "problems": { "type": "array", "items": { "type": "string" }, "description": "One line per disagreement or gap; empty exactly when status is match. For people." }
       }
     },
+    "productionBuild": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url", "status", "summary"],
+      "description": "Since contract 1.6.0. Post-deploy mode only: which build production's reader says it serves, read from <reader>/_app/version.json and <reader>/version, against the recorded candidate's commit (its reader image's revision label). Informational: it never changes the verdict and is never a hunk; a status other than match adds a line to reasons.",
+      "properties": {
+        "url": { "type": "string", "description": "The reader URL that was asked." },
+        "status": { "enum": ["match", "differs", "unknown"], "description": "match: /version names the recorded commit, or the build name is sha256(recorded commit) in hex, first 16 characters. differs: production names a commit, or a hashed build name, that is not the recorded one. unknown: anything else (no recorded commit, nothing answered, an unnamed build)." },
+        "recordedRevision": { "type": "string", "description": "The recorded candidate's commit. Absent when the recording has none." },
+        "buildName": { "type": "string", "description": "`version` from /_app/version.json, as production answered it. Absent when it did not answer." },
+        "builtAt": { "type": "string", "format": "date-time", "description": "When buildName is a millisecond timestamp (a build given no commit): that instant." },
+        "revision": { "type": "string", "description": "`revision` from /version, as production answered it (may be `unknown`). Absent when it did not answer." },
+        "summary": { "type": "string", "description": "One line for people." }
+      }
+    },
     "verdict": { "enum": ["pass", "fail", "warn"] },
     "reasons": { "type": "array", "items": { "type": "string" }, "description": "Why the verdict is what it is, one line each. For people; the wording is not part of the contract." },
     "noise": { "$ref": "#/definitions/noiseStatus" },

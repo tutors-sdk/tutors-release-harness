@@ -11,6 +11,7 @@ import { compareCaptures } from "./compare/index.ts";
 import { gate, rollbackIssueConfigured } from "./gate.ts";
 import { runMigration } from "./modes/migration.ts";
 import { runUpgrade } from "./modes/upgrade.ts";
+import { productionBuildReason, readProductionBuild } from "./modes/production-build.ts";
 import { DEFAULT_MASKS_FILE, loadMasks, normalise, type MaskHits } from "./normalise/masks.ts";
 import { externalOrigins } from "./normalise/origins.ts";
 import { redactCapture } from "./normalise/redact.ts";
@@ -22,7 +23,7 @@ import { deploymentReason, findReleaseRecord, judgeDeployment, releaseRecordOf, 
 import { ROOT, externalSide, imagesFor, sideSpec, stackDown, stackUp } from "./stack.ts";
 import { kindDown, kindSide, kindUp } from "./substrate/kind.ts";
 import { overrideLine, recordOverride, type OverrideRequest } from "./override.ts";
-import type { Claim, Deployment, Hunk, Mode, NoiseStatus, RunReport, SideCapture, SideSpec, Substrate } from "./types.ts";
+import type { Claim, Deployment, Hunk, Mode, NoiseStatus, ProductionBuild, RunReport, SideCapture, SideSpec, Substrate } from "./types.ts";
 
 import { HARNESS_VERSION, SCHEMA_VERSION, harnessInfo } from "./version.ts";
 import { DEFAULT_RESTARTS } from "./runtime/startup.ts";
@@ -137,6 +138,8 @@ interface CompareInput {
   runs: number;
   /** Since 1.3.0: post-deploy's comparison of what was deployed with what release mode recorded. Never changes a FAIL; a PASS becomes a WARN. */
   deployment?: Deployment;
+  /** Since 1.6.0: post-deploy's reading of which build production's reader serves. Informational: never changes the verdict. */
+  productionBuild?: ProductionBuild;
   /** Hunks produced by a rehearsal mode rather than by capture comparison. */
   extraHunks?: Hunk[];
   extras?: Pick<RunReport, "migration" | "upgrade">;
@@ -167,6 +170,8 @@ export function compareFromCaptures(input: CompareInput): RunOutcome {
   const gated = gate({ mode: input.mode, compare, noiseWaived: noise.waived, noiseMaxAgeDays: input.noiseMaxAgeDays, ranAt, rollbackIssue: rollbackIssueConfigured(process.env), ...(degraded.length ? { degraded } : {}), ...(noise.status ? { noise: noise.status } : {}) });
   // Deployed images that are not the ones judged: loud, advisory. A FAIL stays a FAIL, and a PASS is not a clean one.
   const deploymentLine = input.deployment ? deploymentReason(input.deployment) : undefined;
+  // Which build production serves: a line in the reasons, never the verdict.
+  const productionBuildLine = input.productionBuild ? productionBuildReason(input.productionBuild) : undefined;
   const verdict = deploymentLine && gated.verdict === "pass" ? { ...gated, verdict: "warn" as const } : gated;
   const override = input.override ? recordOverride(input.override, verdict.verdict, ranAt) : undefined;
   const hygiene = input.claims.length ? claimHygiene(compare, input.claimMaxHunks ?? DEFAULT_CLAIM_MAX_HUNKS) : undefined;
@@ -188,7 +193,7 @@ export function compareFromCaptures(input: CompareInput): RunOutcome {
     sides: { a: input.a.images, b: input.b.images },
     ...(input.a.provenance || input.b.provenance ? { provenance: { ...(input.a.provenance ? { a: input.a.provenance } : {}), ...(input.b.provenance ? { b: input.b.provenance } : {}) } } : {}),
     verdict: verdict.verdict,
-    reasons: [...(override ? [overrideLine(override)] : []), ...(deploymentLine ? [deploymentLine] : []), ...verdict.reasons, ...(input.mode === "noise" ? [] : blind), ...provenanceReasons(input.a, input.b), ...imageStaticReasons(input.a, input.b)],
+    reasons: [...(override ? [overrideLine(override)] : []), ...(deploymentLine ? [deploymentLine] : []), ...(productionBuildLine ? [productionBuildLine] : []), ...verdict.reasons, ...(input.mode === "noise" ? [] : blind), ...provenanceReasons(input.a, input.b), ...imageStaticReasons(input.a, input.b)],
     ...(noise.status ? { noise: noise.status } : {}),
     compare,
     masksApplied,
@@ -197,7 +202,8 @@ export function compareFromCaptures(input: CompareInput): RunOutcome {
     ...(hygiene ? { claimHygiene: hygiene } : {}),
     ...(override ? { override } : {}),
     ...(imageArtefacts ? { imageArtefacts } : {}),
-    ...(input.deployment ? { deployment: input.deployment } : {})
+    ...(input.deployment ? { deployment: input.deployment } : {}),
+    ...(input.productionBuild ? { productionBuild: input.productionBuild } : {})
   };
 
   const files = writeReports(input.captureDir, report);
@@ -297,13 +303,16 @@ export async function run(opts: RunOptions): Promise<RunOutcome> {
     opts.log(`  a: recorded ${recorded.images.reader} from ${opts.recorded}`);
     opts.log(`  b: live ${b.urls.reader}`);
     const captureB = await captureSide(b, journeys, { outDir, now: opts.now, runs: opts.runs, screenshots: opts.screenshots, axe: opts.axe, focusStops: opts.focusStops, log: opts.log });
+    // Which build production serves, against the commit release mode recorded for the candidate (its reader image's revision).
+    const productionBuild = await readProductionBuild(b.urls.reader, recorded.provenance?.images.reader?.revision);
+    opts.log(`  production build: ${productionBuild.status} (${productionBuild.summary})`);
     // Only the reference journeys are comparable against production.
     const recordedRef: SideCapture = { ...redactCapture(recorded), side: "a", journeys: recorded.journeys.filter((j) => journeys.some((s) => s.name === j.journey)), logs: {}, metrics: { before: {}, after: {} } };
     delete recordedRef.load;
     mkdirSync(join(outDir, "a"), { recursive: true });
     writeFileSync(join(outDir, "a", "capture.json"), JSON.stringify(recordedRef, null, 2));
     if (!recordedRef.journeys.length) opts.log("  warning: the recorded run has no reference journeys; run release mode with --set reference included");
-    return compareFromCaptures({ ...common, mode: "post-deploy", a: recordedRef, b: captureB, ...(opts.deployed ? { deployment: checkDeployment(opts.deployed, opts.log) } : {}) });
+    return compareFromCaptures({ ...common, mode: "post-deploy", a: recordedRef, b: captureB, productionBuild, ...(opts.deployed ? { deployment: checkDeployment(opts.deployed, opts.log) } : {}) });
   }
 
   const a: SideSpec = sideSpec("a", pinImages(imagesFor(opts.a, opts.imagePrefix), opts.aDigests, "--a-digests"));

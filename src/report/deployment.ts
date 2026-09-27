@@ -33,3 +33,41 @@ export function deploymentHtml(report: RunReport, esc: (s: string) => string): s
   const rows = APPS.filter((app) => d.digests[app] || d.recorded?.[app]).map((app) => `<tr><td>${app}</td><td><code>${esc(short(d.digests[app]))}</code></td><td><code>${esc(short(d.recorded?.[app]))}</code></td></tr>`);
   return `<h2>Deployment${d.production ? ` ${esc(d.production)}` : ""}: ${esc(d.status)}</h2>${d.record ? `<p>Judged as <code>${esc(d.record.candidate)}</code> at ${esc(d.record.judgedAt)} (${d.record.verdict.toUpperCase()}).</p>` : ""}${rows.length ? `<table class="provenance"><thead><tr><th>app</th><th>deployed</th><th>judged</th></tr></thead><tbody>${rows.join("")}</tbody></table>` : ""}`;
 }
+
+/** A value from the network as a Markdown code span that nothing inside it can break out of, in a table cell too. */
+export function mdCode(value: string): string {
+  // eslint-disable-next-line no-control-regex
+  const text = value.replace(/[\u0000-\u001f\u007f]+/g, " ").replaceAll("|", "\\|");
+  const fence = "`".repeat(Math.max(1, ...[...text.matchAll(/`+/g)].map((m) => m[0].length + 1)));
+  const pad = text.startsWith("`") || text.endsWith("`") ? " " : "";
+  return `${fence}${pad}${text}${pad}${fence}`;
+}
+
+/** Since 1.6.0, post-deploy: which build production's reader answered with, beside the deployment section. */
+export function productionBuildMarkdown(report: RunReport): string[] {
+  const p = report.productionBuild;
+  if (!p) return [];
+  const name = p.buildName === undefined ? "not answered" : `${mdCode(p.buildName)}${p.builtAt ? ` (built at ${p.builtAt} from an unnamed build)` : ""}`;
+  const revision = p.revision === undefined ? "not answered" : mdCode(p.revision);
+  return [
+    `### Production build: ${p.status}`,
+    "",
+    `Asked ${mdCode(p.url)}; the recorded candidate's commit is ${p.recordedRevision ? mdCode(p.recordedRevision) : "not recorded"}.`,
+    "",
+    "| source | answer |",
+    "|---|---|",
+    `| \`/_app/version.json\` build name | ${name} |`,
+    `| \`/version\` revision | ${revision} |`,
+    "",
+    `${p.summary}. Informational: never changes the verdict.`,
+    ""
+  ];
+}
+
+export function productionBuildHtml(report: RunReport, esc: (s: string) => string): string {
+  const p = report.productionBuild;
+  if (!p) return "";
+  const name = p.buildName === undefined ? "<em>not answered</em>" : `<code>${esc(p.buildName)}</code>${p.builtAt ? ` (built at ${esc(p.builtAt)} from an unnamed build)` : ""}`;
+  const revision = p.revision === undefined ? "<em>not answered</em>" : `<code>${esc(p.revision)}</code>`;
+  return `<h2>Production build: ${esc(p.status)}</h2><p>Asked <code>${esc(p.url)}</code>; the recorded candidate's commit is ${p.recordedRevision ? `<code>${esc(p.recordedRevision)}</code>` : "<em>not recorded</em>"}.</p><table class="provenance"><thead><tr><th>source</th><th>answer</th></tr></thead><tbody><tr><td><code>/_app/version.json</code> build name</td><td>${name}</td></tr><tr><td><code>/version</code> revision</td><td>${revision}</td></tr></tbody></table><p>${esc(p.summary)}. Informational: never changes the verdict.</p>`;
+}

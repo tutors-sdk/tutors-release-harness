@@ -386,6 +386,30 @@ export interface RunReport {
   imageArtefacts?: { a?: SideImageArtefacts; b?: SideImageArtefacts };
   /** Since contract 1.3.0. Post-deploy mode only, and only when the deploy said what it deployed: does it match what release mode judged? */
   deployment?: Deployment;
+  /**
+   * Since contract 1.6.0. Post-deploy mode only: which build production's reader says it serves (`/_app/version.json`,
+   * `/version`) against the recorded candidate's commit. Informational: never changes the verdict and is never a hunk.
+   */
+  productionBuild?: ProductionBuild;
+}
+
+/** Whether production's reader serves the build of the recorded candidate. */
+export type ProductionBuildStatus = "match" | "differs" | "unknown";
+
+export interface ProductionBuild {
+  /** The reader URL that was asked. */
+  url: string;
+  status: ProductionBuildStatus;
+  /** The recorded candidate's commit (its reader image's `org.opencontainers.image.revision`); absent when not recorded. */
+  recordedRevision?: string;
+  /** `version` from `<reader>/_app/version.json`; absent when it did not answer. */
+  buildName?: string;
+  /** When `buildName` is a millisecond timestamp (a build given no commit): that instant, ISO 8601. */
+  builtAt?: string;
+  /** `revision` from `<reader>/version` (may be `unknown`); absent when it did not answer. */
+  revision?: string;
+  /** One line for people. */
+  summary: string;
 }
 
 /** How what was deployed compares with the release record of the candidate that was judged. */

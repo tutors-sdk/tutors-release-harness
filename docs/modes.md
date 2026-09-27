@@ -132,6 +132,18 @@ persistence are not compared (production's are not the harness's to read).
 A difference means production is not behaving as the tested candidate did:
 the workflow opens a rollback issue with `report.md`.
 
+After capturing production, the run asks its reader which build it serves
+(since contract 1.6.0): `/_app/version.json` (SvelteKit's build name, which is
+`sha256(commit)`, first 16 hex characters, when the build was given its commit,
+and the build time in milliseconds when it was not) and `/version` (`revision`),
+a few seconds each. It compares the answer with the recorded candidate's commit
+(its reader image's `revision` label) and reports `match`, `differs` or
+`unknown` in a "Production build" section of the report and in
+`productionBuild` in `report.json`; `differs` and `unknown` also get a line in
+the reasons. A request that fails is "not answered". This says whether
+production runs the tested release at all; it never changes the verdict. See
+[contract.md](contract.md#which-build-production-serves).
+
 The same command on a 15-minute schedule is the synthetic monitor
 (the schedule in `.github/workflows/post-deploy.yml`). The monitor needs a
 recording: when no successful release run has kept a `release-report`

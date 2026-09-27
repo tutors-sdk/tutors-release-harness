@@ -2,7 +2,7 @@ import { APPS, type App } from "../image-ref.ts";
 import type { Hunk, RunReport } from "../types.ts";
 import { claimLabel } from "../claims/rules.ts";
 import { loudProvenance } from "./provenance.ts";
-import { deploymentHtml, loudDeployment } from "./deployment.ts";
+import { deploymentHtml, loudDeployment, productionBuildHtml } from "./deployment.ts";
 import { imageArtefactsHtml } from "./image-static.ts";
 
 const esc = (s: string) => s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
@@ -76,6 +76,7 @@ ${loudDeployment(report) ? `<p class="loud">${esc(loudDeployment(report)!)}</p>`
 </table>
 ${provenanceBlock(report)}
 ${deploymentHtml(report, esc)}
+${productionBuildHtml(report, esc)}
 ${imageArtefactsHtml(report)}
 
 ${

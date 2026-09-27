@@ -3,7 +3,7 @@ import type { RunReport } from "../types.ts";
 import { claimLabel } from "../claims/rules.ts";
 import { loudProvenance } from "./provenance.ts";
 import { imageArtefactsMarkdown } from "./image-static.ts";
-import { deploymentMarkdown, loudDeployment } from "./deployment.ts";
+import { deploymentMarkdown, loudDeployment, productionBuildMarkdown } from "./deployment.ts";
 
 const ICON = { pass: "✅", warn: "⚠️", fail: "❌" } as const;
 
@@ -95,6 +95,7 @@ export function renderMarkdown(report: RunReport): string {
     lines.push("");
   }
   lines.push(...deploymentMarkdown(report)); // 1.3.0
+  lines.push(...productionBuildMarkdown(report)); // 1.6.0
   lines.push(...imageArtefactsMarkdown(report)); // R5 static image artefacts
 
   if (report.migration) {
