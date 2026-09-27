@@ -8,6 +8,8 @@
 import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { readReport } from "../ci/scorecard.ts";
+import { MARKS_FILE, applyMarks, parseMarks } from "../glance/marks.ts";
+import { glanceOf } from "../glance/read.ts";
 import type { RunReport } from "../types.ts";
 import { confidence, gateOfReports, type ChangeRisk, type Confidence, type ConfidenceRun, type GateWord, type Located, type ScoreInputs, type TestSignal, type Traceability } from "./confidence.ts";
 
@@ -100,6 +102,8 @@ export interface ScoreSources {
   candidate?: string;
   baseline?: string;
   harness?: { version: string; contractVersion: string };
+  /** releases.jsonl: the history the glance's novelty reads (since 1.12.0). */
+  scoreboard?: string;
 }
 
 function report(where: string | undefined, outDir: string, flag: string, mode?: RunReport["mode"]): Located<RunReport> | undefined {
@@ -135,9 +139,18 @@ export function scoreInputs(s: ScoreSources): ScoreInputs {
   return { gate, ...(release ? { release } : {}), ...(migration ? { migration } : {}), ...(upgrade ? { upgrade } : {}), ...(postDeploy ? { postDeploy } : {}), ...(testSignal ? { testSignal } : {}), ...(traceability ? { traceability } : {}), ...(changeRisk ? { changeRisk } : {}), run };
 }
 
-/** Read what is there, score it, write confidence.json into `outDir`. */
+/**
+ * Read what is there, score it, rank the reviewer's glance (since 1.12.0), write confidence.json into `outDir`. The glance
+ * is ranked after the score and from the same inputs, and is never read back by it. Marks already recorded beside it
+ * (a re-score) stay with their findings.
+ */
 export function scoreAndWrite(s: ScoreSources): { confidence: Confidence; file: string } {
-  const c = confidence(scoreInputs(s));
+  const inputs = scoreInputs(s);
+  const c = confidence(inputs);
+  const g = glanceOf({ outDir: s.outDir, inputs, ...(s.changeRisk ? { changeRisk: s.changeRisk } : {}), ...(s.scoreboard ? { scoreboard: s.scoreboard } : {}) });
+  const marks = join(s.outDir, MARKS_FILE);
+  c.glance = existsSync(marks) ? applyMarks(g.items, parseMarks(readFileSync(marks, "utf8"))) : g.items;
+  c.glanceBasis = g.basis;
   const file = join(s.outDir, CONFIDENCE_FILE);
   writeFileSync(file, `${JSON.stringify(c, null, 2)}\n`);
   return { confidence: c, file };

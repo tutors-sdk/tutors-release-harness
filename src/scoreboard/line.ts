@@ -10,6 +10,8 @@
  * a line already there. Pure: src/scoreboard/store.ts reads the files and appends.
  */
 import type { Changes } from "../changes/signals.ts";
+import { applyMarks, type MarkRecord } from "../glance/marks.ts";
+import type { GlanceKind, MarkWord } from "../glance/rank.ts";
 import type { Confidence, GateWord } from "../score/confidence.ts";
 import { DIMENSION_IDS, type Band, type DimensionId } from "../score/weights.ts";
 import type { RunReport, SideCapture } from "../types.ts";
@@ -80,7 +82,21 @@ export interface ScoreboardLine {
   mutants: MutantsPoint | null;
   /** The per-PR risk lines from changes.json; null when change risk was not measured. */
   prs: PrRiskLine[] | null;
+  /** Since 1.12.0: every mask id the release run loaded (its masksApplied keys), so the next release's glance can see a mask added. */
+  maskIds?: string[];
+  /** Since 1.12.0: the reviewer's glance as the line was appended: its items, their marks so far, and what it looked at. */
+  glance?: GlanceSummary;
   runUrl?: string;
+}
+
+/** The glance on the scoreboard: counts and marks for the trends, and every candidate's key for the next release's novelty. */
+export interface GlanceSummary {
+  items: number;
+  marks: Record<MarkWord | "unmarked", number>;
+  /** The kinds the glance could check (the rest were not checked, and say nothing about novelty). */
+  checked: GlanceKind[];
+  /** Every candidate's `kind:key`, ranked or not. */
+  seen: string[];
 }
 
 /** What a line is built from: the score, and what it read, as found beside it. */
@@ -93,6 +109,8 @@ export interface LineSources {
   mutants?: MutantsPoint;
   /** Lines already in the file: the run number counts them. */
   existing: Pick<ScoreboardLine, "tag">[];
+  /** The Reviewer's marks so far (glance-marks.jsonl beside confidence.json): the latest per item. */
+  marks?: MarkRecord[];
   /** Overrides confidence.run.candidate (a tag given with --tag). */
   tag?: string;
   now: Date;
@@ -121,6 +139,13 @@ export function prLines(changes: Changes): PrRiskLine[] {
     files: p.files,
     deductions: p.deductions.map((d) => ({ rule: d.rule, points: d.points, ...(d.file ? { file: d.file } : {}), ...(d.floor ? { floor: true as const } : {}) }))
   }));
+}
+
+/** The glance of a score as a line carries it; an item with no mark yet is `unmarked` (marks usually come after the line). */
+export function glanceSummary(c: Confidence, marks: MarkRecord[]): GlanceSummary {
+  const counts = { verified: 0, disputed: 0, escalated: 0, unmarked: 0 };
+  for (const item of marks.length ? applyMarks(c.glance, marks) : c.glance) counts[item.mark?.mark ?? "unmarked"] += 1;
+  return { items: c.glance.length, marks: counts, checked: c.glanceBasis?.checked.map((k) => k.kind) ?? [], seen: c.glanceBasis?.seen ?? [] };
 }
 
 export function buildLine(s: LineSources): ScoreboardLine {
@@ -154,6 +179,8 @@ export function buildLine(s: LineSources): ScoreboardLine {
     journeys: s.candidate ? journeysPassed(s.candidate) : null,
     mutants: s.mutants ?? null,
     prs: s.changes ? prLines(s.changes) : null,
+    ...(masksApplied ? { maskIds: masksApplied.map(([id]) => id).sort() } : {}),
+    ...(c.glanceBasis ? { glance: glanceSummary(c, s.marks ?? []) } : {}),
     ...(s.runUrl ? { runUrl: s.runUrl } : {})
   };
 }

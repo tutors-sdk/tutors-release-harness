@@ -2,6 +2,8 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { renderChangesHtml, renderChangesMarkdown } from "../changes/render.ts";
 import { CHANGES_FILE, type Changes } from "../changes/signals.ts";
+import { MARKS_FILE } from "../glance/marks.ts";
+import { markHint, renderGlanceHtml, renderGlanceMarkdown } from "../glance/render.ts";
 import { DigestError, parseDigests } from "../digests.ts";
 import { isTag } from "../release-record.ts";
 import type { Confidence, GateWord } from "../score/confidence.ts";
@@ -40,9 +42,10 @@ import {
  *              risk lines the score's change risk reads; skipped, with the reason, when there is no checkout
  *   release    --mode release, 3 runs, k6 20x30s, the claims, the rules, that A/A
  *   rehearse   migration, then upgrade (skipped only with --fast)
- *   score      confidence.json: the Release Confidence Score (C0) from the release, migration and upgrade runs; the
- *              glance (C3) and the 5 Whys stubs (C4) are not built yet
- *   report     report.md, report.html, gate.md, gate.json in the same directory, led by the Gate, then the RCS; before
+ *   score      confidence.json: the Release Confidence Score (C0) from the release, migration and upgrade runs, and
+ *              the reviewer's glance (C3): at most seven places to look, ranked; the 5 Whys stubs (C4) are not built yet
+ *   report     report.md, report.html, gate.md, gate.json in the same directory, led by the Gate, then the RCS and its
+ *              band, then the glance, where the command stops for the one step that stays human (SOP step 8); before
  *              them the scoreboard line (C2) is appended to HARNESS_HOME/scoreboard/releases.jsonl (or --scoreboard), and
  *              the line and any run rule firing are printed after the score
  *
@@ -183,8 +186,8 @@ export interface PlannedStage {
   skip?: string;
 }
 
-/** The seams later phases fill (C3 glance, C4 5 Whys). Until then they say so; they never make data up. */
-export const NOT_BUILT = { glance: "not built yet (C3)", whys: "not built yet (C4)" } as const;
+/** The seam a later phase fills (C4 5 Whys). Until then it says so; it never makes data up. */
+export const NOT_BUILT = { whys: "not built yet (C4)" } as const;
 
 /** Where the changes step writes changes.json: the command's own directory, known only once it runs. */
 export const CHANGES_OUT = "<release-command dir>/changes.json";
@@ -229,7 +232,7 @@ export function planRelease(o: ReleaseOptions, noise: NoiseDecision): PlannedSta
       steps: [withOut({ ...release, title: `release mode: A/B${o.claims ? ", claims" : ""}${o.fast ? "" : ", k6"}`, argv: [...release.argv, "--noise", noiseArg] })]
     },
     o.fast ? { stage: "rehearse", title: "migration, then upgrade", steps: [], skip: "--fast: no rehearsals" } : { stage: "rehearse", title: "migration, then upgrade", steps: [withOut(step("migration")!), withOut(step("upgrade")!)] },
-    { stage: "score", title: "the score (confidence.json); the glance and the 5 Whys stubs are not built yet", steps: [] },
+    { stage: "score", title: "the score and the reviewer's glance (confidence.json); the 5 Whys stubs are not built yet", steps: [] },
     { stage: "report", title: "report.md, report.html, gate.md, gate.json", steps: [] }
   ];
 }
@@ -367,6 +370,8 @@ export interface SeamInput {
   score?: ScoreExtras;
   /** changes.json, when the changes stage wrote one: the score reads it as --change-risk unless one was given. */
   changes?: string;
+  /** releases.jsonl: the glance's novelty reads the releases before this one. */
+  scoreboard?: string;
 }
 
 /**
@@ -386,8 +391,9 @@ export function changesStage(i: SeamInput, step: Step | undefined, harness: (arg
 }
 
 /**
- * C0: confidence.json in the command's directory, from the release, migration and upgrade runs (and the optional inputs).
- * C3 and C4 fill the rest: the glance, and the 5 Whys stubs for a FAIL or a Red band. No release run, nothing to score.
+ * C0: confidence.json in the command's directory, from the release, migration and upgrade runs (and the optional inputs),
+ * with C3's glance ranked from the same inputs and the scoreboard. C4 fills the rest: the 5 Whys stubs for a FAIL or a
+ * Red band. No release run, nothing to score.
  */
 export function scoreStage(i: SeamInput): SeamResult {
   const runDir = (id: string) => i.entries.find((e) => e.id === id)?.runDir;
@@ -397,9 +403,9 @@ export function scoreStage(i: SeamInput): SeamResult {
   const upgrade = runDir("upgrade");
   // An explicit --change-risk wins; else the changes stage's changes.json.
   const changeRisk = i.score?.changeRisk ?? i.changes;
-  const { confidence: c } = scoreAndWrite({ outDir: i.dir, gate: i.gate, release, ...(migration ? { migration } : {}), ...(upgrade ? { upgrade } : {}), ...i.score, ...(changeRisk ? { changeRisk } : {}), candidate: i.candidate, baseline: i.baseline.tag });
+  const { confidence: c } = scoreAndWrite({ outDir: i.dir, gate: i.gate, release, ...(migration ? { migration } : {}), ...(upgrade ? { upgrade } : {}), ...i.score, ...(changeRisk ? { changeRisk } : {}), candidate: i.candidate, baseline: i.baseline.tag, ...(i.scoreboard ? { scoreboard: i.scoreboard } : {}) });
   const measured = c.dimensions.filter((d) => d.status === "measured").length;
-  return { state: "done", note: `${c.rcs === null ? `no RCS (Gate ${c.gate})` : `RCS ${c.rcs} ${c.band}`}; ${measured} of ${c.dimensions.length} dimensions measured; confidence.json`, markdown: renderDeductionsMarkdown(c), confidence: c };
+  return { state: "done", note: `${c.rcs === null ? `no RCS (Gate ${c.gate})` : `RCS ${c.rcs} ${c.band}`}; ${measured} of ${c.dimensions.length} dimensions measured; glance: ${c.glance.length} to mark; confidence.json`, markdown: renderDeductionsMarkdown(c), confidence: c };
 }
 
 /**
@@ -528,7 +534,7 @@ export function runRelease(r: ReleaseRun, deps: ReleaseDeps): ReleaseOutcome {
     results.push(...outcome.results);
     return outcome;
   };
-  const seamInput = (gate: GateWord): SeamInput => ({ candidate: r.candidate, baseline: r.baseline, dir, entries: results.map(readGateEntry), gate, ...(r.score ? { score: r.score } : {}), ...(seams.changes?.file ? { changes: seams.changes.file } : {}) });
+  const seamInput = (gate: GateWord): SeamInput => ({ candidate: r.candidate, baseline: r.baseline, dir, entries: results.map(readGateEntry), gate, ...(r.score ? { score: r.score } : {}), ...(seams.changes?.file ? { changes: seams.changes.file } : {}), ...(r.scoreboard ? { scoreboard: r.scoreboard.file } : {}) });
 
   let interrupted = false;
   try {
@@ -635,7 +641,7 @@ export function runRelease(r: ReleaseRun, deps: ReleaseDeps): ReleaseOutcome {
   const code = releaseExitCode({ codes: results.map((x) => x.code), notJudged: notJudged || interrupted });
   const gate = gateWord(code, entries);
 
-  // score: confidence.json (C0), a seam for the glance (C3) and the 5 Whys (C4). It runs whatever happened above, and never fails.
+  // score: confidence.json (C0) and the glance (C3), a seam for the 5 Whys (C4). It runs whatever happened above, and never fails.
   if (!interrupted) {
     progress.start("score");
     seams.score = runSeam(scoreStage, seamInput(gate));
@@ -649,7 +655,7 @@ export function runRelease(r: ReleaseRun, deps: ReleaseDeps): ReleaseOutcome {
   // report: always.
   progress.start("report");
   const at2 = deps.now();
-  const summary = { production: r.baseline.tag, candidate: r.candidate, entries, code, at: at2.toISOString(), gate, ...(r.fast ? { banner: FAST_BANNER } : {}), ...(conf ? { score: `${renderScoreMarkdown(conf)}${changes ? `\n\n#### Change risk per PR\n\n${renderChangesMarkdown(changes)}` : ""}` } : {}) };
+  const summary = { production: r.baseline.tag, candidate: r.candidate, entries, code, at: at2.toISOString(), gate, ...(r.fast ? { banner: FAST_BANNER } : {}), ...(conf ? { score: `${renderScoreMarkdown(conf, renderGlanceMarkdown(conf, { dir }))}${changes ? `\n\n#### Change risk per PR\n\n${renderChangesMarkdown(changes)}` : ""}` } : {}) };
   const gateFiles = writeGateSummary(r.outRoot, at2, summary, dir);
   const md = join(dir, "report.md");
   const html = join(dir, "report.html");
@@ -661,6 +667,7 @@ export function runRelease(r: ReleaseRun, deps: ReleaseDeps): ReleaseOutcome {
   deps.say(`gate: ${gate}${r.fast ? " (--fast: not for a go decision)" : ""} -> exit ${code}`);
   if (conf) deps.say(`confidence: ${rcsLine(conf)}`);
   for (const line of board) deps.say(line);
+  if (conf) deps.say(`glance: ${conf.glance.length} place(s) to look (step 8, the one step that stays human)${conf.band === "Amber" ? "; Amber: go only once every item is recorded verified" : ""}${conf.glance.length ? `; mark each: ${markHint(dir)}` : ""}`);
   deps.say(`report: ${html}`);
   if (r.fast) deps.say(FAST_BANNER);
   if (deps.open) deps.open(html);
@@ -681,7 +688,8 @@ export function renderReleaseMarkdown(o: { gateMd: string; status: ReleaseStatus
   lines.push("");
   lines.push("### Score (visual management): where the points went", "", o.seams.score?.markdown ?? `Not computed: ${o.seams.score?.note ?? "the score stage did not run"}. Never an input to the gate or the exit code.`, "");
   if (o.board?.length) lines.push("### Scoreboard (visual management over time)", "", ...o.board.map((l) => `- ${l.trim()}`), "");
-  lines.push("### Glance (gemba)", "", `Not shown: ${NOT_BUILT.glance}.`, "");
+  const conf = o.seams.score?.confidence;
+  lines.push("### Glance (gemba)", "", conf ? `At the top, under the RCS: ${conf.glance.length} place(s) to look, ranked by novelty × exposure. Marks go to ${MARKS_FILE} (\`harness glance status --run <this dir>\` reads them back); they never change the Gate or an exit code.` : `Not ranked: ${o.seams.score?.note ?? "the score stage did not run"}.`, "");
   lines.push("### 5 Whys (kaizen)", "", `Not opened: ${NOT_BUILT.whys}.${o.code === 1 ? " This FAIL is a trigger once it is." : ""}`, "");
   // The per-PR table sits under the score when there is one; without a score it is shown here.
   const ch = o.seams.changes;
@@ -710,9 +718,11 @@ table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid #ddd;pad
 .seam{color:#555}
 .rcs{font-size:1.3rem;font-weight:700;padding:.4rem 1rem;border-radius:6px}
 .rcs.green{background:#e3f4e6}.rcs.amber{background:#fff4e0}.rcs.red{background:#fbe3e3}.rcs.none{background:#f1f1f1}
+.glance{border-left:4px solid #1f5fa8;padding:0 1rem;margin:1rem 0}.glance li{margin:.5rem 0}
+.mark{font-size:.8rem;padding:0 .4rem;border-radius:4px;background:#f1f1f1}.mark.verified{background:#e3f4e6}.mark.disputed{background:#fbe3e3}.mark.escalated{background:#fff4e0}
 </style></head><body>
 <p class="gate ${tone}">Gate: ${esc(o.gate)} <small>(exit ${o.code})</small></p>
-${o.seams.score?.confidence ? renderScoreHtml(o.seams.score.confidence) : ""}
+${o.seams.score?.confidence ? renderScoreHtml(o.seams.score.confidence, renderGlanceHtml(o.seams.score.confidence, { dir: o.dir })) : ""}
 ${o.seams.score?.confidence && o.seams.changes?.changes ? renderChangesHtml(o.seams.changes.changes) : ""}
 <p>${esc(o.candidate)} beside ${esc(o.baseline.tag)} <small>(${esc(o.baseline.how)})</small></p>
 ${o.fast ? `<p class="banner">${esc(FAST_BANNER)}</p>` : ""}
@@ -727,7 +737,7 @@ ${stages}
 </tbody></table>
 <h2>Score (visual management)</h2><p class="seam">${esc(o.seams.score?.note ?? "the score stage did not run")}; never an input to the gate or the exit code.${o.seams.score?.confidence ? ' Every deduction and its evidence is in <a href="confidence.json">confidence.json</a>.' : ""}</p>
 ${o.board?.length ? `<h2>Scoreboard (visual management over time)</h2><ul class="seam">${o.board.map((l) => `<li>${esc(l.trim())}</li>`).join("")}</ul>` : ""}
-<h2>Glance (gemba)</h2><p class="seam">${esc(NOT_BUILT.glance)}</p>
+${o.seams.score?.confidence ? "" : `<h2>Glance (gemba)</h2><p class="seam">Not ranked: ${esc(o.seams.score?.note ?? "the score stage did not run")}.</p>`}
 <h2>5 Whys (kaizen)</h2><p class="seam">${esc(NOT_BUILT.whys)}</p>
 <h2>Changes</h2><p class="seam">${esc(o.seams.changes?.note ?? NO_MONOREPO)}</p>
 ${!o.seams.score?.confidence && o.seams.changes?.changes ? renderChangesHtml(o.seams.changes.changes) : ""}

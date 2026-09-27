@@ -22,6 +22,9 @@ import { harnessInfo } from "../version.ts";
 import { CHANGES_DEFAULTS, ChangesInputError, renderChangesBoard, runChanges, type ChangesDeps } from "../changes/command.ts";
 import { PRUNE_DEFAULTS, prune, renderPrune } from "./prune.ts";
 import { ScoreboardInputError } from "../scoreboard/line.ts";
+import { GlanceInputError, markItem, statusOf } from "../glance/command.ts";
+import { MARK_MEANS } from "../glance/rank.ts";
+import { renderGlanceBoard } from "../glance/render.ts";
 import { appendRun, defaultScoreboardFile, mutantsFileBeside, readTrends, recordMutants } from "../scoreboard/store.ts";
 import { renderSite, renderTrends } from "../scoreboard/render.ts";
 import { keepReport } from "../ci/report-archive.ts";
@@ -203,8 +206,10 @@ export function confidenceSources(v: Values): ScoreSources {
   if (!where) throw new UsageError("confidence needs --run <release run dir | report.json | harness release dir> [--migration dir] [--upgrade dir] [--json]");
   const dir = runDirOf(where);
   const gateFile = join(dir, "gate.json");
-  const explicit = { ...(str(v, "migration") ? { migration: resolve(str(v, "migration")!) } : {}), ...(str(v, "upgrade") ? { upgrade: resolve(str(v, "upgrade")!) } : {}), ...scoreExtras(v) };
+  const explicit: Partial<ScoreSources> = { ...(str(v, "migration") ? { migration: resolve(str(v, "migration")!) } : {}), ...(str(v, "upgrade") ? { upgrade: resolve(str(v, "upgrade")!) } : {}), ...scoreExtras(v) };
   const harness = (({ version, contractVersion }) => ({ version, contractVersion }))(harnessInfo());
+  // The glance's novelty reads the scoreboard: --scoreboard, else the local one (HARNESS_HOME/scoreboard/releases.jsonl).
+  explicit.scoreboard = str(v, "scoreboard") ? resolve(str(v, "scoreboard")!) : defaultScoreboardFile(harnessHome());
   if (!existsSync(join(dir, "report.json")) && existsSync(gateFile)) {
     let g: { production?: string; candidate?: string; code: number; steps: (Parameters<typeof gateWord>[1][number])[] };
     try {
@@ -317,6 +322,58 @@ export function scoreboardCommand(sub: string | undefined, v: Values, deps: Scor
   } catch (e) {
     if (e instanceof ScoreboardInputError) throw new UsageError(e.message);
     throw e;
+  }
+}
+
+// ---- harness glance -----------------------------------------------------------------------------------
+
+export interface GlanceDeps {
+  now?: () => Date;
+  log?: (m: string) => void;
+}
+
+/**
+ * `harness glance mark|status --run <harness release dir>`: the Reviewer's marks (SOP step 8). mark appends one line to
+ * glance-marks.jsonl and re-renders the glance; exit 0 when recorded, 2 for what it cannot use. status prints the glance
+ * with its marks and exits 0 whatever they say (or when there is no glance to read): informational. Neither can change a
+ * Gate, a verdict or any other command's exit code.
+ */
+export function glanceCommand(sub: string | undefined, v: Values, deps: GlanceDeps = {}): number {
+  const log = deps.log ?? ((m: string) => console.log(m));
+  const now = (deps.now ?? (() => new Date()))();
+  const run = str(v, "run");
+  switch (sub) {
+    case "mark": {
+      if (!run) throw new UsageError("glance mark needs --run <harness release dir> --item <n> --mark verified|disputed|escalated --by <name> [--note text]");
+      try {
+        const o = markItem({ run, item: str(v, "item"), mark: str(v, "mark"), by: str(v, "by"), ...(str(v, "note") ? { note: str(v, "note")! } : {}), now });
+        if (flag(v, "json")) log(JSON.stringify({ record: o.record, status: o.status, files: o.files, ...(o.warning ? { warning: o.warning } : {}) }, null, 2));
+        else {
+          log(`item ${o.record.item} marked ${o.record.mark} by ${o.record.by} (${MARK_MEANS[o.record.mark].means}): ${o.record.becomes}${o.record.whyWanted ? " (whyWanted: harness why, C4, opens it)" : ""}`);
+          log(`  ${o.record.finding}`);
+          log(o.status.go);
+          log(`recorded in ${o.files[0]}; re-rendered ${o.files.slice(1).map((f) => basename(f)).join(", ")}`);
+          if (o.warning) log(o.warning);
+        }
+        return 0;
+      } catch (e) {
+        if (e instanceof GlanceInputError) throw new UsageError(e.message);
+        throw e;
+      }
+    }
+    case "status": {
+      if (!run) throw new UsageError("glance status needs --run <harness release dir> [--json]");
+      try {
+        const s = statusOf(run);
+        log(flag(v, "json") ? JSON.stringify({ dir: s.dir, gate: s.confidence.gate, rcs: s.confidence.rcs, band: s.confidence.band, ...s.status, notChecked: s.confidence.glanceBasis?.notChecked ?? [] }, null, 2) : `Gate: ${s.confidence.gate}\n${s.confidence.rcs === null ? (s.confidence.note ?? "No RCS.") : `RCS ${s.confidence.rcs} ${s.confidence.band}: ${s.confidence.meaning}`}\n${renderGlanceBoard({ ...s.confidence, glance: s.status.items }, { dir: s.dir, records: s.records })}`);
+      } catch (e) {
+        if (!(e instanceof GlanceInputError)) throw e;
+        log(flag(v, "json") ? JSON.stringify({ error: e.message }) : `no glance to show: ${e.message}`);
+      }
+      return 0;
+    }
+    default:
+      throw new UsageError("glance mark|status");
   }
 }
 

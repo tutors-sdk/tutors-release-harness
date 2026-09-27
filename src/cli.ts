@@ -19,7 +19,7 @@ import { harnessInfo } from "./version.ts";
 import { helpFor, parseArgsErrorText } from "./local/usage.ts";
 import { RequirementError, requirements } from "./not-collected.ts";
 import { previewResolve } from "./ci/main-preview.ts";
-import { UsageError, changesCommand, confidenceCommand, doctorCommand, guardCommand, localCommand, noiseCommand, overrideCommand, pruneCommand, recordAppliedOverride, releaseCommand, reportsCommand, scoreboardCommand, scorecardCommand, vulnDbCommand } from "./local/cli.ts";
+import { UsageError, changesCommand, confidenceCommand, doctorCommand, glanceCommand, guardCommand, localCommand, noiseCommand, overrideCommand, pruneCommand, recordAppliedOverride, releaseCommand, reportsCommand, scoreboardCommand, scorecardCommand, vulnDbCommand } from "./local/cli.ts";
 import { defaultNoise } from "./local/noise-store.ts";
 
 const USAGE = `tutors-release-harness
@@ -154,7 +154,7 @@ const USAGE = `tutors-release-harness
       when clean and at most 7 days old, else an A/A of the baseline, 3 runs), changes (harness changes in the monorepo
       checkout: changes.json, fed to the score's change risk; skipped without a checkout), release (3 runs,
       k6 20x30s, claims, rules), rehearse (migration, upgrade), score (confidence.json, as harness confidence), report,
-      led by the Gate, then the RCS and its band. --baseline prod or none reads
+      led by the Gate, then the RCS and its band, then the reviewer's glance (since 1.12.0). --baseline prod or none reads
       release/deployed.json in the monorepo checkout (--monorepo or HARNESS_MONOREPO_DIR), else HARNESS_PRODUCTION_TAG, else
       exit 2; --claims defaults to release/claims.yaml there. A stage that stops the line (images missing, a dirty A/A,
       a gate FAIL) says so and the next step; the report is written whatever happened, into
@@ -164,13 +164,14 @@ const USAGE = `tutors-release-harness
       (--scoreboard <file> writes there instead; never into the checkout unasked; a --fast run is not appended), prints it
       and any run rule firing. Exit 0 pass or warn, 1 FAIL, 2 not judged or usage. Not stable.
   harness confidence --run <release run dir | report.json | harness release dir> [--migration dir] [--upgrade dir] [--json]
-                     [--test-signal f] [--traceability f] [--change-risk f] [--post-deploy dir]
+                     [--test-signal f] [--traceability f] [--change-risk f] [--post-deploy dir] [--scoreboard f]
       The Release Confidence Score: writes confidence.json beside the run and prints the board. The Gate first, then the
       RCS (0-100, only when the Gate is PASS or WARN) and its band (Green >= 90, Amber 75-89, Red < 75), then eight
       dimensions, each with every point lost and where. A dimension without its input is "not measured" and left out of
       the mean; a breached floor caps the RCS at 74. The optional inputs are JSON files (docs/contract.md). Never changes
       a verdict or an exit code: exit 0 when written, 2 for an input it cannot read. --change-risk also takes a
-      changes.json. Not stable.
+      changes.json. Since 1.12.0 it also ranks the reviewer's glance into confidence.json (at most seven places to look,
+      novelty x exposure; --scoreboard, default HARNESS_HOME/scoreboard/releases.jsonl, is the history). Not stable.
   harness changes --a <tag> --b <tag> [--monorepo dir] [--history 6] [--changelog f] [--json] [--out file]
       What changed between two tags of the monorepo (git log A..B in the checkout: --monorepo or HARNESS_MONOREPO_DIR;
       16.2.2 finds v16.2.2), one risk line per PR: churn per app against its median over the last --history releases,
@@ -192,6 +193,15 @@ const USAGE = `tutors-release-harness
       beside the file, or --mutants), clean A/A nights and days since the last A/A failure (--noise-history, default the
       local noise store's). --site writes scoreboard.html and scoreboard.json into a directory. mutants records a
       self-test's mutants.json in mutants.jsonl. Advisory: exit 0 when done, 2 for what it cannot read. Not stable.
+  harness glance mark --run <harness release dir> --item <n> --mark verified|disputed|escalated --by <name> [--note text] [--json]
+  harness glance status --run <harness release dir> [--json]
+      The reviewer's glance (SOP step 8, gemba): at most seven places to look, ranked by novelty x exposure in
+      confidence.json, each linked to the hunk, the claim and the PR. mark records one of three per item in
+      glance-marks.jsonl beside it and re-renders the glance in confidence.json, report.md, gate.md and report.html:
+      verified (looked, agrees with the claim), disputed (becomes a new claim or a hold), escalated (becomes a 5 Whys).
+      status prints the glance with its marks and whether an Amber release's glance is recorded verified (go only then).
+      Marks never change the Gate or an exit code. mark: exit 0 when recorded, 2 for what it cannot use; status: exit 0
+      always once --run is given (informational). Not stable.
 `;
 
 function fail(message: string): never {
@@ -305,6 +315,10 @@ async function main(argv: string[]): Promise<number> {
       "noise-history": { type: "string" },
       site: { type: "string" },
       scoreboard: { type: "string" },
+      item: { type: "string" },
+      mark: { type: "string" },
+      by: { type: "string" },
+      note: { type: "string" },
       screenshots: { type: "boolean", default: true },
       axe: { type: "boolean", default: true },
       focus: { type: "boolean", default: true },
@@ -519,6 +533,8 @@ async function main(argv: string[]): Promise<number> {
       return changesCommand(values);
     case "scoreboard":
       return scoreboardCommand(positionals[0], values);
+    case "glance":
+      return glanceCommand(positionals[0], values);
     case "journeys":
       for (const j of journeys) console.log(`${j.name.padEnd(34)} set=${j.set.padEnd(9)} ${j.anonymous ? "anonymous" : "signed-in"}`);
       return 0;

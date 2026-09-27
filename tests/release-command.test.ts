@@ -11,7 +11,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { runChanges } from "../src/changes/command.ts";
 import type { Changes } from "../src/changes/signals.ts";
 import { changesRepo } from "./support/changes-repo.ts";
-import { UsageError, releaseCommand } from "../src/local/cli.ts";
+import { UsageError, glanceCommand, releaseCommand } from "../src/local/cli.ts";
 import { describeStatus } from "../src/local/noise-store.ts";
 import {
   BaselineError,
@@ -404,7 +404,7 @@ describe("the score stage (C0): confidence.json, and never an exit code", () => 
     expect(c.run.reports.release).toMatch(/^\.\.\/.*-release\/report\.json$/);
     expect(c.run.reports.migration).toMatch(/-migration\/report\.json$/);
     expect(c.dimensions.filter((d) => d.status === "not measured").map((d) => d.id)).toEqual(["test-signal", "traceability", "change-risk", "post-deploy"]);
-    expect(r.status.stages.find((s) => s.stage === "score")!.note).toBe("RCS 100 Green; 4 of 8 dimensions measured; confidence.json");
+    expect(r.status.stages.find((s) => s.stage === "score")!.note).toBe("RCS 100 Green; 4 of 8 dimensions measured; glance: 0 to mark; confidence.json");
     expect(r.outcome.files.confidence).toBe(join(r.outcome.dir, "confidence.json"));
   });
 
@@ -640,5 +640,71 @@ describe("the scoreboard (C2): a line after the score, the run rules printed, ne
     const dry: string[] = [];
     releaseCommand(opts({ candidate: "16.3.0-rc.1", baseline: "16.2.2", "dry-run": true }), { env: {}, home, say: (m) => dry.push(m) });
     expect(dry.join("\n")).toContain(`scoreboard: the line is appended to ${join(home, "scoreboard", "releases.jsonl")}`);
+  });
+});
+
+describe("the glance (C3): at the top, right after the RCS, and never an exit code", () => {
+  const board = () => join(tmp("board"), "releases.jsonl");
+  const fixed = (pk: string, k: number) => ({ id: `console:${pk}:${k}`, artefact: "console", scope: pk, summary: `${pk}: console message gone on b`, detail: "error: boom", severity: "info" });
+  const withFixes = { release: { compare: { hunks: [fixed("reader:home", 1), fixed("live:home", 2)], unclaimed: [], matches: [], staleClaims: [], broadUnapproved: [] } } };
+
+  it("report.md, gate.md and report.html open with the Gate, the RCS and its band, then the glance, then the dimension table", () => {
+    const r = go({ fake: { report: withFixes } });
+    const conf = JSON.parse(readFileSync(join(r.outcome.dir, "confidence.json"), "utf8")) as Confidence;
+    expect(conf.glance.map((i) => i.kind)).toEqual(["fixed-on-b", "fixed-on-b"]);
+    const at = (s: string) => r.md.indexOf(s);
+    expect(at("**Gate: PASS**")).toBeLessThan(at("**RCS "));
+    expect(at("**RCS ")).toBeLessThan(at("### The reviewer's glance (gemba: go to the artefact and look)"));
+    expect(at("### The reviewer's glance")).toBeLessThan(at("| dimension | weight |"));
+    expect(r.md).toContain(`Mark each one: \`harness glance mark --run ${r.outcome.dir} --item <n> --mark verified|disputed|escalated --by <name> [--note text]\``);
+    expect(r.md).toMatch(/\n1\. \*\*Fixed on b\*\*: /);
+    expect(r.md).toContain("[hunk](../2026-09-27T10-00-00-release/report.html#hunk-console:reader:home:1)");
+    expect(r.md).toContain("Not checked (no input, so nothing is claimed about them): mask added");
+    expect(readFileSync(r.outcome.files.gateMd, "utf8")).toContain("### The reviewer's glance");
+    expect(r.html.indexOf('class="rcs')).toBeLessThan(r.html.indexOf('<section class="glance">'));
+    expect(r.html.indexOf('<section class="glance">')).toBeLessThan(r.html.indexOf("<table><thead><tr><th>dimension"));
+    expect(r.lines.find((l) => l.startsWith("glance: "))).toBe(`glance: 2 place(s) to look (step 8, the one step that stays human); mark each: harness glance mark --run ${r.outcome.dir} --item <n> --mark verified|disputed|escalated --by <name> [--note text]`);
+    expect(r.md).not.toContain("not built yet (C3)");
+  });
+
+  it("an Amber release says the glance must be recorded verified before go", () => {
+    const dir = tmp("inputs");
+    const ts = join(dir, "test-signal.json");
+    // two packages at 72%: test signal 40 and no floor, so the mean lands in Amber
+    writeFileSync(ts, JSON.stringify({ packages: [{ name: "reader", mutationScore: 72 }, { name: "live", mutationScore: 72 }], harnessMutants: { caught: 8, total: 8 } }));
+    const r = go({ fake: { report: withFixes }, score: { testSignal: ts } });
+    const conf = JSON.parse(readFileSync(join(r.outcome.dir, "confidence.json"), "utf8")) as Confidence;
+    expect(conf.band).toBe("Amber");
+    expect(r.md).toContain("**Amber: the glance is not yet recorded verified (0 of 2 verified): not a go (SOP step 9).**");
+    expect(r.lines.find((l) => l.startsWith("glance: "))).toContain("; Amber: go only once every item is recorded verified");
+  });
+
+  it("the same exit code with a glance, without one, and after every mark; the scoreboard line carries the glance", () => {
+    for (const fake of [{}, { verdicts: { release: "fail" } }, { verdicts: { release: "warn" } }]) {
+      const plain = go({ fake });
+      const file = board();
+      const glanced = go({ fake: { ...fake, report: withFixes }, scoreboard: file });
+      expect(glanced.outcome.code, JSON.stringify(fake)).toBe(plain.outcome.code);
+      const line = JSON.parse(readFileSync(file, "utf8").trim()) as { glance: { items: number; marks: Record<string, number> }; maskIds: string[] };
+      expect(line.glance).toMatchObject({ items: 2, marks: { unmarked: 2 } });
+      expect(line.maskIds).toEqual(["a-mask"]);
+      for (const mark of ["disputed", "escalated", "verified"]) expect(glanceCommand("mark", { run: glanced.outcome.dir, item: "1", mark, by: "ana" }, { log: () => {} })).toBe(0);
+      const status = JSON.parse(readFileSync(glanced.outcome.files.status, "utf8")) as ReleaseStatus;
+      expect(status.exitCode).toBe(plain.outcome.code);
+      const conf = JSON.parse(readFileSync(join(glanced.outcome.dir, "confidence.json"), "utf8")) as Confidence;
+      expect(conf.gate).toBe(plain.outcome.code === 1 ? "FAIL" : fake.verdicts?.release === "warn" ? "WARN" : "PASS");
+      expect(readFileSync(glanced.outcome.files.md, "utf8")).toContain("mark: **verified** by ana");
+      expect(readFileSync(glanced.outcome.files.html, "utf8")).toContain('<span class="mark verified">verified by ana</span>');
+    }
+  });
+
+  it("the glance's novelty reads the scoreboard the run appends to: a second run of another tag sees the first", () => {
+    const file = board();
+    go({ fake: { report: withFixes }, scoreboard: file });
+    // the same tag again is a re-run, not history
+    const again = go({ fake: { report: withFixes }, scoreboard: file });
+    const c = JSON.parse(readFileSync(join(again.outcome.dir, "confidence.json"), "utf8")) as Confidence;
+    expect(c.glance[0]!.basis.novelty).toBe("no history yet");
+    expect(c.glanceBasis!.history.releases).toEqual([]);
   });
 });

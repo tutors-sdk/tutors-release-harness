@@ -293,8 +293,8 @@ one line when it ends, with its elapsed time, and `status.json` records it as it
 | changes | `harness changes --a <baseline> --b <candidate>` in the monorepo checkout (`--monorepo` or `HARNESS_MONOREPO_DIR`): `changes.json`, one risk line per PR, which the score reads as change risk ([below](#what-changed-pr-by-pr-harness-changes)). No checkout: skipped, with the reason, and change risk stays not measured | never fails, never changes the exit code: orphans, a missing token, even a failure to run are the stage's note |
 | release | `--mode release --runs 3 --load 20x30s` with the claims (`--claims`, else `release/claims.yaml` in the monorepo checkout), the rules and that A/A | a FAIL stops the line for a go decision; the rehearsals still run for the evidence, the report is written, exit `1` |
 | rehearse | migration, then upgrade | skipped only with `--fast`, and the report says so |
-| score | `confidence.json`: the Release Confidence Score from the release, migration and upgrade runs ([below](#the-release-confidence-score-harness-confidence)). The glance (C3) and the 5 Whys stubs (C4) are not built yet | never fails, never changes the exit code: the exit code is decided before the score exists |
-| report | `report.md`, `report.html`, `gate.md`, `gate.json` in `out/<timestamp>-release-command/`, led by the Gate, then the RCS and its band, then the dimension table, then the per-PR change-risk table; `--open` opens `report.html` | always written |
+| score | `confidence.json`: the Release Confidence Score from the release, migration and upgrade runs ([below](#the-release-confidence-score-harness-confidence)), and the reviewer's glance, at most seven places to look, ranked ([below](#the-reviewers-glance-harness-glance)). The 5 Whys stubs (C4) are not built yet | never fails, never changes the exit code: the exit code is decided before the score exists |
+| report | `report.md`, `report.html`, `gate.md`, `gate.json` in `out/<timestamp>-release-command/`, led by the Gate, then the RCS and its band, then **the reviewer's glance**, then the dimension table, then the per-PR change-risk table; `--open` opens `report.html`. The command stops here: step 8 of the SOP is the one step that stays human | always written |
 
 `status.json` ([schema](contract/release-status.schema.json)) holds the stage running now, and
 for each stage its `state`, `startedAt`, `elapsed` and the plan's `expected` seconds, so a
@@ -324,13 +324,13 @@ The view behind this table is [lean.md](lean.md).
 | --- | --- | --- |
 | Jidoka (stop the line) | a stage that cannot hand good work on stops it: missing images at resolve, a dirty A/A at noise (before any A/B), a gate FAIL at release. The terminal and the report say `line stopped at <stage>: <why>` and the next standard step, not a generic error. The Gate is always shown first and no number talks it back on | the 5 Whys it triggers (C4) |
 | Andon, visual management (**live since 1.9.0; over time since 1.11.0**) | the report opens with the Gate in one word (PASS, WARN, FAIL or NOT JUDGED), then the Release Confidence Score and its band with what the band means (Green: ship on the captain's say; Amber: ship only after the reviewer's glance is recorded verified; Red: hold, open a 5 Whys, do not re-run hoping for a better number), then the eight dimensions, each with every point lost and where. `confidence.json` and `status.json` are the boards a dashboard reads. Since 1.11.0 each run appends one line to the scoreboard (`HARNESS_HOME/scoreboard/releases.jsonl`, or `--scoreboard`), and the terminal and the report show the line and any **run rule** firing right after the RCS: three consecutive declines, or two of three releases below 75, in a dimension or the RCS, is the andon for a trend, and opens a kaizen item naming the dimension. `harness scoreboard trends` and the reports site's `scoreboard.html` draw the six trend views beside the harness's own health | the Release Hub reading the same file; the monorepo's test signal, traceability and post-deploy record for the three dimensions still not measured |
-| Standard work | one command, the same stages in the same order every time, the same steps CI runs, and a named next step for each stop | the SOP in the monorepo (C3) |
-| Gemba (**change risk live since 1.10.0**) | each gate row links to that run's own `report.html`, the artefacts themselves; each change-risk deduction links to the exact file in the exact PR's diff on GitHub, so a reviewer with fifteen minutes opens the hunk, not the release | the glance: at most seven ranked places to look (C3), which will draw hotspot-meets-first-contribution and major bumps from `changes.json` |
+| Standard work (**the SOP live since 1.12.0**) | one command, the same stages in the same order every time, the same steps CI runs, and a named next step for each stop. The monorepo's `release/SOP.md` is the standard work sheet around it: three roles, twelve steps, one owner and one done-when per step; `harness release` is steps 1 to 7 and stops at step 8, and `harness glance mark` is how step 8's done-when ("each item marked") is recorded | a deviation log the harness reads (C4's kaizen register) |
+| Gemba (**the glance live since 1.12.0**) | **the reviewer's glance** is the top of the report and the PR comment, right under the Gate and the RCS: at most seven places to look, ranked by novelty (against the last six releases on the scoreboard) × exposure (the share of the journeys it touches), each a one-line finding with a link to the hunk in `report.html`, the claim that covers it and the PR (and the file in its diff) that caused it. The Reviewer goes to the artefact, not the summary, and records one mark per item: **verified**, **disputed** (a new claim or a hold) or **escalated** (a 5 Whys). An Amber release goes only once every item is recorded verified. What the glance could not check is listed with the reason, never made up. Every gate row links to its run's own `report.html`; every change-risk deduction to the file in the PR's diff | the 5 Whys an escalated mark opens (`whyWanted`, C4), and, when a regression escapes past a verified glance, the 5 Whys asking whether the glance ranked the right thing |
 | Kaizen (**trends live since 1.11.0**) | every FAIL is marked as a trigger in the report; `changes.json` keeps a risk line per PR and a deduction per file, and the scoreboard turns them into hotspot recurrence (the same file every release: a refactor candidate) and per-file risk over time. A run rule firing names the kaizen item it opens; a re-run is a logged deviation, listed with its first and latest RCS, never a quiet replacement. The harness's own health (mutants caught per week, clean A/A nights, days since the last A/A failure) sits beside the product's, so a harness that is quietly decaying shows in the same picture | `harness why`, the 5 Whys stub and the countermeasure register (C4), which will write the kaizen items the run rules open and give "open countermeasures only rising" its numbers |
 
 The seams are functions (`changesStage`, `scoreStage`, `scoreboardStage` in `src/local/release.ts`);
-`changesStage` runs `harness changes`, `scoreStage` writes `confidence.json` and `scoreboardStage`
-appends the scoreboard line. Whatever they return, the
+`changesStage` runs `harness changes`, `scoreStage` writes `confidence.json` with the glance and
+`scoreboardStage` appends the scoreboard line. Whatever they return, the
 gate wins: nothing in them can change a verdict or an exit code.
 
 ### The Release Confidence Score: `harness confidence`
@@ -473,6 +473,73 @@ caught per week, clean nights of the last 30 A/As, and days since the last A/A f
 local noise store, or `--noise-history`). Advisory: nothing here reaches a verdict or an exit
 code; exit `0` when done, `2` for what it cannot read. The fields are in
 [contract.md](contract.md#the-scoreboard).
+
+### The reviewer's glance: `harness glance`
+
+```console
+pnpm harness glance status --run out\<time>-release-command            # the glance, its marks, and whether Amber may go
+pnpm harness glance mark --run out\<time>-release-command --item 2 --mark disputed --by ana --note "a real fix: claim it"
+```
+
+Gemba: go to the artefact and look. The SOP's step 8 belongs to the **Reviewer**, a second person
+who authored no PR in the release, and its whole job is the glance at the top of `report.html`
+and the PR comment, right under the Gate, the RCS and its band: at most seven places, each a
+one-line finding with its links. The checked-in 16.2.1 → 16.2.2 run, scored from `report.json`
+alone, puts this first:
+
+```text
+1. Fixed on b: catalogue:home: 2 console errors fixed on b, unclaimed; but 2 new console errors on the same page: fixed, or only changed?
+   hunk: report.html#hunk-console:catalogue:home:12
+   novelty 1.00 (no history yet) × exposure 0.20 (1 of 5 journeys: catalogue) = 0.20
+2. Fixed on b: reader-auth:course: 3 console errors fixed on b, unclaimed; a fix nobody claimed can be a behaviour change
+```
+
+Opening the two hunks answers both. On `catalogue:home` the catalogue's `Cannot read properties
+of undefined (reading 'from')` is not fixed: it is the same error with a new stack, so it reads
+as gone and new at once (a Reviewer would mark it **disputed**). On `reader-auth:course` the
+reader's `(reading 'increment')` error really is gone on 16.2.2, and no claim says so. A
+reviewer asked to "review the report" reads what is easy; one handed ranked places to look
+opens the hunk.
+
+**What it looks for**, in this order (the order breaks ties): broad claims (with `approvedBy`
+and every hunk they absorbed); masks added since the last release on the scoreboard (with the
+reason and what they hid); timing or load p-values in 0.05-0.10 (with both distributions side
+by side); hotspots touched by a first contribution (with the diff); persistence writes in a
+journey that wrote nothing before, even when claimed; console errors or axe violations fixed on
+b; major dependency bumps (with the journeys exercising the app, or "unmapped"); journeys whose
+duration moved more than 20%, significant or not.
+
+**How it ranks.** `novelty × exposure`, written out on every item so the ranking can be
+reviewed too. Novelty is how unusual the finding is against the last six releases on the
+scoreboard: 1 with no history ("no history yet"), lower for each release that had the same
+finding, never 0. Exposure is the share of the journey set it touches; a finding that cannot be
+placed counts as the whole set, so what the harness cannot place is not ranked below what it can.
+
+**What it could not check** is listed under the glance with the reason, never made up. On a
+`harness release` run with the monorepo checkout, six kinds are live: broad claims, near misses
+and fixes from the release report, persistence writes and duration moves from the captures,
+hotspots and major bumps from `changes.json` (hotspots need three releases of history before
+the base tag). A mask added is checked from the second release on: the scoreboard line records
+the mask ids since 1.12.0, and the first line has nothing to compare with.
+
+**The three marks** are the Reviewer's whole job:
+
+| Mark | Means | Becomes |
+| --- | --- | --- |
+| `verified` | looked, and agrees with the claim | counts towards go |
+| `disputed` | looked, and does not agree | a new claim or a hold |
+| `escalated` | cannot tell from the artefacts | a 5 Whys on why the harness could not show it (`whyWanted`, for `harness why`) |
+
+`mark` appends one line to `glance-marks.jsonl` in the release directory (a changed mind is a
+new line; the latest wins) and re-renders the glance in `confidence.json`, `report.md`,
+`gate.md` and `report.html`; nothing else in them moves. When `--by` is named as a PR's author
+in `changes.json` it says so (the SOP's Reviewer authored no PR in the release) and records the
+mark all the same: the deviation is the Captain's to log. `status` prints the glance with its
+marks and the go line: **Amber goes only once every item is recorded verified** (SOP step 9);
+Red holds whatever the marks say; a FAIL keeps the glance for the 5 Whys. Marks never change the
+Gate, a verdict or an exit code: `mark` exits `0` when recorded and `2` for what it cannot use,
+`status` exits `0` whatever it finds. The fields are in
+[contract.md](contract.md#the-reviewers-glance).
 
 ## Parity matrix
 

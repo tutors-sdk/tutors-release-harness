@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/tutors-sdk/tutors-release-harness/blob/main/docs/contract/scoreboard-line.schema.json",
-  "title": "scoreboard/releases.jsonl: one line per release run (contract 1.11.0, not stable)",
+  "title": "scoreboard/releases.jsonl: one line per release run (contract 1.12.0, not stable)",
   "description": "Since 1.11.0. Each line of scoreboard/releases.jsonl is one of these, as one JSON object on one line. Appended by `harness scoreboard append` (and by `harness release` after its score) from a scored run; never edited, reordered or removed (`harness guard scoreboard`). A re-run is a new line with the same tag and the next run number. Advisory: never an input to the gate, a verdict or an exit code. Derived from ScoreboardLine in src/scoreboard/line.ts. Not stable: it may change in a minor release; schemaVersion changes when a reader must.",
   "type": "object",
   "additionalProperties": false,
@@ -65,6 +65,19 @@
       "description": "The latest weekly mutants record (mutants.jsonl beside the file) at the time of the line: caught and attributed, of planted. null when there is none."
     },
     "prs": { "anyOf": [{ "type": "array", "items": { "$ref": "#/definitions/pr" } }, { "type": "null" }], "description": "The per-PR risk lines of changes.json; null when change risk was not measured." },
+    "maskIds": { "type": "array", "items": { "type": "string" }, "description": "Since 1.12.0: every mask id the release run loaded (its masksApplied keys), sorted, so the next release's glance can see a mask added. Absent before 1.12.0." },
+    "glance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["items", "marks", "checked", "seen"],
+      "description": "Since 1.12.0: the reviewer's glance as the line was appended (confidence.json and glance-marks.jsonl beside it). Absent before 1.12.0.",
+      "properties": {
+        "items": { "type": "integer", "minimum": 0, "maximum": 7 },
+        "marks": { "type": "object", "additionalProperties": false, "required": ["verified", "disputed", "escalated", "unmarked"], "properties": { "verified": { "type": "integer", "minimum": 0 }, "disputed": { "type": "integer", "minimum": 0 }, "escalated": { "type": "integer", "minimum": 0 }, "unmarked": { "type": "integer", "minimum": 0 } } },
+        "checked": { "type": "array", "items": { "enum": ["broad-claim", "mask-added", "near-miss", "first-time-hotspot", "new-persistence", "fixed-on-b", "major-bump", "duration-moved"] } },
+        "seen": { "type": "array", "maxItems": 200, "items": { "type": "string" }, "description": "Every candidate's kind:key: what the next release's novelty reads." }
+      }
+    },
     "runUrl": { "type": "string" }
   }
 }

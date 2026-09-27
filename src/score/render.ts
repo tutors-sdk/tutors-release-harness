@@ -3,6 +3,8 @@
  * what the band means, then the eight dimensions as rows. A dimension that is not measured says so in its row; it is
  * never shown as a number.
  */
+import { dirname } from "node:path";
+import { renderGlanceBoard } from "../glance/render.ts";
 import type { Confidence, DimensionScore } from "./confidence.ts";
 import { FLOOR_CAP } from "./weights.ts";
 
@@ -41,6 +43,7 @@ export function renderBoard(c: Confidence, file?: string): string {
   const deductions = c.dimensions.flatMap((d) => d.deductions.map((x) => `  ${x.points ? `-${x.points}` : "floor"} ${d.name}: ${x.why}${x.floor && x.points ? " [floor]" : ""}\n      ${x.evidence}`));
   if (deductions.length) lines.push("", "Where the points went:", ...deductions.slice(0, BOARD_DEDUCTIONS));
   if (deductions.length > BOARD_DEDUCTIONS) lines.push(`  … ${deductions.length - BOARD_DEDUCTIONS} more in confidence.json`);
+  if (c.glanceBasis) lines.push("", renderGlanceBoard(c, { dir: file ? dirname(file) : "<dir>" }));
   lines.push("", "The score never changes the gate, a verdict or an exit code.");
   if (file) lines.push(`confidence.json: ${file}`);
   return lines.join("\n");
@@ -48,9 +51,9 @@ export function renderBoard(c: Confidence, file?: string): string {
 
 const cell = (s: string) => s.replaceAll("|", "\\|").replaceAll("\n", " ");
 
-/** The lead of report.md and gate.md, under the Gate: RCS and band, then the dimension table. */
-export function renderScoreMarkdown(c: Confidence): string {
-  const lines = [`**${rcsLine(c)}**`, "", basisLine(c), "", "| dimension | weight | score | floor | where it lost points |", "| --- | --- | --- | --- | --- |"];
+/** The lead of report.md and gate.md, under the Gate: RCS and band, then `lead` (the glance, since 1.12.0), then the dimension table. */
+export function renderScoreMarkdown(c: Confidence, lead?: string): string {
+  const lines = [`**${rcsLine(c)}**`, "", ...(lead ? [lead, ""] : []), basisLine(c), "", "| dimension | weight | score | floor | where it lost points |", "| --- | --- | --- | --- | --- |"];
   for (const d of c.dimensions) {
     const detail = d.status === "measured" ? d.deductions.map((x) => `${pts(x)} ${x.why}`).join("; ") || "—" : d.reason ?? "";
     lines.push(`| ${d.name} | ${d.weight} | ${d.status === "measured" ? `**${d.score}**` : "not measured"} | ${d.floorBreached ? "**breached**" : ""} | ${cell(detail)} |`);
@@ -70,8 +73,8 @@ export function renderDeductionsMarkdown(c: Confidence): string {
 
 const esc = (s: string) => s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
 
-/** The score block of the release report.html, right under the Gate. Evidence links are relative, so they open offline. */
-export function renderScoreHtml(c: Confidence): string {
+/** The score block of the release report.html, right under the Gate; `lead` (the glance) right under the RCS. Evidence links are relative, so they open offline. */
+export function renderScoreHtml(c: Confidence, lead?: string): string {
   const tone = c.band ? c.band.toLowerCase() : "none";
   const rows = c.dimensions
     .map((d) => {
@@ -80,6 +83,7 @@ export function renderScoreHtml(c: Confidence): string {
     })
     .join("\n");
   return `<p class="rcs ${tone}">${esc(rcsLine(c))}</p>
+${lead ?? ""}
 <p class="seam">${esc(basisLine(c))}</p>
 <table><thead><tr><th>dimension</th><th>weight</th><th>score</th><th>floor</th><th>where it lost points</th></tr></thead><tbody>
 ${rows}

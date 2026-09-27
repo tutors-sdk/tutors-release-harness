@@ -1,0 +1,75 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/tutors-sdk/tutors-release-harness/blob/main/docs/contract/glance-marks.schema.json",
+  "title": "glance-marks.jsonl: one line per mark the Reviewer records (contract 1.12.0, not stable)",
+  "description": "Since 1.12.0. Each line of glance-marks.jsonl, beside confidence.json in a harness release directory, is one of these, as one JSON object on one line. Appended by `harness glance mark`; never edited: a changed mind is a new line, and the latest line for a finding (kind and key) is its mark. Read by `harness glance status` and `harness scoreboard append`. Marks never change the Gate or an exit code. Derived from MarkRecord in src/glance/marks.ts. Not stable.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "item",
+    "kind",
+    "key",
+    "finding",
+    "mark",
+    "by",
+    "at",
+    "becomes"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "item": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 7,
+      "description": "The item's rank when it was marked."
+    },
+    "kind": {
+      "enum": [
+        "broad-claim",
+        "mask-added",
+        "near-miss",
+        "first-time-hotspot",
+        "new-persistence",
+        "fixed-on-b",
+        "major-bump",
+        "duration-moved"
+      ]
+    },
+    "key": {
+      "type": "string",
+      "description": "The finding's key: the mark applies to kind and key, so a re-score that reorders the glance keeps it on its finding."
+    },
+    "finding": {
+      "type": "string"
+    },
+    "mark": {
+      "enum": [
+        "verified",
+        "disputed",
+        "escalated"
+      ]
+    },
+    "by": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Who looked: the Reviewer (SOP: authored no PR in the release)."
+    },
+    "at": {
+      "type": "string"
+    },
+    "note": {
+      "type": "string"
+    },
+    "becomes": {
+      "type": "string",
+      "description": "verified: counts towards go; disputed: becomes a new claim or a hold; escalated: becomes a 5 Whys."
+    },
+    "whyWanted": {
+      "const": true,
+      "description": "Escalated: the seam for C4 (harness why), which opens a 5 Whys on why the harness could not show it."
+    }
+  }
+}

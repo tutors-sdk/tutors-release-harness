@@ -464,7 +464,6 @@ jobs:
           if [ -n "$migration" ]; then score+=(--migration "$PWD/$(dirname "$migration")"); fi
           if [ -n "$upgrade" ]; then score+=(--upgrade "$PWD/$(dirname "$upgrade")"); fi
           if [ -f changes.json ]; then score+=(--change-risk "$PWD/changes.json"); fi
-          (cd harness && pnpm harness confidence "${score[@]}")
           remote="https://github.com/${GITHUB_REPOSITORY}.git"
           auth="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
           if git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth}" ls-remote --exit-code --heads "$remote" scoreboard > /dev/null 2>&1; then
@@ -475,6 +474,9 @@ jobs:
           mkdir -p publish/scoreboard
           touch publish/scoreboard/releases.jsonl
           cp publish/scoreboard/releases.jsonl before.jsonl
+          # Scored after the branch is fetched: the glance's novelty reads the releases already on the scoreboard.
+          score+=(--scoreboard "$PWD/publish/scoreboard/releases.jsonl")
+          (cd harness && pnpm harness confidence "${score[@]}")
           (cd harness && pnpm harness scoreboard append --run "$run_dir/confidence.json" --file ../publish/scoreboard/releases.jsonl --tag "$CANDIDATE" --run-url "$RUN_URL")
           # Append-only, checked on the bytes: the file before this run must be exactly the start of the file after it.
           head -c "$(wc -c < before.jsonl)" publish/scoreboard/releases.jsonl | cmp -s - before.jsonl || { echo "the scoreboard would lose or change a line: refusing to push" >&2; exit 1; }

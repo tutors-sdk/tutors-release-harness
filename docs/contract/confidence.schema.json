@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/tutors-sdk/tutors-release-harness/blob/main/docs/contract/confidence.schema.json",
-  "title": "confidence.json: the Release Confidence Score (contract 1.11.0, not stable)",
+  "title": "confidence.json: the Release Confidence Score (contract 1.12.0, not stable)",
   "description": "Since 1.9.0. Written by `harness confidence` beside the run it scores, and by `harness release` in out/<timestamp>-release-command/. The Gate first, then the RCS (only when the Gate is PASS or WARN) and its band, then eight dimensions, each with every point lost and its evidence. Advisory: never an input to the gate, a verdict or an exit code. Derived from Confidence in src/score/confidence.ts. Not stable: it may change in a minor release.",
   "type": "object",
   "additionalProperties": false,
@@ -36,7 +36,47 @@
         "gaps": { "type": "array", "items": { "type": "string" }, "description": "Parts of what 100 means that this dimension could not check with what it was given." }
       }
     },
-    "reportPath": { "type": "string", "description": "A report.json, relative to confidence.json." }
+    "reportPath": { "type": "string", "description": "A report.json, relative to confidence.json." },
+    "glanceKind": { "enum": ["broad-claim", "mask-added", "near-miss", "first-time-hotspot", "new-persistence", "fixed-on-b", "major-bump", "duration-moved"] },
+    "glanceItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rank", "kind", "key", "finding", "links", "novelty", "exposure", "score", "basis", "mark"],
+      "properties": {
+        "rank": { "type": "integer", "minimum": 1, "maximum": 7 },
+        "kind": { "$ref": "#/definitions/glanceKind" },
+        "key": { "type": "string", "description": "What makes it the same finding in another release (a claim, a mask id, a scope, a file, a journey, a package)." },
+        "finding": { "type": "string", "minLength": 1, "description": "One line." },
+        "links": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "hunk": { "type": "string", "description": "The hunk (or section) in the run's report.html, relative to confidence.json (…/report.html#hunk-<id>, #masks)." },
+            "claim": { "type": "string", "description": "The claim that covers it, as the report labels it." },
+            "pr": { "type": "string", "description": "The PR that caused it." },
+            "diff": { "type": "string", "description": "The file in that PR's diff (changes.json's evidence)." }
+          }
+        },
+        "hunks": { "type": "array", "items": { "type": "string" }, "description": "Every hunk it stands for, when more than one (a broad claim's absorbed hunks)." },
+        "detail": { "type": "string", "description": "The evidence side by side: both distributions, the messages fixed, a mask's reason." },
+        "novelty": { "type": "number", "exclusiveMinimum": 0, "maximum": 1, "description": "(n - seen + 1) / (n + 1) over the last six releases that recorded the kind; 1 with no history." },
+        "exposure": { "type": "number", "minimum": 0, "maximum": 1, "description": "The share of the journey set it touches; 1 when it cannot be placed." },
+        "score": { "type": "number", "minimum": 0, "maximum": 1, "description": "novelty x exposure, two decimals." },
+        "basis": { "type": "object", "additionalProperties": false, "required": ["novelty", "exposure"], "properties": { "novelty": { "type": "string" }, "exposure": { "type": "string" } } },
+        "mark": {
+          "anyOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["mark", "by", "at", "becomes"],
+              "properties": { "mark": { "enum": ["verified", "disputed", "escalated"] }, "by": { "type": "string", "minLength": 1 }, "at": { "type": "string" }, "note": { "type": "string" }, "becomes": { "type": "string" }, "whyWanted": { "const": true } }
+            }
+          ],
+          "description": "The Reviewer's latest mark (glance-marks.jsonl), null until there is one."
+        }
+      }
+    }
   },
   "properties": {
     "schemaVersion": { "const": 1 },
@@ -63,7 +103,21 @@
     },
     "weightsVersion": { "type": "string", "pattern": "^[0-9a-f]{12}$", "description": "Since 1.11.0. Which weights, floors, bands and deduction rules scored it: 12 hex of a SHA-256 over them (src/score/weights.ts, WEIGHTS_VERSION). A new value is a discontinuity the scoreboard shows. Absent in a confidence.json written before 1.11.0." },
     "dimensions": { "type": "array", "minItems": 8, "maxItems": 8, "items": { "$ref": "#/definitions/dimension" } },
-    "glance": { "type": "array", "maxItems": 0, "description": "The reviewer's glance (C3). Empty until it is built." },
+    "glance": { "type": "array", "maxItems": 7, "items": { "$ref": "#/definitions/glanceItem" }, "description": "Since 1.12.0: the reviewer's glance (C3), at most seven places to look, ranked by novelty x exposure (score, highest first), each with its links and the Reviewer's latest mark. Empty in a confidence.json written before 1.12.0, and when nothing was found." },
+    "glanceBasis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rule", "history", "journeys", "checked", "notChecked", "seen"],
+      "description": "Since 1.12.0: how the glance was ranked, so the ranking can itself be reviewed. Absent before 1.12.0.",
+      "properties": {
+        "rule": { "type": "string", "description": "The ranking rule in words." },
+        "history": { "type": "object", "additionalProperties": false, "required": ["releases"], "properties": { "releases": { "type": "array", "items": { "type": "string" }, "maxItems": 6, "description": "The releases novelty read (the last six on the scoreboard, this tag's own runs left out), oldest first." }, "source": { "type": "string" }, "note": { "type": "string" } } },
+        "journeys": { "type": "object", "additionalProperties": false, "required": ["total", "names", "source"], "properties": { "total": { "type": "integer", "minimum": 0 }, "names": { "type": "array", "items": { "type": "string" } }, "source": { "type": "string", "description": "Where the journey set came from: the release run's capture.json, else the page groups of report.json's hunks." } } },
+        "checked": { "type": "array", "items": { "type": "object", "additionalProperties": false, "required": ["kind", "candidates"], "properties": { "kind": { "$ref": "#/definitions/glanceKind" }, "candidates": { "type": "integer", "minimum": 0 } } } },
+        "notChecked": { "type": "array", "items": { "type": "object", "additionalProperties": false, "required": ["kind", "reason"], "properties": { "kind": { "$ref": "#/definitions/glanceKind" }, "reason": { "type": "string", "minLength": 1 } } }, "description": "A kind whose input the harness does not have, and why: never made up." },
+        "seen": { "type": "array", "maxItems": 200, "items": { "type": "string" }, "description": "Every candidate's kind:key, ranked or not: what the scoreboard line keeps for the next release's novelty." }
+      }
+    },
     "run": {
       "type": "object",
       "additionalProperties": false,
