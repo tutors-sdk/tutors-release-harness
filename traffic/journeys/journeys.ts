@@ -237,12 +237,12 @@ export const referenceCourseReads: Journey = {
     await page.getByRole("banner").getByRole("heading", { name: reference.title }).waitFor(VISIBLE);
     await onPage("reference:course");
 
-    await page.getByRole("main").getByRole("link", { name: reference.topicLink }).first().click();
+    await page.getByRole("main").locator(`a[href$="/topic/${course}/${reference.topicPath}"]`).first().click();
     await page.waitForURL(new RegExp(`/topic/${course}/${reference.topicPath}$`));
     await pageHeading(page, reference.topicTitle).waitFor(VISIBLE);
     await onPage("reference:topic");
 
-    await page.getByRole("main").getByRole("link", { name: reference.labTitle }).first().click();
+    await page.getByRole("main").locator(`a[href*="/lab/${course}/${reference.labPath}"]`).first().click();
     await page.waitForURL(new RegExp(`/lab/${course}/${reference.labPath}`));
     await page.getByRole("article").getByRole("heading", { level: 1 }).first().waitFor(VISIBLE);
     await labSteps(page).waitFor(VISIBLE);
