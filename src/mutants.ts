@@ -98,11 +98,22 @@ export async function runMutants(options: MutantsOptions): Promise<boolean> {
   for (const mutant of mutants) {
     const image = buildMutant(mutant, baseImages.reader, opts.log);
     const bSpec = specFor({ ...baseImages, reader: image });
-    const outcome = await run({ ...opts, static: staticOpts, sets, mode: "release", recordRelease: false, a: baseSpec, b: bSpec, noise: noiseStatus, runs: Math.max(opts.runs, mutant.runs ?? 1) });
+    // One mutant that cannot be run is that mutant escaping, not the end of the self-test: the others still report.
+    let outcome: Awaited<ReturnType<typeof run>>;
+    try {
+      outcome = await run({ ...opts, static: staticOpts, sets, mode: "release", recordRelease: false, a: baseSpec, b: bSpec, noise: noiseStatus, runs: Math.max(opts.runs, mutant.runs ?? 1) });
+    } catch (e) {
+      const message = e instanceof Error ? e.message.split("\n")[0]! : String(e);
+      results.push({ name: mutant.name, caught: false, attributed: false, verdict: "error", artefacts: [], report: message });
+      opts.log(`mutant ${mutant.name}: ERROR, not caught (${message})`);
+      continue;
+    }
     const artefacts = [...new Set(outcome.report.compare.unclaimed.map((h) => h.artefact))];
     const caught = outcome.report.verdict === "fail";
     const attributed = mutant.expect.some((a) => artefacts.includes(a));
     results.push({ name: mutant.name, caught, attributed, verdict: outcome.report.verdict, artefacts, report: outcome.files.html });
+    // As it finishes, so a run that is killed later still says what it had found.
+    opts.log(`mutant ${mutant.name}: ${caught ? "caught" : "NOT caught"}, ${attributed ? "attributed" : "NOT attributed"} (${outcome.report.verdict}${artefacts.length ? `; ${artefacts.join(", ")}` : ""})`);
   }
 
   opts.log("");
