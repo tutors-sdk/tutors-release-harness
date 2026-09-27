@@ -7,13 +7,17 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFil
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { Ajv } from "ajv";
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
+import { runChanges } from "../src/changes/command.ts";
+import type { Changes } from "../src/changes/signals.ts";
+import { changesRepo } from "./support/changes-repo.ts";
 import { UsageError, releaseCommand } from "../src/local/cli.ts";
 import { describeStatus } from "../src/local/noise-store.ts";
 import {
   BaselineError,
+  CHANGES_OUT,
   FAST_BANNER,
-  NOT_BUILT,
+  NO_MONOREPO,
   STAGES,
   decideNoise,
   gateWord,
@@ -113,7 +117,7 @@ describe("the plan", () => {
       score: [],
       report: []
     });
-    expect(stages.find((s) => s.stage === "changes")!.skip).toBe(NOT_BUILT.changes);
+    expect(stages.find((s) => s.stage === "changes")!.skip).toBe(NO_MONOREPO);
     expect(stages.find((s) => s.stage === "score")!.skip).toBeUndefined();
   });
 
@@ -142,7 +146,7 @@ describe("the plan", () => {
     expect(text).toContain("harness release: c beside 16.2.2 (given with --baseline)");
     expect(text).toContain(FAST_BANNER);
     expect(text).toContain("harness images ensure --a 16.2.2 --b c");
-    expect(text).toContain(`skipped: ${NOT_BUILT.changes}`);
+    expect(text).toContain(`skipped: ${NO_MONOREPO}`);
     expect(text).toContain("dry run: nothing was pulled or run");
   });
 });
@@ -174,7 +178,7 @@ interface Fake {
  * Each `run` writes `<out>/<stamp>-<mode>/report.json` (and noise-status.json in noise mode) and exits with `codes[mode]`.
  * `verdicts[mode]` is the verdict it writes; a noise run is dirty when `dirty` is set.
  */
-function fakeExecutor(out: string, o: { codes?: Record<string, number>; verdicts?: Record<string, string>; dirty?: boolean; statusFile?: () => string | undefined; report?: Record<string, object> } = {}): Fake {
+function fakeExecutor(out: string, o: { codes?: Record<string, number>; verdicts?: Record<string, string>; dirty?: boolean; statusFile?: () => string | undefined; report?: Record<string, object>; changes?: object } = {}): Fake {
   const calls: string[][] = [];
   const seen: Fake["seen"] = [];
   let n = 0;
@@ -187,6 +191,11 @@ function fakeExecutor(out: string, o: { codes?: Record<string, number>; verdicts
         seen.push({ argv: argv.slice(0, 3).join(" "), stage: s.stage, states: s.stages.map((x) => x.state) });
       }
       if (argv[0] === "images") return o.codes?.ensure ?? 0;
+      // harness changes: writes the changes.json it was given where --out says, as the real one would
+      if (argv[0] === "changes") {
+        if (o.changes) writeFileSync(argv[argv.indexOf("--out") + 1]!, JSON.stringify(o.changes));
+        return o.codes?.changes ?? 0;
+      }
       if (argv[0] !== "run") return 0;
       const mode = argv[2]!;
       const dir = join(out, `2026-09-27T10-00-${String(n++).padStart(2, "0")}-${mode}`);
@@ -216,13 +225,13 @@ function clock(start = Date.parse("2026-09-27T10:00:00Z")) {
 const reuse: NoiseDecision = { action: "reuse", noise: "/s/noise-status.json", why: "reusing the local noise store: clean" };
 const runAA: NoiseDecision = { action: "run", why: "an A/A of the baseline first: stale" };
 
-function go(o: { fast?: boolean; noise?: NoiseDecision; fake?: Parameters<typeof fakeExecutor>[1]; interruptAfter?: (calls: string[][]) => boolean; score?: ScoreExtras }) {
+function go(o: { fast?: boolean; noise?: NoiseDecision; fake?: Parameters<typeof fakeExecutor>[1]; interruptAfter?: (calls: string[][]) => boolean; score?: ScoreExtras; monorepo?: string }) {
   const out = tmp("out");
   const lines: string[] = [];
   const fake = fakeExecutor(out, { ...o.fake, statusFile: () => findStatus(out) });
   const opened: string[] = [];
   const outcome = runRelease(
-    { candidate: "16.3.0-rc.1", baseline: base, fast: o.fast ?? false, outRoot: out, noise: o.noise ?? reuse, ...(o.score ? { score: o.score } : {}) },
+    { candidate: "16.3.0-rc.1", baseline: base, fast: o.fast ?? false, outRoot: out, noise: o.noise ?? reuse, ...(o.score ? { score: o.score } : {}), ...(o.monorepo ? { monorepo: o.monorepo } : {}) },
     {
       ex: fake.ex,
       env: {},
@@ -467,6 +476,8 @@ describe("the command", () => {
     expect(code).toBe(0);
     expect(said.join("\n")).toContain(`--claims ${join(mono, "release", "claims.yaml")}`);
     expect(said.join("\n")).toContain("beside 16.2.2");
+    // the checkout that named the baseline is the one harness changes reads
+    expect(said.join("\n")).toContain(`harness changes --a 16.2.2 --b 16.3.0-rc.1 --monorepo ${mono} --out`);
   });
 
   it("runs, holds the lock, opens with --open, and says posting to a PR is not built when GITHUB_TOKEN is set", () => {
@@ -484,5 +495,78 @@ describe("the command", () => {
     expect(openerFor("darwin", "/r.html")).toEqual({ command: "open", args: ["/r.html"] });
     expect(openerFor("linux", "/r.html")).toEqual({ command: "xdg-open", args: ["/r.html"] });
     expect(openerFor("win32", "C:\\r.html").command).toBe("cmd");
+  });
+});
+
+describe("the changes stage (C1): harness changes in the monorepo checkout, fed to change risk, never an exit code", () => {
+  let changes: Changes;
+  beforeAll(async () => {
+    changes = (await runChanges({ a: "1.0.4", b: "1.1.0", monorepo: changesRepo(), history: 6 }, { env: {}, reviews: { approved: async (pr) => pr !== 11 } })).changes;
+  }, 30_000);
+  const conf = (r: ReturnType<typeof go>) => JSON.parse(readFileSync(join(r.outcome.dir, "confidence.json"), "utf8")) as Confidence;
+
+  it("is planned from the checkout: harness changes --a <baseline> --b <candidate>, writing into the command's directory", () => {
+    const stages = planRelease({ candidate: "16.3.0-rc.1", baseline: base, fast: false, monorepo: "/m" }, reuse);
+    expect(argvOf(stages).changes).toEqual([`changes --a 16.2.2 --b 16.3.0-rc.1 --monorepo /m --out ${CHANGES_OUT}`]);
+  });
+
+  it("writes changes.json into the release-command dir; the score reads it as change risk; the per-PR table sits under the score", () => {
+    const r = go({ monorepo: "/m", fake: { changes } });
+    const call = r.fake.calls.find((c) => c[0] === "changes")!;
+    expect(call.slice(0, 7)).toEqual(["changes", "--a", "16.2.2", "--b", "16.3.0-rc.1", "--monorepo", "/m"]);
+    expect(call.at(-1)).toBe(join(r.outcome.dir, "changes.json"));
+    expect(r.outcome.files.changes).toBe(join(r.outcome.dir, "changes.json"));
+    expect(r.status.stages.find((s) => s.stage === "changes")).toMatchObject({ state: "done", note: "change risk 32: 4 of 5 line(s) lost points, floor breached; changes.json" });
+    const cr = conf(r).dimensions.find((d) => d.id === "change-risk")!;
+    expect(cr).toMatchObject({ status: "measured", score: 32, floorBreached: true, evidence: ["changes.json"] });
+    expect(conf(r).run.inputs).toEqual({ changeRisk: "changes.json" });
+    // the Gate, the RCS, the dimensions, then the per-PR table, then the steps
+    const md = r.md;
+    expect(md.indexOf("#### Change risk per PR")).toBeGreaterThan(md.indexOf("| dimension | weight | score |"));
+    expect(md.indexOf("| step | result |")).toBeGreaterThan(md.indexOf("#### Change risk per PR"));
+    expect(md).toContain("| #11 | fix(reader): hot path fixed |");
+    expect(md).toContain("| 1 more | no deductions: #13 |");
+    expect(r.html.indexOf('id="change-risk"')).toBeGreaterThan(r.html.indexOf("RCS "));
+    expect(r.html.indexOf('id="change-risk"')).toBeLessThan(r.html.indexOf("<h2>Gate</h2>"));
+    // it is not a gate step: not in gate.json, and its code reaches nothing
+    const gate = JSON.parse(readFileSync(r.outcome.files.gateJson, "utf8")) as { steps: { id: string }[] };
+    expect(gate.steps.map((s) => s.id)).not.toContain("changes");
+    expect(r.outcome.code).toBe(0);
+    expect(r.md).toContain("The per-PR table is under the score");
+  });
+
+  it("the same exit code with it, without it, and when it fails; a failure leaves change risk not measured", () => {
+    for (const fake of [{}, { verdicts: { release: "fail" } }, { verdicts: { release: "warn" } }]) {
+      const plain = go({ fake });
+      const withIt = go({ monorepo: "/m", fake: { ...fake, changes } });
+      const broken = go({ monorepo: "/m", fake: { ...fake, codes: { changes: 2 } } });
+      expect(withIt.outcome.code, JSON.stringify(fake)).toBe(plain.outcome.code);
+      expect(broken.outcome.code, JSON.stringify(fake)).toBe(plain.outcome.code);
+      expect(broken.status.stages.find((s) => s.stage === "changes")).toMatchObject({ state: "skipped", note: "harness changes exit 2 wrote no changes.json: change risk stays not measured" });
+      expect(conf(broken).dimensions.find((d) => d.id === "change-risk")!.status).toBe("not measured");
+    }
+  });
+
+  it("no checkout: skipped with the reason, change risk not measured, and the report says so", () => {
+    const r = go({});
+    expect(r.status.stages.find((s) => s.stage === "changes")).toMatchObject({ state: "skipped", note: NO_MONOREPO });
+    expect(conf(r).dimensions.find((d) => d.id === "change-risk")!.status).toBe("not measured");
+    expect(r.md).toContain(`Not shown: ${NO_MONOREPO}.`);
+    expect(r.fake.calls.some((c) => c[0] === "changes")).toBe(false);
+  });
+
+  it("an explicit --change-risk wins over the stage's changes.json", () => {
+    const dir = tmp("cr");
+    const file = join(dir, "cr.json");
+    writeFileSync(file, JSON.stringify({ prs: [{ number: 1, reviewed: true }] }));
+    const c = conf(go({ monorepo: "/m", fake: { changes }, score: { changeRisk: file } }));
+    expect(c.dimensions.find((d) => d.id === "change-risk")).toMatchObject({ score: 100 });
+    expect(c.run.inputs?.changeRisk).toMatch(/cr\.json$/);
+  });
+
+  it("Ctrl-C while it runs ends the plan like any step: the stacks come down, nothing after it starts", () => {
+    const r = go({ monorepo: "/m", fake: { changes }, interruptAfter: (calls) => calls.some((c) => c[0] === "changes") });
+    expect(r.fake.calls.map((c) => c[0])).toEqual(["images", "changes", "stack"]);
+    expect(r.status).toMatchObject({ state: "interrupted", stopped: { stage: "changes" } });
   });
 });

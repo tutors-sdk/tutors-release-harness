@@ -28,7 +28,7 @@ export const DIMENSIONS: readonly DimensionSpec[] = [
   { id: "rehearsals", name: "Rehearsals", weight: 10, full: "migration and upgrade both pass with zero failed requests", floor: "either rehearsal skipped" },
   { id: "test-signal", name: "Test signal", weight: 15, full: "mutation score at least 80% on every changed package; every harness mutant caught", floor: "a mutation score below 60%, or any harness mutant missed" },
   { id: "traceability", name: "Requirements traceability", weight: 10, full: "every changelog entry has an EARS file and a claim; every claim traces to a changelog entry", floor: "any new-feature entry without an EARS file" },
-  { id: "change-risk", name: "Change risk", weight: 15, full: "no hotspot touched by a first-time contributor; every PR reviewed", floor: "any PR merged without review" },
+  { id: "change-risk", name: "Change risk", weight: 15, full: "low churn; no hotspot touched by a first-time contributor; every PR reviewed", floor: "any PR merged without review (or a commit straight to main)" },
   { id: "post-deploy", name: "Post-deploy history", weight: 5, full: "no rollback after the last release", floor: "the last release's post-deploy check FAILED (a rollback issue)" }
 ];
 
@@ -59,6 +59,26 @@ export const RULES = {
   rehearsals: { skipped: 50, failed: 50, warned: 20, failedRequests: 50 },
   testSignal: { target: 80, floorBelow: 60, belowTarget: 30, mutantMissed: 25 },
   traceability: { noEars: 20, noClaim: 10, untracedClaim: 10 },
-  changeRisk: { unreviewed: 40, hotspotFirstTime: 40 },
+  // The plan's table, "Code-level change signals"; src/changes/signals.ts applies them per PR (docs/releases/1.10.0.md).
+  changeRisk: {
+    /** An app whose churn is above this many times its median over the history releases. */
+    churnFactor: 2,
+    churnApp: 5,
+    /** A hotspot: a production file changed in at least this many of the history releases. */
+    hotspotReleases: 3,
+    hotspotFirstTime: 10,
+    hotspot: 3,
+    /** A file with at least this many authors this release. */
+    dispersionAuthors: 3,
+    dispersion: 5,
+    dispersionMax: 15,
+    orphan: 10,
+    /** Test lines ÷ production lines below this, on a package with production churn. */
+    testRatio: 0.2,
+    lowTests: 10,
+    majorBump: 5,
+    /** No points: an unreviewed PR breaches the floor, which caps the RCS at 74. */
+    unreviewed: 0
+  },
   postDeploy: { failed: 100, warned: 20 }
 } as const;

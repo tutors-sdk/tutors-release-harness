@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/tutors-sdk/tutors-release-harness/blob/main/docs/contract/confidence.schema.json",
-  "title": "confidence.json: the Release Confidence Score (contract 1.9.0, not stable)",
+  "title": "confidence.json: the Release Confidence Score (contract 1.10.0, not stable)",
   "description": "Since 1.9.0. Written by `harness confidence` beside the run it scores, and by `harness release` in out/<timestamp>-release-command/. The Gate first, then the RCS (only when the Gate is PASS or WARN) and its band, then eight dimensions, each with every point lost and its evidence. Advisory: never an input to the gate, a verdict or an exit code. Derived from Confidence in src/score/confidence.ts. Not stable: it may change in a minor release.",
   "type": "object",
   "additionalProperties": false,
@@ -13,7 +13,7 @@
       "additionalProperties": false,
       "required": ["points", "why", "evidence"],
       "properties": {
-        "points": { "type": "number", "exclusiveMinimum": 0 },
+        "points": { "type": "number", "minimum": 0, "description": "Points lost. 0 only for a finding that breaches the floor and costs no points of its own (since 1.10.0: a PR with no approving review, orphan changes in traceability)." },
         "why": { "type": "string", "minLength": 1, "description": "What was read and why it cost points: names the hunk, claim, PR, file or run." },
         "evidence": { "type": "string", "minLength": 1, "description": "Where to look: a link relative to confidence.json into a run's report.html (…/report.html#hunk-<id>, #stale-claims, #noise, #masks, #load, #migration, #upgrade), an input file, or a PR." },
         "floor": { "const": true, "description": "Present when this finding breaches the dimension's floor, which caps the RCS at 74." }

@@ -63,13 +63,25 @@ export function parseTraceability(raw: unknown, file: string): Traceability {
   return raw as unknown as Traceability;
 }
 
+/**
+ * A changes.json (`harness changes`, since 1.10.0: its `changeRisk` block is read, and a deduction's evidence stays as
+ * written) or the 1.9.0 shape `{ "prs": [...] }`. `reviewed` may be null since 1.10.0: not known (no token).
+ */
 export function parseChangeRisk(raw: unknown, file: string): ChangeRisk {
   const f = "--change-risk";
-  if (!isObj(raw) || !Array.isArray(raw.prs)) return bad(f, file, 'expected { "prs": [...] }');
-  if (!raw.prs.every((p) => isObj(p) && Number.isInteger(p.number) && typeof p.reviewed === "boolean" && optStr(p.url) && (p.firstTimeContributor === undefined || typeof p.firstTimeContributor === "boolean") && (p.hotspots === undefined || (Array.isArray(p.hotspots) && p.hotspots.every((h) => typeof h === "string")))))
-    bad(f, file, '"prs" must be [{ "number": n, "reviewed": boolean, "url"?: string, "firstTimeContributor"?: boolean, "hotspots"?: [string] }]');
-  if (!optStr(raw.evidence)) bad(f, file, '"evidence" must be a string');
-  return raw as unknown as ChangeRisk;
+  const whole = isObj(raw) && isObj(raw.changeRisk);
+  const o = whole ? (raw as { changeRisk: Record<string, unknown> }).changeRisk : raw;
+  if (!isObj(o) || !Array.isArray(o.prs)) return bad(f, file, 'expected a changes.json, or { "prs": [...] }');
+  if (!o.prs.every((p) => isObj(p) && Number.isInteger(p.number) && (typeof p.reviewed === "boolean" || p.reviewed === null) && optStr(p.url) && (p.firstTimeContributor === undefined || typeof p.firstTimeContributor === "boolean") && (p.hotspots === undefined || (Array.isArray(p.hotspots) && p.hotspots.every((h) => typeof h === "string")))))
+    bad(f, file, '"prs" must be [{ "number": n, "reviewed": boolean|null, "url"?: string, "firstTimeContributor"?: boolean, "hotspots"?: [string] }]');
+  if (o.deductions !== undefined && !(Array.isArray(o.deductions) && o.deductions.every((d) => isObj(d) && typeof d.points === "number" && d.points >= 0 && typeof d.why === "string" && typeof d.evidence === "string" && (d.floor === undefined || d.floor === true))))
+    bad(f, file, '"deductions" must be [{ "points": n >= 0, "why": string, "evidence": string, "floor"?: true }]');
+  if (o.gaps !== undefined && !(Array.isArray(o.gaps) && o.gaps.every((g) => typeof g === "string"))) bad(f, file, '"gaps" must be a list of strings');
+  if (o.orphans !== undefined && !(Number.isInteger(o.orphans) && (o.orphans as number) >= 0)) bad(f, file, '"orphans" must be a whole number');
+  if (!optStr(o.evidence)) bad(f, file, '"evidence" must be a string');
+  // changes.json names itself as "changes.json"; the score names the file it read, relative to confidence.json.
+  const { evidence: _named, ...rest } = o;
+  return (whole ? rest : o) as unknown as ChangeRisk;
 }
 
 /** Where each input is. Run directories may be the directory or its report.json; the rest are files. */

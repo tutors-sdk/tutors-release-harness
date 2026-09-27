@@ -1,5 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, relative } from "node:path";
+import { renderChangesHtml, renderChangesMarkdown } from "../changes/render.ts";
+import { CHANGES_FILE, type Changes } from "../changes/signals.ts";
 import { DigestError, parseDigests } from "../digests.ts";
 import { isTag } from "../release-record.ts";
 import type { Confidence, GateWord } from "../score/confidence.ts";
@@ -32,7 +34,8 @@ import {
  *
  *   resolve    the baseline (--baseline, else release/deployed.json in the monorepo, else HARNESS_PRODUCTION_TAG), images ensure
  *   noise      the local noise store's A/A when it is clean and at most 7 days old, else an A/A of the baseline (3 runs)
- *   changes    a seam: harness changes (C1) is not built yet
+ *   changes    harness changes --a <baseline> --b <candidate> in the monorepo checkout (C1): changes.json, the per-PR
+ *              risk lines the score's change risk reads; skipped, with the reason, when there is no checkout
  *   release    --mode release, 3 runs, k6 20x30s, the claims, the rules, that A/A
  *   rehearse   migration, then upgrade (skipped only with --fast)
  *   score      confidence.json: the Release Confidence Score (C0) from the release, migration and upgrade runs; the
@@ -154,6 +157,8 @@ export interface ReleaseOptions {
   out?: string;
   /** The score's optional inputs (--test-signal, --traceability, --change-risk, --post-deploy), as given. */
   score?: ScoreExtras;
+  /** The monorepo checkout (--monorepo or HARNESS_MONOREPO_DIR): where `harness changes` reads git. */
+  monorepo?: string;
 }
 
 /** The score's optional inputs: files a later phase or the monorepo writes. */
@@ -172,8 +177,14 @@ export interface PlannedStage {
   skip?: string;
 }
 
-/** The seams later phases fill (C1 changes; C3 glance, C4 5 Whys). Until then they say so; they never make data up. */
-export const NOT_BUILT = { changes: "not built yet (C1)", glance: "not built yet (C3)", whys: "not built yet (C4)" } as const;
+/** The seams later phases fill (C3 glance, C4 5 Whys). Until then they say so; they never make data up. */
+export const NOT_BUILT = { glance: "not built yet (C3)", whys: "not built yet (C4)" } as const;
+
+/** Where the changes step writes changes.json: the command's own directory, known only once it runs. */
+export const CHANGES_OUT = "<release-command dir>/changes.json";
+
+/** Why the changes stage is skipped without a checkout: change risk is then not measured, never assumed. */
+export const NO_MONOREPO = "no monorepo checkout (--monorepo or HARNESS_MONOREPO_DIR), so no git to read: change risk stays not measured";
 
 export function planRelease(o: ReleaseOptions, noise: NoiseDecision): PlannedStage[] {
   const b = o.baseline.tag;
@@ -203,7 +214,9 @@ export function planRelease(o: ReleaseOptions, noise: NoiseDecision): PlannedSta
   return [
     { stage: "resolve", title: `the baseline ${b} (${o.baseline.how}); pull and verify, or build, both sides`, steps: [step("ensure")!] },
     noise.action === "run" ? { stage: "noise", title: noise.why, steps: [aa] } : { stage: "noise", title: noise.why, steps: [], skip: noise.why },
-    { stage: "changes", title: "what changed between the two tags", steps: [], skip: NOT_BUILT.changes },
+    o.monorepo
+      ? { stage: "changes", title: `what changed between ${b} and ${o.candidate}: per-PR risk lines`, steps: [{ id: "changes", title: `harness changes ${b}..${o.candidate}`, argv: ["changes", "--a", b, "--b", o.candidate, "--monorepo", o.monorepo, "--out", CHANGES_OUT], stream: "changes", gatesStream: false, informational: true }] }
+      : { stage: "changes", title: "what changed between the two tags", steps: [], skip: NO_MONOREPO },
     {
       stage: "release",
       title: `release mode: ${o.candidate} beside ${b}, ${o.fast ? "1 run, no load" : `${RELEASE_DEFAULTS.runs} runs, k6 ${RELEASE_DEFAULTS.load}`}, ${o.claims ? "with the claims" : "no claims"}`,
@@ -331,6 +344,10 @@ export interface SeamResult {
   markdown?: string;
   /** The score seam's result, for the lead of the summary. */
   confidence?: Confidence;
+  /** The changes seam's result: the per-PR table goes under the score. */
+  changes?: Changes;
+  /** Where the seam wrote its file. */
+  file?: string;
 }
 
 export interface SeamInput {
@@ -341,11 +358,24 @@ export interface SeamInput {
   /** The Gate, already decided: the score reads it and cannot change it. */
   gate: GateWord;
   score?: ScoreExtras;
+  /** changes.json, when the changes stage wrote one: the score reads it as --change-risk unless one was given. */
+  changes?: string;
 }
 
-/** C1 fills this: `harness changes --a <baseline> --b <candidate>` from the monorepo checkout. */
-export function changesStage(_: SeamInput): SeamResult {
-  return { state: "skipped", note: NOT_BUILT.changes };
+/**
+ * C1: `harness changes --a <baseline> --b <candidate>` in the monorepo checkout, as a child like every other step, writing
+ * changes.json into the command's directory. Its exit code is not an input to anything: orphans, a missing token, even a
+ * failure to run are reported in the stage's note and leave change risk "not measured"; they never stop the line.
+ */
+export function changesStage(i: SeamInput, step: Step | undefined, harness: (argv: string[]) => number, skip = NO_MONOREPO): SeamResult {
+  if (!step) return { state: "skipped", note: skip };
+  const file = join(i.dir, CHANGES_FILE);
+  const code = harness(step.argv.map((a) => (a === CHANGES_OUT ? file : a)));
+  if (!existsSync(file)) return { state: "skipped", note: `harness changes exit ${code} wrote no changes.json: change risk stays not measured` };
+  const c = JSON.parse(readFileSync(file, "utf8")) as Changes;
+  const risky = c.prs.filter((p) => p.deductions.length).length;
+  const nm = c.notMeasured.length ? `; not measured: ${c.notMeasured.map((n) => n.signal).join(", ")}` : "";
+  return { state: "done", note: `change risk ${c.score}: ${risky} of ${c.prs.length} line(s) lost points${c.floorBreached ? ", floor breached" : ""}${nm}; changes.json`, markdown: renderChangesMarkdown(c), changes: c, file };
 }
 
 /**
@@ -358,16 +388,19 @@ export function scoreStage(i: SeamInput): SeamResult {
   if (!release) return { state: "skipped", note: "no release run to score" };
   const migration = runDir("migration");
   const upgrade = runDir("upgrade");
-  const { confidence: c } = scoreAndWrite({ outDir: i.dir, gate: i.gate, release, ...(migration ? { migration } : {}), ...(upgrade ? { upgrade } : {}), ...i.score, candidate: i.candidate, baseline: i.baseline.tag });
+  // An explicit --change-risk wins; else the changes stage's changes.json.
+  const changeRisk = i.score?.changeRisk ?? i.changes;
+  const { confidence: c } = scoreAndWrite({ outDir: i.dir, gate: i.gate, release, ...(migration ? { migration } : {}), ...(upgrade ? { upgrade } : {}), ...i.score, ...(changeRisk ? { changeRisk } : {}), candidate: i.candidate, baseline: i.baseline.tag });
   const measured = c.dimensions.filter((d) => d.status === "measured").length;
   return { state: "done", note: `${c.rcs === null ? `no RCS (Gate ${c.gate})` : `RCS ${c.rcs} ${c.band}`}; ${measured} of ${c.dimensions.length} dimensions measured; confidence.json`, markdown: renderDeductionsMarkdown(c), confidence: c };
 }
 
-/** A seam that throws is a finding about the seam, never about the release: it is reported and the exit code is left alone. */
+/** A seam that throws is a finding about the seam, never about the release: it is reported and the exit code is left alone. Ctrl-C still ends the plan. */
 function runSeam(seam: (i: SeamInput) => SeamResult, input: SeamInput): SeamResult {
   try {
     return seam(input);
   } catch (e) {
+    if (e instanceof Interrupted) throw e;
     return { state: "skipped", note: `failed, and changes nothing: ${e instanceof Error ? e.message : String(e)}` };
   }
 }
@@ -417,7 +450,7 @@ export interface ReleaseRun extends ReleaseOptions {
 export interface ReleaseOutcome {
   code: number;
   dir: string;
-  files: { status: string; md: string; html: string; gateMd: string; gateJson: string; confidence?: string };
+  files: { status: string; md: string; html: string; gateMd: string; gateJson: string; confidence?: string; changes?: string };
 }
 
 /** Why a stage stopped the line, and the next standard step. */
@@ -471,7 +504,7 @@ export function runRelease(r: ReleaseRun, deps: ReleaseDeps): ReleaseOutcome {
     results.push(...outcome.results);
     return outcome;
   };
-  const seamInput = (gate: GateWord): SeamInput => ({ candidate: r.candidate, baseline: r.baseline, dir, entries: results.map(readGateEntry), gate, ...(r.score ? { score: r.score } : {}) });
+  const seamInput = (gate: GateWord): SeamInput => ({ candidate: r.candidate, baseline: r.baseline, dir, entries: results.map(readGateEntry), gate, ...(r.score ? { score: r.score } : {}), ...(seams.changes?.file ? { changes: seams.changes.file } : {}) });
 
   let interrupted = false;
   try {
@@ -517,10 +550,11 @@ export function runRelease(r: ReleaseRun, deps: ReleaseDeps): ReleaseOutcome {
       }
     }
 
-    // changes: a seam (C1).
+    // changes: C1, advisory. Its exit code goes nowhere near the gate's (it is not added to the results).
     current = "changes";
     progress.start("changes");
-    seams.changes = runSeam(changesStage, seamInput("NOT JUDGED"));
+    const cs = planned("changes");
+    seams.changes = runSeam((i) => changesStage(i, cs.steps[0], (argv) => ex.harness(argv, deps.env), cs.skip), seamInput("NOT JUDGED"));
     progress.end("changes", seams.changes.state, seams.changes.note);
 
     // release: the A/B. A FAIL stops the line for a go decision; the rehearsals still run, as the gate's do, for the evidence.
@@ -569,7 +603,7 @@ export function runRelease(r: ReleaseRun, deps: ReleaseDeps): ReleaseOutcome {
   }
 
   // The exit code and the Gate are decided here, before the score exists: nothing the score says can reach them.
-  const allSteps = stages.flatMap((s) => s.steps);
+  const allSteps = stages.filter((s) => s.stage !== "changes").flatMap((s) => s.steps);
   const entries: GateSummaryEntry[] = allSteps.map((s) => {
     const done = results.find((x) => x.id === s.id);
     return done ? readGateEntry(done) : { id: s.id, title: s.title, code: "skipped" };
@@ -584,25 +618,26 @@ export function runRelease(r: ReleaseRun, deps: ReleaseDeps): ReleaseOutcome {
     progress.end("score", seams.score.state, seams.score.note);
   }
   const conf = seams.score?.confidence;
+  const changes = seams.changes?.changes;
 
   // report: always.
   progress.start("report");
   const at2 = deps.now();
-  const summary = { production: r.baseline.tag, candidate: r.candidate, entries, code, at: at2.toISOString(), gate, ...(r.fast ? { banner: FAST_BANNER } : {}), ...(conf ? { score: renderScoreMarkdown(conf) } : {}) };
+  const summary = { production: r.baseline.tag, candidate: r.candidate, entries, code, at: at2.toISOString(), gate, ...(r.fast ? { banner: FAST_BANNER } : {}), ...(conf ? { score: `${renderScoreMarkdown(conf)}${changes ? `\n\n#### Change risk per PR\n\n${renderChangesMarkdown(changes)}` : ""}` } : {}) };
   const gateFiles = writeGateSummary(r.outRoot, at2, summary, dir);
   const md = join(dir, "report.md");
   const html = join(dir, "report.html");
   const gateMd = readFileSync(gateFiles.md, "utf8");
   writeFileSync(md, renderReleaseMarkdown({ gateMd, status: progress.status, code, review, seams }));
   writeFileSync(html, renderReleaseHtml({ dir, gate, fast: r.fast, candidate: r.candidate, baseline: r.baseline, code, entries, status: progress.status, review, seams }));
-  progress.end("report", "done", `report.md, report.html, gate.md, gate.json${conf ? ", confidence.json" : ""}`);
+  progress.end("report", "done", `report.md, report.html, gate.md, gate.json${conf ? ", confidence.json" : ""}${changes ? ", changes.json" : ""}`);
   progress.finish(interrupted ? "interrupted" : "finished", code);
   deps.say(`gate: ${gate}${r.fast ? " (--fast: not for a go decision)" : ""} -> exit ${code}`);
   if (conf) deps.say(`confidence: ${rcsLine(conf)}`);
   deps.say(`report: ${html}`);
   if (r.fast) deps.say(FAST_BANNER);
   if (deps.open) deps.open(html);
-  return { code, dir, files: { status: progress.file, md, html, gateMd: gateFiles.md, gateJson: gateFiles.json, ...(conf ? { confidence: join(dir, "confidence.json") } : {}) } };
+  return { code, dir, files: { status: progress.file, md, html, gateMd: gateFiles.md, gateJson: gateFiles.json, ...(conf ? { confidence: join(dir, "confidence.json") } : {}), ...(seams.changes?.file ? { changes: seams.changes.file } : {}) } };
 }
 
 // ---- the summary --------------------------------------------------------------------------------------
@@ -620,7 +655,9 @@ export function renderReleaseMarkdown(o: { gateMd: string; status: ReleaseStatus
   lines.push("### Score (visual management): where the points went", "", o.seams.score?.markdown ?? `Not computed: ${o.seams.score?.note ?? "the score stage did not run"}. Never an input to the gate or the exit code.`, "");
   lines.push("### Glance (gemba)", "", `Not shown: ${NOT_BUILT.glance}.`, "");
   lines.push("### 5 Whys (kaizen)", "", `Not opened: ${NOT_BUILT.whys}.${o.code === 1 ? " This FAIL is a trigger once it is." : ""}`, "");
-  lines.push("### Changes", "", o.seams.changes?.markdown ?? `Not shown: ${NOT_BUILT.changes}.`, "");
+  // The per-PR table sits under the score when there is one; without a score it is shown here.
+  const ch = o.seams.changes;
+  lines.push("### Changes", "", ch?.changes ? (o.seams.score?.confidence ? `${ch.note}. The per-PR table is under the score; every deduction is in changes.json.` : (ch.markdown ?? ch.note)) : `Not shown: ${ch?.note ?? NO_MONOREPO}.`, "");
   return lines.join("\n");
 }
 
@@ -648,6 +685,7 @@ table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid #ddd;pad
 </style></head><body>
 <p class="gate ${tone}">Gate: ${esc(o.gate)} <small>(exit ${o.code})</small></p>
 ${o.seams.score?.confidence ? renderScoreHtml(o.seams.score.confidence) : ""}
+${o.seams.score?.confidence && o.seams.changes?.changes ? renderChangesHtml(o.seams.changes.changes) : ""}
 <p>${esc(o.candidate)} beside ${esc(o.baseline.tag)} <small>(${esc(o.baseline.how)})</small></p>
 ${o.fast ? `<p class="banner">${esc(FAST_BANNER)}</p>` : ""}
 ${stopped}
@@ -662,7 +700,8 @@ ${stages}
 <h2>Score (visual management)</h2><p class="seam">${esc(o.seams.score?.note ?? "the score stage did not run")}; never an input to the gate or the exit code.${o.seams.score?.confidence ? ' Every deduction and its evidence is in <a href="confidence.json">confidence.json</a>.' : ""}</p>
 <h2>Glance (gemba)</h2><p class="seam">${esc(NOT_BUILT.glance)}</p>
 <h2>5 Whys (kaizen)</h2><p class="seam">${esc(NOT_BUILT.whys)}</p>
-<h2>Changes</h2><p class="seam">${esc(o.seams.changes?.note ?? NOT_BUILT.changes)}</p>
+<h2>Changes</h2><p class="seam">${esc(o.seams.changes?.note ?? NO_MONOREPO)}</p>
+${!o.seams.score?.confidence && o.seams.changes?.changes ? renderChangesHtml(o.seams.changes.changes) : ""}
 </body></html>
 `;
 }

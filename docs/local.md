@@ -290,11 +290,11 @@ one line when it ends, with its elapsed time, and `status.json` records it as it
 | --- | --- | --- |
 | resolve | the baseline: `--baseline <tag>`; `prod` or nothing reads `tag` (and `digests`, which pin production) from `release/deployed.json` in the monorepo checkout (`--monorepo`, else `HARNESS_MONOREPO_DIR`), else `HARNESS_PRODUCTION_TAG` (not `main`), else exit `2` before anything runs. Then `images ensure` for both sides | the line stops at resolve, exit `2` |
 | noise | the local noise store's A/A when it is clean, verified and at most 7 days old; else an A/A of the baseline, 3 runs, k6 `20x30s` | a dirty A/A stops the line before any A/B, exit `2`; the report lists each difference that needs a mask reviewed or a determinism fix |
-| changes | a seam: not built yet (C1). Says so; never makes data up | never fails |
+| changes | `harness changes --a <baseline> --b <candidate>` in the monorepo checkout (`--monorepo` or `HARNESS_MONOREPO_DIR`): `changes.json`, one risk line per PR, which the score reads as change risk ([below](#what-changed-pr-by-pr-harness-changes)). No checkout: skipped, with the reason, and change risk stays not measured | never fails, never changes the exit code: orphans, a missing token, even a failure to run are the stage's note |
 | release | `--mode release --runs 3 --load 20x30s` with the claims (`--claims`, else `release/claims.yaml` in the monorepo checkout), the rules and that A/A | a FAIL stops the line for a go decision; the rehearsals still run for the evidence, the report is written, exit `1` |
 | rehearse | migration, then upgrade | skipped only with `--fast`, and the report says so |
 | score | `confidence.json`: the Release Confidence Score from the release, migration and upgrade runs ([below](#the-release-confidence-score-harness-confidence)). The glance (C3) and the 5 Whys stubs (C4) are not built yet | never fails, never changes the exit code: the exit code is decided before the score exists |
-| report | `report.md`, `report.html`, `gate.md`, `gate.json` in `out/<timestamp>-release-command/`, led by the Gate, then the RCS and its band, then the dimension table; `--open` opens `report.html` | always written |
+| report | `report.md`, `report.html`, `gate.md`, `gate.json` in `out/<timestamp>-release-command/`, led by the Gate, then the RCS and its band, then the dimension table, then the per-PR change-risk table; `--open` opens `report.html` | always written |
 
 `status.json` ([schema](contract/release-status.schema.json)) holds the stage running now, and
 for each stage its `state`, `startedAt`, `elapsed` and the plan's `expected` seconds, so a
@@ -325,12 +325,12 @@ The view behind this table is [lean.md](lean.md).
 | Jidoka (stop the line) | a stage that cannot hand good work on stops it: missing images at resolve, a dirty A/A at noise (before any A/B), a gate FAIL at release. The terminal and the report say `line stopped at <stage>: <why>` and the next standard step, not a generic error. The Gate is always shown first and no number talks it back on | the 5 Whys it triggers (C4) |
 | Andon, visual management (**live since 1.9.0**) | the report opens with the Gate in one word (PASS, WARN, FAIL or NOT JUDGED), then the Release Confidence Score and its band with what the band means (Green: ship on the captain's say; Amber: ship only after the reviewer's glance is recorded verified; Red: hold, open a 5 Whys, do not re-run hoping for a better number), then the eight dimensions, each with every point lost and where. `confidence.json` and `status.json` are the boards a dashboard reads | the scoreboard of releases and its run rules (C2); the four dimensions not measured yet get their inputs (C1 change risk; the monorepo's test signal, traceability, post-deploy record) |
 | Standard work | one command, the same stages in the same order every time, the same steps CI runs, and a named next step for each stop | the SOP in the monorepo (C3) |
-| Gemba | each gate row links to that run's own `report.html`, the artefacts themselves | the glance: at most seven ranked places to look (C3) |
-| Kaizen | every FAIL is marked as a trigger in the report | `harness why`, the 5 Whys stub and the countermeasure register (C4) |
+| Gemba (**change risk live since 1.10.0**) | each gate row links to that run's own `report.html`, the artefacts themselves; each change-risk deduction links to the exact file in the exact PR's diff on GitHub, so a reviewer with fifteen minutes opens the hunk, not the release | the glance: at most seven ranked places to look (C3), which will draw hotspot-meets-first-contribution and major bumps from `changes.json` |
+| Kaizen | every FAIL is marked as a trigger in the report; `changes.json` keeps a risk line per PR and a deduction per file, the raw material for "the same file every release" and per-file trends | `harness why`, the 5 Whys stub and the countermeasure register (C4); the trends themselves (C2) |
 
-The seams are functions (`changesStage`, `scoreStage` in `src/local/release.ts`) that the later
-phases fill; `scoreStage` now writes `confidence.json`. Whatever they return, the gate wins:
-nothing in them can change a verdict or an exit code.
+The seams are functions (`changesStage`, `scoreStage` in `src/local/release.ts`); `changesStage`
+now runs `harness changes` and `scoreStage` writes `confidence.json`. Whatever they return, the
+gate wins: nothing in them can change a verdict or an exit code.
 
 ### The Release Confidence Score: `harness confidence`
 
@@ -345,8 +345,8 @@ input you did not have then (a `--test-signal` from the monorepo's CI, say). It 
 
 ```text
 Gate: PASS
-RCS 85 Amber: ship only after the reviewer's glance is recorded verified
-  weighted mean 85.00 over 8 of 8 dimensions measured (weight 100 of 100, renormalised).
+RCS 89 Amber: ship only after the reviewer's glance is recorded verified
+  weighted mean 89.50 over 8 of 8 dimensions measured (weight 100 of 100, renormalised).
 
   dimension                  weight  score         floor, points lost
   Claim coverage                 20  85            -15: 1 deduction(s)
@@ -355,7 +355,7 @@ RCS 85 Amber: ship only after the reviewer's glance is recorded verified
   Rehearsals                     10  100
   Test signal                    15  70            -30: 1 deduction(s)
   Requirements traceability      10  100
-  Change risk                    15  60            -40: 1 deduction(s)
+  Change risk                    15  90            -10: 1 deduction(s)
   Post-deploy history             5  100
 ```
 
@@ -371,14 +371,67 @@ row, the stale claims, the masks) or the input file or PR it came from.
   ≥ 90, Amber 75-89, Red < 75. The rules and the input shapes are in
   [contract.md](contract.md#confidencejson-the-release-confidence-score).
 - **Not measured is not 100.** Today a `harness release` run measures the first four from its
-  own runs. Test signal, traceability and post-deploy history need the monorepo's data
-  (`--test-signal`, `--traceability`, `--post-deploy`), and change risk needs C1
-  (`--change-risk`). Without their input they are "not measured", say which flag would measure
+  own runs, and change risk too when it has the monorepo checkout (since 1.10.0). Test signal,
+  traceability and post-deploy history need the monorepo's data (`--test-signal`,
+  `--traceability`, `--post-deploy`); change risk can also be given as `--change-risk
+  <changes.json>`. Without their input they are "not measured", say which flag would measure
   them, and are left out of the mean, whose weights are renormalised and recorded.
 - **Advisory.** The exit code is `0` whenever `confidence.json` was written, whatever the score
   or the Gate, and `2` for an input it cannot read. Three real releases show whether the
   weights match the team's judgement before a band holds anything; the weights and bands
   change only by a PR with a 5 Whys attached (`src/score/weights.ts`).
+
+### What changed, PR by PR: `harness changes`
+
+```console
+pnpm harness changes --a 16.2.1 --b 16.2.2 --monorepo ..\tutors-mono-repo   # or HARNESS_MONOREPO_DIR
+    [--history 6] [--changelog changelog.json] [--json] [--out changes.json]
+```
+
+`harness release` runs this for you in its changes stage. It reads `git log A..B` in the
+monorepo checkout between the same two tags the diff engine compared (`16.2.2` finds `v16.2.2`),
+so fetch the tags first (`git fetch --tags`). One line per PR (a squash `(#N)`, a `Merge pull
+request #N`, or a commit straight to main on its own line), and the signals of the plan's table,
+each on the PR that carries it:
+
+| Signal | Costs |
+| --- | --- |
+| churn per app against its median over the last `--history` releases | −5 per app above 2× |
+| a hotspot (a file changed in 3 of those releases) touched | −10 by a first contribution, −3 otherwise |
+| a file with 3+ authors this release | −5 each, at most −15 |
+| an orphan: a changelog entry with no diff under its section, a diff with no entry | −10 each |
+| test lines ÷ production lines below 0.2 on a package the PR changed | −10 |
+| a PR with no approving review, or a commit straight to main | floor (caps the RCS at 74), no points |
+| a major bump of a direct dependency in `pnpm-lock.yaml` | −5 each |
+
+Change risk is 100 minus the **sum** of every PR's deductions, not an average: the report's
+per-PR table shows each PR that lost points on a row of its own and folds the clean ones into
+one row, so six clean PRs and one risky one read as one risky PR. The real 16.2.1 → 16.2.2:
+
+```text
+Change risk 90 (100 − 10), v16.2.1..v16.2.2: 5 of 5 PRs carry a finding; floor breached (caps the RCS at 74).
+
+  PR       points   churn  files  tests   reviewed     first title
+  #259        -10     358      4  0.00    no           yes   fix: restore accents and umlauts in de, es, fr and it messages
+  #262      floor    1587      7  -       no                 docs(testing): rewrite the testing guides, and fix the nightly jobs …
+  …
+```
+
+- **Gemba.** Every deduction names the PR and the file, and links to that file in that PR's diff
+  on GitHub (`…/pull/259/files#diff-<sha256 of the path>`): the reviewer goes to the hunk.
+- **Kaizen, not blame.** The author is kept in `changes.json` as a fact for the scoreboard's
+  trends and is never in a reason or the report's table. A first contribution is flagged as a
+  fact and costs nothing on its own; the points land only when it meets a hotspot or lacks
+  tests, the same −10 anyone's PR would lose.
+- **Not measured is not clean.** Review coverage needs `GITHUB_TOKEN` or `GH_TOKEN` (behind a
+  proxy, Node's `fetch` needs `NODE_USE_ENV_PROXY=1`); the orphan check needs `### v<version>`
+  entries in CHANGELOG.md at the newer tag, or `--changelog` (the output of `pnpm
+  release:changelog --json`); churn and hotspots need release tags before `A`. Whatever it
+  cannot read is listed as not measured, with the reason, and costs nothing. A commit straight
+  to main breaches the review floor with or without a token.
+- **Advisory.** Exit `0` whatever it found, `2` for what it cannot read (no checkout, a tag the
+  monorepo lacks, an unusable `--changelog`). Orphans are reported, never fatal. The fields are
+  in [contract.md](contract.md#changesjson-the-change-signals).
 
 ## Parity matrix
 

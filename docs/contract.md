@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.9.0`
+Contract version: `1.10.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -17,6 +17,7 @@ The machine-readable half lives in [`docs/contract/`](contract/):
 | [`rules.schema.json`](contract/rules.schema.json) | `rules.json`, the Rules a claim may name (since 1.3.0) |
 | [`release-status.schema.json`](contract/release-status.schema.json) | `status.json` of `harness release` (since 1.8.0, not stable) |
 | [`confidence.schema.json`](contract/confidence.schema.json) | `confidence.json`, the Release Confidence Score (since 1.9.0, not stable) |
+| [`changes.schema.json`](contract/changes.schema.json) | `changes.json`, the change signals between two tags (since 1.10.0, not stable) |
 | [`cli.json`](contract/cli.json) | every command and flag, which are stable, the exit codes |
 | [`workflows.json`](contract/workflows.json) | dispatch events and payloads, repository variables, artifacts, permissions the workflows never hold |
 
@@ -32,9 +33,9 @@ Three numbers, all stamped where a reader can see them:
 
 ```console
 $ pnpm harness version
-harness 1.9.0 (3f2c…) · contract 1.9.0
+harness 1.10.0 (3f2c…) · contract 1.10.0
 $ pnpm harness version --json
-{"version":"1.9.0","gitSha":"3f2c…","contractVersion":"1.9.0"}
+{"version":"1.10.0","gitSha":"3f2c…","contractVersion":"1.10.0"}
 ```
 
 `gitSha` is `git rev-parse HEAD` of the harness checkout, or the
@@ -84,6 +85,7 @@ written whatever happened, a stopped line or Ctrl-C included:
 | `report.html` | the file exists and is self-contained; its content is for people |
 | `gate.md`, `gate.json` | the combined gate summary `harness local gate` writes to `<timestamp>-gate/`; since 1.9.0 `gate.md` (and so `report.md`) has the RCS, its band and the dimension table right under the Gate |
 | `confidence.json` | since 1.9.0, not stable: [`confidence.json`](#confidencejson-the-release-confidence-score), from the release, migration and upgrade runs. Absent when there was no release run to score (a stopped line before the A/B, Ctrl-C) or when the score could not be computed (the score stage says why) |
+| `changes.json` | since 1.10.0, not stable: [`changes.json`](#changesjson-the-change-signals), written by the changes stage (`harness changes --a <baseline> --b <candidate>` in the monorepo checkout) and read by the score as change risk. Absent without a checkout (`--monorepo` or `HARNESS_MONOREPO_DIR`), or when `harness changes` could not run; the stage's note says which, and change risk is then not measured. Since 1.10.0 `gate.md` and `report.md` carry the per-PR table under the dimension table |
 
 ## `report.json`
 
@@ -667,7 +669,7 @@ number).
 | Rehearsals (`rehearsals`) | 10 | the migration and upgrade reports: skipped (−50 each), FAIL (−50), WARN (−20), failed requests during the rollout (−50) | either rehearsal skipped |
 | Test signal (`test-signal`) | 15 | `--test-signal`: a changed package below 80% mutation score (−30 each), each harness mutant missed (−25) | a mutation score below 60%, or a harness mutant missed |
 | Requirements traceability (`traceability`) | 10 | `--traceability`: an entry with no EARS file (−20), with no claim (−10), a claim tracing to no entry (−10) | a `feature` entry with no EARS file |
-| Change risk (`change-risk`) | 15 | `--change-risk`: a PR merged without review (−40), a first contribution touching a hotspot (−40) | a PR merged without review |
+| Change risk (`change-risk`) | 15 | `--change-risk` (a `changes.json`, or the changes stage of `harness release`): the deductions `harness changes` made, summed, as [`changes.json`](#changesjson-the-change-signals) lists them (since 1.10.0; the plan's table: −5 per app above 2× its churn median, −10 a hotspot touched by a first contribution and −3 by anyone else, −5 per file with 3+ authors at most −15, −10 per orphan change, −10 per PR below 0.2 test lines per production line, −5 per major bump) | a PR with no approving review, or a commit straight to main (no points of its own) |
 | Post-deploy history (`post-deploy`) | 5 | `--post-deploy`: the last release's post-deploy run FAILED (−100), WARNED (−20) | it FAILED (a rollback issue) |
 
 **Every point lost is a deduction** `{ points, why, evidence, floor? }`: `why` names the hunk,
@@ -696,9 +698,16 @@ and replaces the file name in a deduction (a CI run URL, a report):
 // --traceability: the changelog against the EARS files and the claims.
 { "entries": [{ "entry": "Reader: reading time on lab steps", "kind": "feature", "ears": "specs/0031.feature", "claimed": true }],
   "untracedClaims": ["dom reader:lab"] }
-// --change-risk: the PRs between the two tags (the shape C1, `harness changes`, is to write; it may still change).
+// --change-risk: a changes.json (since 1.10.0; its changeRisk block is read), or the 1.9.0 shape below, still read:
+// reviewed may be null (not known) since 1.10.0; hotspots cost −10 on a first contribution, −3 otherwise; an unreviewed
+// PR breaches the floor at no points; churn, ownership, orphans, tests and dependencies are then gaps.
 { "prs": [{ "number": 412, "url": "https://…/pull/412", "reviewed": true, "firstTimeContributor": true, "hotspots": ["packages/reader/src/lib/course.ts"] }] }
 ```
+
+Since 1.10.0 a deduction may be `points: 0` with `floor: true`: a finding that caps the RCS
+and costs no points of its own (a PR with no approving review; orphan changes in
+requirements traceability, where `changes.json`'s orphans are a floor signal once it is measured
+and are named in its `reason` while it is not). The board and the report show it as `floor`.
 
 `--post-deploy` takes the last release's post-deploy run directory or its `report.json`.
 
@@ -706,13 +715,53 @@ and replaces the file name in a deduction (a CI run URL, a report):
 baseline, when the release ran, the reports and inputs read (relative paths) and the harness
 that scored it.
 
+## `changes.json`: the change signals
+
+Since 1.10.0, not stable: [`contract/changes.schema.json`](contract/changes.schema.json).
+Source of truth: `Changes` in `src/changes/signals.ts`; the points are `RULES.changeRisk` in
+`src/score/weights.ts`. Written by `harness changes --out <file>` and by the changes stage of
+`harness release` in its `<timestamp>-release-command/` directory.
+
+**What it reads.** `git log A..B` in the monorepo checkout, from the two tags the diff engine
+compared (a harness tag `16.2.2` finds the monorepo's `v16.2.2`), not whatever is checked out.
+Each first-parent commit is one line: a merged PR (`Merge pull request #N from …`, title from
+the body), a squashed one (`title (#N)`), or a commit straight to main (`pr: null`,
+`direct: true`). A `release/*` branch coming back is `release: true`: bookkeeping, left out of
+the hotspot, ownership, test and orphan checks. The history is the `--history` (default 6)
+releases before `A`, each the net diff between two neighbouring plain `X.Y.Z` tags (an rc is
+not a release).
+
+| Signal | Measured as | Points (on the PR that carries it) | Not measured when |
+| --- | --- | --- | --- |
+| churn | lines added + deleted under `apps/<reader, catalogue, live, time>/` between the tags, against that app's median over the history | −5 per app above 2× its median, on the PR with most of that churn | no release tag before `A` |
+| hotspots | production files changed in 3+ of the history releases, heaviest first | −10 when a first contribution touches one, −3 otherwise (once per PR) | fewer than 3 releases of history |
+| ownership | production files with 3+ distinct authors (by name or email) this release | −5 per file, at most −15, on the PR that brought the third author | never |
+| orphans | a PR (or direct commit) that changed a product section's paths with no entry under `### v<version>` naming it; an entry whose PRs did not merge between the tags or changed nothing under its section (CHANGELOG.md has no Development section, so Infrastructure also covers CI, tests and guides) | −10 each; an entry no PR between the tags carries is a line of its own (`pr: null`) | CHANGELOG.md at `B` has no `### v<version>` entries and no `--changelog` (the output of `pnpm release:changelog --json`, whose `curated: false` then answers the diff half) was given |
+| tests | test lines ÷ production lines per package (`apps/<x>`, `packages/jsr/<x>`, `packages/svelte/<x>`); tests outside a package (the root `tests/`) count for the packages the same PR changed | −10 per PR below 0.2 on any package it changed | never |
+| reviews | at least one `APPROVED` review, from `GET /repos/{repo}/pulls/{n}/reviews` with `GITHUB_TOKEN` (else `GH_TOKEN`) | floor, no points, per PR without one and per commit straight to main (known without a token) | no token, or an origin that is not GitHub; a PR GitHub cannot answer for is `reviewed: null` and named |
+| dependencies | the direct dependencies of each importer in `pnpm-lock.yaml`, `A` against `B` | −5 per major bump (for 0.x, a minor), on the PR that moved it; new ones listed | a side has no `pnpm-lock.yaml` |
+
+**Every deduction** is `{ points, why, evidence, floor?, rule, pr, commit?, file?, author? }`:
+`why` names the PR (or commit) and the file, and never the author; `evidence` is the file in
+that PR's diff on GitHub (`https://github.com/<repo>/pull/<n>/files#diff-<sha256 of the
+path>`), the commit, or `CHANGELOG.md` at `B`. `author` is a fact field for the scoreboard's
+trends. A first contribution (`firstContribution`: nothing by that author reachable from `A`)
+is a fact and costs nothing on its own: the points land only when it meets a hotspot or lacks
+tests. The report's table has no author column.
+
+**The score** is `score` (and `changeRisk.score`): 100 minus the sum of every deduction on every
+line, floored at 0 — a sum, not an average. `changeRisk` is what `harness confidence
+--change-risk` reads (it takes the whole file): `prs`, `direct`, `deductions`, `gaps` (each
+signal not measured, and why) and `orphans`. `notMeasured` lists what could not be read; a
+signal not measured is never scored clean.
+
 ## CLI
 
 Full list: [`contract/cli.json`](contract/cli.json). Invoke as `pnpm harness
 <command>` from a checkout (Node ≥ 22, `pnpm install`, and for capturing modes
 `pnpm exec playwright install chromium` and Docker). Commands and flags marked
 `stable: true` there are the ones below; the rest (`harness stack`, `harness
-kind`, `harness journeys`, `harness override`, `harness local`, `harness release` (since 1.8.0), `harness confidence` (since 1.9.0), `harness prune`, `harness reports`, `harness scorecard`, `harness noise
+kind`, `harness journeys`, `harness override`, `harness local`, `harness release` (since 1.8.0), `harness confidence` (since 1.9.0), `harness changes` (since 1.10.0), `harness prune`, `harness reports`, `harness scorecard`, `harness noise
 history`, `--substrate`, `--now`, `--masks`, `--snapshot`,
 `--upgrade-*`, `--noise-max-age-days`, `--no-screenshots`, `--no-axe`,
 `--no-focus`, `--no-runtime` and `--startup-restarts` (both since 1.2.0),
@@ -735,7 +784,9 @@ calls it) and the flags only they take (`--only`, `--migrations-a`, `--migration
 and neither are `harness release` and the flags only it takes (`--candidate`, `--baseline`,
 `--monorepo`, `--fast`, `--open`; since 1.8.0), nor `harness confidence` and the flags it takes
 (`--run`, `--migration`, `--upgrade`, `--test-signal`, `--traceability`, `--change-risk`,
-`--post-deploy`; since 1.9.0; `harness release` takes the last four too).
+`--post-deploy`; since 1.9.0; `harness release` takes the last four too), nor `harness changes`
+and the flags only it takes (`--history`, `--changelog`; since 1.10.0; it also takes `--a`, `--b`,
+`--monorepo`, `--json` and `--out`).
 
 | Command | Stable flags |
 | --- | --- |
@@ -1009,6 +1060,33 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.10.0 (minor; change signals: `harness changes`)
+
+The release note is [releases/1.10.0.md](releases/1.10.0.md). Additive for a consumer written
+against 1.9.0: no `report.json` field, verdict, or exit code of an existing command changes.
+
+- `harness changes --a <tag> --b <tag> [--monorepo dir] [--history 6] [--changelog f] [--json]
+  [--out file]` (not stable): the change signals between two tags of the monorepo (`git log
+  A..B` in the checkout, `--monorepo` or `HARNESS_MONOREPO_DIR`), one risk line per PR, and the
+  change risk they add up to. Exit `0` whatever it found; `2` for what it cannot read.
+- `changes.json` ([`changes.schema.json`](contract/changes.schema.json), not stable): the
+  per-PR lines, the release-level signals, what was not measured, and the `changeRisk` block
+  ([`changes.json`](#changesjson-the-change-signals)).
+- `harness release`: the changes stage is no longer a seam. With a monorepo checkout it runs
+  `harness changes --a <baseline> --b <candidate>` and writes `changes.json` into
+  `<timestamp>-release-command/`; the score stage reads it as change risk (an explicit
+  `--change-risk` wins); `report.md`, `gate.md` and `report.html` carry the per-PR table under the
+  score. Without a checkout the stage is skipped with the reason and change risk stays not
+  measured. Its exit code reaches nothing; the command's exit code is unchanged.
+- `harness confidence --change-risk` takes a `changes.json` (its `changeRisk` block); the 1.9.0
+  `{ "prs": [...] }` shape is still read, `reviewed` may now be `null`. Change risk's points
+  follow the plan's table (a hotspot touched by a first contribution −10, by anyone else −3; a PR
+  with no approving review breaches the floor at no points, where 1.9.0 took −40 for each).
+- `confidence.json`: a deduction may be `points: 0` with `floor: true` (the schema's
+  `exclusiveMinimum: 0` is now `minimum: 0`); orphan changes are a floor signal for
+  requirements traceability once it is measured.
+- New flags, not stable: `--history`, `--changelog`.
 
 ### 1.9.0 (minor; the Release Confidence Score)
 

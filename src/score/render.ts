@@ -7,6 +7,8 @@ import type { Confidence, DimensionScore } from "./confidence.ts";
 import { FLOOR_CAP } from "./weights.ts";
 
 const scoreText = (d: DimensionScore) => (d.status === "measured" ? String(d.score) : "not measured");
+/** A deduction's points as shown: a floor-only finding (0 points, since 1.10.0) says "floor" instead of −0. */
+const pts = (x: { points: number }) => (x.points ? `−${x.points}` : "floor");
 const lost = (d: DimensionScore) => d.deductions.reduce((n, x) => n + x.points, 0);
 
 /** "RCS 85 Amber: ship only after …", or why there is none. */
@@ -36,7 +38,7 @@ export function renderBoard(c: Confidence, file?: string): string {
     const why = d.status === "measured" ? (d.deductions.length ? `-${lost(d)}: ${d.deductions.length} deduction(s)` : "") : d.reason ?? "";
     lines.push(`  ${d.name.padEnd(27)}${String(d.weight).padStart(6)}  ${scoreText(d).padEnd(14)}${floor}${floor && why ? "  " : ""}${why}`.trimEnd());
   }
-  const deductions = c.dimensions.flatMap((d) => d.deductions.map((x) => `  -${x.points} ${d.name}: ${x.why}${x.floor ? " [floor]" : ""}\n      ${x.evidence}`));
+  const deductions = c.dimensions.flatMap((d) => d.deductions.map((x) => `  ${x.points ? `-${x.points}` : "floor"} ${d.name}: ${x.why}${x.floor && x.points ? " [floor]" : ""}\n      ${x.evidence}`));
   if (deductions.length) lines.push("", "Where the points went:", ...deductions.slice(0, BOARD_DEDUCTIONS));
   if (deductions.length > BOARD_DEDUCTIONS) lines.push(`  … ${deductions.length - BOARD_DEDUCTIONS} more in confidence.json`);
   lines.push("", "The score never changes the gate, a verdict or an exit code.");
@@ -50,7 +52,7 @@ const cell = (s: string) => s.replaceAll("|", "\\|").replaceAll("\n", " ");
 export function renderScoreMarkdown(c: Confidence): string {
   const lines = [`**${rcsLine(c)}**`, "", basisLine(c), "", "| dimension | weight | score | floor | where it lost points |", "| --- | --- | --- | --- | --- |"];
   for (const d of c.dimensions) {
-    const detail = d.status === "measured" ? d.deductions.map((x) => `−${x.points} ${x.why}`).join("; ") || "—" : d.reason ?? "";
+    const detail = d.status === "measured" ? d.deductions.map((x) => `${pts(x)} ${x.why}`).join("; ") || "—" : d.reason ?? "";
     lines.push(`| ${d.name} | ${d.weight} | ${d.status === "measured" ? `**${d.score}**` : "not measured"} | ${d.floorBreached ? "**breached**" : ""} | ${cell(detail)} |`);
   }
   lines.push("", "_Visual management: never an input to the gate or the exit code. Every deduction names its evidence in confidence.json._");
@@ -59,7 +61,7 @@ export function renderScoreMarkdown(c: Confidence): string {
 
 /** Every deduction with its evidence link, for the section further down report.md. */
 export function renderDeductionsMarkdown(c: Confidence): string {
-  const rows = c.dimensions.flatMap((d) => d.deductions.map((x) => `| ${d.name} | −${x.points}${x.floor ? " (floor)" : ""} | ${cell(x.why)} | ${cell(x.evidence)} |`));
+  const rows = c.dimensions.flatMap((d) => d.deductions.map((x) => `| ${d.name} | ${pts(x)}${x.floor && x.points ? " (floor)" : ""} | ${cell(x.why)} | ${cell(x.evidence)} |`));
   const gaps = c.dimensions.flatMap((d) => (d.gaps ?? []).map((g) => `- ${d.name}: ${g}`));
   const out = [rows.length ? ["| dimension | points | why | evidence |", "| --- | --- | --- | --- |", ...rows].join("\n") : "No deductions."];
   if (gaps.length) out.push("", "Not looked at yet by a measured dimension:", "", ...gaps);
@@ -73,7 +75,7 @@ export function renderScoreHtml(c: Confidence): string {
   const tone = c.band ? c.band.toLowerCase() : "none";
   const rows = c.dimensions
     .map((d) => {
-      const detail = d.status === "measured" ? d.deductions.map((x) => `−${x.points} <a href="${esc(x.evidence)}">${esc(x.why)}</a>`).join("<br>") || "—" : esc(d.reason ?? "");
+      const detail = d.status === "measured" ? d.deductions.map((x) => `${pts(x)} <a href="${esc(x.evidence)}">${esc(x.why)}</a>`).join("<br>") || "—" : esc(d.reason ?? "");
       return `<tr><td>${esc(d.name)}</td><td>${d.weight}</td><td>${d.status === "measured" ? `<strong>${d.score}</strong>` : "<em>not measured</em>"}</td><td>${d.floorBreached ? "<strong>breached</strong>" : ""}</td><td>${detail}</td></tr>`;
     })
     .join("\n");
