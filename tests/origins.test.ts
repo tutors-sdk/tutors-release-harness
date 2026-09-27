@@ -107,3 +107,14 @@ describe("the recorded side's literal link to production (G2)", () => {
     expect(outcome.report.compare.hunks.filter((h) => h.artefact === "dom")).toEqual([]);
   });
 });
+
+describe("consoleText: a failed resource says which", () => {
+  it("adds the resource's URL, without its query, to Chromium's failed-load message", async () => {
+    const { consoleText } = await import("../src/collectors/browser.ts");
+    const failed = "Failed to load resource: the server responded with a status of 404 ()";
+    expect(consoleText(failed, "https://reference-course.netlify.app/course.png?v=3#x")).toBe(`${failed}: https://reference-course.netlify.app/course.png`);
+    expect(consoleText(failed, undefined)).toBe(failed);
+    expect(consoleText(failed, "")).toBe(failed);
+    expect(consoleText("Uncaught TypeError: x is undefined", "https://tutors.dev/_app/x.js")).toBe("Uncaught TypeError: x is undefined");
+  });
+});

@@ -71,6 +71,17 @@ export async function launchBrowser(): Promise<Browser> {
  * redacted here too, so `capture.json` does not hold them; `normalise()` redacts
  * again for captures recorded before this (src/normalise/redact.ts).
  */
+/**
+ * The text a console entry is compared by. Chromium's "Failed to load resource: the server responded with a status of 404 ()"
+ * names no resource: the URL is only the message's location. Without it a report says a page now fails to load something
+ * and not what, and two different failures on one page read as one. So that message carries its URL, without the query
+ * (which can hold a token or a cache-buster); every other message is its text alone.
+ */
+export function consoleText(text: string, locationUrl: string | undefined): string {
+  if (!locationUrl || !text.startsWith("Failed to load resource")) return text;
+  return `${text}: ${locationUrl.split(/[?#]/)[0]}`;
+}
+
 export function stripOrigins(text: string, spec: SideSpec): string {
   let out = text;
   const origins = [spec.urls.reader, spec.urls.catalogue, spec.urls.live, spec.urls.time, spec.urls.readerAuth, spec.urls.persistence].filter((o): o is string => !!o);
@@ -261,7 +272,7 @@ export async function captureJourney(browser: Browser, spec: SideSpec, journey: 
   });
   page.on("console", (message) => {
     const type = message.type();
-    if (type === "error" || type === "warning") pendingConsole.push({ level: type, text: stripOrigins(message.text(), spec) });
+    if (type === "error" || type === "warning") pendingConsole.push({ level: type, text: stripOrigins(consoleText(message.text(), message.location().url), spec) });
   });
   page.on("pageerror", (error) => pendingConsole.push({ level: "error", text: stripOrigins(error.message, spec) }));
   // Requests in flight right now. waitForLoadState("networkidle") resolves at once when the page reached

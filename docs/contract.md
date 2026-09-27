@@ -956,6 +956,8 @@ meaning, stable command or flag, or dispatch payload field changes.
   notice in the run summary, when no release run has kept a `release-report`
   artifact to compare production with; before, every scheduled run failed. A
   `deployed` dispatch or a `recorded_run_id` without a recording still fails.
+- A console "Failed to load resource" message now carries the resource's URL (without its query), so a report says which resource failed, and two different failures on one page are two differences (harness 1.5.2).
+- Dependencies updated in one batch (harness 1.5.3): `diff` 9, whose `structuredPatch` output was checked byte-identical to 8's, so `dom` and `focus` hunk text does not change; the rest (tsx, Vitest 5, ESLint 10, `@types/pixelmatch` 7) are tooling. No report, flag or payload changes.
 
 ### 1.4.0 (minor; the pinned vulnerability database, one "not collected" convention, housekeeping commands, clean exit 2, post-deploy on an external side)
 
