@@ -94,6 +94,9 @@ jobs:
       HARNESS_VULN_DB_DIR: ${{ github.workspace }}/.harness/vuln-db
       # As release.yml: the forecast is only worth having if it is judged as the candidate would be.
       HARNESS_REQUIRE_STATIC: "1"
+      # What the apps load from Google Fonts, Iconify and jsDelivr, as recorded once (src/collectors/third-party-cache.ts): the
+      # default of a local run is HARNESS_HOME/third-party-cache, the same place.
+      HARNESS_THIRD_PARTY_CACHE_DIR: ${{ github.workspace }}/.harness/third-party-cache
     steps:
       - uses: actions/checkout@v4
         with:
@@ -105,6 +108,18 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
+
+      # The browser is answered from one recorded copy of what the apps load from Google Fonts, Iconify and jsDelivr: the same
+      # bytes on both sides, at once, so a font or an icon cannot arrive on one side only, and an outage of those hosts breaks
+      # nothing (docs/noise-burndown.md). The key never matches exactly; restore-keys picks the newest entry.
+      - name: Restore the recorded third-party responses
+        id: third-party-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .harness/third-party-cache
+          key: third-party-v1-${{ github.run_id }}
+          restore-keys: |
+            third-party-v1-
       - uses: sigstore/cosign-installer@v4.1.2
 
       - uses: anchore/scan-action/download-grype@v7.4.2
@@ -200,6 +215,14 @@ jobs:
           else
             echo "### Main to RC: could not judge (no report: the run stopped before a verdict, see the step log)" >> "$GITHUB_STEP_SUMMARY"
           fi
+
+      # Saved under the hash of its content, and only when this run recorded something the restored copy did not have.
+      - name: Keep the recorded third-party responses for later runs
+        if: always() && hashFiles('.harness/third-party-cache/*.json') != '' && steps.third-party-cache.outputs.cache-matched-key != format('third-party-v1-{0}', hashFiles('.harness/third-party-cache/*.json'))
+        uses: actions/cache/save@v4
+        with:
+          path: .harness/third-party-cache
+          key: third-party-v1-${{ hashFiles('.harness/third-party-cache/*.json') }}
 
   # The forecast, readable at a raw URL after the artifact has expired: reports/index.json and each run's report and
   # scorecard, on the `main-preview` branch. One commit per run, never forced; the last 60 runs are kept.

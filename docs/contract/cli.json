@@ -159,6 +159,10 @@
       "default": "",
       "meaning": "since 1.2.0. A pre-fetched scanner database directory (GRYPE_DB_CACHE_DIR / TRIVY_CACHE_DIR). Scanner database updates are always switched off, so this is what pins the scan. Since 1.4.0, unset means HARNESS_HOME/vuln-db when `harness vuln-db update` has made it, else the scanner's own cache"
     },
+    "HARNESS_THIRD_PARTY_CACHE_DIR": {
+      "default": "HARNESS_HOME/third-party-cache",
+      "meaning": "since 1.5.0. Where the recorded responses of the third-party hosts the apps load in the browser (Google Fonts, Iconify, cdn.jsdelivr.net) are kept: fetched once, then every request on both sides and in later runs is answered from the record. Delete the directory to record afresh"
+    },
     "HARNESS_VULN_DB_MAX_AGE_DAYS": {
       "default": "5",
       "meaning": "since 1.4.0. How old (days since built) the vulnerability database may be: `harness doctor` warns beyond it, and it is passed to grype as its own limit (GRYPE_DB_MAX_ALLOWED_BUILT_AGE), so a scan and the doctor agree. 5 is grype's own default"

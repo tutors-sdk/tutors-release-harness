@@ -86,6 +86,9 @@ jobs:
       # collection on the production tag every night, so a broken scanner is known before a release needs it; a FAIL a person
       # accepts anyway goes through override_reason. Rationale: docs/images.md, "The vulnerability database".
       HARNESS_REQUIRE_STATIC: "1"
+      # What the apps load from Google Fonts, Iconify and jsDelivr, as recorded once (src/collectors/third-party-cache.ts): the
+      # default of a local run is HARNESS_HOME/third-party-cache, the same place.
+      HARNESS_THIRD_PARTY_CACHE_DIR: ${{ github.workspace }}/.harness/third-party-cache
     steps:
       - uses: actions/checkout@v4
         with:
@@ -97,6 +100,18 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
+
+      # The browser is answered from one recorded copy of what the apps load from Google Fonts, Iconify and jsDelivr: the same
+      # bytes on both sides, at once, so a font or an icon cannot arrive on one side only, and an outage of those hosts breaks
+      # nothing (docs/noise-burndown.md). The key never matches exactly; restore-keys picks the newest entry.
+      - name: Restore the recorded third-party responses
+        id: third-party-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .harness/third-party-cache
+          key: third-party-v1-${{ github.run_id }}
+          restore-keys: |
+            third-party-v1-
 
       # `images ensure` verifies the cosign signature of every image it pulls (docs/images.md).
       # The images are signed with cosign 3, and verifying them needs cosign >= 3: installer v4 installs it.
@@ -182,6 +197,14 @@ jobs:
         run: |
           if ls out/*-release/report.md > /dev/null 2>&1; then cat out/*-release/report.md >> "$GITHUB_STEP_SUMMARY"; else echo "### Release mode: could not judge (no report: the run stopped before a verdict, see the step log)" >> "$GITHUB_STEP_SUMMARY"; fi
 
+      # Saved under the hash of its content, and only when this run recorded something the restored copy did not have.
+      - name: Keep the recorded third-party responses for later runs
+        if: always() && hashFiles('.harness/third-party-cache/*.json') != '' && steps.third-party-cache.outputs.cache-matched-key != format('third-party-v1-{0}', hashFiles('.harness/third-party-cache/*.json'))
+        uses: actions/cache/save@v4
+        with:
+          path: .harness/third-party-cache
+          key: third-party-v1-${{ hashFiles('.harness/third-party-cache/*.json') }}
+
   migration:
     name: Migration rehearsal
     runs-on: ubuntu-latest
@@ -217,6 +240,10 @@ jobs:
     name: Upgrade rehearsal (rollout under load)
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      # What the apps load from Google Fonts, Iconify and jsDelivr, as recorded once (src/collectors/third-party-cache.ts): the
+      # default of a local run is HARNESS_HOME/third-party-cache, the same place.
+      HARNESS_THIRD_PARTY_CACHE_DIR: ${{ github.workspace }}/.harness/third-party-cache
     steps:
       - uses: actions/checkout@v4
         with:
@@ -228,6 +255,19 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
+
+      # The browser is answered from one recorded copy of what the apps load from Google Fonts, Iconify and jsDelivr: the same
+      # bytes on both sides, at once, so a font or an icon cannot arrive on one side only, and an outage of those hosts breaks
+      # nothing (docs/noise-burndown.md). The key never matches exactly; restore-keys picks the newest entry.
+      - name: Restore the recorded third-party responses
+        id: third-party-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .harness/third-party-cache
+          key: third-party-v1-${{ github.run_id }}
+          restore-keys: |
+            third-party-v1-
+
       # `images ensure` verifies the cosign signature of every image it pulls (docs/images.md).
       # The images are signed with cosign 3, and verifying them needs cosign >= 3: installer v4 installs it.
       - uses: sigstore/cosign-installer@v4.1.2
@@ -248,6 +288,14 @@ jobs:
       - if: always()
         run: |
           if ls out/*-upgrade/report.md > /dev/null 2>&1; then cat out/*-upgrade/report.md >> "$GITHUB_STEP_SUMMARY"; else echo "### Upgrade rehearsal: could not judge (no report: the run stopped before a verdict, see the step log)" >> "$GITHUB_STEP_SUMMARY"; fi
+
+      # Saved under the hash of its content, and only when this run recorded something the restored copy did not have.
+      - name: Keep the recorded third-party responses for later runs
+        if: always() && hashFiles('.harness/third-party-cache/*.json') != '' && steps.third-party-cache.outputs.cache-matched-key != format('third-party-v1-{0}', hashFiles('.harness/third-party-cache/*.json'))
+        uses: actions/cache/save@v4
+        with:
+          path: .harness/third-party-cache
+          key: third-party-v1-${{ hashFiles('.harness/third-party-cache/*.json') }}
 
   # What release mode judged, for post-deploy mode to check a deployment against (docs/contract.md, "The release record").
   # Release mode wrote `release-record.json` into its output directory, so the release-report artifact carries it. This
