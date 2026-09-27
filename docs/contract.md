@@ -705,10 +705,10 @@ Every job that runs `harness images ensure` first installs cosign ≥ 3 with
 are held.
 
 Since 1.4.0 the jobs that judge images (nightly noise, the release job, weekly
-mutants) also install grype, pinned (`anchore/scan-action/download-grype`), fetch
+mutants, and since 1.5.0 the Main to RC preview) also install grype, pinned (`anchore/scan-action/download-grype`), fetch
 its vulnerability database once with `harness vuln-db update` into
 `.harness/vuln-db`, cache it per UTC day and grype version, and never update it
-during a run; the nightly and release jobs set `HARNESS_REQUIRE_STATIC=1`, the
+during a run; the nightly, release and preview jobs set `HARNESS_REQUIRE_STATIC=1`, the
 mutants job does not. See [`contract/workflows.json`](contract/workflows.json)
 (`tools.grype`, `vulnerabilityDatabase`) and
 [images.md](images.md#the-vulnerability-database).
@@ -729,6 +729,7 @@ Each is the run's whole `out/` directory unless noted, so a report is at
 | `mutant-reports` | `weekly-mutants.yml` | 14 days |
 | `mutant-noise-report` | `weekly-mutants.yml` | 7 days (only when the self-test failed: the A/A report of the base, reports and captures only) |
 | `harness-ci` | `ci.yml` | 7 days |
+| `main-preview-report` | `main-preview.yml` | 14 days (since 1.5.0; see [Main to RC](#main-to-rc)) |
 
 Each job also appends `report.md` to its step summary. A `release.yml` run
 concludes `failure` when any of its three jobs exits non-zero, `success`
@@ -748,6 +749,7 @@ index, readable by anyone at a raw URL:
 | --- | --- | --- |
 | `noise` | `nightly-noise.yml`, `publish` job | the last 14 nights |
 | `release-records` | `release.yml`, `publish-record` job | every judged candidate |
+| `main-preview` | `main-preview.yml`, `publish` job | the last 60 forecasts ([Main to RC](#main-to-rc)) |
 
 `reports/index.json` is `{ "schemaVersion": 1, "runs": [...] }`, newest first. Each
 run has `id` (`<ranAt>-<mode>`, the colons as dashes: `2026-09-26T07-57-09Z-noise`),
@@ -755,7 +757,8 @@ run has `id` (`<ranAt>-<mode>`, the colons as dashes: `2026-09-26T07-57-09Z-nois
 `files`, paths relative to `reports/`, and `score` (`score`, `grade`, `normalness`,
 `manual`: the scorecard's headline). `harness reports keep` writes both (see
 [CLI](#cli)); keeping is best effort and never stops the status or record being
-published. No new branch, write permission or push.
+published. No new branch, write permission or push, apart from `main-preview`
+below.
 
 Each kept run also has `scorecard.json` and `scorecard.md` (`harness scorecard`,
 `src/ci/scorecard.ts`), derived from its `report.json` alone. **Informational:
@@ -778,13 +781,41 @@ it never changes a verdict, an exit code or the gate.**
   then claimed diffs in `screenshot`, `axe`, `focus` or `dom`, then diffs covered
   only by a broad claim.
 
+### Main to RC
+
+Since 1.5.0 (unreleased). `main-preview.yml` answers "what would release mode say
+if main were cut as a release candidate today?", every day after the nightly A/A
+(and by hand, `workflow_dispatch` with optional `production`, `candidate` and
+`force`). It is a **forecast, never a gate**: it tags, records and deploys nothing,
+and it cannot be mistaken for a judged candidate, because it never writes the
+`release-records` branch that post-deploy reads.
+
+- **Side a** is production as the monorepo's `release-dispatch.yml` reads it: the
+  first `newTag` of `deploy/k8s/overlays/reader/kustomization.yaml` on main.
+- **Side b** is `sha-<short>` of the newest commit on main whose `image-build.yml`
+  push run succeeded, so its four images are signed and attested. (`:main` is
+  pushed before it is signed; a run that picks it up in that window cannot verify it.)
+- **Claims** are `release/claims.yaml` at that commit, the next release's claims so
+  far; the Rules they may name come from `pnpm release:rules` at the commit, best
+  effort, as in the monorepo. Every unclaimed diff is a claim, or a fix, the next
+  release needs, which is the forecast's point.
+- **The judging** is the release job's: 5 runs, k6 `20x30s`, the pinned
+  vulnerability database with `HARNESS_REQUIRE_STATIC=1`, the latest noise status.
+  PASS, WARN and FAIL all end the run green; only exit `2` (could not judge) fails it.
+- **Skipped** when this harness version has already judged the same pair (the
+  `main-preview` branch's `reports/index.json`), so a quiet day is one API call.
+  `harness preview resolve` (not stable) makes that decision.
+- **Kept** on the `main-preview` branch, one commit per run, never forced, the last
+  60 runs: `reports/index.json` and each run's report and scorecard, as in
+  [Kept reports](#kept-reports).
+
 ## What the harness does to a pull request
 
 Nothing. The harness has no token for the monorepo and its workflows never
 hold `pull-requests`, `checks`, `statuses` or `deployments` permission (a test
 enforces this). It will not comment on a PR, set a commit status, create a
 check run, tag, label, approve or merge, in any repository, and pushes to none
-but the one branch named below.
+but the branches named below.
 
 What it does instead:
 
@@ -804,8 +835,11 @@ What it does instead:
 - since 1.3.0, in `release.yml` only, the `publish-record` job, with
   `contents: write` on **this** repository: pushes the `release-records` branch
   (`releases/<candidate>.json` and `releases/<release>.json`, see [the release
-  record](#the-release-record), and since 1.5.0 each candidate's report). No other branch, no tag, no release, no other
-  repository. A test lists these four write scopes and fails on any other.
+  record](#the-release-record), and since 1.5.0 each candidate's report);
+- since 1.5.0, in `main-preview.yml` only, the `publish` job, with
+  `contents: write` on **this** repository: pushes the `main-preview` branch
+  ([Main to RC](#main-to-rc)). No other branch, no tag, no release, no other
+  repository. A test lists these five write scopes and fails on any other.
 
 Post-deploy mode sends anonymous, read-only requests for the published
 reference course to the production URLs. It never signs in and never writes.
@@ -861,6 +895,12 @@ Releases are git tags `v<harness version>` on `main`, cut by a maintainer.
   `[#313](https://github.com/tutors-sdk/tutors-mono-repo/pull/313)`: a bare `#313` in a
   report kept in this repository linked to this repository's #313. The monorepo's
   `pnpm release:rules --since` now fills each Rule's `prs` from the PRs that touched it.
+- Main to RC: `main-preview.yml` runs release mode every day with production on
+  side a and main's newest signed images on side b, against main's claims, and
+  keeps each forecast on a new `main-preview` branch (its `publish` job holds
+  `contents: write`, the one new write scope). `harness preview resolve` (not
+  stable) and the `--force` flag (not stable) decide what it judges. See
+  [Main to RC](#main-to-rc).
 - A failing `screenshot` hunk's summary says where the pixels differ: `…% of
   pixels differ in W×H at (x, y) (threshold …)`, the box around every differing
   pixel. The diff image stays in `diff/`; the summary is what a CI log shows.

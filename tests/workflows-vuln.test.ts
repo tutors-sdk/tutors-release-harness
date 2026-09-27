@@ -45,7 +45,7 @@ const idx = (job: Job, pred: (s: Step) => boolean) => job.steps.findIndex(pred);
 
 describe("which jobs install grype", () => {
   it("the nightly's noise job, the release job and the mutants job: the jobs that judge images, and no others", () => {
-    expect(grypeJobs.map(([f, id]) => `${f}:${id}`).sort()).toEqual(["nightly-noise.yml:noise", "release.yml:release", "weekly-mutants.yml:mutants"]);
+    expect(grypeJobs.map(([f, id]) => `${f}:${id}`).sort()).toEqual(["main-preview.yml:preview", "nightly-noise.yml:noise", "release.yml:release", "weekly-mutants.yml:mutants"]);
     expect([...new Set(grypeJobs.map(([f]) => f))].sort()).toEqual(contract.tools.grype!.usedBy);
   });
 
@@ -169,6 +169,7 @@ describe("HARNESS_REQUIRE_STATIC: the nightly and the release require the static
   it("set on exactly the jobs the contract says, and on no other job", () => {
     const required = files.flatMap((f) => Object.entries(jobsOf(f)).filter(([, j]) => j.env?.HARNESS_REQUIRE_STATIC !== undefined).map(([id, j]) => [f, id, j.env!.HARNESS_REQUIRE_STATIC] as const));
     expect(required).toEqual([
+      ["main-preview.yml", "preview", "1"],
       ["nightly-noise.yml", "noise", "1"],
       ["release.yml", "release", "1"]
     ]);

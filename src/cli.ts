@@ -18,6 +18,7 @@ import { MODES, SUBSTRATES, type Mode, type Substrate } from "./types.ts";
 import { harnessInfo } from "./version.ts";
 import { helpFor, parseArgsErrorText } from "./local/usage.ts";
 import { RequirementError, requirements } from "./not-collected.ts";
+import { previewResolve } from "./ci/main-preview.ts";
 import { UsageError, doctorCommand, guardCommand, localCommand, noiseCommand, overrideCommand, pruneCommand, recordAppliedOverride, reportsCommand, scorecardCommand, vulnDbCommand } from "./local/cli.ts";
 import { defaultNoise } from "./local/noise-store.ts";
 
@@ -116,6 +117,11 @@ const USAGE = `tutors-release-harness
   harness scorecard --report <run dir | report.json> [--rules rules.json] [--json]
       A 0-100 score with every deduction, the A/A normalness, EARS Rule -> diffs -> PRs, and at most five pages to test
       by hand. PRs come from a Rule's "prs" in rules.json and "PR #n" in claim reasons. Never changes a verdict. Not stable.
+  harness preview resolve [--a <production>] [--b <candidate>] [--force]
+      Main to RC: what main-preview.yml judges. Production is the reader overlay's newTag on the monorepo's main, the
+      candidate sha-<short> of main's newest commit with signed images; a pair this harness version already judged (on the
+      main-preview branch) is skipped unless --force. Writes production, candidate, sha, claims_url, skip to
+      $GITHUB_OUTPUT. Exit 2 when it cannot decide. Not stable.
   harness prune [--out dir] [--older-than-days 14] [--keep-last 5] [--image-cache dir] [--image-cache-days 30] [--yes] [--json]
       Free disk: remove run directories under out/ that are older than --older-than-days AND not among the newest
       --keep-last of their mode, and an image cache saved more than --image-cache-days ago. A dry run unless --yes.
@@ -252,6 +258,7 @@ async function main(argv: string[]): Promise<number> {
       yes: { type: "boolean", default: false },
       strict: { type: "boolean", default: false },
       "no-load": { type: "boolean", default: false },
+      force: { type: "boolean", default: false },
       json: { type: "boolean", default: false },
       help: { type: "boolean", short: "h", default: false }
     },
@@ -435,6 +442,9 @@ async function main(argv: string[]): Promise<number> {
       return reportsCommand(positionals[0], values);
     case "scorecard":
       return scorecardCommand(values);
+    case "preview":
+      if (positionals[0] !== "resolve") fail("preview resolve [--a <production>] [--b <candidate>] [--force]");
+      return previewResolve(values);
     case "local":
       return localCommand(positionals[0], values);
     case "journeys":
