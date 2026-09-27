@@ -65,6 +65,14 @@
     "fetch": "pnpm harness vuln-db update, only on a cache miss, continue-on-error",
     "status": "pnpm harness vuln-db status, after the fetch, before any run"
   },
+  "thirdPartyCache": {
+    "$comment": "Since 1.5.0. What the apps load in the browser from Google Fonts, Iconify and jsDelivr, recorded once and answered from that copy on both sides (src/collectors/third-party-cache.ts). Every job that installs Chromium restores it before its first command and saves it, under the hash of its content, when the run recorded something new. tests/workflows-third-party.test.ts holds the workflows to this.",
+    "dir": ".harness/third-party-cache",
+    "env": "HARNESS_THIRD_PARTY_CACHE_DIR",
+    "cacheKey": "third-party-v1-<hash of the recorded files>",
+    "restoreKey": "third-party-v1-",
+    "usedBy": ["ci.yml:two-stacks", "main-preview.yml:preview", "nightly-noise.yml:noise", "post-deploy.yml:post-deploy", "release.yml:release", "release.yml:upgrade", "weekly-mutants.yml:mutants"]
+  },
   "forbiddenPermissions": ["pull-requests", "checks", "statuses", "deployments"],
   "writePermissions": {
     "$comment": "The only `write` scopes any workflow or job holds, all on THIS repository (since 1.2.0 for nightly-noise.yml and release.yml). the key <workflow> means the workflow-level permissions. tests/contract.test.ts fails on any other.",

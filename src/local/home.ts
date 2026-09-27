@@ -11,6 +11,8 @@ import { ROOT } from "../stack.ts";
  *   <home>/noise/               noise-status.json, noise-history.json, noise-summary.md (the `noise` branch)
  *   <home>/image-cache/         the last verified production images (the runner's actions/cache)
  *   <home>/vuln-db/             the pinned vulnerability database, fetched once by `harness vuln-db update` (the runner's actions/cache)
+ *   <home>/third-party-cache/   the recorded fonts, icons and stylesheets the apps load from third-party hosts (the runner's actions/cache;
+ *                               HARNESS_THIRD_PARTY_CACHE_DIR moves it; src/collectors/third-party-cache.ts)
  *   <home>/overrides.jsonl      every applied override, append-only (the `harness-override` issues)
  *   <home>/releases/            what release mode judged, one file per candidate (the `release-records` branch)
  *   <home>/rollbacks/           what a failing post-deploy watch leaves (the `rollback` issue)
@@ -27,6 +29,8 @@ export function harnessHome(env: NodeJS.ProcessEnv = process.env): string {
 export const noiseDir = (home = harnessHome()) => join(home, "noise");
 export const imageCacheDir = (home = harnessHome()) => join(home, "image-cache");
 export const vulnDbDir = (home = harnessHome()) => join(home, "vuln-db");
+/** HARNESS_THIRD_PARTY_CACHE_DIR, else <home>/third-party-cache. */
+export const thirdPartyCacheDir = (env: NodeJS.ProcessEnv = process.env) => env.HARNESS_THIRD_PARTY_CACHE_DIR?.trim() ? resolve(env.HARNESS_THIRD_PARTY_CACHE_DIR.trim()) : join(harnessHome(env), "third-party-cache");
 export const releasesDir = (home = harnessHome()) => join(home, "releases");
 export const overridesFile = (home = harnessHome()) => join(home, "overrides.jsonl");
 export const rollbacksDir = (home = harnessHome()) => join(home, "rollbacks");

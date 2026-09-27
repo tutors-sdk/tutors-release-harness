@@ -46,6 +46,9 @@ jobs:
       DEPLOYED: ${{ github.event.client_payload.production }}
       DEPLOYED_DIGESTS: ${{ github.event.client_payload.digests && toJSON(github.event.client_payload.digests) || '' }}
       PRODUCTION_URLS: ${{ vars.HARNESS_PRODUCTION_URLS || 'reader=https://tutors.dev,catalogue=https://catalogue.tutors.dev,live=https://live.tutors.dev' }}
+      # What the apps load from Google Fonts, Iconify and jsDelivr, as recorded once (src/collectors/third-party-cache.ts): the
+      # default of a local run is HARNESS_HOME/third-party-cache, the same place.
+      HARNESS_THIRD_PARTY_CACHE_DIR: ${{ github.workspace }}/.harness/third-party-cache
     steps:
       - uses: actions/checkout@v4
         with:
@@ -57,6 +60,18 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
+
+      # The browser is answered from one recorded copy of what the apps load from Google Fonts, Iconify and jsDelivr: the same
+      # bytes on both sides, at once, so a font or an icon cannot arrive on one side only, and an outage of those hosts breaks
+      # nothing (docs/noise-burndown.md). The key never matches exactly; restore-keys picks the newest entry.
+      - name: Restore the recorded third-party responses
+        id: third-party-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .harness/third-party-cache
+          key: third-party-v1-${{ github.run_id }}
+          restore-keys: |
+            third-party-v1-
 
       - name: Fetch the recorded release run
         uses: dawidd6/action-download-artifact@v6
@@ -133,3 +148,11 @@ jobs:
           gh label create rollback --color B60205 --description "Production differs from the tested release" 2>/dev/null || true
           gh issue create --title "Rollback candidate: production differs from the tested release ($(date -u +%Y-%m-%dT%H:%MZ))" \
             --label rollback --body-file body.md
+
+      # Saved under the hash of its content, and only when this run recorded something the restored copy did not have.
+      - name: Keep the recorded third-party responses for later runs
+        if: always() && hashFiles('.harness/third-party-cache/*.json') != '' && steps.third-party-cache.outputs.cache-matched-key != format('third-party-v1-{0}', hashFiles('.harness/third-party-cache/*.json'))
+        uses: actions/cache/save@v4
+        with:
+          path: .harness/third-party-cache
+          key: third-party-v1-${{ hashFiles('.harness/third-party-cache/*.json') }}

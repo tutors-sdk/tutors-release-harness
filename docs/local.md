@@ -377,6 +377,7 @@ for example to a backed-up folder.
 | `noise/noise-status.json`, `noise-history.json`, `noise-summary.md` | the latest night, the ratchet's history, tonight's summary | the `noise` branch |
 | `image-cache/` | `docker save` of the last verified production images | `actions/cache` |
 | `vuln-db/` | the pinned vulnerability database, fetched by `harness vuln-db update` (about 2.1 GB) | `actions/cache`, `.harness/vuln-db` |
+| `third-party-cache/` | what the apps load from Google Fonts, Iconify and `cdn.jsdelivr.net`, recorded on first use and served from here to both sides (`HARNESS_THIRD_PARTY_CACHE_DIR` moves it; delete it to record afresh) | `actions/cache`, `.harness/third-party-cache` |
 | `overrides.jsonl` | every applied override, one JSON line each, hash-chained | `harness-override` issues |
 | `releases/<candidate>.json`, `releases/<release>.json` | what release mode judged: the digests of the candidate's images, and the verdict. Written by every release-mode run; `--deployed <release>` in post-deploy mode checks a deployment against it | the `release-records` branch |
 | `rollbacks/` | what a failing watch would have opened as an issue | `rollback` issues |

@@ -281,6 +281,27 @@ a lazy image that had not loaded. Fix by waiting for the specific condition
 threshold. `screenshot.pixelThreshold` and `maxDiffRatio` are thresholds and
 follow the mask rules; loosening them hides real visual regressions.
 
+**Fonts and icons from third-party hosts** (since 1.4.13). The course shell's
+typeface comes from Google Fonts (`fonts.googleapis.com`, `fonts.gstatic.com`),
+its icons from the Iconify API on first use (`api.iconify.design`, with the
+fallback hosts `api.simplesvg.com` and `api.unisvg.com`), and the KaTeX
+stylesheet from `cdn.jsdelivr.net`. Fetched live, each arrived when the network
+let it, and a shot taken after an icon arrived on one side and before it on the
+other was an intermittent A/A hunk on `reader:home` ("0.37% of pixels differ
+(threshold 0.10%)"). The browser no longer fetches them: the collector
+(`src/collectors/third-party-cache.ts`) fetches each URL once, records its
+status, the headers that describe the content (not `date`, `age`, `expires`,
+cookies or the CDN's own ids) and its body, and answers every later request, on
+either side and in every later run, from that record: the same bytes on both
+sides, at once. The records live in `HARNESS_THIRD_PARTY_CACHE_DIR`, else
+`<HARNESS_HOME>/third-party-cache`; every CI job that runs journeys restores
+and saves the directory with `actions/cache`, so an outage of those hosts does
+not reach a run. A URL never recorded whose host cannot be reached now is
+answered `504` with a fixed body for the rest of the process (both sides alike)
+and is not written down, so the next run records it. Delete the directory to
+record afresh. The `document.fonts.ready` wait stays: the swap to the web font
+is still asynchronous, only no longer a network race.
+
 ### `/metrics` process-level series
 
 *Shows as* `metrics` hunks: a series that moves differently under the same
@@ -326,9 +347,13 @@ same instant (`HARNESS_NOW`) or it is permanent noise.
 
 - **Build strings** (git sha, build date) in the DOM: **M20** moves them to one
   known endpoint so the harness can mask that route instead of chasing the sha.
-- **Third-party requests** (`third-party-requests`, dropped today: the KaTeX
-  stylesheet on `cdn.jsdelivr.net`). Stubbing the CDN in the fixture stack
-  would let that mask go.
+- **Third-party requests** (`third-party-requests`, dropped today). Since
+  1.4.13 the hosts the apps use (Google Fonts, Iconify, `cdn.jsdelivr.net`) are
+  answered from the recorded copy (see "Font and anti-aliasing in screenshots"
+  above), so their content and timing no longer differ between the sides. The
+  mask stays for now: which page a late request lands on still depends on when
+  the page asks for it, and it also covers any other host a release starts to
+  load. Take it out in its own PR once the A/A shows these entries stable.
 - **Hashed asset names** (`hashed-assets`): masks the hash, keeps the chunk
   count and statuses, so a bundle that grows or splits still shows.
 - **Tooling that floats:** `grafana/k6:latest`, the Playwright browser build,

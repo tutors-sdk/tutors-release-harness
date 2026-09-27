@@ -7,6 +7,7 @@ import type { Journey } from "../../traffic/journeys/journeys.ts";
 import { reference } from "../../traffic/journeys/reference.ts";
 import { redactSecrets } from "../normalise/redact.ts";
 import { IDENTITY_URL } from "../stack.ts";
+import { routeThirdParty } from "./third-party-cache.ts";
 import type { AxeFinding, ConsoleEntry, JourneyCapture, NetworkEntry, PageCapture, SideSpec, Timing } from "../types.ts";
 
 export interface BrowserCaptureOptions {
@@ -241,6 +242,9 @@ export async function captureJourney(browser: Browser, spec: SideSpec, journey: 
   const context = await newContext(browser, opts.now);
   context.setDefaultTimeout(ACTION_TIMEOUT_MS);
   if (journey.target === "readerAuth") await routeIdentity(context);
+  // Google Fonts, Iconify and jsDelivr are answered from one recorded copy, the same bytes on both sides, at once
+  // (src/collectors/third-party-cache.ts): an icon or the typeface can no longer arrive on one side only before a shot.
+  await routeThirdParty(context);
   const page = await context.newPage();
   const crashed = new Promise<never>((_, reject) => page.on("crash", () => reject(new Error("renderer crashed"))));
   crashed.catch(() => undefined);
@@ -262,8 +266,9 @@ export async function captureJourney(browser: Browser, spec: SideSpec, journey: 
   page.on("pageerror", (error) => pendingConsole.push({ level: "error", text: stripOrigins(error.message, spec) }));
   // Requests in flight right now. waitForLoadState("networkidle") resolves at once when the page reached
   // idle earlier in its life, so it does not wait for requests a page starts later: the course shell's icons
-  // (Iconify, fetched from its API on first use) arrive after the heading, and a capture taken before them
-  // screenshotted the page with an icon missing on one side only.
+  // (Iconify, requested from its API on first use) arrive after the heading, and a capture taken before them
+  // screenshotted the page with an icon missing on one side only. They are served from the third-party cache now,
+  // so they arrive at once, but still after the page asked for them.
   let inFlight = 0;
   page.on("request", () => inFlight++);
   page.on("requestfinished", () => inFlight--);
@@ -303,8 +308,9 @@ export async function captureJourney(browser: Browser, spec: SideSpec, journey: 
       if (opts.screenshots) {
         // The course shell loads its typeface from Google Fonts with display=swap, so until the font
         // arrives the page paints in the fallback face, and a screenshot taken on that race can differ
-        // between two identical sides. Wait for the fonts the page has asked for (bounded, so a
-        // font that never loads cannot hang the run; it then shows in the screenshot as it would to a person).
+        // between two identical sides. The font comes from the third-party cache (the same file on both
+        // sides, at once), but the swap is still asynchronous: wait for the fonts the page has asked for (bounded,
+        // so a font that never loads cannot hang the run; it then shows in the screenshot as it would to a person).
         await page.evaluate(() => Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 5_000))])).catch(() => undefined);
         // And let what just arrived (an icon, a font swap) paint before the shot.
         await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))).catch(() => undefined);
