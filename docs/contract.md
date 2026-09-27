@@ -934,6 +934,10 @@ write scope.
   job holds `contents: write`. A tag is never moved or re-made, and a version that
   never reached `main` has none (`scripts/release-tags.sh`). Before, a maintainer
   tagged by hand and no version after 1.0.0 had been tagged.
+- A tag GitHub refuses a workflow token (its commit carries workflow files other than
+  the default branch's) is created through the REST API as a lightweight tag; one
+  still refused is named in the log and skipped, and only the newest version failing
+  fails the run (harness 1.7.1). Before, the first refusal ended the run, green.
 
 ### 1.6.0 (minor; which build production serves)
 

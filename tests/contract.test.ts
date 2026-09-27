@@ -903,7 +903,9 @@ describe("workflows", () => {
     const users = files.filter((f) => text[f]!.includes("release-tags.sh"));
     expect(users).toEqual(["tags.yml"]);
     const script = readFileSync(resolve(ROOT, "scripts/release-tags.sh"), "utf8");
-    expect(script).not.toMatch(/--force|-f\b|git tag -d|:refs\/tags/);
+    // nothing forced, no remote tag deleted or updated; the one local `git tag -d` drops a tag this run just made and could not push
+    expect(script).not.toMatch(/--force|git (?:tag|push)[^\n]* -f\b|:refs\/tags|-X (?:PATCH|DELETE)/);
+    expect(script.match(/git tag -d/g) ?? []).toHaveLength(1);
     expect(script).toContain('git rev-parse -q --verify "refs/tags/${tag}"');
     expect(contractMd).toContain("tags.yml");
   });
