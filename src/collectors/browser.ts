@@ -18,6 +18,32 @@ export interface BrowserCaptureOptions {
   axe: boolean;
   /** How many Tab presses the keyboard-order walk records per page. */
   focusStops: number;
+  /** The most one journey may take before it is recorded as errored and the run moves on. Default JOURNEY_TIMEOUT_MS. */
+  journeyTimeoutMs?: number;
+}
+
+/**
+ * A journey's deadline. The slowest seen takes about 30 s (signed in, five pages, each waiting for the network, fonts
+ * and paint), so this is six times that: a slow side still finishes, and a hung one (a renderer that died under a
+ * Playwright call with no deadline of its own, issue #4) is cut off instead of holding the run until the job times out.
+ */
+export const JOURNEY_TIMEOUT_MS = 180_000;
+/** Every Playwright call without a timeout of its own gets this one. */
+const ACTION_TIMEOUT_MS = 30_000;
+/** Closing the context of a dead page can hang too; past this the run moves on and the browser is closed with the run. */
+const CLOSE_TIMEOUT_MS = 10_000;
+
+/**
+ * Settle `work` within `ms`, or reject with `timedOut()`; `abort` rejects it sooner (a crashed renderer). The work is
+ * not cancelled, only no longer awaited, so its eventual rejection is swallowed here. Exported for its test.
+ */
+export function withDeadline<T>(work: Promise<T>, ms: number, timedOut: () => Error, abort?: Promise<never>): Promise<T> {
+  work.catch(() => undefined);
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(timedOut()), ms);
+  });
+  return Promise.race([work, deadline, ...(abort ? [abort] : [])]).finally(() => clearTimeout(timer));
 }
 
 const VIEWPORT = { width: 1280, height: 800 };
@@ -213,8 +239,11 @@ export async function quiet(count: () => number, quietMs: number, maxMs: number,
 
 export async function captureJourney(browser: Browser, spec: SideSpec, journey: Journey, run: number, opts: BrowserCaptureOptions): Promise<JourneyCapture> {
   const context = await newContext(browser, opts.now);
+  context.setDefaultTimeout(ACTION_TIMEOUT_MS);
   if (journey.target === "readerAuth") await routeIdentity(context);
   const page = await context.newPage();
+  const crashed = new Promise<never>((_, reject) => page.on("crash", () => reject(new Error("renderer crashed"))));
+  crashed.catch(() => undefined);
   await page.clock.setFixedTime(new Date(opts.now));
 
   const pages: PageCapture[] = [];
@@ -245,8 +274,9 @@ export async function captureJourney(browser: Browser, spec: SideSpec, journey: 
 
   const started = Date.now();
   let error: string | undefined;
+  const timeoutMs = opts.journeyTimeoutMs ?? JOURNEY_TIMEOUT_MS;
   try {
-    await journey.run(page, spec.urls, async (pageKey) => {
+    await withDeadline(journey.run(page, spec.urls, async (pageKey) => {
       // Let in-flight requests settle so the network set is the page's, not the race's.
       await page.waitForLoadState("networkidle", { timeout: 5_000 }).catch(() => undefined);
       await quiet(() => inFlight, 500, 5_000);
@@ -286,14 +316,15 @@ export async function captureJourney(browser: Browser, spec: SideSpec, journey: 
       // Last, because it moves focus.
       if (opts.focusStops > 0) capture.focus = await focusWalk(page, opts.focusStops);
       pages.push(capture);
-    });
+    }), timeoutMs, () => new Error(`journey timed out after ${Math.round(timeoutMs / 1000)}s`), crashed);
   } catch (e) {
     error = e instanceof Error ? stripOrigins(e.message.split("\n")[0] ?? e.message, spec) : String(e);
   } finally {
-    await context.close();
+    await withDeadline(context.close(), CLOSE_TIMEOUT_MS, () => new Error("context close timed out")).catch(() => undefined);
   }
 
-  const result: JourneyCapture = { journey: journey.name, run, anonymous: journey.anonymous, durationMs: Date.now() - started, pages, persistence: [] };
+  // A copy: a journey cut off by its deadline may still be running, and must not add pages to a result already returned.
+  const result: JourneyCapture = { journey: journey.name, run, anonymous: journey.anonymous, durationMs: Date.now() - started, pages: [...pages], persistence: [] };
   if (error !== undefined) result.error = error;
   return result;
 }
