@@ -29,7 +29,12 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
       - run: pnpm lint
-      - run: pnpm test
+      # The unit and fixture tests, with the coverage floor in vitest.config.ts (TESTING.md).
+      - run: pnpm test:coverage
+      - name: Coverage summary
+        if: always() && hashFiles('coverage/summary.txt') != ''
+        run: |
+          { echo "### Coverage"; echo '```'; cat coverage/summary.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
 
   # The workflows themselves: actionlint (syntax, expressions, and shellcheck on every `run:`) and zizmor (injection,
   # unpinned actions, dangerous triggers, credentials; .github/zizmor.yml says what is ignored and why). Both are

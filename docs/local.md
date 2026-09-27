@@ -337,7 +337,7 @@ commits that came with this document.
 | M4 | "Mutants re-run (required)": shell that combines two job results | WF + GH | the exit codes of `guard engine` and `local mutants` | nothing to port: a required status check is a GitHub setting. **n/a** |
 | M5 | grype and its database in the mutants job; no `HARNESS_REQUIRE_STATIC` there | GH + CLI | as N14 and N15 | none: the mutants job does not require it, and neither does a local run. **Closed** |
 | C1 | Masks land in their own PR (`mask-change.ts`) | WF | `harness guard masks --base <ref>` | as M3. **Closed** |
-| C2 | Typecheck, lint, unit and fixture tests | CLI | `pnpm typecheck`, `pnpm lint`, `pnpm test` | none |
+| C2 | Typecheck, lint, unit and fixture tests | CLI | `pnpm typecheck`, `pnpm lint`, `pnpm test:coverage` (`pnpm test` without the floor) | none |
 | C3 | Two-stacks smoke, including "the contracting fixture must be rejected" (`if cmd; then exit 1`) | CLI | `harness local smoke` (`pnpm smoke`); ci.yml calls it | the inversion is a step that expects the FAIL verdict. **Closed** |
 | C4 | Stack logs on failure | WF | `docker compose -p <project> -f compose.harness.yaml --profile upgrade logs`, where `<project>` is this checkout's compose project (`harness doctor` prints it) | CI pins `HARNESS_COMPOSE_PROJECT=tutors-harness`, one checkout per runner. **Documented** |
 | C5 | Claims hygiene | CLI | reported in every report that has claims; never gates | none |
