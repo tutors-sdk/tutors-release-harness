@@ -933,6 +933,11 @@ Releases are git tags `v<harness version>` on `main`, cut by a maintainer.
   and saves that directory with `actions/cache` (`thirdPartyCache` in
   `workflows.json`). A URL never recorded whose host is unreachable is answered 504,
   alike on both sides.
+- A streamed media request (a `video/*` or `audio/*` body, or any `206` partial
+  response) is compared by whether it was made, its status and its type, not by
+  how many times (harness 1.4.14). The browser fetches a video in as many range
+  requests as its buffering needs, so "requested 4× on a, 5× on b" was timing.
+  A video one side never requests is still a `network` hunk.
 
 ### 1.4.0 (minor; the pinned vulnerability database, one "not collected" convention, housekeeping commands, clean exit 2, post-deploy on an external side)
 
