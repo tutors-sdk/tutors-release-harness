@@ -5,6 +5,7 @@ Start with the [user guide](user-guide/README.md): what the harness is, a ten-mi
 | Document | What it covers |
 | --- | --- |
 | [user-guide/](user-guide/README.md) | The guide for release authors, operators, CI integrators and harness developers: concepts, running locally, reading a report, writing claims, noise and the self-test, CI, reference, troubleshooting, extending, glossary |
+| [lean.md](lean.md) | The Lean view behind release confidence: jidoka (the gate stops the line), visual management (the score), standard work (the SOP and one command), gemba (the reviewer's glance), kaizen (5 Whys), and the guardrails that keep the number honest |
 | [contract.md](contract.md) | The integration contract: what the monorepo may build against (report, noise status, release record, rules, claims file, CLI, workflows, versions). Its machine-readable half is in [contract/](contract/) |
 | [images.md](images.md) | Where the A and B images come from: Quay, cosign verification, digests, the image cache, the from-source fallback, the image artefacts |
 | [modes.md](modes.md) | The six modes and what each produces |
