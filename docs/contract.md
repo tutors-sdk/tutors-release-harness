@@ -861,6 +861,13 @@ Releases are git tags `v<harness version>` on `main`, cut by a maintainer.
   `[#313](https://github.com/tutors-sdk/tutors-mono-repo/pull/313)`: a bare `#313` in a
   report kept in this repository linked to this repository's #313. The monorepo's
   `pnpm release:rules --since` now fills each Rule's `prs` from the PRs that touched it.
+- A journey has a deadline (3 minutes; the slowest seen takes about 30 s) and ends
+  at once when its renderer crashes: it is recorded with `error` "journey timed out
+  after 180s" or "renderer crashed" and the pages it reached, and the run moves on.
+  Every Playwright call without a timeout of its own gets 30 s. Before, a dead
+  renderer could hold a run until the job timed out. `harness mutants` prints each
+  mutant's result as it finishes, and a mutant whose run throws counts as escaped
+  instead of ending the self-test.
 - A failing `screenshot` hunk's summary says where the pixels differ: `…% of
   pixels differ in W×H at (x, y) (threshold …)`, the box around every differing
   pixel. The diff image stays in `diff/`; the summary is what a CI log shows.
