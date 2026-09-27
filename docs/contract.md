@@ -956,6 +956,7 @@ meaning, stable command or flag, or dispatch payload field changes.
   notice in the run summary, when no release run has kept a `release-report`
   artifact to compare production with; before, every scheduled run failed. A
   `deployed` dispatch or a `recorded_run_id` without a recording still fails.
+- A console "Failed to load resource" message now carries the resource's URL (without its query), so a report says which resource failed, and two different failures on one page are two differences (harness 1.5.2).
 
 ### 1.4.0 (minor; the pinned vulnerability database, one "not collected" convention, housekeeping commands, clean exit 2, post-deploy on an external side)
 
