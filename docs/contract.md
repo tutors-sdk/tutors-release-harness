@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.6.0`
+Contract version: `1.7.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -30,9 +30,9 @@ Three numbers, all stamped where a reader can see them:
 
 ```console
 $ pnpm harness version
-harness 1.6.0 (3f2c…) · contract 1.6.0
+harness 1.7.0 (3f2c…) · contract 1.7.0
 $ pnpm harness version --json
-{"version":"1.6.0","gitSha":"3f2c…","contractVersion":"1.6.0"}
+{"version":"1.7.0","gitSha":"3f2c…","contractVersion":"1.7.0"}
 ```
 
 `gitSha` is `git rev-parse HEAD` of the harness checkout, or the
@@ -44,9 +44,11 @@ Which harness judged a run is recorded, not chosen by the caller: a
 default branch (`main`), so a dispatch always gets the harness on `main` at that
 moment. Every `report.json` and `capture.json` carries `harness.version` and
 `harness.gitSha`, which name exactly what ran. Released versions are marked by
-git tags `v<harness version>` on `main`; a maintainer creates them by hand (no
-workflow creates a tag or a GitHub release, and `tests/contract.test.ts` keeps it
-that way), so the newest tag can lag `main`. To reproduce a run, check out its
+git tags `v<harness version>` on `main`. Since 1.7.0 `tags.yml` creates them: each
+version is tagged on the first commit of `main` that carries it, when `package.json`
+changes on `main`, and a tag is never moved or re-made (`scripts/release-tags.sh`;
+`tests/contract.test.ts` keeps it that way). A version that never reached `main`
+has no tag, and no workflow creates a GitHub release. To reproduce a run, check out its
 `harness.gitSha`; to build against a released contract, read this file at the
 tag. Check `schemaVersion === 1` before reading a report.
 
@@ -470,7 +472,7 @@ run's output directory (so the `release-report` artifact carries it).
 ```json
 { "schemaVersion": 1, "candidate": "16.3.0-rc.4", "release": "16.3.0", "production": "16.2.0",
   "recordedAt": "2026-09-16T09:10:00.000Z",
-  "harness": { "version": "1.6.0", "gitSha": "3f2c…", "contractVersion": "1.6.0" },
+  "harness": { "version": "1.7.0", "gitSha": "3f2c…", "contractVersion": "1.7.0" },
   "verdict": "pass", "overridden": false, "pinned": true, "verified": true,
   "digests": { "reader": "sha256:…", "catalogue": "sha256:…", "live": "sha256:…", "time": "sha256:…" } }
 ```
@@ -916,9 +918,22 @@ reports are comparable only when their `harness.version` is the same: a new
 mask or engine can change the hunks for the same two images without any
 change to this contract.
 
-Releases are git tags `v<harness version>` on `main`, cut by a maintainer.
+Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.7.0 (minor; release tags from a workflow)
+
+Additive for a consumer written against 1.6.0: no `report.json` field, exit code,
+command, flag or payload changes. It is a minor because it adds a workflow and a
+write scope.
+
+- `tags.yml` creates the git tag `v<harness version>` on the first commit of `main`
+  that carries each version, when `package.json` changes on `main` and by hand
+  (`workflow_dispatch`, which also tags earlier versions that have none). Its `tag`
+  job holds `contents: write`. A tag is never moved or re-made, and a version that
+  never reached `main` has none (`scripts/release-tags.sh`). Before, a maintainer
+  tagged by hand and no version after 1.0.0 had been tagged.
 
 ### 1.6.0 (minor; which build production serves)
 

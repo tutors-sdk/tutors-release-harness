@@ -1,0 +1,45 @@
+# Release tags: every harness version that lands on main is tagged v<version>, on the first commit of main that carries
+# it (scripts/release-tags.sh). A tag is never moved or re-made. Runs when package.json changes on main, and by hand,
+# which also tags any version from before this workflow that has no tag yet.
+name: Release tags
+
+on:
+  push:
+    branches: [main]
+    paths: ["package.json"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-tags
+  cancel-in-progress: false
+
+jobs:
+  tag:
+    name: Tag released versions
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      # Creates tags v<version> in this repository and nothing else.
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+          fetch-tags: true
+      - name: Tag each version that has no tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          AUTH="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)" \
+            REMOTE="https://github.com/${GITHUB_REPOSITORY}.git" scripts/release-tags.sh HEAD | tee tagged.txt
+          {
+            echo "### Release tags"
+            echo
+            if [ -s tagged.txt ]; then sed 's/^/- /' tagged.txt; else echo "Every version on main is already tagged."; fi
+          } >> "$GITHUB_STEP_SUMMARY"
