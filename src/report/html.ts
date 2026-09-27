@@ -9,7 +9,7 @@ const esc = (s: string) => s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").re
 
 function hunkRow(h: Hunk, claimedBy?: string): string {
   const detail = h.detail ? `<details><summary>detail</summary><pre>${esc(h.detail)}</pre></details>` : "";
-  return `<tr class="${h.severity}"><td><code>${h.artefact}</code></td><td><code>${esc(h.scope)}</code>${h.path ? `<br><small>${esc(h.path)}</small>` : ""}</td><td>${esc(h.summary)}${detail}</td><td>${claimedBy ? esc(claimedBy) : h.severity === "info" ? "<em>informational</em>" : "<strong>unclaimed</strong>"}</td></tr>`;
+  return `<tr id="hunk-${esc(h.id)}" class="${h.severity}"><td><code>${h.artefact}</code></td><td><code>${esc(h.scope)}</code>${h.path ? `<br><small>${esc(h.path)}</small>` : ""}</td><td>${esc(h.summary)}${detail}</td><td>${claimedBy ? esc(claimedBy) : h.severity === "info" ? "<em>informational</em>" : "<strong>unclaimed</strong>"}</td></tr>`;
 }
 
 const short = (v: string | undefined) => (v ? v.replace(/^sha256:/, "").slice(0, 12) : "");
@@ -68,7 +68,7 @@ export function renderHtml(report: RunReport): string {
 <p><small>${esc(report.ranAt)} · clock ${esc(report.now)} · ${report.runs} run(s) per side · harness ${esc(report.harnessVersion)}</small></p>
 ${loud ? `<p class="loud">${esc(loud.text)}</p>` : ""}
 ${loudDeployment(report) ? `<p class="loud">${esc(loudDeployment(report)!)}</p>` : ""}
-<ul>${report.reasons.map((r) => `<li>${esc(r)}</li>`).join("")}${report.noise ? `<li>A/A consulted: ${report.noise.clean ? "clean" : `${report.noise.hunks} diff(s)`}${report.noise.degraded?.length ? " but DEGRADED (does not count)" : ""} at ${esc(report.noise.ranAt)}</li>` : ""}</ul>
+<ul>${report.reasons.map((r) => `<li>${esc(r)}</li>`).join("")}${report.noise ? `<li id="noise">A/A consulted: ${report.noise.clean ? "clean" : `${report.noise.hunks} diff(s)`}${report.noise.degraded?.length ? " but DEGRADED (does not count)" : ""} at ${esc(report.noise.ranAt)}</li>` : ""}</ul>
 
 <table>
 <thead><tr><th></th><th>a</th><th>b</th></tr></thead>
@@ -81,29 +81,29 @@ ${imageArtefactsHtml(report)}
 
 ${
   report.migration
-    ? `<h2>Migration rehearsal</h2><p>a: <code>${esc(report.migration.a.ref)}</code> — ${report.migration.a.files.length} migration(s), ${Object.keys(report.migration.a.catalog.tables).length} table(s).<br>b: <code>${esc(report.migration.b.ref)}</code> — new migration(s): ${report.migration.b.files.filter((f) => !report.migration!.a.files.includes(f)).map((f) => `<code>${esc(f)}</code>`).join(", ") || "none"}.</p>`
+    ? `<h2 id="migration">Migration rehearsal</h2><p>a: <code>${esc(report.migration.a.ref)}</code> — ${report.migration.a.files.length} migration(s), ${Object.keys(report.migration.a.catalog.tables).length} table(s).<br>b: <code>${esc(report.migration.b.ref)}</code> — new migration(s): ${report.migration.b.files.filter((f) => !report.migration!.a.files.includes(f)).map((f) => `<code>${esc(f)}</code>`).join(", ") || "none"}.</p>`
     : ""
 }
 ${
   report.upgrade
-    ? `<h2>Upgrade rehearsal (${esc(report.upgrade.substrate)})</h2><table><thead><tr><th>upstream</th><th>requests</th><th>failed</th><th>5xx</th><th>p95</th></tr></thead><tbody>${Object.entries(report.upgrade.byUpstream)
+    ? `<h2 id="upgrade">Upgrade rehearsal (${esc(report.upgrade.substrate)})</h2><table><thead><tr><th>upstream</th><th>requests</th><th>failed</th><th>5xx</th><th>p95</th></tr></thead><tbody>${Object.entries(report.upgrade.byUpstream)
         .map(([k, v]) => `<tr><td>${esc(k)}</td><td>${v.requests}</td><td>${v.failed}</td><td>${v.serverErrors}</td><td>${v.p95} ms</td></tr>`)
         .join("")}<tr><td><strong>all</strong></td><td>${report.upgrade.requests}</td><td>${report.upgrade.failed}</td><td>${report.upgrade.serverErrors}</td><td>switched at ${(report.upgrade.switchedAt / 1000).toFixed(1)} s</td></tr></tbody></table>`
     : ""
 }
 ${
   report.load
-    ? `<h2>Load (k6, ${report.load.a.rate} req/s for ${esc(report.load.a.duration)})</h2><table><thead><tr><th>side</th><th>requests</th><th>failed</th><th>5xx</th><th>p50</th><th>p95</th></tr></thead><tbody>${(["a", "b"] as const)
+    ? `<h2 id="load">Load (k6, ${report.load.a.rate} req/s for ${esc(report.load.a.duration)})</h2><table><thead><tr><th>side</th><th>requests</th><th>failed</th><th>5xx</th><th>p50</th><th>p95</th></tr></thead><tbody>${(["a", "b"] as const)
         .map((s) => `<tr><td>${s}</td><td>${report.load![s].requests}</td><td>${report.load![s].failed}</td><td>${report.load![s].serverErrors}</td><td>${report.load![s].p50} ms</td><td>${report.load![s].p95} ms</td></tr>`)
         .join("")}</tbody></table>`
     : ""
 }
 
-<h2>Differences (${compare.hunks.length}; ${compare.unclaimed.length} unclaimed)</h2>
+<h2 id="differences">Differences (${compare.hunks.length}; ${compare.unclaimed.length} unclaimed)</h2>
 ${compare.hunks.length ? `<table><thead><tr><th>artefact</th><th>scope</th><th>what changed</th><th>claimed by</th></tr></thead><tbody>${rows}</tbody></table>` : "<p>None. The two sides are observably identical after normalisation.</p>"}
 
-${compare.staleClaims.length ? `<h2>Stale claims (${compare.staleClaims.length})</h2><ul>${compare.staleClaims.map((c) => `<li><code>${c.artefact}</code> <code>${esc(c.scope)}</code> — ${esc(claimLabel(c))}</li>`).join("")}</ul>` : ""}
-${compare.broadUnapproved.length ? `<h2>Broad claims without approval (${compare.broadUnapproved.length})</h2><ul>${compare.broadUnapproved.map((c) => `<li><code>${c.artefact}</code> <code>${esc(c.scope)}</code> — ${esc(claimLabel(c))}</li>`).join("")}</ul>` : ""}
+${compare.staleClaims.length ? `<h2 id="stale-claims">Stale claims (${compare.staleClaims.length})</h2><ul>${compare.staleClaims.map((c) => `<li><code>${c.artefact}</code> <code>${esc(c.scope)}</code> — ${esc(claimLabel(c))}</li>`).join("")}</ul>` : ""}
+${compare.broadUnapproved.length ? `<h2 id="broad-claims">Broad claims without approval (${compare.broadUnapproved.length})</h2><ul>${compare.broadUnapproved.map((c) => `<li><code>${c.artefact}</code> <code>${esc(c.scope)}</code> — ${esc(claimLabel(c))}</li>`).join("")}</ul>` : ""}
 
 ${
   report.override
@@ -112,11 +112,11 @@ ${
 }
 ${
   report.claimHygiene
-    ? `<h2>Claim hygiene</h2><p>${report.claimHygiene.claims} claim(s) cover ${report.claimHygiene.claimedHunks} failing hunk(s): ${report.claimHygiene.hunksPerClaim} per claim, at most ${report.claimHygiene.maxHunksPerClaim} under one (flagged above ${report.claimHygiene.threshold}).</p>${report.claimHygiene.flagged.length ? `<ul>${report.claimHygiene.flagged.map((f) => `<li><code>${f.claim.artefact}</code> <code>${esc(f.claim.scope)}</code> — ${f.hunks} hunk(s): ${f.flags.map((x) => (x === "covers-many-hunks" ? "covers many hunks" : `broad claim approved by ${esc(f.claim.approvedBy ?? "")}`)).join("; ")}</li>`).join("")}</ul>` : ""}`
+    ? `<h2 id="claim-hygiene">Claim hygiene</h2><p>${report.claimHygiene.claims} claim(s) cover ${report.claimHygiene.claimedHunks} failing hunk(s): ${report.claimHygiene.hunksPerClaim} per claim, at most ${report.claimHygiene.maxHunksPerClaim} under one (flagged above ${report.claimHygiene.threshold}).</p>${report.claimHygiene.flagged.length ? `<ul>${report.claimHygiene.flagged.map((f) => `<li><code>${f.claim.artefact}</code> <code>${esc(f.claim.scope)}</code> — ${f.hunks} hunk(s): ${f.flags.map((x) => (x === "covers-many-hunks" ? "covers many hunks" : `broad claim approved by ${esc(f.claim.approvedBy ?? "")}`)).join("; ")}</li>`).join("")}</ul>` : ""}`
     : ""
 }
 
-<h2>Masks</h2>
+<h2 id="masks">Masks</h2>
 <p>Fired: ${fired.length ? fired.map(([id, n]) => `<code>${esc(id)}</code>×${n}`).join(", ") : "none"}.<br>
 Silent this run: ${silent.length ? silent.map(([id]) => `<code>${esc(id)}</code>`).join(", ") : "none"} — a mask that never fires is a mask to delete.</p>
 

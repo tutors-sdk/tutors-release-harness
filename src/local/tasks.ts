@@ -363,13 +363,15 @@ export function readGateEntry(r: StepResult): GateSummaryEntry {
 
 /**
  * The three workflow jobs' verdicts and their PR comments in one file, for reading locally (posting it anywhere is optional).
- * `gate` (the one word a reader wants first) and `banner` (a warning that must not be missed) go straight under the heading.
+ * `gate` (the one word a reader wants first) and `banner` (a warning that must not be missed) go straight under the heading,
+ * then `score` (`harness release`: the RCS, its band and the dimension table), always after the Gate, never before it.
  */
-export function renderGateSummary(o: { production: string; candidate: string; entries: GateSummaryEntry[]; code: number; at: string; gate?: string; banner?: string }): string {
+export function renderGateSummary(o: { production: string; candidate: string; entries: GateSummaryEntry[]; code: number; at: string; gate?: string; banner?: string; score?: string }): string {
   const verdictOf = (e: GateSummaryEntry) => (e.code === "skipped" ? "not run" : e.verdict ? `${e.verdict.toUpperCase()}${e.overridden ? " (OVERRIDDEN)" : ""}` : e.code === 0 ? "ok" : `exit ${e.code}`);
   const lines = [`## Release gate: ${o.candidate} beside ${o.production}`, ""];
   if (o.gate) lines.push(`**Gate: ${o.gate}**`, "");
   if (o.banner) lines.push(`> ${o.banner}`, "");
+  if (o.score) lines.push(o.score, "");
   lines.push(`${o.at} — exit code **${o.code}**`, "", "| step | result | report |", "| --- | --- | --- |");
   for (const e of o.entries) lines.push(`| ${e.title} | ${verdictOf(e)} | ${e.runDir ? `\`${e.runDir}\`` : ""} |`);
   lines.push("");

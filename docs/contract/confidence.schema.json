@@ -1,0 +1,93 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/tutors-sdk/tutors-release-harness/blob/main/docs/contract/confidence.schema.json",
+  "title": "confidence.json: the Release Confidence Score (contract 1.9.0, not stable)",
+  "description": "Since 1.9.0. Written by `harness confidence` beside the run it scores, and by `harness release` in out/<timestamp>-release-command/. The Gate first, then the RCS (only when the Gate is PASS or WARN) and its band, then eight dimensions, each with every point lost and its evidence. Advisory: never an input to the gate, a verdict or an exit code. Derived from Confidence in src/score/confidence.ts. Not stable: it may change in a minor release.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "gate", "rcs", "band", "mean", "weightsUsed", "dimensions", "glance", "run"],
+  "definitions": {
+    "dimensionId": { "enum": ["claim-coverage", "noise-health", "statistical-margin", "rehearsals", "test-signal", "traceability", "change-risk", "post-deploy"] },
+    "deduction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["points", "why", "evidence"],
+      "properties": {
+        "points": { "type": "number", "exclusiveMinimum": 0 },
+        "why": { "type": "string", "minLength": 1, "description": "What was read and why it cost points: names the hunk, claim, PR, file or run." },
+        "evidence": { "type": "string", "minLength": 1, "description": "Where to look: a link relative to confidence.json into a run's report.html (…/report.html#hunk-<id>, #stale-claims, #noise, #masks, #load, #migration, #upgrade), an input file, or a PR." },
+        "floor": { "const": true, "description": "Present when this finding breaches the dimension's floor, which caps the RCS at 74." }
+      }
+    },
+    "dimension": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "weight", "status", "score", "floorBreached", "deductions", "evidence"],
+      "properties": {
+        "id": { "$ref": "#/definitions/dimensionId" },
+        "name": { "type": "string" },
+        "weight": { "type": "number", "description": "The nominal weight (src/score/weights.ts); the ones the mean used are in weightsUsed." },
+        "status": { "enum": ["measured", "not measured"] },
+        "score": { "description": "0-100: 100 minus the deductions; null when not measured (never 100 for a missing input).", "anyOf": [{ "type": "integer", "minimum": 0, "maximum": 100 }, { "type": "null" }] },
+        "floorBreached": { "type": "boolean" },
+        "reason": { "type": "string", "description": "Why it is not measured, and which input would measure it." },
+        "deductions": { "type": "array", "items": { "$ref": "#/definitions/deduction" } },
+        "evidence": { "type": "array", "items": { "type": "string" }, "description": "Where this dimension's evidence is: sections of the runs' report.html, or the input files." },
+        "gaps": { "type": "array", "items": { "type": "string" }, "description": "Parts of what 100 means that this dimension could not check with what it was given." }
+      }
+    },
+    "reportPath": { "type": "string", "description": "A report.json, relative to confidence.json." }
+  },
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "gate": { "enum": ["PASS", "WARN", "FAIL", "FAIL (OVERRIDDEN)", "NOT JUDGED"], "description": "The Gate, as the gate decided it. Always first." },
+    "rcs": { "description": "The Release Confidence Score: the weighted mean of the measured dimensions rounded down, capped at 74 when a floor is breached. null when the Gate is not PASS or WARN.", "anyOf": [{ "type": "integer", "minimum": 0, "maximum": 100 }, { "type": "null" }] },
+    "band": { "description": "Green >= 90, Amber 75-89, Red < 75; null with no RCS.", "anyOf": [{ "enum": ["Green", "Amber", "Red"] }, { "type": "null" }] },
+    "meaning": { "type": "string", "description": "The band's one-line meaning. Absent with no band." },
+    "note": { "type": "string", "description": "Why there is no RCS, or why it was capped." },
+    "mean": { "description": "The weighted mean before rounding and the cap, two decimals; null with no RCS.", "anyOf": [{ "type": "number", "minimum": 0, "maximum": 100 }, { "type": "null" }] },
+    "weightsUsed": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "The weight each measured dimension had in the mean, renormalised to sum to 100. A dimension that is not measured is absent.",
+      "properties": {
+        "claim-coverage": { "type": "number" },
+        "noise-health": { "type": "number" },
+        "statistical-margin": { "type": "number" },
+        "rehearsals": { "type": "number" },
+        "test-signal": { "type": "number" },
+        "traceability": { "type": "number" },
+        "change-risk": { "type": "number" },
+        "post-deploy": { "type": "number" }
+      }
+    },
+    "dimensions": { "type": "array", "minItems": 8, "maxItems": 8, "items": { "$ref": "#/definitions/dimension" } },
+    "glance": { "type": "array", "maxItems": 0, "description": "The reviewer's glance (C3). Empty until it is built." },
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reports"],
+      "properties": {
+        "candidate": { "type": "string" },
+        "baseline": { "type": "string" },
+        "ranAt": { "type": "string", "description": "The release run's ranAt." },
+        "reports": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": { "release": { "$ref": "#/definitions/reportPath" }, "migration": { "$ref": "#/definitions/reportPath" }, "upgrade": { "$ref": "#/definitions/reportPath" }, "postDeploy": { "$ref": "#/definitions/reportPath" } }
+        },
+        "inputs": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": { "testSignal": { "type": "string" }, "traceability": { "type": "string" }, "changeRisk": { "type": "string" } }
+        },
+        "harness": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["version", "contractVersion"],
+          "properties": { "version": { "type": "string" }, "contractVersion": { "type": "string" } }
+        }
+      }
+    }
+  }
+}

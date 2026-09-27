@@ -26,8 +26,10 @@ import {
   runRelease,
   type Baseline,
   type NoiseDecision,
-  type ReleaseStatus
+  type ReleaseStatus,
+  type ScoreExtras
 } from "../src/local/release.ts";
+import type { Confidence } from "../src/score/confidence.ts";
 import { LATEST_NOISE, latestRunIn, type Executor } from "../src/local/tasks.ts";
 
 const tmp = (name: string) => mkdtempSync(join(tmpdir(), `harness-release-${name}-`));
@@ -112,7 +114,7 @@ describe("the plan", () => {
       report: []
     });
     expect(stages.find((s) => s.stage === "changes")!.skip).toBe(NOT_BUILT.changes);
-    expect(stages.find((s) => s.stage === "score")!.skip).toBe(NOT_BUILT.score);
+    expect(stages.find((s) => s.stage === "score")!.skip).toBeUndefined();
   });
 
   it("a reused A/A is passed by file; --out reaches every run; deployed digests pin both A/A sides and the baseline", () => {
@@ -172,7 +174,7 @@ interface Fake {
  * Each `run` writes `<out>/<stamp>-<mode>/report.json` (and noise-status.json in noise mode) and exits with `codes[mode]`.
  * `verdicts[mode]` is the verdict it writes; a noise run is dirty when `dirty` is set.
  */
-function fakeExecutor(out: string, o: { codes?: Record<string, number>; verdicts?: Record<string, string>; dirty?: boolean; statusFile?: () => string | undefined } = {}): Fake {
+function fakeExecutor(out: string, o: { codes?: Record<string, number>; verdicts?: Record<string, string>; dirty?: boolean; statusFile?: () => string | undefined; report?: Record<string, object> } = {}): Fake {
   const calls: string[][] = [];
   const seen: Fake["seen"] = [];
   let n = 0;
@@ -191,7 +193,10 @@ function fakeExecutor(out: string, o: { codes?: Record<string, number>; verdicts
       mkdirSync(dir, { recursive: true });
       const verdict = o.verdicts?.[mode] ?? (mode === "noise" && o.dirty ? "warn" : "pass");
       const hunks = mode === "noise" && o.dirty ? [{ id: "h1", artefact: "timing", scope: "reader /course", summary: "p95 moved", severity: "fail" }] : [];
-      writeFileSync(join(dir, "report.json"), JSON.stringify({ verdict, reasons: [verdict === "fail" ? "2 unclaimed difference(s)" : "no unclaimed difference"], compare: { hunks, unclaimed: hunks, matches: [] } }));
+      // A release run's report as far as the gate summary and the score read it: the A/A it consulted, k6, the masks.
+      const noise = argv.includes("--noise") && argv[argv.indexOf("--noise") + 1] !== "none" ? { noise: { ranAt: "2026-09-27T02:00:00Z", clean: true, hunks: 0 } } : {};
+      const extra = mode === "release" ? { ...noise, load: { a: { requests: 600, failed: 0, serverErrors: 0 }, b: { requests: 600, failed: 0, serverErrors: 0 } }, masksApplied: { "a-mask": 3 } } : {};
+      writeFileSync(join(dir, "report.json"), JSON.stringify({ mode, ranAt: "2026-09-27T10:00:00Z", verdict, reasons: [verdict === "fail" ? "2 unclaimed difference(s)" : "no unclaimed difference"], compare: { hunks, unclaimed: hunks, matches: [], staleClaims: [], broadUnapproved: [] }, ...extra, ...o.report?.[mode] }));
       writeFileSync(join(dir, "report.md"), `## ${mode}: ${verdict.toUpperCase()}\n`);
       if (mode === "noise") writeFileSync(join(dir, "noise-status.json"), JSON.stringify({ ranAt: "2026-09-27T10:00:00Z", clean: !o.dirty, hunks: hunks.length }));
       return o.codes?.[mode] ?? (verdict === "fail" ? 1 : 0);
@@ -211,13 +216,13 @@ function clock(start = Date.parse("2026-09-27T10:00:00Z")) {
 const reuse: NoiseDecision = { action: "reuse", noise: "/s/noise-status.json", why: "reusing the local noise store: clean" };
 const runAA: NoiseDecision = { action: "run", why: "an A/A of the baseline first: stale" };
 
-function go(o: { fast?: boolean; noise?: NoiseDecision; fake?: Parameters<typeof fakeExecutor>[1]; interruptAfter?: (calls: string[][]) => boolean }) {
+function go(o: { fast?: boolean; noise?: NoiseDecision; fake?: Parameters<typeof fakeExecutor>[1]; interruptAfter?: (calls: string[][]) => boolean; score?: ScoreExtras }) {
   const out = tmp("out");
   const lines: string[] = [];
   const fake = fakeExecutor(out, { ...o.fake, statusFile: () => findStatus(out) });
   const opened: string[] = [];
   const outcome = runRelease(
-    { candidate: "16.3.0-rc.1", baseline: base, fast: o.fast ?? false, outRoot: out, noise: o.noise ?? reuse },
+    { candidate: "16.3.0-rc.1", baseline: base, fast: o.fast ?? false, outRoot: out, noise: o.noise ?? reuse, ...(o.score ? { score: o.score } : {}) },
     {
       ex: fake.ex,
       env: {},
@@ -240,7 +245,7 @@ describe("running it", () => {
     const r = go({});
     expect(r.outcome.code).toBe(0);
     expect(r.fake.calls.map((c) => c.slice(0, 3).join(" "))).toEqual(["images ensure --a", "run --mode release", "run --mode migration", "run --mode upgrade"]);
-    expect(stateOf(r.status)).toEqual({ resolve: "done", noise: "done", changes: "skipped", release: "done", rehearse: "done", score: "skipped", report: "done" });
+    expect(stateOf(r.status)).toEqual({ resolve: "done", noise: "done", changes: "skipped", release: "done", rehearse: "done", score: "done", report: "done" });
     expect(r.status).toMatchObject({ state: "finished", exitCode: 0, stage: null, candidate: "16.3.0-rc.1", baseline: "16.2.2", fast: false });
     expect(r.status.stopped).toBeUndefined();
     for (const s of r.status.stages) expect(s.elapsed, s.stage).toBeGreaterThan(0);
@@ -251,6 +256,14 @@ describe("running it", () => {
     expect(r.md).toContain("**Gate: PASS**");
     expect(r.md.indexOf("**Gate: PASS**")).toBeLessThan(r.md.indexOf("### Stages"));
     for (const seam of ["### Score (visual management)", "### Glance (gemba)", "### 5 Whys (kaizen)", "### Changes"]) expect(r.md).toContain(seam);
+    // the Gate, then the RCS and its band with what the band means, then the dimension table, then the steps
+    const rcs = r.md.indexOf("**RCS 100 Green: ship on the captain's say**");
+    expect(rcs).toBeGreaterThan(r.md.indexOf("**Gate: PASS**"));
+    expect(r.md.indexOf("| dimension | weight | score |")).toBeGreaterThan(rcs);
+    expect(r.md.indexOf("| step | result |")).toBeGreaterThan(r.md.indexOf("| dimension | weight | score |"));
+    expect(r.html.indexOf("RCS 100 Green")).toBeGreaterThan(r.html.indexOf("Gate: PASS"));
+    expect(r.lines).toContain("confidence: RCS 100 Green: ship on the captain's say");
+    expect(existsSync(join(r.outcome.dir, "confidence.json"))).toBe(true);
     expect(r.html).toContain("Gate: PASS");
     expect(r.html).not.toMatch(/<script|https?:\/\//);
     expect(r.opened).toEqual([r.outcome.files.html]);
@@ -357,6 +370,77 @@ describe("running it", () => {
     const r = go({ interruptAfter: (calls) => calls.length >= 1 });
     expect(r.fake.calls.map((c) => c[0])).toEqual(["images", "stack"]);
     expect(r.status.stopped!.stage).toBe("resolve");
+  });
+});
+
+describe("the score stage (C0): confidence.json, and never an exit code", () => {
+  const conf = (r: ReturnType<typeof go>) => JSON.parse(readFileSync(join(r.outcome.dir, "confidence.json"), "utf8")) as Confidence;
+  // a release that passes the gate on thin evidence: one claim broad enough to swallow everything, three stale ones
+  const hollow = {
+    release: {
+      compare: {
+        hunks: [{ id: "dom:x:1", artefact: "dom", scope: "x", summary: "moved", severity: "fail" }],
+        unclaimed: [],
+        matches: [{ hunk: { id: "dom:x:1", artefact: "dom", scope: "x", summary: "moved", severity: "fail" }, claim: { artefact: "*", scope: "**", reason: "everything", approvedBy: "someone" } }],
+        staleClaims: [1, 2, 3].map((n) => ({ artefact: "dom", scope: `s${n}`, reason: `r${n}` })),
+        broadUnapproved: []
+      }
+    }
+  };
+
+  it("reads the release, migration and upgrade runs and writes confidence.json in the command's directory, links relative to it", () => {
+    const r = go({});
+    const c = conf(r);
+    expect(c).toMatchObject({ gate: "PASS", rcs: 100, band: "Green", run: { candidate: "16.3.0-rc.1", baseline: "16.2.2" } });
+    expect(c.run.reports.release).toMatch(/^\.\.\/.*-release\/report\.json$/);
+    expect(c.run.reports.migration).toMatch(/-migration\/report\.json$/);
+    expect(c.dimensions.filter((d) => d.status === "not measured").map((d) => d.id)).toEqual(["test-signal", "traceability", "change-risk", "post-deploy"]);
+    expect(r.status.stages.find((s) => s.stage === "score")!.note).toBe("RCS 100 Green; 4 of 8 dimensions measured; confidence.json");
+    expect(r.outcome.files.confidence).toBe(join(r.outcome.dir, "confidence.json"));
+  });
+
+  it("a PASS on hollow evidence is Red and still exits 0: the score cannot stop the line", () => {
+    const r = go({ fake: { report: hollow } });
+    expect(r.outcome.code).toBe(0);
+    expect(conf(r)).toMatchObject({ gate: "PASS", band: "Red", rcs: 74 });
+    expect(r.md).toContain("**RCS 74 Red: hold, open a 5 Whys, do not re-run hoping for a better number**");
+    expect(r.status.exitCode).toBe(0);
+  });
+
+  it("a FAIL is a FAIL: no RCS, the Gate shown, exit 1 whatever the dimensions say", () => {
+    const r = go({ fake: { verdicts: { release: "fail" } } });
+    expect(r.outcome.code).toBe(1);
+    expect(conf(r)).toMatchObject({ gate: "FAIL", rcs: null, band: null });
+    expect(r.md).toContain("No RCS: Gate FAIL. The Gate wins");
+    expect(r.lines).toContain("gate: FAIL -> exit 1");
+  });
+
+  it("a score that cannot be computed is reported and changes nothing: the same exit code as without it", () => {
+    for (const fake of [{}, { verdicts: { release: "fail" } }, { verdicts: { release: "warn" } }, { report: hollow }]) {
+      const plain = go({ fake });
+      const broken = go({ fake, score: { testSignal: "/does/not/exist.json" } });
+      expect(broken.outcome.code, JSON.stringify(fake)).toBe(plain.outcome.code);
+      expect(broken.status.stages.find((s) => s.stage === "score")).toMatchObject({ state: "skipped", note: expect.stringContaining("failed, and changes nothing: --test-signal") });
+      expect(existsSync(join(broken.outcome.dir, "confidence.json"))).toBe(false);
+    }
+  });
+
+  it("nothing to score when the line stopped before the release run; Ctrl-C skips it", () => {
+    const dirty = go({ noise: runAA, fake: { dirty: true } });
+    expect(dirty.outcome.code).toBe(2);
+    expect(dirty.status.stages.find((s) => s.stage === "score")).toMatchObject({ state: "skipped", note: "no release run to score" });
+    const ctrlC = go({ interruptAfter: (calls) => calls.some((c) => c[2] === "release") });
+    expect(stateOf(ctrlC.status).score).toBe("skipped");
+    expect(existsSync(join(ctrlC.outcome.dir, "confidence.json"))).toBe(false);
+  });
+
+  it("the optional inputs reach the score", () => {
+    const dir = tmp("inputs");
+    const ts = join(dir, "test-signal.json");
+    writeFileSync(ts, JSON.stringify({ packages: [{ name: "reader", mutationScore: 72 }], harnessMutants: { caught: 8, total: 8 } }));
+    const c = conf(go({ score: { testSignal: ts } }));
+    expect(c.dimensions.find((d) => d.id === "test-signal")).toMatchObject({ status: "measured", score: 70 });
+    expect(c.run.inputs?.testSignal).toMatch(/test-signal\.json$/);
   });
 });
 

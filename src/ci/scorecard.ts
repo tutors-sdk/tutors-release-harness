@@ -95,6 +95,9 @@ const failing = (h: Hunk) => h.severity === "fail";
 const uniq = <T>(xs: T[]) => [...new Set(xs)];
 const byNumber = (a: number, b: number) => a - b;
 
+/** A claim that names no one artefact or no one page: everything it absorbs is a place nobody said precisely what changed. */
+export const isBroad = (c: Pick<Claim, "artefact" | "scope">): boolean => c.artefact === "*" || c.scope === "*" || c.scope === "**";
+
 function ruleOf(claim: Claim): string | undefined {
   return claim.rule ?? claim.reason?.match(RULE_IN_REASON)?.[1];
 }
@@ -178,8 +181,7 @@ export function manualSlice(report: RunReport, limit = MANUAL_LIMIT): ManualChec
   for (const h of report.compare.unclaimed.filter(failing)) put(h, 0, "moved and no claim covers it");
   for (const m of report.compare.matches) {
     if (!m.claim || !failing(m.hunk)) continue;
-    const broad = m.claim.artefact === "*" || m.claim.scope === "*" || m.claim.scope === "**";
-    if (broad) put(m.hunk, 2, "covered only by a broad claim");
+    if (isBroad(m.claim)) put(m.hunk, 2, "covered only by a broad claim");
     else if (HUMAN_JUDGED.includes(m.hunk.artefact)) put(m.hunk, 1, `intended change a person must see (${m.hunk.artefact})`, m.claim);
   }
   return [...byScope.entries()]
