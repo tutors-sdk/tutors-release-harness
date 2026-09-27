@@ -19,7 +19,7 @@ import { harnessInfo } from "./version.ts";
 import { helpFor, parseArgsErrorText } from "./local/usage.ts";
 import { RequirementError, requirements } from "./not-collected.ts";
 import { previewResolve } from "./ci/main-preview.ts";
-import { UsageError, changesCommand, confidenceCommand, doctorCommand, glanceCommand, guardCommand, localCommand, noiseCommand, overrideCommand, pruneCommand, recordAppliedOverride, releaseCommand, reportsCommand, scoreboardCommand, scorecardCommand, vulnDbCommand } from "./local/cli.ts";
+import { UsageError, changesCommand, confidenceCommand, doctorCommand, glanceCommand, guardCommand, localCommand, noiseCommand, overrideCommand, pruneCommand, recordAppliedOverride, releaseCommand, reportsCommand, scoreboardCommand, scorecardCommand, vulnDbCommand, whyCommand } from "./local/cli.ts";
 import { defaultNoise } from "./local/noise-store.ts";
 
 const USAGE = `tutors-release-harness
@@ -201,7 +201,23 @@ const USAGE = `tutors-release-harness
       verified (looked, agrees with the claim), disputed (becomes a new claim or a hold), escalated (becomes a 5 Whys).
       status prints the glance with its marks and whether an Amber release's glance is recorded verified (go only then).
       Marks never change the Gate or an exit code. mark: exit 0 when recorded, 2 for what it cannot use; status: exit 0
-      always once --run is given (informational). Not stable.
+      always once --run is given (informational). Since 1.13.0 an escalated mark opens a 5 Whys stub in <dir>/kaizen/. Not stable.
+  harness why --run <run dir | harness release dir> --finding <id> [--out kaizen/] [--tag T] [--scoreboard f] [--json]
+  harness why check <file|dir...> [--json]
+  harness why register [--dir kaizen] [--write] [--json]
+      The 5 Whys (kaizen): from a finding to a countermeasure to the system, never to a person. why writes
+      <out>/<date>-<tag>-<finding>.md with Why 1 answered from the run's own trace (the finding, artefact, journeys, the
+      hunk's link, the nearest claim and why it did not cover, the PR with its files and churn, a first contribution as a
+      fact, the glance rank and mark), Whys 2-5 blank, and the countermeasure constrained to seven kinds: mutant, journey,
+      mask review, EARS spec, claim guidance, SOP change, glance rule. --finding: gate, band or rollback (a Gate FAIL, a Red
+      band, a post-deploy FAIL), <rule>:<series> (three-declines:rcs, two-of-three-below-75:change-risk,
+      countermeasures-rising; the scoreboard is --scoreboard, default HARNESS_HOME/scoreboard/releases.jsonl), a glance item
+      (<kind>:<key> or glance:<n>), or a hunk id from report.json. A file already there is left as it is. check: every
+      answer up to where the chain ends, no answer that is only "human error", carelessness or a person's name, the chain
+      ending in a process or a tool, exactly one of the seven kinds (a mutant names its path under mutants/), an owner and
+      a due date; exit 1 when one is not ready (a docs lint, never a release gate). register: the table of kaizen/README.md
+      regenerated from the files (--write writes it; without, exit 1 when README.md is out of date) with the open and
+      overdue counts. harness release opens one by itself for each trigger. Exit 2 for what it cannot read. Not stable.
 `;
 
 function fail(message: string): never {
@@ -319,6 +335,7 @@ async function main(argv: string[]): Promise<number> {
       mark: { type: "string" },
       by: { type: "string" },
       note: { type: "string" },
+      finding: { type: "string" },
       screenshots: { type: "boolean", default: true },
       axe: { type: "boolean", default: true },
       focus: { type: "boolean", default: true },
@@ -338,6 +355,7 @@ async function main(argv: string[]): Promise<number> {
       open: { type: "boolean", default: false },
       fast: { type: "boolean", default: false },
       json: { type: "boolean", default: false },
+      write: { type: "boolean", default: false },
       help: { type: "boolean", short: "h", default: false }
     },
     allowNegative: true
@@ -535,6 +553,8 @@ async function main(argv: string[]): Promise<number> {
       return scoreboardCommand(positionals[0], values);
     case "glance":
       return glanceCommand(positionals[0], values);
+    case "why":
+      return whyCommand(positionals[0], positionals.slice(1), values);
     case "journeys":
       for (const j of journeys) console.log(`${j.name.padEnd(34)} set=${j.set.padEnd(9)} ${j.anonymous ? "anonymous" : "signed-in"}`);
       return 0;

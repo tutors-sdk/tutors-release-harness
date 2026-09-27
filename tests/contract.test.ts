@@ -208,7 +208,7 @@ describe("report.json", () => {
     const cli = json("docs/contract/cli.json");
     for (const flag of cli.flags.filter((f: { since?: string }) => f.since === "1.2.0")) expect(changes, flag.name).toContain(`--${flag.name === "runtime" ? "no-runtime" : flag.name}`);
     for (const [name, v] of Object.entries(cli.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.2.0")) expect(changes, name).toContain(name);
-    expect(CONTRACT_VERSION).toBe("1.12.0");
+    expect(CONTRACT_VERSION).toBe("1.13.0");
     // The harness version is package.json's and moves at least as far as the contract's (docs/contract.md, Versioning):
     // a mask or engine PR bumps the patch of the harness alone, so do not pin a literal here.
     expect(json("package.json").version).toBe(HARNESS_VERSION);
@@ -278,6 +278,23 @@ describe("report.json", () => {
     for (const command of cliJson.commands.filter((c: { since?: string }) => c.since === "1.5.0")) expect(changes, command.name).toContain(command.name);
     for (const [name, v] of Object.entries(cliJson.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.5.0")) expect(changes, name).toContain(name);
     for (const workflow of ["main-preview.yml", "pages.yml"]) expect(changes, workflow).toContain(workflow);
+  });
+
+  it("1.13.0: its changelog and release note list the command, its subcommands, every flag, the register and the new line field", () => {
+    const start = contractMd.indexOf("### 1.13.0");
+    const end = contractMd.indexOf("### 1.12.0");
+    expect(start).toBeGreaterThan(0);
+    expect(end).toBeGreaterThan(start);
+    const changes = contractMd.slice(start, end);
+    expect(changes).toContain("releases/1.13.0.md");
+    expect(existsSync(resolve(ROOT, "docs/releases/1.13.0.md"))).toBe(true);
+    const cliJson = json("docs/contract/cli.json");
+    for (const flag of cliJson.flags.filter((f: { since?: string }) => f.since === "1.13.0")) expect(changes, flag.name).toContain(`--${flag.name}`);
+    for (const command of cliJson.commands.filter((c: { since?: string }) => c.since === "1.13.0")) for (const sub of command.subcommands) expect(changes, `${command.name} ${sub}`).toContain(`harness ${command.name} ${sub}`);
+    for (const item of ["harness why --run", "kaizen/README.md", "openCountermeasures", "post-deploy.yml", "No new permission", "mutant", "glance rule"]) expect(changes, item).toContain(item);
+    expect(contractMd).toContain("## The 5 Whys and the kaizen register");
+    expect(contractMd).toContain("| `kaizen/` |");
+    expect(existsSync(resolve(ROOT, "kaizen/README.md"))).toBe(true);
   });
 
   it("1.12.0: its changelog and release note list the command, its subcommands, every flag, the marks file and its schema", () => {

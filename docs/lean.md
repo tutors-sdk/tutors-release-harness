@@ -154,6 +154,19 @@ the monorepo's `release/SOP.md`.
 - Open countermeasures are plotted over time. A count that only rises means the
   loop is not closing, and that is itself a run-rule trigger.
 
+How the tooling holds to this (since 1.13.0):
+
+| The rule | How the harness keeps it |
+| --- | --- |
+| The harness starts it, not a person remembering to | `harness release` writes a stub for a Gate FAIL, a Red band, each run rule firing and open countermeasures only rising; an escalated glance mark writes one; the rollback issue carries one |
+| The first answers are facts, not recollections | Why 1 is the harness's own trace: the finding, the journeys that reach it, the hunk, the nearest claim and why it did not cover, the PR and its churn, the glance rank and mark, each a link |
+| "Human error" is a prompt for the next why | `harness why check` rejects an answer that is only human error, carelessness or a person's name, and says why; blame beside a cause that can be checked is kept |
+| The chain ends in a process or a tool | the file says where the chain ends and in which; the check requires both |
+| One of seven kinds; a mutant is the best | exactly one kind; a mutant names its path under `mutants/` and the register links it |
+| Every 5 Whys has an owner and a due date | the check requires both; `harness release` prints the open and overdue counts for SOP step 12 |
+| The register is the record, not a notebook | its table is regenerated from the files and never edited by hand; CI fails when it is out of date |
+| A loop that is not closing is itself a finding | each scoreboard line records the open count; three rises open a 5 Whys on the loop |
+
 ## Guardrails
 
 A percentage is only useful while nobody is optimising for it, so the same
@@ -190,18 +203,24 @@ Two principles from the harness README are unchanged:
 
 ## Build order
 
-The companion is built in five phases, one per release cycle. Each phase is
-gated on evidence from real releases, not on a date. Before C0 comes the one
-command, so that every later phase runs through it.
+The companion is built in five phases, one per release cycle. Before C0 comes the
+one command, so that every later phase runs through it. The tooling of every
+phase is now built. Building a phase is not the same as meeting its gate: each
+gate is about use, and only real releases can meet it. Until a gate is met, the
+phase stays advisory, as C0's score does.
 
-| Phase | Adds | Gate to the next phase |
-| --- | --- | --- |
-| One command | `harness release --candidate <tag>`: build, test and report with no prompts in between | It runs a real candidate end to end |
-| C0 Score | `confidence.json`: Gate first, then the RCS and its band, advisory at first | 3 releases scored |
-| C1 Changes | `harness changes --a --b`: churn, hotspots, test delta, review coverage and dependency movement, with one risk line per PR | Change risk explains a drop |
-| C2 Scoreboard | `scoreboard/releases.jsonl`, the trends and the run rules | 6 releases plotted |
-| C3 SOP and glance | The monorepo's `release/SOP.md`, and the glance in the report | 2 glances recorded |
-| C4 5 Whys | `harness why` and the kaizen register | Countermeasures verified closed |
+| Phase | Adds | Built in | Gate to the next phase: evidence still to come from real releases |
+| --- | --- | --- | --- |
+| One command | `harness release --candidate <tag>`: build, test and report with no prompts in between | harness 1.8.0 | It runs a real candidate end to end |
+| C0 Score | `confidence.json`: Gate first, then the RCS and its band, advisory at first | harness 1.9.0 | 3 releases scored |
+| C1 Changes | `harness changes --a --b`: churn, hotspots, test delta, review coverage and dependency movement, with one risk line per PR | harness 1.10.0 | Change risk explains a drop |
+| C2 Scoreboard | `scoreboard/releases.jsonl`, the trends and the run rules | harness 1.11.0 | 6 releases plotted |
+| C3 SOP and glance | The monorepo's `release/SOP.md`, and the glance in the report | harness 1.12.0, and the SOP in the monorepo | 2 glances recorded |
+| C4 5 Whys | `harness why`, `harness why check`, and the kaizen register (`kaizen/README.md`, `harness why register`) | harness 1.13.0 | Countermeasures verified closed |
+
+The last gate needs the whole loop to work once: a trigger opens a 5 Whys, a
+countermeasure lands, and a later release is written into `Verified by`. The
+register starts empty, and entries are not invented to fill it.
 
 C0 starts advisory. Three real releases show whether the weights match the
 team's judgement before any band is allowed to hold a release.

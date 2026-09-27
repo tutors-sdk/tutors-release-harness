@@ -293,7 +293,7 @@ one line when it ends, with its elapsed time, and `status.json` records it as it
 | changes | `harness changes --a <baseline> --b <candidate>` in the monorepo checkout (`--monorepo` or `HARNESS_MONOREPO_DIR`): `changes.json`, one risk line per PR, which the score reads as change risk ([below](#what-changed-pr-by-pr-harness-changes)). No checkout: skipped, with the reason, and change risk stays not measured | never fails, never changes the exit code: orphans, a missing token, even a failure to run are the stage's note |
 | release | `--mode release --runs 3 --load 20x30s` with the claims (`--claims`, else `release/claims.yaml` in the monorepo checkout), the rules and that A/A | a FAIL stops the line for a go decision; the rehearsals still run for the evidence, the report is written, exit `1` |
 | rehearse | migration, then upgrade | skipped only with `--fast`, and the report says so |
-| score | `confidence.json`: the Release Confidence Score from the release, migration and upgrade runs ([below](#the-release-confidence-score-harness-confidence)), and the reviewer's glance, at most seven places to look, ranked ([below](#the-reviewers-glance-harness-glance)). The 5 Whys stubs (C4) are not built yet | never fails, never changes the exit code: the exit code is decided before the score exists |
+| score | `confidence.json`: the Release Confidence Score from the release, migration and upgrade runs ([below](#the-release-confidence-score-harness-confidence)), and the reviewer's glance, at most seven places to look, ranked ([below](#the-reviewers-glance-harness-glance)). After the scoreboard line, **a 5 Whys stub for each trigger that fired** (a Gate FAIL, a Red band, a run rule firing at this release, open countermeasures only rising) in `kaizen/` of the release directory, and the register's open and overdue counts ([below](#the-5-whys-harness-why)) | never fails, never changes the exit code: the exit code is decided before the score exists |
 | report | `report.md`, `report.html`, `gate.md`, `gate.json` in `out/<timestamp>-release-command/`, led by the Gate, then the RCS and its band, then **the reviewer's glance**, then the dimension table, then the per-PR change-risk table; `--open` opens `report.html`. The command stops here: step 8 of the SOP is the one step that stays human | always written |
 
 `status.json` ([schema](contract/release-status.schema.json)) holds the stage running now, and
@@ -322,11 +322,11 @@ The view behind this table is [lean.md](lean.md).
 
 | Idea | Where it is in `harness release` | Still to come |
 | --- | --- | --- |
-| Jidoka (stop the line) | a stage that cannot hand good work on stops it: missing images at resolve, a dirty A/A at noise (before any A/B), a gate FAIL at release. The terminal and the report say `line stopped at <stage>: <why>` and the next standard step, not a generic error. The Gate is always shown first and no number talks it back on | the 5 Whys it triggers (C4) |
-| Andon, visual management (**live since 1.9.0; over time since 1.11.0**) | the report opens with the Gate in one word (PASS, WARN, FAIL or NOT JUDGED), then the Release Confidence Score and its band with what the band means (Green: ship on the captain's say; Amber: ship only after the reviewer's glance is recorded verified; Red: hold, open a 5 Whys, do not re-run hoping for a better number), then the eight dimensions, each with every point lost and where. `confidence.json` and `status.json` are the boards a dashboard reads. Since 1.11.0 each run appends one line to the scoreboard (`HARNESS_HOME/scoreboard/releases.jsonl`, or `--scoreboard`), and the terminal and the report show the line and any **run rule** firing right after the RCS: three consecutive declines, or two of three releases below 75, in a dimension or the RCS, is the andon for a trend, and opens a kaizen item naming the dimension. `harness scoreboard trends` and the reports site's `scoreboard.html` draw the six trend views beside the harness's own health | the Release Hub reading the same file; the monorepo's test signal, traceability and post-deploy record for the three dimensions still not measured |
-| Standard work (**the SOP live since 1.12.0**) | one command, the same stages in the same order every time, the same steps CI runs, and a named next step for each stop. The monorepo's `release/SOP.md` is the standard work sheet around it: three roles, twelve steps, one owner and one done-when per step; `harness release` is steps 1 to 7 and stops at step 8, and `harness glance mark` is how step 8's done-when ("each item marked") is recorded | a deviation log the harness reads (C4's kaizen register) |
-| Gemba (**the glance live since 1.12.0**) | **the reviewer's glance** is the top of the report and the PR comment, right under the Gate and the RCS: at most seven places to look, ranked by novelty (against the last six releases on the scoreboard) × exposure (the share of the journeys it touches), each a one-line finding with a link to the hunk in `report.html`, the claim that covers it and the PR (and the file in its diff) that caused it. The Reviewer goes to the artefact, not the summary, and records one mark per item: **verified**, **disputed** (a new claim or a hold) or **escalated** (a 5 Whys). An Amber release goes only once every item is recorded verified. What the glance could not check is listed with the reason, never made up. Every gate row links to its run's own `report.html`; every change-risk deduction to the file in the PR's diff | the 5 Whys an escalated mark opens (`whyWanted`, C4), and, when a regression escapes past a verified glance, the 5 Whys asking whether the glance ranked the right thing |
-| Kaizen (**trends live since 1.11.0**) | every FAIL is marked as a trigger in the report; `changes.json` keeps a risk line per PR and a deduction per file, and the scoreboard turns them into hotspot recurrence (the same file every release: a refactor candidate) and per-file risk over time. A run rule firing names the kaizen item it opens; a re-run is a logged deviation, listed with its first and latest RCS, never a quiet replacement. The harness's own health (mutants caught per week, clean A/A nights, days since the last A/A failure) sits beside the product's, so a harness that is quietly decaying shows in the same picture | `harness why`, the 5 Whys stub and the countermeasure register (C4), which will write the kaizen items the run rules open and give "open countermeasures only rising" its numbers |
+| Jidoka (stop the line) | a stage that cannot hand good work on stops it: missing images at resolve, a dirty A/A at noise (before any A/B), a gate FAIL at release. The terminal and the report say `line stopped at <stage>: <why>` and the next standard step, not a generic error. The Gate is always shown first and no number talks it back on | live: each stop opens its 5 Whys (C4, since 1.13.0) |
+| Andon, visual management (**live since 1.9.0; over time since 1.11.0**) | the report opens with the Gate in one word (PASS, WARN, FAIL or NOT JUDGED), then the Release Confidence Score and its band with what the band means (Green: ship on the captain's say; Amber: ship only after the reviewer's glance is recorded verified; Red: hold, open a 5 Whys, do not re-run hoping for a better number), then the eight dimensions, each with every point lost and where. `confidence.json` and `status.json` are the boards a dashboard reads. Since 1.11.0 each run appends one line to the scoreboard (`HARNESS_HOME/scoreboard/releases.jsonl`, or `--scoreboard`), and the terminal and the report show the line and any **run rule** firing right after the RCS: three consecutive declines, or two of three releases below 75, in a dimension or the RCS, is the andon for a trend, and opens a kaizen item naming the dimension. `harness scoreboard trends` and the reports site's `scoreboard.html` draw the six trend views beside the harness's own health | the Release Hub reading the same files; the monorepo's test signal, traceability and post-deploy record for the three dimensions still not measured |
+| Standard work (**the SOP live since 1.12.0**) | one command, the same stages in the same order every time, the same steps CI runs, and a named next step for each stop. The monorepo's `release/SOP.md` is the standard work sheet around it: three roles, twelve steps, one owner and one done-when per step; `harness release` is steps 1 to 7 and stops at step 8, and `harness glance mark` is how step 8's done-when ("each item marked") is recorded | live: SOP step 12's review of the register has its counts after the score (`register:` line, since 1.13.0); a deviation is still recorded by hand in the release PR |
+| Gemba (**the glance live since 1.12.0**) | **the reviewer's glance** is the top of the report and the PR comment, right under the Gate and the RCS: at most seven places to look, ranked by novelty (against the last six releases on the scoreboard) × exposure (the share of the journeys it touches), each a one-line finding with a link to the hunk in `report.html`, the claim that covers it and the PR (and the file in its diff) that caused it. The Reviewer goes to the artefact, not the summary, and records one mark per item: **verified**, **disputed** (a new claim or a hold) or **escalated** (a 5 Whys). An Amber release goes only once every item is recorded verified. What the glance could not check is listed with the reason, never made up. Every gate row links to its run's own `report.html`; every change-risk deduction to the file in the PR's diff | live: an escalated mark opens its 5 Whys (since 1.13.0) |
+| Kaizen (**trends live since 1.11.0; the 5 Whys and the register live since 1.13.0**) | every trigger opens a 5 Whys by itself: a Gate FAIL or a Red band (`gate`, `band`), each run rule firing at this release, and open countermeasures only rising write a stub into `kaizen/` of the release directory, listed under "5 Whys (kaizen)" in the report and printed after the score; an escalated glance mark writes one, and post-deploy's rollback issue carries one. Why 1 is the harness's own trace (the finding, the journeys, the hunk, the nearest claim and why it did not cover, the PR, the glance), so the first answer is a fact, not a recollection; `harness why check` turns "human error" and names back into the next why; the countermeasure is one of seven kinds, owned and dated; `kaizen/README.md` is regenerated from the files, and its open count goes on every scoreboard line, so a loop that is not closing is itself a run rule. `changes.json` and the scoreboard keep hotspot recurrence and per-file risk; a re-run is a logged deviation; the harness's own health sits beside the product's | nothing to build: all five ideas are live. What remains is evidence from real releases (the gates in [lean.md](lean.md#build-order)) |
 
 The seams are functions (`changesStage`, `scoreStage`, `scoreboardStage` in `src/local/release.ts`);
 `changesStage` runs `harness changes`, `scoreStage` writes `confidence.json` with the glance and
@@ -467,7 +467,9 @@ its own copy on the `scoreboard` branch (release.yml and weekly-mutants.yml appe
 **Run rules** act on trends, not on one bad release (a Red band already opens a 5 Whys): three
 consecutive declines, or two of three releases below 75, in any dimension or the RCS. A firing at
 the newest release is printed after the score by `harness release` and marked on the page; each
-opens a kaizen item naming the dimension (by hand until `harness why` exists, C4). A window that
+opens a kaizen item naming the dimension: since 1.13.0 `harness release` writes its 5 Whys stub
+(`harness why --finding <rule>:<series>`). Since 1.13.0 each line also records the register's open
+countermeasures, and three rises in a row fire "open countermeasures only rising". A window that
 spans a change of weights or rules says so. Beside it all, **the harness's own health**: mutants
 caught per week, clean nights of the last 30 A/As, and days since the last A/A failure (from the
 local noise store, or `--noise-history`). Advisory: nothing here reaches a verdict or an exit
@@ -528,7 +530,7 @@ the mask ids since 1.12.0, and the first line has nothing to compare with.
 | --- | --- | --- |
 | `verified` | looked, and agrees with the claim | counts towards go |
 | `disputed` | looked, and does not agree | a new claim or a hold |
-| `escalated` | cannot tell from the artefacts | a 5 Whys on why the harness could not show it (`whyWanted`, for `harness why`) |
+| `escalated` | cannot tell from the artefacts | a 5 Whys on why the harness could not show it: since 1.13.0 the mark writes its stub into `kaizen/` beside `confidence.json` |
 
 `mark` appends one line to `glance-marks.jsonl` in the release directory (a changed mind is a
 new line; the latest wins) and re-renders the glance in `confidence.json`, `report.md`,
@@ -540,6 +542,45 @@ Red holds whatever the marks say; a FAIL keeps the glance for the 5 Whys. Marks 
 Gate, a verdict or an exit code: `mark` exits `0` when recorded and `2` for what it cannot use,
 `status` exits `0` whatever it finds. The fields are in
 [contract.md](contract.md#the-reviewers-glance).
+
+### The 5 Whys: `harness why`
+
+Kaizen: every escape or drop in confidence ends in a countermeasure to the system, never in
+blame. `harness release` opens the 5 Whys its triggers ask for by itself; the command is for
+the rest, and for checking and registering them.
+
+```console
+$ pnpm harness why --run out/2026-09-27T10-00-00-release-command --finding gate
+5 Whys opened (gate): kaizen/2026-09-27-16-3-0-rc-1-gate.md
+  Why 1 is the harness's trace; fill Whys 2-5, where the chain ends and the countermeasure, then: harness why check kaizen/2026-09-27-16-3-0-rc-1-gate.md
+$ pnpm harness why check kaizen
+invalid kaizen/2026-09-27-16-3-0-rc-1-gate.md
+  Why 3: "human error" is not an answer, it is the prompt for the next why: ask what in the process or the tools let it through (docs/lean.md, Kaizen)
+  ...
+$ pnpm harness why register --write
+```
+
+| `--finding` | Opens a 5 Whys on | Opened by itself by |
+| --- | --- | --- |
+| `gate` | a Gate FAIL on a release run: the reasons, where the line stopped, each unclaimed hunk with its journeys and nearest claim | `harness release` |
+| `band` | a Red band: the RCS, the floors breached, the dimensions below 100, where the most points went | `harness release` |
+| `rollback` | a post-deploy FAIL (`--run` the post-deploy run; `--tag` the deployed release) | `post-deploy.yml`, in the rollback issue |
+| `three-declines:<series>`, `two-of-three-below-75:<series>` | a run rule on the scoreboard (`--scoreboard`): the window, and this release's deductions in that dimension | `harness release` |
+| `countermeasures-rising` | the register's own rule: the open counts, and what is open | `harness release` |
+| `<glance kind>:<key>`, `glance:<n>` | a glance item, with its rank and the Reviewer's mark | `harness glance mark --mark escalated` |
+| a hunk id | one difference: artefact, journeys, the hunk, the nearest claim and why it did not cover, the PR with its files and churn, a first contribution as a fact, the glance | a person |
+
+The file is `<--out, default kaizen/>/<date>-<tag>-<finding>.md`; one already there is left as it
+is. Whys 2 to 5 are prompts. Where the chain ends (`Chain ends at: Why N`, `Ends in: process` or
+`tool`) and the countermeasure (`Kind`, one of **mutant, journey, mask review, EARS spec, claim
+guidance, SOP change, glance rule**; `Countermeasure`; `Mutant`, a path under `mutants/` for the
+best kind; `Owner`; `Due`; `Verified by`, the release it was verified closed in) are filled by
+people. **`harness why check`** exits `1` for a file that is not ready, each problem with its Lean
+reason; blame beside a checkable cause is an answer, blame alone is the next why. **`harness why
+register`** regenerates the table of `kaizen/README.md` from the files (`--write`; without it,
+exit `1` when the table is out of date) and prints the open and overdue counts. CI runs both on
+`kaizen/`, so the register stays honest. Nothing here reaches a verdict or an exit code of a run.
+The file format is in [contract.md](contract.md#the-5-whys-and-the-kaizen-register).
 
 ## Parity matrix
 

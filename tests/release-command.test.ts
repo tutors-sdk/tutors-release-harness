@@ -225,13 +225,13 @@ function clock(start = Date.parse("2026-09-27T10:00:00Z")) {
 const reuse: NoiseDecision = { action: "reuse", noise: "/s/noise-status.json", why: "reusing the local noise store: clean" };
 const runAA: NoiseDecision = { action: "run", why: "an A/A of the baseline first: stale" };
 
-function go(o: { fast?: boolean; noise?: NoiseDecision; fake?: Parameters<typeof fakeExecutor>[1]; interruptAfter?: (calls: string[][]) => boolean; score?: ScoreExtras; monorepo?: string; scoreboard?: string }) {
+function go(o: { fast?: boolean; noise?: NoiseDecision; fake?: Parameters<typeof fakeExecutor>[1]; interruptAfter?: (calls: string[][]) => boolean; score?: ScoreExtras; monorepo?: string; scoreboard?: string; kaizen?: string }) {
   const out = tmp("out");
   const lines: string[] = [];
   const fake = fakeExecutor(out, { ...o.fake, statusFile: () => findStatus(out) });
   const opened: string[] = [];
   const outcome = runRelease(
-    { candidate: "16.3.0-rc.1", baseline: base, fast: o.fast ?? false, outRoot: out, noise: o.noise ?? reuse, ...(o.score ? { score: o.score } : {}), ...(o.monorepo ? { monorepo: o.monorepo } : {}), ...(o.scoreboard ? { scoreboard: { file: o.scoreboard } } : {}) },
+    { candidate: "16.3.0-rc.1", baseline: base, fast: o.fast ?? false, outRoot: out, noise: o.noise ?? reuse, ...(o.score ? { score: o.score } : {}), ...(o.monorepo ? { monorepo: o.monorepo } : {}), ...(o.scoreboard ? { scoreboard: { file: o.scoreboard } } : {}), ...(o.kaizen ? { kaizen: o.kaizen } : {}) },
     {
       ex: fake.ex,
       env: {},
@@ -319,7 +319,7 @@ describe("running it", () => {
     expect(r.md).toContain("**Gate: FAIL**");
     expect(r.md).toContain("### Line stopped at release");
     expect(r.md).toContain("Next standard step:");
-    expect(r.md).toContain("This FAIL is a trigger once it is.");
+    expect(r.md).toMatch(/- 5 Whys opened \(Gate FAIL\): kaizen\/2026-09-27-16-3-0-rc-1-gate\.md/);
     expect(existsSync(r.outcome.files.html)).toBe(true);
   });
 
@@ -706,5 +706,75 @@ describe("the glance (C3): at the top, right after the RCS, and never an exit co
     const c = JSON.parse(readFileSync(join(again.outcome.dir, "confidence.json"), "utf8")) as Confidence;
     expect(c.glance[0]!.basis.novelty).toBe("no history yet");
     expect(c.glanceBasis!.history.releases).toEqual([]);
+  });
+});
+
+describe("the 5 Whys (C4): started by the harness, never an exit code", () => {
+  const board = () => join(tmp("board"), "releases.jsonl");
+  const hollow = {
+    release: {
+      compare: {
+        hunks: [{ id: "dom:x:1", artefact: "dom", scope: "x", summary: "moved", severity: "fail" }],
+        unclaimed: [],
+        matches: [{ hunk: { id: "dom:x:1", artefact: "dom", scope: "x", summary: "moved", severity: "fail" }, claim: { artefact: "*", scope: "**", reason: "everything", approvedBy: "someone" } }],
+        staleClaims: [1, 2, 3].map((n) => ({ artefact: "dom", scope: `s${n}`, reason: `r${n}` })),
+        broadUnapproved: []
+      }
+    }
+  };
+  const names = (r: ReturnType<typeof go>) => r.outcome.whys.map((f) => f.split("/").pop());
+
+  it("a Gate FAIL writes the gate stub into <dir>/kaizen/, lists it in the report and the terminal, and still exits 1", () => {
+    const r = go({ fake: { verdicts: { release: "fail" } } });
+    expect(r.outcome.code).toBe(1);
+    expect(names(r)).toEqual(["2026-09-27-16-3-0-rc-1-gate.md"]);
+    expect(r.outcome.whys[0]!.startsWith(join(r.outcome.dir, "kaizen"))).toBe(true);
+    const stub = readFileSync(r.outcome.whys[0]!, "utf8");
+    expect(stub).toContain("- **Trigger:** Gate FAIL");
+    expect(stub).toContain("## Why 1: Why did the Gate FAIL on 16.3.0-rc.1?");
+    expect(r.lines).toContain("5 Whys opened (Gate FAIL): kaizen/2026-09-27-16-3-0-rc-1-gate.md");
+    expect(r.md).toContain("### 5 Whys (kaizen)");
+    expect(r.html).toContain("5 Whys opened (Gate FAIL): kaizen/2026-09-27-16-3-0-rc-1-gate.md");
+  });
+
+  it("a Red band opens one whatever the Gate says; a run rule firing at this release opens one naming it", () => {
+    const red = go({ fake: { report: hollow } });
+    expect(red.outcome.code).toBe(0);
+    expect(names(red)).toEqual(["2026-09-27-16-3-0-rc-1-band.md"]);
+    const file = board();
+    const seed = (tag: string, rcs: number) => ({ schemaVersion: 1, tag, run: 1, date: "2026-09-01T00:00:00Z", appendedAt: "2026-09-01T00:00:00Z", gate: "PASS", rcs, band: "Green", weightsVersion: null, dimensions: [], masks: null, masksNeverFired: null, claims: null, staleClaims: null, journeys: null, mutants: null, prs: null });
+    writeFileSync(file, [95, 90, 85].map((n, i) => JSON.stringify(seed(`16.2.${i}`, n))).join("\n") + "\n");
+    const trend = go({ fake: { report: hollow }, scoreboard: file });
+    expect(trend.outcome.code).toBe(0);
+    expect(names(trend)).toEqual(["2026-09-27-16-3-0-rc-1-band.md", "2026-09-27-16-3-0-rc-1-three-declines-rcs.md"]);
+    expect(readFileSync(trend.outcome.whys[1]!, "utf8")).toContain("- **Window:** 16.2.0 95 → 16.2.1 90 → 16.2.2 85 → 16.3.0-rc.1 74");
+  });
+
+  it("a clean PASS opens none and says so; --fast opens none; the register's counts are printed for SOP step 12", () => {
+    const kaizen = tmp("kaizen");
+    const pass = go({ kaizen });
+    expect(pass.outcome.whys).toEqual([]);
+    expect(pass.lines).toContain("5 Whys: no trigger fired (no Gate FAIL, no Red band, no run rule firing)");
+    expect(pass.lines.some((l) => l.startsWith("register: 0 open countermeasure(s), 0 overdue, 0 closed ("))).toBe(true);
+    expect(pass.md).toContain("- register: 0 open countermeasure(s)");
+    const fast = go({ fast: true, noise: { action: "skip", noise: "none", why: "--fast" }, fake: { verdicts: { release: "fail" } } });
+    expect(fast.outcome.whys).toEqual([]);
+    expect(fast.lines).toContain("5 Whys: none opened (--fast: this report cannot be used for a go decision)");
+  });
+
+  it("the exit codes are the gate's, with or without the 5 Whys, and a register that cannot be read changes nothing", () => {
+    const notADir = join(tmp("kz"), "file");
+    writeFileSync(notADir, "x");
+    for (const fake of [{}, { verdicts: { release: "fail" } }, { verdicts: { release: "warn" } }, { report: hollow }, { codes: { release: 2 } }]) {
+      const plain = go({ fake });
+      for (const kaizen of [tmp("kaizen"), notADir]) {
+        const r = go({ fake, kaizen });
+        expect(r.outcome.code, JSON.stringify(fake)).toBe(plain.outcome.code);
+        expect(r.status.exitCode).toBe(plain.status.exitCode);
+      }
+    }
+    expect(go({ kaizen: notADir }).lines.some((l) => l.startsWith("register: not read:"))).toBe(true);
+    // the line stopped before judging: nothing to open
+    expect(go({ noise: runAA, fake: { dirty: true } }).outcome.whys).toEqual([]);
   });
 });

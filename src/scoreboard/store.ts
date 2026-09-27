@@ -18,6 +18,7 @@ import { readReport } from "../ci/scorecard.ts";
 import type { Confidence } from "../score/confidence.ts";
 import { CONFIDENCE_FILE } from "../score/read.ts";
 import type { RunReport, SideCapture } from "../types.ts";
+import { readRegister } from "../why/register.ts";
 import { MUTANTS_FILE, MUTANTS_SUMMARY, SCOREBOARD_FILE, ScoreboardInputError, buildLine, parseLines, parseMutants, serialise, type MutantsPoint, type ScoreboardLine } from "./line.ts";
 import { trends, type Trends } from "./trends.ts";
 
@@ -110,6 +111,8 @@ export interface AppendOptions {
   tag?: string;
   runUrl?: string;
   now: Date;
+  /** The kaizen register's directory (kaizen/): its open countermeasures go on the line (since 1.13.0). Absent, or no such directory: not recorded. */
+  kaizen?: string;
 }
 
 /** Build the line from what the run left and append it. Never rewrites a line: the history is the history. */
@@ -119,7 +122,8 @@ export function appendRun(o: AppendOptions): { line: ScoreboardLine; file: strin
   const file = resolve(o.file);
   const existing = readLines(file);
   const mutants = readMutants(o.mutants ?? mutantsFileBeside(file)).at(-1);
-  const line = buildLine({ confidence: run.confidence, ...(run.release ? { release: run.release } : {}), ...(run.candidate ? { candidate: run.candidate } : {}), ...(run.changes ? { changes: run.changes } : {}), ...(mutants ? { mutants } : {}), marks: run.marks, existing, ...(o.tag ? { tag: o.tag } : {}), now: o.now, ...(o.runUrl ? { runUrl: o.runUrl } : {}) });
+  const open = o.kaizen && existsSync(o.kaizen) ? readRegister(o.kaizen).filter((e) => e.open).length : undefined;
+  const line = buildLine({ confidence: run.confidence, ...(run.release ? { release: run.release } : {}), ...(run.candidate ? { candidate: run.candidate } : {}), ...(run.changes ? { changes: run.changes } : {}), ...(mutants ? { mutants } : {}), marks: run.marks, existing, ...(o.tag ? { tag: o.tag } : {}), now: o.now, ...(o.runUrl ? { runUrl: o.runUrl } : {}), ...(open !== undefined ? { openCountermeasures: open } : {}) });
   appendLine(file, line);
   return { line, file };
 }

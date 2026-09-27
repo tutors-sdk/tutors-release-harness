@@ -35,6 +35,13 @@ jobs:
         if: always() && hashFiles('coverage/summary.txt') != ''
         run: |
           { echo "### Coverage"; echo '```'; cat coverage/summary.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      # The kaizen register stays honest (docs/lean.md, Kaizen): every 5 Whys in kaizen/ is filled (no answer that is only
+      # "human error" or a name, a chain ending in a process or a tool, one of the seven countermeasure kinds, an owner and
+      # a due date), and kaizen/README.md's table is what `harness why register` generates from the files. A docs lint.
+      - name: The 5 Whys are filled and the register is regenerated
+        run: |
+          pnpm harness why check kaizen
+          pnpm harness why register --dir kaizen
 
   # The workflows themselves: actionlint (syntax, expressions, and shellcheck on every `run:`) and zizmor (injection,
   # unpinned actions, dangerous triggers, credentials; .github/zizmor.yml says what is ignored and why). Both are

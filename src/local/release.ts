@@ -12,6 +12,12 @@ import { rcsLine, renderDeductionsMarkdown, renderScoreHtml, renderScoreMarkdown
 import type { NoiseStatus, RunReport } from "../types.ts";
 import { renderAppended } from "../scoreboard/render.ts";
 import { appendRun, readTrends } from "../scoreboard/store.ts";
+import type { Trends } from "../scoreboard/trends.ts";
+import { captures } from "../glance/read.ts";
+import { KAIZEN_DIR, openAutomatic, type Opened } from "../why/command.ts";
+import { TRIGGERS } from "../why/format.ts";
+import { registerLine } from "../why/register.ts";
+import type { WhyContext } from "../why/trace.ts";
 import { formatElapsed } from "./compare.ts";
 import { readStatus, type StatusReport } from "./noise-store.ts";
 import {
@@ -43,11 +49,13 @@ import {
  *   release    --mode release, 3 runs, k6 20x30s, the claims, the rules, that A/A
  *   rehearse   migration, then upgrade (skipped only with --fast)
  *   score      confidence.json: the Release Confidence Score (C0) from the release, migration and upgrade runs, and
- *              the reviewer's glance (C3): at most seven places to look, ranked; the 5 Whys stubs (C4) are not built yet
+ *              the reviewer's glance (C3): at most seven places to look, ranked
  *   report     report.md, report.html, gate.md, gate.json in the same directory, led by the Gate, then the RCS and its
  *              band, then the glance, where the command stops for the one step that stays human (SOP step 8); before
  *              them the scoreboard line (C2) is appended to HARNESS_HOME/scoreboard/releases.jsonl (or --scoreboard), and
- *              the line and any run rule firing are printed after the score
+ *              the line and any run rule firing are printed after the score; then the 5 Whys (C4): a Gate FAIL, a
+ *              Red band, a run rule firing or open countermeasures only rising each writes a stub into <dir>/kaizen/
+ *              (`harness why`), and the register's open and overdue counts are printed for SOP step 12
  *
  * Jidoka: a stage that cannot hand good work to the next stops the line (missing images, a dirty A/A before any A/B, a
  * gate FAIL), and the terminal and the summary say "line stopped at <stage>: <why>" and the next standard step. The
@@ -168,6 +176,8 @@ export interface ReleaseOptions {
   monorepo?: string;
   /** Where the scoreboard line goes (HARNESS_HOME/scoreboard/releases.jsonl, or --scoreboard), and the noise history its self-health reads. */
   scoreboard?: { file: string; noiseHistory?: string };
+  /** The kaizen register (the harness checkout's kaizen/): its open countermeasures go on the scoreboard line and in the summary. */
+  kaizen?: string;
 }
 
 /** The score's optional inputs: files a later phase or the monorepo writes. */
@@ -185,9 +195,6 @@ export interface PlannedStage {
   /** Planned as skipped, and why. */
   skip?: string;
 }
-
-/** The seam a later phase fills (C4 5 Whys). Until then it says so; it never makes data up. */
-export const NOT_BUILT = { whys: "not built yet (C4)" } as const;
 
 /** Where the changes step writes changes.json: the command's own directory, known only once it runs. */
 export const CHANGES_OUT = "<release-command dir>/changes.json";
@@ -232,13 +239,13 @@ export function planRelease(o: ReleaseOptions, noise: NoiseDecision): PlannedSta
       steps: [withOut({ ...release, title: `release mode: A/B${o.claims ? ", claims" : ""}${o.fast ? "" : ", k6"}`, argv: [...release.argv, "--noise", noiseArg] })]
     },
     o.fast ? { stage: "rehearse", title: "migration, then upgrade", steps: [], skip: "--fast: no rehearsals" } : { stage: "rehearse", title: "migration, then upgrade", steps: [withOut(step("migration")!), withOut(step("upgrade")!)] },
-    { stage: "score", title: "the score and the reviewer's glance (confidence.json); the 5 Whys stubs are not built yet", steps: [] },
+    { stage: "score", title: "the score and the reviewer's glance (confidence.json); a 5 Whys stub for each trigger that fires", steps: [] },
     { stage: "report", title: "report.md, report.html, gate.md, gate.json", steps: [] }
   ];
 }
 
 /** `--dry-run`: the baseline, the noise decision and every command, and nothing pulled or run. */
-export function renderReleasePlan(o: { candidate: string; baseline: Baseline; fast: boolean; stages: PlannedStage[]; env: Record<string, string>; platform?: NodeJS.Platform; scoreboard?: string }): string {
+export function renderReleasePlan(o: { candidate: string; baseline: Baseline; fast: boolean; stages: PlannedStage[]; env: Record<string, string>; platform?: NodeJS.Platform; scoreboard?: string; kaizen?: string }): string {
   const lines = [`harness release: ${o.candidate} beside ${o.baseline.tag} (${o.baseline.how})${o.fast ? `\n${FAST_BANNER}` : ""}`, ""];
   const set = Object.entries(o.env);
   if (set.length) lines.push(`environment: ${set.map(([k, v]) => `${k}=${commandLine([v], o.platform)}`).join(" ")}`, "");
@@ -248,6 +255,7 @@ export function renderReleasePlan(o: { candidate: string; baseline: Baseline; fa
     for (const step of s.steps) lines.push(`       harness ${commandLine(step.argv, o.platform)}`);
   });
   if (o.scoreboard) lines.push("", o.fast ? "scoreboard: not appended (--fast)" : `scoreboard: the line is appended to ${o.scoreboard}`);
+  if (o.kaizen) lines.push(o.fast ? "5 Whys: none opened (--fast)" : `5 Whys: a stub for each trigger that fires (a Gate FAIL, a Red band, a run rule) in <release-command dir>/${KAIZEN_DIR}/; the register is ${o.kaizen}`);
   lines.push("", `dry run: nothing was pulled or run (${o.candidate} beside ${o.baseline.tag})`);
   return lines.join("\n");
 }
@@ -413,16 +421,54 @@ export function scoreStage(i: SeamInput): SeamResult {
  * and never into the repository checkout unasked. A --fast run is not a go decision, so it is not put on the board; a
  * run with no score has no line. Returns the lines to print after the score (and to put in report.md).
  */
-export function scoreboardStage(o: { dir: string; fast: boolean; scoreboard?: ReleaseRun["scoreboard"]; confidence?: Confidence; now: Date }): string[] {
-  if (!o.scoreboard) return [];
-  if (o.fast) return ["scoreboard: not appended (--fast: this report cannot be used for a go decision)"];
-  if (!o.confidence) return ["scoreboard: not appended (no score)"];
+export function scoreboardStage(o: { dir: string; fast: boolean; scoreboard?: ReleaseRun["scoreboard"]; confidence?: Confidence; kaizen?: string; now: Date }): { lines: string[]; trends?: Trends } {
+  if (!o.scoreboard) return { lines: [] };
+  if (o.fast) return { lines: ["scoreboard: not appended (--fast: this report cannot be used for a go decision)"] };
+  if (!o.confidence) return { lines: ["scoreboard: not appended (no score)"] };
   try {
-    const { line, file } = appendRun({ run: o.dir, file: o.scoreboard.file, now: o.now });
-    return renderAppended(line, file, readTrends({ file, ...(o.scoreboard.noiseHistory ? { noiseHistory: o.scoreboard.noiseHistory } : {}), now: o.now }));
+    const { line, file } = appendRun({ run: o.dir, file: o.scoreboard.file, now: o.now, ...(o.kaizen ? { kaizen: o.kaizen } : {}) });
+    const trends = readTrends({ file, ...(o.scoreboard.noiseHistory ? { noiseHistory: o.scoreboard.noiseHistory } : {}), now: o.now });
+    return { lines: renderAppended(line, file, trends), trends };
   } catch (e) {
-    return [`scoreboard: not appended, and nothing else changes: ${e instanceof Error ? e.message : String(e)}`];
+    return { lines: [`scoreboard: not appended, and nothing else changes: ${e instanceof Error ? e.message : String(e)}`] };
   }
+}
+
+/** What the 5 Whys stage gives the summary: the stubs it opened, and the lines to print and report. */
+export interface WhysResult {
+  opened: Opened[];
+  lines: string[];
+}
+
+/**
+ * C4: the 5 Whys, started by the harness, not by a person remembering to. Each trigger that fired writes a stub into
+ * `<dir>/kaizen/` with Why 1 answered from this run's own trace (src/why/): a Gate FAIL, a Red band, each run rule
+ * firing at this release, open countermeasures only rising. After the exit code, like everything after the score; a
+ * --fast run is not a go decision, so it opens none. Then the register's line for SOP step 12.
+ */
+export function whysStage(o: { dir: string; fast: boolean; context?: WhyContext; kaizen?: string; now: Date; harness?: string }): WhysResult {
+  const lines: string[] = [];
+  let opened: Opened[] = [];
+  if (o.fast) lines.push("5 Whys: none opened (--fast: this report cannot be used for a go decision)");
+  else if (!o.context) lines.push("5 Whys: none opened (nothing was judged)");
+  else {
+    try {
+      opened = openAutomatic(o.context, { outDir: join(o.dir, KAIZEN_DIR), now: o.now, ...(o.harness ? { harness: o.harness } : {}) });
+      if (!opened.length) lines.push("5 Whys: no trigger fired (no Gate FAIL, no Red band, no run rule firing)");
+      for (const w of opened) lines.push(`5 Whys opened (${TRIGGERS[w.trigger]}): ${relative(o.dir, w.file).replaceAll("\\", "/")}${w.written ? "" : " (already there, left as it is)"}`);
+      if (opened.length) lines.push(`  Why 1 is the harness's trace; fill Whys 2-5 and the countermeasure, check it (harness why check <file>), then add it to the register (${KAIZEN_DIR}/ in the harness repo, harness why register --write)`);
+    } catch (e) {
+      lines.push(`5 Whys: not opened, and nothing else changes: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+  if (o.kaizen) {
+    try {
+      lines.push(registerLine(o.kaizen, o.now));
+    } catch (e) {
+      lines.push(`register: not read: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+  return { opened, lines };
 }
 
 /** A seam that throws is a finding about the seam, never about the release: it is reported and the exit code is left alone. Ctrl-C still ends the plan. */
@@ -481,6 +527,8 @@ export interface ReleaseOutcome {
   code: number;
   dir: string;
   files: { status: string; md: string; html: string; gateMd: string; gateJson: string; confidence?: string; changes?: string };
+  /** The 5 Whys stubs this run opened (or found already there), in `<dir>/kaizen/`. */
+  whys: string[];
 }
 
 /** Why a stage stopped the line, and the next standard step. */
@@ -650,7 +698,10 @@ export function runRelease(r: ReleaseRun, deps: ReleaseDeps): ReleaseOutcome {
   const conf = seams.score?.confidence;
   const changes = seams.changes?.changes;
   // scoreboard: C2, after the score. What it says is printed and reported; it cannot reach `code` or `gate`, decided above.
-  const board = interrupted ? [] : scoreboardStage({ dir, fast: r.fast, ...(r.scoreboard ? { scoreboard: r.scoreboard } : {}), ...(conf ? { confidence: conf } : {}), now: deps.now() });
+  const sb = interrupted ? { lines: [] } : scoreboardStage({ dir, fast: r.fast, ...(r.scoreboard ? { scoreboard: r.scoreboard } : {}), ...(conf ? { confidence: conf } : {}), ...(r.kaizen ? { kaizen: r.kaizen } : {}), now: deps.now() });
+  const board = sb.lines;
+  // 5 Whys: C4, after the scoreboard (its run rules are triggers). It reads `gate` and cannot reach it or `code`.
+  const whys = interrupted ? { opened: [], lines: [] } : whysStage({ dir, fast: r.fast, ...(results.length ? { context: whyContext({ r, dir, gate, entries, confidence: conf, changes, trends: sb.trends, stopped: progress.status.stopped }) } : {}), ...(r.kaizen ? { kaizen: r.kaizen } : {}), now: deps.now() });
 
   // report: always.
   progress.start("report");
@@ -660,18 +711,45 @@ export function runRelease(r: ReleaseRun, deps: ReleaseDeps): ReleaseOutcome {
   const md = join(dir, "report.md");
   const html = join(dir, "report.html");
   const gateMd = readFileSync(gateFiles.md, "utf8");
-  writeFileSync(md, renderReleaseMarkdown({ gateMd, status: progress.status, code, review, seams, board }));
-  writeFileSync(html, renderReleaseHtml({ dir, gate, fast: r.fast, candidate: r.candidate, baseline: r.baseline, code, entries, status: progress.status, review, seams, board }));
+  writeFileSync(md, renderReleaseMarkdown({ gateMd, status: progress.status, code, review, seams, board, whys: whys.lines }));
+  writeFileSync(html, renderReleaseHtml({ dir, gate, fast: r.fast, candidate: r.candidate, baseline: r.baseline, code, entries, status: progress.status, review, seams, board, whys: whys.lines }));
   progress.end("report", "done", `report.md, report.html, gate.md, gate.json${conf ? ", confidence.json" : ""}${changes ? ", changes.json" : ""}`);
   progress.finish(interrupted ? "interrupted" : "finished", code);
   deps.say(`gate: ${gate}${r.fast ? " (--fast: not for a go decision)" : ""} -> exit ${code}`);
   if (conf) deps.say(`confidence: ${rcsLine(conf)}`);
   for (const line of board) deps.say(line);
+  for (const line of whys.lines) deps.say(line);
   if (conf) deps.say(`glance: ${conf.glance.length} place(s) to look (step 8, the one step that stays human)${conf.band === "Amber" ? "; Amber: go only once every item is recorded verified" : ""}${conf.glance.length ? `; mark each: ${markHint(dir)}` : ""}`);
   deps.say(`report: ${html}`);
   if (r.fast) deps.say(FAST_BANNER);
   if (deps.open) deps.open(html);
-  return { code, dir, files: { status: progress.file, md, html, gateMd: gateFiles.md, gateJson: gateFiles.json, ...(conf ? { confidence: join(dir, "confidence.json") } : {}), ...(seams.changes?.file ? { changes: seams.changes.file } : {}) } };
+  return { code, dir, files: { status: progress.file, md, html, gateMd: gateFiles.md, gateJson: gateFiles.json, ...(conf ? { confidence: join(dir, "confidence.json") } : {}), ...(seams.changes?.file ? { changes: seams.changes.file } : {}) }, whys: whys.opened.map((w) => w.file) };
+}
+
+/** What the 5 Whys read of this run, in memory: the same {@link WhyContext} `harness why --run <this dir>` would load. */
+function whyContext(o: { r: ReleaseRun; dir: string; gate: GateWord; entries: GateSummaryEntry[]; confidence: Confidence | undefined; changes: Changes | undefined; trends: Trends | undefined; stopped: ReleaseStatus["stopped"] }): WhyContext {
+  const releaseDir = o.entries.find((e) => e.id === "release")?.runDir;
+  let report: WhyContext["report"];
+  if (releaseDir && existsSync(join(releaseDir, "report.json"))) {
+    try {
+      report = { data: JSON.parse(readFileSync(join(releaseDir, "report.json"), "utf8")) as RunReport, dir: releaseDir };
+    } catch {
+      report = undefined;
+    }
+  }
+  return {
+    dir: o.dir,
+    kind: "release-command",
+    tag: o.r.candidate,
+    baseline: o.r.baseline.tag,
+    gate: o.gate,
+    ...(report ? { report, captures: captures(report.dir) } : {}),
+    ...(o.confidence ? { confidence: o.confidence } : {}),
+    ...(o.changes ? { changes: o.changes } : {}),
+    marks: [],
+    ...(o.stopped ? { stopped: { stage: o.stopped.stage, why: o.stopped.why } } : {}),
+    ...(o.trends ? { trends: o.trends, ...(o.r.scoreboard ? { trendsSource: o.r.scoreboard.file } : {}) } : {}),
+  };
 }
 
 // ---- the summary --------------------------------------------------------------------------------------
@@ -679,7 +757,7 @@ export function runRelease(r: ReleaseRun, deps: ReleaseDeps): ReleaseOutcome {
 type Seams = Partial<Record<"changes" | "score", SeamResult>>;
 
 /** report.md: the gate first (the andon), the RCS and its dimensions under it (in gate.md), then where the line stopped, the stages, and the seams still to be filled. */
-export function renderReleaseMarkdown(o: { gateMd: string; status: ReleaseStatus; code: number; review: string[]; seams: Seams; board?: string[] }): string {
+export function renderReleaseMarkdown(o: { gateMd: string; status: ReleaseStatus; code: number; review: string[]; seams: Seams; board?: string[]; whys?: string[] }): string {
   const lines = [o.gateMd.trimEnd(), ""];
   if (o.status.stopped) lines.push(`### Line stopped at ${o.status.stopped.stage}`, "", o.status.stopped.why, "", `Next standard step: ${o.status.stopped.next}`, "");
   if (o.review.length) lines.push("#### The A/A differences (each needs a mask reviewed or a determinism fix)", "", ...o.review.map((l) => `- ${l}`), "");
@@ -690,7 +768,7 @@ export function renderReleaseMarkdown(o: { gateMd: string; status: ReleaseStatus
   if (o.board?.length) lines.push("### Scoreboard (visual management over time)", "", ...o.board.map((l) => `- ${l.trim()}`), "");
   const conf = o.seams.score?.confidence;
   lines.push("### Glance (gemba)", "", conf ? `At the top, under the RCS: ${conf.glance.length} place(s) to look, ranked by novelty × exposure. Marks go to ${MARKS_FILE} (\`harness glance status --run <this dir>\` reads them back); they never change the Gate or an exit code.` : `Not ranked: ${o.seams.score?.note ?? "the score stage did not run"}.`, "");
-  lines.push("### 5 Whys (kaizen)", "", `Not opened: ${NOT_BUILT.whys}.${o.code === 1 ? " This FAIL is a trigger once it is." : ""}`, "");
+  lines.push("### 5 Whys (kaizen)", "", ...(o.whys?.length ? o.whys.map((l) => `- ${l.trim()}`) : ["- Not opened: the 5 Whys stage did not run."]), "");
   // The per-PR table sits under the score when there is one; without a score it is shown here.
   const ch = o.seams.changes;
   lines.push("### Changes", "", ch?.changes ? (o.seams.score?.confidence ? `${ch.note}. The per-PR table is under the score; every deduction is in changes.json.` : (ch.markdown ?? ch.note)) : `Not shown: ${ch?.note ?? NO_MONOREPO}.`, "");
@@ -700,7 +778,7 @@ export function renderReleaseMarkdown(o: { gateMd: string; status: ReleaseStatus
 const esc = (s: string) => s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
 
 /** report.html: self-contained (no scripts, no external requests), the same order as report.md, links to each run's own report. */
-export function renderReleaseHtml(o: { dir: string; gate: string; fast: boolean; candidate: string; baseline: Baseline; code: number; entries: GateSummaryEntry[]; status: ReleaseStatus; review: string[]; seams: Seams; board?: string[] }): string {
+export function renderReleaseHtml(o: { dir: string; gate: string; fast: boolean; candidate: string; baseline: Baseline; code: number; entries: GateSummaryEntry[]; status: ReleaseStatus; review: string[]; seams: Seams; board?: string[]; whys?: string[] }): string {
   const tone = o.code === 0 ? "pass" : o.code === 1 ? "fail" : "none";
   const link = (runDir: string | undefined) => (runDir ? `<a href="${esc(relative(o.dir, join(runDir, "report.html")).replaceAll("\\", "/"))}">report</a>` : "");
   const rows = o.entries.map((e) => `<tr><td>${esc(e.title)}</td><td>${esc(e.code === "skipped" ? "not run" : e.verdict ? `${e.verdict.toUpperCase()}${e.overridden ? " (OVERRIDDEN)" : ""}` : e.code === 0 ? "ok" : `exit ${e.code}`)}</td><td>${link(e.runDir)}</td></tr>`).join("\n");
@@ -738,7 +816,7 @@ ${stages}
 <h2>Score (visual management)</h2><p class="seam">${esc(o.seams.score?.note ?? "the score stage did not run")}; never an input to the gate or the exit code.${o.seams.score?.confidence ? ' Every deduction and its evidence is in <a href="confidence.json">confidence.json</a>.' : ""}</p>
 ${o.board?.length ? `<h2>Scoreboard (visual management over time)</h2><ul class="seam">${o.board.map((l) => `<li>${esc(l.trim())}</li>`).join("")}</ul>` : ""}
 ${o.seams.score?.confidence ? "" : `<h2>Glance (gemba)</h2><p class="seam">Not ranked: ${esc(o.seams.score?.note ?? "the score stage did not run")}.</p>`}
-<h2>5 Whys (kaizen)</h2><p class="seam">${esc(NOT_BUILT.whys)}</p>
+<h2>5 Whys (kaizen)</h2>${o.whys?.length ? `<ul class="seam">${o.whys.map((l) => `<li>${esc(l.trim())}</li>`).join("")}</ul>` : `<p class="seam">Not opened: the 5 Whys stage did not run.</p>`}
 <h2>Changes</h2><p class="seam">${esc(o.seams.changes?.note ?? NO_MONOREPO)}</p>
 ${!o.seams.score?.confidence && o.seams.changes?.changes ? renderChangesHtml(o.seams.changes.changes) : ""}
 </body></html>
