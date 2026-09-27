@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/tutors-sdk/tutors-release-harness/blob/main/docs/contract/release-status.schema.json",
+  "title": "status.json of harness release (contract 1.8.0, not stable)",
+  "description": "Since 1.8.0. The progress of one `harness release` run, rewritten whole at every change in out/<timestamp>-release-command/status.json, so a dashboard can show 'running: release, 14 of 25 min'. Derived from ReleaseStatus in src/local/release.ts. Not stable: it may change in a minor release.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "command", "candidate", "baseline", "fast", "startedAt", "updatedAt", "state", "stage", "stages"],
+  "definitions": {
+    "stageName": { "enum": ["resolve", "noise", "changes", "release", "rehearse", "score", "report"] }
+  },
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "command": { "const": "release" },
+    "candidate": { "type": "string", "minLength": 1 },
+    "baseline": { "type": "string", "minLength": 1, "description": "The tag the candidate is judged beside." },
+    "fast": { "type": "boolean", "description": "--fast: the report cannot be used for a go decision." },
+    "startedAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" },
+    "state": { "enum": ["running", "finished", "interrupted"] },
+    "stage": { "description": "The stage running now; null when none is.", "anyOf": [{ "$ref": "#/definitions/stageName" }, { "type": "null" }] },
+    "stopped": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stage", "why", "next"],
+      "description": "Where the line stopped (jidoka), why, and the next standard step. Absent when it did not stop.",
+      "properties": { "stage": { "$ref": "#/definitions/stageName" }, "why": { "type": "string" }, "next": { "type": "string" } }
+    },
+    "exitCode": { "enum": [0, 1, 2], "description": "Present once the run has finished." },
+    "stages": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["stage", "state", "expected"],
+        "properties": {
+          "stage": { "$ref": "#/definitions/stageName" },
+          "state": { "enum": ["pending", "running", "done", "failed", "skipped", "interrupted"] },
+          "startedAt": { "type": "string", "format": "date-time" },
+          "elapsed": { "type": "integer", "minimum": 0, "description": "Seconds, once the stage has ended. While it runs: now minus startedAt." },
+          "expected": { "type": "integer", "minimum": 0, "description": "The plan's estimate in seconds; never a timeout." },
+          "note": { "type": "string" }
+        }
+      }
+    }
+  }
+}

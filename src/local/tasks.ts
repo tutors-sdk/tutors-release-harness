@@ -361,10 +361,16 @@ export function readGateEntry(r: StepResult): GateSummaryEntry {
   return entry;
 }
 
-/** The three workflow jobs' verdicts and their PR comments in one file, for reading locally (posting it anywhere is optional). */
-export function renderGateSummary(o: { production: string; candidate: string; entries: GateSummaryEntry[]; code: number; at: string }): string {
+/**
+ * The three workflow jobs' verdicts and their PR comments in one file, for reading locally (posting it anywhere is optional).
+ * `gate` (the one word a reader wants first) and `banner` (a warning that must not be missed) go straight under the heading.
+ */
+export function renderGateSummary(o: { production: string; candidate: string; entries: GateSummaryEntry[]; code: number; at: string; gate?: string; banner?: string }): string {
   const verdictOf = (e: GateSummaryEntry) => (e.code === "skipped" ? "not run" : e.verdict ? `${e.verdict.toUpperCase()}${e.overridden ? " (OVERRIDDEN)" : ""}` : e.code === 0 ? "ok" : `exit ${e.code}`);
-  const lines = [`## Release gate: ${o.candidate} beside ${o.production}`, "", `${o.at} — exit code **${o.code}**`, "", "| step | result | report |", "| --- | --- | --- |"];
+  const lines = [`## Release gate: ${o.candidate} beside ${o.production}`, ""];
+  if (o.gate) lines.push(`**Gate: ${o.gate}**`, "");
+  if (o.banner) lines.push(`> ${o.banner}`, "");
+  lines.push(`${o.at} — exit code **${o.code}**`, "", "| step | result | report |", "| --- | --- | --- |");
   for (const e of o.entries) lines.push(`| ${e.title} | ${verdictOf(e)} | ${e.runDir ? `\`${e.runDir}\`` : ""} |`);
   lines.push("");
   for (const e of o.entries) {
@@ -374,8 +380,12 @@ export function renderGateSummary(o: { production: string; candidate: string; en
   return lines.join("\n");
 }
 
-export function writeGateSummary(outRoot: string, at: Date, o: Parameters<typeof renderGateSummary>[0]): { md: string; json: string } {
-  const dir = resolve(outRoot, `${at.toISOString().replace(/[:.]/g, "-").slice(0, 19)}-gate`);
+/** `<out>/<timestamp>-<suffix>`: the name every run directory has. */
+export const stampedDir = (outRoot: string, at: Date, suffix: string): string => resolve(outRoot, `${at.toISOString().replace(/[:.]/g, "-").slice(0, 19)}-${suffix}`);
+
+/** gate.md and gate.json in `<out>/<timestamp>-gate/`, or in `into` (`harness release` keeps them in its own directory). */
+export function writeGateSummary(outRoot: string, at: Date, o: Parameters<typeof renderGateSummary>[0], into?: string): { md: string; json: string } {
+  const dir = into ?? stampedDir(outRoot, at, "gate");
   mkdirSync(dir, { recursive: true });
   const md = join(dir, "gate.md");
   const json = join(dir, "gate.json");
