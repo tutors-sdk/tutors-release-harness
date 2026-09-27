@@ -53,6 +53,28 @@ describe("engines catch one planted change each", () => {
     expect(hunks.find((h) => h.scope === "GET /course/localhost:8080")!.summary).toContain("200 → 500");
   });
 
+  it("network: a streamed video fetched a different number of times is not a hunk, but one never fetched is", () => {
+    const video = { method: "GET", url: "{{course}}/note-1/img/video.mov", status: 206, contentType: "video/quicktime", cacheControl: "", schemaHash: "" };
+    const a = capture("a");
+    const b = capture("b");
+    a.journeys[0]!.pages[0]!.network.push(...Array.from({ length: 4 }, () => ({ ...video })));
+    b.journeys[0]!.pages[0]!.network.push(...Array.from({ length: 5 }, () => ({ ...video })));
+    expect(diff(a, b)).toEqual([]);
+
+    const gone = capture("b");
+    const hunks = diff(a, gone);
+    expect(hunks).toHaveLength(1);
+    expect(hunks[0]!.summary).toContain("request no longer made on b");
+  });
+
+  it("network: a repeated request that is not streamed media still counts", () => {
+    const b = capture("b");
+    b.journeys[0]!.pages[0]!.network.push({ ...b.journeys[0]!.pages[0]!.network[0]! });
+    const hunks = diff(capture("a"), b);
+    expect(hunks).toHaveLength(1);
+    expect(hunks[0]!.summary).toMatch(/requested 1× on a, 2× on b/);
+  });
+
   it("network: a changed response schema is a hunk even when status and type match", () => {
     const b = capture("b");
     b.journeys[0]!.pages[0]!.network[1]!.schemaHash = "cafebabe";

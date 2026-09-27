@@ -128,14 +128,26 @@ function routeOf(url: string): string {
   return url.replace("{{origin}}", "").replace(/^https?:\/\//, "");
 }
 
+/**
+ * A streamed media request: a video or audio body, or any partial (206) response. The browser fetches such a
+ * file in as many range requests as its buffering needs, which depends on timing, so how often it is requested
+ * is not the release's behaviour; whether it is requested, its status and its type are.
+ */
+export function isStreamedMedia(n: { status: number; contentType: string }): boolean {
+  return n.status === 206 || /^(video|audio)\//i.test(n.contentType);
+}
+
 export const network: Engine = (a, b) => {
   const hunks: Hunk[] = [];
   for (const pair of pagePairs(a, b)) {
     const key = (n: { method: string; url: string }) => `${n.method} ${n.url}`;
-    const countA = new Map<string, number>();
-    const countB = new Map<string, number>();
-    for (const n of pair.a.network) countA.set(key(n), (countA.get(key(n)) ?? 0) + 1);
-    for (const n of pair.b.network) countB.set(key(n), (countB.get(key(n)) ?? 0) + 1);
+    const count = (entries: typeof pair.a.network) => {
+      const counts = new Map<string, number>();
+      for (const n of entries) counts.set(key(n), isStreamedMedia(n) ? 1 : (counts.get(key(n)) ?? 0) + 1);
+      return counts;
+    };
+    const countA = count(pair.a.network);
+    const countB = count(pair.b.network);
 
     for (const [k, c] of countA) {
       const other = countB.get(k) ?? 0;
