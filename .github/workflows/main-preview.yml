@@ -1,0 +1,277 @@
+# Main to RC: what release mode would say if the monorepo's main were cut as a
+# release candidate today. A forecast, not a gate: nothing is tagged, recorded or
+# deployed, and a FAIL does not fail the run.
+#
+#   side a   production: the reader overlay's newTag on the monorepo's main, the
+#            same tag release-dispatch.yml would put on side a
+#   side b   sha-<short> of the newest commit on main whose image-build.yml push
+#            run succeeded (so its images are signed; the :main tag is pushed
+#            before it is signed and cannot be trusted mid-build)
+#   claims   release/claims.yaml at that commit: the next release's claims so far
+#
+# The same release job as release.yml (5 runs, k6 20x30s, the pinned vulnerability
+# database, the noise status), so its verdict is the one the release candidate
+# would get today. Each unclaimed diff is a claim, or a fix, the next release needs.
+# The report and its scorecard are kept on the `main-preview` branch
+# (reports/index.json, newest first) for the Release Hub and anyone else to read.
+# A commit already judged by this harness version is skipped: a quiet day is one
+# API call. `harness preview resolve` (src/ci/main-preview.ts) decides what to judge; docs/contract.md, "Main to RC".
+name: Main to RC
+
+on:
+  schedule:
+    # After the nightly A/A (02:17), so the run finds tonight's noise status.
+    - cron: "23 4 * * *"
+  workflow_dispatch:
+    inputs:
+      production:
+        description: "Side a (default: the reader overlay's newTag on the monorepo's main)"
+        required: false
+      candidate:
+        description: "Side b (default: sha-<short> of the newest commit on main with signed images)"
+        required: false
+      force:
+        description: "Judge again even when this pair was already judged by this harness version"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: main-preview
+  cancel-in-progress: false
+
+jobs:
+  resolve:
+    name: What main would ship
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      production: ${{ steps.resolve.outputs.production }}
+      candidate: ${{ steps.resolve.outputs.candidate }}
+      sha: ${{ steps.resolve.outputs.sha }}
+      claims_url: ${{ steps.resolve.outputs.claims_url }}
+      skip: ${{ steps.resolve.outputs.skip }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Resolve production and main's images
+        id: resolve
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PRODUCTION: ${{ inputs.production }}
+          CANDIDATE: ${{ inputs.candidate }}
+          FORCE: ${{ inputs.force }}
+        run: |
+          pnpm harness preview resolve ${PRODUCTION:+--a "$PRODUCTION"} ${CANDIDATE:+--b "$CANDIDATE"} \
+            $([ "$FORCE" = true ] && echo --force)
+
+  preview:
+    name: Release mode, main as the candidate
+    needs: resolve
+    if: needs.resolve.outputs.skip == 'false'
+    # The runner image the nightly A/A calibrated the noise floor on, as release.yml.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      HARNESS_IMAGE_PREFIX: ${{ vars.HARNESS_IMAGE_PREFIX || 'quay.io/tutors-sdk/tutors-{app}' }}
+      HARNESS_COSIGN_IDENTITY: ${{ vars.HARNESS_COSIGN_IDENTITY || '^https://github.com/tutors-sdk/tutors-mono-repo/\.github/workflows/image-build\.yml@' }}
+      PRODUCTION: ${{ needs.resolve.outputs.production }}
+      CANDIDATE: ${{ needs.resolve.outputs.candidate }}
+      SHA: ${{ needs.resolve.outputs.sha }}
+      CLAIMS_URL: ${{ needs.resolve.outputs.claims_url }}
+      GRYPE_VERSION: v0.119.0
+      HARNESS_VULN_DB_DIR: ${{ github.workspace }}/.harness/vuln-db
+      # As release.yml: the forecast is only worth having if it is judged as the candidate would be.
+      HARNESS_REQUIRE_STATIC: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - uses: sigstore/cosign-installer@v4.1.2
+
+      - uses: anchore/scan-action/download-grype@v7.4.2
+        id: grype
+        with:
+          grype-version: ${{ env.GRYPE_VERSION }}
+      - name: Put the pinned grype on PATH
+        run: dirname "${{ steps.grype.outputs.cmd }}" >> "$GITHUB_PATH"
+      - name: Which day's vulnerability database
+        id: vulndb
+        run: echo "day=$(date -u +%F)" >> "$GITHUB_OUTPUT"
+      - name: Restore the vulnerability database
+        id: vulndb-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .harness/vuln-db
+          key: vuln-db-grype-${{ env.GRYPE_VERSION }}-${{ steps.vulndb.outputs.day }}
+          restore-keys: |
+            vuln-db-grype-${{ env.GRYPE_VERSION }}-
+      - name: Fetch the vulnerability database once (a cache miss only)
+        id: vulndb-fetch
+        if: steps.vulndb-cache.outputs.cache-hit != 'true'
+        continue-on-error: true
+        run: pnpm harness vuln-db update
+      - name: Keep today's vulnerability database for the other runs
+        if: steps.vulndb-fetch.outcome == 'success'
+        uses: actions/cache/save@v4
+        with:
+          path: .harness/vuln-db
+          key: vuln-db-grype-${{ env.GRYPE_VERSION }}-${{ steps.vulndb.outputs.day }}
+      - name: The vulnerability database this run judges with
+        run: pnpm harness vuln-db status
+
+      - name: Pull and verify both sides
+        run: pnpm harness images ensure --a "$PRODUCTION" --b "$CANDIDATE"
+
+      # The next release's claims so far. A claim that names a Rule needs the Rules main defines, built the way
+      # release-dispatch.yml builds them (pnpm release:rules at the commit); best effort, as there.
+      - name: Fetch main's claims
+        run: curl -fsSL "$CLAIMS_URL" -o claims.yaml
+      - name: Check out the monorepo at that commit, for its Rules
+        if: env.SHA != ''
+        continue-on-error: true
+        uses: actions/checkout@v4
+        with:
+          repository: tutors-sdk/tutors-mono-repo
+          ref: ${{ env.SHA }}
+          path: monorepo
+          persist-credentials: false
+      - name: Main's Rules
+        if: env.SHA != ''
+        continue-on-error: true
+        working-directory: monorepo
+        run: |
+          pnpm install --frozen-lockfile --ignore-scripts --filter .
+          pnpm --silent release:rules --ref "$SHA" --out ../rules.json
+
+      - name: Fetch the latest noise status
+        id: noise
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p noise
+          gh api -H "Accept: application/vnd.github.raw" "repos/${GITHUB_REPOSITORY}/contents/noise-status.json?ref=noise" > noise/noise-status.json 2>/dev/null || rm -f noise/noise-status.json
+          pnpm harness noise status --store noise
+
+      # A verdict, PASS, WARN or FAIL, is the forecast and the job succeeds; only "could not judge" (exit 2) fails it.
+      - name: Release mode
+        env:
+          NOISE_FILE: ${{ steps.noise.outputs.noise_file }}
+        run: |
+          rules=""; if [ -s rules.json ]; then rules=rules.json; fi
+          set +e
+          pnpm harness run --mode release --a "$PRODUCTION" --b "$CANDIDATE" --runs 5 --load 20x30s \
+            --claims claims.yaml ${rules:+--rules "$rules"} ${NOISE_FILE:+--noise "$NOISE_FILE"}
+          code=$?
+          set -e
+          if [ -f rules.json ]; then mkdir -p out && cp rules.json out/rules.json; fi
+          if [ "$code" -gt 1 ]; then exit "$code"; fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: main-preview-report
+          path: out/
+          retention-days: 14
+
+      - name: Show the report
+        if: always()
+        run: |
+          if ls out/*-release/report.md > /dev/null 2>&1; then
+            { echo "### Main (${CANDIDATE}) as a release candidate against production ${PRODUCTION}"; echo; cat out/*-release/report.md; } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### Main to RC: could not judge (no report: the run stopped before a verdict, see the step log)" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  # The forecast, readable at a raw URL after the artifact has expired: reports/index.json and each run's report and
+  # scorecard, on the `main-preview` branch. One commit per run, never forced; the last 60 runs are kept.
+  publish:
+    name: Keep the forecast
+    needs: [resolve, preview]
+    if: always() && needs.preview.result != 'skipped'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      # Pushes this repository's `main-preview` branch and nothing else.
+      contents: write
+    concurrency:
+      group: main-preview-branch
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          path: harness
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: harness/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: harness/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+        working-directory: harness
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: main-preview-report
+          path: reports
+      - name: Push the report to the main-preview branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          PRODUCTION: ${{ needs.resolve.outputs.production }}
+          CANDIDATE: ${{ needs.resolve.outputs.candidate }}
+        run: |
+          report="$(find reports -path '*-release/report.json' 2>/dev/null | head -1)"
+          if [ -z "$report" ]; then echo "no report was written (release mode did not reach a verdict): nothing to keep"; exit 0; fi
+          remote="https://github.com/${GITHUB_REPOSITORY}.git"
+          auth="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          if git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth}" ls-remote --exit-code --heads "$remote" main-preview > /dev/null 2>&1; then
+            git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth}" clone -q --depth 1 --branch main-preview "$remote" publish
+          else
+            git init -q -b main-preview publish
+          fi
+          rules_flag=""
+          if [ -f reports/rules.json ]; then rules_flag="--rules ../reports/rules.json"; fi
+          (cd harness && pnpm harness reports keep --dir "../$(dirname "$report")" --store ../publish --run-url "$RUN_URL" --keep-last 60 $rules_flag)
+          cat > publish/README.md <<'README'
+          # main-preview
+
+          Written by `.github/workflows/main-preview.yml` ("Main to RC"), one commit per run. Do not edit.
+
+          Each run is release mode with production on side a and the monorepo's main (`sha-<short>`) on side b, judged
+          against main's `release/claims.yaml`: what the next release candidate would get if it were cut today. A
+          forecast, never a gate or a release record.
+
+          - `reports/index.json`: the last 60 runs, newest first, each with its verdict and scorecard headline.
+          - `reports/<ranAt>-release/report.{json,md,html}` and `scorecard.{json,md}` for each.
+
+          See `docs/contract.md`, "Main to RC", on the default branch.
+          README
+          cd publish
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A README.md reports
+          if git diff --cached --quiet; then echo "the report is already kept"; exit 0; fi
+          git commit -q -m "main preview: ${CANDIDATE} against ${PRODUCTION}"
+          git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth}" push "https://github.com/${GITHUB_REPOSITORY}.git" main-preview

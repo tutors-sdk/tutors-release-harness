@@ -833,8 +833,8 @@ describe("workflows", () => {
     expect(actual).toEqual(declared);
   });
 
-  it("nothing pushes, tags or releases anywhere but the noise and release-records branches of this repository, each from its own workflow", () => {
-    const branchOf: Record<string, string> = { "nightly-noise.yml": "noise", "release.yml": "release-records" };
+  it("nothing pushes, tags or releases anywhere but the noise, release-records and main-preview branches of this repository, each from its own workflow", () => {
+    const branchOf: Record<string, string> = { "nightly-noise.yml": "noise", "release.yml": "release-records", "main-preview.yml": "main-preview" };
     let pushes = 0;
     for (const f of files) {
       for (const m of text[f]!.matchAll(/git (?:-c [^\n]*?)?push[^\n]*/g)) {
@@ -842,7 +842,7 @@ describe("workflows", () => {
         expect(Object.keys(branchOf), m[0]).toContain(f);
         expect(m[0]).toContain("${GITHUB_REPOSITORY}");
         expect(m[0]).toMatch(new RegExp(` ${branchOf[f]}$`));
-        // the noise branch is forced every night; the release records are never forced: no record is lost
+        // the noise branch is forced every night; the release records and the forecasts are never forced: no record is lost
         expect(/--force/.test(m[0]), m[0]).toBe(f === "nightly-noise.yml");
       }
       expect(text[f], f).not.toMatch(/git tag|gh release|gh pr |gh api [^\n]*-X (?:POST|PUT|PATCH|DELETE)/);
