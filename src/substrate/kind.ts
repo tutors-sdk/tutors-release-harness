@@ -223,7 +223,7 @@ export function kindUp(a: SideSpec, b: SideSpec, now: string, log: (m: string) =
       } catch (e) {
         // A cluster made before the time app joined never published its NodePorts on the host.
         const hint = app === "time" ? `; a cluster created before the time app was added does not publish ${NODE_PORT.a.time.host} and ${NODE_PORT.b.time.host}: recreate it with kind delete cluster --name ${CLUSTER}` : "";
-        throw new Error(`${e instanceof Error ? e.message : e}${hint}`);
+        throw new Error(`${e instanceof Error ? e.message : e}${hint}`, { cause: e });
       }
     }
   }
