@@ -143,6 +143,17 @@ jobs:
           echo "exit_code=$code" >> "$GITHUB_OUTPUT"
           exit "$code"
 
+      # Which build production's reader says it serves (harness 1.6.0), as an annotation: it is read from the run's page and
+      # the checks API without downloading the artifact, including when the rollback issue already carries these differences.
+      - name: Say which build production serves
+        if: always() && steps.recording.outputs.found == 'true'
+        run: |
+          summary="$(find out -path '*-post-deploy/report.json' -exec jq -r '.productionBuild.summary // empty' {} + | head -1)"
+          if [ -n "$summary" ]; then
+            echo "::notice title=Production build::${summary}"
+            { echo "### Production build"; echo; echo "${summary}"; } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always() && steps.recording.outputs.found == 'true'
         with:
