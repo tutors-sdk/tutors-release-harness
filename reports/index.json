@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "runs": [
+    {
+      "id": "2026-09-27T09-14-51Z-release",
+      "mode": "release",
+      "ranAt": "2026-09-27T09:14:51.337Z",
+      "verdict": "warn",
+      "reasons": [
+        "advisory only: the last A/A run (2026-09-27T08:21:17.849Z) was degraded and does not count: journey \"reference-course-reads\" failed on both sides, so this run saw nothing of its pages",
+        "865 unclaimed diff(s)"
+      ],
+      "sides": {
+        "a": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:16.2.2",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:16.2.2",
+          "live": "quay.io/tutors-sdk/tutors-live:16.2.2",
+          "time": "quay.io/tutors-sdk/tutors-time:16.2.2"
+        },
+        "b": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:sha-54a8f83",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:sha-54a8f83",
+          "live": "quay.io/tutors-sdk/tutors-live:sha-54a8f83",
+          "time": "quay.io/tutors-sdk/tutors-time:sha-54a8f83"
+        }
+      },
+      "harnessVersion": "1.4.11",
+      "runUrl": "https://github.com/tutors-sdk/tutors-release-harness/actions/runs/36308104339",
+      "score": {
+        "score": 30,
+        "grade": "D",
+        "normalness": "degraded",
+        "manual": 5
+      },
+      "files": [
+        "2026-09-27T09-14-51Z-release/report.json",
+        "2026-09-27T09-14-51Z-release/report.md",
+        "2026-09-27T09-14-51Z-release/report.html",
+        "2026-09-27T09-14-51Z-release/scorecard.json",
+        "2026-09-27T09-14-51Z-release/scorecard.md"
+      ]
+    }
+  ]
+}
