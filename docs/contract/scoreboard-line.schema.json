@@ -1,0 +1,70 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/tutors-sdk/tutors-release-harness/blob/main/docs/contract/scoreboard-line.schema.json",
+  "title": "scoreboard/releases.jsonl: one line per release run (contract 1.11.0, not stable)",
+  "description": "Since 1.11.0. Each line of scoreboard/releases.jsonl is one of these, as one JSON object on one line. Appended by `harness scoreboard append` (and by `harness release` after its score) from a scored run; never edited, reordered or removed (`harness guard scoreboard`). A re-run is a new line with the same tag and the next run number. Advisory: never an input to the gate, a verdict or an exit code. Derived from ScoreboardLine in src/scoreboard/line.ts. Not stable: it may change in a minor release; schemaVersion changes when a reader must.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "tag", "run", "date", "appendedAt", "gate", "rcs", "band", "weightsVersion", "dimensions", "masks", "masksNeverFired", "claims", "staleClaims", "journeys", "mutants", "prs"],
+  "definitions": {
+    "count": { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }] },
+    "dimension": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "status", "score", "floorBreached"],
+      "properties": {
+        "id": { "enum": ["claim-coverage", "noise-health", "statistical-margin", "rehearsals", "test-signal", "traceability", "change-risk", "post-deploy"] },
+        "status": { "enum": ["measured", "not measured"] },
+        "score": { "anyOf": [{ "type": "integer", "minimum": 0, "maximum": 100 }, { "type": "null" }], "description": "null when not measured (never 100 for a missing input)." },
+        "floorBreached": { "type": "boolean" }
+      }
+    },
+    "pr": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pr", "points", "firstContribution", "reviewed", "files", "deductions"],
+      "properties": {
+        "pr": { "type": ["integer", "null"], "description": "null for a commit straight to main." },
+        "points": { "type": "number", "minimum": 0 },
+        "author": { "type": "string", "description": "A fact for the per-contributor trend only: never a reason, never for reviewing a person." },
+        "firstContribution": { "type": "boolean" },
+        "reviewed": { "type": ["boolean", "null"] },
+        "files": { "type": "array", "items": { "type": "string" } },
+        "deductions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["rule", "points"],
+            "properties": { "rule": { "type": "string" }, "points": { "type": "number", "minimum": 0 }, "file": { "type": "string" }, "floor": { "const": true } }
+          }
+        }
+      }
+    }
+  },
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "tag": { "type": "string", "minLength": 1, "description": "The candidate tag." },
+    "run": { "type": "integer", "minimum": 1, "description": "1 for the tag's first line; a re-run is the next number (a logged deviation, never an edit)." },
+    "date": { "type": "string", "description": "When the release run ran (its report's ranAt); else when the line was appended." },
+    "appendedAt": { "type": "string" },
+    "baseline": { "type": "string" },
+    "gate": { "enum": ["PASS", "WARN", "FAIL", "FAIL (OVERRIDDEN)", "NOT JUDGED"] },
+    "rcs": { "anyOf": [{ "type": "integer", "minimum": 0, "maximum": 100 }, { "type": "null" }] },
+    "band": { "anyOf": [{ "enum": ["Green", "Amber", "Red"] }, { "type": "null" }] },
+    "weightsVersion": { "anyOf": [{ "type": "string", "pattern": "^[0-9a-f]{12}$" }, { "type": "null" }], "description": "Which weights, floors, bands and rules scored it; a change is a discontinuity the trends show. null for a confidence.json written before 1.11.0." },
+    "harness": { "type": "object", "additionalProperties": false, "required": ["version", "contractVersion"], "properties": { "version": { "type": "string" }, "contractVersion": { "type": "string" } } },
+    "dimensions": { "type": "array", "minItems": 8, "maxItems": 8, "items": { "$ref": "#/definitions/dimension" } },
+    "masks": { "$ref": "#/definitions/count", "description": "Masks the release run applied; null without a release report." },
+    "masksNeverFired": { "anyOf": [{ "type": "array", "items": { "type": "string" } }, { "type": "null" }], "description": "The masks that fired nothing in that run, by id." },
+    "claims": { "$ref": "#/definitions/count" },
+    "staleClaims": { "$ref": "#/definitions/count" },
+    "journeys": { "anyOf": [{ "type": "object", "additionalProperties": false, "required": ["passed", "total"], "properties": { "passed": { "type": "integer", "minimum": 0 }, "total": { "type": "integer", "minimum": 0 } } }, { "type": "null" }], "description": "Journeys the candidate completed in every run, of the distinct journeys it ran; null without the candidate's capture." },
+    "mutants": {
+      "anyOf": [{ "type": "object", "additionalProperties": false, "required": ["ranAt", "caught", "total"], "properties": { "ranAt": { "type": "string" }, "caught": { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }] }, "total": { "type": "integer", "minimum": 0 } } }, { "type": "null" }],
+      "description": "The latest weekly mutants record (mutants.jsonl beside the file) at the time of the line: caught and attributed, of planted. null when there is none."
+    },
+    "prs": { "anyOf": [{ "type": "array", "items": { "$ref": "#/definitions/pr" } }, { "type": "null" }], "description": "The per-PR risk lines of changes.json; null when change risk was not measured." },
+    "runUrl": { "type": "string" }
+  }
+}

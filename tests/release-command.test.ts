@@ -225,13 +225,13 @@ function clock(start = Date.parse("2026-09-27T10:00:00Z")) {
 const reuse: NoiseDecision = { action: "reuse", noise: "/s/noise-status.json", why: "reusing the local noise store: clean" };
 const runAA: NoiseDecision = { action: "run", why: "an A/A of the baseline first: stale" };
 
-function go(o: { fast?: boolean; noise?: NoiseDecision; fake?: Parameters<typeof fakeExecutor>[1]; interruptAfter?: (calls: string[][]) => boolean; score?: ScoreExtras; monorepo?: string }) {
+function go(o: { fast?: boolean; noise?: NoiseDecision; fake?: Parameters<typeof fakeExecutor>[1]; interruptAfter?: (calls: string[][]) => boolean; score?: ScoreExtras; monorepo?: string; scoreboard?: string }) {
   const out = tmp("out");
   const lines: string[] = [];
   const fake = fakeExecutor(out, { ...o.fake, statusFile: () => findStatus(out) });
   const opened: string[] = [];
   const outcome = runRelease(
-    { candidate: "16.3.0-rc.1", baseline: base, fast: o.fast ?? false, outRoot: out, noise: o.noise ?? reuse, ...(o.score ? { score: o.score } : {}), ...(o.monorepo ? { monorepo: o.monorepo } : {}) },
+    { candidate: "16.3.0-rc.1", baseline: base, fast: o.fast ?? false, outRoot: out, noise: o.noise ?? reuse, ...(o.score ? { score: o.score } : {}), ...(o.monorepo ? { monorepo: o.monorepo } : {}), ...(o.scoreboard ? { scoreboard: { file: o.scoreboard } } : {}) },
     {
       ex: fake.ex,
       env: {},
@@ -568,5 +568,77 @@ describe("the changes stage (C1): harness changes in the monorepo checkout, fed 
     const r = go({ monorepo: "/m", fake: { changes }, interruptAfter: (calls) => calls.some((c) => c[0] === "changes") });
     expect(r.fake.calls.map((c) => c[0])).toEqual(["images", "changes", "stack"]);
     expect(r.status).toMatchObject({ state: "interrupted", stopped: { stage: "changes" } });
+  });
+});
+
+describe("the scoreboard (C2): a line after the score, the run rules printed, never an exit code", () => {
+  const board = () => join(tmp("board"), "releases.jsonl");
+  const opts = (v: Record<string, string | boolean>) => ({ "dry-run": false, fast: false, open: false, ...v });
+  const lines = (file: string) => readFileSync(file, "utf8").trim().split("\n").map((l) => JSON.parse(l) as { tag: string; run: number; gate: string; rcs: number | null });
+
+  it("appends the run's line after the score, prints it and the run rules after the RCS, and lists them in report.md", () => {
+    const file = board();
+    const r = go({ scoreboard: file });
+    expect(r.outcome.code).toBe(0);
+    expect(lines(file)).toMatchObject([{ tag: "16.3.0-rc.1", run: 1, gate: "PASS", rcs: 100 }]);
+    const at = r.lines.findIndex((l) => l.startsWith("confidence: "));
+    expect(r.lines[at + 1]).toBe(`scoreboard: 16.3.0-rc.1 run 1, Gate PASS, RCS 100 Green, 4 of 8 dimensions measured -> ${file}`);
+    expect(r.lines[at + 2]).toBe("  run rules: none firing");
+    expect(r.md).toContain("### Scoreboard (visual management over time)");
+    expect(r.html).toContain("Scoreboard (visual management over time)");
+    // a second run of the same candidate is the next run number, and the first line is untouched
+    const first = readFileSync(file, "utf8");
+    go({ scoreboard: file });
+    expect(readFileSync(file, "utf8").startsWith(first)).toBe(true);
+    expect(lines(file).map((l) => l.run)).toEqual([1, 2]);
+  });
+
+  it("a run rule firing at this release is printed, and opens a kaizen item; the exit code is the gate's", () => {
+    const file = board();
+    const seed = (tag: string, score: number) => ({ schemaVersion: 1, tag, run: 1, date: "2026-09-01T00:00:00Z", appendedAt: "2026-09-01T00:00:00Z", gate: "PASS", rcs: 80, band: "Amber", weightsVersion: null, dimensions: [{ id: "claim-coverage", status: "measured", score, floorBreached: false }], masks: null, masksNeverFired: null, claims: null, staleClaims: null, journeys: null, mutants: null, prs: null });
+    writeFileSync(file, `${JSON.stringify(seed("16.2.0", 60))}\n${JSON.stringify(seed("16.2.1", 60))}\n`);
+    const r = go({ scoreboard: file });
+    expect(r.outcome.code).toBe(0);
+    expect(r.lines).toContain("  run rule: Claim coverage: two of the last three releases below 75 (16.2.0 60, 16.2.1 60, 16.3.0-rc.1 100) -> opens a kaizen item");
+  });
+
+  it("a FAIL is on the board too, with no RCS; --fast is not; neither changes the exit code", () => {
+    const file = board();
+    const fail = go({ scoreboard: file, fake: { verdicts: { release: "fail" } } });
+    expect(fail.outcome.code).toBe(1);
+    expect(lines(file)).toMatchObject([{ gate: "FAIL", rcs: null }]);
+    const fastFile = board();
+    const fast = go({ scoreboard: fastFile, fast: true });
+    expect(fast.outcome.code).toBe(go({ fast: true }).outcome.code);
+    expect(existsSync(fastFile)).toBe(false);
+    expect(fast.lines).toContain("scoreboard: not appended (--fast: this report cannot be used for a go decision)");
+  });
+
+  it("a scoreboard that cannot be written is reported and changes nothing", () => {
+    const file = board();
+    writeFileSync(file, "not a scoreboard\n");
+    for (const fake of [{}, { verdicts: { release: "fail" } }]) {
+      const plain = go({ fake });
+      const broken = go({ fake, scoreboard: file });
+      expect(broken.outcome.code).toBe(plain.outcome.code);
+      expect(broken.lines.some((l) => l.startsWith("scoreboard: not appended, and nothing else changes:"))).toBe(true);
+    }
+    expect(readFileSync(file, "utf8")).toBe("not a scoreboard\n");
+  });
+
+  it("the command appends to HARNESS_HOME/scoreboard by default, --scoreboard names another file; --dry-run says which", () => {
+    const home = tmp("home");
+    const out = tmp("out");
+    const said: string[] = [];
+    expect(releaseCommand(opts({ candidate: "16.3.0-rc.1", baseline: "16.2.2", out }), { env: {}, home, say: (m) => said.push(m), ex: fakeExecutor(out).ex, now: clock() })).toBe(0);
+    expect(lines(join(home, "scoreboard", "releases.jsonl"))).toHaveLength(1);
+    const elsewhere = board();
+    const out2 = tmp("out");
+    releaseCommand(opts({ candidate: "16.3.0-rc.1", baseline: "16.2.2", out: out2, scoreboard: elsewhere }), { env: {}, home, say: () => {}, ex: fakeExecutor(out2).ex, now: clock() });
+    expect(lines(elsewhere)).toHaveLength(1);
+    expect(lines(join(home, "scoreboard", "releases.jsonl"))).toHaveLength(1);
+    const dry: string[] = [];
+    releaseCommand(opts({ candidate: "16.3.0-rc.1", baseline: "16.2.2", "dry-run": true }), { env: {}, home, say: (m) => dry.push(m) });
+    expect(dry.join("\n")).toContain(`scoreboard: the line is appended to ${join(home, "scoreboard", "releases.jsonl")}`);
   });
 });

@@ -386,6 +386,119 @@ jobs:
           git commit -q -m "release record: ${candidate} (${release})"
           git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth}" push "https://github.com/${GITHUB_REPOSITORY}.git" release-records
 
+  # The release scoreboard (docs/contract.md, "The scoreboard"): this run's line, appended to scoreboard/releases.jsonl on the
+  # `scoreboard` branch of THIS repository. main takes changes only through a pull request (its ruleset), so the line goes to
+  # a data branch the way the release records do: one commit per line, never forced, and the file only ever gains lines
+  # (checked before the push). A PR may copy the file to main; `harness guard scoreboard` lets it only add lines there too.
+  # Advisory, and after the gate: it scores the finished reports (harness confidence), so nothing here reaches a verdict.
+  scoreboard:
+    name: Append the scoreboard line
+    needs: [release, migration, upgrade]
+    # A run that never reached a verdict left no report: nothing to score, and that is not an error.
+    if: always() && needs.release.result != 'skipped'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      # Pushes this repository's `scoreboard` branch and nothing else.
+      contents: write
+    concurrency:
+      group: scoreboard-branch
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          path: harness
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          package_json_file: harness/package.json
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: harness/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+        working-directory: harness
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        continue-on-error: true
+        with:
+          name: release-report
+          path: reports/release
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        continue-on-error: true
+        with:
+          name: migration-report
+          path: reports/migration
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        continue-on-error: true
+        with:
+          name: upgrade-report
+          path: reports/upgrade
+      # Change risk and the per-PR risk lines: the monorepo's history between the two tags (public; read-only). Without it
+      # change risk is "not measured" on the line, never assumed clean.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        continue-on-error: true
+        with:
+          repository: tutors-sdk/tutors-mono-repo
+          persist-credentials: false
+          fetch-depth: 0
+          path: mono
+      - name: What changed between the two tags
+        continue-on-error: true
+        working-directory: harness
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: pnpm harness changes --a "$PRODUCTION" --b "$CANDIDATE" --monorepo ../mono --out ../changes.json
+      - name: Score the run and append its line
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          report="$(find reports/release -path '*-release/report.json' 2>/dev/null | head -1)"
+          if [ -z "$report" ]; then echo "no release report (release mode did not reach a verdict): nothing to score, no line"; exit 0; fi
+          case "$CANDIDATE" in *[!A-Za-z0-9._-]*) echo "unsafe candidate tag: refusing to append" >&2; exit 1;; esac
+          run_dir="$PWD/$(dirname "$report")"
+          migration="$(find reports/migration -path '*-migration/report.json' 2>/dev/null | head -1)"
+          upgrade="$(find reports/upgrade -path '*-upgrade/report.json' 2>/dev/null | head -1)"
+          score=(--run "$run_dir")
+          if [ -n "$migration" ]; then score+=(--migration "$PWD/$(dirname "$migration")"); fi
+          if [ -n "$upgrade" ]; then score+=(--upgrade "$PWD/$(dirname "$upgrade")"); fi
+          if [ -f changes.json ]; then score+=(--change-risk "$PWD/changes.json"); fi
+          (cd harness && pnpm harness confidence "${score[@]}")
+          remote="https://github.com/${GITHUB_REPOSITORY}.git"
+          auth="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          if git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth}" ls-remote --exit-code --heads "$remote" scoreboard > /dev/null 2>&1; then
+            git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth}" clone -q --depth 1 --branch scoreboard "$remote" publish
+          else
+            git init -q -b scoreboard publish
+          fi
+          mkdir -p publish/scoreboard
+          touch publish/scoreboard/releases.jsonl
+          cp publish/scoreboard/releases.jsonl before.jsonl
+          (cd harness && pnpm harness scoreboard append --run "$run_dir/confidence.json" --file ../publish/scoreboard/releases.jsonl --tag "$CANDIDATE" --run-url "$RUN_URL")
+          # Append-only, checked on the bytes: the file before this run must be exactly the start of the file after it.
+          head -c "$(wc -c < before.jsonl)" publish/scoreboard/releases.jsonl | cmp -s - before.jsonl || { echo "the scoreboard would lose or change a line: refusing to push" >&2; exit 1; }
+          (cd harness && pnpm harness scoreboard trends --file ../publish/scoreboard/releases.jsonl)
+          cat > publish/README.md <<'README'
+          # scoreboard
+
+          Written by the `scoreboard` job of `.github/workflows/release.yml` (one line per release run) and the `record` job of
+          `.github/workflows/weekly-mutants.yml` (one line per weekly self-test). Append-only, never forced. Do not edit.
+
+          - `scoreboard/releases.jsonl`: one line per release run (`docs/contract/scoreboard-line.schema.json`); a re-run is the same tag with the next run number.
+          - `scoreboard/mutants.jsonl`: the harness's weekly mutants, caught of planted.
+
+          `harness scoreboard trends --file scoreboard/releases.jsonl` reads it; the reports site draws it (scoreboard.html).
+          See `docs/contract.md`, "The scoreboard", on the default branch.
+          README
+          cd publish
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md scoreboard/releases.jsonl
+          if git diff --cached --quiet; then echo "nothing new on the scoreboard"; exit 0; fi
+          git commit -q -m "scoreboard: ${CANDIDATE}"
+          git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth}" push "https://github.com/${GITHUB_REPOSITORY}.git" scoreboard
+
   # An override is a recorded event. The reports carry it (override.applied); this opens one issue per applied
   # override in THIS repository, so the quarterly count is `gh issue list --label harness-override`.
   override-record:

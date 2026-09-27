@@ -19,7 +19,7 @@ import { harnessInfo } from "./version.ts";
 import { helpFor, parseArgsErrorText } from "./local/usage.ts";
 import { RequirementError, requirements } from "./not-collected.ts";
 import { previewResolve } from "./ci/main-preview.ts";
-import { UsageError, changesCommand, confidenceCommand, doctorCommand, guardCommand, localCommand, noiseCommand, overrideCommand, pruneCommand, recordAppliedOverride, releaseCommand, reportsCommand, scorecardCommand, vulnDbCommand } from "./local/cli.ts";
+import { UsageError, changesCommand, confidenceCommand, doctorCommand, guardCommand, localCommand, noiseCommand, overrideCommand, pruneCommand, recordAppliedOverride, releaseCommand, reportsCommand, scoreboardCommand, scorecardCommand, vulnDbCommand } from "./local/cli.ts";
 import { defaultNoise } from "./local/noise-store.ts";
 
 const USAGE = `tutors-release-harness
@@ -106,9 +106,10 @@ const USAGE = `tutors-release-harness
       Does the latest status license a FAIL (clean, verified, fresh)? --require exits 1 when it does not.
   harness noise history [--store dir] [--last n] [--json]
       The ratchet, the clean streak and the last nights.
-  harness guard masks|engine|all --base <ref>
+  harness guard masks|engine|scoreboard|all --base <ref>
       The PR guards of CI against a local ref: masks land in their own PR; an engine, mask, journey, gate or mutant
-      change needs a version bump. Exit 1 on a violation, 2 when the ref does not exist.
+      change needs a version bump; scoreboard/*.jsonl only gains lines (since 1.11.0). Exit 1 on a violation, 2 when
+      the ref does not exist.
   harness override list [--since <date>] [--json]
       The local, append-only record of every FAIL a person overrode.
   harness reports keep --dir <run dir | report.json> [--store dir] [--run-url u] [--keep-last n] [--rules f]
@@ -148,7 +149,7 @@ const USAGE = `tutors-release-harness
       All take --port-offset <n> to move the compose stack's host ports beside a stack of your own.
       A run holds a lock: one per machine at a time.
   harness release --candidate <tag> [--baseline <tag|prod>] [--monorepo dir] [--claims f] [--rules f] [--fast] [--open] [--out dir] [--dry-run]
-                  [--test-signal f] [--traceability f] [--change-risk f] [--post-deploy dir]
+                  [--test-signal f] [--traceability f] [--change-risk f] [--post-deploy dir] [--scoreboard f]
       A pushed candidate to a report, asking nothing: resolve (the baseline, images ensure), noise (the local store's A/A
       when clean and at most 7 days old, else an A/A of the baseline, 3 runs), changes (harness changes in the monorepo
       checkout: changes.json, fed to the score's change risk; skipped without a checkout), release (3 runs,
@@ -159,7 +160,9 @@ const USAGE = `tutors-release-harness
       a gate FAIL) says so and the next step; the report is written whatever happened, into
       out/<timestamp>-release-command/ (report.md, report.html, gate.md, gate.json, status.json as it goes). Ctrl-C takes
       the stacks down first. --fast: one run, no load, no rehearsals, no A/A; its report says it cannot be used for a go
-      decision. --open opens report.html. Exit 0 pass or warn, 1 FAIL, 2 not judged or usage. Not stable.
+      decision. --open opens report.html. After the score it appends the scoreboard line to HARNESS_HOME/scoreboard/releases.jsonl
+      (--scoreboard <file> writes there instead; never into the checkout unasked; a --fast run is not appended), prints it
+      and any run rule firing. Exit 0 pass or warn, 1 FAIL, 2 not judged or usage. Not stable.
   harness confidence --run <release run dir | report.json | harness release dir> [--migration dir] [--upgrade dir] [--json]
                      [--test-signal f] [--traceability f] [--change-risk f] [--post-deploy dir]
       The Release Confidence Score: writes confidence.json beside the run and prints the board. The Gate first, then the
@@ -176,6 +179,19 @@ const USAGE = `tutors-release-harness
       GITHUB_TOKEN or GH_TOKEN), major dependency bumps. Change risk is 100 minus the sum of the PRs' deductions. A
       signal it cannot read is "not measured", never clean. --out writes changes.json. Advisory: exit 0 whatever it
       found, 2 for what it cannot read. Not stable.
+  harness scoreboard append --run <harness release dir | confidence.json> [--file f] [--mutants f] [--tag T] [--run-url u] [--json]
+  harness scoreboard trends [--file f] [--mutants f] [--noise-history f] [--site dir] [--json]
+  harness scoreboard mutants --run <harness mutants --out dir | mutants.json> [--file f] [--run-url u] [--json]
+      The release scoreboard: one line per release run in releases.jsonl (--file; default HARNESS_HOME/scoreboard/releases.jsonl),
+      append-only: a re-run appends the same tag with the next run number, and nothing ever edits a line. append builds
+      the line from a scored run (the Gate, the RCS and band, the eight dimensions, masks, claims, journeys, the latest
+      mutants record, the per-PR risk lines of changes.json); a --fast run is refused. trends prints the six views (RCS
+      with its bands, the dimensions, masks and never-fired masks, claims and stale claims, hotspot recurrence, per-file
+      and per-contributor risk) and the run rules: three consecutive declines, or two of three releases below 75, in any
+      dimension or the RCS, opens a kaizen item. Beside them the harness's health: mutants caught per week (mutants.jsonl
+      beside the file, or --mutants), clean A/A nights and days since the last A/A failure (--noise-history, default the
+      local noise store's). --site writes scoreboard.html and scoreboard.json into a directory. mutants records a
+      self-test's mutants.json in mutants.jsonl. Advisory: exit 0 when done, 2 for what it cannot read. Not stable.
 `;
 
 function fail(message: string): never {
@@ -284,6 +300,11 @@ async function main(argv: string[]): Promise<number> {
       "post-deploy": { type: "string" },
       history: { type: "string" },
       changelog: { type: "string" },
+      file: { type: "string" },
+      mutants: { type: "string" },
+      "noise-history": { type: "string" },
+      site: { type: "string" },
+      scoreboard: { type: "string" },
       screenshots: { type: "boolean", default: true },
       axe: { type: "boolean", default: true },
       focus: { type: "boolean", default: true },
@@ -496,6 +517,8 @@ async function main(argv: string[]): Promise<number> {
       return confidenceCommand(values);
     case "changes":
       return changesCommand(values);
+    case "scoreboard":
+      return scoreboardCommand(positionals[0], values);
     case "journeys":
       for (const j of journeys) console.log(`${j.name.padEnd(34)} set=${j.set.padEnd(9)} ${j.anonymous ? "anonymous" : "signed-in"}`);
       return 0;

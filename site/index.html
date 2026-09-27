@@ -35,6 +35,10 @@
 <h1>Tutors release harness reports</h1>
 <p class="about">Every report the <a href="https://github.com/tutors-sdk/tutors-release-harness">release harness</a> keeps, newest first. A report compares two sets of Tutors images and fails on any observable difference no claim covers. The score is informational and never changes a verdict.</p>
 
+<section id="scoreboard">
+  <h2>Release scoreboard</h2>
+  <p class="note">Visual management over time: <a href="scoreboard.html">the six trend views</a> (the Release Confidence Score against its bands, the eight dimensions, masks, claims, hotspots, per-file risk), the run rules that open kaizen items, and the harness's own health. The numbers behind it are <a href="scoreboard.json">scoreboard.json</a>.</p>
+</section>
 <section id="release-records">
   <h2>Release candidates</h2>
   <p class="note">Release mode on each candidate the monorepo cut, against production. The verdict that gates the release.</p>
@@ -48,7 +52,7 @@
   <p class="note">Production against itself. Any diff here is noise the harness must learn to ignore; a release can only fail on a clean, fresh night.</p>
 </section>
 
-<footer>Built from the <code>release-records</code>, <code>main-preview</code> and <code>noise</code> branches by <code>.github/workflows/pages.yml</code>. See <a href="https://github.com/tutors-sdk/tutors-release-harness/blob/main/docs/contract.md#kept-reports">Kept reports</a> in the contract. <span id="built"></span></footer>
+<footer>Built from the <code>release-records</code>, <code>main-preview</code>, <code>noise</code> and <code>scoreboard</code> branches by <code>.github/workflows/pages.yml</code>. See <a href="https://github.com/tutors-sdk/tutors-release-harness/blob/main/docs/contract.md#kept-reports">Kept reports</a> in the contract. <span id="built"></span></footer>
 
 <script>
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);

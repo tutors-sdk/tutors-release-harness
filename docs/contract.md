@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.10.0`
+Contract version: `1.11.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -18,6 +18,7 @@ The machine-readable half lives in [`docs/contract/`](contract/):
 | [`release-status.schema.json`](contract/release-status.schema.json) | `status.json` of `harness release` (since 1.8.0, not stable) |
 | [`confidence.schema.json`](contract/confidence.schema.json) | `confidence.json`, the Release Confidence Score (since 1.9.0, not stable) |
 | [`changes.schema.json`](contract/changes.schema.json) | `changes.json`, the change signals between two tags (since 1.10.0, not stable) |
+| [`scoreboard-line.schema.json`](contract/scoreboard-line.schema.json) | one line of `scoreboard/releases.jsonl`, the release scoreboard (since 1.11.0, not stable) |
 | [`cli.json`](contract/cli.json) | every command and flag, which are stable, the exit codes |
 | [`workflows.json`](contract/workflows.json) | dispatch events and payloads, repository variables, artifacts, permissions the workflows never hold |
 
@@ -33,9 +34,9 @@ Three numbers, all stamped where a reader can see them:
 
 ```console
 $ pnpm harness version
-harness 1.10.0 (3f2c…) · contract 1.10.0
+harness 1.11.0 (3f2c…) · contract 1.11.0
 $ pnpm harness version --json
-{"version":"1.10.0","gitSha":"3f2c…","contractVersion":"1.10.0"}
+{"version":"1.11.0","gitSha":"3f2c…","contractVersion":"1.11.0"}
 ```
 
 `gitSha` is `git rev-parse HEAD` of the harness checkout, or the
@@ -70,6 +71,11 @@ tag. Check `schemaVersion === 1` before reading a report.
 | `confidence.json` | `harness confidence --run <this run>` (since 1.9.0), never `harness run` | not stable: [`confidence.json`](#confidencejson-the-release-confidence-score) |
 | `a/capture.json`, `b/capture.json`, screenshots, `a/load/`, `b/load/` | capturing modes | no. The harness reads its own captures back (`harness compare`, `--recorded`); nobody else should. Each `capture.json` carries the same `harness` stamp as the report |
 
+`harness mutants --out <dir>` writes, since 1.11.0, `<dir>/mutants.json` beside its run
+directories: `{ schemaVersion: 1, ranAt, base, caught, total, escaped, harnessVersion, note? }`,
+`caught` counting the mutants caught **and** attributed (`null` when the A/A on the base was not
+clean and no mutant ran). Not stable; `harness scoreboard mutants` reads it.
+
 `harness compare --dir <run dir>` rewrites the three reports (and, in noise
 mode, the status) in place.
 
@@ -86,6 +92,12 @@ written whatever happened, a stopped line or Ctrl-C included:
 | `gate.md`, `gate.json` | the combined gate summary `harness local gate` writes to `<timestamp>-gate/`; since 1.9.0 `gate.md` (and so `report.md`) has the RCS, its band and the dimension table right under the Gate |
 | `confidence.json` | since 1.9.0, not stable: [`confidence.json`](#confidencejson-the-release-confidence-score), from the release, migration and upgrade runs. Absent when there was no release run to score (a stopped line before the A/B, Ctrl-C) or when the score could not be computed (the score stage says why) |
 | `changes.json` | since 1.10.0, not stable: [`changes.json`](#changesjson-the-change-signals), written by the changes stage (`harness changes --a <baseline> --b <candidate>` in the monorepo checkout) and read by the score as change risk. Absent without a checkout (`--monorepo` or `HARNESS_MONOREPO_DIR`), or when `harness changes` could not run; the stage's note says which, and change risk is then not measured. Since 1.10.0 `gate.md` and `report.md` carry the per-PR table under the dimension table |
+
+Since 1.11.0 `harness release` writes no new file here: after the score it appends the run's
+[scoreboard line](#the-scoreboard) to `HARNESS_HOME/scoreboard/releases.jsonl` (or the file
+`--scoreboard` names; never into the repository checkout unasked; a `--fast` run and a run with no
+score are not appended), prints the line and any run rule firing after the RCS, and lists the same
+lines in `report.md` and `report.html` under "Scoreboard".
 
 ## `report.json`
 
@@ -648,6 +660,11 @@ Source of truth: `Confidence` in `src/score/confidence.ts`; the weights, floors 
 constants in `src/score/weights.ts`. Written by `harness confidence --run <…>` beside the run
 it scores and by `harness release` in its `<timestamp>-release-command/` directory.
 
+Since 1.11.0 it also carries `weightsVersion`: 12 hex of a SHA-256 over the weights, floors,
+bands and deduction rules that scored it (`WEIGHTS_VERSION` in `src/score/weights.ts`). Any change
+to them gives a new value with nothing to remember to bump, so the scoreboard shows the
+discontinuity on the first release scored under the new rules.
+
 **Advisory, and always second.** `gate` (`PASS`, `WARN`, `FAIL`, `FAIL (OVERRIDDEN)`, `NOT
 JUDGED`) is the Gate as the gate decided it. `rcs` (0-100) and `band` are computed only when
 the Gate is `PASS` or `WARN`; otherwise both are `null` and `note` says why. The score is never
@@ -755,13 +772,71 @@ line, floored at 0 — a sum, not an average. `changeRisk` is what `harness conf
 signal not measured, and why) and `orphans`. `notMeasured` lists what could not be read; a
 signal not measured is never scored clean.
 
+## The scoreboard
+
+Since 1.11.0, not stable: [`contract/scoreboard-line.schema.json`](contract/scoreboard-line.schema.json).
+Source of truth: `ScoreboardLine` in `src/scoreboard/line.ts`, the views and run rules in
+`src/scoreboard/trends.ts`. Visual management over time: one line per release run.
+
+**Where it lives.** `scoreboard/releases.jsonl` (one JSON object per line) and, beside it,
+`scoreboard/mutants.jsonl` (one line per weekly mutants self-test):
+
+| Where | Written by |
+| --- | --- |
+| the `scoreboard` branch of this repository | `release.yml`'s `scoreboard` job (one line per release run) and `weekly-mutants.yml`'s `record` job (scheduled and dispatched self-tests only), one commit each, never forced; each checks the file before is exactly the start of the file after before it pushes. `main` takes changes only through a pull request, so CI appends here, the way the release records do |
+| `scoreboard/` on `main` | only a pull request that copies lines over from the branch; `harness guard scoreboard` (CI's masks job) fails a diff that changes or removes a line already there |
+| `HARNESS_HOME/scoreboard/` | `harness release` on a laptop, and `harness scoreboard append` without `--file` |
+
+**Append-only.** The history is the history: a line is never edited, reordered or removed. A
+re-run of a tag is a new line with the same `tag` and the next `run` number (a logged deviation).
+Nothing is seeded: an empty file is "no releases scored yet".
+
+**A line** (`harness scoreboard append --run <harness release dir | confidence.json>`): `tag`,
+`run`, `date` (the release run's `ranAt`), `gate`, `rcs`, `band`, `weightsVersion`, the eight
+`dimensions` (`id`, `status`, `score`, `floorBreached`), `masks` and `masksNeverFired` (the release
+run's `masksApplied`, and those at 0), `claims` and `staleClaims`, `journeys` (`passed` of `total`:
+the journeys the candidate completed in every run, from `b/capture.json`), `mutants` (the latest
+line of `mutants.jsonl` beside the file, or `--mutants`; else `null`), and `prs`: the per-PR risk
+lines of `changes.json` (`pr`, `points`, `author`, `firstContribution`, `reviewed`, `files`, and
+each deduction's `rule`, `points`, `file`), `null` when change risk was not measured. A `--fast`
+run is refused (exit `2`): its report cannot be used for a go decision.
+
+**Trends** (`harness scoreboard trends [--json] [--site dir]`): one point per release, its tag's
+latest run (every re-run is listed in `deviations` with its first and latest RCS), in the order
+the tags first appeared. Six views: `rcs` (with `band`, and `weightsChanged` marking a
+discontinuity), `dimensions` (the eight as series), `masks` (count and never fired), `claims`
+(claims and stale), `hotspots` (the five files touched by the most releases; 3 or more is a
+refactor candidate) and `risk` (per file: the change-risk points its deductions cost per release;
+per contributor: the points of their PRs, labelled for trends only, never for reviewing people).
+`selfHealth`: `mutants` caught per week (the latest self-test of each ISO week), and `noise`: clean
+nights of the last 30, the last A/A failure (a night with any difference) and days since it, from
+`noise-history.json` (`--noise-history`, default the local noise store's).
+
+**Run rules** (statistical process control), over each dimension and the RCS, skipping releases
+where the series has no value:
+
+| Rule | Fires at a release when |
+| --- | --- |
+| `three-declines` | the value fell three releases running (four points, each lower than the one before) |
+| `two-of-three-below-75` | two of the last three releases are below 75 (three points needed) |
+
+Each firing names the series, the release, the window, whether the window spans a change of
+`weightsVersion`, and the kaizen item it opens (`kaizen`). `runRules.current` are those at the
+newest release: what `harness release` prints after the RCS. The kaizen register's own rule, open
+countermeasures only rising, is reported as not measured until `kaizen/README.md` exists (C4).
+**Advisory: no run rule changes a verdict or an exit code.**
+
+`--site <dir>` writes `scoreboard.html` (self-contained, inline SVG, the bands shaded) and
+`scoreboard.json` (the trends, as `--json` prints them); `pages.yml` publishes both beside the
+kept reports.
+
 ## CLI
 
 Full list: [`contract/cli.json`](contract/cli.json). Invoke as `pnpm harness
 <command>` from a checkout (Node ≥ 22, `pnpm install`, and for capturing modes
 `pnpm exec playwright install chromium` and Docker). Commands and flags marked
 `stable: true` there are the ones below; the rest (`harness stack`, `harness
-kind`, `harness journeys`, `harness override`, `harness local`, `harness release` (since 1.8.0), `harness confidence` (since 1.9.0), `harness changes` (since 1.10.0), `harness prune`, `harness reports`, `harness scorecard`, `harness noise
+kind`, `harness journeys`, `harness override`, `harness local`, `harness release` (since 1.8.0), `harness confidence` (since 1.9.0), `harness changes` (since 1.10.0), `harness scoreboard` (since 1.11.0), `harness prune`, `harness reports`, `harness scorecard`, `harness noise
 history`, `--substrate`, `--now`, `--masks`, `--snapshot`,
 `--upgrade-*`, `--noise-max-age-days`, `--no-screenshots`, `--no-axe`,
 `--no-focus`, `--no-runtime` and `--startup-restarts` (both since 1.2.0),
@@ -786,7 +861,10 @@ and neither are `harness release` and the flags only it takes (`--candidate`, `-
 (`--run`, `--migration`, `--upgrade`, `--test-signal`, `--traceability`, `--change-risk`,
 `--post-deploy`; since 1.9.0; `harness release` takes the last four too), nor `harness changes`
 and the flags only it takes (`--history`, `--changelog`; since 1.10.0; it also takes `--a`, `--b`,
-`--monorepo`, `--json` and `--out`).
+`--monorepo`, `--json` and `--out`), nor `harness scoreboard` and the flags only it takes (`--file`,
+`--mutants`, `--noise-history`, `--site`; since 1.11.0; it also takes `--run`, `--tag`, `--run-url`
+and `--json`), nor `--scoreboard` of `harness release`, nor `harness guard scoreboard` (since
+1.11.0; `guard all` runs it too).
 
 | Command | Stable flags |
 | --- | --- |
@@ -911,6 +989,7 @@ Each is the run's whole `out/` directory unless noted, so a report is at
 | `noise-report` | `nightly-noise.yml` | 8 days |
 | `mutant-reports` | `weekly-mutants.yml` | 14 days |
 | `mutant-noise-report` | `weekly-mutants.yml` | 7 days (only when the self-test failed: the A/A report of the base, reports and captures only) |
+| `mutants-summary` | `weekly-mutants.yml` | 14 days (since 1.11.0: `out/mutants.json` only, what the `record` job puts on the scoreboard) |
 | `harness-ci` | `ci.yml` | 7 days |
 | `main-preview-report` | `main-preview.yml` | 14 days (since 1.5.0; see [Main to RC](#main-to-rc)) |
 
@@ -948,7 +1027,10 @@ Since 1.5.0 the same reports are also a website:
 `pages.yml` copies each branch's `reports/` beside `site/index.html`, which lists
 them newest first with each run's verdict, score and scorecard, and deploys the
 lot to GitHub Pages after every workflow that keeps a report. Its `deploy` job
-holds `pages: write` and `id-token: write`, and writes no branch.
+holds `pages: write` and `id-token: write`, and writes no branch. Since 1.11.0 it also
+runs `harness scoreboard trends --site` on the `scoreboard` branch and the `noise` branch's
+history, and serves `scoreboard.html` and `scoreboard.json` beside the index
+([the scoreboard](#the-scoreboard)); with no branch yet the page says "no releases scored yet".
 
 Each kept run also has `scorecard.json` and `scorecard.md` (`harness scorecard`,
 `src/ci/scorecard.ts`), derived from its `report.json` alone. **Informational:
@@ -1030,6 +1112,9 @@ What it does instead:
 - since 1.5.0, in `main-preview.yml` only, the `publish` job, with
   `contents: write` on **this** repository: pushes the `main-preview` branch
   ([Main to RC](#main-to-rc));
+- since 1.11.0, in `release.yml` the `scoreboard` job and in `weekly-mutants.yml` the `record`
+  job (scheduled and dispatched runs only), each with `contents: write` on **this** repository:
+  append to the `scoreboard` branch ([the scoreboard](#the-scoreboard)), never forced;
 - since 1.5.0, in `pages.yml` only, the `deploy` job, with `pages: write` and
   `id-token: write` on **this** repository: publishes the kept reports to GitHub
   Pages ([Kept reports](#kept-reports)). No other branch, no tag, no release, no other
@@ -1060,6 +1145,36 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.11.0 (minor; the scoreboard: `harness scoreboard`, the trends and the run rules)
+
+The release note is [releases/1.11.0.md](releases/1.11.0.md). Additive for a consumer written
+against 1.10.0: no `report.json` field, verdict, or exit code of an existing command changes.
+
+- `scoreboard/releases.jsonl` ([`scoreboard-line.schema.json`](contract/scoreboard-line.schema.json),
+  not stable): one line per release run, append-only; a re-run is the same tag with the next run
+  number ([the scoreboard](#the-scoreboard)). `scoreboard/mutants.jsonl` beside it: one line per
+  weekly mutants self-test.
+- `harness scoreboard append --run <harness release dir | confidence.json> [--file f] [--mutants f]
+  [--tag T] [--run-url u] [--json]`, `harness scoreboard trends [--file f] [--mutants f]
+  [--noise-history f] [--site dir] [--json]` and `harness scoreboard mutants --run <dir |
+  mutants.json> [--file f] [--run-url u]` (not stable): append a line, read the six trend views,
+  the run rules and the harness's own health, and record a self-test. Exit `0` when done, `2` for
+  what they cannot read.
+- The run rules: three consecutive declines, or two of three releases below 75, in any of the
+  eight dimensions or the RCS, opens a kaizen item naming it. In the trends JSON and after the
+  score of `harness release`. No exit code changes.
+- `harness release`: appends its line to `HARNESS_HOME/scoreboard/releases.jsonl` after the score
+  (`--scoreboard <file>` writes there instead; a `--fast` run is not appended) and prints it and
+  the run rules firing; `report.md` and `report.html` list the same lines.
+- `harness guard scoreboard` (not stable; `guard all` runs it): a diff may only add lines to
+  `scoreboard/*.jsonl`. CI runs it in the masks job.
+- `confidence.json`: `weightsVersion` (optional in the schema; absent before 1.11.0).
+- `harness mutants` writes `mutants.json` into its `--out`.
+- Workflows: `release.yml` gains the `scoreboard` job and `weekly-mutants.yml` the `record` job,
+  each with `contents: write`, appending to the new `scoreboard` branch; `weekly-mutants.yml`
+  uploads `mutants-summary`; `pages.yml` publishes `scoreboard.html` and `scoreboard.json`.
+- New flags, not stable: `--file`, `--mutants`, `--noise-history`, `--site`, `--scoreboard`.
 
 ### 1.10.0 (minor; change signals: `harness changes`)
 
