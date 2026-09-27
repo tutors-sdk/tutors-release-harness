@@ -85,10 +85,16 @@ writes `coverage/coverage-summary.json` and an HTML and lcov report to `coverage
 
 | Metric | Measured when the floor was set | Floor |
 | --- | --- | --- |
-| Statements | 86.25% | 84% |
-| Branches | 87.35% | 85% |
-| Functions | 87.13% | 85% |
-| Lines | 86.25% | 84% |
+| Statements | 84.47% | 82% |
+| Branches | 78.40% | 76% |
+| Functions | 84.25% | 82% |
+| Lines | 85.42% | 83% |
+
+Re-measured in 1.5.3, when Vitest moved from 3 to 5: its v8 provider now maps coverage through the source's AST, so
+code in functions that never run counts its own branches and functions (in 1.5.1 `src/collectors/index.ts` reported 0
+branches, now 38, all unrun). The same 86 files and the same 1046 tests measure lower under the stricter counter, not
+less tested; the floor was reset against the new numbers by the same rule (measured, minus two, rounded down). It was
+84 / 85 / 85 / 84 over 86.25% / 87.35% / 87.13% / 86.25% under Vitest 3.
 
 The floor is a ratchet, not a target: it sits a couple of points under what was measured, rounded down, so noise does not
 trip it but a change that leaves new code untested does. When coverage rises, raise the floor in the same PR; never lower
@@ -170,6 +176,12 @@ relevant changed, otherwise the result of both conditions — so it is the one
 to mark as a required status check on `main` (a path-filtered workflow cannot
 be required: it never reports on PRs it skips). The rule's own logic is unit
 tested in `tests/engine-change.test.ts`.
+
+**Dependabot PRs cannot pass this on their own.** Every npm bump changes `pnpm-lock.yaml`, an engine path, and
+Dependabot cannot bump `version`. A maintainer batches the open Dependabot PRs into one PR (`deps/batch-N`) that applies
+them with pnpm, bumps the patch version, and fixes what the majors break; the mutants run on that PR, and the Dependabot
+PRs close once it merges. A major that cannot land yet (a plugin without support, output that would change) is left out
+and the PR says why.
 
 ### Noise (nightly)
 
