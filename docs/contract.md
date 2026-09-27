@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.5.0`
+Contract version: `1.6.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -30,9 +30,9 @@ Three numbers, all stamped where a reader can see them:
 
 ```console
 $ pnpm harness version
-harness 1.5.0 (3f2c…) · contract 1.5.0
+harness 1.6.0 (3f2c…) · contract 1.6.0
 $ pnpm harness version --json
-{"version":"1.5.0","gitSha":"3f2c…","contractVersion":"1.5.0"}
+{"version":"1.6.0","gitSha":"3f2c…","contractVersion":"1.6.0"}
 ```
 
 `gitSha` is `git rev-parse HEAD` of the harness checkout, or the
@@ -101,6 +101,7 @@ written). Source of truth: `RunReport` in `src/types.ts`.
 | `claimHygiene` | optional — since 1.2.0 | present when the claims file had claims; see [Claim hygiene](#claim-hygiene). Informational: never changes the verdict |
 | `override` | optional — since 1.2.0 | present only when an override of a FAIL was requested; see [Overriding a FAIL](#overriding-a-fail) |
 | `deployment` | optional — since 1.3.0 | post-deploy mode, when the deploy reported what it deployed: `{ production?, status, digests, recorded?, record?, problems[] }`, the deployed digests against the release record; see [Checking a deployment](#checking-a-deployment). Advisory: a `status` other than `match` turns a `pass` into a `warn` and never touches a `fail` |
+| `productionBuild` | optional — since 1.6.0 | post-deploy mode only: `{ url, status, recordedRevision?, buildName?, builtAt?, revision?, summary }`, which build production's reader says it serves against the recorded candidate's commit; see [Which build production serves](#which-build-production-serves). Informational: never changes the verdict and is never a hunk |
 
 **Hunk**: `{ id, artefact, scope, path?, summary, detail?, severity }`.
 `artefact` is one of `dom`, `screenshot`, `network`, `console`, `headers`,
@@ -469,7 +470,7 @@ run's output directory (so the `release-report` artifact carries it).
 ```json
 { "schemaVersion": 1, "candidate": "16.3.0-rc.4", "release": "16.3.0", "production": "16.2.0",
   "recordedAt": "2026-09-16T09:10:00.000Z",
-  "harness": { "version": "1.5.0", "gitSha": "3f2c…", "contractVersion": "1.5.0" },
+  "harness": { "version": "1.6.0", "gitSha": "3f2c…", "contractVersion": "1.6.0" },
   "verdict": "pass", "overridden": false, "pinned": true, "verified": true,
   "digests": { "reader": "sha256:…", "catalogue": "sha256:…", "live": "sha256:…", "time": "sha256:…" } }
 ```
@@ -513,6 +514,39 @@ The record is looked up in this order, and nowhere else: `--release-record`
 `releases/<production>.json` from the `release-records` branch into a directory
 and passes it as `--release-record`. `<tag>` is the `--deployed` value, which
 must be a registry tag (`[A-Za-z0-9_][A-Za-z0-9_.-]*`): it names a file.
+
+### Which build production serves
+
+Since 1.6.0. Production (tutors.dev) is deployed by hand and nothing records
+which build it serves, so every post-deploy run asks its reader, after capturing
+it, with a 5-second timeout per request:
+
+- `GET <reader>/_app/version.json`, SvelteKit's `{"version":"<name>"}`. A build
+  given its commit (`GIT_SHA` in the images; Netlify's `COMMIT_REF` since
+  tutors-mono-repo#354) is named `sha256(commit)` in hex, first 16 characters;
+  a build given neither is named `Date.now()` at build time, 13 digits, which the
+  report shows as "built at <ISO time> from an unnamed build".
+- `GET <reader>/version`, whose `revision` is the commit or `unknown`; older
+  builds answer 404.
+
+A request that fails, times out, or answers anything but a 2xx JSON document is
+"not answered". The recorded commit is the recorded capture's reader image
+`revision` (`provenance.b.images.reader.revision` of the release run). The
+result is `productionBuild` in `report.json` and a "Production build" section
+in `report.md` and `report.html`:
+
+| `productionBuild.status` | Meaning |
+| --- | --- |
+| `match` | `/version` names the recorded commit (or an abbreviation of it, 7 characters or more), or the build name is that commit's hash |
+| `differs` | production names a commit, or carries a hashed build name, that is not the recorded one |
+| `unknown` | anything else: no recorded commit, neither answered, `revision` is `unknown` and the build is unnamed |
+
+`differs` adds a `PRODUCTION BUILD DIFFERS` line to `reasons`, `unknown` a
+`PRODUCTION BUILD NOT CONFIRMED` line. Either is **informational**: the verdict
+and the exit code are exactly what they would be without it, and no hunk is
+added. What production answered is escaped in `report.html` and kept inside code
+spans in `report.md`; `reasons` and `summary` quote only values made of letters,
+digits and `._:+-`.
 
 ## Claims file
 
@@ -885,6 +919,22 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, cut by a maintainer.
 
 ## Changes
+
+### 1.6.0 (minor; which build production serves)
+
+Additive for a consumer written against 1.5.0: one new optional `report.json`
+field, nothing removed or changed. The harness version is 1.6.0 as well, because a
+contract minor moves the harness at least as far ([Compatibility](#compatibility)).
+
+- `productionBuild` (optional, post-deploy mode only): the build production's
+  reader names in `/_app/version.json` and `/version`, against the recorded
+  candidate's commit, with `status` `match`, `differs` or `unknown`. `report.md`
+  and `report.html` get a "Production build" section beside the deployment
+  section, and `differs` or `unknown` adds a line to `reasons`. It never changes
+  the verdict or the exit code, and is never a hunk. See
+  [Which build production serves](#which-build-production-serves). It follows
+  tutors-sdk/tutors-release-harness#38 and tutors-sdk/tutors-mono-repo#354 (Netlify
+  builds named from `COMMIT_REF`).
 
 ### 1.5.0 (minor; kept reports, the scorecard, Main to RC, report pages, one recorded copy of third-party hosts)
 
