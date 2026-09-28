@@ -29,11 +29,30 @@
   a:focus-visible, summary:focus-visible { outline:2px solid currentColor; outline-offset:2px; }
   .empty { font-size:14px; opacity:.75; margin-top:10px; }
   footer { font-size:12px; opacity:.7; border-top:1px solid var(--rule); padding-top:12px; margin-top:40px; }
+  #exemplar { border:1px solid var(--rule); border-radius:8px; padding:4px 16px 16px; margin:20px 0 8px; }
+  #exemplar h2 { margin-top:14px; font-size:1.25rem; }
+  #exemplar h3 { font-size:.95rem; margin:18px 0 4px; }
+  .andon { display:flex; flex-wrap:wrap; gap:8px 16px; align-items:baseline; margin:10px 0 4px; }
+  .gate { font-size:1.3rem; font-weight:700; }
+  .gate .verdict { font-size:1rem; padding:2px 10px; vertical-align:2px; }
+  .band { display:inline-block; padding:1px 8px; border-radius:4px; color:#fff; font-weight:600; }
+  .band.green { background:var(--pass);} .band.amber { background:var(--warn);} .band.red { background:var(--fail);}
+  .rcs { font-size:1.15rem; font-weight:600; }
+  .meaning { margin:2px 0 0; }
+  ol.glance { margin:6px 0 0; padding-left:1.4rem; } ol.glance li { margin:4px 0; }
+  .links { font-size:13px; }
+  .facts { font-size:13px; opacity:.8; margin:14px 0 0; }
 </style>
 </head>
 <body>
 <h1>Tutors release harness reports</h1>
-<p class="about">Every report the <a href="https://github.com/tutors-sdk/tutors-release-harness">release harness</a> keeps, newest first. A report compares two sets of Tutors images and fails on any observable difference no claim covers. The score is informational and never changes a verdict.</p>
+<p class="about">What the <a href="https://github.com/tutors-sdk/tutors-release-harness">release harness</a> says about Tutors. A report compares two sets of Tutors images and fails on any observable difference no claim covers. The score beside it is advisory: it never changes a verdict.</p>
+
+<section id="exemplar" aria-labelledby="exemplar-title">
+  <h2 id="exemplar-title">What main would ship today</h2>
+  <p class="note">The latest Main to RC forecast: the monorepo's main judged as if it were cut as a release candidate now, against the release in production. This is what every release report looks like: the Gate first, then the Release Confidence Score and its band, then the places to look, then what changed. A forecast, never a gate.</p>
+  <div id="exemplar-body"><p class="empty">Loading the latest forecast…</p></div>
+</section>
 
 <section id="scoreboard">
   <h2>Release scoreboard</h2>
@@ -44,8 +63,8 @@
   <p class="note">Release mode on each candidate the monorepo cut, against production. The verdict that gates the release.</p>
 </section>
 <section id="main-preview">
-  <h2>Main to RC</h2>
-  <p class="note">Each morning, main's newest signed images judged as if main were a release candidate. A forecast, never a gate: every unclaimed diff is a claim or a fix the next release will need.</p>
+  <h2>Main to RC, every forecast</h2>
+  <p class="note">Each morning, main's newest signed images judged as if main were a release candidate. A forecast, never a gate: every unclaimed diff is a claim or a fix the next release will need. The newest is the one above.</p>
 </section>
 <section id="noise">
   <h2>Nightly noise</h2>
@@ -59,6 +78,92 @@ const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "
 const tag = (ref) => (ref ? ref.slice(ref.lastIndexOf(":") + 1) : "");
 const when = (iso) => new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }) + " UTC";
 const VERDICTS = ["pass", "warn", "fail"];
+const REPO = "https://github.com/tutors-sdk/tutors-release-harness/blob/main";
+const DOCS = { lean: `${REPO}/docs/lean.md`, guide: `${REPO}/docs/user-guide/10-running-a-release.md` };
+const BANDS = ["green", "amber", "red"];
+
+/**
+ * A link from a kept file: an https URL as it is, a file beside the kept report (report.html#hunk-…, confidence.json)
+ * resolved against the run's directory. Anything else (a path outside it, a note such as "PR #11 apps/reader/…" where no
+ * URL was known) is shown as text, never guessed into a link.
+ */
+const href = (link, dir) => (/^https:\/\/[^\s"<>]+$/.test(link) ? link : /^[A-Za-z0-9_-][A-Za-z0-9._-]*(#[^\s"<>]*)?$/.test(link) ? `${dir}/${link}` : "");
+const a = (link, dir, text) => { const h = href(link, dir); return h ? `<a href="${esc(h)}">${esc(text)}</a>` : `${esc(text)}: ${esc(link)}`; };
+const gateTone = (gate) => (/^PASS/.test(gate) ? "pass" : /^WARN/.test(gate) ? "warn" : "fail");
+// src/glance/rank.ts KIND_TITLES (tests/site.test.ts keeps the two the same).
+const GLANCE_KINDS = { "broad-claim": "Broad claim", "mask-added": "Mask added", "near-miss": "Near miss", "first-time-hotspot": "Hotspot, first contribution", "new-persistence": "New persistence write", "fixed-on-b": "Fixed on b", "major-bump": "Major bump", "duration-moved": "Duration moved" };
+
+/**
+ * The exemplar: the newest Main to RC run, read from its index entry and, when it was scored (harness 1.13.1 and later),
+ * its confidence.json and changes.json. Pure: the text of the section, from what was fetched. Nothing is invented: a run
+ * kept before the score existed says so.
+ */
+function exemplarHtml(run, conf, changes, base) {
+  const dir = `${base}/${run.id}`;
+  const html = run.files.find((f) => f.endsWith("/report.html"));
+  const a_ = tag(run.sides?.a?.reader), b_ = tag(run.sides?.b?.reader);
+  const gate = conf?.gate ?? run.confidence?.gate ?? String(run.verdict ?? "").toUpperCase();
+  const out = [];
+  out.push(`<p>Main <code>${esc(b_)}</code> against production <code>${esc(a_)}</code>.</p>`);
+  out.push(`<div class="andon"><span class="gate">Gate <span class="verdict ${gateTone(gate)}">${esc(gate)}</span></span>`);
+  const c = conf ?? run.confidence;
+  if (c && c.rcs !== null && c.rcs !== undefined && BANDS.includes(String(c.band).toLowerCase())) out.push(`<span class="rcs">RCS ${Number(c.rcs)} <span class="band ${String(c.band).toLowerCase()}">${esc(c.band)}</span></span>`);
+  out.push(`</div>`);
+  if (c) out.push(`<p class="meaning">${c.rcs !== null && c.rcs !== undefined && c.band ? `<strong>${esc(c.band)}:</strong> ${esc(c.meaning ?? "")}${c.note ? ` ${esc(c.note)}` : ""}` : esc(c.note ?? "No RCS.")}</p>`);
+  else out.push(`<p class="meaning">Scored by harness <code>${esc(run.harnessVersion)}</code> before the confidence score existed, so this forecast has no RCS, band, glance or change risk. The next forecast will carry them.</p>`);
+
+  const stops = gate.startsWith("FAIL") || gate === "NOT JUDGED";
+  out.push(`<h3>${stops ? "What stops the line" : "Why"}</h3><ul>${(run.reasons ?? []).slice(0, 5).map((r) => `<li>${esc(r)}</li>`).join("")}${(run.reasons ?? []).length > 5 ? `<li>${run.reasons.length - 5} more in the full report</li>` : ""}</ul>`);
+
+  if (conf) {
+    const items = Array.isArray(conf.glance) ? conf.glance : [];
+    out.push(`<h3>Where to look first</h3>`);
+    if (!conf.glanceBasis) out.push(`<p class="note">Not ranked: this score was written before the glance existed.</p>`);
+    else if (!items.length) out.push(`<p class="note">Nothing ranked: none of the ${conf.glanceBasis.checked?.length ?? 0} kinds checked found a place to look.</p>`);
+    else
+      out.push(`<ol class="glance">${items.map((i) => {
+        const l = i.links ?? {};
+        const links = [l.hunk ? a(l.hunk, dir, "hunk") : "", l.pr ? a(l.pr, dir, "PR") : "", l.diff ? a(l.diff, dir, "diff") : ""].filter(Boolean).join(" · ");
+        return `<li><strong>${esc(GLANCE_KINDS[i.kind] ?? i.kind)}</strong>: ${esc(i.finding)}${i.mark ? ` <em>(${esc(i.mark.mark)} by ${esc(i.mark.by)})</em>` : ""}${links ? ` <span class="links">${links}</span>` : ""}${l.claim ? `<br><span class="links">claim: ${esc(l.claim)}</span>` : ""}</li>`;
+      }).join("")}</ol>`);
+  } else if (run.confidence) out.push(`<h3>Where to look first</h3><p class="note">${run.confidence.glance} place(s) to look: see the full report.</p>`);
+
+  if (changes && Array.isArray(changes.prs)) {
+    const risky = changes.prs.filter((p) => p.deductions?.length).sort((x, y) => y.points - x.points);
+    const clean = changes.prs.length - risky.length;
+    const name = (p) => (p.pr !== null ? `#${p.pr}` : String(p.sha).slice(0, 7));
+    out.push(`<h3>What changed</h3><p>Change risk <strong>${Number(changes.score)}</strong> over <code>${esc(changes.refs?.a)}..${esc(String(changes.refs?.b ?? "").slice(0, 12))}</code>: ${risky.length} of ${changes.prs.length} change(s) carry a finding${changes.floorBreached ? "; its floor is breached" : ""}.</p>`);
+    if (risky.length)
+      out.push(`<div class="scroll"><table><thead><tr><th>PR</th><th>Title</th><th>Points</th><th>Where the points went</th></tr></thead><tbody>${risky.slice(0, 6).map((p) => `<tr><td>${p.url ? a(p.url, dir, name(p)) : esc(name(p))}</td><td>${esc(p.title)}</td><td class="num">${p.points ? `−${Number(p.points)}` : "floor"}</td><td>${p.deductions.slice(0, 2).map((d) => esc(d.why)).join("<br>")}${p.deductions.length > 2 ? `<br>${p.deductions.length - 2} more` : ""}</td></tr>`).join("")}${risky.length > 6 ? `<tr><td colspan="4">${risky.length - 6} more with a finding: see the full report</td></tr>` : ""}${clean ? `<tr><td colspan="4">${clean} more with no deductions</td></tr>` : ""}</tbody></table></div>`);
+  } else if (conf) out.push(`<h3>What changed</h3><p class="note">Not measured for this forecast (no monorepo history to read), so change risk is left out of the score, never assumed clean.</p>`);
+
+  const links = [html ? `<a href="${base}/${esc(html)}">the full report</a>` : "", run.runUrl ? `<a href="${esc(run.runUrl)}">the run</a>` : "", `<a href="${DOCS.lean}">what the score and the glance mean</a> (docs/lean.md)`, `<a href="${DOCS.guide}">how to run a release</a>`].filter(Boolean);
+  out.push(`<p class="facts">Ran ${esc(when(run.ranAt))} with harness <code>${esc(run.harnessVersion)}</code>${run.confidence?.scoredBy && run.confidence.scoredBy !== run.harnessVersion ? `, scored by <code>${esc(run.confidence.scoredBy)}</code>` : ""}. Read ${links.join(", ")}.</p>`);
+  return out.join("\n");
+}
+
+async function json(url) {
+  try {
+    const res = await fetch(url);
+    return res.ok ? await res.json() : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+async function exemplar() {
+  const body = document.getElementById("exemplar-body");
+  const base = "main-preview/reports";
+  const run = (await json(`${base}/index.json`))?.runs?.[0];
+  if (!run) {
+    body.innerHTML = `<p class="empty">No Main to RC forecast kept yet. The first lands the morning after the nightly A/A; <a href="${DOCS.guide}">how to run a release</a> says how to make one by hand.</p>`;
+    return;
+  }
+  const file = (name) => run.files.find((f) => f.endsWith(`/${name}`));
+  const conf = file("confidence.json") ? await json(`${base}/${file("confidence.json")}`) : undefined;
+  const changes = file("changes.json") ? await json(`${base}/${file("changes.json")}`) : undefined;
+  body.innerHTML = exemplarHtml(run, conf, changes, base);
+}
 
 async function scorecardDetails(base, run) {
   const file = run.files.find((f) => f.endsWith("/scorecard.json"));
@@ -93,7 +198,8 @@ async function stream(id) {
     const verdict = VERDICTS.includes(run.verdict) ? run.verdict : "warn";
     const a = tag(run.sides?.a?.reader), b = tag(run.sides?.b?.reader);
     const sides = a === b ? `<code>${esc(a)}</code>` : `<code>${esc(a)}</code> → <code>${esc(b)}</code>`;
-    const score = run.score ? `${run.score.score} (${esc(run.score.grade)})` : "";
+    const rcs = run.confidence ? (run.confidence.rcs !== null && run.confidence.rcs !== undefined ? `RCS ${Number(run.confidence.rcs)} ${esc(run.confidence.band)}` : "no RCS") : "";
+    const score = [rcs, run.score ? `scorecard ${run.score.score} (${esc(run.score.grade)})` : ""].filter(Boolean).join("<br>");
     return `<tr>
       <td class="num">${html ? `<a href="${base}/${esc(html)}">${esc(when(run.ranAt))}</a>` : esc(when(run.ranAt))}</td>
       <td>${sides}</td>
@@ -106,7 +212,7 @@ async function stream(id) {
   section.insertAdjacentHTML("beforeend", `<div class="scroll"><table><thead><tr><th>Ran</th><th>Images</th><th>Verdict</th><th>Score</th><th>Why</th><th>Harness</th></tr></thead><tbody>${rows.join("")}</tbody></table></div>`);
 }
 
-["release-records", "main-preview", "noise"].forEach(stream);
+globalThis.siteReady = Promise.all([exemplar(), ...["release-records", "main-preview", "noise"].map(stream)]);
 fetch("built.json").then((r) => r.json()).then((b) => { document.getElementById("built").textContent = `Last built ${when(b.builtAt)}.`; }).catch(() => {});
 </script>
 </body>

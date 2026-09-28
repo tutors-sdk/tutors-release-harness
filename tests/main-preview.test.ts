@@ -142,3 +142,68 @@ describe("main-preview.yml", () => {
     expect(text).not.toMatch(/push --force/);
   });
 });
+
+describe("main-preview.yml: the forecast is scored as a candidate is (since 1.13.1), and nothing of the score reaches a verdict", () => {
+  type Step = { name?: string; run?: string; uses?: string; if?: string; with?: Record<string, unknown>; "continue-on-error"?: boolean; "working-directory"?: string };
+  type Job = { needs?: string | string[]; if?: string; permissions?: Record<string, string>; steps: Step[] };
+  const wf = parse(readFileSync(resolve(ROOT, ".github/workflows/main-preview.yml"), "utf8")) as { jobs: Record<string, Job> };
+  const release = parse(readFileSync(resolve(ROOT, ".github/workflows/release.yml"), "utf8")) as { jobs: Record<string, Job> };
+  const run = (job: string, name: string) => wf.jobs[job]!.steps.find((s) => s.name === name)!;
+
+  it("rehearses main as release.yml rehearses a candidate, and a rehearsal FAIL is a forecast too: only exit 2 fails the job", () => {
+    for (const [job, mode] of [["migration", "--mode migration"], ["upgrade", "--mode upgrade"]] as const) {
+      const j = wf.jobs[job]!;
+      expect(j.needs, job).toBe("resolve");
+      expect(j.if, job).toBe("needs.resolve.outputs.skip == 'false'");
+      expect(j.permissions, job).toBeUndefined();
+      const step = j.steps.find((s) => s.run?.includes(mode))!.run!;
+      expect(step, job).toContain('if [ "$code" -gt 1 ]; then exit "$code"; fi');
+      expect(j.steps.find((s) => s.uses?.startsWith("actions/upload-artifact@"))!.with!.name).toBe(`main-preview-${job}-report`);
+    }
+    expect(run("migration", "Migration mode").run).toContain('--a "v$PRODUCTION" --b "${SHA:-v$CANDIDATE}"');
+    // the upgrade rehearsal is release.yml's: the same journey, the same set
+    const theirs = release.jobs.upgrade!.steps.find((s) => s.name === "Upgrade mode")!.run!;
+    expect(theirs).toContain("--set fixture --journey anonymous-student-reads-course");
+    expect(run("upgrade", "Upgrade mode").run).toContain("--set fixture --journey anonymous-student-reads-course");
+  });
+
+  it("scores in the publish job, after every verdict: changes over the monorepo's history, then the score with both rehearsals and the scoreboard's history", () => {
+    const p = wf.jobs.publish!;
+    expect(p.needs).toEqual(["resolve", "preview", "migration", "upgrade"]);
+    expect(p.permissions).toEqual({ contents: "write" });
+    const names = p.steps.map((s) => s.name ?? s.uses ?? "");
+    const at = (n: string) => names.findIndex((x) => x.startsWith(n));
+    for (const n of ["actions/download-artifact", "What changed between production and main", "Score the forecast", "Push the report to the main-preview branch"]) expect(at(n), n).toBeGreaterThanOrEqual(0);
+    const mono = p.steps.find((s) => s.with?.repository === "tutors-sdk/tutors-mono-repo")!;
+    expect(mono.with).toMatchObject({ "fetch-depth": 0, "persist-credentials": false, path: "mono" });
+    expect(p.steps.indexOf(mono)).toBeLessThan(at("What changed between production and main"));
+    expect(at("What changed between production and main")).toBeLessThan(at("Score the forecast"));
+    expect(at("Score the forecast")).toBeLessThan(at("Push the report to the main-preview branch"));
+    for (const a of ["main-preview-report", "main-preview-migration-report", "main-preview-upgrade-report"]) expect(p.steps.some((s) => s.with?.name === a), a).toBe(true);
+
+    const changes = run("publish", "What changed between production and main");
+    expect(changes["continue-on-error"]).toBe(true);
+    expect(changes.if).toBe("needs.resolve.outputs.sha != ''");
+    expect(changes.run).toContain('pnpm harness changes --a "$PRODUCTION" --b "$SHA" --monorepo ../mono --out "$(dirname "$report")/changes.json"');
+
+    const score = run("publish", "Score the forecast");
+    expect(score["continue-on-error"]).toBe(true);
+    for (const flag of ["--migration", "--upgrade", '--change-risk "$run_dir/changes.json"', "--scoreboard", "contents/scoreboard/releases.jsonl?ref=scoreboard"]) expect(score.run, flag).toContain(flag);
+    expect(score.run).toContain('pnpm harness confidence "${score[@]}"');
+  });
+
+  it("a forecast is not a release: it never appends to the scoreboard or pushes anything but main-preview", () => {
+    const text = readFileSync(resolve(ROOT, ".github/workflows/main-preview.yml"), "utf8");
+    expect(text).not.toContain("scoreboard append");
+    expect([...text.matchAll(/\bpush "https:\/\/github\.com\/\$\{GITHUB_REPOSITORY\}\.git" ([\w-]+)/g)].map((m) => m[1])).toEqual(["main-preview"]);
+    // the verdict comes first: the release job neither scores nor reads a score
+    const preview = JSON.stringify(wf.jobs.preview);
+    expect(preview).not.toMatch(/harness confidence|harness changes|confidence\.json/);
+  });
+
+  it("keeps the score with the forecast: reports keep runs on the scored run directory", () => {
+    const push = run("publish", "Push the report to the main-preview branch").run!;
+    expect(push).toContain("pnpm harness reports keep --dir \"../$(dirname \"$report\")\"");
+    expect(push).toContain("confidence.json");
+  });
+});

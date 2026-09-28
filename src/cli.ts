@@ -114,7 +114,9 @@ const USAGE = `tutors-release-harness
       The local, append-only record of every FAIL a person overrode.
   harness reports keep --dir <run dir | report.json> [--store dir] [--run-url u] [--keep-last n] [--rules f]
       Keep a run's report.json, report.md and report.html, and its scorecard, under <store>/reports/<ranAt>-<mode>/ and
-      list it in <store>/reports/index.json, newest first, so it outlives the artifact. --keep-last drops older runs. Not stable.
+      list it in <store>/reports/index.json, newest first, so it outlives the artifact. --keep-last drops older runs. Since
+      1.13.1 a release run scored beside it (confidence.json, changes.json) is kept with them, its report.md and report.html
+      led by the Gate, the RCS and its band, the glance and the change risk per PR, as harness release leads its own. Not stable.
   harness scorecard --report <run dir | report.json> [--rules rules.json] [--json]
       A 0-100 score with every deduction, the A/A normalness, EARS Rule -> diffs -> PRs, and at most five pages to test
       by hand. PRs come from a Rule's "prs" in rules.json and "PR #n" in claim reasons. Never changes a verdict. Not stable.
