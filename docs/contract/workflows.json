@@ -1,6 +1,6 @@
 {
   "$comment": "What the harness's workflows accept from outside and publish, machine-readable. tests/contract.test.ts fails when this and .github/workflows disagree.",
-  "contractVersion": "1.13.0",
+  "contractVersion": "1.13.1",
   "repositoryDispatch": {
     "release-candidate": {
       "workflow": "release.yml",
@@ -44,7 +44,9 @@
     "mutant-noise-report": { "workflow": "weekly-mutants.yml", "retentionDays": 7 },
     "mutants-summary": { "workflow": "weekly-mutants.yml", "retentionDays": 14 },
     "harness-ci": { "workflow": "ci.yml", "retentionDays": 7 },
-    "main-preview-report": { "workflow": "main-preview.yml", "retentionDays": 14 }
+    "main-preview-report": { "workflow": "main-preview.yml", "retentionDays": 14 },
+    "main-preview-migration-report": { "workflow": "main-preview.yml", "retentionDays": 14 },
+    "main-preview-upgrade-report": { "workflow": "main-preview.yml", "retentionDays": 14 }
   },
   "tools": {
     "$comment": "Installed by every job that runs `harness images ensure`. Verifying the monorepo's signatures needs cosign >= 3.",
@@ -72,12 +74,12 @@
     "env": "HARNESS_THIRD_PARTY_CACHE_DIR",
     "cacheKey": "third-party-v1-<hash of the recorded files>",
     "restoreKey": "third-party-v1-",
-    "usedBy": ["ci.yml:two-stacks", "main-preview.yml:preview", "nightly-noise.yml:noise", "post-deploy.yml:post-deploy", "release.yml:release", "release.yml:upgrade", "weekly-mutants.yml:mutants"]
+    "usedBy": ["ci.yml:two-stacks", "main-preview.yml:preview", "main-preview.yml:upgrade", "nightly-noise.yml:noise", "post-deploy.yml:post-deploy", "release.yml:release", "release.yml:upgrade", "weekly-mutants.yml:mutants"]
   },
   "forbiddenPermissions": ["pull-requests", "checks", "statuses", "deployments"],
   "writePermissions": {
     "$comment": "The only `write` scopes any workflow or job holds, all on THIS repository (since 1.2.0 for nightly-noise.yml and release.yml). the key <workflow> means the workflow-level permissions. tests/contract.test.ts fails on any other.",
-    "main-preview.yml": { "publish": ["contents"], "why": "since 1.5.0, pushes the `main-preview` branch: each Main to RC forecast's report and scorecard (reports/index.json)" },
+    "main-preview.yml": { "publish": ["contents"], "why": "since 1.5.0, pushes the `main-preview` branch: each Main to RC forecast's report and scorecard (reports/index.json), and since 1.13.1 its confidence.json and changes.json" },
     "pages.yml": { "deploy": ["id-token", "pages"], "why": "since 1.5.0, deploys the kept reports of the release-records, main-preview and noise branches to GitHub Pages; writes no branch" },
     "nightly-noise.yml": { "publish": ["contents"], "why": "force-pushes the `noise` branch: noise-status.json, noise-history.json, noise-summary.md" },
     "post-deploy.yml": { "<workflow>": ["issues"], "why": "opens the `rollback` issue when post-deploy mode exits 1" },
@@ -119,7 +121,7 @@
     "writtenBy": ["release.yml", "weekly-mutants.yml"],
     "jobs": { "release.yml": "scoreboard", "weekly-mutants.yml": "record" },
     "files": ["scoreboard/releases.jsonl", "scoreboard/mutants.jsonl", "README.md"],
-    "readBy": ["pages.yml"],
+    "readBy": ["pages.yml", "main-preview.yml"],
     "fetch": "gh api -H 'Accept: application/vnd.github.raw' repos/<repo>/contents/scoreboard/releases.jsonl?ref=scoreboard",
     "schema": "scoreboard-line.schema.json"
   },

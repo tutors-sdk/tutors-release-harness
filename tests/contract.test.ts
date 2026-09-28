@@ -208,7 +208,7 @@ describe("report.json", () => {
     const cli = json("docs/contract/cli.json");
     for (const flag of cli.flags.filter((f: { since?: string }) => f.since === "1.2.0")) expect(changes, flag.name).toContain(`--${flag.name === "runtime" ? "no-runtime" : flag.name}`);
     for (const [name, v] of Object.entries(cli.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.2.0")) expect(changes, name).toContain(name);
-    expect(CONTRACT_VERSION).toBe("1.13.0");
+    expect(CONTRACT_VERSION).toBe("1.13.1");
     // The harness version is package.json's and moves at least as far as the contract's (docs/contract.md, Versioning):
     // a mask or engine PR bumps the patch of the harness alone, so do not pin a literal here.
     expect(json("package.json").version).toBe(HARNESS_VERSION);
@@ -278,6 +278,21 @@ describe("report.json", () => {
     for (const command of cliJson.commands.filter((c: { since?: string }) => c.since === "1.5.0")) expect(changes, command.name).toContain(command.name);
     for (const [name, v] of Object.entries(cliJson.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.5.0")) expect(changes, name).toContain(name);
     for (const workflow of ["main-preview.yml", "pages.yml"]) expect(changes, workflow).toContain(workflow);
+  });
+
+  it("1.13.1: its changelog and release note name the rehearsals' artifacts, the kept score, the index fields and the page", () => {
+    const start = contractMd.indexOf("### 1.13.1");
+    const end = contractMd.indexOf("### 1.13.0");
+    expect(start).toBeGreaterThan(0);
+    expect(end).toBeGreaterThan(start);
+    const changes = contractMd.slice(start, end);
+    expect(changes).toContain("releases/1.13.1.md");
+    const note = readFileSync(resolve(ROOT, "docs/releases/1.13.1.md"), "utf8");
+    for (const item of ["main-preview-migration-report", "main-preview-upgrade-report", "confidence.json", "changes.json", "`confidence`", "`changes`", "site/index.html", "No new\n  permission", "harness reports keep"]) expect(changes, item).toContain(item);
+    for (const item of ["What main would ship today", "harness changes", "harness confidence", "docs/user-guide/10-running-a-release.md"]) expect(note, item).toContain(item);
+    // the kept-reports section says what a reader of index.json may rely on, and that an old entry has neither field
+    expect(contractMd).toContain("`scoredBy`: the harness that scored it");
+    expect(contractMd).toContain("a reader must not invent them");
   });
 
   it("1.13.0: its changelog and release note list the command, its subcommands, every flag, the register and the new line field", () => {

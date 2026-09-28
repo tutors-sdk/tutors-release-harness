@@ -3,12 +3,12 @@ import { join, relative } from "node:path";
 import { renderChangesHtml, renderChangesMarkdown } from "../changes/render.ts";
 import { CHANGES_FILE, type Changes } from "../changes/signals.ts";
 import { MARKS_FILE } from "../glance/marks.ts";
-import { markHint, renderGlanceHtml, renderGlanceMarkdown } from "../glance/render.ts";
+import { markHint } from "../glance/render.ts";
 import { DigestError, parseDigests } from "../digests.ts";
 import { isTag } from "../release-record.ts";
 import type { Confidence, GateWord } from "../score/confidence.ts";
 import { scoreAndWrite } from "../score/read.ts";
-import { rcsLine, renderDeductionsMarkdown, renderScoreHtml, renderScoreMarkdown } from "../score/render.ts";
+import { rcsLine, renderDeductionsMarkdown } from "../score/render.ts";
 import type { NoiseStatus, RunReport } from "../types.ts";
 import { renderAppended } from "../scoreboard/render.ts";
 import { appendRun, readTrends } from "../scoreboard/store.ts";
@@ -18,6 +18,7 @@ import { KAIZEN_DIR, openAutomatic, type Opened } from "../why/command.ts";
 import { TRIGGERS } from "../why/format.ts";
 import { registerLine } from "../why/register.ts";
 import type { WhyContext } from "../why/trace.ts";
+import { LEAD_CSS, gateLineHtml, scoreLeadHtml, scoreLeadMarkdown } from "../report/lead.ts";
 import { formatElapsed } from "./compare.ts";
 import { readStatus, type StatusReport } from "./noise-store.ts";
 import {
@@ -706,7 +707,7 @@ export function runRelease(r: ReleaseRun, deps: ReleaseDeps): ReleaseOutcome {
   // report: always.
   progress.start("report");
   const at2 = deps.now();
-  const summary = { production: r.baseline.tag, candidate: r.candidate, entries, code, at: at2.toISOString(), gate, ...(r.fast ? { banner: FAST_BANNER } : {}), ...(conf ? { score: `${renderScoreMarkdown(conf, renderGlanceMarkdown(conf, { dir }))}${changes ? `\n\n#### Change risk per PR\n\n${renderChangesMarkdown(changes)}` : ""}` } : {}) };
+  const summary = { production: r.baseline.tag, candidate: r.candidate, entries, code, at: at2.toISOString(), gate, ...(r.fast ? { banner: FAST_BANNER } : {}), ...(conf ? { score: scoreLeadMarkdown(conf, changes, dir) } : {}) };
   const gateFiles = writeGateSummary(r.outRoot, at2, summary, dir);
   const md = join(dir, "report.md");
   const html = join(dir, "report.html");
@@ -779,7 +780,6 @@ const esc = (s: string) => s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").re
 
 /** report.html: self-contained (no scripts, no external requests), the same order as report.md, links to each run's own report. */
 export function renderReleaseHtml(o: { dir: string; gate: string; fast: boolean; candidate: string; baseline: Baseline; code: number; entries: GateSummaryEntry[]; status: ReleaseStatus; review: string[]; seams: Seams; board?: string[]; whys?: string[] }): string {
-  const tone = o.code === 0 ? "pass" : o.code === 1 ? "fail" : "none";
   const link = (runDir: string | undefined) => (runDir ? `<a href="${esc(relative(o.dir, join(runDir, "report.html")).replaceAll("\\", "/"))}">report</a>` : "");
   const rows = o.entries.map((e) => `<tr><td>${esc(e.title)}</td><td>${esc(e.code === "skipped" ? "not run" : e.verdict ? `${e.verdict.toUpperCase()}${e.overridden ? " (OVERRIDDEN)" : ""}` : e.code === 0 ? "ok" : `exit ${e.code}`)}</td><td>${link(e.runDir)}</td></tr>`).join("\n");
   const stages = o.status.stages.filter((x) => x.stage !== "report").map((s) => `<tr><td>${s.stage}</td><td>${s.state}</td><td>${s.elapsed === undefined ? "" : formatElapsed(s.elapsed)}</td><td>${esc(s.note ?? "")}</td></tr>`).join("\n");
@@ -788,20 +788,13 @@ export function renderReleaseHtml(o: { dir: string; gate: string; fast: boolean;
 <html lang="en"><head><meta charset="utf-8"><title>Release ${esc(o.candidate)}: ${esc(o.gate)}</title>
 <style>
 body{font:15px/1.5 system-ui,sans-serif;max-width:60rem;margin:2rem auto;padding:0 1rem;color:#1b1b1b;background:#fff}
-.gate{font-size:1.6rem;font-weight:700;padding:.6rem 1rem;border-radius:6px}
-.gate.pass{background:#e3f4e6}.gate.fail{background:#fbe3e3}.gate.none{background:#f1f1f1}
+${LEAD_CSS}
 .banner{border-left:4px solid #b26b00;background:#fff4e0;padding:.5rem 1rem;font-weight:600}
 .stop{border-left:4px solid #b00020;padding:0 1rem}
 table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid #ddd;padding:.3rem .5rem;text-align:left;vertical-align:top}
-.seam{color:#555}
-.rcs{font-size:1.3rem;font-weight:700;padding:.4rem 1rem;border-radius:6px}
-.rcs.green{background:#e3f4e6}.rcs.amber{background:#fff4e0}.rcs.red{background:#fbe3e3}.rcs.none{background:#f1f1f1}
-.glance{border-left:4px solid #1f5fa8;padding:0 1rem;margin:1rem 0}.glance li{margin:.5rem 0}
-.mark{font-size:.8rem;padding:0 .4rem;border-radius:4px;background:#f1f1f1}.mark.verified{background:#e3f4e6}.mark.disputed{background:#fbe3e3}.mark.escalated{background:#fff4e0}
 </style></head><body>
-<p class="gate ${tone}">Gate: ${esc(o.gate)} <small>(exit ${o.code})</small></p>
-${o.seams.score?.confidence ? renderScoreHtml(o.seams.score.confidence, renderGlanceHtml(o.seams.score.confidence, { dir: o.dir })) : ""}
-${o.seams.score?.confidence && o.seams.changes?.changes ? renderChangesHtml(o.seams.changes.changes) : ""}
+${gateLineHtml(o.gate, o.code)}
+${o.seams.score?.confidence ? scoreLeadHtml(o.seams.score.confidence, o.seams.changes?.changes, o.dir) : ""}
 <p>${esc(o.candidate)} beside ${esc(o.baseline.tag)} <small>(${esc(o.baseline.how)})</small></p>
 ${o.fast ? `<p class="banner">${esc(FAST_BANNER)}</p>` : ""}
 ${stopped}

@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.13.0`
+Contract version: `1.13.1`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -35,9 +35,9 @@ Three numbers, all stamped where a reader can see them:
 
 ```console
 $ pnpm harness version
-harness 1.13.0 (3f2c…) · contract 1.13.0
+harness 1.13.1 (3f2c…) · contract 1.13.1
 $ pnpm harness version --json
-{"version":"1.13.0","gitSha":"3f2c…","contractVersion":"1.13.0"}
+{"version":"1.13.1","gitSha":"3f2c…","contractVersion":"1.13.1"}
 ```
 
 `gitSha` is `git rev-parse HEAD` of the harness checkout, or the
@@ -1126,6 +1126,8 @@ Each is the run's whole `out/` directory unless noted, so a report is at
 | `mutants-summary` | `weekly-mutants.yml` | 14 days (since 1.11.0: `out/mutants.json` only, what the `record` job puts on the scoreboard) |
 | `harness-ci` | `ci.yml` | 7 days |
 | `main-preview-report` | `main-preview.yml` | 14 days (since 1.5.0; see [Main to RC](#main-to-rc)) |
+| `main-preview-migration-report` | `main-preview.yml` | 14 days (since 1.13.1: the forecast's migration rehearsal) |
+| `main-preview-upgrade-report` | `main-preview.yml` | 14 days (since 1.13.1: the forecast's upgrade rehearsal) |
 
 Each job also appends `report.md` to its step summary. A `release.yml` run
 concludes `failure` when any of its three jobs exits non-zero, `success`
@@ -1156,6 +1158,19 @@ run has `id` (`<ranAt>-<mode>`, the colons as dashes: `2026-09-26T07-57-09Z-nois
 published. No new branch, write permission or push, apart from `main-preview`
 below.
 
+Since 1.13.1, a release run scored beside it (a `confidence.json` in its directory whose
+`run.ranAt` is the report's, as [Main to RC](#main-to-rc) leaves one) is kept with its
+score: `confidence.json`, and `changes.json` when it is there too, byte for byte, and its
+`report.md` and `report.html` are led the way `harness release` leads its own: the Gate,
+the RCS and its band, the reviewer's glance, the dimension table, the change risk per PR,
+then the run's own report unchanged (in `report.md` folded, as `gate.md` folds a step's
+report). The run's entry in `index.json` then also has `confidence` (`gate`, `rcs`, `band`,
+`meaning` and `note` when the score has them, `glance`: the number of places to look,
+`scoredBy`: the harness that scored it) and `changes` (`score`, `prs`, `risky`: the PRs
+with a deduction, `floorBreached`, `range`). Both are optional: a run kept before 1.13.1, or
+not scored, has neither, and a reader must not invent them. `report.json` is still kept byte
+for byte.
+
 Since 1.5.0 the same reports are also a website:
 [tutors-sdk.github.io/tutors-release-harness](https://tutors-sdk.github.io/tutors-release-harness/).
 `pages.yml` copies each branch's `reports/` beside `site/index.html`, which lists
@@ -1165,6 +1180,11 @@ holds `pages: write` and `id-token: write`, and writes no branch. Since 1.11.0 i
 runs `harness scoreboard trends --site` on the `scoreboard` branch and the `noise` branch's
 history, and serves `scoreboard.html` and `scoreboard.json` beside the index
 ([the scoreboard](#the-scoreboard)); with no branch yet the page says "no releases scored yet".
+Since 1.13.1 the page opens with the newest Main to RC forecast, "What main would ship
+today": its Gate, RCS and band with the band's meaning, what stops the line, the glance
+with its links, the change risk per PR, when it ran and with which harness, and links to
+the full report, [docs/lean.md](lean.md) and the how-to-run guide. A forecast kept
+before the score existed says so and shows no number.
 
 Each kept run also has `scorecard.json` and `scorecard.md` (`harness scorecard`,
 `src/ci/scorecard.ts`), derived from its `report.json` alone. **Informational:
@@ -1212,9 +1232,21 @@ and it cannot be mistaken for a judged candidate, because it never writes the
 - **Skipped** when this harness version has already judged the same pair (the
   `main-preview` branch's `reports/index.json`), so a quiet day is one API call.
   `harness preview resolve` (not stable) makes that decision.
+- **Rehearsed** (since 1.13.1) as a candidate is: the `migration` job runs migration
+  mode from `v<production>` to the judged commit, the `upgrade` job the rollout under
+  load, as `release.yml` does. A FAIL is a forecast here too; only exit `2` fails a job.
+- **Scored** (since 1.13.1) in the `publish` job, after every verdict and never an
+  input to one, as `release.yml`'s `scoreboard` job scores a candidate: `harness changes
+  --a <production> --b <commit>` over the monorepo's history (`changes.json`), then
+  `harness confidence` over the release run, both rehearsals and `changes.json`, with the
+  `scoreboard` branch's `releases.jsonl` for the glance's novelty (`confidence.json`).
+  Both are advisory: a step that cannot run says why and the forecast is kept without it.
+  Nothing is appended to the scoreboard: a forecast is not a release.
 - **Kept** on the `main-preview` branch, one commit per run, never forced, the last
   60 runs: `reports/index.json` and each run's report and scorecard, as in
-  [Kept reports](#kept-reports).
+  [Kept reports](#kept-reports), and since 1.13.1 its `confidence.json` and
+  `changes.json`, the kept report led by the Gate, the RCS, the glance and the change
+  risk. The report pages show the newest at the top.
 
 ## What the harness does to a pull request
 
@@ -1280,6 +1312,23 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.13.1 (the exemplar: Main to RC carries the score, and the report pages lead with it)
+
+The release note is [releases/1.13.1.md](releases/1.13.1.md). Additive for a consumer written
+against 1.13.0: no command, flag, `report.json` field, verdict or exit code changes, and every new
+field and file is optional.
+
+- `main-preview.yml`: two new jobs, `migration` and `upgrade`, rehearse main as `release.yml`
+  rehearses a candidate (artifacts `main-preview-migration-report` and
+  `main-preview-upgrade-report`, 14 days); the `publish` job runs `harness changes` and
+  `harness confidence` before it keeps the forecast, reading the `scoreboard` branch. No new
+  permission: `publish` still holds `contents: write` and pushes only `main-preview`.
+- `harness reports keep` (not stable): a release run scored beside it is kept with
+  `confidence.json` and `changes.json`, its `report.md` and `report.html` led by the Gate, the
+  RCS and its band, the glance and the change risk per PR (one renderer with `harness release`:
+  `src/report/lead.ts`); its `index.json` entry gains the optional `confidence` and `changes`.
+- `site/index.html`: "What main would ship today", the newest Main to RC forecast, at the top.
 
 ### 1.13.0 (minor; the 5 Whys and the kaizen register: `harness why`)
 
