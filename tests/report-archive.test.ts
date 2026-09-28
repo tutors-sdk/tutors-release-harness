@@ -3,7 +3,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { addEntry, entryId, keepReport, parseIndex, type ReportEntry, type ReportIndex } from "../src/ci/report-archive.ts";
+import type { Changes } from "../src/changes/signals.ts";
 import { reportsCommand, UsageError } from "../src/local/cli.ts";
+import { GLANCE_END, GLANCE_START } from "../src/glance/render.ts";
+import { LEAD_CSS } from "../src/report/lead.ts";
+import type { Confidence } from "../src/score/confidence.ts";
+import { scoredRun } from "./support/scored-run.ts";
 
 const tmp = () => mkdtempSync(join(tmpdir(), "report-archive-"));
 
@@ -93,6 +98,84 @@ describe("keeping a run's report", () => {
   it("a run that wrote no report is said plainly", () => {
     const root = tmp();
     expect(() => keepReport({ dir: root, store: join(root, "store") })).toThrow(/no report\.json/);
+  });
+});
+
+describe("keeping a release run scored beside it (Main to RC, since 1.13.1)", () => {
+  const ranAt = "2026-09-28T05:00:00.000Z";
+  const id = "2026-09-28T05-00-00Z-release";
+
+  it("keeps confidence.json and changes.json byte for byte, and says the Gate, the RCS, the glance and the change risk in the index", async () => {
+    const root = tmp();
+    const dir = await scoredRun(root, { ranAt, unclaimed: 1 });
+    const store = join(root, "store");
+    const { entry: kept } = keepReport({ dir, store });
+    const target = join(store, "reports", id);
+    expect(readdirSync(target).sort()).toEqual(["changes.json", "confidence.json", "report.html", "report.json", "report.md", "scorecard.json", "scorecard.md"]);
+    for (const f of ["confidence.json", "changes.json", "report.json"]) expect(readFileSync(join(target, f), "utf8"), f).toBe(readFileSync(join(dir, f), "utf8"));
+    const c = JSON.parse(readFileSync(join(dir, "confidence.json"), "utf8")) as Confidence;
+    const ch = JSON.parse(readFileSync(join(dir, "changes.json"), "utf8")) as Changes;
+    expect(kept.confidence).toEqual({ gate: "FAIL", rcs: null, band: null, note: c.note, glance: c.glance.length, scoredBy: "1.13.1" });
+    expect(kept.changes).toEqual({ score: ch.score, prs: ch.prs.length, risky: ch.prs.filter((p) => p.deductions.length).length, floorBreached: ch.floorBreached, range: "v1.0.4..v1.1.0" });
+    expect(parseIndex(readFileSync(join(store, "reports", "index.json"), "utf8")).runs[0]).toEqual(kept);
+  }, 60_000);
+
+  it("leads report.md as harness release leads its own: the Gate, the RCS, the glance, the dimensions, the change risk per PR, then the run's report", async () => {
+    const root = tmp();
+    const dir = await scoredRun(root, { ranAt });
+    const store = join(root, "store");
+    keepReport({ dir, store });
+    const md = readFileSync(join(store, "reports", id, "report.md"), "utf8");
+    const c = JSON.parse(readFileSync(join(dir, "confidence.json"), "utf8")) as Confidence;
+    const at = (s: string) => {
+      const i = md.indexOf(s);
+      expect(i, s).toBeGreaterThanOrEqual(0);
+      return i;
+    };
+    expect(md.startsWith("## Release gate: sha-3f1c2a9 beside 1.0.4\n\n**Gate: PASS**\n")).toBe(true);
+    const order = [at("**Gate: PASS**"), at(`**RCS ${c.rcs} ${c.band}: ${c.meaning}**`), at(GLANCE_START), at(GLANCE_END), at("| dimension | weight |"), at("#### Change risk per PR"), at("<details><summary>release: PASS</summary>"), at(readFileSync(join(dir, "report.md"), "utf8").trim())];
+    expect([...order].sort((x, y) => x - y)).toEqual(order);
+    // the glance's mark hint names the kept directory, not the runner's
+    expect(md).toContain(`--run reports/${id} --item <n>`);
+  }, 60_000);
+
+  it("leads report.html with the same blocks and styles, and keeps the run's page under them", async () => {
+    const root = tmp();
+    const dir = await scoredRun(root, { ranAt, unclaimed: 1 });
+    keepReport({ dir, store: join(root, "store") });
+    const html = readFileSync(join(root, "store", "reports", id, "report.html"), "utf8");
+    const own = readFileSync(join(dir, "report.html"), "utf8");
+    expect(html).toContain(`<style>\n${LEAD_CSS}\n</style>\n</head>`);
+    const body = html.indexOf("<body>");
+    // the run's own page, from its <body> on, follows the lead unchanged
+    const ownBody = own.slice(own.indexOf("<body>") + "<body>".length);
+    expect(html.endsWith(ownBody)).toBe(true);
+    const order = [body, html.indexOf('<section class="lead">'), html.indexOf('<p class="gate fail">Gate: FAIL <small>(exit 1)</small></p>'), html.indexOf('<p class="rcs none">'), html.indexOf(GLANCE_START), html.indexOf('<h2 id="change-risk">'), html.length - ownBody.length];
+    for (const i of order) expect(i).toBeGreaterThan(0);
+    expect([...order].sort((x, y) => x - y)).toEqual(order);
+    expect(html).toContain('href="report.html#hunk-dom:/course:1"');
+  }, 60_000);
+
+  it("keeps nothing extra and leads nothing when the score beside the run scored another run, or is not a score", async () => {
+    const root = tmp();
+    const dir = await scoredRun(root, { ranAt });
+    const c = JSON.parse(readFileSync(join(dir, "confidence.json"), "utf8")) as Confidence;
+    writeFileSync(join(dir, "confidence.json"), JSON.stringify({ ...c, run: { ...c.run, ranAt: "2026-09-27T05:00:00.000Z" } }));
+    const { entry: stale } = keepReport({ dir, store: join(root, "a") });
+    expect(stale.confidence).toBeUndefined();
+    expect(stale.changes).toBeUndefined();
+    expect(readdirSync(join(root, "a", "reports", id))).not.toContain("confidence.json");
+    expect(readFileSync(join(root, "a", "reports", id, "report.md"), "utf8")).toBe(readFileSync(join(dir, "report.md"), "utf8"));
+    writeFileSync(join(dir, "confidence.json"), "{not json");
+    expect(keepReport({ dir, store: join(root, "b") }).entry.confidence).toBeUndefined();
+  }, 60_000);
+
+  it("a noise run is never led, whatever sits beside it", () => {
+    const root = tmp();
+    const dir = runDir(root, ranAt, "noise", "pass", ["confidence.json", "changes.json"]);
+    const { entry: kept } = keepReport({ dir, store: join(root, "store") });
+    expect(kept.confidence).toBeUndefined();
+    expect(kept.files.some((f) => f.endsWith("confidence.json"))).toBe(false);
   });
 });
 
