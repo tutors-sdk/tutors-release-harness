@@ -12,6 +12,7 @@ It is:
 - a gate that may fail a release, but only while its own noise check (the A/A run) is clean, verified and recent.
 - a rehearsal for two risky things a diff cannot show: a database migration (expand/contract) and a rolling upgrade under load.
 - a runner you can start on your own machine. The GitHub workflows are an optional convenience; every step of them is a `harness` command that also runs locally.
+- one command for a release, `harness release`, that ends in the Gate, then a Release Confidence Score with its band, then at most seven ranked places for a Reviewer to look. The score is advisory: it never changes the Gate or an exit code.
 
 It is not:
 
@@ -21,36 +22,42 @@ It is not:
 - a tool for OpenShift. The compose and kind substrates are what runs; OpenShift is out of scope and this guide does not cover it.
 - something that writes to your pull requests. It produces a Markdown comment; posting it is the monorepo's job.
 
+## Start here
+
+- **To run a release:** [10 Running a release](10-running-a-release.md). Every step of the release SOP with its command, what you see, and when it is done.
+- **To read a report:** [03 Reading a report](03-reading-a-report.md). A real Main to RC report, top to bottom: the Gate, the score, the glance, the differences.
+- **To see one now:** the [report pages](https://tutors-sdk.github.io/tutors-release-harness/). Main to RC judges today's `main` against production every day, exactly as a release candidate would be judged. It is the live example the guide teaches from.
+
 ## Who reads which chapter
 
 | You are | Start with | Then |
 | --- | --- | --- |
-| **A release author**: you write claims and read a report | [03 Reading a report](03-reading-a-report.md), [04 Writing claims](04-writing-claims.md) | [01 Concepts](01-concepts.md), [08 Troubleshooting](08-troubleshooting.md) |
+| **The Captain**: you run a release and own the go or no-go | [10 Running a release](10-running-a-release.md), [03 Reading a report](03-reading-a-report.md) | [01 Concepts](01-concepts.md), [08 Troubleshooting](08-troubleshooting.md) |
+| **The Reviewer**: you do the glance at step 8 | [03 Reading a report](03-reading-a-report.md) (sections 1 to 4), [10, step 8](10-running-a-release.md#step-8-the-reviewers-glance) | [01 Concepts](01-concepts.md) |
+| **A Contributor**: you write changelog lines and claims | [04 Writing claims](04-writing-claims.md), [03 Reading a report](03-reading-a-report.md) | [10, steps 3 and 4](10-running-a-release.md#steps-3-and-4-the-changelog-and-the-claims), [08 Troubleshooting](08-troubleshooting.md) |
 | **A maintainer or operator**: you run the harness locally and schedule it | [02 Running locally](02-running-locally.md), [05 Noise and self-test](05-noise-and-self-test.md) | [01 Concepts](01-concepts.md), [08 Troubleshooting](08-troubleshooting.md) |
-| **A CI integrator** on the monorepo side | [06 CI integration](06-ci-integration.md), [07 Reference](07-reference.md) | [04 Writing claims](04-writing-claims.md) |
+| **A CI integrator** on the monorepo side | [06 CI integration](06-ci-integration.md), [07 Reference](07-reference.md) | [10 Running a release](10-running-a-release.md#how-ci-runs-the-same-thing) |
 | **A harness developer**: you add an artefact, mask, mutant or journey | [09 Extending](09-extending.md) | [01 Concepts](01-concepts.md), [05 Noise and self-test](05-noise-and-self-test.md) |
+
+Read in this order the first time: 01, 10, 03, 04, then the rest as you need them. The roles are the monorepo's `release/SOP.md`; the Lean ideas behind them are in [docs/lean.md](../lean.md).
 
 | Chapter | Covers |
 | --- | --- |
-| [01 Concepts](01-concepts.md) | A and B, the stacks, journeys, artefacts, masks, claims, verdicts, the gate, exit codes |
+| [01 Concepts](01-concepts.md) | A and B, the stacks, journeys, artefacts, masks, claims, verdicts, the gate, the score, exit codes, and the five Lean ideas |
 | [02 Running locally](02-running-locally.md) | `HARNESS_HOME`, every `local` wrapper and `run` mode, ports, image sources, scheduling, retention |
-| [03 Reading a report](03-reading-a-report.md) | `report.md`, `report.html`, `report.json`, one annotated example, real regression versus noise versus missing claim, timing statistics |
+| [03 Reading a report](03-reading-a-report.md) | A real report top to bottom: the Gate, the RCS and its band, the eight dimensions, the glance, the per-PR change table, the differences, the 5 Whys; then each file and each kind of finding, real regression versus noise versus missing claim, timing statistics |
 | [04 Writing claims](04-writing-claims.md) | The claims schema, a cookbook of worked examples, hygiene, rejections and fixes |
-| [05 Noise and self-test](05-noise-and-self-test.md) | The A/A run, the noise store and ratchet, the mutants, the guards |
-| [06 CI integration](06-ci-integration.md) | Workflows, variables, dispatch payloads, the monorepo side, overrides, exit codes |
+| [05 Noise and self-test](05-noise-and-self-test.md) | The A/A run, the noise store and ratchet, the mutants, the guards, the harness's own health on the scoreboard |
+| [06 CI integration](06-ci-integration.md) | Workflows, variables, dispatch payloads, the monorepo side, Main to RC, the scoreboard branch, release tags, the rollback issue, overrides, exit codes |
 | [07 Reference](07-reference.md) | Every command and flag, environment variables, exit codes, files, artefacts, contract versions |
 | [08 Troubleshooting](08-troubleshooting.md) | Symptom, cause, fix |
 | [09 Extending](09-extending.md) | Adding an artefact, mask, mutant, journey or stub; the versioning rules; the unit suite |
+| [10 Running a release](10-running-a-release.md) | The release SOP step by step: prerequisites, `pnpm release:candidate`, `harness release` and its seven stages, the Gate, the score and the glance, go or no-go, deploy and the watch window, the 5 Whys, closing the release, `--fast`, how CI runs the same |
 | [Glossary](glossary.md) | The terms used in this guide |
 
-Older, narrower documents this guide builds on and links to: [the integration contract](../contract.md), [where the images come from](../images.md), [modes](../modes.md), [running locally (parity matrix)](../local.md), [the noise burn-down playbook](../noise-burndown.md), [claims](../../claims/README.md), [mutants](../../mutants/README.md) and [TESTING.md](../../TESTING.md). Where they and this guide disagree, the code and the contract win; please report the difference.
+Older, narrower documents this guide builds on and links to: [the integration contract](../contract.md), [Lean in the harness](../lean.md), [where the images come from](../images.md), [modes](../modes.md), [running locally (parity matrix)](../local.md), [the noise burn-down playbook](../noise-burndown.md), [the kaizen register](../../kaizen/README.md), [claims](../../claims/README.md), [mutants](../../mutants/README.md) and [TESTING.md](../../TESTING.md). Where they and this guide disagree, the code and the contract win; please report the difference.
 
-## Pending: two changes on their way
-
-Everything in this guide describes what is on `main` (harness 1.4.1, contract 1.4.0). Two small changes are in flight and will land as their own pull requests; the guide mentions them where they matter and does not rely on them.
-
-- **`harness local compare`** (`pnpm compare`): main against the last release in one command: it finds the release, pulls and verifies both sides, runs release mode with no claims, and prints the verdict, the counts and the report path. An exploration: exit 0 whenever a report was produced. See [chapter 2](02-running-locally.md#comparing-main-with-the-last-release).
-- **A deterministic settle for the signed-in reader's A/A**: a known flake class on the `reader-auth` course page (extra console messages, or extra lines in the accessibility tree) that a page settle fix will remove. Until then, [chapter 5](05-noise-and-self-test.md#a-known-flake-class-the-signed-in-reader) says how to recognise it and how to read the artifact the weekly mutants job now uploads.
+This guide describes what is on `main`: harness 1.13.0, contract 1.13.0 (`pnpm harness version` prints both). What changed in each release is in [docs/releases/](../releases/1.13.0.md).
 
 ## Quickstart: ten minutes to a first local run
 
@@ -130,13 +137,13 @@ A `WARN` on a first A/A is normal: it means the run found differences between pr
 
 **6. Or run the whole smoke in one command.** `pnpm smoke` (`harness local smoke`) is what CI runs: it fetches the images, boots both stacks, runs one journey as an A/A, and checks that the expanding migration fixture passes and the contracting one is rejected. It takes roughly ten minutes.
 
-**7. Rehearse a release without starting anything.** `--dry-run` prints the commands a task would run and starts nothing:
+**7. Rehearse a release without starting anything.** `--dry-run` prints the baseline, the noise decision and every command a release would run, and starts nothing:
 
 ```console
-pnpm harness local gate --a 16.2.0 --b 16.3.0-rc.1 --runs 5 --dry-run
+pnpm harness release --candidate 16.3.0-rc.1 --baseline 16.2.2 --dry-run
 ```
 
-Where to go next: the full maintainer tasks are in [chapter 2](02-running-locally.md); if you are writing claims for a release, go to [chapter 4](04-writing-claims.md).
+Where to go next: to run a real release, [chapter 10](10-running-a-release.md); the maintainer tasks are in [chapter 2](02-running-locally.md); if you are writing claims for a release, [chapter 4](04-writing-claims.md).
 
 ## A note on the command line
 

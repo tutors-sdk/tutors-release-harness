@@ -10,6 +10,8 @@ This chapter defines the ideas the rest of the guide relies on. Every term in bo
 - [Claims](#claims)
 - [Verdicts](#verdicts)
 - [Noise and release: the gate](#noise-and-release-the-gate)
+- [The Gate and the score](#the-gate-and-the-score)
+- [The five Lean ideas](#the-five-lean-ideas)
 - [Exit codes](#exit-codes)
 
 ## A and B
@@ -210,6 +212,44 @@ Otherwise the same findings come back as `WARN`, exit 0, and the first reason be
 Without `--noise`, release and post-deploy mode look in the local noise store (`<HARNESS_HOME>/noise`); `--noise none` says do not look. [Chapter 5](05-noise-and-self-test.md) covers the store, the ratchet and the streak.
 
 The rehearsal modes (`migration`, `upgrade`) are deterministic and gate on their own.
+
+## The Gate and the score
+
+A release gets two results, always in this order.
+
+1. **The Gate**: PASS, WARN or FAIL, exactly the verdict above (and NOT JUDGED when `harness release` compared nothing). It decides the exit code. It answers one question: is every observable difference claimed?
+2. **The Release Confidence Score (RCS)**: 0 to 100, with a band. It answers a different question: how much is the evidence behind a pass worth? It is computed only when the Gate is PASS or WARN. A FAIL has no score.
+
+The RCS is the weighted mean of eight dimensions, each 100 minus the points it lost, and every point lost names its evidence (a hunk, a PR, a file or a run):
+
+| Dimension | Weight | Measured from |
+| --- | --- | --- |
+| Claim coverage | 20 | the release run: unclaimed, stale and broad claims |
+| Noise health | 15 | the A/A: clean, verified, fresh; masks that never fired |
+| Statistical margin | 10 | timing and load p-values close to significance |
+| Rehearsals | 10 | the migration and upgrade runs |
+| Test signal | 15 | the monorepo's mutation scores and the harness's mutants (`--test-signal`) |
+| Requirements traceability | 10 | the changelog, the EARS files and the claims (`--traceability`) |
+| Change risk | 15 | `harness changes`: one risk line per PR |
+| Post-deploy history | 5 | the last release's post-deploy check (`--post-deploy`) |
+
+A dimension without its input is **not measured**: left out of the mean, never scored 100. Every dimension has a **floor**; a breached floor caps the RCS at 74, so one hollow dimension cannot hide behind seven strong ones. The **bands** are fixed: **Green** 90 or more (ship on the Captain's say), **Amber** 75 to 89 (ship only when every glance item is marked verified), **Red** below 75 (hold and open a 5 Whys).
+
+Under the score is the **glance**: at most seven places for the Reviewer to look, ranked by novelty × exposure, each linked to the hunk, the claim and the PR. The Reviewer marks each one verified, disputed or escalated.
+
+**The Gate wins.** A FAIL is a FAIL at RCS 99. The score is never an input to the gate and never changes an exit code; nor do the glance, the scoreboard or a 5 Whys. [Chapter 3](03-reading-a-report.md#2-the-score-and-its-band) reads a real score; the rules and weights are in [docs/contract.md](../contract.md#confidencejson-the-release-confidence-score).
+
+## The five Lean ideas
+
+The release process is built on five ideas from Lean. [docs/lean.md](../lean.md) sets out the view and the guardrails; this is where each one is in the tooling.
+
+| Idea | What it means here | Where you meet it |
+| --- | --- | --- |
+| **Jidoka** (stop the line) | the Gate stops the release on an unclaimed difference, and no number talks it back on. Each stop says where and why: `line stopped at <stage>: <why>` | the Gate; `harness release`'s stages |
+| **Visual management** | one score, broken into the points it lost, read the same way by everyone; the scoreboard shows it over releases | the RCS and its band; `harness scoreboard trends` |
+| **Standard work** | a release is the same twelve steps every time, each with an owner and a done-when | the monorepo's `release/SOP.md`; [chapter 10](10-running-a-release.md) |
+| **Gemba** (go and look) | the Reviewer goes to the artefact, not the summary | the glance; `harness glance mark` |
+| **Kaizen** (improve the system) | every stop or drop in confidence ends in one countermeasure to the system, never in blame | `harness why`; [kaizen/README.md](../../kaizen/README.md) |
 
 ## Exit codes
 

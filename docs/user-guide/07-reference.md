@@ -21,16 +21,25 @@ Invoke as `pnpm harness <command>` from a checkout (Node 22 or newer, `pnpm inst
 | `harness compare --dir <run dir> --mode <mode>` | yes | | Re-run normalise, compare, claim and gate on captures already on disk; rewrites the reports in place. No Docker. |
 | `harness images ensure --a <ref> --b <ref>` | yes | | Per image: use it if local, else pull it and verify its cosign signature by digest, else (bare tag) build it from the monorepo ref. |
 | `harness mutants --base <ref>` | yes | | Build every mutant from the base reader image and prove the harness catches each. |
-| `harness version [--json]` | yes | | Harness version, git sha and contract version (they differ: this checkout is harness 1.4.1 on contract 1.4.0). |
+| `harness version [--json]` | yes | | Harness version, git sha and contract version (harness 1.13.0 on contract 1.13.0 on `main` today; they can differ, see [below](#contract-version-compatibility)). |
 | `harness doctor` | yes | 1.3.0 | What this machine lacks to run the harness, and how to install it. Read-only. |
 | `harness noise record` | yes | 1.3.0 | Append tonight's A/A to the noise store; keep the ratchet. |
 | `harness noise status` | yes | 1.3.0 | Does the latest status license a FAIL? |
 | `harness noise history` | **no** | 1.3.0 | The ratchet, the clean streak and the last nights. |
-| `harness guard masks\|engine\|all --base <ref>` | yes | 1.3.0 | The CI guards against a local ref. |
+| `harness guard masks\|engine\|scoreboard\|all --base <ref>` | yes | 1.3.0 (`scoreboard` 1.11.0) | The CI guards against a local ref. `all` runs all three. |
 | `harness override list` | **no** | 1.3.0 | The local, append-only record of overridden FAILs. |
 | `harness local nightly\|gate\|mutants\|watch\|smoke\|compare` | **no** | 1.3.0 (`smoke`, `compare` 1.4.0) | One command per maintainer task, planned from the same commands the workflows run; `--dry-run` prints the plan. `smoke` is the two-stacks smoke `ci.yml` runs (`pnpm smoke`). `compare` (`pnpm compare`) is the gate's release step with `main` against the last release, 3 runs, no claims; exit `0` whenever a report was produced, `2` when it could not judge, `1` for a harness fault. |
 | `harness vuln-db update\|status` | **no** | 1.4.0 | The pinned vulnerability database: `update` fetches it into `HARNESS_VULN_DB_DIR`, else `<HARNESS_HOME>/vuln-db`; `status` says which database a scan would read, its build time, age and checksum. |
 | `harness prune` | **no** | 1.4.0 | Free `out/` and the image cache. A dry run unless `--yes`. |
+| `harness reports keep --dir <run dir>` | **no** | 1.5.0 | Keep a run's reports and its scorecard under `<store>/reports/<ranAt>-<mode>/` and list it in `reports/index.json`, newest first. What the workflows push to the `release-records`, `main-preview` and `noise` branches. |
+| `harness scorecard --report <run dir>` | **no** | 1.5.0 | A 0-100 scorecard of one run: every deduction, the A/A normalness, EARS Rule to diffs to PRs, and at most five pages to test by hand. Never changes a verdict. The older, per-run score; the release score is `harness confidence`. |
+| `harness preview resolve` | **no** | 1.5.0 | Main to RC: decide production and the candidate for `main-preview.yml`, and skip a pair already judged. |
+| `harness release --candidate <tag>` | **no** | 1.8.0 | **The one command for a release** (SOP steps 5 to 7): resolve, noise, changes, release, rehearse, score, report, into `out/<timestamp>-release-command/`. Led by the Gate, then the RCS and its band, then the glance. [Chapter 10](10-running-a-release.md). |
+| `harness confidence --run <dir>` | **no** | 1.9.0 | The Release Confidence Score: writes `confidence.json` and prints the Gate, the RCS, its band and the eight dimensions with every deduction; since 1.12.0 also the glance. |
+| `harness changes --a <tag> --b <tag>` | **no** | 1.10.0 | What changed between two tags of the monorepo, one risk line per PR; change risk. `--out` writes `changes.json`. |
+| `harness scoreboard append\|trends\|mutants` | **no** | 1.11.0 | The release scoreboard: append a run's line, print the six trend views and the run rules with the harness's health, record a week's mutants. |
+| `harness glance mark\|status --run <dir>` | **no** | 1.12.0 | The reviewer's glance: record one mark per item; print the glance with its marks and whether an Amber release may go. |
+| `harness why --run <dir> --finding <id>`, `why check`, `why register` | **no** | 1.13.0 | The 5 Whys: open a stub with Why 1 answered; check a filled one; regenerate the kaizen register. |
 | `harness help [command]`, `--help`, `-h` | yes | | The usage; exit 0. |
 | `harness stack up\|down --a <ref> --b <ref>` | **no** | | Start or stop both compose stacks. |
 | `harness kind up\|down\|rollout --a <ref> --b <ref>` | **no** | | The kind substrate. `down` deletes the namespaces; the cluster stays. |
@@ -78,7 +87,7 @@ The last lines are `verdict: <VERDICT>`, the reasons, and `report: <path to repo
 
 ### `harness guard`
 
-`masks`, `engine` or `all`, with `--base <ref>` (else `HARNESS_BASE_REF`, else `origin/main`, else `main`). Compares `<base>...HEAD`. Exit `0`, `1` a violation, `2` when the ref does not exist or shares no history with `HEAD`.
+`masks`, `engine`, `scoreboard` or `all` (all three), with `--base <ref>` (else `HARNESS_BASE_REF`, else `origin/main`, else `main`). Compares `<base>...HEAD`. Exit `0`, `1` a violation, `2` when the ref does not exist or shares no history with `HEAD`.
 
 ### `harness vuln-db`
 
@@ -91,6 +100,49 @@ The last lines are `verdict: <VERDICT>`, the reasons, and `report: <path to repo
 ### `harness override list`
 
 `--since <ISO date>`, `--json` (`{ file, count, chainIntact, problems, entries }`). Reads `<HARNESS_HOME>/overrides.jsonl`; a broken hash chain prints a warning per problem.
+
+### `harness reports keep`, `harness scorecard`, `harness preview resolve`
+
+`reports keep`: `--dir <run dir | report.json>` (required), `--store`, `--run-url`, `--keep-last`, `--rules`. `scorecard`: `--report <run dir | report.json>` (required), `--rules`, `--json`; informational, exit `0`. `preview resolve`: `--a`, `--b`, `--force`; writes `production`, `candidate`, `sha`, `claims_url` and `skip` to `GITHUB_OUTPUT`; exit `2` when it cannot decide.
+
+### `harness release`
+
+`--candidate <tag>` (required), `--baseline <tag | prod>` (default `prod`: `release/deployed.json` in the monorepo checkout, else `HARNESS_PRODUCTION_TAG`, else exit `2`), `--monorepo <dir>` (else `HARNESS_MONOREPO_DIR`), `--claims` (default `release/claims.yaml` in the checkout), `--rules`, `--fast`, `--open`, `--out`, `--dry-run`, and the score's inputs `--test-signal`, `--traceability`, `--change-risk`, `--post-deploy`, `--scoreboard` (default `<HARNESS_HOME>/scoreboard/releases.jsonl`). Release mode runs 3 runs with k6 at `20x30s`; the A/A, when the store cannot license a FAIL, 3 runs. Holds the run lock. Exit `0` PASS or WARN, `1` FAIL, `2` not judged (a stopped line before the A/B, Ctrl-C) or usage. The stages and what each prints are in [chapter 10](10-running-a-release.md#what-each-stage-prints).
+
+### `harness confidence`
+
+`--run <release run dir | report.json | harness release dir>` (required), `--migration <dir>`, `--upgrade <dir>`, `--test-signal <json>`, `--traceability <json>`, `--change-risk <json | changes.json>`, `--post-deploy <dir | report.json>`, `--scoreboard <file>` (the history the glance's novelty reads), `--json`. Writes `confidence.json` beside what it scored. Exit `0` when written, whatever the Gate or the score; `2` for an input it cannot read.
+
+### `harness changes`
+
+`--a <tag>`, `--b <tag>` (required; `16.2.2` finds `v16.2.2`, and a commit sha is read as it is), `--monorepo <dir>` (else `HARNESS_MONOREPO_DIR`), `--history <n>` (default 6 releases), `--changelog <file>` (the output of `pnpm release:changelog --json`), `--json`, `--out <file>`. Review coverage needs `GITHUB_TOKEN` or `GH_TOKEN`. Exit `0` whatever it found; `2` for what it cannot read (no checkout, a tag the monorepo lacks, an unusable `--changelog`).
+
+### `harness scoreboard`
+
+| Subcommand | Flags | Exit |
+| --- | --- | --- |
+| `append` | `--run <harness release dir \| confidence.json>` (required), `--file` (default `<HARNESS_HOME>/scoreboard/releases.jsonl`), `--mutants`, `--tag`, `--run-url`, `--json` | `0` appended; `2` for what it cannot read, or a `--fast` run (refused) |
+| `trends` | `--file`, `--mutants` (default `mutants.jsonl` beside the file), `--noise-history` (default the local store's), `--site <dir>` (writes `scoreboard.html` and `scoreboard.json`), `--json` | `0`; `2` for what it cannot read |
+| `mutants` | `--run <harness mutants --out dir \| mutants.json>` (required), `--file`, `--run-url`, `--json` | `0`; `2` for what it cannot read |
+
+### `harness glance`
+
+| Subcommand | Flags | Exit |
+| --- | --- | --- |
+| `mark` | `--run <harness release dir>`, `--item <n>`, `--mark verified\|disputed\|escalated`, `--by <name>` (all required), `--note <text>`, `--json` | `0` recorded; `2` for what it cannot use |
+| `status` | `--run <harness release dir>` (required), `--json` | `0` always once `--run` is given |
+
+An `escalated` mark also writes a 5 Whys stub into `<dir>/kaizen/` and prints where.
+
+### `harness why`
+
+| Form | Flags | Exit |
+| --- | --- | --- |
+| `why` | `--run <run dir \| harness release dir>`, `--finding <id>` (both required), `--out <dir>` (default `kaizen/`), `--tag`, `--scoreboard`, `--json` | `0` written (a file already there is left as it is); `2` for what it cannot read |
+| `why check <file\|dir...>` | `--json` | `0` every file ready; `1` one is not, with each gap and its reason |
+| `why register` | `--dir <dir>` (default `kaizen`), `--write`, `--json` | `0` in date (or written); `1` without `--write` when `README.md` is out of date |
+
+`--finding` takes `gate`, `band`, `rollback`, `<rule>:<series>` (`three-declines:rcs`, `two-of-three-below-75:change-risk`, `countermeasures-rising`), a glance item (`<kind>:<key>` or `glance:<n>`), or a hunk id from `report.json`.
 
 ### `harness local`
 
@@ -119,33 +171,51 @@ Every flag, alphabetically. Types: strings unless noted. "Stable" is from `cli.j
 | `--allow-unsigned` (boolean) | yes | 1.1.0 | Judge registry images whose cosign signature could not be verified. Local work only; the report records it. Same as `HARNESS_ALLOW_UNSIGNED=1` |
 | `--axe`, `--focus`, `--screenshots`, `--runtime` (boolean, negated as `--no-...`) | no | `--runtime` 1.2.0 | Collectors that are on by default. `--no-runtime` skips container posture |
 | `--base` | yes | | `harness mutants`: the base tag or reader image. `harness guard`: the ref to compare with |
+| `--baseline` | no | 1.8.0 | `release`: production, a tag or `prod` (the default: `release/deployed.json` in the monorepo checkout) |
+| `--by` | no | 1.12.0 | `glance mark`: who looked (the Reviewer) |
+| `--candidate` | no | 1.8.0 | `release`: the pushed candidate tag, e.g. `16.3.0-rc.1` |
+| `--change-risk`, `--post-deploy`, `--test-signal`, `--traceability` | no | 1.9.0 | `confidence`, `release`: the score's optional inputs (JSON files; `--change-risk` also takes a `changes.json`, `--post-deploy` a run directory) |
+| `--changelog` | no | 1.10.0 | `changes`: the output of `pnpm release:changelog --json`, instead of `CHANGELOG.md` at the newer tag |
 | `--claim-max-hunks` | no | 1.2.0 | Flag a claim covering more failing hunks than this (default 10, or `HARNESS_CLAIM_MAX_HUNKS`); reported, never gates |
 | `--claims` | yes | | The release's `claims.yaml` |
 | `--deployed` | yes | 1.3.0 | Post-deploy mode: the tag that was deployed; names the release record |
 | `--deployed-digests` | yes | 1.3.0 | Post-deploy mode: the digests that run |
-| `--dir` | yes | | `harness compare`: the run directory containing `a/` and `b/` |
-| `--dry-run` (boolean) | no | 1.3.0 | `harness local`: print the plan, start nothing |
+| `--dir` | yes | | `harness compare`: the run directory containing `a/` and `b/`; `reports keep`: the run to keep; `why register`: the kaizen directory |
+| `--dry-run` (boolean) | no | 1.3.0 | `harness local`, `release` (1.8.0): print the plan, start nothing |
+| `--fast` (boolean) | no | 1.8.0 | `release`: one run, no load, no rehearsals, no A/A of its own; cannot be used for a go decision |
+| `--file` | no | 1.11.0 | `scoreboard`: the `releases.jsonl` (or `mutants.jsonl`) to read or append to |
+| `--finding` | no | 1.13.0 | `why`: what the 5 Whys is about (`gate`, `band`, `rollback`, a run rule, a glance item, a hunk id) |
+| `--force` (boolean) | no | 1.5.0 | `preview resolve`: judge a pair already judged |
 | `--for` | yes | 1.3.0 | `harness doctor`: `nightly`, `gate`, `mutants`, `watch`, `kind`, comma separated |
 | `--help`, `-h` (boolean) | yes | | Print the usage after a command; exit 0 |
 | `--image-cache` | yes | 1.2.0 | `images ensure`, `local nightly`: a directory kept between runs; used, as provenance `cached`, only when the registry cannot be reached |
 | `--image-prefix` | yes | | Where bare tags live: a prefix (`tutors`) or a template with `{app}` |
+| `--history` | no | 1.10.0 | `changes`: how many releases before `--a` churn and hotspots are measured against (default 6) |
 | `--interval` | no | 1.3.0 | `local watch`: `<n>s`, `<n>m` or `<n>h` |
+| `--item` | no | 1.12.0 | `glance mark`: the glance item's number |
 | `--journey` (repeatable) | yes | | Run only this journey |
-| `--json` (boolean) | yes | | `version`, `doctor`, `noise status`, `noise history`, `override list`, `prune`, `vuln-db status`: print data |
+| `--json` (boolean) | yes | | `version`, `doctor`, `noise status`, `noise history`, `override list`, `prune`, `vuln-db status`, and the release commands (`confidence`, `changes`, `scoreboard`, `glance`, `why`): print data |
 | `--keep` (boolean) | no | | Leave the stack running afterwards (`pnpm stack:down` stops it) |
 | `--last` | no | 1.3.0 | `noise history`: how many nights to show |
 | `--load` | yes | | k6 after the journeys on each side: `<rate>x<duration>`, e.g. `20x30s` (the duration is `<n>s`, `<n>m` or `<n>h`) |
+| `--mark` | no | 1.12.0 | `glance mark`: `verified`, `disputed` or `escalated` |
 | `--masks` | no | | An alternative `masks.yaml` (for trying a mask on captures) |
+| `--migration`, `--upgrade` | no | 1.9.0 | `confidence`: the rehearsal run directories to score |
+| `--monorepo` | no | 1.8.0 | `release`, `changes`: the monorepo checkout (else `HARNESS_MONOREPO_DIR`) |
+| `--mutants` | no | 1.11.0 | `scoreboard`: the `mutants.jsonl` to read or append to |
 | `--migrations-a`, `--migrations-b` | no | 1.3.0 | `local gate`: monorepo git refs for the migration rehearsal (default `v<a>`, `v<b>`) |
 | `--mode` | yes | | `noise`, `release`, `any-two`, `upgrade`, `migration`, `post-deploy` |
 | `--noise` | yes | | A noise status file or the directory that holds it; `skip` waives the requirement (logged, recorded); `none` does not look. Omitted in release and post-deploy mode: the latest status in the local store |
 | `--noise-max-age-days` | no | | Days after which a status is too old (default 7) |
 | `--no-stack` (`--stack`, boolean) | no | | Do not start or stop the stack; assume it is up |
+| `--note` | no | 1.12.0 | `glance mark`: one line of what the Reviewer saw |
+| `--noise-history` | no | 1.11.0 | `scoreboard trends`: the noise history for the harness's health (default the local store's) |
 | `--now` | no | | The frozen clock, an ISO instant (default `HARNESS_NOW`, else `2026-09-16T09:05:00.000Z`) |
 | `--once` (boolean) | no | 1.3.0 | `local watch`: one comparison and exit |
 | `--older-than-days`, `--keep-last`, `--image-cache-days` | no | 1.4.0 | `prune`: age, newest-per-mode and image-cache thresholds (14, 5, 30) |
+| `--open` (boolean) | no | 1.8.0 | `release`: open `report.html` at the end |
 | `--only` | no | 1.3.0 | `local gate`: `release`, `migration` or `upgrade`; `local smoke`: `stacks` or `migration` |
-| `--out` | yes | | Output root (default `./out`); `prune` uses it as the directory to clean |
+| `--out` | yes | | Output root (default `./out`); `prune` uses it as the directory to clean; `changes`: the `changes.json` to write; `why`: the directory for the stub (default `kaizen/`) |
 | `--override-by` | yes | 1.2.0 | Who accepted the FAIL: a person, not a bot |
 | `--override-reason` | yes | 1.2.0 | Accept a FAIL and say why: 20 or more characters, not a rubber stamp. Both override flags are required together |
 | `--port-offset` | no | 1.3.0 | `local` and `doctor`: move the compose stack's host ports by this many. A variable you set yourself wins |
@@ -158,17 +228,21 @@ Every flag, alphabetically. Types: strings unless noted. "Stable" is from `cli.j
 | `--require` (boolean) | yes | 1.3.0 | `noise status`: exit 1 when the status does not license a FAIL |
 | `--require-verified` (boolean) | yes | 1.2.0 | Noise mode: write the status `degraded` unless every image on both sides was pulled and verified in this run |
 | `--rules` | yes | 1.3.0 | `rules.json`, a path or a URL fetched without credentials: the Rules a claim may name |
-| `--run-url` | yes | 1.3.0 | `noise record`: the run's URL, kept in the history |
+| `--run` | no | 1.9.0 | `confidence`, `scoreboard`, `glance`, `why`: the run or `harness release` directory to read |
+| `--run-url` | yes | 1.3.0 | `noise record`, `reports keep`, `scoreboard`: the run's URL, kept in the history |
 | `--runs` | yes | | Journey repetitions per side (default 1). Timing needs four or more to be able to reach significance; five is recommended |
 | `--set` | yes | | Journey sets, comma separated: `fixture`, `auth`, `reference` (default all three) |
+| `--scoreboard` | no | 1.11.0 | `release`: where to append the line; `confidence`, `why`: the history to read (default `<HARNESS_HOME>/scoreboard/releases.jsonl`) |
 | `--since` | no | 1.3.0 | `override list`: only overrides at or after this date |
+| `--site` | no | 1.11.0 | `scoreboard trends`: write `scoreboard.html` and `scoreboard.json` into this directory |
 | `--snapshot` | no | | Migration mode: a `pg_dump` file to restore first |
 | `--startup-restarts` | no | 1.2.0 | Restarts per app for the startup artefact (default 5; 0 switches it off) |
 | `--status` | yes | 1.3.0 | `noise record`: a noise run directory or `noise-status.json` |
 | `--store` | yes | 1.3.0 | `noise ...`, `local nightly`: the noise store directory (default `<HARNESS_HOME>/noise`) |
 | `--substrate` | no | | `compose` (default) or `kind` |
 | `--summary` | yes | 1.3.0 | `noise record`: a file the summary is appended to |
-| `--tag` | yes | 1.3.0 | `noise record`, `local nightly`: the production tag |
+| `--tag` | yes | 1.3.0 | `noise record`, `local nightly`: the production tag; `scoreboard append`, `why`: the release the line or the 5 Whys is for |
+| `--write` (boolean) | no | 1.13.0 | `why register`: write the regenerated table into `kaizen/README.md` |
 | `--yes` (boolean) | no | 1.4.0 | `prune`: delete (the default is a dry run) |
 | `--strict` (boolean) | no | 1.4.0 | `local compare`: exit code follows the verdict, as `local gate` does |
 | `--no-load` (boolean) | no | 1.4.0 | `local compare`: drop the k6 load leg |
@@ -198,7 +272,9 @@ The image prefix is `--image-prefix`, else `HARNESS_IMAGE_PREFIX`, else `tutors`
 | `HARNESS_COSIGN_IDENTITY` | `^https://github.com/tutors-sdk/tutors-mono-repo/\.github/workflows/image-build\.yml@` | regular expression the signing certificate's identity must match; empty means the default |
 | `HARNESS_COSIGN_ISSUER` | `https://token.actions.githubusercontent.com` | the certificate's OIDC issuer; empty means the default |
 | `HARNESS_ALLOW_UNSIGNED` | unset | `1`, `true` or `yes`: the same as `--allow-unsigned` |
-| `HARNESS_HOME` | `<checkout>/.harness` | where the harness keeps what outlives a run: `noise/`, `releases/`, `overrides.jsonl`, `image-cache/`, `rollbacks/`, `locks/` |
+| `HARNESS_HOME` | `<checkout>/.harness` | where the harness keeps what outlives a run: `noise/`, `releases/`, `overrides.jsonl`, `image-cache/`, `rollbacks/`, `locks/`, `scoreboard/`, `third-party-cache/` |
+| `HARNESS_MONOREPO_DIR` | unset | since 1.8.0: the monorepo checkout `harness release` reads `release/deployed.json` and `release/claims.yaml` from, and `harness changes` reads git from; `--monorepo` overrides |
+| `HARNESS_THIRD_PARTY_CACHE_DIR` | `<HARNESS_HOME>/third-party-cache` | since 1.5.0: the one recorded copy of the third-party hosts the apps load; delete it to record afresh |
 | `HARNESS_PROJECT` | `tutors-harness-<8 hex>` | this checkout's compose project and kind cluster, when the next two do not say. Derived from the SHA-256 of the checkout's real path (lowercased on Windows) |
 | `HARNESS_COMPOSE_PROJECT` | derived | the compose project; wins over `HARNESS_PROJECT` |
 | `HARNESS_KIND_CLUSTER` | derived | the kind cluster; wins over `HARNESS_PROJECT`. `tutors-harness` is refused |
@@ -217,7 +293,9 @@ The image prefix is `--image-prefix`, else `HARNESS_IMAGE_PREFIX`, else `tutors`
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `HARNESS_NOW` | `2026-09-16T09:05:00.000Z` | the frozen clock; `--now` overrides. Given to the browser and every container |
-| `HARNESS_PRODUCTION_TAG` | `main` | `local nightly`, `local mutants`: the production tag when `--tag` and `--base` are not given |
+| `HARNESS_PRODUCTION_TAG` | `main` | `local nightly`, `local mutants`: the production tag when `--tag` and `--base` are not given; `release`: the baseline when there is no `release/deployed.json` |
+| `GITHUB_TOKEN`, `GH_TOKEN` | unset | `changes`: read each PR's reviews from GitHub; without one, review coverage is not measured. Behind an HTTPS proxy Node also needs `NODE_USE_ENV_PROXY=1` |
+| `HARNESS_DIR` | unset | read by the monorepo's `pnpm release:candidate` and `pnpm release:harness`: the harness checkout to run |
 | `HARNESS_PRODUCTION_URLS` | the three production URLs | `local watch`: the URLs when `--production` is not given |
 | `HARNESS_BASH` | `bash` | the bash that runs `scripts/build-images.sh` and `scripts/fetch-migrations.sh` (set it to Git Bash's on Windows when `bash` is WSL's) |
 | `HARNESS_BASE_REF` | unset | `harness guard`: the base when `--base` is not given |
@@ -263,6 +341,13 @@ By command:
 | `local gate`, `nightly`, `mutants` | every step ok | the worst step failed | usage; another harness run holds the lock |
 | `local watch` | (loop: never exits on a difference); `--once`: the comparison passed, or the previous watch was still running | `--once`: production differs | usage; the lock is held (without `--once`) |
 | `version`, `journeys`, `override list`, `noise history` | success | | usage |
+| `release` | Gate PASS or WARN | Gate FAIL | not judged (a stopped line before the A/B, Ctrl-C), usage, or the lock is held |
+| `confidence`, `changes`, `scoreboard`, `scorecard` | written, whatever was found (advisory) | | an input it cannot read |
+| `glance mark` | recorded | | what it cannot use |
+| `glance status` | always, once `--run` is given | | usage |
+| `why` | the stub written, or already there | | what it cannot read |
+| `why check` | every file ready | a file not ready | no files |
+| `why register` | in date, or written with `--write` | out of date (without `--write`) | usage |
 
 `warn` exits `0` on purpose. `harness` with no command prints the usage and exits `2`; `--help`, `-h` and `help` print it and exit `0`. On exit `2` there may be no `report.json`.
 
@@ -278,6 +363,13 @@ By command:
 | `out/.../a/capture.json`, `b/capture.json`, screenshots, `a/load/`, `b/load/` | capturing modes | not contract; read back by `compare` and `--recorded` |
 | `out/.../diff/` | the screenshot engine | difference images |
 | `out/<UTC timestamp>-gate/gate.md`, `gate.json` | `local gate` | the three "pull-request comments" and the verdicts in one place |
+| `out/<UTC timestamp>-release-command/report.md`, `report.html`, `gate.md`, `gate.json` | `release` (1.8.0) | the release report: the Gate, the RCS and its band, the glance, the tables, each step's report |
+| `out/.../release-command/status.json` | `release` (1.8.0) | the stage running, each stage's state and elapsed time, where the line stopped ([schema](../contract/release-status.schema.json)) |
+| `out/.../release-command/changes.json` | `release`, `changes --out` (1.10.0) | one risk line per PR ([schema](../contract/changes.schema.json)) |
+| `out/.../release-command/confidence.json` | `release`, `confidence` (1.9.0) | the score, the dimensions with every deduction, the glance ([schema](../contract/confidence.schema.json)) |
+| `out/.../release-command/glance-marks.jsonl` | `glance mark` (1.12.0) | one line per mark, append-only ([schema](../contract/glance-marks.schema.json)) |
+| `out/.../release-command/kaizen/<date>-<tag>-<finding>.md` | `release`, `glance mark --mark escalated` (1.13.0) | a 5 Whys stub per trigger that fired |
+| `<harness mutants --out>/mutants.json` | `mutants` (1.11.0) | caught of planted, for the scoreboard |
 | `<HARNESS_HOME>/noise/noise-status.json`, `noise-history.json`, `noise-summary.md` | `noise record` | the local noise store |
 | `<HARNESS_HOME>/releases/<candidate>.json`, `<release>.json` | release mode | release records |
 | `<HARNESS_HOME>/overrides.jsonl` | any run with an applied override | append-only, hash-chained |
@@ -286,6 +378,9 @@ By command:
 | `<HARNESS_HOME>/locks/run.lock`, `watch.lock` | `local` | one heavy run, one watch |
 | `<HARNESS_HOME>/image-provenance.json` | `images ensure` | the ledger `run` reads |
 | `<HARNESS_HOME>/vuln-db/` | `harness vuln-db update` | the pinned vulnerability database (about 2.1 GB) |
+| `<HARNESS_HOME>/scoreboard/releases.jsonl` | `release`, `scoreboard append` (1.11.0) | one line per release run, append-only ([schema](../contract/scoreboard-line.schema.json)) |
+| `scoreboard/releases.jsonl`, `scoreboard/mutants.jsonl` | the `scoreboard` branch; a PR may copy lines to `main` | the CI copy of the scoreboard; only gains lines |
+| `kaizen/<date>-<tag>-<finding>.md`, `kaizen/README.md` | people; `why register --write` (1.13.0) | the 5 Whys and the kaizen register |
 | `normalise/masks.yaml` | people | the masks and thresholds |
 | `mutants/mutants.yaml` | people | the ten mutants and what each must be attributed to |
 | `claims/example.claims.yaml` | people | an example claims file (real ones live in the monorepo) |
@@ -334,9 +429,9 @@ Three numbers, stamped where a reader can see them:
 
 ```console
 $ pnpm harness version
-harness 1.4.1 (9513b145e26c871a9b1785fb7a2f752f258407aa) · contract 1.4.0
+harness 1.13.0 (<git sha>) · contract 1.13.0
 $ pnpm harness version --json
-{"version":"1.4.1","gitSha":"9513b145e26c871a9b1785fb7a2f752f258407aa","contractVersion":"1.4.0"}
+{"version":"1.13.0","gitSha":"<git sha>","contractVersion":"1.13.0"}
 ```
 
 `gitSha` is `git rev-parse HEAD` of the checkout, or `HARNESS_GIT_SHA` when set, or `null`.
@@ -349,7 +444,7 @@ What bumps what:
 | minor | additions a careful consumer survives | a new optional report field; a new artefact name; a new mode, command, stable flag, optional payload field, event type, variable with a default, or artifact; a new optional claims key; any change to non-stable commands and flags |
 | patch | nothing above changes | the wording of reasons, summaries, `report.md`, `report.html`; documentation; fixes that make the code match the contract (for example `--help` exiting 0, a claims error without a stack trace) |
 
-The harness version moves at least as far as the contract (this checkout is harness 1.4.1 on contract 1.4.0: 1.4.1 added masks for the CDN in front of production and changed nothing in the contract); a contract major is a harness major. Independently, the harness version must be bumped by any pull request that changes what the harness compares or gates on ([chapter 5](05-noise-and-self-test.md#an-engine-change-needs-a-version-bump-and-the-mutants)).
+The harness version moves at least as far as the contract (harness 1.4.1 ran on contract 1.4.0: it added masks for the CDN in front of production and changed nothing in the contract); a contract major is a harness major. Independently, the harness version must be bumped by any pull request that changes what the harness compares or gates on ([chapter 5](05-noise-and-self-test.md#an-engine-change-needs-a-version-bump-and-the-mutants)).
 
 What each contract version added, for a consumer written against an earlier one:
 
@@ -358,8 +453,17 @@ What each contract version added, for a consumer written against an earlier one:
 | 1.0.0 | the contract: `report.json`, `noise-status.json`, the CLI, the dispatch, the claims file |
 | 1.1.0 | Quay images by template, cosign verification by digest, `provenance` in every report, `--image-prefix` template, `--allow-unsigned`, the `HARNESS_COSIGN_*` variables |
 | 1.2.0 | six artefacts (`bus`, `image-manifest`, `sbom`, `vulns`, `runtime`, `startup`); `claimHygiene`, `override`, `imageArtefacts`, `provenance: cached`, `noise.degraded`; `--image-cache`, `--require-verified`, `--override-*`; the `noise` branch; the SBOM and scanner variables |
-| 1.4.0 | the pinned vulnerability database (`harness vuln-db`), one `NOT COLLECTED` convention and `HARNESS_REQUIRE_ARTEFACTS`, `harness prune`, `harness local smoke`, `--help` and clean exit 2 messages, canonical `content-type` and `cache-control`, symmetric origins and secret redaction for post-deploy, `HARNESS_ROLLBACK_ISSUE`, the `mutant-noise-report` artifact, the `release <candidate>` run title. No `report.json` field, exit code meaning, claims key or payload changes |
 | 1.3.0 | digests in the dispatch (`--a-digests`, `--b-digests`), the release record and the deployment check (`--deployed`, `--deployed-digests`, `--release-record`, `report.json` `deployment`), `rule` claims and `--rules` (`rules_url`), the local noise store as the default source of `--noise`, the stable commands `doctor`, `noise record`, `noise status`, `guard`, and checkout-derived project and cluster names (`HARNESS_HOME`, `HARNESS_PROJECT`) |
+| 1.4.0 | the pinned vulnerability database (`harness vuln-db`), one `NOT COLLECTED` convention and `HARNESS_REQUIRE_ARTEFACTS`, `harness prune`, `harness local smoke`, `--help` and clean exit 2 messages, canonical `content-type` and `cache-control`, symmetric origins and secret redaction for post-deploy, `HARNESS_ROLLBACK_ISSUE`, the `mutant-noise-report` artifact, the `release <candidate>` run title. No `report.json` field, exit code meaning, claims key or payload changes |
+| 1.5.0 | `harness reports keep` and the kept reports on the `noise`, `release-records` and `main-preview` branches, `harness scorecard`, Main to RC (`main-preview.yml`, `harness preview resolve`), the report pages (`pages.yml`), one recorded copy of third-party hosts (`HARNESS_THIRD_PARTY_CACHE_DIR`) |
+| 1.6.0 | `productionBuild` in a post-deploy `report.json`: which build production serves |
+| 1.7.0 | `tags.yml`: `v<version>` tags from a workflow |
+| 1.8.0 | `harness release --candidate`: the one command, `status.json`, `--baseline`, `--monorepo`, `--fast`, `--open`, `HARNESS_MONOREPO_DIR` |
+| 1.9.0 | `harness confidence` and `confidence.json`: the Release Confidence Score; `harness release` scores every run |
+| 1.10.0 | `harness changes` and `changes.json`: one risk line per PR; change risk measured by `harness release` |
+| 1.11.0 | `harness scoreboard`, `scoreboard/releases.jsonl`, the run rules, `harness guard scoreboard`, `mutants.json`, the `scoreboard` branch |
+| 1.12.0 | the reviewer's glance in `confidence.json` and at the top of the report, `harness glance mark` and `status`, `glance-marks.jsonl` |
+| 1.13.0 | `harness why`, `why check`, `why register`, `kaizen/` stubs in a release directory, the kaizen register, `openCountermeasures` on the scoreboard, the 5 Whys stub in the rollback issue |
 
 A run against a dispatch without any 1.3.0 field behaves exactly as under 1.2.0. Four things are not purely additive: a `rule` key in a claim was ignored before and is now checked; a missing `--noise` no longer means "no status" on a machine that has a local noise store; the default name of the compose project and kind cluster changed; and a stack under the old name `tutors-harness` is left alone.
 

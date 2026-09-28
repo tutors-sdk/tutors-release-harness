@@ -1,10 +1,12 @@
 # Documentation
 
-Start with the [user guide](user-guide/README.md): what the harness is, a ten-minute quickstart, and a chapter for each of the people who use it.
+**How to run a release:** [user-guide/10-running-a-release.md](user-guide/10-running-a-release.md), every step of the release SOP with its command, what you see and when it is done. **How to read what it produces:** [user-guide/03-reading-a-report.md](user-guide/03-reading-a-report.md), a real Main to RC report from top to bottom. The live example is on the [report pages](https://tutors-sdk.github.io/tutors-release-harness/).
+
+Otherwise start with the [user guide](user-guide/README.md): what the harness is, a ten-minute quickstart, and a chapter for each of the people who use it.
 
 | Document | What it covers |
 | --- | --- |
-| [user-guide/](user-guide/README.md) | The guide for release authors, operators, CI integrators and harness developers: concepts, running locally, reading a report, writing claims, noise and the self-test, CI, reference, troubleshooting, extending, glossary |
+| [user-guide/](user-guide/README.md) | The guide for the Captain, the Reviewer, Contributors, operators, CI integrators and harness developers: concepts, running locally, reading a report, writing claims, noise and the self-test, CI, reference, troubleshooting, extending, running a release, glossary |
 | [lean.md](lean.md) | The Lean view behind release confidence: jidoka (the gate stops the line), visual management (the score), standard work (the SOP and one command), gemba (the reviewer's glance), kaizen (5 Whys and the register), and the guardrails that keep the number honest |
 | [contract.md](contract.md) | The integration contract: what the monorepo may build against (report, noise status, release record, rules, claims file, CLI, workflows, versions). Its machine-readable half is in [contract/](contract/) |
 | [images.md](images.md) | Where the A and B images come from: Quay, cosign verification, digests, the image cache, the from-source fallback, the image artefacts |
@@ -14,6 +16,6 @@ Start with the [user guide](user-guide/README.md): what the harness is, a ten-mi
 | [bus.md](bus.md) | The bus collector (disabled until a bus exists) |
 | [harness-now.md](harness-now.md) | The decision on `HARNESS_NOW` and time-derived stats |
 | [monorepo/](monorepo/README.md) | What the monorepo needs to do, with reference copies of its two workflows |
-| [releases/](releases/1.2.0.md) | Release notes of the harness |
+| [releases/](releases/1.13.0.md) | Release notes of the harness, newest [1.13.0](releases/1.13.0.md); 1.8.0 to 1.13.0 built the Release Confidence companion |
 
 Elsewhere: [kaizen/README.md](../kaizen/README.md) (the kaizen register: every 5 Whys and its countermeasure), [claims/README.md](../claims/README.md) (the claims format), [mutants/README.md](../mutants/README.md) (the planted regressions), [deploy/kind/README.md](../deploy/kind/README.md) (the kind substrate) and [TESTING.md](../TESTING.md) (how the harness is tested).

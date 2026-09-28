@@ -12,7 +12,8 @@ ideas, where each one lives in a release, and the rules that stop the numbers
 from taking over. It is written for anyone who runs, reviews or changes a Tutors
 release. It explains why the tooling is shaped the way it is; how to use each
 command is covered in [local.md](local.md), [contract.md](contract.md) and
-the monorepo's `release/SOP.md`.
+the monorepo's `release/SOP.md`, and step by step, in the SOP's order, in
+[how to run a release](user-guide/10-running-a-release.md).
 
 ## The five ideas
 
@@ -29,7 +30,7 @@ the monorepo's `release/SOP.md`.
 - A release gets two results, always in this order:
   1. the **Gate** (PASS, WARN or FAIL, exactly as `gate.ts` decides it);
   2. the **Release Confidence Score** (RCS, 0 to 100).
-- The RCS is computed only when the Gate is not FAIL. Keeping the two separate
+- The RCS is computed only when the Gate is PASS or WARN. Keeping the two separate
   is what stops a percentage from arguing with a red light.
 - A FAIL is a FAIL at RCS 99.
 - The score is never an input to `gate.ts` and never changes an exit code.
@@ -93,7 +94,8 @@ the monorepo's `release/SOP.md`.
 - Skipping a step does not make a release faster. It makes a release with an
   undocumented deviation, and deviations are logged in the kaizen register.
 - Steps 2 to 7 are scripted as one command, `harness release --candidate <tag>`.
-  It stops at step 8, the reviewer's glance, because that is the one step that
+  (Steps 3 and 4, the changelog and the claims, are the Contributors' work; the
+  command reads them, it does not write them.) It stops at step 8, the reviewer's glance, because that is the one step that
   must stay human. The command:
   - asks nothing;
   - retries nothing silently;
@@ -182,7 +184,8 @@ discipline that protects masks protects the score.
   a point went, that rule is not ready. A dimension the harness cannot measure yet
   is reported as not measured; it is never quietly scored 100.
 - **Re-running to get a better number is a logged deviation.** Statistical
-  dimensions are re-run only to add samples (`--runs 5`), and the report says so.
+  dimensions are re-run only to add samples (`harness local gate --runs 5`;
+  `harness release` always runs 3), and the release PR says so.
 - **Contributor risk lines are for trends and glances, not for people's
   reviews.** First contributions are flagged as a fact, not a penalty. The
   register records countermeasures to the system, and "a person was careless" is

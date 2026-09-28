@@ -9,6 +9,7 @@ A harness that fails releases must first show that it does not fail on nothing, 
 - [A known flake class: the signed-in reader](#a-known-flake-class-the-signed-in-reader)
 - [The mutant self-test](#the-mutant-self-test)
 - [Guards](#guards)
+- [The harness's own health on the scoreboard](#the-harnesss-own-health-on-the-scoreboard)
 - [The burn-down playbook](#the-burn-down-playbook)
 
 ## The A/A run
@@ -195,12 +196,13 @@ When the A/A on the base is not clean, the log now lists the hunks that made it 
 
 ## Guards
 
-Two checks run on every pull request to this repository. `harness guard` runs the very same code against a local git ref, so you can check before you push.
+Three checks run on every pull request to this repository. `harness guard` runs the very same code against a local git ref, so you can check before you push.
 
 ```console
-pnpm harness guard masks  --base <ref>
-pnpm harness guard engine --base <ref>
-pnpm harness guard all    --base <ref>
+pnpm harness guard masks      --base <ref>
+pnpm harness guard engine     --base <ref>
+pnpm harness guard scoreboard --base <ref>
+pnpm harness guard all        --base <ref>     # all three
 ```
 
 The base is `--base <ref>`, else `HARNESS_BASE_REF`, else `origin/main`, else `main`. The guards compare `<base>...HEAD`, so they see what your branch has *committed* since it left the base; uncommitted work is not compared, and the command says so when the tree is dirty. Exit `0` ok, `1` a violation, `2` when the ref does not exist (or has no common ancestor with `HEAD`, which for a shallow clone is `git fetch --unshallow`).
@@ -267,6 +269,33 @@ package.json version is 1.4.1 (base: 1.4.1). A change to what the harness compar
 ```
 
 exit 1. With no engine change: `no engine, mask, journey, fixture, stack, gate, collector or mutant change: mutants re-run and version bump not required`. In CI the check named **Mutants re-run (required)** always reports (pass when nothing relevant changed), so it is the one to require on `main`; the guard itself can only check the version bump, and the mutants run is the second half of the rule.
+
+### The scoreboard only gains lines
+
+`scoreboard/*.jsonl` is the history of every release run (since 1.11.0). A pull request may add lines to it and nothing else: an edited, reordered or removed line fails `harness guard scoreboard`, and CI's masks job runs it. A re-run of a candidate is a new line with the next run number, never an edit.
+
+## The harness's own health on the scoreboard
+
+A harness that is quietly decaying should show up in the same picture as the product. `harness scoreboard trends` prints, under the release trends, three measures of the harness itself:
+
+| Measure | From | What a bad trend means |
+| --- | --- | --- |
+| mutants caught per week | `scoreboard/mutants.jsonl`: `weekly-mutants.yml`'s `record` job appends each week's `mutants.json` (`harness scoreboard mutants`) | the harness is losing its ability to fail |
+| clean A/A nights, of the last 30 | the noise history (`noise-history.json`, the local store's by default, or `--noise-history`) | noise is growing, and the right to fail is at risk |
+| days since the last A/A failure | the same history | |
+
+A real run on 28 September 2026, reading the `noise` branch's history before any release had been scored:
+
+```console
+$ pnpm harness scoreboard trends --noise-history noise-history.json
+Scoreboard: no releases scored yet. (<HARNESS_HOME>/scoreboard/releases.jsonl)
+
+Harness self-health:
+  mutants: no weekly record yet (harness scoreboard mutants)
+  noise: 4 of the last 9 A/A nights clean; 0 day(s) since the last A/A failure (2026-09-27T13:59:55.645Z)
+```
+
+The report pages draw the same view in `scoreboard.html`, from the `scoreboard` branch ([chapter 6](06-ci-integration.md#the-scoreboard-branch)). "Not measured" is said, never drawn as a value. Masks, and masks that never fired, are on the same page among the release trends: both growing means the harness is going blind.
 
 ## The burn-down playbook
 
