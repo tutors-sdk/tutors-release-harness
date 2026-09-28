@@ -20,7 +20,8 @@ export function headline(c: Changes): string {
   const r = risky(c);
   const loose = c.changeRisk.deductions.filter((d) => d.pr === null && !d.commit);
   const direct = c.prs.filter((p) => p.direct).length;
-  const units = `${c.prs.length - direct} ${c.prs.length - direct === 1 ? "PR" : "PRs"}${direct ? ` and ${direct} direct ${direct === 1 ? "commit" : "commits"}` : ""}`;
+  const merged = c.prs.length - direct;
+  const units = direct ? `${c.prs.length} changes (${merged} ${merged === 1 ? "PR" : "PRs"}, ${direct} direct ${direct === 1 ? "commit" : "commits"})` : `${merged} ${merged === 1 ? "PR" : "PRs"}`;
   return `Change risk ${c.score} (100 − ${c.lost}), ${released(c)}: ${r.length} of ${units} carry a finding${loose.length ? `, and ${loose.length} finding(s) no PR carries` : ""}${c.floorBreached ? "; floor breached (caps the RCS at 74)" : ""}.`;
 }
 

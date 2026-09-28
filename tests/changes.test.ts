@@ -345,7 +345,7 @@ describe("the per-PR table", () => {
   it("the board: the headline, risky lines first, where the points went, the release signals, what was not measured", () => {
     const text = renderChangesBoard(c, "/o/changes.json");
     const lines = text.split("\n");
-    expect(lines[0]).toBe("Change risk 32 (100 − 68), v1.0.4..v1.1.0: 4 of 4 PRs and 1 direct commit carry a finding, and 1 finding(s) no PR carries; floor breached (caps the RCS at 74).");
+    expect(lines[0]).toBe("Change risk 32 (100 − 68), v1.0.4..v1.1.0: 4 of 5 changes (4 PRs, 1 direct commit) carry a finding, and 1 finding(s) no PR carries; floor breached (caps the RCS at 74).");
     expect(text.indexOf("#11 ")).toBeLessThan(text.indexOf("#10 "));
     expect(text).toContain("Where the points went, most first:");
     expect(text).toContain("reviews: 3 approved, 1 not; 1 commit(s) straight to main");

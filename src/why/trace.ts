@@ -189,6 +189,11 @@ const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? o
 const isUrl = (s: string) => /^https?:\/\//.test(s);
 
 /** A link as the stub can follow it: a URL as it is, a path relative to where the stub is written. */
+/** Evidence as a link when it names a file, a hunk or a URL; as words when it is a sentence ("no migration run directory"). */
+function evidenceOf(outDir: string, base: string, evidence: string): string {
+  return isUrl(evidence) || !/\s/.test(evidence) ? `[evidence](${linkFrom(outDir, base, evidence)})` : `evidence: ${md(evidence)}`;
+}
+
 function linkFrom(outDir: string, base: string, target: string): string {
   if (isUrl(target)) return target;
   const [path, anchor] = target.split("#");
@@ -327,7 +332,7 @@ function deductionLines(c: WhyContext, conf: Confidence, outDir: string, only?: 
     .flatMap((d) => d.deductions.map((x) => ({ d, x })))
     .sort((a, b) => b.x.points - a.x.points)
     .slice(0, 5);
-  return all.map(({ d, x }) => `  - ${d.name} −${x.points}${x.floor ? " (floor)" : ""}: ${md(short(x.why, 120))} ([evidence](${linkFrom(outDir, c.dir, x.evidence)}))`);
+  return all.map(({ d, x }) => `  - ${d.name} −${x.points}${x.floor ? " (floor)" : ""}: ${md(short(x.why, 120))} (${evidenceOf(outDir, c.dir, x.evidence)})`);
 }
 
 interface Trace {
