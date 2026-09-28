@@ -1,0 +1,4679 @@
+{
+  "schemaVersion": 1,
+  "a": "16.2.2",
+  "b": "017ceb6d1882e07106d7f35afde27cc0a4eaeaca",
+  "refs": {
+    "a": "v16.2.2",
+    "b": "017ceb6d1882e07106d7f35afde27cc0a4eaeaca"
+  },
+  "version": "017ceb6d1882e07106d7f35afde27cc0a4eaeaca",
+  "repo": "tutors-sdk/tutors-mono-repo",
+  "history": {
+    "asked": 6,
+    "releases": [
+      {
+        "from": "v16.2.1",
+        "to": "v16.2.2"
+      },
+      {
+        "from": "v16.2.0",
+        "to": "v16.2.1"
+      },
+      {
+        "from": "v16.1.8",
+        "to": "v16.2.0"
+      },
+      {
+        "from": "v16.1.6",
+        "to": "v16.1.8"
+      },
+      {
+        "from": "v16.1.5",
+        "to": "v16.1.6"
+      },
+      {
+        "from": "v16.1.4",
+        "to": "v16.1.5"
+      }
+    ]
+  },
+  "score": 30,
+  "lost": 70,
+  "floorBreached": true,
+  "prs": [
+    {
+      "pr": 276,
+      "sha": "790af8b6aca17da5632fa33f83ebf6e6f9bf4fea",
+      "title": "fix(infra): consolidate .env to the repository root",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/276",
+      "direct": false,
+      "release": false,
+      "author": "Leigh Griffin",
+      "firstContribution": false,
+      "files": [
+        ".github/workflows/ci.yml",
+        "ARCHITECTURE.md",
+        "CONTRIBUTING.md",
+        "README.md",
+        "apps/catalogue/svelte.config.js",
+        "apps/catalogue/vite.config.ts",
+        "apps/live/svelte.config.js",
+        "apps/live/vite.config.ts",
+        "apps/reader/svelte.config.js",
+        "apps/reader/vite.config.ts",
+        "apps/time/svelte.config.js",
+        "apps/time/vite.config.ts"
+      ],
+      "churn": 49,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 16,
+        "tests": 0,
+        "ratio": 0,
+        "packages": [
+          {
+            "package": "apps/catalogue",
+            "production": 4,
+            "tests": 0,
+            "ratio": 0
+          },
+          {
+            "package": "apps/live",
+            "production": 4,
+            "tests": 0,
+            "ratio": 0
+          },
+          {
+            "package": "apps/reader",
+            "production": 4,
+            "tests": 0,
+            "ratio": 0
+          },
+          {
+            "package": "apps/time",
+            "production": 4,
+            "tests": 0,
+            "ratio": 0
+          }
+        ]
+      },
+      "reviewed": false,
+      "points": 10,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #276 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/276",
+          "pr": 276,
+          "author": "Leigh Griffin"
+        },
+        {
+          "points": 10,
+          "rule": "tests",
+          "why": "PR #276 changed 4 production lines in apps/catalogue with 0 test lines (0.00); 4 production lines in apps/live with 0 test lines (0.00); 4 production lines in apps/reader with 0 test lines (0.00); 4 production lines in apps/time with 0 test lines (0.00): below 0.2",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/276/files#diff-f59256a303b4024e8a8528f50c846374d823ee3e46c478100acfb0cb61cc4baf",
+          "file": "apps/catalogue/svelte.config.js",
+          "pr": 276,
+          "author": "Leigh Griffin"
+        }
+      ]
+    },
+    {
+      "pr": 279,
+      "sha": "c5f6b792b441a12e58dd48b42ed7600d3ed8fedb",
+      "title": "feat(deploy): make the container spec files Quay-compatible",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/279",
+      "direct": false,
+      "release": false,
+      "author": "Leigh Griffin",
+      "firstContribution": false,
+      "files": [
+        "Dockerfile",
+        "compose.yaml",
+        "deploy/README.md",
+        "deploy/k8s/overlays/catalogue/kustomization.yaml",
+        "deploy/k8s/overlays/live/kustomization.yaml",
+        "deploy/k8s/overlays/reader/kustomization.yaml",
+        "deploy/k8s/overlays/time/kustomization.yaml",
+        "scripts/checks/conformance.ts",
+        "tests/conformance/platform-conformance.test.ts"
+      ],
+      "churn": 144,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 20,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #279 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/279",
+          "pr": 279,
+          "author": "Leigh Griffin"
+        }
+      ]
+    },
+    {
+      "pr": 278,
+      "sha": "60531f1ac6f64f892abeb236afbe4e6fe3765289",
+      "title": "test(reader): smoke the container with authentication enabled",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/278",
+      "direct": false,
+      "release": false,
+      "author": "Leigh Griffin",
+      "firstContribution": false,
+      "files": [
+        ".github/workflows/ci.yml",
+        "guides/TESTING.md",
+        "tests/TESTING.md"
+      ],
+      "churn": 11,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 1,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #278 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/278",
+          "pr": 278,
+          "author": "Leigh Griffin"
+        }
+      ]
+    },
+    {
+      "pr": 282,
+      "sha": "13e7f8869d60a4ed11c10a186acb3f5212cc0d2d",
+      "title": "feat: deterministic responses for the release harness (HARNESS_NOW, /version, stable headers)",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/282",
+      "direct": false,
+      "release": false,
+      "author": "Leigh Griffin",
+      "firstContribution": false,
+      "files": [
+        ".env.example",
+        ".github/workflows/ci.yml",
+        "ARCHITECTURE.md",
+        "Dockerfile",
+        "apps/catalogue/README.md",
+        "apps/catalogue/package.json",
+        "apps/catalogue/src/hooks.server.ts",
+        "apps/catalogue/src/routes/healthz/+server.ts",
+        "apps/catalogue/src/routes/version/+server.ts",
+        "apps/catalogue/svelte.config.js",
+        "apps/live/README.md",
+        "apps/live/package.json",
+        "apps/live/src/hooks.server.ts",
+        "apps/live/src/routes/healthz/+server.ts",
+        "apps/live/src/routes/version/+server.ts",
+        "apps/live/svelte.config.js",
+        "apps/reader/README.md",
+        "apps/reader/package.json",
+        "apps/reader/src/hooks.server.ts",
+        "apps/reader/src/routes/healthz/+server.ts",
+        "apps/reader/src/routes/version/+server.ts",
+        "apps/reader/svelte.config.js",
+        "apps/time/package.json",
+        "apps/time/src/hooks.server.ts",
+        "apps/time/src/lib/server/db/submissionsRepository.ts",
+        "apps/time/src/lib/server/services/AssignmentsSyncService.ts",
+        "apps/time/src/routes/healthz/+server.ts",
+        "apps/time/src/routes/version/+server.ts",
+        "apps/time/svelte.config.js",
+        "deploy/README.md",
+        "packages/svelte/ui-navigators/src/footers/TutorsVersion.svelte",
+        "packages/svelte/utils/runtime/package.json",
+        "packages/svelte/utils/runtime/src/clock.ts",
+        "packages/svelte/utils/runtime/src/index.ts",
+        "packages/svelte/utils/runtime/src/version.ts",
+        "pnpm-lock.yaml",
+        "scripts/checks/conformance.ts",
+        "scripts/checks/container-smoke.ts",
+        "tests/TESTING.md",
+        "tests/conformance/fixtures/faulty-image/server.mjs",
+        "tests/conformance/platform-conformance.test.ts",
+        "tests/unit/utils/runtime.test.ts",
+        "vitest.aliases.ts"
+      ],
+      "churn": 541,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 204,
+        "tests": 157,
+        "ratio": 0.77,
+        "packages": [
+          {
+            "package": "apps/catalogue",
+            "production": 18,
+            "tests": 157,
+            "ratio": 8.72
+          },
+          {
+            "package": "apps/live",
+            "production": 18,
+            "tests": 157,
+            "ratio": 8.72
+          },
+          {
+            "package": "apps/reader",
+            "production": 16,
+            "tests": 157,
+            "ratio": 9.81
+          },
+          {
+            "package": "apps/time",
+            "production": 26,
+            "tests": 157,
+            "ratio": 6.04
+          },
+          {
+            "package": "packages/svelte/ui-navigators",
+            "production": 3,
+            "tests": 157,
+            "ratio": 52.33
+          },
+          {
+            "package": "packages/svelte/utils",
+            "production": 123,
+            "tests": 157,
+            "ratio": 1.28
+          }
+        ]
+      },
+      "reviewed": false,
+      "points": 5,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #282 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/282",
+          "pr": 282,
+          "author": "Leigh Griffin"
+        },
+        {
+          "points": 5,
+          "rule": "churn",
+          "why": "catalogue churn 51 lines, above 2× its median of 3 over the last 6 releases; PR #282 is the largest part (20 lines)",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/282/files#diff-10394989b5de72cbe00f760412617d9d0a1f16338a4c58e33cce177446098b45",
+          "file": "apps/catalogue/src/routes/version/+server.ts",
+          "pr": 282,
+          "author": "Leigh Griffin"
+        }
+      ]
+    },
+    {
+      "pr": 283,
+      "sha": "8ad19f0d5c1981e4d1c9f5a37c67f919e4944fe5",
+      "title": "feat(observability): stable log and metrics shape for release-harness A/A runs (M18, M19)",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/283",
+      "direct": false,
+      "release": false,
+      "author": "Leigh Griffin",
+      "firstContribution": false,
+      "files": [
+        "apps/catalogue/src/hooks.server.ts",
+        "apps/live/src/hooks.server.ts",
+        "apps/reader/src/hooks.server.ts",
+        "apps/time/src/hooks.server.ts",
+        "deploy/README.md",
+        "docs/LOCAL-CONTAINERS.md",
+        "guides/TESTING.md",
+        "packages/svelte/community/src/utils/supabase-client.ts",
+        "packages/svelte/utils/logger/src/context.ts",
+        "packages/svelte/utils/logger/src/contract.ts",
+        "packages/svelte/utils/logger/src/errors.ts",
+        "packages/svelte/utils/logger/src/formatter.ts",
+        "packages/svelte/utils/logger/src/index.ts",
+        "packages/svelte/utils/logger/src/logger.ts",
+        "packages/svelte/utils/logger/src/outbound.ts",
+        "packages/svelte/utils/logger/src/process.ts",
+        "packages/svelte/utils/logger/src/request-logger.ts",
+        "packages/svelte/utils/logger/src/types.ts",
+        "scripts/checks/container-smoke.ts",
+        "scripts/checks/observability.ts",
+        "tests/conformance/fixtures/faulty-image/server.mjs",
+        "tests/observability/observability-contracts.test.ts",
+        "tests/unit/utils/logger-contract.test.ts",
+        "tests/unit/utils/request-logger.test.ts"
+      ],
+      "churn": 1236,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 471,
+        "tests": 447,
+        "ratio": 0.95,
+        "packages": [
+          {
+            "package": "apps/catalogue",
+            "production": 6,
+            "tests": 447,
+            "ratio": 74.5
+          },
+          {
+            "package": "apps/live",
+            "production": 6,
+            "tests": 447,
+            "ratio": 74.5
+          },
+          {
+            "package": "apps/reader",
+            "production": 6,
+            "tests": 447,
+            "ratio": 74.5
+          },
+          {
+            "package": "apps/time",
+            "production": 6,
+            "tests": 447,
+            "ratio": 74.5
+          },
+          {
+            "package": "packages/svelte/community",
+            "production": 5,
+            "tests": 447,
+            "ratio": 89.4
+          },
+          {
+            "package": "packages/svelte/utils",
+            "production": 442,
+            "tests": 447,
+            "ratio": 1.01
+          }
+        ]
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #283 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/283",
+          "pr": 283,
+          "author": "Leigh Griffin"
+        }
+      ]
+    },
+    {
+      "pr": 281,
+      "sha": "aebfbaa93265ebed69b8afbcbdbaf587f6df9349",
+      "title": "feat(k8s): Route and Ingress components with per-substrate variants",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/281",
+      "direct": false,
+      "release": false,
+      "author": "Leigh Griffin",
+      "firstContribution": false,
+      "files": [
+        ".github/workflows/ci.yml",
+        "deploy/README.md",
+        "deploy/k8s/components/ingress/ingress.yaml",
+        "deploy/k8s/components/ingress/kustomization.yaml",
+        "deploy/k8s/components/route/kustomization.yaml",
+        "deploy/k8s/components/route/route.yaml",
+        "deploy/k8s/variants/kind/catalogue/kustomization.yaml",
+        "deploy/k8s/variants/kind/live/kustomization.yaml",
+        "deploy/k8s/variants/kind/reader/kustomization.yaml",
+        "deploy/k8s/variants/kind/time/kustomization.yaml",
+        "deploy/k8s/variants/openshift/catalogue/kustomization.yaml",
+        "deploy/k8s/variants/openshift/live/kustomization.yaml",
+        "deploy/k8s/variants/openshift/reader/kustomization.yaml",
+        "deploy/k8s/variants/openshift/time/kustomization.yaml",
+        "scripts/checks/conformance.ts",
+        "scripts/checks/k8s-conformance.ts",
+        "tests/conformance/platform-conformance.test.ts"
+      ],
+      "churn": 506,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 101,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #281 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/281",
+          "pr": 281,
+          "author": "Leigh Griffin"
+        }
+      ]
+    },
+    {
+      "pr": 280,
+      "sha": "99a8fccc2f6364245cbe2ac3ef38b4fec3c78ac1",
+      "title": "ci(release): tag release candidates and dispatch the release harness",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/280",
+      "direct": false,
+      "release": false,
+      "author": "Leigh Griffin",
+      "firstContribution": false,
+      "files": [
+        ".github/CODEOWNERS",
+        ".github/workflows/release-claims.yml",
+        ".github/workflows/release-dispatch.yml",
+        "guides/Release-Strategy.md",
+        "guides/TESTING.md",
+        "package.json",
+        "release/README.md",
+        "release/claims.yaml",
+        "scripts/checks/release-claims.ts",
+        "tests/conformance/release-claims.test.ts"
+      ],
+      "churn": 560,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 52,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #280 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/280",
+          "pr": 280,
+          "author": "Leigh Griffin"
+        }
+      ]
+    },
+    {
+      "pr": 143,
+      "sha": "0d705cf7026d3388d74440168665d298a2db3165",
+      "title": "feat(ci): container image build pipeline with Quay.io registry",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/143",
+      "direct": false,
+      "release": false,
+      "author": "Leigh Griffin",
+      "firstContribution": false,
+      "files": [
+        ".github/workflows/image-build.yml",
+        "Dockerfile",
+        "deploy/README.md",
+        "deploy/staging/.env.example",
+        "deploy/staging/compose.yaml"
+      ],
+      "churn": 570,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 0,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #143 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/143",
+          "pr": 143,
+          "author": "Leigh Griffin"
+        }
+      ]
+    },
+    {
+      "pr": null,
+      "sha": "96e9e4d48acdf7a8a7021b97827c3378b80c21aa",
+      "title": "Create images.yml",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/commit/96e9e4d48acdf7a8a7021b97827c3378b80c21aa",
+      "direct": true,
+      "release": false,
+      "author": "Leigh Griffin",
+      "firstContribution": false,
+      "files": [
+        ".github/workflows/images.yml"
+      ],
+      "churn": 64,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 0,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "commit 96e9e4d \"Create images.yml\" reached main without a pull request, so nobody reviewed it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/commit/96e9e4d48acdf7a8a7021b97827c3378b80c21aa",
+          "pr": null,
+          "commit": "96e9e4d48acdf7a8a7021b97827c3378b80c21aa",
+          "author": "Leigh Griffin"
+        }
+      ]
+    },
+    {
+      "pr": 284,
+      "sha": "bbe0244f591664e29598d4db0774bc07db776137",
+      "title": "docs: add graphify knowledge-graph report of the monorepo",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/284",
+      "direct": false,
+      "release": false,
+      "author": "Leigh Griffin",
+      "firstContribution": false,
+      "files": [
+        ".gitignore",
+        ".graphifyignore",
+        "docs/knowledge-graph/GRAPH_REPORT.md",
+        "docs/knowledge-graph/README.md"
+      ],
+      "churn": 1283,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 0,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #284 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/284",
+          "pr": 284,
+          "author": "Leigh Griffin"
+        }
+      ]
+    },
+    {
+      "pr": 286,
+      "sha": "7a548ec2362b4e080ab30bc6188f8808c23623e7",
+      "title": "fix(community): count a first visit when the increments rpc returns no rows",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/286",
+      "direct": false,
+      "release": false,
+      "author": "Leigh Griffin",
+      "firstContribution": false,
+      "files": [
+        "packages/svelte/community/src/utils/supabase-client.ts",
+        "tests/unit/community/learning-record-increments.test.ts"
+      ],
+      "churn": 68,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 3,
+        "tests": 65,
+        "ratio": 21.67,
+        "packages": [
+          {
+            "package": "packages/svelte/community",
+            "production": 3,
+            "tests": 65,
+            "ratio": 21.67
+          }
+        ]
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #286 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/286",
+          "pr": 286,
+          "author": "Leigh Griffin"
+        }
+      ]
+    },
+    {
+      "pr": 274,
+      "sha": "0cbf10a973ce2bb722230fbb4c1be20e0d84d883",
+      "title": "fix(reader): a course that does not exist showed \"500 Server Error\"",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/274",
+      "direct": false,
+      "release": false,
+      "author": "Leigh Griffin",
+      "firstContribution": false,
+      "files": [
+        "apps/reader/src/hooks.client.ts",
+        "packages/svelte/course/src/course/index.ts",
+        "packages/svelte/course/src/course/services/course.svelte.ts",
+        "tests/unit/course/course-service-not-found.test.ts"
+      ],
+      "churn": 112,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 47,
+        "tests": 65,
+        "ratio": 1.38,
+        "packages": [
+          {
+            "package": "apps/reader",
+            "production": 6,
+            "tests": 65,
+            "ratio": 10.83
+          },
+          {
+            "package": "packages/svelte/course",
+            "production": 41,
+            "tests": 65,
+            "ratio": 1.59
+          }
+        ]
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #274 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/274",
+          "pr": 274,
+          "author": "Leigh Griffin"
+        }
+      ]
+    },
+    {
+      "pr": 275,
+      "sha": "a35b5db14b7b9cd3fdf838fe51b8b7cdbd815f96",
+      "title": "ci: run the create scaffolder's Deno tests, and count deno test steps as runners",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/275",
+      "direct": false,
+      "release": false,
+      "author": "Leigh Griffin",
+      "firstContribution": false,
+      "files": [
+        ".github/workflows/ci.yml",
+        ".github/workflows/rc-validation.yml",
+        "scripts/checks/suite-health.ts",
+        "tests/TESTING.md",
+        "tests/suite-health/fixtures/runners-root/.github/workflows/ci.yml",
+        "tests/suite-health/fixtures/runners-root/packages/cli/bench/orphan.test.js",
+        "tests/suite-health/fixtures/runners-root/packages/cli/test/run.test.js",
+        "tests/suite-health/known-findings.txt",
+        "tests/suite-health/suite-health.test.ts"
+      ],
+      "churn": 92,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 31,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #275 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/275",
+          "pr": 275,
+          "author": "Leigh Griffin"
+        }
+      ]
+    },
+    {
+      "pr": 273,
+      "sha": "52b72ed5985b7cded7e9149c25230bfa3d9356b6",
+      "title": "fix(logger): a Supabase error's message never reached the log",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/273",
+      "direct": false,
+      "release": false,
+      "author": "Leigh Griffin",
+      "firstContribution": false,
+      "files": [
+        "packages/svelte/utils/logger/src/logger.ts",
+        "tests/unit/utils/logger.test.ts"
+      ],
+      "churn": 22,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 13,
+        "tests": 9,
+        "ratio": 0.69,
+        "packages": [
+          {
+            "package": "packages/svelte/utils",
+            "production": 13,
+            "tests": 9,
+            "ratio": 0.69
+          }
+        ]
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #273 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/273",
+          "pr": 273,
+          "author": "Leigh Griffin"
+        }
+      ]
+    },
+    {
+      "pr": 270,
+      "sha": "50ca3c554f828b81e463b1bd77dfeeac70f12320",
+      "title": "fix(search): a hit in one-line content came back with no text",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/270",
+      "direct": false,
+      "release": false,
+      "author": "Leigh Griffin",
+      "firstContribution": false,
+      "files": [
+        "packages/jsr/model/src/services/search.ts",
+        "tests/unit/model/search-mutations.test.ts",
+        "tests/unit/model/search.test.ts"
+      ],
+      "churn": 21,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 2,
+        "tests": 19,
+        "ratio": 9.5,
+        "packages": [
+          {
+            "package": "packages/jsr/model",
+            "production": 2,
+            "tests": 19,
+            "ratio": 9.5
+          }
+        ]
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #270 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/270",
+          "pr": 270,
+          "author": "Leigh Griffin"
+        }
+      ]
+    },
+    {
+      "pr": 272,
+      "sha": "3a8ab370ac50b2553757a9a2627e355c7a90bbf7",
+      "title": "fix(model): a learning object with order: 0 sorted last instead of first",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/272",
+      "direct": false,
+      "release": false,
+      "author": "Leigh Griffin",
+      "firstContribution": false,
+      "files": [
+        "packages/jsr/model/src/utils/lo-utils.ts",
+        "tests/unit/model/lo-utils.test.ts"
+      ],
+      "churn": 28,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 10,
+        "tests": 18,
+        "ratio": 1.8,
+        "packages": [
+          {
+            "package": "packages/jsr/model",
+            "production": 10,
+            "tests": 18,
+            "ratio": 1.8
+          }
+        ]
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #272 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/272",
+          "pr": 272,
+          "author": "Leigh Griffin"
+        }
+      ]
+    },
+    {
+      "pr": 269,
+      "sha": "dee87dcdfb14d1653b11670304e991ccb2418f11",
+      "title": "ci: make the three type-check steps blocking",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/269",
+      "direct": false,
+      "release": false,
+      "author": "Leigh Griffin",
+      "firstContribution": false,
+      "files": [
+        ".github/PULL_REQUEST_TEMPLATE.md",
+        ".github/workflows/ci.yml",
+        "CONTRIBUTING.md",
+        "apps/reader/src/routes/(course-reader)/llm/[courseid]/+page.ts",
+        "apps/reader/src/routes/(course-reader)/whiteboard/[courseid]/[...loid]/+page.ts",
+        "etc/tutors-model-lib.api.md",
+        "guides/TESTING-OVERVIEW.md",
+        "guides/TESTING.md",
+        "package.json",
+        "packages/jsr/model/src/utils/markdown-plugins.ts",
+        "packages/jsr/model/src/utils/markdown-utils.ts"
+      ],
+      "churn": 42,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 20,
+        "tests": 0,
+        "ratio": 0,
+        "packages": [
+          {
+            "package": "apps/reader",
+            "production": 8,
+            "tests": 0,
+            "ratio": 0
+          },
+          {
+            "package": "packages/jsr/model",
+            "production": 12,
+            "tests": 0,
+            "ratio": 0
+          }
+        ]
+      },
+      "reviewed": false,
+      "points": 10,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #269 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/269",
+          "pr": 269,
+          "author": "Leigh Griffin"
+        },
+        {
+          "points": 10,
+          "rule": "tests",
+          "why": "PR #269 changed 8 production lines in apps/reader with 0 test lines (0.00); 12 production lines in packages/jsr/model with 0 test lines (0.00): below 0.2",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/269/files#diff-eb38d340e5f8cf75f24da0f7604a5cfc8c2ad77ed33e1672c354a63f9322fe2c",
+          "file": "packages/jsr/model/src/utils/markdown-plugins.ts",
+          "pr": 269,
+          "author": "Leigh Griffin"
+        }
+      ]
+    },
+    {
+      "pr": 271,
+      "sha": "6feb90b2ea332e97f88d3f7bbbaedcdc9fc5360f",
+      "title": "fix(search): wrong line, fence and language from the second match on",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/271",
+      "direct": false,
+      "release": false,
+      "author": "Leigh Griffin",
+      "firstContribution": false,
+      "files": [
+        "packages/jsr/model/src/services/search.ts",
+        "tests/unit/model/search-mutations.test.ts",
+        "tests/unit/model/search.test.ts"
+      ],
+      "churn": 83,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 20,
+        "tests": 63,
+        "ratio": 3.15,
+        "packages": [
+          {
+            "package": "packages/jsr/model",
+            "production": 20,
+            "tests": 63,
+            "ratio": 3.15
+          }
+        ]
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #271 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/271",
+          "pr": 271,
+          "author": "Leigh Griffin"
+        }
+      ]
+    },
+    {
+      "pr": 277,
+      "sha": "d5b9c5787eaa2c7c2171f3977484b02938eb9c52",
+      "title": "test(bdd): make the feature files executable, bound to product code",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/277",
+      "direct": false,
+      "release": false,
+      "author": "Leigh Griffin",
+      "firstContribution": false,
+      "files": [
+        "guides/EARS-METHODOLOGY.md",
+        "guides/PERSONAS.md",
+        "guides/TESTING-OVERVIEW.md",
+        "guides/TESTING.md",
+        "guides/specifications/README.md",
+        "guides/specifications/accessibility.md",
+        "guides/specifications/analytics-lab.md",
+        "guides/specifications/auth-integration.md",
+        "guides/specifications/authentication.md",
+        "guides/specifications/calendar-analytics.md",
+        "guides/specifications/course-authoring.md",
+        "guides/specifications/course-discovery.md",
+        "guides/specifications/error-handling.md",
+        "guides/specifications/lab-analytics.md",
+        "guides/specifications/live-presence.md",
+        "guides/specifications/offline-resilience.md",
+        "guides/specifications/presence-tracking.md",
+        "guides/specifications/responsive-layout.md",
+        "guides/specifications/search-content.md",
+        "guides/specifications/student-engagement.md",
+        "guides/specifications/theme-customisation.md",
+        "guides/specifications/whitelist-management.md",
+        "package.json",
+        "pnpm-lock.yaml",
+        "scripts/checks/suite-health.ts",
+        "tests/TESTING.md",
+        "tests/bdd/features/course/course-loading.feature",
+        "tests/bdd/features/course/course-navigation.feature",
+        "tests/bdd/features/developer/auth-integration.feature",
+        "tests/bdd/features/developer/i18n-localisation.feature",
+        "tests/bdd/features/developer/theme-customisation.feature",
+        "tests/bdd/features/instructor/analytics-calendar.feature",
+        "tests/bdd/features/instructor/analytics-lab.feature",
+        "tests/bdd/features/instructor/course-authoring.feature",
+        "tests/bdd/features/instructor/student-engagement.feature",
+        "tests/bdd/features/instructor/whitelist-management.feature",
+        "tests/bdd/features/live/presence-tracking.feature",
+        "tests/bdd/features/shared/authentication.feature",
+        "tests/bdd/features/shared/error-handling.feature",
+        "tests/bdd/features/shared/offline-resilience.feature",
+        "tests/bdd/features/shared/responsive-layout.feature",
+        "tests/bdd/features/shared/theming.feature",
+        "tests/bdd/features/student/accessibility.feature",
+        "tests/bdd/features/student/course-discovery.feature",
+        "tests/bdd/features/student/lab-interaction.feature",
+        "tests/bdd/features/student/learning-progress.feature",
+        "tests/bdd/features/student/live-presence.feature",
+        "tests/bdd/features/student/search-content.feature",
+        "tests/bdd/features/time/calendar-analytics.feature",
+        "tests/bdd/features/time/lab-analytics.feature",
+        "tests/bdd/steps/course/course-loading.steps.ts",
+        "tests/bdd/steps/course/course-navigation.steps.ts",
+        "tests/bdd/steps/developer/auth-integration.steps.ts",
+        "tests/bdd/steps/developer/i18n-localisation.steps.ts",
+        "tests/bdd/steps/developer/theme-customisation.steps.ts",
+        "tests/bdd/steps/instructor/analytics-calendar.steps.ts",
+        "tests/bdd/steps/instructor/analytics-lab.steps.ts",
+        "tests/bdd/steps/instructor/course-authoring.steps.ts",
+        "tests/bdd/steps/instructor/student-engagement.steps.ts",
+        "tests/bdd/steps/instructor/whitelist-management.steps.ts",
+        "tests/bdd/steps/live/presence-tracking.steps.ts",
+        "tests/bdd/steps/shared/authentication.steps.ts",
+        "tests/bdd/steps/shared/error-handling.steps.ts",
+        "tests/bdd/steps/shared/offline-resilience.steps.ts",
+        "tests/bdd/steps/shared/responsive-layout.steps.ts",
+        "tests/bdd/steps/shared/theming.steps.ts",
+        "tests/bdd/steps/student/accessibility.steps.ts",
+        "tests/bdd/steps/student/course-discovery.steps.ts",
+        "tests/bdd/steps/student/lab-interaction.steps.ts",
+        "tests/bdd/steps/student/learning-progress.steps.ts",
+        "tests/bdd/steps/student/live-presence.steps.ts",
+        "tests/bdd/steps/student/search-content.steps.ts",
+        "tests/bdd/steps/time/calendar-analytics.steps.ts",
+        "tests/bdd/steps/time/lab-analytics.steps.ts",
+        "tests/bdd/support/connect.ts",
+        "tests/bdd/support/course.ts",
+        "tests/bdd/support/fixtures.ts",
+        "tests/bdd/support/reader-loading.ts",
+        "tests/bdd/support/reader.ts",
+        "tests/bdd/support/runes-stub.ts",
+        "tests/bdd/support/supabase-recorder.ts",
+        "tests/bdd/support/svelte-runes-shim.ts",
+        "tests/bdd/support/theme.ts",
+        "tests/bdd/support/time.ts",
+        "tests/bdd/support/world.ts",
+        "tests/suite-health/fixtures/features-root/specs/bound.feature",
+        "tests/suite-health/fixtures/features-root/specs/drops-steps.feature",
+        "tests/suite-health/fixtures/features-root/tests/bound.steps.js",
+        "tests/suite-health/known-findings.txt",
+        "tests/suite-health/suite-health.test.ts"
+      ],
+      "churn": 5559,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 4888,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #277 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/277",
+          "pr": 277,
+          "author": "Leigh Griffin"
+        }
+      ]
+    },
+    {
+      "pr": 293,
+      "sha": "118eb8a343fb5309eb19983a48f121cb3448d81f",
+      "title": "fix(course): distinguish a 404 from an unreachable host when loading a course",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/293",
+      "direct": false,
+      "release": false,
+      "author": "Leigh Griffin",
+      "firstContribution": false,
+      "files": [
+        "apps/reader/src/hooks.client.ts",
+        "packages/svelte/course/src/course/index.ts",
+        "packages/svelte/course/src/course/services/course.svelte.ts",
+        "tests/unit/course/course-service-not-found.test.ts"
+      ],
+      "churn": 78,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 42,
+        "tests": 36,
+        "ratio": 0.86,
+        "packages": [
+          {
+            "package": "apps/reader",
+            "production": 8,
+            "tests": 36,
+            "ratio": 4.5
+          },
+          {
+            "package": "packages/svelte/course",
+            "production": 34,
+            "tests": 36,
+            "ratio": 1.06
+          }
+        ]
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #293 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/293",
+          "pr": 293,
+          "author": "Leigh Griffin"
+        }
+      ]
+    },
+    {
+      "pr": 302,
+      "sha": "38713255bc47a10d574ce8f29ee5cdda42669218",
+      "title": "docs(quiz): state that quizzes are a formative self-check, not assessment",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/302",
+      "direct": false,
+      "release": false,
+      "author": "Leigh Griffin",
+      "firstContribution": false,
+      "files": [
+        "packages/svelte/quiz/README.md"
+      ],
+      "churn": 23,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 0,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #302 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/302",
+          "pr": 302,
+          "author": "Leigh Griffin"
+        }
+      ]
+    },
+    {
+      "pr": 295,
+      "sha": "4a227490e33d6304ad83b4fff31fe2e43ec5b77c",
+      "title": "test(reader): smoke the built server for ESM globals and 5xx on /auth",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/295",
+      "direct": false,
+      "release": false,
+      "author": "Leigh Griffin",
+      "firstContribution": false,
+      "files": [
+        ".github/workflows/ci.yml",
+        "guides/TESTING-OVERVIEW.md",
+        "guides/TESTING.md",
+        "package.json",
+        "scripts/checks/server-smoke.ts",
+        "tests/TESTING.md",
+        "tests/conformance/server-smoke.test.ts"
+      ],
+      "churn": 273,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 80,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #295 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/295",
+          "pr": 295,
+          "author": "Leigh Griffin"
+        }
+      ]
+    },
+    {
+      "pr": 303,
+      "sha": "e5623bd548d8a13faa3ecfbf66ac4a3d42724d53",
+      "title": "feat(images): promote the judged rc image on a final tag instead of rebuilding",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/303",
+      "direct": false,
+      "release": false,
+      "author": "Leigh Griffin",
+      "firstContribution": false,
+      "files": [
+        ".github/workflows/image-build.yml",
+        "deploy/README.md",
+        "guides/Release-Strategy.md",
+        "package.json",
+        "scripts/promote-image.ts",
+        "tests/conformance/promote-image.test.ts"
+      ],
+      "churn": 1039,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 410,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #303 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/303",
+          "pr": 303,
+          "author": "Leigh Griffin"
+        }
+      ]
+    },
+    {
+      "pr": 297,
+      "sha": "f8ee5d252d5da96ed98e7ac44fdd94d332fd35d2",
+      "title": "fix(logger): keep variable data out of log messages and guard it with a test",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/297",
+      "direct": false,
+      "release": false,
+      "author": "Leigh Griffin",
+      "firstContribution": false,
+      "files": [
+        "apps/reader/src/hooks.server.ts",
+        "deploy/README.md",
+        "packages/svelte/community/src/services/catalogue.ts",
+        "packages/svelte/community/src/utils/supabase-client.ts",
+        "packages/svelte/connect/src/services/connect.svelte.ts",
+        "packages/svelte/connect/src/services/supabaseProfile.svelte.ts",
+        "packages/svelte/course/src/course/services/course.svelte.ts",
+        "scripts/checks/observability.ts",
+        "tests/bdd/features/shared/error-handling.feature",
+        "tests/bdd/steps/shared/offline-resilience.steps.ts",
+        "tests/observability/observability-contracts.test.ts",
+        "tests/unit/community/catalogue-service.test.ts",
+        "tests/unit/course/course-service-not-found.test.ts"
+      ],
+      "churn": 185,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 38,
+        "tests": 102,
+        "ratio": 2.68,
+        "packages": [
+          {
+            "package": "apps/reader",
+            "production": 2,
+            "tests": 102,
+            "ratio": 51
+          },
+          {
+            "package": "packages/svelte/community",
+            "production": 9,
+            "tests": 102,
+            "ratio": 11.33
+          },
+          {
+            "package": "packages/svelte/connect",
+            "production": 4,
+            "tests": 102,
+            "ratio": 25.5
+          },
+          {
+            "package": "packages/svelte/course",
+            "production": 23,
+            "tests": 102,
+            "ratio": 4.43
+          }
+        ]
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #297 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/297",
+          "pr": 297,
+          "author": "Leigh Griffin"
+        }
+      ]
+    },
+    {
+      "pr": 299,
+      "sha": "020cfdccaee3df17f22673341e1efb2a9d2c803d",
+      "title": "chore(ci): include the time app in the build check and the registry wait",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/299",
+      "direct": false,
+      "release": false,
+      "author": "Leigh Griffin",
+      "firstContribution": false,
+      "files": [
+        ".github/workflows/rc-validation.yml",
+        ".github/workflows/release-dispatch.yml"
+      ],
+      "churn": 4,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 0,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #299 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/299",
+          "pr": 299,
+          "author": "Leigh Griffin"
+        }
+      ]
+    },
+    {
+      "pr": 287,
+      "sha": "0554f1a8578d363038954afd7e68fc955c9eb845",
+      "title": "chore(infra): add ESLint no-console rule and standardise error catching",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/287",
+      "direct": false,
+      "release": false,
+      "author": "Leigh Griffin",
+      "firstContribution": false,
+      "files": [
+        "eslint.config.mjs",
+        "packages/jsr/create/src/cli.ts",
+        "packages/jsr/gen/src/services/course-builder.ts",
+        "packages/jsr/gen/src/templates/template-downloader.ts",
+        "packages/jsr/gen/src/templates/template-engine.ts",
+        "packages/jsr/gen/src/tutors.ts",
+        "packages/jsr/gen/src/utils/file-utils.ts",
+        "packages/jsr/gen/src/utils/lr-utils.ts",
+        "packages/jsr/model/src/utils/course-utils.ts",
+        "packages/jsr/time/src/services/course-time.ts",
+        "packages/jsr/tutors-lite/main.ts",
+        "packages/jsr/tutors/main.ts",
+        "packages/svelte/ui-components/src/learning-objects/content/notebook/NotebookCodeEditor.svelte",
+        "packages/svelte/ui-components/src/learning-objects/content/whiteboard/WhiteboardViewer.svelte",
+        "scripts/api-surface.ts",
+        "scripts/checks/bundle-budget.ts",
+        "scripts/checks/container-smoke.ts",
+        "scripts/checks/dependency-audit.ts",
+        "scripts/checks/generator-diff.ts",
+        "scripts/checks/k8s-conformance.ts",
+        "scripts/checks/knip.ts",
+        "scripts/checks/lighthouse.ts",
+        "scripts/checks/load-test.ts",
+        "scripts/checks/release-claims.ts",
+        "scripts/checks/test-time-budget.ts",
+        "scripts/checks/tz-matrix.ts",
+        "scripts/generate-okf.ts",
+        "tests/conformance/fixtures/faulty-image/server.mjs",
+        "tests/e2e-stack/fixture-course/build.ts",
+        "tests/e2e-stack/fixture-course/serve.mjs",
+        "tests/e2e-stack/ratchet.mjs",
+        "tests/e2e/accessibility.spec.ts",
+        "tests/performance/k6/lib/reader-traffic.js",
+        "tests/release/scripts/compare-artifacts.ts",
+        "tests/release/scripts/compare-reader-builds.ts",
+        "tests/release/scripts/fetch-reference-course.ts",
+        "tests/release/scripts/generate-baseline.ts",
+        "tests/release/scripts/generate-candidate.ts",
+        "tests/release/scripts/performance-benchmark.ts",
+        "tests/release/scripts/run-release-tests.ts",
+        "tests/release/scripts/smoke-test-preview.ts",
+        "tests/release/scripts/visual-regression.ts"
+      ],
+      "churn": 636,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 111,
+        "tests": 288,
+        "ratio": 2.59,
+        "packages": [
+          {
+            "package": "packages/jsr/create",
+            "production": 10,
+            "tests": 288,
+            "ratio": 28.8
+          },
+          {
+            "package": "packages/jsr/gen",
+            "production": 75,
+            "tests": 288,
+            "ratio": 3.84
+          },
+          {
+            "package": "packages/jsr/model",
+            "production": 5,
+            "tests": 288,
+            "ratio": 57.6
+          },
+          {
+            "package": "packages/jsr/time",
+            "production": 2,
+            "tests": 288,
+            "ratio": 144
+          },
+          {
+            "package": "packages/jsr/tutors",
+            "production": 4,
+            "tests": 288,
+            "ratio": 72
+          },
+          {
+            "package": "packages/jsr/tutors-lite",
+            "production": 4,
+            "tests": 288,
+            "ratio": 72
+          },
+          {
+            "package": "packages/svelte/ui-components",
+            "production": 11,
+            "tests": 288,
+            "ratio": 26.18
+          }
+        ]
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #287 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/287",
+          "pr": 287,
+          "author": "Leigh Griffin"
+        }
+      ]
+    },
+    {
+      "pr": 301,
+      "sha": "bfc05a4f34d37312410873edc2da499ca6232e03",
+      "title": "feat(testing): EARS Rule ids, audit gate and claims link (slice 1 of #214)",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/301",
+      "direct": false,
+      "release": false,
+      "author": "Leigh Griffin",
+      "firstContribution": false,
+      "files": [
+        ".claude/skills/ears-gherkin-dev/SKILL.md",
+        ".claude/skills/ears-gherkin-dev/references/audit-codes.md",
+        ".claude/skills/ears-gherkin-dev/references/ears-rules.md",
+        ".claude/skills/ears-gherkin-dev/references/vitest-cucumber.md",
+        ".github/workflows/ci.yml",
+        "guides/EARS-METHODOLOGY.md",
+        "guides/TESTING.md",
+        "package.json",
+        "scripts/checks/ears-audit.ts",
+        "scripts/checks/lib/gherkin-rules.ts",
+        "scripts/checks/lib/rules-index.ts",
+        "scripts/checks/release-claims.ts",
+        "scripts/release-claims-draft.ts",
+        "tests/bdd/ears-audit-baseline.txt",
+        "tests/bdd/ears-retired-rule-ids.txt",
+        "tests/bdd/features/course/course-loading.feature",
+        "tests/bdd/features/course/course-navigation.feature",
+        "tests/bdd/features/shared/authentication.feature",
+        "tests/bdd/features/student/course-discovery.feature",
+        "tests/bdd/features/student/search-content.feature",
+        "tests/bdd/steps/course/course-loading.steps.ts",
+        "tests/bdd/steps/course/course-navigation.steps.ts",
+        "tests/bdd/steps/shared/authentication.steps.ts",
+        "tests/bdd/steps/student/course-discovery.steps.ts",
+        "tests/bdd/steps/student/search-content.steps.ts",
+        "tests/conformance/release-claims-draft.test.ts",
+        "tests/conformance/release-claims.test.ts",
+        "tests/suite-health/ears-audit.test.ts",
+        "tests/suite-health/fixtures/ears-audit/root/tests/bdd/features/student/bad.feature",
+        "tests/suite-health/fixtures/ears-audit/root/tests/bdd/features/student/binding.feature",
+        "tests/suite-health/fixtures/ears-audit/root/tests/bdd/features/student/good.feature",
+        "tests/suite-health/fixtures/ears-audit/root/tests/bdd/features/student/legacy.feature",
+        "tests/suite-health/fixtures/ears-audit/root/tests/bdd/features/student/unbound.feature",
+        "tests/suite-health/fixtures/ears-audit/root/tests/bdd/steps/student/binding.steps.js",
+        "tests/suite-health/fixtures/ears-audit/root/tests/bdd/steps/student/good.steps.js"
+      ],
+      "churn": 2643,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 1504,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #301 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/301",
+          "pr": 301,
+          "author": "Leigh Griffin"
+        }
+      ]
+    },
+    {
+      "pr": 306,
+      "sha": "c3740eb8cf86a70c06eeabf6ab0c73d59021946f",
+      "title": "fix(lint): use process streams for script output (no-console)",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/306",
+      "direct": false,
+      "release": false,
+      "author": "Leigh Griffin",
+      "firstContribution": false,
+      "files": [
+        "scripts/checks/server-smoke.ts",
+        "scripts/promote-image.ts"
+      ],
+      "churn": 32,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 0,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #306 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/306",
+          "pr": 306,
+          "author": "Leigh Griffin"
+        }
+      ]
+    },
+    {
+      "pr": 305,
+      "sha": "994698f8697ca02cb71676fdfba60fd3e8f6f412",
+      "title": "ci: remove images.yml, image-build.yml already publishes the images",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/305",
+      "direct": false,
+      "release": false,
+      "author": "Leigh Griffin",
+      "firstContribution": false,
+      "files": [
+        ".github/workflows/images.yml"
+      ],
+      "churn": 64,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 0,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #305 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/305",
+          "pr": 305,
+          "author": "Leigh Griffin"
+        }
+      ]
+    },
+    {
+      "pr": 298,
+      "sha": "d7ebc1700b043209ef7e83c812cd7bb9b4234bf8",
+      "title": "feat(deploy): pin overlays by digest and tell the release harness after a deploy",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/298",
+      "direct": false,
+      "release": false,
+      "author": "Leigh Griffin",
+      "firstContribution": false,
+      "files": [
+        ".github/workflows/deploy.yml",
+        "deploy/README.md",
+        "deploy/k8s/overlays/catalogue/kustomization.yaml",
+        "deploy/k8s/overlays/live/kustomization.yaml",
+        "deploy/k8s/overlays/reader/kustomization.yaml",
+        "deploy/k8s/overlays/time/kustomization.yaml",
+        "guides/Release-Strategy.md",
+        "knip.json",
+        "package.json",
+        "scripts/checks/conformance.ts",
+        "scripts/checks/deploy-pins.ts",
+        "scripts/checks/k8s-conformance.ts",
+        "scripts/checks/lib/registry.ts",
+        "scripts/deploy-pin.ts",
+        "scripts/promote-image.ts",
+        "tests/conformance/deploy-pins.test.ts",
+        "tests/conformance/platform-conformance.test.ts"
+      ],
+      "churn": 940,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 298,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #298 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/298",
+          "pr": 298,
+          "author": "Leigh Griffin"
+        }
+      ]
+    },
+    {
+      "pr": 296,
+      "sha": "6b72950f966054fe17fa0fb16c8a7ae2e26b3bd4",
+      "title": "fix(runtime): route the course calendar through the clock seam; keep the commit off /_app/version.json",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/296",
+      "direct": false,
+      "release": false,
+      "author": "Leigh Griffin",
+      "firstContribution": false,
+      "files": [
+        ".github/workflows/ci.yml",
+        "ARCHITECTURE.md",
+        "apps/catalogue/svelte.config.js",
+        "apps/live/svelte.config.js",
+        "apps/reader/svelte.config.js",
+        "apps/time/svelte.config.js",
+        "deploy/README.md",
+        "etc/tutors-model-lib.api.md",
+        "package.json",
+        "packages/jsr/model/src/utils/course-utils.ts",
+        "packages/svelte/course/package.json",
+        "packages/svelte/course/src/course/services/lo-tree.ts",
+        "pnpm-lock.yaml",
+        "scripts/checks/build-identity.ts",
+        "scripts/checks/container-smoke.ts",
+        "tests/TESTING.md",
+        "tests/conformance/build-identity.test.ts",
+        "tests/unit/course/lo-tree-clock.test.ts",
+        "tests/unit/model/course-calendar.test.ts"
+      ],
+      "churn": 672,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 48,
+        "tests": 285,
+        "ratio": 5.94,
+        "packages": [
+          {
+            "package": "apps/catalogue",
+            "production": 8,
+            "tests": 285,
+            "ratio": 35.63
+          },
+          {
+            "package": "apps/live",
+            "production": 8,
+            "tests": 285,
+            "ratio": 35.63
+          },
+          {
+            "package": "apps/reader",
+            "production": 8,
+            "tests": 285,
+            "ratio": 35.63
+          },
+          {
+            "package": "apps/time",
+            "production": 8,
+            "tests": 285,
+            "ratio": 35.63
+          },
+          {
+            "package": "packages/jsr/model",
+            "production": 11,
+            "tests": 285,
+            "ratio": 25.91
+          },
+          {
+            "package": "packages/svelte/course",
+            "production": 5,
+            "tests": 285,
+            "ratio": 57
+          }
+        ]
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #296 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/296",
+          "pr": 296,
+          "author": "Leigh Griffin"
+        }
+      ]
+    },
+    {
+      "pr": 300,
+      "sha": "66ad056c2ade2ba61bbfe1477f43ce2477d90ffd",
+      "title": "feat(release): migration expand/contract checks and artefact-tagged changelog entries",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/300",
+      "direct": false,
+      "release": false,
+      "author": "Leigh Griffin",
+      "firstContribution": false,
+      "files": [
+        ".github/PULL_REQUEST_TEMPLATE.md",
+        ".github/workflows/release-claims.yml",
+        "CHANGELOG.md",
+        "CONTRIBUTING.md",
+        "guides/MIGRATIONS.md",
+        "guides/Release-Strategy.md",
+        "guides/TESTING.md",
+        "package.json",
+        "release/README.md",
+        "release/claims.yaml",
+        "scripts/checks/migrations.ts",
+        "scripts/checks/release-claims.ts",
+        "supabase/migrations/README.md",
+        "tests/conformance/migrations.test.ts",
+        "tests/conformance/release-claims.test.ts"
+      ],
+      "churn": 774,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 150,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #300 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/300",
+          "pr": 300,
+          "author": "Leigh Griffin"
+        }
+      ]
+    },
+    {
+      "pr": 307,
+      "sha": "1af2b35945fb290b6c5087b77e7ab1ddb597d234",
+      "title": "feat(release): pnpm release:harness builds the harness dispatch from a local checkout",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/307",
+      "direct": false,
+      "release": false,
+      "author": "Leigh Griffin",
+      "firstContribution": false,
+      "files": [
+        "guides/Release-Strategy.md",
+        "package.json",
+        "scripts/release-harness.ts",
+        "tests/conformance/release-harness.test.ts"
+      ],
+      "churn": 994,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 388,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #307 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/307",
+          "pr": 307,
+          "author": "Leigh Griffin"
+        }
+      ]
+    },
+    {
+      "pr": 308,
+      "sha": "c14c3ee20098da06a81fe1e83bf6b0ac5a16c4bc",
+      "title": "feat(release): publish rules.json and let a claim cite its Rule with a rule field",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/308",
+      "direct": false,
+      "release": false,
+      "author": "Leigh Griffin",
+      "firstContribution": false,
+      "files": [
+        "guides/EARS-METHODOLOGY.md",
+        "package.json",
+        "release/README.md",
+        "release/claims.yaml",
+        "scripts/checks/release-claims.ts",
+        "scripts/release-claims-draft.ts",
+        "scripts/release-rules.ts",
+        "tests/conformance/release-claims-draft.test.ts",
+        "tests/conformance/release-claims.test.ts",
+        "tests/conformance/release-rules.test.ts"
+      ],
+      "churn": 491,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 249,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #308 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/308",
+          "pr": 308,
+          "author": "Leigh Griffin"
+        }
+      ]
+    },
+    {
+      "pr": 309,
+      "sha": "77fbbd76e47fc1ffa3f65461534c17ce646b295e",
+      "title": "fix(release): accept the harness's 19 claim artefacts and correct what an older harness does with rule:",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/309",
+      "direct": false,
+      "release": false,
+      "author": "Leigh Griffin",
+      "firstContribution": false,
+      "files": [
+        "CHANGELOG.md",
+        "CONTRIBUTING.md",
+        "guides/EARS-METHODOLOGY.md",
+        "release/README.md",
+        "release/claims.yaml",
+        "scripts/checks/release-claims.ts",
+        "scripts/release-claims-draft.ts",
+        "tests/conformance/release-claims-draft.test.ts",
+        "tests/conformance/release-claims.test.ts"
+      ],
+      "churn": 116,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 68,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #309 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/309",
+          "pr": 309,
+          "author": "Leigh Griffin"
+        }
+      ]
+    },
+    {
+      "pr": 310,
+      "sha": "3f38f2ef9dd89a73c4d2c63b38d0eb9d8e03b4d9",
+      "title": "feat(release): send digests, rules_url and 5 runs to the harness (time digest on deploy)",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/310",
+      "direct": false,
+      "release": false,
+      "author": "Leigh Griffin",
+      "firstContribution": false,
+      "files": [
+        ".github/workflows/deploy.yml",
+        ".github/workflows/release-dispatch.yml",
+        "guides/Release-Strategy.md",
+        "scripts/release-harness.ts",
+        "tests/conformance/release-harness.test.ts"
+      ],
+      "churn": 258,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 75,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #310 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/310",
+          "pr": 310,
+          "author": "Leigh Griffin"
+        }
+      ]
+    },
+    {
+      "pr": 135,
+      "sha": "5d7283e7b83bbf0308547e9d00ef333dc833c6e2",
+      "title": "feat(observability): local Grafana stack for Tutors learning insights",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/135",
+      "direct": false,
+      "release": false,
+      "author": "Leigh Griffin",
+      "firstContribution": false,
+      "files": [
+        ".gitignore",
+        "observability/grafana/.env.example",
+        "observability/grafana/README.md",
+        "observability/grafana/dashboards/tutors-overview.json",
+        "observability/grafana/docker-compose.yml",
+        "observability/grafana/native/datasource-local.yml",
+        "observability/grafana/provisioning/dashboards/dashboards.yml",
+        "observability/grafana/provisioning/datasources/datasources.yml",
+        "observability/grafana/sql/grafana_reader.sql",
+        "observability/grafana/sql/reporting_views.sql",
+        "proposal.md"
+      ],
+      "churn": 732,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 0,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #135 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/135",
+          "pr": 135,
+          "author": "Leigh Griffin"
+        }
+      ]
+    },
+    {
+      "pr": 312,
+      "sha": "623d6f50931d3b57a7a38625402d5ae5ee795017",
+      "title": "feat(release): post the harness verdict on the release PR (re-open of #311, which merged into #310's branch)",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/312",
+      "direct": false,
+      "release": false,
+      "author": "Leigh Griffin",
+      "firstContribution": false,
+      "files": [
+        ".github/workflows/release-dispatch.yml",
+        ".github/workflows/release-harness-report.yml",
+        "guides/Release-Strategy.md",
+        "package.json",
+        "release/README.md",
+        "scripts/release-report-comment.ts",
+        "tests/conformance/release-report-comment.test.ts"
+      ],
+      "churn": 1347,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 471,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #312 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/312",
+          "pr": 312,
+          "author": "Leigh Griffin"
+        }
+      ]
+    },
+    {
+      "pr": 313,
+      "sha": "b23f251192c2e711d8065cdd9c954245a632cdc9",
+      "title": "feat(ui): rebuild Tutors with the Paper design system",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/313",
+      "direct": false,
+      "release": false,
+      "author": "Jordan Harrison",
+      "firstContribution": true,
+      "files": [
+        ".claude/skills/ears-gherkin-dev/SKILL.md",
+        ".claude/skills/ears-gherkin-dev/references/audit-codes.md",
+        ".github/workflows/ci.yml",
+        "CONTRIBUTING.md",
+        "DESIGN.md",
+        "apps/catalogue/src/app.css",
+        "apps/catalogue/src/routes/+page.svelte",
+        "apps/catalogue/tests/e2e/smoke.spec.ts",
+        "apps/catalogue/vite.config.ts",
+        "apps/live/src/app.css",
+        "apps/live/src/routes/+page.svelte",
+        "apps/live/src/routes/[courseid]/+page.svelte",
+        "apps/live/tests/e2e/smoke.spec.ts",
+        "apps/live/vite.config.ts",
+        "apps/reader/package.json",
+        "apps/reader/playwright.config.ts",
+        "apps/reader/src/app.css",
+        "apps/reader/src/app.html",
+        "apps/reader/src/routes/(auth)/auth/SigninWithGithub.svelte",
+        "apps/reader/src/routes/(course-reader)/+layout.svelte",
+        "apps/reader/src/routes/(course-reader)/llm/[courseid]/+page.svelte",
+        "apps/reader/src/routes/(course-reader)/notebook/[courseid]/[...loid]/+page.svelte",
+        "apps/reader/src/routes/(course-reader)/search/[courseid]/+page.svelte",
+        "apps/reader/src/routes/(course-reader)/time/[courseid]/+page.svelte",
+        "apps/reader/src/routes/(course-reader)/time/[courseid]/ActivityTable.svelte",
+        "apps/reader/src/routes/(course-reader)/time/[courseid]/CalendarByDayTable.svelte",
+        "apps/reader/src/routes/(course-reader)/time/[courseid]/CalendarHeatmap.svelte",
+        "apps/reader/src/routes/(course-reader)/time/[courseid]/HeatMaps.svelte",
+        "apps/reader/src/routes/(course-reader)/time/[courseid]/Heatmap.svelte",
+        "apps/reader/src/routes/(course-reader)/time/[courseid]/LabByStepTable.svelte",
+        "apps/reader/src/routes/(course-reader)/time/[courseid]/StudentCalendarTable.svelte",
+        "apps/reader/src/routes/(course-reader)/time/[courseid]/StudentLabTable.svelte",
+        "apps/reader/src/routes/(course-reader)/time/[courseid]/Tables.svelte",
+        "apps/reader/src/routes/(course-reader)/time/[courseid]/heat.ts",
+        "apps/reader/src/routes/(create)/create/+page.svelte",
+        "apps/reader/src/routes/(create)/create/CourseInfoStep.svelte",
+        "apps/reader/src/routes/(create)/create/DownloadStep.svelte",
+        "apps/reader/src/routes/(create)/create/FileTree.svelte",
+        "apps/reader/src/routes/(create)/create/PreviewStep.svelte",
+        "apps/reader/src/routes/(create)/create/StepIndicator.svelte",
+        "apps/reader/src/routes/(create)/create/StructureStep.svelte",
+        "apps/reader/src/routes/(home)/+page.svelte",
+        "apps/reader/src/routes/(home)/CourseList.svelte",
+        "apps/reader/src/routes/(home)/CourseVisitCard.svelte",
+        "apps/reader/src/routes/(home)/Links.svelte",
+        "apps/reader/src/routes/(home)/TutorsInfo.svelte",
+        "apps/reader/src/routes/(home)/Welcome.svelte",
+        "apps/reader/static/excalidraw-editor.html",
+        "apps/reader/tests/e2e/accessibility.spec.ts",
+        "apps/reader/tests/e2e/content-locks.spec.ts",
+        "apps/reader/tests/e2e/course-tools.spec.ts",
+        "apps/reader/tests/e2e/learning-activities.spec.ts",
+        "apps/reader/tests/e2e/preferences-and-themes.spec.ts",
+        "apps/reader/tests/e2e/reading.spec.ts",
+        "apps/reader/tests/e2e/resource-cards.spec.ts",
+        "apps/reader/tests/e2e/search.spec.ts",
+        "apps/reader/tests/e2e/shell-and-navigation.spec.ts",
+        "apps/reader/tests/e2e/smoke.spec.ts",
+        "apps/reader/tests/e2e/support.ts",
+        "apps/reader/vite.config.ts",
+        "apps/time/package.json",
+        "apps/time/src/app.css",
+        "apps/time/src/app.html",
+        "apps/time/src/lib/components/CourseCard.svelte",
+        "apps/time/src/lib/components/CourseIdDialog.svelte",
+        "apps/time/src/lib/components/MediansView.svelte",
+        "apps/time/src/lib/components/Navigation.svelte",
+        "apps/time/src/lib/components/PinDialog.svelte",
+        "apps/time/src/lib/components/StudentAvatar.svelte",
+        "apps/time/src/lib/components/StudentCard.svelte",
+        "apps/time/src/lib/components/calendar/CalendarGrid.svelte",
+        "apps/time/src/lib/components/calendar/CalendarHeatmap.svelte",
+        "apps/time/src/lib/components/calendar/CalendarMedianGrid.svelte",
+        "apps/time/src/lib/components/labs/LabsGrid.svelte",
+        "apps/time/src/lib/components/labs/LabsMedianGrid.svelte",
+        "apps/time/src/lib/components/tables/AssignmentsTable.svelte",
+        "apps/time/src/lib/components/tables/CalendarByDayTable.svelte",
+        "apps/time/src/lib/components/tables/CalendarTable.svelte",
+        "apps/time/src/lib/components/tables/LabByStepTable.svelte",
+        "apps/time/src/lib/components/tables/LearningRecordsTable.svelte",
+        "apps/time/src/lib/components/tables/StudentCalendarTable.svelte",
+        "apps/time/src/lib/components/tables/StudentLabTable.svelte",
+        "apps/time/src/routes/+layout.svelte",
+        "apps/time/src/routes/+page.svelte",
+        "apps/time/src/routes/[courseid]/(calendar-lab)/assignments/+page.svelte",
+        "apps/time/src/routes/[courseid]/(calendar-lab)/calendar/+page.svelte",
+        "apps/time/src/routes/[courseid]/(calendar-lab)/calendar/raw/+page.svelte",
+        "apps/time/src/routes/[courseid]/(calendar-lab)/lab/+page.svelte",
+        "apps/time/src/routes/[courseid]/(calendar-lab)/lab/learning-records/+page.svelte",
+        "apps/time/src/routes/[courseid]/+layout.svelte",
+        "apps/time/src/routes/[courseid]/[studentid]/+page.svelte",
+        "apps/time/static/OpenDyslexic-Bold.woff2",
+        "apps/time/static/OpenDyslexic-BoldItalic.woff2",
+        "apps/time/static/OpenDyslexic-Italic.woff2",
+        "apps/time/static/OpenDyslexic-Regular.woff2",
+        "apps/time/vite.config.ts",
+        "guides/EARS-METHODOLOGY.md",
+        "guides/TESTING-OVERVIEW.md",
+        "guides/TESTING.md",
+        "guides/specifications/README.md",
+        "package.json",
+        "packages/svelte/course/src/markdown/actions/copy-code-action.ts",
+        "packages/svelte/runes/src/index.svelte.ts",
+        "packages/svelte/themes/src/icons/easter-icons.ts",
+        "packages/svelte/themes/src/icons/festive-icons.ts",
+        "packages/svelte/themes/src/icons/fluent-icons.ts",
+        "packages/svelte/themes/src/icons/hero-icons.ts",
+        "packages/svelte/themes/src/services/themes.svelte.ts",
+        "packages/svelte/themes/src/styles/card-styles.ts",
+        "packages/svelte/themes/src/styles/classic.css",
+        "packages/svelte/themes/src/styles/paper-tokens.css",
+        "packages/svelte/themes/src/styles/paper-ui.css",
+        "packages/svelte/themes/src/styles/theme-overrides.css",
+        "packages/svelte/themes/src/types.ts",
+        "packages/svelte/ui-components/package.json",
+        "packages/svelte/ui-components/src/_safelist.svelte",
+        "packages/svelte/ui-components/src/learning-objects/content/Note.svelte",
+        "packages/svelte/ui-components/src/learning-objects/content/Podcast.svelte",
+        "packages/svelte/ui-components/src/learning-objects/content/QuizLo.svelte",
+        "packages/svelte/ui-components/src/learning-objects/content/Video.svelte",
+        "packages/svelte/ui-components/src/learning-objects/content/WidthToggle.svelte",
+        "packages/svelte/ui-components/src/learning-objects/content/lab/Lab.svelte",
+        "packages/svelte/ui-components/src/learning-objects/content/notebook/Notebook.svelte",
+        "packages/svelte/ui-components/src/learning-objects/content/notebook/NotebookCodeEditor.svelte",
+        "packages/svelte/ui-components/src/learning-objects/content/notebook/cells/NotebookCell.svelte",
+        "packages/svelte/ui-components/src/learning-objects/content/notebook/cells/NotebookCodeCell.svelte",
+        "packages/svelte/ui-components/src/learning-objects/content/notebook/cells/NotebookExerciseCell.svelte",
+        "packages/svelte/ui-components/src/learning-objects/content/notebook/cells/NotebookSolutionCell.svelte",
+        "packages/svelte/ui-components/src/learning-objects/content/notebook/notebook-styles.css",
+        "packages/svelte/ui-components/src/learning-objects/content/talk/TalkAdobe.svelte",
+        "packages/svelte/ui-components/src/learning-objects/content/talk/TalkClient.svelte",
+        "packages/svelte/ui-components/src/learning-objects/content/talk/TalkMarp.svelte",
+        "packages/svelte/ui-components/src/learning-objects/content/talk/TalkMozilla.svelte",
+        "packages/svelte/ui-components/src/learning-objects/content/whiteboard/WhiteboardViewer.svelte",
+        "packages/svelte/ui-components/src/learning-objects/layout/Card.svelte",
+        "packages/svelte/ui-components/src/learning-objects/layout/Cards.svelte",
+        "packages/svelte/ui-components/src/learning-objects/layout/LoContextPanel.svelte",
+        "packages/svelte/ui-components/src/learning-objects/layout/Panels.svelte",
+        "packages/svelte/ui-components/src/learning-objects/layout/Units.svelte",
+        "packages/svelte/ui-components/src/learning-objects/layout/Wall.svelte",
+        "packages/svelte/ui-components/src/learning-objects/structure/Composite.svelte",
+        "packages/svelte/ui-components/src/learning-objects/structure/Context.svelte",
+        "packages/svelte/ui-components/src/quiz/QuizQuestion.svelte",
+        "packages/svelte/ui-components/src/quiz/QuizResults.svelte",
+        "packages/svelte/ui-components/src/quiz/QuizTaker.svelte",
+        "packages/svelte/ui-components/src/time/Catalogue.svelte",
+        "packages/svelte/ui-components/src/time/ConnectLatestLosCards.svelte",
+        "packages/svelte/ui-components/src/time/CourseGroup.svelte",
+        "packages/svelte/ui-components/src/time/CourseGroupHeader.svelte",
+        "packages/svelte/ui-components/src/time/Courses.svelte",
+        "packages/svelte/ui-components/src/time/Students.svelte",
+        "packages/svelte/ui-navigators/package.json",
+        "packages/svelte/ui-navigators/src/Calendar.svelte",
+        "packages/svelte/ui-navigators/src/CourseContext.svelte",
+        "packages/svelte/ui-navigators/src/CourseNavigation.svelte",
+        "packages/svelte/ui-navigators/src/LayoutMenu.svelte",
+        "packages/svelte/ui-navigators/src/MainNavigator.svelte",
+        "packages/svelte/ui-navigators/src/SecondaryNavigator.svelte",
+        "packages/svelte/ui-navigators/src/TutorsShell.svelte",
+        "packages/svelte/ui-navigators/src/buttons/Breadcrumbs.svelte",
+        "packages/svelte/ui-navigators/src/buttons/CalendarButton.svelte",
+        "packages/svelte/ui-navigators/src/buttons/CourseSentimentButton.svelte",
+        "packages/svelte/ui-navigators/src/buttons/EditCoursButton.svelte",
+        "packages/svelte/ui-navigators/src/buttons/InfoButton.svelte",
+        "packages/svelte/ui-navigators/src/buttons/OnlineButton.svelte",
+        "packages/svelte/ui-navigators/src/buttons/SearchButton.svelte",
+        "packages/svelte/ui-navigators/src/buttons/TocButton.svelte",
+        "packages/svelte/ui-navigators/src/buttons/WhiteboardButton.svelte",
+        "packages/svelte/ui-navigators/src/footers/Footer.svelte",
+        "packages/svelte/ui-navigators/src/footers/TutorsMessage.svelte",
+        "packages/svelte/ui-navigators/src/footers/TutorsVersion.svelte",
+        "packages/svelte/ui-navigators/src/layout/AppearanceSwitcher.svelte",
+        "packages/svelte/ui-navigators/src/layout/CodeThemeSwitcher.svelte",
+        "packages/svelte/ui-navigators/src/layout/LanguageSwitcher.svelte",
+        "packages/svelte/ui-navigators/src/layout/LayoutSwitcher.svelte",
+        "packages/svelte/ui-navigators/src/layout/ThemeSwitcher.svelte",
+        "packages/svelte/ui-navigators/src/search/resource-search.ts",
+        "packages/svelte/ui-navigators/src/titles/CourseTitle.svelte",
+        "packages/svelte/ui-navigators/src/tutors-connect/AnonProfile.svelte",
+        "packages/svelte/ui-navigators/src/tutors-connect/ConnectedProfile.svelte",
+        "packages/svelte/ui-primitives/src/_safelist.svelte",
+        "packages/svelte/ui-primitives/src/components/ErrorPage.svelte",
+        "packages/svelte/ui-primitives/src/components/Icon.svelte",
+        "packages/svelte/ui-primitives/src/components/Image.svelte",
+        "packages/svelte/ui-primitives/src/components/LoContextTreeView.svelte",
+        "packages/svelte/ui-primitives/src/components/LoReference.svelte",
+        "packages/svelte/ui-primitives/src/components/Menu.svelte",
+        "packages/svelte/ui-primitives/src/components/MenuItem.svelte",
+        "packages/svelte/ui-primitives/src/components/SetuIcon.svelte",
+        "packages/svelte/ui-primitives/src/components/Sidebar.svelte",
+        "packages/svelte/ui-primitives/src/components/StudentCard.svelte",
+        "packages/svelte/ui-primitives/src/components/ToastProvider.svelte",
+        "packages/svelte/ui-primitives/src/components/TourOverlay.svelte",
+        "packages/svelte/ui-primitives/src/components/TutorsIcon.svelte",
+        "packages/svelte/utils/i18n/src/messages/de.ts",
+        "packages/svelte/utils/i18n/src/messages/en.ts",
+        "packages/svelte/utils/i18n/src/messages/es.ts",
+        "packages/svelte/utils/i18n/src/messages/fr.ts",
+        "packages/svelte/utils/i18n/src/messages/ga.ts",
+        "packages/svelte/utils/i18n/src/messages/it.ts",
+        "packages/svelte/utils/rbac/src/index.ts",
+        "packages/svelte/utils/rbac/src/rbac-service.svelte.ts",
+        "packages/svelte/utils/tour/src/index.ts",
+        "packages/svelte/utils/tour/src/steps.ts",
+        "packages/svelte/utils/tour/src/tour-service.svelte.ts",
+        "playwright-a11y.config.ts",
+        "pnpm-lock.yaml",
+        "scripts/checks/ears-audit.ts",
+        "scripts/checks/suite-health.ts",
+        "tests/TESTING.md",
+        "tests/bdd/features/shared/theming.feature",
+        "tests/bdd/features/ui/accessibility.feature",
+        "tests/bdd/features/ui/content-locks.feature",
+        "tests/bdd/features/ui/course-tools.feature",
+        "tests/bdd/features/ui/learning-activities.feature",
+        "tests/bdd/features/ui/preferences-and-themes.feature",
+        "tests/bdd/features/ui/reading.feature",
+        "tests/bdd/features/ui/resource-cards.feature",
+        "tests/bdd/features/ui/search.feature",
+        "tests/bdd/features/ui/shell-and-navigation.feature",
+        "tests/bdd/steps/shared/theming.steps.ts",
+        "tests/bdd/support/theme.ts",
+        "tests/components/runes/analytics-store.test.ts",
+        "tests/components/runes/course-store.test.ts",
+        "tests/components/runes/presence-store.test.ts",
+        "tests/components/ui-components/CalendarHeatmap.test.ts",
+        "tests/components/ui-components/PresenceIndicator.test.ts",
+        "tests/components/ui-components/TopicCard.test.ts",
+        "tests/components/ui-components/UnitCard.test.ts",
+        "tests/components/ui-navigators/CourseHeader.test.ts",
+        "tests/components/ui-navigators/Navigator.test.ts",
+        "tests/components/ui-navigators/SearchResults.test.ts",
+        "tests/components/ui-navigators/Sidebar.test.ts",
+        "tests/components/ui-primitives/Button.test.ts",
+        "tests/components/ui-primitives/Card.test.ts",
+        "tests/components/ui-primitives/Icon.test.ts",
+        "tests/components/ui-primitives/Layout.test.ts",
+        "tests/components/ui-primitives/Tooltip.test.ts",
+        "tests/conformance/release-harness.test.ts",
+        "tests/conformance/release-rules.test.ts",
+        "tests/e2e-stack/journeys/journeys.ts",
+        "tests/e2e-stack/journeys/stack.ts",
+        "tests/e2e-stack/journeys/student.journey.spec.ts",
+        "tests/e2e/accessibility.spec.ts",
+        "tests/performance/bundle-budgets.json",
+        "tests/suite-health/ears-audit.test.ts",
+        "tests/suite-health/fixtures/ears-audit/root/apps/reader/tests/e2e/ui.spec.ts",
+        "tests/suite-health/fixtures/ears-audit/root/tests/bdd/features/ui/ui.feature",
+        "tests/suite-health/known-findings.txt",
+        "tests/unit/rbac/lock-matching.test.ts",
+        "tests/unit/reader/copy-code.test.ts",
+        "tests/unit/reader/resource-search.test.ts",
+        "tests/unit/themes/theme-icon-fallback.test.ts"
+      ],
+      "churn": 11781,
+      "hotspotsTouched": [
+        "packages/svelte/ui-primitives/src/components/LoContextTreeView.svelte"
+      ],
+      "testDelta": {
+        "production": 6643,
+        "tests": 4327,
+        "ratio": 0.65,
+        "packages": [
+          {
+            "package": "apps/catalogue",
+            "production": 12,
+            "tests": 3397,
+            "ratio": 283.08
+          },
+          {
+            "package": "apps/live",
+            "production": 16,
+            "tests": 3397,
+            "ratio": 212.31
+          },
+          {
+            "package": "apps/reader",
+            "production": 1487,
+            "tests": 4317,
+            "ratio": 2.9
+          },
+          {
+            "package": "apps/time",
+            "production": 437,
+            "tests": 3392,
+            "ratio": 7.76
+          },
+          {
+            "package": "packages/svelte/course",
+            "production": 50,
+            "tests": 3392,
+            "ratio": 67.84
+          },
+          {
+            "package": "packages/svelte/runes",
+            "production": 31,
+            "tests": 3392,
+            "ratio": 109.42
+          },
+          {
+            "package": "packages/svelte/themes",
+            "production": 530,
+            "tests": 3392,
+            "ratio": 6.4
+          },
+          {
+            "package": "packages/svelte/ui-components",
+            "production": 1493,
+            "tests": 3392,
+            "ratio": 2.27
+          },
+          {
+            "package": "packages/svelte/ui-navigators",
+            "production": 1530,
+            "tests": 3392,
+            "ratio": 2.22
+          },
+          {
+            "package": "packages/svelte/ui-primitives",
+            "production": 508,
+            "tests": 3392,
+            "ratio": 6.68
+          },
+          {
+            "package": "packages/svelte/utils",
+            "production": 549,
+            "tests": 3392,
+            "ratio": 6.18
+          }
+        ]
+      },
+      "reviewed": false,
+      "points": 25,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #313 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/313",
+          "pr": 313,
+          "author": "Jordan Harrison"
+        },
+        {
+          "points": 10,
+          "rule": "hotspot",
+          "why": "PR #313, a first contribution, touches hotspot packages/svelte/ui-primitives/src/components/LoContextTreeView.svelte (3 of the last 6 releases)",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/313/files#diff-3805a328d2572205ef2f52b7b2b8eb8164c3c1dc10b3c867d195122994548757",
+          "file": "packages/svelte/ui-primitives/src/components/LoContextTreeView.svelte",
+          "pr": 313,
+          "author": "Jordan Harrison"
+        },
+        {
+          "points": 5,
+          "rule": "churn",
+          "why": "reader churn 2738 lines, above 2× its median of 98 over the last 6 releases; PR #313 is the largest part (2422 lines)",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/313/files#diff-6e0d83696317a7dd434a0f962ec82a7debb04a718f3885992316f95ec9b82733",
+          "file": "apps/reader/tests/e2e/shell-and-navigation.spec.ts",
+          "pr": 313,
+          "author": "Jordan Harrison"
+        },
+        {
+          "points": 5,
+          "rule": "churn",
+          "why": "live churn 55 lines, above 2× its median of 2.5 over the last 6 releases; PR #313 is the largest part (21 lines)",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/313/files#diff-d4f3beaa5f469d6d50fb9ca5300f2bb3ca5041d9716f0df65022760488fc9199",
+          "file": "apps/live/src/routes/[courseid]/+page.svelte",
+          "pr": 313,
+          "author": "Jordan Harrison"
+        },
+        {
+          "points": 5,
+          "rule": "churn",
+          "why": "time churn 482 lines, above 2× its median of 9.5 over the last 6 releases; PR #313 is the largest part (441 lines)",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/313/files#diff-739c1b09200b6be443c6fdb46c59233efcb1d139a68129f5925a0cf720719bcf",
+          "file": "apps/time/src/lib/components/CourseIdDialog.svelte",
+          "pr": 313,
+          "author": "Jordan Harrison"
+        }
+      ]
+    },
+    {
+      "pr": 316,
+      "sha": "895add5f5c7debcb25a25241fc6ee661bd12fab4",
+      "title": "fix(whiteboard): load the scene, follow dark mode, match the Paper UI (supersedes #304)",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/316",
+      "direct": false,
+      "release": false,
+      "author": "Leigh Griffin",
+      "firstContribution": false,
+      "files": [
+        "apps/reader/netlify.toml",
+        "apps/reader/static/excalidraw-editor.html",
+        "apps/reader/static/excalidraw-viewer.html",
+        "guides/WHITEBOARD.md",
+        "packages/svelte/ui-components/src/learning-objects/content/whiteboard/WhiteboardViewer.svelte",
+        "tests/contract/realtime/whiteboard-protocol.contract.test.ts",
+        "tests/contract/support/schemas.ts"
+      ],
+      "churn": 318,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 167,
+        "tests": 25,
+        "ratio": 0.15,
+        "packages": [
+          {
+            "package": "packages/svelte/ui-components",
+            "production": 167,
+            "tests": 25,
+            "ratio": 0.15
+          }
+        ]
+      },
+      "reviewed": false,
+      "points": 10,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #316 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/316",
+          "pr": 316,
+          "author": "Leigh Griffin"
+        },
+        {
+          "points": 10,
+          "rule": "tests",
+          "why": "PR #316 changed 167 production lines in packages/svelte/ui-components with 25 test lines (0.15): below 0.2",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/316/files#diff-df9fd1dd4556d3b501ea96a8bfc85aeae703e79866841d36fa27aab651c128d6",
+          "file": "packages/svelte/ui-components/src/learning-objects/content/whiteboard/WhiteboardViewer.svelte",
+          "pr": 316,
+          "author": "Leigh Griffin"
+        }
+      ]
+    },
+    {
+      "pr": 317,
+      "sha": "0ebb37020e91f629aa3440fe86ec89485db09995",
+      "title": "tutors-sdk/fix/enable-rls-public-tables",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/317",
+      "direct": false,
+      "release": false,
+      "author": "Jordan Harrison",
+      "firstContribution": true,
+      "files": [
+        "docs/DATA-INVENTORY.md",
+        "guides/MIGRATIONS.md",
+        "supabase/migrations/20260924_enable_rls_public_tables.sql"
+      ],
+      "churn": 55,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 0,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #317 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/317",
+          "pr": 317,
+          "author": "Jordan Harrison"
+        }
+      ]
+    },
+    {
+      "pr": 318,
+      "sha": "7b9b8ad974f745a308472a6ed9324684595870ac",
+      "title": "Make phones and tablets fit: two-up cards, scroll-away header, no keyboard hints on touch",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/318",
+      "direct": false,
+      "release": false,
+      "author": "Jordan Harrison",
+      "firstContribution": true,
+      "files": [
+        "DESIGN.md",
+        "apps/reader/src/routes/(course-reader)/search/[courseid]/+page.svelte",
+        "apps/reader/src/routes/(home)/Links.svelte",
+        "apps/reader/tests/e2e/reading.spec.ts",
+        "apps/reader/tests/e2e/resource-cards.spec.ts",
+        "apps/reader/tests/e2e/search.spec.ts",
+        "apps/reader/tests/e2e/shell-and-navigation.spec.ts",
+        "packages/svelte/themes/src/styles/paper-tokens.css",
+        "packages/svelte/themes/src/styles/paper-ui.css",
+        "packages/svelte/ui-components/src/learning-objects/content/Note.svelte",
+        "packages/svelte/ui-components/src/learning-objects/content/lab/Lab.svelte",
+        "packages/svelte/ui-components/src/learning-objects/content/notebook/Notebook.svelte",
+        "packages/svelte/ui-components/src/learning-objects/content/talk/TalkClient.svelte",
+        "packages/svelte/ui-components/src/learning-objects/layout/Card.svelte",
+        "packages/svelte/ui-navigators/src/MainNavigator.svelte",
+        "packages/svelte/ui-navigators/src/SecondaryNavigator.svelte",
+        "packages/svelte/ui-navigators/src/TutorsShell.svelte",
+        "packages/svelte/ui-navigators/src/buttons/SearchButton.svelte",
+        "packages/svelte/ui-primitives/src/components/Sidebar.svelte",
+        "tests/bdd/features/ui/reading.feature",
+        "tests/bdd/features/ui/resource-cards.feature",
+        "tests/bdd/features/ui/search.feature",
+        "tests/bdd/features/ui/shell-and-navigation.feature"
+      ],
+      "churn": 424,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 220,
+        "tests": 169,
+        "ratio": 0.77,
+        "packages": [
+          {
+            "package": "apps/reader",
+            "production": 16,
+            "tests": 169,
+            "ratio": 10.56
+          },
+          {
+            "package": "packages/svelte/themes",
+            "production": 41,
+            "tests": 62,
+            "ratio": 1.51
+          },
+          {
+            "package": "packages/svelte/ui-components",
+            "production": 36,
+            "tests": 62,
+            "ratio": 1.72
+          },
+          {
+            "package": "packages/svelte/ui-navigators",
+            "production": 115,
+            "tests": 62,
+            "ratio": 0.54
+          },
+          {
+            "package": "packages/svelte/ui-primitives",
+            "production": 12,
+            "tests": 62,
+            "ratio": 5.17
+          }
+        ]
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #318 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/318",
+          "pr": 318,
+          "author": "Jordan Harrison"
+        }
+      ]
+    },
+    {
+      "pr": null,
+      "sha": "8582ef2a6c4f45f5b16ca7cc7c1b90b6dfc1f3a8",
+      "title": "Rationalised the connect, course home and course tools menus",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/commit/8582ef2a6c4f45f5b16ca7cc7c1b90b6dfc1f3a8",
+      "direct": true,
+      "release": false,
+      "author": "Eamonn de Leastar",
+      "firstContribution": false,
+      "files": [
+        "apps/reader/tests/e2e/course-tools.spec.ts",
+        "apps/reader/tests/e2e/shell-and-navigation.spec.ts",
+        "apps/reader/tests/e2e/support.ts",
+        "packages/svelte/ui-navigators/src/CourseNavigation.svelte",
+        "packages/svelte/ui-navigators/src/buttons/CourseSentimentButton.svelte",
+        "packages/svelte/ui-navigators/src/buttons/OnlineButton.svelte",
+        "packages/svelte/ui-navigators/src/tutors-connect/AnonProfile.svelte",
+        "packages/svelte/ui-navigators/src/tutors-connect/ConnectedProfile.svelte",
+        "packages/svelte/utils/i18n/src/messages/de.ts",
+        "packages/svelte/utils/i18n/src/messages/en.ts",
+        "packages/svelte/utils/i18n/src/messages/es.ts",
+        "packages/svelte/utils/i18n/src/messages/fr.ts",
+        "packages/svelte/utils/i18n/src/messages/ga.ts",
+        "packages/svelte/utils/i18n/src/messages/it.ts",
+        "tests/bdd/features/ui/course-tools.feature",
+        "tests/bdd/features/ui/shell-and-navigation.feature"
+      ],
+      "churn": 275,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 163,
+        "tests": 112,
+        "ratio": 0.69,
+        "packages": [
+          {
+            "package": "packages/svelte/ui-navigators",
+            "production": 109,
+            "tests": 35,
+            "ratio": 0.32
+          },
+          {
+            "package": "packages/svelte/utils",
+            "production": 54,
+            "tests": 35,
+            "ratio": 0.65
+          }
+        ]
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "commit 8582ef2 \"Rationalised the connect, course home and course tools menus\" reached main without a pull request, so nobody reviewed it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/commit/8582ef2a6c4f45f5b16ca7cc7c1b90b6dfc1f3a8",
+          "pr": null,
+          "commit": "8582ef2a6c4f45f5b16ca7cc7c1b90b6dfc1f3a8",
+          "author": "Eamonn de Leastar"
+        }
+      ]
+    },
+    {
+      "pr": 330,
+      "sha": "fc96e6a0913f84ff7a236fbdf53933243887049a",
+      "title": "tutors-sdk/codex/course-shell-mobile-header",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/330",
+      "direct": false,
+      "release": false,
+      "author": "Jordan Harrison",
+      "firstContribution": true,
+      "files": [
+        "apps/reader/tests/e2e/content-locks.spec.ts",
+        "apps/reader/tests/e2e/resource-cards.spec.ts",
+        "apps/reader/tests/e2e/shell-and-navigation.spec.ts",
+        "packages/svelte/themes/src/styles/paper-ui.css",
+        "packages/svelte/themes/src/styles/theme-overrides.css",
+        "packages/svelte/ui-components/src/learning-objects/layout/Card.svelte",
+        "packages/svelte/ui-components/src/learning-objects/structure/Composite.svelte",
+        "packages/svelte/ui-navigators/src/CourseNavigation.svelte",
+        "packages/svelte/ui-navigators/src/MainNavigator.svelte",
+        "packages/svelte/ui-navigators/src/SecondaryNavigator.svelte",
+        "packages/svelte/ui-navigators/src/buttons/CalendarButton.svelte",
+        "packages/svelte/ui-navigators/src/buttons/InfoButton.svelte",
+        "packages/svelte/utils/i18n/src/messages/de.ts",
+        "packages/svelte/utils/i18n/src/messages/en.ts",
+        "packages/svelte/utils/i18n/src/messages/es.ts",
+        "packages/svelte/utils/i18n/src/messages/fr.ts",
+        "packages/svelte/utils/i18n/src/messages/ga.ts",
+        "packages/svelte/utils/i18n/src/messages/it.ts",
+        "tests/bdd/features/ui/shell-and-navigation.feature",
+        "tests/e2e-stack/journeys/journeys.ts"
+      ],
+      "churn": 197,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 144,
+        "tests": 53,
+        "ratio": 0.37,
+        "packages": [
+          {
+            "package": "packages/svelte/themes",
+            "production": 8,
+            "tests": 11,
+            "ratio": 1.38
+          },
+          {
+            "package": "packages/svelte/ui-components",
+            "production": 30,
+            "tests": 11,
+            "ratio": 0.37
+          },
+          {
+            "package": "packages/svelte/ui-navigators",
+            "production": 100,
+            "tests": 11,
+            "ratio": 0.11
+          },
+          {
+            "package": "packages/svelte/utils",
+            "production": 6,
+            "tests": 11,
+            "ratio": 1.83
+          }
+        ]
+      },
+      "reviewed": false,
+      "points": 10,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #330 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/330",
+          "pr": 330,
+          "author": "Jordan Harrison"
+        },
+        {
+          "points": 10,
+          "rule": "tests",
+          "why": "PR #330, a first contribution, changed 100 production lines in packages/svelte/ui-navigators with 11 test lines (0.11): below 0.2",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/330/files#diff-d9959693589250e82da1747e0d059c0b1d7215ba4f64d1c3f3e9d73e3321ed90",
+          "file": "packages/svelte/ui-navigators/src/MainNavigator.svelte",
+          "pr": 330,
+          "author": "Jordan Harrison"
+        }
+      ]
+    },
+    {
+      "pr": 333,
+      "sha": "adc9a9eb0db3ca011d0a93b7a913920ca9c41e5b",
+      "title": "test: honest coverage floors, mutation floors and a nightly mutation job (Rules 0110-0114)",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/333",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": true,
+      "files": [
+        ".github/workflows/ci.yml",
+        ".github/workflows/nightly.yml",
+        "guides/MUTATION-TESTING.md",
+        "guides/TESTING-OVERVIEW.md",
+        "guides/TESTING.md",
+        "package.json",
+        "scripts/checks/coverage-floors.ts",
+        "scripts/checks/mutation-floors.ts",
+        "stryker.config.json",
+        "tests/TESTING.md",
+        "tests/bdd/features/developer/test-quality-ratchets.feature",
+        "tests/bdd/steps/developer/test-quality-ratchets.steps.ts",
+        "tests/mutation/mutation-floors.json",
+        "tests/suite-health/coverage-floors.json",
+        "vitest.config.ts"
+      ],
+      "churn": 719,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 391,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #333 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/333",
+          "pr": 333,
+          "author": "Claude"
+        }
+      ]
+    },
+    {
+      "pr": 335,
+      "sha": "c1e20f942fac8b28efe8dc051f6c903ec4346fb9",
+      "title": "test: mutation-test 12 modules at 93.6%, break at 90 (Rules 0113, 0115)",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/335",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": true,
+      "files": [
+        "guides/MUTATION-TESTING.md",
+        "guides/TESTING-OVERVIEW.md",
+        "guides/TESTING.md",
+        "scripts/checks/coverage-floors.ts",
+        "stryker.config.json",
+        "tests/TESTING.md",
+        "tests/bdd/features/developer/test-quality-ratchets.feature",
+        "tests/bdd/steps/developer/test-quality-ratchets.steps.ts",
+        "tests/mutation/mutation-floors.json",
+        "tests/suite-health/coverage-floors.json",
+        "tests/unit/gen/lr-utils-mutations.test.ts",
+        "tests/unit/gen/template-utils-mutations.test.ts",
+        "tests/unit/model/course-utils-mutations.test.ts",
+        "tests/unit/model/lo-tree-mutations.test.ts",
+        "tests/unit/model/lo-utils-mutations2.test.ts",
+        "tests/unit/model/markdown-utils-mutations.test.ts",
+        "tests/unit/model/search-mutations2.test.ts",
+        "tests/unit/time/base-lab-model-mutations.test.ts",
+        "tests/unit/time/lab-utils-mutations.test.ts",
+        "vitest.config.mutation.ts"
+      ],
+      "churn": 1938,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 1856,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #335 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/335",
+          "pr": 335,
+          "author": "Claude"
+        }
+      ]
+    },
+    {
+      "pr": 334,
+      "sha": "f12110269e315e57a329b9cf6a282e2ca6b53e5f",
+      "title": "Let the image backfill accept V16.2.1 and 16.2.1",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/334",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": true,
+      "files": [
+        ".github/workflows/image-build.yml",
+        "deploy/README.md",
+        "tests/conformance/promote-image.test.ts"
+      ],
+      "churn": 48,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 32,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #334 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/334",
+          "pr": 334,
+          "author": "Claude"
+        }
+      ]
+    },
+    {
+      "pr": 337,
+      "sha": "3ab2bf2b53fe3bcd7bbb1f35194954a06fbdd672",
+      "title": "fix(load): drop the Node-only log line from the k6 reader traffic script",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/337",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": true,
+      "files": [
+        "tests/performance/k6/lib/reader-traffic.js"
+      ],
+      "churn": 1,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 1,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #337 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/337",
+          "pr": 337,
+          "author": "Claude"
+        }
+      ]
+    },
+    {
+      "pr": 336,
+      "sha": "1592250ef44a1dc91b51e37e5b17710385b9a8bf",
+      "title": "test: nightly mutation testing over every library module",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/336",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": true,
+      "files": [
+        ".github/workflows/nightly.yml",
+        ".gitignore",
+        "guides/MUTATION-TESTING.md",
+        "guides/TESTING-OVERVIEW.md",
+        "guides/TESTING.md",
+        "package.json",
+        "scripts/checks/mutation-floors.ts",
+        "stryker.nightly.config.json",
+        "tests/TESTING.md",
+        "tests/bdd/features/developer/test-quality-ratchets.feature",
+        "tests/bdd/steps/developer/test-quality-ratchets.steps.ts",
+        "tests/mutation/nightly-mutation-floors.json",
+        "vitest.config.mutation-nightly.ts"
+      ],
+      "churn": 622,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 418,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #336 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/336",
+          "pr": 336,
+          "author": "Claude"
+        }
+      ]
+    },
+    {
+      "pr": 340,
+      "sha": "e57afb628e48fb6cc700578f0f3c7f7dd51f825c",
+      "title": "docs(testing): describe both mutation runs and refresh stale figures",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/340",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": true,
+      "files": [
+        "CONTRIBUTING.md",
+        "guides/MUTATION-TESTING.md",
+        "guides/TESTING-OVERVIEW.md",
+        "guides/TESTING.md",
+        "tests/TESTING.md"
+      ],
+      "churn": 66,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 2,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #340 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/340",
+          "pr": 340,
+          "author": "Claude"
+        }
+      ]
+    },
+    {
+      "pr": 349,
+      "sha": "54a8f832d4138484f4c37ce975d7b08e977d09c4",
+      "title": "feat(release): generate the release changelog from merged PRs and their EARS Rules",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/349",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": true,
+      "files": [
+        ".github/workflows/release-dispatch.yml",
+        "CONTRIBUTING.md",
+        "guides/EARS-METHODOLOGY.md",
+        "guides/Release-Strategy.md",
+        "package.json",
+        "scripts/release-changelog.ts",
+        "scripts/release-rules.ts",
+        "tests/bdd/features/developer/release-changelog.feature",
+        "tests/bdd/steps/developer/release-changelog.steps.ts",
+        "tests/conformance/release-changelog.test.ts",
+        "tests/conformance/release-harness.test.ts",
+        "tests/conformance/release-rules.test.ts"
+      ],
+      "churn": 775,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 370,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #349 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/349",
+          "pr": 349,
+          "author": "Claude"
+        }
+      ]
+    },
+    {
+      "pr": 350,
+      "sha": "c117f56e34a2d1b02a6d1f7773e5eabc7a55e339",
+      "title": "Add \"the data API\" as an EARS system name",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/350",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": true,
+      "files": [
+        "guides/EARS-METHODOLOGY.md",
+        "scripts/checks/ears-audit.ts",
+        "tests/suite-health/ears-audit.test.ts"
+      ],
+      "churn": 9,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 2,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #350 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/350",
+          "pr": 350,
+          "author": "Claude"
+        }
+      ]
+    },
+    {
+      "pr": 351,
+      "sha": "d7b88b3917ebd88d36a2a133691d9c95dc533fc3",
+      "title": "ci(image-build): sign and attest the digest before tagging it",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/351",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": true,
+      "files": [
+        ".github/workflows/image-build.yml",
+        "deploy/README.md",
+        "tests/conformance/promote-image.test.ts"
+      ],
+      "churn": 78,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 16,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #351 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/351",
+          "pr": 351,
+          "author": "Claude"
+        }
+      ]
+    },
+    {
+      "pr": 353,
+      "sha": "17243d9305b1b5e184be4458e40d187b6ad6e8ac",
+      "title": "fix(community): error reports flushed on page unload reach app_errors (console, network)",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/353",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": true,
+      "files": [
+        "packages/svelte/community/src/utils/error-transport.ts",
+        "tests/suite-health/coverage-floors.json",
+        "tests/unit/community/error-transport.test.ts"
+      ],
+      "churn": 81,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 7,
+        "tests": 74,
+        "ratio": 10.57,
+        "packages": [
+          {
+            "package": "packages/svelte/community",
+            "production": 7,
+            "tests": 74,
+            "ratio": 10.57
+          }
+        ]
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #353 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/353",
+          "pr": 353,
+          "author": "Claude"
+        }
+      ]
+    },
+    {
+      "pr": 352,
+      "sha": "6f89eb41504836165508db966593153256059bf4",
+      "title": "fix(deps): override devalue to >=5.9.1 for GHSA-9rgm-9g3h-6x36",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/352",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": true,
+      "files": [
+        "pnpm-lock.yaml",
+        "pnpm-workspace.yaml"
+      ],
+      "churn": 15,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 0,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #352 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/352",
+          "pr": 352,
+          "author": "Claude"
+        }
+      ]
+    },
+    {
+      "pr": 354,
+      "sha": "a4c4c667768414100a09d98c597f18e8f21d1d7d",
+      "title": "fix(build): name Netlify builds after their commit (network)",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/354",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": true,
+      "files": [
+        "apps/catalogue/svelte.config.js",
+        "apps/live/svelte.config.js",
+        "apps/reader/svelte.config.js",
+        "apps/time/svelte.config.js",
+        "tests/conformance/build-identity.test.ts"
+      ],
+      "churn": 47,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 24,
+        "tests": 23,
+        "ratio": 0.96,
+        "packages": [
+          {
+            "package": "apps/catalogue",
+            "production": 6,
+            "tests": 23,
+            "ratio": 3.83
+          },
+          {
+            "package": "apps/live",
+            "production": 6,
+            "tests": 23,
+            "ratio": 3.83
+          },
+          {
+            "package": "apps/reader",
+            "production": 6,
+            "tests": 23,
+            "ratio": 3.83
+          },
+          {
+            "package": "apps/time",
+            "production": 6,
+            "tests": 23,
+            "ratio": 3.83
+          }
+        ]
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #354 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/354",
+          "pr": 354,
+          "author": "Claude"
+        }
+      ]
+    },
+    {
+      "pr": 355,
+      "sha": "017ceb6d1882e07106d7f35afde27cc0a4eaeaca",
+      "title": "feat(release): pnpm release:candidate, release/deployed.json and the release SOP",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/355",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": true,
+      "files": [
+        ".github/CODEOWNERS",
+        ".github/workflows/deploy.yml",
+        "guides/Release-Strategy.md",
+        "package.json",
+        "release/README.md",
+        "release/SOP.md",
+        "release/deployed.json",
+        "scripts/checks/deploy-pins.ts",
+        "scripts/deploy-pin.ts",
+        "scripts/release-candidate.ts",
+        "tests/bdd/features/developer/release-candidate.feature",
+        "tests/bdd/steps/developer/release-candidate.steps.ts",
+        "tests/conformance/release-candidate.test.ts"
+      ],
+      "churn": 919,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 485,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": false,
+      "points": 0,
+      "deductions": [
+        {
+          "points": 0,
+          "rule": "review",
+          "floor": true,
+          "why": "PR #355 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/355",
+          "pr": 355,
+          "author": "Claude"
+        }
+      ]
+    }
+  ],
+  "signals": {
+    "churn": {
+      "status": "measured",
+      "apps": [
+        {
+          "app": "reader",
+          "churn": 2738,
+          "median": 98,
+          "above": true,
+          "history": [
+            2,
+            109,
+            94,
+            119,
+            40,
+            102
+          ]
+        },
+        {
+          "app": "catalogue",
+          "churn": 51,
+          "median": 3,
+          "above": true,
+          "history": [
+            2,
+            11,
+            73,
+            2,
+            4,
+            2
+          ]
+        },
+        {
+          "app": "live",
+          "churn": 55,
+          "median": 2.5,
+          "above": true,
+          "history": [
+            2,
+            3,
+            73,
+            2,
+            4,
+            2
+          ]
+        },
+        {
+          "app": "time",
+          "churn": 482,
+          "median": 9.5,
+          "above": true,
+          "history": [
+            2,
+            15,
+            107,
+            13,
+            6,
+            4
+          ]
+        }
+      ]
+    },
+    "hotspots": {
+      "status": "measured",
+      "files": [
+        {
+          "path": "packages/svelte/ui-primitives/src/components/LoContextTreeView.svelte",
+          "releases": 3,
+          "weight": 164
+        }
+      ],
+      "touched": [
+        {
+          "path": "packages/svelte/ui-primitives/src/components/LoContextTreeView.svelte",
+          "prs": [
+            313
+          ]
+        }
+      ]
+    },
+    "ownership": {
+      "files": []
+    },
+    "orphans": {
+      "diffs": {
+        "status": "not measured",
+        "reason": "CHANGELOG.md at 017ceb6d1882e07106d7f35afde27cc0a4eaeaca has no \"### v017ceb6d1882e07106d7f35afde27cc0a4eaeaca\" entries under a product section, and no --changelog (pnpm release:changelog --json) was given"
+      },
+      "entries": {
+        "status": "not measured",
+        "reason": "CHANGELOG.md at 017ceb6d1882e07106d7f35afde27cc0a4eaeaca has no \"### v017ceb6d1882e07106d7f35afde27cc0a4eaeaca\" entries under a product section"
+      }
+    },
+    "tests": {
+      "packages": [
+        {
+          "package": "apps/catalogue",
+          "production": 54,
+          "tests": 4309,
+          "ratio": 79.8,
+          "below": false
+        },
+        {
+          "package": "apps/live",
+          "production": 58,
+          "tests": 4309,
+          "ratio": 74.29,
+          "below": false
+        },
+        {
+          "package": "apps/reader",
+          "production": 1567,
+          "tests": 5601,
+          "ratio": 3.57,
+          "below": false
+        },
+        {
+          "package": "apps/time",
+          "production": 487,
+          "tests": 4304,
+          "ratio": 8.84,
+          "below": false
+        },
+        {
+          "package": "packages/jsr/create",
+          "production": 10,
+          "tests": 288,
+          "ratio": 28.8,
+          "below": false
+        },
+        {
+          "package": "packages/jsr/gen",
+          "production": 75,
+          "tests": 288,
+          "ratio": 3.84,
+          "below": false
+        },
+        {
+          "package": "packages/jsr/model",
+          "production": 60,
+          "tests": 673,
+          "ratio": 11.22,
+          "below": false
+        },
+        {
+          "package": "packages/jsr/time",
+          "production": 2,
+          "tests": 288,
+          "ratio": 144,
+          "below": false
+        },
+        {
+          "package": "packages/jsr/tutors",
+          "production": 4,
+          "tests": 288,
+          "ratio": 72,
+          "below": false
+        },
+        {
+          "package": "packages/jsr/tutors-lite",
+          "production": 4,
+          "tests": 288,
+          "ratio": 72,
+          "below": false
+        },
+        {
+          "package": "packages/svelte/community",
+          "production": 24,
+          "tests": 688,
+          "ratio": 28.67,
+          "below": false
+        },
+        {
+          "package": "packages/svelte/connect",
+          "production": 4,
+          "tests": 102,
+          "ratio": 25.5,
+          "below": false
+        },
+        {
+          "package": "packages/svelte/course",
+          "production": 153,
+          "tests": 3880,
+          "ratio": 25.36,
+          "below": false
+        },
+        {
+          "package": "packages/svelte/runes",
+          "production": 31,
+          "tests": 3392,
+          "ratio": 109.42,
+          "below": false
+        },
+        {
+          "package": "packages/svelte/themes",
+          "production": 579,
+          "tests": 3465,
+          "ratio": 5.98,
+          "below": false
+        },
+        {
+          "package": "packages/svelte/ui-components",
+          "production": 1737,
+          "tests": 3778,
+          "ratio": 2.18,
+          "below": false
+        },
+        {
+          "package": "packages/svelte/ui-navigators",
+          "production": 1857,
+          "tests": 3657,
+          "ratio": 1.97,
+          "below": false
+        },
+        {
+          "package": "packages/svelte/ui-primitives",
+          "production": 520,
+          "tests": 3454,
+          "ratio": 6.64,
+          "below": false
+        },
+        {
+          "package": "packages/svelte/utils",
+          "production": 1187,
+          "tests": 4051,
+          "ratio": 3.41,
+          "below": false
+        }
+      ]
+    },
+    "reviews": {
+      "status": "measured",
+      "reviewed": [],
+      "unreviewed": [
+        276,
+        279,
+        278,
+        282,
+        283,
+        281,
+        280,
+        143,
+        284,
+        286,
+        274,
+        275,
+        273,
+        270,
+        272,
+        269,
+        271,
+        277,
+        293,
+        302,
+        295,
+        303,
+        297,
+        299,
+        287,
+        301,
+        306,
+        305,
+        298,
+        296,
+        300,
+        307,
+        308,
+        309,
+        310,
+        135,
+        312,
+        313,
+        316,
+        317,
+        318,
+        330,
+        333,
+        335,
+        334,
+        337,
+        336,
+        340,
+        349,
+        350,
+        351,
+        353,
+        352,
+        354,
+        355
+      ],
+      "unknown": [],
+      "problems": [],
+      "direct": [
+        "96e9e4d",
+        "8582ef2"
+      ]
+    },
+    "dependencies": {
+      "status": "measured",
+      "majorBumps": [],
+      "newPackages": [
+        {
+          "kind": "new",
+          "name": "@amiceli/vitest-cucumber",
+          "importer": ".",
+          "to": "7.0.0",
+          "pr": 277
+        }
+      ]
+    }
+  },
+  "notMeasured": [
+    {
+      "signal": "orphan diffs (a diff with no changelog entry)",
+      "reason": "CHANGELOG.md at 017ceb6d1882e07106d7f35afde27cc0a4eaeaca has no \"### v017ceb6d1882e07106d7f35afde27cc0a4eaeaca\" entries under a product section, and no --changelog (pnpm release:changelog --json) was given"
+    },
+    {
+      "signal": "orphan entries (a changelog entry with no diff)",
+      "reason": "CHANGELOG.md at 017ceb6d1882e07106d7f35afde27cc0a4eaeaca has no \"### v017ceb6d1882e07106d7f35afde27cc0a4eaeaca\" entries under a product section"
+    }
+  ],
+  "changeRisk": {
+    "score": 30,
+    "prs": [
+      {
+        "number": 276,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/276",
+        "reviewed": false,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 279,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/279",
+        "reviewed": false,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 278,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/278",
+        "reviewed": false,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 282,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/282",
+        "reviewed": false,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 283,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/283",
+        "reviewed": false,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 281,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/281",
+        "reviewed": false,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 280,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/280",
+        "reviewed": false,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 143,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/143",
+        "reviewed": false,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 284,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/284",
+        "reviewed": false,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 286,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/286",
+        "reviewed": false,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 274,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/274",
+        "reviewed": false,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 275,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/275",
+        "reviewed": false,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 273,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/273",
+        "reviewed": false,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 270,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/270",
+        "reviewed": false,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 272,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/272",
+        "reviewed": false,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 269,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/269",
+        "reviewed": false,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 271,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/271",
+        "reviewed": false,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 277,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/277",
+        "reviewed": false,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 293,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/293",
+        "reviewed": false,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 302,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/302",
+        "reviewed": false,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 295,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/295",
+        "reviewed": false,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 303,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/303",
+        "reviewed": false,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 297,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/297",
+        "reviewed": false,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 299,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/299",
+        "reviewed": false,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 287,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/287",
+        "reviewed": false,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 301,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/301",
+        "reviewed": false,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 306,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/306",
+        "reviewed": false,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 305,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/305",
+        "reviewed": false,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 298,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/298",
+        "reviewed": false,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 296,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/296",
+        "reviewed": false,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 300,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/300",
+        "reviewed": false,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 307,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/307",
+        "reviewed": false,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 308,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/308",
+        "reviewed": false,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 309,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/309",
+        "reviewed": false,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 310,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/310",
+        "reviewed": false,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 135,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/135",
+        "reviewed": false,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 312,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/312",
+        "reviewed": false,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 313,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/313",
+        "reviewed": false,
+        "firstTimeContributor": true,
+        "hotspots": [
+          "packages/svelte/ui-primitives/src/components/LoContextTreeView.svelte"
+        ]
+      },
+      {
+        "number": 316,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/316",
+        "reviewed": false,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 317,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/317",
+        "reviewed": false,
+        "firstTimeContributor": true,
+        "hotspots": []
+      },
+      {
+        "number": 318,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/318",
+        "reviewed": false,
+        "firstTimeContributor": true,
+        "hotspots": []
+      },
+      {
+        "number": 330,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/330",
+        "reviewed": false,
+        "firstTimeContributor": true,
+        "hotspots": []
+      },
+      {
+        "number": 333,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/333",
+        "reviewed": false,
+        "firstTimeContributor": true,
+        "hotspots": []
+      },
+      {
+        "number": 335,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/335",
+        "reviewed": false,
+        "firstTimeContributor": true,
+        "hotspots": []
+      },
+      {
+        "number": 334,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/334",
+        "reviewed": false,
+        "firstTimeContributor": true,
+        "hotspots": []
+      },
+      {
+        "number": 337,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/337",
+        "reviewed": false,
+        "firstTimeContributor": true,
+        "hotspots": []
+      },
+      {
+        "number": 336,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/336",
+        "reviewed": false,
+        "firstTimeContributor": true,
+        "hotspots": []
+      },
+      {
+        "number": 340,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/340",
+        "reviewed": false,
+        "firstTimeContributor": true,
+        "hotspots": []
+      },
+      {
+        "number": 349,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/349",
+        "reviewed": false,
+        "firstTimeContributor": true,
+        "hotspots": []
+      },
+      {
+        "number": 350,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/350",
+        "reviewed": false,
+        "firstTimeContributor": true,
+        "hotspots": []
+      },
+      {
+        "number": 351,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/351",
+        "reviewed": false,
+        "firstTimeContributor": true,
+        "hotspots": []
+      },
+      {
+        "number": 353,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/353",
+        "reviewed": false,
+        "firstTimeContributor": true,
+        "hotspots": []
+      },
+      {
+        "number": 352,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/352",
+        "reviewed": false,
+        "firstTimeContributor": true,
+        "hotspots": []
+      },
+      {
+        "number": 354,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/354",
+        "reviewed": false,
+        "firstTimeContributor": true,
+        "hotspots": []
+      },
+      {
+        "number": 355,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/355",
+        "reviewed": false,
+        "firstTimeContributor": true,
+        "hotspots": []
+      }
+    ],
+    "direct": [
+      {
+        "sha": "96e9e4d48acdf7a8a7021b97827c3378b80c21aa",
+        "title": "Create images.yml"
+      },
+      {
+        "sha": "8582ef2a6c4f45f5b16ca7cc7c1b90b6dfc1f3a8",
+        "title": "Rationalised the connect, course home and course tools menus"
+      }
+    ],
+    "deductions": [
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #276 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/276",
+        "pr": 276,
+        "author": "Leigh Griffin"
+      },
+      {
+        "points": 10,
+        "rule": "tests",
+        "why": "PR #276 changed 4 production lines in apps/catalogue with 0 test lines (0.00); 4 production lines in apps/live with 0 test lines (0.00); 4 production lines in apps/reader with 0 test lines (0.00); 4 production lines in apps/time with 0 test lines (0.00): below 0.2",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/276/files#diff-f59256a303b4024e8a8528f50c846374d823ee3e46c478100acfb0cb61cc4baf",
+        "file": "apps/catalogue/svelte.config.js",
+        "pr": 276,
+        "author": "Leigh Griffin"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #279 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/279",
+        "pr": 279,
+        "author": "Leigh Griffin"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #278 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/278",
+        "pr": 278,
+        "author": "Leigh Griffin"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #282 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/282",
+        "pr": 282,
+        "author": "Leigh Griffin"
+      },
+      {
+        "points": 5,
+        "rule": "churn",
+        "why": "catalogue churn 51 lines, above 2× its median of 3 over the last 6 releases; PR #282 is the largest part (20 lines)",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/282/files#diff-10394989b5de72cbe00f760412617d9d0a1f16338a4c58e33cce177446098b45",
+        "file": "apps/catalogue/src/routes/version/+server.ts",
+        "pr": 282,
+        "author": "Leigh Griffin"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #283 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/283",
+        "pr": 283,
+        "author": "Leigh Griffin"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #281 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/281",
+        "pr": 281,
+        "author": "Leigh Griffin"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #280 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/280",
+        "pr": 280,
+        "author": "Leigh Griffin"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #143 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/143",
+        "pr": 143,
+        "author": "Leigh Griffin"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "commit 96e9e4d \"Create images.yml\" reached main without a pull request, so nobody reviewed it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/commit/96e9e4d48acdf7a8a7021b97827c3378b80c21aa",
+        "pr": null,
+        "commit": "96e9e4d48acdf7a8a7021b97827c3378b80c21aa",
+        "author": "Leigh Griffin"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #284 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/284",
+        "pr": 284,
+        "author": "Leigh Griffin"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #286 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/286",
+        "pr": 286,
+        "author": "Leigh Griffin"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #274 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/274",
+        "pr": 274,
+        "author": "Leigh Griffin"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #275 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/275",
+        "pr": 275,
+        "author": "Leigh Griffin"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #273 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/273",
+        "pr": 273,
+        "author": "Leigh Griffin"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #270 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/270",
+        "pr": 270,
+        "author": "Leigh Griffin"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #272 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/272",
+        "pr": 272,
+        "author": "Leigh Griffin"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #269 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/269",
+        "pr": 269,
+        "author": "Leigh Griffin"
+      },
+      {
+        "points": 10,
+        "rule": "tests",
+        "why": "PR #269 changed 8 production lines in apps/reader with 0 test lines (0.00); 12 production lines in packages/jsr/model with 0 test lines (0.00): below 0.2",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/269/files#diff-eb38d340e5f8cf75f24da0f7604a5cfc8c2ad77ed33e1672c354a63f9322fe2c",
+        "file": "packages/jsr/model/src/utils/markdown-plugins.ts",
+        "pr": 269,
+        "author": "Leigh Griffin"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #271 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/271",
+        "pr": 271,
+        "author": "Leigh Griffin"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #277 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/277",
+        "pr": 277,
+        "author": "Leigh Griffin"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #293 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/293",
+        "pr": 293,
+        "author": "Leigh Griffin"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #302 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/302",
+        "pr": 302,
+        "author": "Leigh Griffin"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #295 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/295",
+        "pr": 295,
+        "author": "Leigh Griffin"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #303 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/303",
+        "pr": 303,
+        "author": "Leigh Griffin"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #297 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/297",
+        "pr": 297,
+        "author": "Leigh Griffin"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #299 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/299",
+        "pr": 299,
+        "author": "Leigh Griffin"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #287 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/287",
+        "pr": 287,
+        "author": "Leigh Griffin"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #301 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/301",
+        "pr": 301,
+        "author": "Leigh Griffin"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #306 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/306",
+        "pr": 306,
+        "author": "Leigh Griffin"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #305 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/305",
+        "pr": 305,
+        "author": "Leigh Griffin"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #298 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/298",
+        "pr": 298,
+        "author": "Leigh Griffin"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #296 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/296",
+        "pr": 296,
+        "author": "Leigh Griffin"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #300 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/300",
+        "pr": 300,
+        "author": "Leigh Griffin"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #307 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/307",
+        "pr": 307,
+        "author": "Leigh Griffin"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #308 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/308",
+        "pr": 308,
+        "author": "Leigh Griffin"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #309 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/309",
+        "pr": 309,
+        "author": "Leigh Griffin"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #310 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/310",
+        "pr": 310,
+        "author": "Leigh Griffin"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #135 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/135",
+        "pr": 135,
+        "author": "Leigh Griffin"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #312 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/312",
+        "pr": 312,
+        "author": "Leigh Griffin"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #313 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/313",
+        "pr": 313,
+        "author": "Jordan Harrison"
+      },
+      {
+        "points": 10,
+        "rule": "hotspot",
+        "why": "PR #313, a first contribution, touches hotspot packages/svelte/ui-primitives/src/components/LoContextTreeView.svelte (3 of the last 6 releases)",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/313/files#diff-3805a328d2572205ef2f52b7b2b8eb8164c3c1dc10b3c867d195122994548757",
+        "file": "packages/svelte/ui-primitives/src/components/LoContextTreeView.svelte",
+        "pr": 313,
+        "author": "Jordan Harrison"
+      },
+      {
+        "points": 5,
+        "rule": "churn",
+        "why": "reader churn 2738 lines, above 2× its median of 98 over the last 6 releases; PR #313 is the largest part (2422 lines)",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/313/files#diff-6e0d83696317a7dd434a0f962ec82a7debb04a718f3885992316f95ec9b82733",
+        "file": "apps/reader/tests/e2e/shell-and-navigation.spec.ts",
+        "pr": 313,
+        "author": "Jordan Harrison"
+      },
+      {
+        "points": 5,
+        "rule": "churn",
+        "why": "live churn 55 lines, above 2× its median of 2.5 over the last 6 releases; PR #313 is the largest part (21 lines)",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/313/files#diff-d4f3beaa5f469d6d50fb9ca5300f2bb3ca5041d9716f0df65022760488fc9199",
+        "file": "apps/live/src/routes/[courseid]/+page.svelte",
+        "pr": 313,
+        "author": "Jordan Harrison"
+      },
+      {
+        "points": 5,
+        "rule": "churn",
+        "why": "time churn 482 lines, above 2× its median of 9.5 over the last 6 releases; PR #313 is the largest part (441 lines)",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/313/files#diff-739c1b09200b6be443c6fdb46c59233efcb1d139a68129f5925a0cf720719bcf",
+        "file": "apps/time/src/lib/components/CourseIdDialog.svelte",
+        "pr": 313,
+        "author": "Jordan Harrison"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #316 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/316",
+        "pr": 316,
+        "author": "Leigh Griffin"
+      },
+      {
+        "points": 10,
+        "rule": "tests",
+        "why": "PR #316 changed 167 production lines in packages/svelte/ui-components with 25 test lines (0.15): below 0.2",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/316/files#diff-df9fd1dd4556d3b501ea96a8bfc85aeae703e79866841d36fa27aab651c128d6",
+        "file": "packages/svelte/ui-components/src/learning-objects/content/whiteboard/WhiteboardViewer.svelte",
+        "pr": 316,
+        "author": "Leigh Griffin"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #317 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/317",
+        "pr": 317,
+        "author": "Jordan Harrison"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #318 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/318",
+        "pr": 318,
+        "author": "Jordan Harrison"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "commit 8582ef2 \"Rationalised the connect, course home and course tools menus\" reached main without a pull request, so nobody reviewed it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/commit/8582ef2a6c4f45f5b16ca7cc7c1b90b6dfc1f3a8",
+        "pr": null,
+        "commit": "8582ef2a6c4f45f5b16ca7cc7c1b90b6dfc1f3a8",
+        "author": "Eamonn de Leastar"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #330 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/330",
+        "pr": 330,
+        "author": "Jordan Harrison"
+      },
+      {
+        "points": 10,
+        "rule": "tests",
+        "why": "PR #330, a first contribution, changed 100 production lines in packages/svelte/ui-navigators with 11 test lines (0.11): below 0.2",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/330/files#diff-d9959693589250e82da1747e0d059c0b1d7215ba4f64d1c3f3e9d73e3321ed90",
+        "file": "packages/svelte/ui-navigators/src/MainNavigator.svelte",
+        "pr": 330,
+        "author": "Jordan Harrison"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #333 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/333",
+        "pr": 333,
+        "author": "Claude"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #335 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/335",
+        "pr": 335,
+        "author": "Claude"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #334 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/334",
+        "pr": 334,
+        "author": "Claude"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #337 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/337",
+        "pr": 337,
+        "author": "Claude"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #336 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/336",
+        "pr": 336,
+        "author": "Claude"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #340 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/340",
+        "pr": 340,
+        "author": "Claude"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #349 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/349",
+        "pr": 349,
+        "author": "Claude"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #350 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/350",
+        "pr": 350,
+        "author": "Claude"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #351 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/351",
+        "pr": 351,
+        "author": "Claude"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #353 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/353",
+        "pr": 353,
+        "author": "Claude"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #352 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/352",
+        "pr": 352,
+        "author": "Claude"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #354 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/354",
+        "pr": 354,
+        "author": "Claude"
+      },
+      {
+        "points": 0,
+        "rule": "review",
+        "floor": true,
+        "why": "PR #355 was merged with no approving review",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/355",
+        "pr": 355,
+        "author": "Claude"
+      }
+    ],
+    "gaps": [
+      "orphan diffs (a diff with no changelog entry): CHANGELOG.md at 017ceb6d1882e07106d7f35afde27cc0a4eaeaca has no \"### v017ceb6d1882e07106d7f35afde27cc0a4eaeaca\" entries under a product section, and no --changelog (pnpm release:changelog --json) was given",
+      "orphan entries (a changelog entry with no diff): CHANGELOG.md at 017ceb6d1882e07106d7f35afde27cc0a4eaeaca has no \"### v017ceb6d1882e07106d7f35afde27cc0a4eaeaca\" entries under a product section"
+    ],
+    "orphans": 0,
+    "evidence": "changes.json"
+  },
+  "harness": {
+    "version": "1.13.2",
+    "contractVersion": "1.13.1"
+  }
+}
