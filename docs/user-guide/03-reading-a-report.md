@@ -129,7 +129,7 @@ Each dimension is 100 minus its deductions, and every deduction names its eviden
 - **Claim coverage 0.** −20 for each unclaimed hunk. The first five are listed with their links (`report.html#hunk-dom:reference-course-reads:1`, the failed journey, is first); the other 860 are "not counted again". Main's claims file was empty, so nothing was claimed.
 - **Noise health 45, floor breached.** −40 because the A/A is degraded (the same fact as the Gate's first reason), and −5 for each of three masks that fired nothing (`realtime-rest-fallback-warning`, `transport-encoding`, `transport-transfer`): a mask that never fires is a mask to delete.
 - **Statistical margin 80, floor breached.** −20 for a near miss: `anonymous-student-searches` took 2493 ms on a and 3006 ms on b, with p = 0.095. Not significant, and too close to call.
-- **Rehearsals 0, floor breached.** Main to RC runs release mode only, so the migration and upgrade rehearsals are reported as skipped (−50 each). A forecast therefore always has this floor breached; a real candidate's `harness release` runs both.
+- **Rehearsals 0, floor breached.** This kept forecast (harness 1.4.11) ran release mode only, so the migration and upgrade rehearsals are reported as skipped (−50 each). Since 1.13.1 Main to RC runs both rehearsals, as `harness release` does for a real candidate, so a forecast is no longer held at this floor.
 - **Change risk 30, floor breached.** From `changes.json`: see [section 5](#5-the-per-pr-change-table).
 - **Not measured** is not 100. Each says which input would measure it (`--test-signal`, `--traceability`, `--post-deploy`). It is left out of the mean, and the weights used are recorded in `confidence.json`.
 

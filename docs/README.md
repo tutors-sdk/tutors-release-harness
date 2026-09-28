@@ -16,6 +16,6 @@ Otherwise start with the [user guide](user-guide/README.md): what the harness is
 | [bus.md](bus.md) | The bus collector (disabled until a bus exists) |
 | [harness-now.md](harness-now.md) | The decision on `HARNESS_NOW` and time-derived stats |
 | [monorepo/](monorepo/README.md) | What the monorepo needs to do, with reference copies of its two workflows |
-| [releases/](releases/1.13.0.md) | Release notes of the harness, newest [1.13.0](releases/1.13.0.md); 1.8.0 to 1.13.0 built the Release Confidence companion |
+| [releases/](releases/1.13.1.md) | Release notes of the harness, newest [1.13.1](releases/1.13.1.md) (Main to RC scored, the exemplar on the report pages); 1.8.0 to 1.13.0 built the Release Confidence companion |
 
 Elsewhere: [kaizen/README.md](../kaizen/README.md) (the kaizen register: every 5 Whys and its countermeasure), [claims/README.md](../claims/README.md) (the claims format), [mutants/README.md](../mutants/README.md) (the planted regressions), [deploy/kind/README.md](../deploy/kind/README.md) (the kind substrate) and [TESTING.md](../TESTING.md) (how the harness is tested).
