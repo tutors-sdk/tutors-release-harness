@@ -3,7 +3,8 @@
 Every escape, and every drop in confidence, ends here: in a countermeasure to the system,
 never in blame. This directory holds one file per 5 Whys, and this page lists them all. The
 Lean view behind it is [docs/lean.md](../docs/lean.md) ("Kaizen"); the release SOP reviews
-this register at step 12.
+this register at step 12, and [how to run a release](../docs/user-guide/10-running-a-release.md#when-a-trigger-fires-the-5-whys)
+shows where each stub comes from.
 
 ## What opens a 5 Whys
 
@@ -24,8 +25,9 @@ Any other finding can be opened by hand: `harness why --run <run dir | release d
 
 ## How to use it
 
-1. **Open.** Take the stub the harness wrote, or run `harness why --run <dir> --finding <id>`
-   from this checkout (it writes into `kaizen/`). Why 1 is already answered: the harness's own
+1. **Open.** Copy the stub the harness wrote into `kaizen/` (from `<release dir>/kaizen/`, or
+   from the fold in the rollback issue), or run `harness why --run <dir> --finding <id>` from
+   this checkout (it writes into `kaizen/`). Why 1 is already answered: the harness's own
    trace of the finding, with links to the hunk, the claim and the PR.
 2. **Ask why, four more times at most.** Each answer is checkable against an artefact, a PR or a
    document. "Human error" is not an answer; it is the prompt for the next why. Stop at the

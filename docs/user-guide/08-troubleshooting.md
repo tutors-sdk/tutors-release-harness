@@ -9,6 +9,7 @@ Symptom, cause, fix. The messages are the ones the harness prints. Start with `p
 - [The machine](#the-machine)
 - [Guards and pull requests](#guards-and-pull-requests)
 - [Commands and locks](#commands-and-locks)
+- [Release confidence and the one command](#release-confidence-and-the-one-command)
 
 ## Images and signatures
 
@@ -78,6 +79,10 @@ Then check `masksApplied`. Never retry a flake; the harness has no retries.
 ### `A/A is clean but DEGRADED, so it does not count: ...`
 
 **Cause.** A zero-hunk night on evidence that was not pulled and signature-verified in that run (a cache, a local build, an unverified pull). **Fix.** Find why (`images ensure` logged `REGISTRY UNREACHABLE` or `BUILDING FROM SOURCE`) and run the next night with verified images.
+
+### `... DEGRADED ...: journey "<name>" failed on both sides, so this run saw nothing of its pages`
+
+**Cause.** A journey failed on side a and side b alike, so the A/A compared nothing for its pages: zero hunks there means nothing. The Main to RC report of 27 September 2026 (the example in [chapter 3](03-reading-a-report.md#1-the-gate)) has it for `reference-course-reads`. **Fix.** Open the noise run's `report.html` and read why the journey failed (both sides give the same error). A journey that breaks on production too is a product or environment finding, not noise: fix the cause, never mask it. The next clean night licenses a FAIL again.
 
 ### `advisory only: no A/A (noise) result was supplied ...`, and the verdict is WARN not FAIL
 
@@ -303,3 +308,62 @@ $env:HARNESS_BASH = "C:\Program Files\Git\bin\bash.exe"
 
 **Cause.** The harness exited 2 ("could not judge": an unusable input, an image that cannot be trusted, a run that stopped before a verdict). The workflow fails so it is seen and says so in the job summary, but a rollback issue is opened only for exit 1, a difference between production and the recorded candidate. **Fix.** Read the step log for the reason and correct it.
 
+## Release confidence and the one command
+
+The one command (`harness release`), the score, the change signals, the glance, the scoreboard and the 5 Whys. Nothing in this section can change a Gate or an exit code, except where it says the line stopped.
+
+### `cannot tell what production runs: <monorepo>/release/deployed.json does not exist, and HARNESS_PRODUCTION_TAG is not set to a release.` (exit 2)
+
+**Cause.** `--baseline prod` (the default) reads production from `release/deployed.json` in the monorepo checkout, and this checkout has none: usually it is behind `origin/main`, which has one. **Fix.** `git -C <monorepo> pull --ff-only`, then run again. Or name the baseline: `--baseline 16.2.2`. Nothing was pulled or written.
+
+### `line stopped at resolve: the images of <a> or <b> could not be obtained or verified` (exit 2)
+
+**Cause.** A candidate tag whose images are not on quay.io yet, or not signed, or a baseline digest the registry no longer serves. **Fix.** `pnpm harness images ensure --a <baseline> --b <candidate>` prints why for each image ([Images and signatures](#images-and-signatures)). `pnpm release:candidate` waits for the images before it starts the harness; run it rather than `harness release` straight after a push.
+
+### `line stopped at noise: the A/A of <tag> is dirty (N difference(s) between two identical stacks), so no A/B was attempted` (exit 2)
+
+**Cause.** The noise store could not license a FAIL, so the command ran its own A/A of the baseline, and production differed from itself. That is jidoka: while the harness sees noise, an A/B result would be unreadable, so none is attempted. **Fix.** The lines under it (`needs a mask reviewed or a determinism fix: ...`) name each difference. For each: a mask in its own PR, or a fix that makes it deterministic ([chapter 5](05-noise-and-self-test.md), [the noise burn-down](../noise-burndown.md)). Then `pnpm harness local nightly` for a clean A/A, and run again. Do not re-run hoping the noise goes away.
+
+### The changes stage says `skipped: no monorepo checkout (--monorepo or HARNESS_MONOREPO_DIR), so no git to read: change risk stays not measured`
+
+**Cause.** `harness release` has no monorepo checkout to read `git log` from (you passed `--baseline <tag>` and no `--monorepo`). **Fix.** Pass `--monorepo <dir>` or set `HARNESS_MONOREPO_DIR`. Until then change risk is not measured and left out of the RCS; it is never scored as clean.
+
+### `review coverage: GitHub could not say for PR #...: GitHub answered 401 ...`, or `no GITHUB_TOKEN or GH_TOKEN, so no PR's reviews could be read`
+
+**Cause.** `harness changes` reads each PR's reviews from GitHub's API, and it had no token, or the token was refused. Behind an HTTPS proxy, Node's `fetch` bypasses the proxy unless `NODE_USE_ENV_PROXY=1` is set, so a token that works through the proxy (with `curl`, say) can still be refused. **Fix.** Set `GITHUB_TOKEN` or `GH_TOKEN` to a token that can read the monorepo's pull requests; behind a proxy also set `NODE_USE_ENV_PROXY=1`. Until then review coverage is listed under "Not measured (never scored as clean)" and costs nothing; a commit straight to `main` still breaches the review floor, because git alone shows it.
+
+### `orphan diffs (a diff with no changelog entry): CHANGELOG.md at <ref> has no "### v<version>" entries ...`
+
+**Cause.** The orphan check reads the changelog entries for the newer tag's version. A commit sha (Main to RC, `harness changes --b <sha>`) or a release whose entries are not in `CHANGELOG.md` yet has none. **Fix.** Pass `--changelog <file>`, the output of `pnpm release:changelog --json` in the monorepo. Orphans are reported, never fatal.
+
+### `Test signal`, `Requirements traceability` or `Post-deploy history`: `not measured`
+
+**Cause.** These dimensions read data the harness does not produce: the monorepo's mutation scores (`--test-signal`), the changelog, EARS files and claims side by side (`--traceability`), and the last release's post-deploy record (`--post-deploy`). **Fix.** None is needed to decide: a dimension that is not measured is left out of the mean, and `confidence.json` records the weights used. Pass the input to `harness confidence` (or `harness release`) to measure it.
+
+### `Rehearsals −50 (floor): the migration rehearsal was skipped`, and the RCS is capped at 74
+
+**Cause.** The score was computed without a migration or upgrade run: a Main to RC report (it runs release mode only), a `--fast` run, or `harness confidence --run` on a lone `report.json`. **Fix.** For a release decision, run `harness release` without `--fast`; it runs both rehearsals. To re-score by hand, pass `--migration <dir>` and `--upgrade <dir>`.
+
+### `No RCS: Gate FAIL. The Gate wins: no number talks a FAIL back on.`
+
+**Cause.** Expected: a FAIL has no score and no band. The dimensions are still shown, for the 5 Whys. **Fix.** Claim or fix each unclaimed difference and cut the next rc.
+
+### `scoreboard: not appended (--fast: this report cannot be used for a go decision)`
+
+**Cause.** Expected: a `--fast` run is not a go decision, so it is not put on the board and opens no 5 Whys. `harness scoreboard append` refuses one too. **Fix.** None; run without `--fast` for a release.
+
+### `note: <name> is named as the author of PR #n in changes.json; the SOP's Reviewer authored no PR in this release`
+
+**Cause.** `harness glance mark --by <name>` named someone who has a PR in the release. The mark is recorded all the same. **Fix.** If it is true, the Captain records the deviation in the release PR; a different Reviewer re-marks the items (a later mark is the one that counts).
+
+### `invalid kaizen/<file>.md` from `harness why check` (exit 1)
+
+**Cause.** The 5 Whys is not ready for the register. Each line under it names the field and the reason: a why left blank before the chain ends; an answer that is only "human error", carelessness or a person's name (`"human error" is not an answer, it is the prompt for the next why`); no `Chain ends at` or `Ends in`; not exactly one of the seven countermeasure kinds; a mutant with no path under `mutants/`; no owner or due date. **Fix.** Answer what it asks. Blame beside a cause that can be checked is kept; blame alone is the next why.
+
+### `kaizen/README.md does not say what the files say: run harness why register --dir kaizen --write` (exit 1), and CI fails
+
+**Cause.** The register is out of date: a 5 Whys was added or changed and the table was not regenerated, or someone edited the table by hand. The table is generated from the files and never edited. **Fix.** `pnpm harness why register --write` and commit the result with the 5 Whys. CI's unit job runs `harness why check kaizen` and `harness why register --dir kaizen`.
+
+### The noise store, the scoreboard or the register seem to be empty on every run
+
+**Cause.** The harness ran from npx's cache: `pnpm release:candidate` without `HARNESS_DIR` uses `npx github:tutors-sdk/tutors-release-harness`, and `HARNESS_HOME` (default `<checkout>/.harness`) and the register (`<checkout>/kaizen`) are then inside that cache. **Fix.** Set `HARNESS_DIR` to your harness checkout, or `HARNESS_HOME` to a directory you keep.

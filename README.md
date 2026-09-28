@@ -26,10 +26,36 @@ candidate today) is published at
 
 ## Quick start
 
-```bash
-pnpm install
-pnpm exec playwright install chromium
+**How to run a release:** [docs/user-guide/10-running-a-release.md](docs/user-guide/10-running-a-release.md).
+Every step of the monorepo's release SOP, with the command, what you see and when it is done:
 
+```bash
+pnpm install && pnpm exec playwright install chromium
+pnpm harness doctor --for gate                                  # what this machine lacks, read-only
+
+# In the monorepo, on release/16.3.0, with HARNESS_DIR set to this checkout:
+pnpm release:candidate 16.3.0                                   # tag v16.3.0-rc.N, wait for its images, run the harness
+# ...which runs, from this checkout:
+pnpm harness release --candidate 16.3.0-rc.1 --baseline prod --monorepo ../tutors-mono-repo
+
+# The Reviewer, then the Captain:
+pnpm harness glance mark --run out/<time>-release-command --item 1 --mark verified --by <reviewer>
+pnpm harness glance status --run out/<time>-release-command    # the go line for the band
+```
+
+`harness release` asks nothing and always leaves a report. It reads in a fixed order: the **Gate**
+(PASS, WARN or FAIL: every observable difference claimed, or not), then the **Release Confidence
+Score** and its band (Green, Amber, Red), then **the reviewer's glance**, at most seven ranked
+places to look. The Gate alone decides the exit code; the score is advisory.
+
+**See one first.** The live example is **Main to RC** on the
+[report pages](https://tutors-sdk.github.io/tutors-release-harness/): today's `main` judged against
+production every day, exactly as a release candidate would be.
+[Reading a report](docs/user-guide/03-reading-a-report.md) walks through one from top to bottom.
+
+**Or drive the modes yourself:**
+
+```bash
 # Two tags you have locally (docker compose up --build in the monorepo gives tutors/<app>:local)
 pnpm harness run --mode noise   --a local --b local            # A/A: is the harness itself clean?
 pnpm harness run --mode release --a 16.2.0 --b 16.3.0-rc.1 \
@@ -60,11 +86,14 @@ Every run writes `out/<timestamp>-<mode>/` with `a/` and `b/` captures
 (`capture.json`, screenshots, k6 output), `report.json`, `report.html`,
 `report.md` (the PR comment) and, in noise mode, `noise-status.json`.
 
-**New here? Start with the [user guide](docs/user-guide/README.md)** (release authors, operators, CI integrators and harness developers, with a ten-minute quickstart).
+**New here? Start with the [user guide](docs/user-guide/README.md)** (the Captain, the Reviewer, Contributors, operators, CI integrators and harness developers, with a ten-minute quickstart).
 
-Docs: [where the A and B images come from](docs/images.md) ·
-[the integration contract](docs/contract.md) ·
+Docs: **[how to run a release](docs/user-guide/10-running-a-release.md)** ·
+**[reading a report](docs/user-guide/03-reading-a-report.md)** ·
 [Lean in the harness](docs/lean.md) ·
+[the kaizen register](kaizen/README.md) ·
+[where the A and B images come from](docs/images.md) ·
+[the integration contract](docs/contract.md) ·
 [modes](docs/modes.md) · [claims](claims/README.md) ·
 [what the monorepo needs to do](docs/monorepo/README.md) ·
 [kind substrate](deploy/kind/README.md) · [testing the harness](TESTING.md) ·
@@ -202,7 +231,14 @@ harness version [--json]
 harness local smoke [--tag T] [--only stacks|migration] [--dry-run]   # the two-stacks smoke CI runs: pnpm smoke
 harness local compare [--a tag] [--b main] [--runs 3] [--no-load] [--strict] [--dry-run]   # main against the last release: pnpm compare
 harness prune [--older-than-days 14] [--keep-last 5] [--yes]   # frees out/ and the image cache; a dry run without --yes
+
+harness release --candidate <tag> [--baseline <tag|prod>] [--monorepo dir] [--fast] [--open] [--dry-run]   # SOP steps 5-7
+harness confidence --run <dir>          harness changes --a <tag> --b <tag> [--monorepo dir]
+harness glance mark|status --run <dir>  harness scoreboard append|trends|mutants
+harness why --run <dir> --finding <id>  harness why check <file|dir>   harness why register [--write]
 ```
+
+The release commands are in `harness --help` and [chapter 7](docs/user-guide/07-reference.md) of the guide.
 
 Exit codes: 0 pass or warn, 1 fail (or `images ensure` could not obtain an
 image), 2 usage or harness error — which includes "an image may not be
@@ -237,10 +273,11 @@ prints the same), and the HTML and Markdown reports name it in their footer.
 | --- | --- | --- |
 | `ci.yml` | every PR | unit and fixture tests; masks land in their own PR; two stacks boot, one journey A/A; migration fixtures pass and fail as they must (all of it `pnpm smoke`, the same command locally); the workflows linted by actionlint and zizmor (`.github/zizmor.yml` says what is ignored and why) |
 | `nightly-noise.yml` | nightly | A/A on the production tag pulled from Quay (five runs, with load; last night's verified images as the outage fallback, a degraded night); publishes `noise-status.json` as an artifact and to the `noise` branch, and keeps the ratchet — [docs/noise-burndown.md](docs/noise-burndown.md) |
-| `release.yml` | monorepo dispatch on a release branch, or by hand | release mode with claims, 5 runs, k6; migration rehearsal; upgrade rehearsal |
+| `release.yml` | monorepo dispatch on a release branch, or by hand | release mode with claims, 5 runs, k6; migration rehearsal; upgrade rehearsal; the scoreboard line (changes, confidence) pushed to the `scoreboard` branch |
 | `main-preview.yml` | when the nightly A/A finishes on main, or by hand | Main to RC: release mode with production against main's newest signed images and main's claims, a forecast of what the next release candidate would get today; skipped when nothing changed; kept on the `main-preview` branch — [docs/contract.md](docs/contract.md#main-to-rc) |
-| `pages.yml` | after any workflow that keeps a report, or by hand | publishes every kept report, with an index, to [GitHub Pages](https://tutors-sdk.github.io/tutors-release-harness/) so a report can be shared as a link |
-| `post-deploy.yml` | monorepo dispatch after deploy, then every 15 minutes | reference journeys against production vs the recorded candidate; opens a rollback issue on a new difference |
+| `pages.yml` | after any workflow that keeps a report, or by hand | publishes every kept report, with an index, and the scoreboard's trends to [GitHub Pages](https://tutors-sdk.github.io/tutors-release-harness/) so a report can be shared as a link |
+| `post-deploy.yml` | monorepo dispatch after deploy, then every 15 minutes | reference journeys against production vs the recorded candidate; opens a rollback issue on a new difference, with its 5 Whys stub |
+| `tags.yml` | a version change lands on main, or by hand | tags `v<version>` on the first commit of main that carries it |
 | `weekly-mutants.yml` | weekly, and on every PR | the ten mutants; on a PR only when it touches an engine, a collector, a mask, a journey, a fixture, a stack, the gate or a mutant (`src/ci/engine-change.ts`), which also needs a version bump |
 
 Images are pulled from Quay (`HARNESS_IMAGE_PREFIX`, default in CI
@@ -256,7 +293,7 @@ missing and how to install it, and `pnpm harness local nightly | gate | mutants 
 watch` each do what its workflow does, from the same harness commands
 (`--dry-run` prints them), keeping the noise status, the override record and the
 image cache under `HARNESS_HOME` instead of the `noise` branch, issues and
-`actions/cache`. `harness guard masks|engine --base <ref>` runs the PR guards
+`actions/cache`. `harness guard masks|engine|scoreboard --base <ref>` runs the PR guards
 against a local ref. The step-by-step parity with the workflows, Windows notes,
 scheduling and what stays GitHub-only are in [docs/local.md](docs/local.md).
 

@@ -4,6 +4,8 @@ Everything the harness does runs from one command on a laptop: Windows 11 (Git B
 
 OpenShift is out of scope. Compose and kind are what runs.
 
+**To run a release, go to [chapter 10](10-running-a-release.md).** `harness release --candidate <tag>` is the one command for SOP steps 5 to 7: it runs the same steps as `harness local gate` below, then scores the result, ranks the glance, appends the scoreboard line and opens any 5 Whys. This chapter covers the machine, the maintainer tasks and the modes underneath it.
+
 - [Set up the machine](#set-up-the-machine)
 - [Where state lives](#where-state-lives)
 - [The five maintainer tasks](#the-five-maintainer-tasks)
@@ -56,8 +58,10 @@ Install the tools that are missing with the platform commands the doctor prints.
 | `rollbacks/` | what a failing watch would have opened as an issue | `rollback` issues |
 | `locks/run.lock`, `locks/watch.lock` | one heavy run per machine; one watch | `concurrency:` groups |
 | `image-provenance.json` | the ledger `images ensure` leaves for `run` (`HARNESS_PROVENANCE_FILE` moves it) | a file on the runner |
+| `scoreboard/releases.jsonl` | one line per `harness release` run, append-only (since 1.11.0; `--scoreboard` writes elsewhere) | the `scoreboard` branch |
+| `third-party-cache/` | the one recorded copy of the third-party hosts the apps load ([chapter 1](01-concepts.md#normalising-and-masks)) | `actions/cache` |
 
-Run output stays in `<checkout>/out/<UTC timestamp>-<mode>/` (`--out` on `harness run`). The `local` wrappers always use `<checkout>/out`.
+Run output stays in `<checkout>/out/<UTC timestamp>-<mode>/` (`--out` on `harness run`). The `local` wrappers always use `<checkout>/out`. `harness release` adds `out/<UTC timestamp>-release-command/` beside its steps' run directories. The kaizen register is not state: it is `kaizen/` in the checkout, versioned, changed by pull request.
 
 The noise store is **this machine's calibration**. The A/A measures the noise floor of the machine that ran it (fonts, anti-aliasing, timing), and the gate applies the same rule locally as in CI. Do not copy CI's `noise-status.json` into the local store to gain the right to fail: a Linux runner's clean A/A says nothing about this machine's Chromium.
 
@@ -103,6 +107,8 @@ pnpm harness local nightly [--tag T] [--runs 5] [--load 20x30s] [--image-cache d
 `--store` names another noise store for step 3 (default `<HARNESS_HOME>/noise`). Before the first one, and after a quiet week, run `harness vuln-db update` ([below](#the-vulnerability-database)): a run scans with the database already on disk and never updates it. See [chapter 5](05-noise-and-self-test.md).
 
 ### Release gate for a candidate: `harness local gate`
+
+For a release, use `harness release` ([chapter 10](10-running-a-release.md)): it is this task with a baseline read from production, an A/A when the store cannot license a FAIL, and the score, the glance and the scoreboard after the verdict. `local gate` stays for what it does differently: `--runs 5` (CI's count; `harness release` runs 3), `--only` one job, `--migrations-a` and `--migrations-b`, and an override.
 
 ```console
 pnpm harness local gate --a 16.2.0 --b 16.3.0-rc.1 [--claims path/to/claims.yaml] [--rules path-or-url] [--runs 5] \

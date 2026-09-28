@@ -9,6 +9,10 @@ OpenShift is out of scope; nothing here deploys anything.
 - [The `release-candidate` dispatch](#the-release-candidate-dispatch)
 - [The `deployed` dispatch](#the-deployed-dispatch)
 - [The release record](#the-release-record)
+- [Main to RC: the live exemplar](#main-to-rc-the-live-exemplar)
+- [The scoreboard branch](#the-scoreboard-branch)
+- [The rollback issue and its 5 Whys](#the-rollback-issue-and-its-5-whys)
+- [Release tags](#release-tags)
 - [The monorepo side](#the-monorepo-side)
 - [What the pull-request comment shows](#what-the-pull-request-comment-shows)
 - [Overrides and the record they leave](#overrides-and-the-record-they-leave)
@@ -17,17 +21,18 @@ OpenShift is out of scope; nothing here deploys anything.
 
 ## The workflows
 
-Seven workflows live in this repository's `.github/workflows/`. Five judge or check something; `main-preview.yml` forecasts the next release; `pages.yml` only publishes what the others kept.
+Eight workflows live in this repository's `.github/workflows/`. Five judge or check something; `main-preview.yml` forecasts the next release; `pages.yml` only publishes what the others kept; `tags.yml` tags each harness version that lands on `main`. How they line up with the steps of a release is in [chapter 10](10-running-a-release.md#how-ci-runs-the-same-thing).
 
 | Workflow | Runs when | What it does |
 | --- | --- | --- |
-| `ci.yml` | every pull request, and pushes to `main` | Typecheck, lint, unit and fixture tests. **Masks land in their own PR (required)**: `harness guard masks --base <base sha>`. The two-stacks smoke is one command, `pnpm harness local smoke --tag "$TAG"`: `images ensure`, both stacks boot and one journey runs as an A/A, the expanding migration fixture passes and the contracting one is rejected. Stack logs on failure. Uploads `harness-ci` (7 days). |
+| `ci.yml` | every pull request, and pushes to `main` | Typecheck, lint, unit and fixture tests. **Masks land in their own PR (required)**: `harness guard masks --base <base sha>`. The two-stacks smoke is one command, `pnpm harness local smoke --tag "$TAG"`: `images ensure`, both stacks boot and one journey runs as an A/A, the expanding migration fixture passes and the contracting one is rejected. Stack logs on failure. Uploads `harness-ci` (7 days). The unit job also runs `harness why check kaizen` and `harness why register --dir kaizen`, so every 5 Whys in `kaizen/` is filled and the register's table is what the files say; the masks job also runs `harness guard scoreboard`, so `scoreboard/*.jsonl` only gains lines. |
 | `nightly-noise.yml` | nightly at 02:17 UTC, or by hand (`tag` input) | The A/A on the production tag, pulled from Quay. Job `noise`: install pinned grype (v0.119.0) and restore or fetch its database (`harness vuln-db update` on a cache miss, then `harness vuln-db status`), restore the last verified images, `images ensure ... --image-cache`, `run --mode noise --runs 5 --load 20x30s --require-verified` with `HARNESS_REQUIRE_STATIC=1`, upload `noise-status` and `noise-report` (8 days). Job `publish`: `noise record` into a working directory, force-push the `noise` branch, fail the night if the ratchet is broken. |
-| `release.yml` | `repository_dispatch` `release-candidate`, or by hand | The run is titled `release <candidate>`. Job `release`: pinned grype and its database, `images ensure`, fetch claims, fetch the noise status, `run --mode release ... --load 20x30s` with `HARNESS_REQUIRE_STATIC=1` (a release is not judged on an SBOM and vulnerability diff that could not be produced). Job `migration`: `run --mode migration`. Job `upgrade`: `images ensure`, `run --mode upgrade --set fixture --journey anonymous-student-reads-course`. Job `publish-record`: push the release record to the `release-records` branch. Job `override-record`: open a `harness-override` issue for each applied override. Each job's summary says `could not judge` when the run stopped before a verdict, instead of a report. |
-| `post-deploy.yml` | `repository_dispatch` `deployed`, every 15 minutes, or by hand (`recorded_run_id` input) | Download the `release-report` artifact of the latest release run, fetch the noise status and the release record, `run --mode post-deploy`. **Exit 1** (a difference) opens a `rollback` issue. **Exit 2** ("could not judge": an unusable input, an image that cannot be trusted, a run that stopped before a verdict) fails the workflow, says so in the job summary, and opens no issue, because nothing was found that says production is worse. On the 15-minute schedule, when no release run has kept a `release-report` to compare with, the monitor stands down green with a notice in the run summary instead of failing; a `deployed` dispatch or a `recorded_run_id` without a recording still fails. |
-| `main-preview.yml` (**Main to RC**) | when the nightly A/A on `main` finishes, passed or failed (`workflow_run`), or by hand (`production`, `candidate`, `force` inputs) | "What would release mode say if main were cut as a release candidate today?" Job `resolve`: `harness preview resolve` picks side a (production: the reader overlay's `newTag` on the monorepo's `main`) and side b (`sha-<short>` of the newest commit on `main` whose images are signed), and skips the run when this harness version already judged that pair (unless `force`). Job `preview`: pinned grype and its database, `images ensure`, main's `release/claims.yaml` and Rules, the latest noise status, `run --mode release --runs 5 --load 20x30s` with `HARNESS_REQUIRE_STATIC=1`; uploads `main-preview-report` (14 days). PASS, WARN and FAIL all end green: a forecast, never a gate; only exit `2` fails it. Job `publish`: `harness reports keep` onto the `main-preview` branch (last 60 runs). It never writes `release-records`, so post-deploy cannot mistake a forecast for a judged candidate. |
-| `pages.yml` (**Report pages**) | after every run of the nightly, the release workflow and Main to RC, on a push to `main` that changes `site/`, or by hand | Copies the kept `reports/` of the `release-records`, `main-preview` and `noise` branches beside `site/index.html` and deploys them to GitHub Pages: [tutors-sdk.github.io/tutors-release-harness](https://tutors-sdk.github.io/tutors-release-harness/), every kept run newest first with its verdict, score and scorecard. Judges nothing and writes no branch. Needs the repository setting Pages, source "GitHub Actions". |
-| `weekly-mutants.yml` | Mondays 03:41 UTC, every pull request, or by hand (`tag` input) | Job `changes`: on a pull request, `harness guard engine --base <base sha>`. Job `mutants`: pinned syft (v1.52.0) and grype with its database, `images ensure`, `harness mutants --base <tag>` (only when an engine change was detected, or on the schedule). When the self-test fails it uploads `mutant-noise-report`. Job `required`, named **Mutants re-run (required)**, always reports so it can be a required check. Uploads `mutant-reports` (14 days). |
+| `release.yml` | `repository_dispatch` `release-candidate`, or by hand | The run is titled `release <candidate>`. Job `release`: pinned grype and its database, `images ensure`, fetch claims, fetch the noise status, `run --mode release ... --load 20x30s` with `HARNESS_REQUIRE_STATIC=1` (a release is not judged on an SBOM and vulnerability diff that could not be produced). Job `migration`: `run --mode migration`. Job `upgrade`: `images ensure`, `run --mode upgrade --set fixture --journey anonymous-student-reads-course`. Job `publish-record`: push the release record to the `release-records` branch. Job `override-record`: open a `harness-override` issue for each applied override. Job `scoreboard` (after the three runs, pass or fail): `harness changes` against the monorepo, `harness confidence` over the three reports, `harness scoreboard append`, pushed to the `scoreboard` branch ([below](#the-scoreboard-branch)). Each job's summary says `could not judge` when the run stopped before a verdict, instead of a report. |
+| `post-deploy.yml` | `repository_dispatch` `deployed`, every 15 minutes, or by hand (`recorded_run_id` input) | Download the `release-report` artifact of the latest release run, fetch the noise status and the release record, `run --mode post-deploy`. **Exit 1** (a difference) opens a `rollback` issue, with the 5 Whys stub for the rollback in a fold ([below](#the-rollback-issue-and-its-5-whys)). **Exit 2** ("could not judge": an unusable input, an image that cannot be trusted, a run that stopped before a verdict) fails the workflow, says so in the job summary, and opens no issue, because nothing was found that says production is worse. On the 15-minute schedule, when no release run has kept a `release-report` to compare with, the monitor stands down green with a notice in the run summary instead of failing; a `deployed` dispatch or a `recorded_run_id` without a recording still fails. |
+| `main-preview.yml` (**Main to RC**) | when the nightly A/A on `main` finishes, passed or failed (`workflow_run`), or by hand (`production`, `candidate`, `force` inputs) | "What would release mode say if main were cut as a release candidate today?" Job `resolve`: `harness preview resolve` picks side a (production: the reader overlay's `newTag` on the monorepo's `main`) and side b (`sha-<short>` of the newest commit on `main` whose images are signed), and skips the run when this harness version already judged that pair (unless `force`). Job `preview`: pinned grype and its database, `images ensure`, main's `release/claims.yaml` and Rules, the latest noise status, `run --mode release --runs 5 --load 20x30s` with `HARNESS_REQUIRE_STATIC=1`; uploads `main-preview-report` (14 days). Jobs `migration` and `upgrade` (since 1.13.1): the same two rehearsals `release.yml` gives a candidate. PASS, WARN and FAIL all end green: a forecast, never a gate; only exit `2` fails it. Job `publish`: `harness changes` over a monorepo checkout and `harness confidence` with the release run, both rehearsals and the `scoreboard` branch's history (read only, never appended), then `harness reports keep` onto the `main-preview` branch (last 60 runs) with `confidence.json` and `changes.json`, the report leading with Gate, RCS and band, the glance and the per-PR changes (since 1.13.1). It never writes `release-records`, so post-deploy cannot mistake a forecast for a judged candidate. It is the live example the guide reads ([below](#main-to-rc-the-live-exemplar)). |
+| `pages.yml` (**Report pages**) | after every run of the nightly, the release workflow and Main to RC, on a push to `main` that changes `site/`, or by hand | Copies the kept `reports/` of the `release-records`, `main-preview` and `noise` branches beside `site/index.html` and deploys them to GitHub Pages: [tutors-sdk.github.io/tutors-release-harness](https://tutors-sdk.github.io/tutors-release-harness/), every kept run newest first with its verdict, score and scorecard, and `scoreboard.html` (the release trends and the harness's health, `harness scoreboard trends --site`, from the `scoreboard` branch). Judges nothing and writes no branch. Needs the repository setting Pages, source "GitHub Actions". |
+| `weekly-mutants.yml` | Mondays 03:41 UTC, every pull request, or by hand (`tag` input) | Job `changes`: on a pull request, `harness guard engine --base <base sha>`. Job `mutants`: pinned syft (v1.52.0) and grype with its database, `images ensure`, `harness mutants --base <tag>` (only when an engine change was detected, or on the schedule). When the self-test fails it uploads `mutant-noise-report`. Job `required`, named **Mutants re-run (required)**, always reports so it can be a required check. Uploads `mutant-reports` (14 days). Job `record` (the schedule and by hand only): appends the week's `mutants.json` to `scoreboard/mutants.jsonl` on the `scoreboard` branch (`harness scoreboard mutants`). |
+| `tags.yml` (**Release tags**) | a push to `main` that changes `package.json`, or by hand | Tags `v<version>` on the first commit of `main` that carries each version (`scripts/release-tags.sh`). A tag is never moved or re-made ([below](#release-tags)). |
 
 Every job that runs journeys (the nightly, release, post-deploy, Main to RC's `preview`, `ci.yml`'s `two-stacks` and the mutants) runs on the pinned `ubuntu-24.04`, not `ubuntu-latest`: the A/A measures the noise floor of that image (fonts, anti-aliasing), so the others must run on the same one. Move them all together, in one pull request, and expect a fresh burn-down afterwards.
 
@@ -170,6 +175,40 @@ The `publish-record` job of `release.yml` pushes both to this repository's `rele
 
 Anything but `match` is **advisory, exit 0**: the first reason says `DEPLOYED IMAGES DIFFER` or `DEPLOYED IMAGES NOT CONFIRMED`, a `pass` becomes a `warn`, and a `fail` is neither softened nor made worse. The record is looked up in this order and nowhere else: `--release-record` (a file, or a directory holding `<tag>.json`), otherwise `<HARNESS_HOME>/releases/<tag>.json`.
 
+## Main to RC: the live exemplar
+
+`main-preview.yml` answers one question every day: what would release mode say if `main` were cut as a release candidate today? Side a is production (the reader overlay's `newTag` on the monorepo's `main`), side b is `sha-<short>` of the newest commit on `main` whose images are signed, and the claims are main's `release/claims.yaml`: the next release's claims so far. It is the same release job as `release.yml` (5 runs, k6 `20x30s`, the pinned vulnerability database, the noise status), with the same migration and upgrade rehearsals, and since 1.13.1 it is scored as a candidate is: change signals from the monorepo, the confidence score, the glance. The kept report opens with the Gate, then the RCS and band, then where to look first, and the top of the [report pages](https://tutors-sdk.github.io/tutors-release-harness/) shows the newest one as "What main would ship today".
+
+It is a forecast, never a gate: PASS, WARN and FAIL all end green, nothing is tagged or recorded as a candidate, and only exit `2` fails the run. Each report is kept on the `main-preview` branch (`reports/<ranAt>-release/`, the last 60 runs in `reports/index.json`) and published on the [report pages](https://tutors-sdk.github.io/tutors-release-harness/). Because it is the report the next candidate would get, it is the example [chapter 3](03-reading-a-report.md) reads from top to bottom, and the first place to look for an unclaimed difference before a release is cut: each one is a claim, or a fix, the next release needs.
+
+A pair this harness version already judged is skipped (`harness preview resolve`, one API call on a quiet day); `force` judges it again.
+
+## The scoreboard branch
+
+`main` takes changes only through pull requests, so no workflow commits to it. The scoreboard lives on its own branch instead:
+
+- `release.yml`'s `scoreboard` job, after the release, migration and upgrade jobs (pass or fail), downloads the three reports, runs `harness changes --a <production> --b <candidate>` against a checkout of the monorepo, fetches the `scoreboard` branch (so the glance's novelty reads the releases already there), scores with `harness confidence`, and appends one line to `scoreboard/releases.jsonl` with `harness scoreboard append --tag <candidate> --run-url <run>`. One commit per line. A run that reached no verdict has nothing to score and adds no line.
+- `weekly-mutants.yml`'s `record` job appends the week's self-test to `scoreboard/mutants.jsonl`.
+- Both share the concurrency group `scoreboard-branch`, never force-push, and check before pushing that the old file is exactly the start of the new one.
+- `pages.yml` reads the branch and publishes `scoreboard.html` and `scoreboard.json`.
+- To bring lines onto `main`, open a pull request that copies them; `harness guard scoreboard` lets it only add.
+
+Until the first release run the branch does not exist, and the page says "No releases scored yet." There is no seed data: a made-up history would draw a trend nobody lived through. A `harness release` on a laptop appends to its own `HARNESS_HOME/scoreboard/releases.jsonl`; the two are separate histories.
+
+## The rollback issue and its 5 Whys
+
+When `post-deploy.yml` exits `1` (production differs from the tested candidate), the step "Open a rollback issue":
+
+1. runs `harness why --run <the post-deploy run> --finding rollback --tag <deployed tag>`, which writes the 5 Whys stub for the rollback with Why 1 answered from the run's trace. If writing it fails, the issue is still opened;
+2. builds the body: the post-deploy `report.md`, a link to the run, and the stub in a fold ("copy to kaizen/ in the harness repository, then fill Whys 2-5 and the countermeasure");
+3. keeps **one open rollback issue at a time**. The monitor runs every 15 minutes and finds the same differences until someone acts, so a run whose unclaimed differences are already on the open issue (a signature of that section, in a hidden comment) adds nothing; different differences become a comment on it; with none open, a new issue labelled `rollback`.
+
+Exit `2` opens no issue. What to do with the issue is SOP step 11: roll back (`pnpm deploy:pin <previous>` in the monorepo) and take the stub to the register ([chapter 10](10-running-a-release.md#when-a-trigger-fires-the-5-whys)).
+
+## Release tags
+
+Every harness version that lands on `main` is tagged `v<version>`, on the first commit of `main` (first-parent history) whose `package.json` carries it. `tags.yml` does it on a push to `main` that changes `package.json`, and by hand, which also tags any older version that has no tag yet. A tag that exists is never moved or re-made, and a version that never reached `main` gets none. The run's summary lists the tags it made. No workflow creates a GitHub release.
+
 ## The monorepo side
 
 What the monorepo owns and how it meets the harness. The monorepo's files are the source of truth; the reference copies under [`docs/monorepo/`](../monorepo/README.md) exist so the contract can be read next to the code that receives it.
@@ -214,7 +253,7 @@ Other options: `--candidate <tag>`, `--ref <ref>`, `--main-ref <ref>`, `--produc
 
 The harness never comments on a pull request, sets a commit status, creates a check run, tags, labels, approves or merges. Its workflows never hold `pull-requests`, `checks`, `statuses` or `deployments` permission (a test enforces it). What it produces is `report.md`, written to be a pull-request comment:
 
-- the verdict in the heading, then the provenance and digests of both sides;
+- the verdict in the heading, then the provenance and digests of both sides (a `harness release`'s `gate.md` leads instead with the Gate, then the RCS and its band, the glance, the dimension table and the per-PR table);
 - the reasons, unclaimed differences (the list to act on), claimed differences with what claims them, claim hygiene, stale claims;
 - banners when a side was not verified or a deployment differs;
 - load, migration and upgrade tables where they apply.
@@ -246,7 +285,7 @@ Details of the commands' outputs for workflows:
 - `guard` writes `masks_changed` and `engine_changed` to `GITHUB_OUTPUT` (the mutants job runs only when an engine change was detected).
 - `images ensure` exits 2 when an image may not be judged, even when another was merely unobtainable.
 
-You do not pin the harness from the monorepo: a `repository_dispatch` runs this repository's workflows as they are on `main`. Every report records what ran in `harness.version` and `harness.gitSha`; released versions are marked by `v<version>` tags a maintainer creates by hand (no workflow tags or releases). Check `schemaVersion === 1` before reading a report. Two reports are comparable only when their `harness.version` is the same.
+You do not pin the harness from the monorepo: a `repository_dispatch` runs this repository's workflows as they are on `main`. Every report records what ran in `harness.version` and `harness.gitSha`; released versions are marked by `v<version>` tags, made by `tags.yml` ([release tags](#release-tags)). Check `schemaVersion === 1` before reading a report. Two reports are comparable only when their `harness.version` is the same.
 
 ## Permissions and artifacts
 
@@ -259,9 +298,12 @@ The only `write` scopes any workflow or job holds, all on **this** repository:
 | `release.yml` | `override-record` | `issues` | opens a `harness-override` issue for each applied override |
 | `release.yml` | `publish-record` | `contents` | pushes the `release-records` branch |
 | `main-preview.yml` | `publish` | `contents` | pushes the `main-preview` branch: each Main to RC forecast's report and scorecard |
+| `release.yml` | `scoreboard` | `contents` | pushes the `scoreboard` branch: one line per release run |
+| `weekly-mutants.yml` | `record` | `contents` | pushes the `scoreboard` branch: the week's mutants |
+| `tags.yml` | `tag` | `contents` | creates `v<version>` tags |
 | `pages.yml` | `deploy` | `pages`, `id-token` | deploys the kept reports to GitHub Pages; writes no branch |
 
-No other branch, no tag, no release, no other repository. A test lists these ([`workflows.json`](../contract/workflows.json) `writePermissions`) and fails on any other.
+No other branch, no tag but `v<version>`, no release, no other repository. A test lists these ([`workflows.json`](../contract/workflows.json) `writePermissions`) and fails on any other.
 
 Artifacts, each the run's whole `out/` directory unless noted (so a report is at `<timestamp>-<mode>/report.json` inside it). Download one with `gh run download <run id> -n <name> -D out`:
 
@@ -278,4 +320,4 @@ Artifacts, each the run's whole `out/` directory unless noted (so a report is at
 | `harness-ci` | `ci.yml` | 7 days |
 | `main-preview-report` | `main-preview.yml` | 14 days |
 
-The `noise` and `release-records` branches carry what would otherwise expire: the noise status past its 8 days, and the release record past 30.
+The `noise`, `release-records`, `main-preview` and `scoreboard` branches carry what would otherwise expire: the noise status past its 8 days, the release record past 30, each Main to RC report past 14, and every release run's score for good.
