@@ -70,7 +70,7 @@ const changes = {
 } as unknown as Changes;
 
 /** `<out>/<stamp>-release-command/` with gate.json, confidence.json, changes.json, and the release run beside it with its captures. */
-function releaseDir(o: { verdict?: "pass" | "fail"; hollow?: boolean; changes?: boolean } = {}): string {
+function releaseDir(o: { verdict?: "pass" | "fail"; hollow?: boolean; changes?: boolean; rehearsals?: boolean } = {}): string {
   const out = tmp("out");
   const run = join(out, "2026-09-27T10-00-00-release");
   const dir = join(out, "2026-09-27T10-00-00-release-command");
@@ -88,7 +88,7 @@ function releaseDir(o: { verdict?: "pass" | "fail"; hollow?: boolean; changes?: 
     writeFileSync(join(d, "report.json"), JSON.stringify({ schemaVersion: 1, mode, ranAt: "2026-09-27T10:00:00Z", verdict: "pass", reasons: [], compare: { hunks: [], matches: [], unclaimed: [], staleClaims: [], broadUnapproved: [] }, masksApplied: {} }));
     return d;
   };
-  scoreAndWrite({ outDir: dir, gate: verdict === "fail" ? "FAIL" : "PASS", release: run, migration: rehearsal("migration"), upgrade: rehearsal("upgrade"), candidate: "16.3.0-rc.1", baseline: "16.2.2" });
+  scoreAndWrite({ outDir: dir, gate: verdict === "fail" ? "FAIL" : "PASS", release: run, ...(o.rehearsals === false ? {} : { migration: rehearsal("migration"), upgrade: rehearsal("upgrade") }), candidate: "16.3.0-rc.1", baseline: "16.2.2" });
   if (o.changes !== false) writeFileSync(join(dir, "changes.json"), JSON.stringify(changes));
   return dir;
 }
@@ -203,6 +203,15 @@ describe("each trigger opens a stub", () => {
     expect(text).toContain("## Why 1: Why was 16.3.0-rc.1 Red (RCS 74)?");
     expect(text).toMatch(/- \*\*Floors breached:\*\* Claim coverage/);
     expect(text).toContain("[evidence](../");
+    // Evidence that is a sentence ("no migration run directory") is words, never a link to a path that does not exist.
+    expect(text).not.toMatch(/\]\([^)]*\s[^)]*\)/);
+  });
+
+  it("band: evidence that is a sentence (a skipped rehearsal) is words, not a link to a path that does not exist", () => {
+    const dir = releaseDir({ verdict: "pass", rehearsals: false });
+    const text = readFileSync(openWhy({ run: dir, finding: "band", out: join(dir, "kaizen"), now: NOW }).file, "utf8");
+    expect(text).toContain("evidence: no migration run directory");
+    expect(text).not.toMatch(/\]\([^)]*\s[^)]*\)/);
   });
 
   it("rollback: a post-deploy FAIL, tagged with what was deployed", () => {
