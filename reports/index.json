@@ -2,6 +2,62 @@
   "schemaVersion": 1,
   "runs": [
     {
+      "id": "2026-09-28T08-59-53Z-release",
+      "mode": "release",
+      "ranAt": "2026-09-28T08:59:53.429Z",
+      "verdict": "fail",
+      "reasons": [
+        "893 unclaimed diff(s)",
+        "4 claim(s) matched nothing and should be removed from the changelog"
+      ],
+      "sides": {
+        "a": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:16.2.2",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:16.2.2",
+          "live": "quay.io/tutors-sdk/tutors-live:16.2.2",
+          "time": "quay.io/tutors-sdk/tutors-time:16.2.2"
+        },
+        "b": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:sha-185e87f",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:sha-185e87f",
+          "live": "quay.io/tutors-sdk/tutors-live:sha-185e87f",
+          "time": "quay.io/tutors-sdk/tutors-time:sha-185e87f"
+        }
+      },
+      "harnessVersion": "1.13.2",
+      "runUrl": "https://github.com/tutors-sdk/tutors-release-harness/actions/runs/36399691471",
+      "score": {
+        "score": 25,
+        "grade": "D",
+        "normalness": "normal",
+        "manual": 5
+      },
+      "confidence": {
+        "gate": "FAIL",
+        "rcs": null,
+        "band": null,
+        "note": "No RCS: Gate FAIL. The Gate wins: no number talks a FAIL back on. The dimensions are shown for the 5 Whys, not for a decision.",
+        "glance": 7,
+        "scoredBy": "1.13.2"
+      },
+      "changes": {
+        "score": 20,
+        "prs": 60,
+        "risky": 60,
+        "floorBreached": true,
+        "range": "v16.2.2..185e87f12d34e0e6d7a16714c29aa08bde629639"
+      },
+      "files": [
+        "2026-09-28T08-59-53Z-release/report.json",
+        "2026-09-28T08-59-53Z-release/report.md",
+        "2026-09-28T08-59-53Z-release/report.html",
+        "2026-09-28T08-59-53Z-release/confidence.json",
+        "2026-09-28T08-59-53Z-release/changes.json",
+        "2026-09-28T08-59-53Z-release/scorecard.json",
+        "2026-09-28T08-59-53Z-release/scorecard.md"
+      ]
+    },
+    {
       "id": "2026-09-28T03-45-17Z-release",
       "mode": "release",
       "ranAt": "2026-09-28T03:45:17.459Z",
