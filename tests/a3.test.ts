@@ -187,13 +187,25 @@ describe("the A3", () => {
     const q = (id: string) => a.rca.find((r) => r.id === id)!;
     expect(q("gate").depth).toMatchObject({ kind: "5 whys", file: "2026-09-29-sha-185e87f-gate.md" });
     expect(q("post-deploy").depth).toMatchObject({ kind: "5 whys", file: "2026-09-29-16.2.2-rollback.md" });
-    expect(q("stale-claims").depth).toMatchObject({ kind: "5 whys", file: "2026-09-29-sha-185e87f-fixed-on-b.md" });
-    expect(q("stale-claims").answer).toContain("1 of them name a page whose difference is an info hunk");
+    expect(q("decisions").depth).toMatchObject({ kind: "5 whys", file: "2026-09-29-sha-185e87f-fixed-on-b.md" });
+    expect(q("decisions").answer).toContain("Decided: reader-auth:sign-in (document-title) by a changelog entry.");
+    // A report written before 1.15.0 called the claim stale; it decides a fix, so it is not.
+    expect(a.rca.find((r) => r.id === "stale-claims")).toBeUndefined();
     expect(q("change-risk").depth.kind).toBe("evidence stops");
     expect(q("aa").answer).toContain("older than 1.4.4");
     expect(a.fiveWhys.map((w) => w.file)).toEqual(["2026-09-29-sha-185e87f-gate.md", "2026-09-29-16.2.2-rollback.md", "2026-09-29-sha-185e87f-fixed-on-b.md"]);
     for (const w of a.fiveWhys) expect(w.whys.length).toBe(w.chainEndsAt);
     expect(a.countermeasures.map((c) => c.kind).sort()).toEqual(["SOP change", "claim guidance", "glance rule"]);
+  });
+
+  it("reads fixes on b as decisions: orange on the board, a row each with the claim that says why, by artefact", () => {
+    const a = buildA3(inputs(github));
+    expect(a.decisions).toMatchObject({ fixes: 1, pages: 1, decided: 1, byArtefact: [{ artefact: "axe", fixes: 1, decided: 1 }] });
+    expect(a.decisions!.rows).toEqual([{ artefact: "axe", scope: "reader-auth:sign-in", what: ["document-title"], hunk: "main-preview/reports/2026-09-28T08-59-53Z-release/report.html#hunk-axe:1", state: "decided", why: "Rule 0216" }]);
+    const html = renderA3(a);
+    expect(html).toContain('class="decide-strip"');
+    expect(html).toContain("100% decided");
+    expect(html).toContain('<span class="chip decided">decided</span>');
   });
 
   it("carries only 5 Whys the register's own check accepts", () => {

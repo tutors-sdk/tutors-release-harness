@@ -120,6 +120,23 @@ The advisories that leave with the tool are `vulns` info hunks and need no
 claim; a patched base (`node`, `tzdata`) is a bump per package, claimed as
 above (`*/node`, `*/tzdata`).
 
+### A fix on b is a decision
+
+An accessibility violation fixed on b, or an error-level console message gone
+on b, is an info hunk: it never gates, and needs no claim to ship. It is still
+a behaviour change somebody chose, so the glance asks about it ("undecided")
+and the A3 shows it in orange, beside the traffic lights. Claim it to record
+the decision and its why; the glance item switches off and the A3 counts it
+decided (since 1.15.0; before, such a claim read as stale):
+
+```yaml
+claims:
+  - artefact: axe
+    scope: "reader-auth:sign-in"
+    rule: "0216"          # the Rule the fix delivers is the why
+    reason: "sign-in button text contrast (color-contrast, serious) fixed by #313"
+```
+
 Globs are `picomatch` with `dot: true` and case folding. Quote scopes with
 spaces or colons.
 

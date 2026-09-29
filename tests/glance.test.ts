@@ -253,7 +253,7 @@ describe("each kind of candidate, from fixtures", () => {
     expect(items[0]!.exposure).toBe(0.17);
   });
 
-  it("fixed on b: console errors and axe violations gone on b, claimed or not; a warning gone is not one", () => {
+  it("fixed on b: console errors and axe violations gone on b and undecided; a warning gone is not one", () => {
     const hs = [
       hunk("console", "reader:topic", { severity: "info", summary: "reader:topic: console message gone on b", detail: "error: Cannot read properties of undefined" }),
       hunk("console", "reader:topic", { severity: "info", summary: "reader:topic: console message gone on b", detail: "warning: deprecated" }),
@@ -261,14 +261,27 @@ describe("each kind of candidate, from fixtures", () => {
     ];
     const g = glance({ release: at(report({ hunks: hs })), captures: captures() });
     const items = g.items.filter((i) => i.kind === "fixed-on-b");
-    expect(items.map((i) => i.finding).sort()).toEqual(["live:home: 1 axe violation fixed on b, unclaimed; a fix nobody claimed can be a behaviour change", "reader:topic: 1 console error fixed on b, unclaimed; a fix nobody claimed can be a behaviour change"]);
+    expect(items.map((i) => i.finding).sort()).toEqual(["live:home: 1 axe violation fixed on b, undecided; a fix is a decision: claim it to say why, and this item switches off", "reader:topic: 1 console error fixed on b, undecided; a fix is a decision: claim it to say why, and this item switches off"]);
     expect(items.find((i) => i.key === "axe live:home")!.detail).toBe("color-contrast (serious)");
   });
 
   it("fixed on b, with new errors on the same page: it asks whether the error was fixed or only changed", () => {
     const hs = [hunk("console", "catalogue:home", { severity: "info", summary: "catalogue:home: console message gone on b", detail: "error: boom at a.js:1" }), hunk("console", "catalogue:home", { summary: "catalogue:home: new console message on b", detail: "error: boom at b.js:9" })];
     const g = glance({ release: at(report({ hunks: hs })), captures: captures() });
-    expect(g.items[0]!.finding).toBe("catalogue:home: 1 console error fixed on b, unclaimed; but 1 new console error on the same page: fixed, or only changed?");
+    expect(g.items[0]!.finding).toBe("catalogue:home: 1 console error fixed on b, undecided; but 1 new console error on the same page: fixed, or only changed?");
+  });
+
+  it("fixed on b and claimed is decided: the item switches off, unless new failures on the same page ask whether it was only changed", () => {
+    const fix = hunk("axe", "reader-auth:sign-in", { severity: "info", summary: "reader-auth:sign-in: axe violation fixed on b: color-contrast (serious)" });
+    const claim: Claim = { artefact: "axe", scope: "reader-auth:sign-in", reason: "Rule 0216: no serious WCAG violations on sign-in" };
+    expect(glance({ release: at(report({ matched: [[fix, claim]] })), captures: captures() }).items.filter((i) => i.kind === "fixed-on-b")).toEqual([]);
+    // A report written before 1.15.0 left the claim stale: it still decides the fix.
+    const old = report({ hunks: [fix] });
+    old.compare.staleClaims = [claim];
+    expect(glance({ release: at(old), captures: captures() }).items.filter((i) => i.kind === "fixed-on-b")).toEqual([]);
+    const fresh = hunk("axe", "reader-auth:sign-in", { summary: "reader-auth:sign-in: new axe violation on b: label (critical)" });
+    const g = glance({ release: at(report({ matched: [[fix, claim]], hunks: [fresh] })), captures: captures() });
+    expect(g.items.find((i) => i.kind === "fixed-on-b")!.finding).toBe("reader-auth:sign-in: 1 axe violation fixed on b, decided; but 1 new axe violation on the same page: fixed, or only changed?");
   });
 
   it("major bump: the journeys exercising the app it lands in, or unmapped, said", () => {

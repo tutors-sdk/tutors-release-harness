@@ -62,6 +62,15 @@ describe("matcher", () => {
     expect(result.unclaimed).toEqual([]);
   });
 
+  it("a claim that names a fix on b (an info hunk) matches it: the claim is used, not stale, and nothing is unclaimed", () => {
+    const fix = hunk({ artefact: "axe", scope: "reader-auth:sign-in", summary: "reader-auth:sign-in: axe violation fixed on b: color-contrast (serious)", severity: "info" });
+    const claim = { artefact: "axe" as const, scope: "reader-auth:sign-in", reason: "Rule 0216: no serious WCAG violations on sign-in" };
+    const result = matchClaims([fix], [claim]);
+    expect(result.matches).toEqual([{ hunk: fix, claim }]);
+    expect(result.staleClaims).toEqual([]);
+    expect(result.unclaimed).toEqual([]);
+  });
+
   it("reports stale claims and broad unapproved claims", () => {
     const result = matchClaims([hunk({})], [
       { artefact: "network", scope: "GET /nothing", reason: "Rule 0002: stale" },

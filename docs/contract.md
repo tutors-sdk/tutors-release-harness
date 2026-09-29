@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.14.0`
+Contract version: `1.15.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -125,9 +125,9 @@ written). Source of truth: `RunReport` in `src/types.ts`.
 | `reasons` | string[] | why, one line each. For people: **do not parse** |
 | `noise` | noise status, optional | the status consulted for the gating decision; absent when `--noise` was not given or was `skip`. Carries `degraded` when the status did |
 | `compare.hunks` | Hunk[] | every difference, failing and informational |
-| `compare.matches` | `{ hunk, claim? }[]` | one per hunk, with the claim that covers it, if any |
+| `compare.matches` | `{ hunk, claim? }[]` | one per hunk, with the claim that covers it, if any. Since 1.15.0 an info hunk a claim names carries that claim too (a fix on b is a decision; the claim is its why); it never gates |
 | `compare.unclaimed` | Hunk[] | failing hunks no claim covers — what gates |
-| `compare.staleClaims` | Claim[] | claims that matched nothing; reported, never gate |
+| `compare.staleClaims` | Claim[] | claims that matched no hunk, failing or info (before 1.15.0: no failing hunk); reported, never gate |
 | `compare.broadUnapproved` | Claim[] | broad claims without `approvedBy`; gate in `release` and `post-deploy` |
 | `masksApplied` | `{ [maskId]: integer }` | how often each mask in `normalise/masks.yaml` changed something, both sides summed; `0` is a silent mask |
 | `migration` | optional | migration mode only: `{ a, b, rolledBack }`; `a`/`b` are `{ ref, files[], catalog }`, a catalog is `{ tables: { [table]: { [column]: { type, nullable, default } } }, indexes[], functions[], policies[] }` |
@@ -980,6 +980,13 @@ data with a link to the 5 Whys in `kaizen/` that goes deeper; countermeasures, p
 follow-up from the register; the 5 Whys themselves; and the Lean terms the page uses. The final
 scoring (the Gate and, when the Gate passes, the RCS with its band and dimensions) leads it.
 
+**Decisions on b** (since 1.15.0): a fix on b (an axe violation fixed, an error-level console
+message gone) is an info hunk and never gates, but it is a behaviour change someone chose. The
+A3 shows each one as a decision, in orange beside the traffic lights and never on them: decided
+when a claim names it (the claim is the why), undecided when none does, and "fixed, or only
+changed?" when the same page also has new failures of that kind; with the share decided per
+artefact.
+
 What was not read is **not measured**, never a guess: a missing file, a stream with no kept
 run, or a GitHub call that failed (named in `github.json`'s `errors`). Exit `0` when the A3 is
 written, `2` for a usage error (no `--site`, a directory that does not exist, an unreadable
@@ -1339,6 +1346,26 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.15.0 (minor; fixes on b are decisions, not failures)
+
+The release note is [releases/1.15.0.md](releases/1.15.0.md). Additive for a consumer written
+against 1.14.0: no verdict, exit code, command or flag changes.
+
+- The claims matcher offers info hunks to claims too. A claim that names an info hunk (an axe
+  violation fixed on b, an error-level console message gone on b) is recorded in
+  `compare.matches` beside it and is no longer in `compare.staleClaims`, so the Gate's "claim(s)
+  matched nothing" reason and the stale-claim deduction no longer fire for the claim written for a
+  fix. An info hunk is still never in `compare.unclaimed` and never gates. `claimHygiene` still
+  counts failing hunks only.
+- The glance's `fixed-on-b` rule: a claimed fix is **decided** and is no longer a glance item,
+  unless the same page has new failures of the same kind ("fixed, or only changed?"); an
+  unclaimed one reads "undecided". The claim is the switch.
+- The scorecard's Rule table counts a Rule whose claims matched only fixes as `covered`.
+- `a3.json` gains the optional `decisions` (fixes, pages, decided, `byArtefact`, one row per page
+  with its state and the claim that says why), and the RCA question `decisions`; `a3.html` shows
+  them in orange, beside the traffic lights, with a "Decisions on b" table. A claim a report
+  written before 1.15.0 called stale but that names a fix reads as deciding it.
 
 ### 1.14.0 (minor; the A3 Aggregator: `harness a3`)
 

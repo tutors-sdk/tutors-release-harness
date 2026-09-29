@@ -138,8 +138,9 @@ export function ruleRows(report: RunReport, rules: RulePrs = {}): RuleRow[] {
   };
   const titleOf = (c: Claim, rule: string | undefined) => (rule ? c.ruleTitle ?? rules[rule]?.title ?? c.reason?.replace(RULE_IN_REASON, "").replace(/^:\s*/, "") : c.reason);
 
+  // A fix on b a claim names (an info hunk, since 1.15.0) is the Rule delivered too: covered, not stale.
   for (const m of report.compare.matches) {
-    if (!m.claim || !failing(m.hunk)) continue;
+    if (!m.claim) continue;
     const rule = ruleOf(m.claim);
     add(keyOf(m.claim), { hunks: 1, artefacts: [m.hunk.artefact], scopes: [m.hunk.path ?? m.hunk.scope], prs: [...prsIn(m.claim.reason), ...(rule ? rules[rule]?.prs ?? [] : [])], ...(titleOf(m.claim, rule) ? { title: titleOf(m.claim, rule)! } : {}), changelog: !rule });
   }
