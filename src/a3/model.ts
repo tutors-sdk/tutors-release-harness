@@ -12,7 +12,9 @@
  * Pure: src/a3/read.ts reads the files, src/a3/github.ts asks GitHub, src/a3/render.ts draws the page.
  */
 import type { Changes } from "../changes/signals.ts";
-import type { Confidence } from "../score/confidence.ts";
+import { decidingClaims, decisionsOf } from "../claims/decisions.ts";
+import { claimLabel } from "../claims/rules.ts";
+import { hunkAnchor, type Confidence } from "../score/confidence.ts";
 import { DIMENSIONS } from "../score/weights.ts";
 import type { Hunk, RunReport } from "../types.ts";
 import type { WhyFile } from "../why/format.ts";
@@ -200,6 +202,21 @@ export interface Score {
   openCountermeasures: number;
 }
 
+/**
+ * Fixes on b, read as decisions (src/claims/decisions.ts): orange beside the traffic lights, never on them. A claim
+ * decides a fix and says why; the share decided is the switch the glance reads.
+ */
+export interface Decisions {
+  /** Fixes on b (info hunks), and on how many pages. */
+  fixes: number;
+  pages: number;
+  /** Fixes a claim decides. */
+  decided: number;
+  /** The same, by artefact: accessibility (axe) and console errors are separate decisions. */
+  byArtefact: { artefact: string; fixes: number; decided: number }[];
+  rows: { artefact: string; scope: string; what: string[]; hunk: string; state: "decided" | "undecided" | "fixed, or only changed?"; why?: string; rule?: string }[];
+}
+
 export interface A3 {
   schemaVersion: typeof A3_SCHEMA_VERSION;
   builtAt: string;
@@ -211,6 +228,8 @@ export interface A3 {
   goal: GoalRow[];
   rca: Rca[];
   fiveWhys: FiveWhys[];
+  /** Since 1.15.0; absent when the subject run kept no report. */
+  decisions?: Decisions;
   countermeasures: { kind: string; what: string; owner: string; due: string; status: FiveWhys["status"]; from: string; rca: string[] }[];
   plan: { what: string; who: string; when: string; status: string }[];
   followUp: { check: string; state: string; met: boolean }[];
@@ -538,6 +557,25 @@ const whyFor = (whys: FiveWhys[], k: KaizenFile[], test: (trigger: string, findi
   return i >= 0 ? whys[i] : undefined;
 };
 
+export function decisionsFor(subject: KeptRun | undefined): Decisions | undefined {
+  const r = subject?.report;
+  if (!r) return undefined;
+  // Accessibility first: it is the decision a reader of the sheet is most often asked to make.
+  const ds = decisionsOf(r.compare).sort((x, y) => Number(y.artefact === "axe") - Number(x.artefact === "axe"));
+  const rows = ds.map((d) => ({
+    artefact: d.artefact,
+    scope: d.scope,
+    what: d.what,
+    hunk: `${subject!.dir}/report.html#${hunkAnchor(d.hunks[0]!)}`,
+    state: d.fresh ? ("fixed, or only changed?" as const) : d.claim ? ("decided" as const) : ("undecided" as const),
+    ...(d.claim ? { why: claimLabel(d.claim) } : {}),
+    ...(d.claim?.rule ? { rule: d.claim.rule } : {})
+  }));
+  const count = (xs: typeof ds) => ({ fixes: xs.reduce((n, d) => n + d.hunks.length, 0), decided: xs.filter((d) => d.claim).reduce((n, d) => n + d.hunks.length, 0) });
+  const byArtefact = [...new Set(ds.map((d) => d.artefact))].map((artefact) => ({ artefact, ...count(ds.filter((d) => d.artefact === artefact)) }));
+  return { ...count(ds), pages: ds.length, byArtefact, rows };
+}
+
 function rcaOf(i: A3Inputs, subject: KeptRun | undefined, paretos: Map<string, Pareto>, vs: ValueStream, whys: FiveWhys[]): Rca[] {
   const out: Rca[] = [];
   const depth = (w: FiveWhys | undefined, stops: string): Rca["depth"] => (w ? { kind: "5 whys", file: w.file, title: w.title } : { kind: "evidence stops", why: stops });
@@ -572,19 +610,30 @@ function rcaOf(i: A3Inputs, subject: KeptRun | undefined, paretos: Map<string, P
     });
   }
   if (r) {
-    const stale = r.compare.staleClaims ?? [];
-    const info = r.compare.hunks.filter((h) => h.severity !== "fail");
-    const contradicted = stale.filter((c) => info.some((h) => (c.artefact === "*" || c.artefact === h.artefact) && (h.scope === c.scope || h.scope.startsWith(`${c.scope}/`))));
+    const ds = decisionsOf(r.compare);
+    const deciding = decidingClaims(ds);
+    const fixes = ds.reduce((n, d) => n + d.hunks.length, 0);
+    const w = whyFor(whys, i.kaizen, (_t, f) => f.startsWith("fixed-on-b"));
+    if (fixes) {
+      const decided = ds.filter((d) => d.claim);
+      const open = ds.filter((d) => !d.claim);
+      out.push({
+        id: "decisions",
+        question: "Which differences were decisions, not failures, and why were they made?",
+        answer: `${plural(fixes, "fix", "fixes")} on b across ${plural(ds.length, "page")} (${[...new Set(ds.map((d) => d.artefact))].join(", ")}). A fix never gates: it is a decision, and a claim is where its why is written. ${decided.length ? `Decided: ${decided.map((d) => `${d.scope} (${d.what.join(", ")}) by ${d.claim!.rule ? `Rule ${d.claim!.rule}` : "a changelog entry"}`).join("; ")}.` : "None is decided yet."}${open.length ? ` Undecided: ${open.map((d) => `${d.scope} (${d.what.join(", ")})`).join("; ")}; a claim records the why and switches the glance item off.` : " Every one is decided, so the glance asks about none of them."}`,
+        evidence: [{ label: "report.html, differences", href: `${subject!.dir}/report.html#differences` }, { label: "src/claims/decisions.ts", href: `${REPO}/blob/main/src/claims/decisions.ts` }],
+        depth: depth(w, "no 5 Whys in the register answers this yet")
+      });
+    }
+    // A claim the report calls stale but that decides a fix (a report written before 1.15.0) is not stale.
+    const stale = (r.compare.staleClaims ?? []).filter((c) => !deciding.has(c));
     if (stale.length) {
-      const w = whyFor(whys, i.kaizen, (_t, f) => f.startsWith("fixed-on-b"));
       out.push({
         id: "stale-claims",
-        question: "Why are claims stale while the fixes they name read as unclaimed?",
-        answer: contradicted.length
-          ? `${plural(stale.length, "claim")} matched nothing, and ${contradicted.length} of them name a page whose difference is an info hunk (a fix): the claims were written for exactly those fixes, but only failing differences are offered to a claim, so the Gate says remove them and the glance says they are missing.`
-          : `${plural(stale.length, "claim")} matched nothing in this run: each is a claim to remove or a difference that did not happen.`,
-        evidence: [{ label: "report.html, claims", href: `${subject!.dir}/report.html` }, { label: "src/claims/matcher.ts", href: `${REPO}/blob/main/src/claims/matcher.ts` }],
-        depth: depth(w, "no 5 Whys in the register answers this yet")
+        question: "Why do claims match nothing?",
+        answer: `${plural(stale.length, "claim")} matched nothing in this run: each is a claim to remove or a difference that did not happen (${stale.map((c) => `${c.artefact} ${c.scope}`).join("; ")}).`,
+        evidence: [{ label: "report.html, stale claims", href: `${subject!.dir}/report.html#stale-claims` }],
+        depth: { kind: "evidence stops", why: "the report names each claim; whether it is early or wrong is the author's to say" }
       });
     }
   }
@@ -654,6 +703,7 @@ export function buildA3(i: A3Inputs): A3 {
   };
   whys.sort((x, y) => order(x) - order(y));
   const score = scoreOf(i, subject, postDeployState(i.github));
+  const decisions = decisionsFor(subject);
   const times = i.runs.map((r) => r.ranAt).sort();
   const streams: Partial<Record<Stream, number>> = {};
   for (const r of i.runs) streams[r.stream] = (streams[r.stream] ?? 0) + 1;
@@ -709,6 +759,7 @@ export function buildA3(i: A3Inputs): A3 {
     goal,
     rca,
     fiveWhys: whys,
+    ...(decisions ? { decisions } : {}),
     countermeasures,
     plan,
     followUp,

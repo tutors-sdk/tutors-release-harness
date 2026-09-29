@@ -8,7 +8,7 @@
  * Pages and printed on an A3 sheet alike. Light and dark follow the reader's setting. Every chart has its numbers in a
  * table too, and every bar and box says its value on hover.
  */
-import { REPO, duration, type A3, type FiveWhys, type Pareto, type Rca, type Score, type ValueStream } from "./model.ts";
+import { REPO, duration, type A3, type Decisions, type FiveWhys, type Pareto, type Rca, type Score, type ValueStream } from "./model.ts";
 
 const esc = (s: string) => s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
 const day = (iso?: string) => (iso ? iso.slice(0, 10) : "");
@@ -93,7 +93,7 @@ function andon(s: Score | null, a: A3): string {
   ].join("");
   return `<section class="andon" aria-label="Final scoring">
   <div class="tile gate ${t}"><span class="k">Gate · ${esc(s.subject)}</span><span class="huge">${esc(s.gate)}</span><span class="sub">${esc(s.candidate ?? "")} beside ${esc(s.baseline ?? "")} · ${esc(s.ranAt ? when(s.ranAt) : "")}<br>${link("full report", s.report)}${s.runUrl ? ` · ${link("the run", s.runUrl)}` : ""}${s.scorecard ? ` · scorecard ${s.scorecard.score} (${esc(s.scorecard.grade)})` : ""}${s.glance ? ` · ${s.glance} glance items` : ""}</span></div>
-  ${rcs}${dims}${small}
+  ${rcs}${dims}${small}${decideStrip(a.decisions)}
 </section>
 <p class="note andon-note">${esc(s.note)}</p>`;
 }
@@ -197,6 +197,23 @@ function vsmHtml(v: ValueStream): string {
   <details><summary>Numbers</summary><div class="scroll"><table><thead><tr><th>Stage</th><th>Where</th><th>Process time</th><th>First pass</th><th>Note</th></tr></thead><tbody>${v.stages.map((s) => `<tr><td>${esc(s.name)}</td><td>${esc(s.where)}</td><td class="num">${esc(duration(s.processMs))}${s.n ? ` (n ${s.n})` : ""}</td><td class="num">${s.firstPass ? `${s.firstPass.green}/${s.firstPass.runs}` : "–"}</td><td>${esc(s.note)}${s.andon ? ` <strong>Andon: ${esc(s.andon)}</strong>` : ""}</td></tr>`).join("")}${v.waits.map((w) => `<tr><td colspan="2">Wait: ${esc(w.label)}</td><td class="num">${esc(duration(w.ms))}</td><td></td><td></td></tr>`).join("")}</tbody></table></div></details></figure>`;
 }
 
+const ARTEFACT_NAMES: Record<string, string> = { axe: "Accessibility", console: "Console errors" };
+
+/** Decisions are orange, beside the traffic lights and never on them: a fix on b is a choice, not a pass or a fail. */
+function decideStrip(d: Decisions | undefined): string {
+  if (!d || !d.fixes) return "";
+  const share = d.decided / d.fixes;
+  return `<div class="decide-strip" role="group" aria-label="Decisions on b"><span class="k">Decisions on b · not failures</span><span class="meter" title="${d.decided} of ${d.fixes} fixes decided"><span class="fill d" style="width:${Math.max(2, Math.round(share * 100))}%"></span></span><span class="pct">${Math.round(share * 100)}% decided</span><span class="sub">${d.byArtefact.map((x) => `<strong>${esc(ARTEFACT_NAMES[x.artefact] ?? x.artefact)}</strong> ${x.decided} of ${x.fixes} decided (${Math.round((x.decided / x.fixes) * 100)}%)`).join(" · ")}. A claim says why and switches the glance item off; the rest wait for a decision · <a href="#decisions">the decisions</a></span></div>`;
+}
+
+function decisionsHtml(d: Decisions | undefined): string {
+  if (!d || !d.rows.length) return "";
+  const chip = (st: Decisions["rows"][number]["state"]) => `<span class="chip ${st === "decided" ? "decided" : st === "undecided" ? "undecided" : "changed"}">${esc(st)}</span>`;
+  return `<div class="decisions" id="decisions"><h3>Decisions on b <span class="hint">fixes are choices, not failures: the claim is the why</span></h3><div class="scroll"><table><thead><tr><th>Page</th><th>Fixed on b</th><th>State</th><th>Why (the claim)</th></tr></thead><tbody>${d.rows
+    .map((r) => `<tr><td><a href="${esc(safeHref(r.hunk) ?? "#")}"><code>${esc(r.artefact)} ${esc(r.scope)}</code></a></td><td>${esc(r.what.join(", "))}</td><td>${chip(r.state)}</td><td>${r.why ? esc(r.why) : `<span class="muted">none yet: claim it to record the decision</span>`}</td></tr>`)
+    .join("")}</tbody></table></div></div>`;
+}
+
 // ---- RCA and the 5 Whys ---------------------------------------------------------------------------------
 
 function rcaHtml(q: Rca, n: number, whys: FiveWhys[]): string {
@@ -223,11 +240,11 @@ function whysHtml(w: FiveWhys): string {
 
 const CSS = `
 :root{color-scheme:light;--bg:#f4f3ef;--sheet:#fcfcfb;--ink:#0b0b0b;--ink2:#52514e;--muted:#7a7873;--rule:#dddbd4;--box:#ffffff;
---pass:#2f7a4f;--warn:#8a6119;--fail:#a12a2a;--vital:#2a78d6;--trivial:#b9b7b0;--accent:#2a78d6;--hatch:#c9c7c0}
+--pass:#2f7a4f;--warn:#8a6119;--fail:#a12a2a;--vital:#2a78d6;--trivial:#b9b7b0;--accent:#2a78d6;--hatch:#c9c7c0;--decide:#b04e12;--on-decide:#ffffff;--decide-soft:#fbeadf}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#121211;--sheet:#1a1a19;--ink:#ffffff;--ink2:#c3c2b7;--muted:#9a988f;--rule:#383835;--box:#232322;
---pass:#3f9a66;--warn:#c28a2a;--fail:#d05050;--vital:#3987e5;--trivial:#5a5953;--accent:#3987e5;--hatch:#4a4945}}
+--pass:#3f9a66;--warn:#c28a2a;--fail:#d05050;--vital:#3987e5;--trivial:#5a5953;--accent:#3987e5;--hatch:#4a4945;--decide:#ec8a45;--on-decide:#1a1a19;--decide-soft:#3a2618}}
 :root[data-theme="dark"]{color-scheme:dark;--bg:#121211;--sheet:#1a1a19;--ink:#ffffff;--ink2:#c3c2b7;--muted:#9a988f;--rule:#383835;--box:#232322;
---pass:#3f9a66;--warn:#c28a2a;--fail:#d05050;--vital:#3987e5;--trivial:#5a5953;--accent:#3987e5;--hatch:#4a4945}
+--pass:#3f9a66;--warn:#c28a2a;--fail:#d05050;--vital:#3987e5;--trivial:#5a5953;--accent:#3987e5;--hatch:#4a4945;--decide:#ec8a45;--on-decide:#1a1a19;--decide-soft:#3a2618}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
 a{color:var(--accent)} a:focus-visible,summary:focus-visible{outline:2px solid currentColor;outline-offset:2px}
@@ -253,6 +270,12 @@ code{font:12.5px ui-monospace,Menlo,Consolas,monospace}
 .verdict,.band{display:inline-block;padding:1px 9px;border-radius:4px;color:#fff;font-weight:700;font-size:13px;letter-spacing:.04em;text-transform:uppercase}
 .verdict.pass,.band.green{background:var(--pass)} .verdict.warn,.band.amber{background:var(--warn)} .verdict.fail,.band.red{background:var(--fail)}
 .note{font-size:12.5px;color:var(--ink2);margin:6px 0 0} .andon-note{margin:0 0 14px}
+.decide-strip{grid-column:1/-1;display:grid;grid-template-columns:auto minmax(80px,1fr) auto;gap:6px 14px;align-items:center;background:var(--decide-soft);border:1px solid var(--decide);border-radius:8px;padding:8px 12px}
+.decide-strip .k{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink2)} .decide-strip .sub{grid-column:1/-1;font-size:12px;color:var(--ink2)}
+.decide-strip .meter{height:10px} .fill.d{background:var(--decide)} .decide-strip .pct{font-weight:800;font-size:1.15rem;font-variant-numeric:tabular-nums}
+.chip{display:inline-block;padding:0 7px;border-radius:4px;font-size:11.5px;font-weight:700;letter-spacing:.03em;white-space:nowrap}
+.chip.decided{background:var(--decide);color:var(--on-decide)} .chip.undecided{border:1px dashed var(--decide);color:var(--ink)} .chip.changed{border:1px solid var(--fail);color:var(--ink)}
+.decisions h3{font-size:13px;margin:14px 0 4px} .decisions h3 .hint{font-weight:400;font-size:12px;color:var(--ink2)}
 .a3{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:14px;align-items:start;margin:14px 0}
 .wide{margin:14px 0}
 .whyrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:12px;align-items:start}
@@ -347,7 +370,7 @@ ${vsmHtml(a.current.valueStream)}
 <div class="paretos">${a.current.paretos.map(paretoHtml).join("")}</div></section>
 <div class="a3">
 <section class="blk"><h2><span class="n">4</span>Root cause analysis <span class="hint">each question as deep as the evidence goes</span></h2>
-<ol class="rcas">${a.rca.map((q, i) => rcaHtml(q, i + 1, a.fiveWhys)).join("")}</ol></section>
+<ol class="rcas">${a.rca.map((q, i) => rcaHtml(q, i + 1, a.fiveWhys)).join("")}</ol>${decisionsHtml(a.decisions)}</section>
 <div class="col">
 <section class="blk"><h2><span class="n">5</span>Countermeasures <span class="hint">to the system, never to a person</span></h2>${cms}</section>
 <section class="blk"><h2><span class="n">6</span>Plan <span class="hint">who, what, when</span></h2>${plan}</section>
@@ -364,6 +387,7 @@ ${a.fiveWhys.length ? `<section class="blk wide"><h2><span class="n">4</span>The
 <div><dt>5 Whys</dt><dd>asked until the answer is a process or a tool, never a person</dd></div>
 <div><dt>VSM</dt><dd>process time (P/T), first-pass yield (FPY), waits and inventory (I) from merge to verify</dd></div>
 <div><dt>Flow efficiency</dt><dd>process time as a share of lead time</dd></div>
+<div><dt>Decision</dt><dd>a fix on b is a choice, not a failure: orange, beside the traffic lights, and switched off by the claim that says why</dd></div>
 <div><dt>Kaizen</dt><dd>every finding ends in one of seven countermeasure kinds, closed in a release (<a href="${REPO}/blob/main/docs/lean.md">docs/lean.md</a>)</dd></div>
 </dl></section>
 <footer>Sources: ${Object.entries(a.sources.streams).map(([k, v]) => `${v} ${esc(k)}`).join(", ")} run(s)${a.sources.first ? ` from ${esc(day(a.sources.first))} to ${esc(day(a.sources.last ?? ""))}` : ""}; GitHub ${esc(a.sources.github)}; ${a.sources.kaizen} 5 Whys in <code>kaizen/</code>. Advisory, like the score: nothing here is an input to the Gate, a verdict or an exit code.</footer>

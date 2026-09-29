@@ -24,11 +24,15 @@ export function claimMaxHunksFromEnv(env: NodeJS.ProcessEnv = process.env): numb
  * one claim (the matcher's rule), so the ratio is claimed hunks per claim.
  */
 export function claimHygiene(compare: CompareResult, threshold: number = DEFAULT_CLAIM_MAX_HUNKS): ClaimHygiene {
+  // Failing hunks per claim: a claim that names only fixes on b (info hunks, since 1.15.0) is a claim with none.
   const covered = new Map<CompareResult["staleClaims"][number], number>();
+  const used = new Set<CompareResult["staleClaims"][number]>();
   for (const m of compare.matches) {
-    if (m.claim) covered.set(m.claim, (covered.get(m.claim) ?? 0) + 1);
+    if (!m.claim) continue;
+    used.add(m.claim);
+    if (m.hunk.severity === "fail") covered.set(m.claim, (covered.get(m.claim) ?? 0) + 1);
   }
-  const claims = covered.size + compare.staleClaims.length;
+  const claims = used.size + compare.staleClaims.length;
   const claimedHunks = [...covered.values()].reduce((sum, n) => sum + n, 0);
 
   const flagged: FlaggedClaim[] = [];

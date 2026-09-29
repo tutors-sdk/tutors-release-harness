@@ -181,6 +181,10 @@ Each root-cause question is answered from the data and links to the 5 Whys in `k
 goes deeper; countermeasures, plan and follow-up are the register. What was not read says "not
 measured". It is advisory: it never changes a verdict.
 
+A fix on b (an accessibility violation or a console error gone) is a **decision**, not a failure:
+the A3 shows it in orange, beside the traffic lights, with the share decided. The claim that
+names it is the decision and its why, and it switches the glance item off (1.15.0).
+
 ## Guardrails
 
 A percentage is only useful while nobody is optimising for it, so the same

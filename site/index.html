@@ -235,6 +235,8 @@ function a3Html(a) {
   if (s) cells.push(`<div><span class="k">Gate</span><span class="verdict ${gateTone(s.gate)}">${esc(s.gate)}</span> ${esc(s.candidate ?? "")}</div>`, `<div><span class="k">Release Confidence Score</span>${s.rcs !== null && s.rcs !== undefined ? `${Number(s.rcs)} <span class="band ${esc(String(s.band).toLowerCase())}">${esc(s.band)}</span>` : "none: the Gate wins"}</div>`);
   if (top) cells.push(`<div><span class="k">The vital few</span>${esc(top.caption)}</div>`);
   if (vs) cells.push(`<div><span class="k">Flow</span>lead time ${vs.leadMs === null ? "not measured" : `${Math.round(vs.leadMs / 864e5 * 10) / 10} days`}, ${esc(String((vs.inventory ?? []).map((i) => `${i.count} ${i.label}`).join("; ")))}</div>`);
+  const d = a.decisions;
+  if (d && d.fixes) cells.push(`<div><span class="k">Decisions on b, not failures</span>${(d.byArtefact ?? []).map((x) => `${esc(x.artefact === "axe" ? "Accessibility" : x.artefact === "console" ? "Console errors" : x.artefact)} ${Number(x.decided)} of ${Number(x.fixes)} decided`).join("; ")}</div>`);
   cells.push(`<div><span class="k">Root causes</span>${(a.rca ?? []).length} questions, ${(a.fiveWhys ?? []).length} 5 Whys, ${(a.countermeasures ?? []).filter((c) => c.status !== "closed").length} countermeasures open</div>`);
   return `<div class="a3-grid">${cells.join("")}</div><a class="a3-cta" href="a3.html">Open the A3 →</a> <span class="note">Built ${esc(when(a.builtAt))}.</span>`;
 }

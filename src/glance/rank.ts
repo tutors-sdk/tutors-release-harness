@@ -19,6 +19,7 @@
  * reads the files.
  */
 import { MONOREPO_PULLS, isBroad, prsIn } from "../ci/scorecard.ts";
+import { decisionsOf } from "../claims/decisions.ts";
 import { claimLabel } from "../claims/rules.ts";
 import type { Changes } from "../changes/signals.ts";
 import { hunkAnchor, reportLink, type Located } from "../score/confidence.ts";
@@ -406,27 +407,26 @@ function newPersistence(i: GlanceInputs): Found {
 function fixedOnB(i: GlanceInputs, js: JourneySet): Found {
   if (!i.release) return { notChecked: NO_RELEASE };
   const { data: r, where } = i.release;
-  const fixed = (r.compare.hunks ?? []).filter((h) => h.severity === "info" && ((h.artefact === "console" && /console message gone on b/.test(h.summary) && /^error\b/i.test(h.detail ?? "")) || (h.artefact === "axe" && /axe violation fixed on b/.test(h.summary))));
-  const groups = new Map<string, Hunk[]>();
-  for (const h of fixed) groups.set(`${h.artefact} ${h.scope}`, [...(groups.get(`${h.artefact} ${h.scope}`) ?? []), h]);
-  const candidates = [...groups].map(([key, hs]): Candidate => {
-    const h = hs[0]!;
-    const claim = hs.map((x) => claimOf(r, x)).find((c) => c);
-    const what = h.artefact === "console" ? plural(hs.length, "console error") : plural(hs.length, "axe violation");
-    const anchors = hs.map((x) => reportLink(where, hunkAnchor(x)));
-    // The same page with new errors on b: a message that only changed (a new stack, a new bundle name) reads as gone too.
-    const fresh = (r.compare.hunks ?? []).filter((x) => x.artefact === h.artefact && x.scope === h.scope && failing(x) && (h.artefact === "axe" || /^error\b/i.test(x.detail ?? "")));
-    const why = fresh.length ? `but ${plural(fresh.length, h.artefact === "console" ? "new console error" : "new axe violation")} on the same page: fixed, or only changed?` : claim ? "a fix is a behaviour change: does the claim say so?" : "a fix nobody claimed can be a behaviour change";
-    return {
-      kind: "fixed-on-b",
-      key,
-      finding: `${h.scope}: ${what} fixed on b, ${claim ? "claimed" : "unclaimed"}; ${why}`,
-      links: { hunk: anchors[0]!, ...claimLinks(claim, i.changes) },
-      ...(anchors.length > 1 ? { hunks: anchors } : {}),
-      detail: hs.slice(0, 3).map((x) => short(h.artefact === "axe" ? x.summary.replace(/^.*fixed on b: /, "") : x.detail ?? x.summary, 90)).join(" | ") + (hs.length > 3 ? ` | and ${hs.length - 3} more` : ""),
-      touched: touchedByHunks(hs, js)
-    };
-  });
+  // A fix on b is a decision (src/claims/decisions.ts). A claim records it and switches the item off, unless the same
+  // page also has new failures of the same kind, when "fixed" may only mean "changed".
+  const candidates = decisionsOf(r.compare)
+    .filter((d) => !d.claim || d.fresh)
+    .map((d): Candidate => {
+      const h = d.hunks[0]!;
+      const claim = d.claim;
+      const what = h.artefact === "console" ? plural(d.hunks.length, "console error") : plural(d.hunks.length, "axe violation");
+      const anchors = d.hunks.map((x) => reportLink(where, hunkAnchor(x)));
+      const why = d.fresh ? `but ${plural(d.fresh, h.artefact === "console" ? "new console error" : "new axe violation")} on the same page: fixed, or only changed?` : "a fix is a decision: claim it to say why, and this item switches off";
+      return {
+        kind: "fixed-on-b",
+        key: `${d.artefact} ${d.scope}`,
+        finding: `${h.scope}: ${what} fixed on b, ${claim ? "decided" : "undecided"}; ${why}`,
+        links: { hunk: anchors[0]!, ...claimLinks(claim, i.changes) },
+        ...(anchors.length > 1 ? { hunks: anchors } : {}),
+        detail: d.hunks.slice(0, 3).map((x) => short(h.artefact === "axe" ? x.summary.replace(/^.*fixed on b: /, "") : x.detail ?? x.summary, 90)).join(" | ") + (d.hunks.length > 3 ? ` | and ${d.hunks.length - 3} more` : ""),
+        touched: touchedByHunks(d.hunks, js)
+      };
+    });
   return { candidates };
 }
 
