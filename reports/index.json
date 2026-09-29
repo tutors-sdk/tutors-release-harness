@@ -2,6 +2,61 @@
   "schemaVersion": 1,
   "runs": [
     {
+      "id": "2026-09-29T08-48-03Z-release",
+      "mode": "release",
+      "ranAt": "2026-09-29T08:48:03.036Z",
+      "verdict": "fail",
+      "reasons": [
+        "899 unclaimed diff(s)"
+      ],
+      "sides": {
+        "a": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:16.2.2",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:16.2.2",
+          "live": "quay.io/tutors-sdk/tutors-live:16.2.2",
+          "time": "quay.io/tutors-sdk/tutors-time:16.2.2"
+        },
+        "b": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:sha-90cb998",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:sha-90cb998",
+          "live": "quay.io/tutors-sdk/tutors-live:sha-90cb998",
+          "time": "quay.io/tutors-sdk/tutors-time:sha-90cb998"
+        }
+      },
+      "harnessVersion": "1.15.0",
+      "runUrl": "https://github.com/tutors-sdk/tutors-release-harness/actions/runs/36543874929",
+      "score": {
+        "score": 40,
+        "grade": "D",
+        "normalness": "normal",
+        "manual": 5
+      },
+      "confidence": {
+        "gate": "FAIL",
+        "rcs": null,
+        "band": null,
+        "note": "No RCS: Gate FAIL. The Gate wins: no number talks a FAIL back on. The dimensions are shown for the 5 Whys, not for a decision.",
+        "glance": 4,
+        "scoredBy": "1.15.0"
+      },
+      "changes": {
+        "score": 5,
+        "prs": 67,
+        "risky": 66,
+        "floorBreached": true,
+        "range": "v16.2.2..90cb998977c587e5e2c1147287db6ea5bb9aeb1e"
+      },
+      "files": [
+        "2026-09-29T08-48-03Z-release/report.json",
+        "2026-09-29T08-48-03Z-release/report.md",
+        "2026-09-29T08-48-03Z-release/report.html",
+        "2026-09-29T08-48-03Z-release/confidence.json",
+        "2026-09-29T08-48-03Z-release/changes.json",
+        "2026-09-29T08-48-03Z-release/scorecard.json",
+        "2026-09-29T08-48-03Z-release/scorecard.md"
+      ]
+    },
+    {
       "id": "2026-09-28T08-59-53Z-release",
       "mode": "release",
       "ranAt": "2026-09-28T08:59:53.429Z",
