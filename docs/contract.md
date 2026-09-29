@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.13.1`
+Contract version: `1.14.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -960,6 +960,33 @@ fire the register's own run rule, which `harness release` opens as a 5 Whys
 (`countermeasures-rising`) listing what is open. **Nothing here changes a verdict, a Gate or an
 exit code**: `harness release` opens the stubs after its exit code is decided.
 
+## The A3 Aggregator
+
+**`harness a3 --site <dir> [--kaizen kaizen] [--noise-history f] [--scoreboard f] [--github f |
+--fetch-github] [--out <dir>]`** (not stable) reads what the pages workflow has already put
+together (each stream's `reports/index.json` and kept reports, `confidence.json` and
+`changes.json` beside them, the noise history, the kaizen register, the scoreboard) and writes
+one A3 on one page: `a3.html` (self-contained, printable on A3 landscape), `a3.json` (the same
+numbers, for the site's own A3 section) and, with `--fetch-github`, `github.json` (the snapshot
+of workflow runs, the monorepo's image builds and commit dates it was built from; `--github f`
+reads such a snapshot instead of fetching). `--out` defaults to `--site`.
+
+The A3 carries, in order: background; current condition, with the value stream map (merge,
+image build, accessibility audit, forecast, release gate, deploy, verify; waits, inventory, lead
+time and the andon on a stage that stopped) and four Paretos (unclaimed hunks by cause, line
+stops by cause, confidence points lost by dimension, change-risk points by rule, each with the
+vital few that make up 80% cut out); the goal; the root-cause questions, each answered from the
+data with a link to the 5 Whys in `kaizen/` that goes deeper; countermeasures, plan and
+follow-up from the register; the 5 Whys themselves; and the Lean terms the page uses. The final
+scoring (the Gate and, when the Gate passes, the RCS with its band and dimensions) leads it.
+
+What was not read is **not measured**, never a guess: a missing file, a stream with no kept
+run, or a GitHub call that failed (named in `github.json`'s `errors`). Exit `0` when the A3 is
+written, `2` for a usage error (no `--site`, a directory that does not exist, an unreadable
+`--github`). Advisory: **nothing here changes a verdict, a Gate or an exit code**, and nothing
+reads `a3.json` but the site. `pages.yml` runs it after the reports are copied, with
+`actions: read` for the workflow runs; a failure is a warning and the site deploys without it.
+
 ## CLI
 
 Full list: [`contract/cli.json`](contract/cli.json). Invoke as `pnpm harness
@@ -1312,6 +1339,21 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.14.0 (minor; the A3 Aggregator: `harness a3`)
+
+The release note is [releases/1.14.0.md](releases/1.14.0.md). Additive for a consumer written
+against 1.13.1: no `report.json` field, verdict or exit code of an existing command changes.
+
+- `harness a3 --site <dir> [--kaizen d] [--noise-history f] [--scoreboard f] [--github f |
+  --fetch-github] [--out d]` (not stable): writes `a3.html`, `a3.json` and, when fetched,
+  `github.json` ([the A3 Aggregator](#the-a3-aggregator)).
+- `pages.yml`: runs `harness a3` into the site (a failure is a warning) and gains `actions: read`
+  to read workflow runs; copies the noise history to `noise/noise-history.json`.
+- `site/index.html`: the A3 section, the final scoring and the vital few, linking to `a3.html`.
+- `claims/README.md`: how to claim a tool removed from an image with one brace-list SBOM claim.
+- `kaizen/`: the first three 5 Whys (the Gate FAIL on the newest forecast, the 16.2.2 rollback,
+  a fixed-on-B finding the glance called unclaimed).
 
 ### 1.13.1 (the exemplar: Main to RC carries the score, and the report pages lead with it)
 

@@ -94,6 +94,32 @@ from an image; fix that rather than claiming it. The same scope shape,
 `<app>/not-collected` or `<artefact>/not-collected`, is what the `runtime`,
 `startup` and `bus` artefacts use when they could not be collected.
 
+### A tool removed from an image
+
+Taking a tool out of an image (the runtime stage no longer ships `npm`,
+`npx`, `corepack` and `yarn`) removes its whole dependency tree: one `sbom`
+hunk per package per image, with names that share no prefix. The first time
+it happened it was 696 hunks, 174 packages in four images
+([kaizen/2026-09-29-sha-185e87f-gate.md](../kaizen/2026-09-29-sha-185e87f-gate.md)).
+Claim it with one narrow claim whose scope is a brace list of exactly the
+removed packages, generated from the run's `report.json`, never with `*/**`:
+
+```sh
+jq -r '[.compare.unclaimed[] | select(.artefact == "sbom" and (.summary | test("package removed")))
+  | .scope | split("/") | .[1:] | join("/")] | unique | "*/{" + join(",") + "}"' report.json
+```
+
+```yaml
+claims:
+  - artefact: sbom
+    scope: "*/{@isaacs/cliui,@npmcli/agent,corepack,npm,node-gyp,yarn,...}"   # the jq output, whole
+    reason: "CHANGELOG 16.3.0: build: drop package managers from the runtime image (sbom, vulns)"
+```
+
+The advisories that leave with the tool are `vulns` info hunks and need no
+claim; a patched base (`node`, `tzdata`) is a bump per package, claimed as
+above (`*/node`, `*/tzdata`).
+
 Globs are `picomatch` with `dot: true` and case folding. Quote scopes with
 spaces or colons.
 

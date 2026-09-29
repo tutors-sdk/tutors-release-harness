@@ -169,6 +169,18 @@ How the tooling holds to this (since 1.13.0):
 | The register is the record, not a notebook | its table is regenerated from the files and never edited by hand; CI fails when it is out of date |
 | A loop that is not closing is itself a finding | each scoreboard line records the open count; three rises open a 5 Whys on the loop |
 
+### The A3: the whole problem on one page
+
+An A3 is Toyota's one sheet of paper for a problem: background, current condition, goal, root
+cause, countermeasures, plan and follow-up, read left to right. **`harness a3`** (1.14.0) builds
+it from what the harness already keeps, and the pages site shows it as `a3.html`. The final
+scoring leads it (Jidoka first: the Gate, then the RCS and its band). The current condition is a
+value stream map of a change, from merge to verified in production, with its waits, its
+inventory and an andon on the stage that stopped, and four Paretos that cut out the vital few.
+Each root-cause question is answered from the data and links to the 5 Whys in `kaizen/` that
+goes deeper; countermeasures, plan and follow-up are the register. What was not read says "not
+measured". It is advisory: it never changes a verdict.
+
 ## Guardrails
 
 A percentage is only useful while nobody is optimising for it, so the same

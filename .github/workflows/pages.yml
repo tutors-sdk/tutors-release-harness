@@ -11,6 +11,8 @@
 #   <pages>/noise/reports/...                 nightly A/A
 #   <pages>/scoreboard.html, scoreboard.json  the release scoreboard's six trend views, run rules and the harness's health
 #                                             (harness scoreboard trends --site, from the `scoreboard` branch; since 1.11.0)
+#   <pages>/a3.html, a3.json, github.json     the A3 Aggregator: one Lean A3 from every kept report, the kaizen register
+#                                             and the value stream's workflow history (harness a3 --site; since 1.14.0)
 #
 # Rebuilt after every workflow that keeps a report, when the page changes on
 # main, and by hand. Repository setting: Pages, source "GitHub Actions".
@@ -27,6 +29,8 @@ on:
 
 permissions:
   contents: read
+  # Since 1.14.0: the A3 Aggregator reads the value stream's workflow runs (harness a3 --fetch-github). Read only.
+  actions: read
 
 concurrency:
   group: pages
@@ -69,6 +73,10 @@ jobs:
             echo "scoreboard: no branch yet"; mkdir -p src-scoreboard/scoreboard
           fi
           pnpm harness scoreboard trends --file src-scoreboard/scoreboard/releases.jsonl --mutants src-scoreboard/scoreboard/mutants.jsonl --noise-history src-noise/noise-history.json --site _site
+          # The A3 Aggregator reads what is now in _site, the kaizen register of this checkout and the workflows' history.
+          # It is advisory and never fails the site: a failure leaves a3.html out and the index says so.
+          if [ -f src-noise/noise-history.json ]; then mkdir -p _site/noise && cp src-noise/noise-history.json _site/noise/noise-history.json; fi
+          pnpm harness a3 --site _site --kaizen kaizen --noise-history _site/noise/noise-history.json --scoreboard src-scoreboard/scoreboard/releases.jsonl --fetch-github || echo "::warning title=A3 Aggregator::harness a3 did not write the A3"
           jq -n --arg at "$(date -u +%FT%TZ)" '{builtAt: $at}' > _site/built.json
           touch _site/.nojekyll
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0

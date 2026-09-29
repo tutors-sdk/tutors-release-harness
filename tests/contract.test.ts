@@ -208,7 +208,7 @@ describe("report.json", () => {
     const cli = json("docs/contract/cli.json");
     for (const flag of cli.flags.filter((f: { since?: string }) => f.since === "1.2.0")) expect(changes, flag.name).toContain(`--${flag.name === "runtime" ? "no-runtime" : flag.name}`);
     for (const [name, v] of Object.entries(cli.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.2.0")) expect(changes, name).toContain(name);
-    expect(CONTRACT_VERSION).toBe("1.13.1");
+    expect(CONTRACT_VERSION).toBe("1.14.0");
     // The harness version is package.json's and moves at least as far as the contract's (docs/contract.md, Versioning):
     // a mask or engine PR bumps the patch of the harness alone, so do not pin a literal here.
     expect(json("package.json").version).toBe(HARNESS_VERSION);
@@ -741,7 +741,7 @@ describe("CLI", () => {
   });
 
   it("cli.json lists exactly the commands src/cli.ts dispatches", () => {
-    const commands = [...source.matchAll(/^\s*case "([a-z][a-z-]*)":/gm), ...source.matchAll(/command === "([a-z]+)"/g)].map((m) => m[1]!);
+    const commands = [...source.matchAll(/^\s*case "([a-z][a-z0-9-]*)":/gm), ...source.matchAll(/command === "([a-z]+)"/g)].map((m) => m[1]!);
     expect(cli.commands.map((c) => c.name).sort()).toEqual([...new Set(commands)].sort());
     for (const c of cli.commands) expect(source, `usage text for ${c.name}`).toContain(`harness ${c.name}`);
   });
@@ -841,7 +841,7 @@ describe("CLI", () => {
       const flags = own.includes(file) ? declaredFlags : stableFlags;
       // A call may continue over lines with a trailing backslash.
       const text = read(file).replace(/\\\n/g, " ");
-      for (const m of text.matchAll(/pnpm harness ([a-z][a-z-]*)([^\n]*)/g)) {
+      for (const m of text.matchAll(/pnpm harness ([a-z][a-z0-9-]*)([^\n]*)/g)) {
         calls += 1;
         expect(commands.has(m[1]!), `${file}: harness ${m[1]}`).toBe(true);
         for (const flag of m[2]!.matchAll(/(?<![\w-])--([a-z][a-z-]*)/g)) expect(flags.has(flag[1]!), `${file}: --${flag[1]}`).toBe(true);
