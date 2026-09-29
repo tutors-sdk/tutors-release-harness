@@ -19,7 +19,7 @@ import { harnessInfo } from "./version.ts";
 import { helpFor, parseArgsErrorText } from "./local/usage.ts";
 import { RequirementError, requirements } from "./not-collected.ts";
 import { previewResolve } from "./ci/main-preview.ts";
-import { UsageError, changesCommand, confidenceCommand, doctorCommand, glanceCommand, guardCommand, localCommand, noiseCommand, overrideCommand, pruneCommand, recordAppliedOverride, releaseCommand, reportsCommand, scoreboardCommand, scorecardCommand, vulnDbCommand, whyCommand } from "./local/cli.ts";
+import { UsageError, changesCommand, confidenceCommand, doctorCommand, glanceCommand, guardCommand, localCommand, noiseCommand, overrideCommand, pruneCommand, recordAppliedOverride, releaseCommand, reportsCommand, scoreboardCommand, scorecardCommand, vulnDbCommand, whyCommand, a3Command } from "./local/cli.ts";
 import { defaultNoise } from "./local/noise-store.ts";
 
 const USAGE = `tutors-release-harness
@@ -220,6 +220,14 @@ const USAGE = `tutors-release-harness
       a due date; exit 1 when one is not ready (a docs lint, never a release gate). register: the table of kaizen/README.md
       regenerated from the files (--write writes it; without, exit 1 when README.md is out of date) with the open and
       overdue counts. harness release opens one by itself for each trigger. Exit 2 for what it cannot read. Not stable.
+  harness a3 --site <dir> [--kaizen kaizen/] [--noise-history f] [--scoreboard f] [--github f | --fetch-github] [--json]
+      The A3 Aggregator (since 1.14.0): one Lean A3 from every kept run under --site (each stream's reports/index.json and
+      the reports beside it), the kaizen register, the noise history and, with --fetch-github (GITHUB_TOKEN or GH_TOKEN),
+      the value stream workflows' history on GitHub. Writes a3.html and a3.json (and github.json when it asked GitHub)
+      into --site: the Gate and the RCS as confidence.json has them, a value stream map, Paretos of the unclaimed
+      differences, the line stops, the confidence lost and the change risk, the root cause questions with the 5 Whys that
+      answer them, and the countermeasures, plan and follow-up. What it cannot read is said to be not measured. Advisory:
+      never an input to the Gate, a verdict or an exit code. Exit 0 when written, 2 for what it cannot read. Not stable.
 `;
 
 function fail(message: string): never {
@@ -358,6 +366,9 @@ async function main(argv: string[]): Promise<number> {
       fast: { type: "boolean", default: false },
       json: { type: "boolean", default: false },
       write: { type: "boolean", default: false },
+      kaizen: { type: "string" },
+      github: { type: "string" },
+      "fetch-github": { type: "boolean", default: false },
       help: { type: "boolean", short: "h", default: false }
     },
     allowNegative: true
@@ -557,6 +568,8 @@ async function main(argv: string[]): Promise<number> {
       return glanceCommand(positionals[0], values);
     case "why":
       return whyCommand(positionals[0], positionals.slice(1), values);
+    case "a3":
+      return a3Command(values);
     case "journeys":
       for (const j of journeys) console.log(`${j.name.padEnd(34)} set=${j.set.padEnd(9)} ${j.anonymous ? "anonymous" : "signed-in"}`);
       return 0;

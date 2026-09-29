@@ -51,6 +51,9 @@ run `harness why register --write`. This header is written by people and is left
 <!-- register:start -->
 | 5 Whys | Trigger | Release | Countermeasure | Owner | Due | Verified closed in |
 | --- | --- | --- | --- | --- | --- | --- |
+| [16.2.2, post-deploy red on every run](2026-09-29-16.2.2-rollback.md) | rollback | 16.2.2 | SOP change: release/SOP.md's deploy step records the build production serves (the pinned digest, or w… | Leigh Griffin | 2026-10-13 | open |
+| [sha-185e87f, claimed fixes read as unclaimed and their claims as stale](2026-09-29-sha-185e87f-fixed-on-b.md) | finding | sha-185e87f | glance rule: a claim that names an info hunk is recorded as matching it, without gating it, so the gla… | Leigh Griffin | 2026-10-06 | open |
+| [sha-185e87f, Gate FAIL on the Main to RC forecast](2026-09-29-sha-185e87f-gate.md) | Gate FAIL | sha-185e87f | claim guidance: claims/README.md gains "A tool removed from an image": one narrow `sbom` claim per remove… | Leigh Griffin | 2026-10-06 | open |
 
-No 5 Whys yet.
+3 5 Whys: 3 open, 0 closed.
 <!-- register:end -->

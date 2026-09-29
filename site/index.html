@@ -29,6 +29,11 @@
   a:focus-visible, summary:focus-visible { outline:2px solid currentColor; outline-offset:2px; }
   .empty { font-size:14px; opacity:.75; margin-top:10px; }
   footer { font-size:12px; opacity:.7; border-top:1px solid var(--rule); padding-top:12px; margin-top:40px; }
+  #a3 { border:2px solid currentColor; border-radius:10px; padding:4px 16px 16px; margin:20px 0 8px; }
+  #a3 h2 { margin-top:14px; font-size:1.35rem; } #a3 h2 a { color:inherit; }
+  .a3-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr)); gap:8px 20px; margin:10px 0 6px; }
+  .a3-grid div { border-left:3px solid var(--rule); padding-left:10px; } .a3-grid .k { display:block; font-size:11px; text-transform:uppercase; letter-spacing:.06em; opacity:.7; }
+  .a3-cta { display:inline-block; margin-top:8px; font-weight:600; }
   #exemplar { border:1px solid var(--rule); border-radius:8px; padding:4px 16px 16px; margin:20px 0 8px; }
   #exemplar h2 { margin-top:14px; font-size:1.25rem; }
   #exemplar h3 { font-size:.95rem; margin:18px 0 4px; }
@@ -47,6 +52,12 @@
 <body>
 <h1>Tutors release harness reports</h1>
 <p class="about">What the <a href="https://github.com/tutors-sdk/tutors-release-harness">release harness</a> says about Tutors. A report compares two sets of Tutors images and fails on any observable difference no claim covers. The score beside it is advisory: it never changes a verdict.</p>
+
+<section id="a3" aria-labelledby="a3-title">
+  <h2 id="a3-title"><a href="a3.html">A3 Aggregator</a>: the whole release on one sheet</h2>
+  <p class="note">A Lean A3 built from every report below and the kaizen register: the Gate and the score, the value stream from merge to production, the Paretos of what stops the line, the root causes with their 5 Whys, and the countermeasures, plan and follow-up.</p>
+  <div id="a3-body"><p class="empty">Loading the A3…</p></div>
+</section>
 
 <section id="exemplar" aria-labelledby="exemplar-title">
   <h2 id="exemplar-title">What main would ship today</h2>
@@ -212,7 +223,29 @@ async function stream(id) {
   section.insertAdjacentHTML("beforeend", `<div class="scroll"><table><thead><tr><th>Ran</th><th>Images</th><th>Verdict</th><th>Score</th><th>Why</th><th>Harness</th></tr></thead><tbody>${rows.join("")}</tbody></table></div>`);
 }
 
-globalThis.siteReady = Promise.all([exemplar(), ...["release-records", "main-preview", "noise"].map(stream)]);
+/**
+ * The A3 Aggregator's headline, read from a3.json (harness a3, since 1.14.0): the Gate, the score, the vital few of the
+ * newest forecast's Pareto and the open countermeasures. Pure: the text, from what was fetched; nothing invented.
+ */
+function a3Html(a) {
+  const s = a.score;
+  const top = (a.current?.paretos ?? [])[0];
+  const vs = a.current?.valueStream;
+  const cells = [];
+  if (s) cells.push(`<div><span class="k">Gate</span><span class="verdict ${gateTone(s.gate)}">${esc(s.gate)}</span> ${esc(s.candidate ?? "")}</div>`, `<div><span class="k">Release Confidence Score</span>${s.rcs !== null && s.rcs !== undefined ? `${Number(s.rcs)} <span class="band ${esc(String(s.band).toLowerCase())}">${esc(s.band)}</span>` : "none: the Gate wins"}</div>`);
+  if (top) cells.push(`<div><span class="k">The vital few</span>${esc(top.caption)}</div>`);
+  if (vs) cells.push(`<div><span class="k">Flow</span>lead time ${vs.leadMs === null ? "not measured" : `${Math.round(vs.leadMs / 864e5 * 10) / 10} days`}, ${esc(String((vs.inventory ?? []).map((i) => `${i.count} ${i.label}`).join("; ")))}</div>`);
+  cells.push(`<div><span class="k">Root causes</span>${(a.rca ?? []).length} questions, ${(a.fiveWhys ?? []).length} 5 Whys, ${(a.countermeasures ?? []).filter((c) => c.status !== "closed").length} countermeasures open</div>`);
+  return `<div class="a3-grid">${cells.join("")}</div><a class="a3-cta" href="a3.html">Open the A3 →</a> <span class="note">Built ${esc(when(a.builtAt))}.</span>`;
+}
+
+async function a3() {
+  const body = document.getElementById("a3-body");
+  const a = await json("a3.json");
+  body.innerHTML = a ? a3Html(a) : `<p class="empty">No A3 built yet: the next pages build writes it (harness a3).</p>`;
+}
+
+globalThis.siteReady = Promise.all([a3(), exemplar(), ...["release-records", "main-preview", "noise"].map(stream)]);
 fetch("built.json").then((r) => r.json()).then((b) => { document.getElementById("built").textContent = `Last built ${when(b.builtAt)}.`; }).catch(() => {});
 </script>
 </body>

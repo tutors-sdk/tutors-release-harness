@@ -30,6 +30,7 @@ import { renderSite, renderTrends } from "../scoreboard/render.ts";
 import { KAIZEN_DIR, checkFiles, openEscalated, openWhy, renderChecked } from "../why/command.ts";
 import { registerOf, registerSummary } from "../why/register.ts";
 import { WhyInputError } from "../why/trace.ts";
+import { A3InputError, runA3 } from "../a3/command.ts";
 import { keepReport } from "../ci/report-archive.ts";
 import { readReport, readRulePrs, renderScorecard, scorecard } from "../ci/scorecard.ts";
 import { appendOverride, overrideFromReport, readOverrides } from "./override-log.ts";
@@ -449,6 +450,54 @@ export function whyCommand(sub: string | undefined, positionals: string[], v: Va
     }
   } catch (e) {
     if (e instanceof WhyInputError) throw new UsageError(e.message);
+    throw e;
+  }
+}
+
+// ---- harness a3 ---------------------------------------------------------------------------------------
+
+export interface A3Deps {
+  now?: () => Date;
+  log?: (m: string) => void;
+  fetch?: import("../changes/github.ts").FetchLike;
+  env?: NodeJS.ProcessEnv;
+}
+
+/**
+ * `harness a3 --site <dir> [--kaizen kaizen/] [--noise-history f] [--scoreboard f] [--github f | --fetch-github]`: the A3
+ * Aggregator (src/a3/), written into the site beside the reports. Advisory: exit 0 when written, 2 for what it cannot read.
+ */
+export async function a3Command(v: Values, deps: A3Deps = {}): Promise<number> {
+  const log = deps.log ?? ((m: string) => console.log(m));
+  const site = str(v, "site");
+  if (!site) throw new UsageError("a3 needs --site <dir>: the site with each stream's reports/index.json [--kaizen kaizen/] [--noise-history f] [--scoreboard f] [--github f | --fetch-github]");
+  if (str(v, "github") && flag(v, "fetch-github")) throw new UsageError("a3: --github reads a snapshot, --fetch-github asks GitHub: give one");
+  const at = (name: string) => (str(v, name) ? resolve(str(v, name)!) : undefined);
+  try {
+    const { a3, files } = await runA3({
+      site: resolve(site),
+      kaizen: at("kaizen") ?? join(ROOT, KAIZEN_DIR),
+      ...(at("noise-history") ? { noiseHistory: at("noise-history")! } : {}),
+      ...(at("scoreboard") ? { scoreboard: at("scoreboard")! } : {}),
+      ...(at("github") ? { github: at("github")! } : {}),
+      fetchGithub: flag(v, "fetch-github"),
+      now: (deps.now ?? (() => new Date()))(),
+      harness: harnessInfo().version,
+      ...(deps.env ? { env: deps.env } : {}),
+      ...(deps.fetch ? { fetch: deps.fetch } : {})
+    });
+    if (flag(v, "json")) log(JSON.stringify(a3, null, 2));
+    else {
+      const s = a3.score;
+      log(`A3 Aggregator: ${s ? `Gate ${s.gate} on ${s.subject.toLowerCase()} ${s.candidate ?? ""}, ${s.rcs === null ? "no RCS" : `RCS ${s.rcs} ${s.band}`}` : "no judged run kept yet"}`);
+      for (const p of a3.current.paretos) log(`  pareto ${p.id}: ${p.caption}`);
+      for (const [n, q] of a3.rca.entries()) log(`  Q${n + 1} ${q.question} ${q.depth.kind === "5 whys" ? `-> 5 Whys ${q.depth.file}` : "-> evidence stops"}`);
+      if (a3.sources.github.startsWith("read") && a3.sources.github.includes("not answered")) log(`  GitHub: ${a3.sources.github}`);
+      log(`wrote ${files.join(", ")}`);
+    }
+    return 0;
+  } catch (e) {
+    if (e instanceof A3InputError) throw new UsageError(e.message);
     throw e;
   }
 }
