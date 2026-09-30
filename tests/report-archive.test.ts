@@ -2,13 +2,13 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFil
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { addEntry, entryId, keepReport, parseIndex, type ReportEntry, type ReportIndex } from "../src/ci/report-archive.ts";
+import { addEntry, entryId, keepReport, parseIndex, relink, type ReportEntry, type ReportIndex } from "../src/ci/report-archive.ts";
 import type { Changes } from "../src/changes/signals.ts";
 import { reportsCommand, UsageError } from "../src/local/cli.ts";
 import { GLANCE_END, GLANCE_START } from "../src/glance/render.ts";
 import { LEAD_CSS } from "../src/report/lead.ts";
 import type { Confidence } from "../src/score/confidence.ts";
-import { scoredRun } from "./support/scored-run.ts";
+import { rehearsalRun, scoredRun } from "./support/scored-run.ts";
 
 const tmp = () => mkdtempSync(join(tmpdir(), "report-archive-"));
 
@@ -50,6 +50,24 @@ describe("the report index", () => {
     expect(dropped).toEqual(["22"]);
   });
 
+  it("--keep-days is a floor under --keep-last: a run younger than n days is never dropped, whatever the count (since 1.16.0)", () => {
+    const now = Date.parse("2026-09-30T12:00:00Z");
+    let index: ReportIndex = { schemaVersion: 1, runs: [] };
+    // a night eleven days ago, a night nine days ago, then a day of runs by hand
+    const ids = ["2026-09-19T03:00:00Z", "2026-09-21T03:00:00Z", "2026-09-30T08:00:00Z", "2026-09-30T09:00:00Z", "2026-09-30T10:00:00Z"];
+    for (const at of ids) index = addEntry(index, entry(at), 2, { keepDays: 10, now }).index;
+    expect(index.runs.map((r) => r.id)).toEqual([...ids].reverse().slice(0, 4));
+    // exactly n days old is still inside the floor; a moment older is not
+    const edge = addEntry({ schemaVersion: 1, runs: [entry("2026-09-20T12:00:00Z"), entry("2026-09-20T11:59:59Z")] }, entry("2026-09-30T11:00:00Z"), 1, { keepDays: 10, now });
+    expect(edge.index.runs.map((r) => r.id)).toEqual(["2026-09-30T11:00:00Z", "2026-09-20T12:00:00Z"]);
+    expect(edge.dropped).toEqual(["2026-09-20T11:59:59Z"]);
+    // the floor only ever keeps more: past it, --keep-last decides as before
+    const many = Array.from({ length: 5 }, (_, i) => entry(`2026-09-0${i + 1}T00:00:00Z`));
+    const counted = addEntry({ schemaVersion: 1, runs: many }, entry("2026-09-30T11:00:00Z"), 3, { keepDays: 10, now });
+    expect(counted.index.runs).toHaveLength(3);
+    expect(counted.dropped).toEqual(["2026-09-03T00:00:00Z", "2026-09-02T00:00:00Z", "2026-09-01T00:00:00Z"]);
+  });
+
   it("a damaged or foreign index starts again instead of stopping the publish", () => {
     expect(parseIndex("{not json").runs).toEqual([]);
     expect(parseIndex(JSON.stringify({ schemaVersion: 2, runs: [entry("x")] })).runs).toEqual([]);
@@ -79,6 +97,14 @@ describe("keeping a run's report", () => {
     for (const day of ["22", "23", "24"]) keepReport({ dir: runDir(root, `2026-09-${day}T07:50:00.000Z`), store, keepLast: 2 });
     const reports = join(store, "reports");
     expect(readdirSync(reports).sort()).toEqual(["2026-09-23T07-50-00Z-noise", "2026-09-24T07-50-00Z-noise", "index.json"]);
+  });
+
+  it("with --keep-days, the directories of runs inside the floor stay even past --keep-last", () => {
+    const root = tmp();
+    const store = join(root, "store");
+    const now = Date.parse("2026-09-24T12:00:00.000Z");
+    for (const day of ["10", "22", "23", "24"]) keepReport({ dir: runDir(root, `2026-09-${day}T07:50:00.000Z`), store, keepLast: 2, keepDays: 3, now });
+    expect(readdirSync(join(store, "reports")).sort()).toEqual(["2026-09-22T07-50-00Z-noise", "2026-09-23T07-50-00Z-noise", "2026-09-24T07-50-00Z-noise", "index.json"]);
   });
 
   it("without --keep-last, every run stays (the release records keep every candidate)", () => {
@@ -170,6 +196,60 @@ describe("keeping a release run scored beside it (Main to RC, since 1.13.1)", ()
     expect(keepReport({ dir, store: join(root, "b") }).entry.confidence).toBeUndefined();
   }, 60_000);
 
+  it("keeps the migration and upgrade rehearsals beside the run, and the kept confidence.json links them there (since 1.16.0)", async () => {
+    const root = tmp();
+    const migration = rehearsalRun(root, "migration", { ranAt: "2026-09-28T04:40:00.000Z" });
+    const upgrade = rehearsalRun(root, "upgrade", { ranAt: "2026-09-28T04:41:00.000Z", verdict: "fail" });
+    const dir = await scoredRun(root, { ranAt, unclaimed: 1, rehearsals: { migration, upgrade } });
+    const written = readFileSync(join(dir, "confidence.json"), "utf8");
+    // as scored on the runner: links into a directory the kept pages do not have
+    expect(written).toContain('"../../rehearsals/upgrade/2026-09-28T04-41-00-000Z-upgrade/report.html#upgrade"');
+    const store = join(root, "store");
+    const { entry: kept, notKept } = keepReport({ dir, store, migration, upgrade: join(upgrade, "report.json") });
+    expect(notKept).toEqual([]);
+    const target = join(store, "reports", id);
+    for (const [name, from] of [["migration", migration], ["upgrade", upgrade]] as const) {
+      expect(readdirSync(join(target, name)).sort(), name).toEqual(["report.html", "report.json", "report.md"]);
+      for (const f of ["report.json", "report.md", "report.html"]) expect(readFileSync(join(target, name, f), "utf8"), `${name}/${f}`).toBe(readFileSync(join(from, f), "utf8"));
+    }
+    expect(kept.files).toEqual(expect.arrayContaining([`${id}/migration/report.json`, `${id}/migration/report.html`, `${id}/upgrade/report.md`]));
+    const c = JSON.parse(readFileSync(join(target, "confidence.json"), "utf8")) as Confidence;
+    expect(c.run.reports).toMatchObject({ release: "report.json", migration: "migration/report.json", upgrade: "upgrade/report.json" });
+    const dim = c.dimensions.find((d) => d.id === "rehearsals")!;
+    expect(dim.evidence).toEqual(["migration/report.html#migration", "upgrade/report.html#upgrade"]);
+    expect(dim.deductions?.map((d) => d.evidence)).toEqual(["upgrade/report.html#upgrade"]);
+    // nothing else of the score moved, and nothing in it still points off the kept pages
+    const kept2 = readFileSync(join(target, "confidence.json"), "utf8");
+    expect(kept2).not.toContain("../");
+    expect(kept2.replaceAll(/"(migration|upgrade)\/report/g, "X")).toBe(written.replaceAll(/"\.\.\/\.\.\/rehearsals\/(migration|upgrade)\/[^/]+\/report/g, "X"));
+    // and the lead of the kept report links the kept copy
+    expect(readFileSync(join(target, "report.html"), "utf8")).toContain("upgrade/report.html#upgrade");
+    expect(readFileSync(join(target, "report.html"), "utf8")).not.toContain("../../rehearsals/");
+  }, 60_000);
+
+  it("keeps confidence.json byte for byte when no rehearsal is given, and says why a rehearsal it could not keep was not kept", async () => {
+    const root = tmp();
+    const migration = rehearsalRun(root, "migration", { ranAt: "2026-09-28T04:40:00.000Z" });
+    const dir = await scoredRun(root, { ranAt, rehearsals: { migration } });
+    keepReport({ dir, store: join(root, "a") });
+    expect(readFileSync(join(root, "a", "reports", id, "confidence.json"), "utf8")).toBe(readFileSync(join(dir, "confidence.json"), "utf8"));
+    // a release run given as the upgrade rehearsal, and a directory with no report: the run is still kept, with what could be
+    const { entry: kept, notKept } = keepReport({ dir, store: join(root, "b"), migration, upgrade: dir });
+    expect(notKept).toEqual([`--upgrade ${dir}: a release-mode report, not upgrade`]);
+    expect(kept.files.some((f) => f.includes("/upgrade/"))).toBe(false);
+    expect(keepReport({ dir, store: join(root, "c"), upgrade: join(root, "nowhere") }).notKept[0]).toMatch(/^--upgrade .*nowhere: no report\.json/);
+    const c = JSON.parse(readFileSync(join(root, "b", "reports", id, "confidence.json"), "utf8")) as Confidence;
+    expect(c.run.reports.migration).toBe("migration/report.json");
+  }, 60_000);
+
+  it("relink moves whole path segments only, and leaves a score that links nothing moved as the same object", () => {
+    const c = { run: { reports: { release: "report.json", migration: "../m/x-migration/report.json" } }, dimensions: [{ evidence: ["../m/x-migration#top", "../m/x-migration-2/report.html", "no migration run directory"] }] } as unknown as Confidence;
+    const out = relink(c, [["../m/x-migration", "migration"]]) as unknown as { run: { reports: Record<string, string> }; dimensions: { evidence: string[] }[] };
+    expect(out.run.reports).toEqual({ release: "report.json", migration: "migration/report.json" });
+    expect(out.dimensions[0]!.evidence).toEqual(["migration#top", "../m/x-migration-2/report.html", "no migration run directory"]);
+    expect(relink(c, [["../elsewhere", "upgrade"], ["", "migration"]])).toBe(c);
+  });
+
   it("a noise run is never led, whatever sits beside it", () => {
     const root = tmp();
     const dir = runDir(root, ranAt, "noise", "pass", ["confidence.json", "changes.json"]);
@@ -191,5 +271,19 @@ describe("harness reports keep", () => {
     const code = reportsCommand("keep", { dir: runDir(root, "2026-09-26T07:57:09.931Z", "release", "warn"), store: join(root, "store"), "keep-last": "5" }, (m) => lines.push(m));
     expect(code).toBe(0);
     expect(lines.join("\n")).toMatch(/kept release 2026-09-26T07:57:09.931Z \(WARN\): reports\/2026-09-26T07-57-09Z-release\/ 5 file\(s\), score 90 \(A\)/);
+  });
+
+  it("takes --keep-days, --migration and --upgrade, and says which rehearsals it kept and which it could not", () => {
+    const root = tmp();
+    const lines: string[] = [];
+    const dir = runDir(root, "2026-09-26T07:57:09.931Z", "release", "warn");
+    const migration = rehearsalRun(root, "migration", { ranAt: "2026-09-26T07:40:00.000Z" });
+    const upgrade = rehearsalRun(root, "upgrade", { ranAt: "2026-09-26T07:41:00.000Z" });
+    expect(reportsCommand("keep", { dir, store: join(root, "store"), "keep-last": "5", "keep-days": "10", migration, upgrade }, (m) => lines.push(m))).toBe(0);
+    expect(lines.join("\n")).toMatch(/11 file\(s\), score 90 \(A\), with the migration and upgrade rehearsals$/);
+    lines.length = 0;
+    expect(reportsCommand("keep", { dir, store: join(root, "store"), upgrade: migration }, (m) => lines.push(m))).toBe(0);
+    expect(lines).toEqual([expect.stringMatching(/5 file\(s\), score 90 \(A\)$/), `  rehearsal not kept: --upgrade ${migration}: a migration-mode report, not upgrade`]);
+    expect(() => reportsCommand("keep", { dir, "keep-days": "0" })).toThrow(/--keep-days takes a whole number, 1 or more/);
   });
 });

@@ -1,6 +1,6 @@
 {
   "$comment": "What the harness's workflows accept from outside and publish, machine-readable. tests/contract.test.ts fails when this and .github/workflows disagree.",
-  "contractVersion": "1.15.0",
+  "contractVersion": "1.16.0",
   "repositoryDispatch": {
     "release-candidate": {
       "workflow": "release.yml",
@@ -107,7 +107,7 @@
     "schema": "release-record.schema.json"
   },
   "mainPreviewBranch": {
-    "$comment": "Since 1.5.0. Main to RC: release mode with production on side a and the monorepo's main on side b, a forecast kept apart from the release records so post-deploy never mistakes it for a judged candidate. Not force-pushed; the last 60 runs are kept.",
+    "$comment": "Since 1.5.0. Main to RC: release mode with production on side a and the monorepo's main on side b, a forecast kept apart from the release records so post-deploy never mistakes it for a judged candidate. Not force-pushed; the last 60 runs are kept, and since 1.16.0 every run of the last 10 days whatever the count, each with its migration and upgrade rehearsals.",
     "branch": "main-preview",
     "writtenBy": "main-preview.yml",
     "job": "publish",

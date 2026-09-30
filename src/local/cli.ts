@@ -172,12 +172,25 @@ export function overrideCommand(sub: string | undefined, v: Values): number {
 
 /** Keep a run's report where it outlives the artifact: the store's reports/ directory and its index.json (src/ci/report-archive.ts). */
 export function reportsCommand(sub: string | undefined, v: Values, log: (m: string) => void = (m) => console.log(m)): number {
-  if (sub !== "keep") throw new UsageError("reports keep --dir <run directory | report.json> [--store dir] [--run-url u] [--keep-last n] [--rules rules.json]");
+  if (sub !== "keep") throw new UsageError("reports keep --dir <run directory | report.json> [--store dir] [--run-url u] [--keep-last n] [--keep-days n] [--rules rules.json] [--migration dir] [--upgrade dir]");
   const dir = str(v, "dir");
   if (!dir) throw new UsageError("reports keep needs --dir <run directory | report.json>");
   const keepLast = v["keep-last"] === undefined ? undefined : integer(v, "keep-last", 0, 1);
-  const { entry, dropped } = keepReport({ dir, store: str(v, "store") ?? ".", ...(str(v, "run-url") ? { runUrl: str(v, "run-url")! } : {}), ...(keepLast ? { keepLast } : {}), ...(str(v, "rules") ? { rules: str(v, "rules")! } : {}) });
-  log(`kept ${entry.mode} ${entry.ranAt} (${entry.verdict.toUpperCase()}): reports/${entry.id}/ ${entry.files.length} file(s)${entry.score ? `, score ${entry.score.score} (${entry.score.grade})` : ""}${dropped.length ? `; removed ${dropped.length} older` : ""}`);
+  const keepDays = v["keep-days"] === undefined ? undefined : integer(v, "keep-days", 0, 1);
+  const opt = (name: string) => str(v, name);
+  const { entry, dropped, notKept } = keepReport({
+    dir,
+    store: opt("store") ?? ".",
+    ...(opt("run-url") ? { runUrl: opt("run-url")! } : {}),
+    ...(keepLast ? { keepLast } : {}),
+    ...(keepDays ? { keepDays } : {}),
+    ...(opt("rules") ? { rules: opt("rules")! } : {}),
+    ...(opt("migration") ? { migration: opt("migration")! } : {}),
+    ...(opt("upgrade") ? { upgrade: opt("upgrade")! } : {})
+  });
+  const rehearsals = entry.files.filter((f) => /\/(migration|upgrade)\/report\.json$/.test(f)).map((f) => f.split("/")[1]);
+  log(`kept ${entry.mode} ${entry.ranAt} (${entry.verdict.toUpperCase()}): reports/${entry.id}/ ${entry.files.length} file(s)${entry.score ? `, score ${entry.score.score} (${entry.score.grade})` : ""}${rehearsals.length ? `, with the ${rehearsals.join(" and ")} rehearsal${rehearsals.length > 1 ? "s" : ""}` : ""}${dropped.length ? `; removed ${dropped.length} older` : ""}`);
+  for (const why of notKept) log(`  rehearsal not kept: ${why}`);
   return 0;
 }
 

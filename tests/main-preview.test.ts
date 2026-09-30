@@ -206,4 +206,17 @@ describe("main-preview.yml: the forecast is scored as a candidate is (since 1.13
     expect(push).toContain("pnpm harness reports keep --dir \"../$(dirname \"$report\")\"");
     expect(push).toContain("confidence.json");
   });
+
+  it("keeps both rehearsals beside the forecast, and ten days of forecasts whatever the count (since 1.16.0)", () => {
+    const push = run("publish", "Push the report to the main-preview branch").run!;
+    expect(push).toContain("--keep-last 60 --keep-days 10");
+    // the same rehearsal directories the score read, so the kept confidence.json can link the kept copies
+    const score = run("publish", "Score the forecast").run!;
+    for (const mode of ["migration", "upgrade"]) {
+      const find = `${mode}="$(find rehearsals/${mode} -path '*-${mode}/report.json' 2>/dev/null | head -1)"`;
+      expect(score, mode).toContain(find);
+      expect(push, mode).toContain(find);
+      expect(push, mode).toContain(`keep_flags+=(--${mode} "../$(dirname "$${mode}")")`);
+    }
+  });
 });
