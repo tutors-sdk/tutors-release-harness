@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.16.0`
+Contract version: `1.16.1`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -20,6 +20,7 @@ The machine-readable half lives in [`docs/contract/`](contract/):
 | [`changes.schema.json`](contract/changes.schema.json) | `changes.json`, the change signals between two tags (since 1.10.0, not stable) |
 | [`scoreboard-line.schema.json`](contract/scoreboard-line.schema.json) | one line of `scoreboard/releases.jsonl`, the release scoreboard (since 1.11.0, not stable) |
 | [`glance-marks.schema.json`](contract/glance-marks.schema.json) | one line of `glance-marks.jsonl`, the Reviewer's marks on the glance (since 1.12.0, not stable) |
+| [`reports-index.schema.json`](contract/reports-index.schema.json) | `reports/index.json`, the kept reports of a branch (since 1.5.0; the schema since 1.16.1, not stable) |
 | [`cli.json`](contract/cli.json) | every command and flag, which are stable, the exit codes |
 | [`workflows.json`](contract/workflows.json) | dispatch events and payloads, repository variables, artifacts, permissions the workflows never hold |
 
@@ -1219,6 +1220,23 @@ rehearsal that cannot be kept (no report, or a report of another mode) is said a
 the run is kept without it. Without either flag `confidence.json` is kept byte for byte, as
 before.
 
+Since 1.16.1 the index has a schema, [`reports-index.schema.json`](contract/reports-index.schema.json),
+and a release run's entry carries `delta`: what moved in its unclaimed set since the previous
+kept release run beside the same baseline (side a's reader tag), read from that run's kept
+`report.json`. `baseline`; `against` (`id`, `ranAt`, `candidate`, `harnessVersion` of the run
+compared with, or `null` when none was kept beside this baseline: the first forecast, or
+production moved, so two baselines are never compared); and, when `against` is not null,
+`new`, `gone` and `byArtefact` (`{ new, gone }` for each artefact where something moved). A
+difference is the same in both runs when its artefact, its scope and its summary with every
+number masked are (hunk ids carry a counter, and a summary's line counts or milliseconds move
+from night to night); both are counted as multisets, so `new - gone` is always the change in the
+unclaimed count. A kept report that is led (a scored run) leads with **New since the last
+forecast** right under the Gate: the counts, the first 15 new differences, each linked to its row
+in `report.html`, and the first 10 gone ones; and it says when the run compared with was judged
+by another harness version, since a harness change can move differences too. `delta` is absent
+on a run kept before 1.16.1 and on a run of another mode. Advisory like the rest of the index: no
+verdict, Gate or exit code reads it.
+
 Since 1.5.0 the same reports are also a website:
 [tutors-sdk.github.io/tutors-release-harness](https://tutors-sdk.github.io/tutors-release-harness/).
 `pages.yml` copies each branch's `reports/` beside `site/index.html`, which lists
@@ -1296,8 +1314,10 @@ and it cannot be mistaken for a judged candidate, because it never writes the
   `confidence.json` and `changes.json`, the kept report led by the Gate, the RCS, the glance
   and the change risk. Since 1.16.0 the migration and upgrade rehearsals are kept beside it
   (`migration/`, `upgrade/`) and the kept `confidence.json` links them there, so the
-  Rehearsals dimension's evidence opens on the pages after the 14-day artifact is gone. The
-  report pages show the newest at the top.
+  Rehearsals dimension's evidence opens on the pages after the 14-day artifact is gone. Since
+  1.16.1 each forecast's entry carries `delta`, what is new and gone in its unclaimed set since
+  the previous forecast beside the same production, and its kept report leads with the new ones.
+  The report pages show the newest at the top.
 
 ## What the harness does to a pull request
 
@@ -1363,6 +1383,20 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.16.1 (patch; new since the last forecast)
+
+The release note is [releases/1.16.1.md](releases/1.16.1.md). The second step of the "Page"
+release. Additive for a consumer written against 1.16.0: no command, flag, `report.json` field,
+verdict or exit code changes, and the new field is optional (the same kind of change as 1.13.1's
+`confidence` and `changes`).
+
+- `reports/index.json`: a release run's entry gains the optional `delta` (`baseline`, `against`,
+  `new`, `gone`, `byArtefact`): what moved in the unclaimed set since the previous kept release
+  run beside the same baseline. See [Kept reports](#kept-reports).
+- `reports-index.schema.json`: the index's first schema, covering every field since 1.5.0.
+- A kept, scored report (Main to RC) leads with "New since the last forecast" under the Gate,
+  in `report.md` and `report.html`.
 
 ### 1.16.0 (minor; the record keeps its rehearsals and ten days)
 

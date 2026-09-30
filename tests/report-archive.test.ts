@@ -2,7 +2,11 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFil
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { Ajv } from "ajv";
 import { addEntry, entryId, keepReport, parseIndex, relink, type ReportEntry, type ReportIndex } from "../src/ci/report-archive.ts";
+import { deltaKey, unclaimedDelta } from "../src/report/delta.ts";
+import { DELTA_LISTED } from "../src/report/lead.ts";
+import type { Hunk } from "../src/types.ts";
 import type { Changes } from "../src/changes/signals.ts";
 import { reportsCommand, UsageError } from "../src/local/cli.ts";
 import { GLANCE_END, GLANCE_START } from "../src/glance/render.ts";
@@ -285,5 +289,152 @@ describe("harness reports keep", () => {
     expect(reportsCommand("keep", { dir, store: join(root, "store"), upgrade: migration }, (m) => lines.push(m))).toBe(0);
     expect(lines).toEqual([expect.stringMatching(/5 file\(s\), score 90 \(A\)$/), `  rehearsal not kept: --upgrade ${migration}: a migration-mode report, not upgrade`]);
     expect(() => reportsCommand("keep", { dir, "keep-days": "0" })).toThrow(/--keep-days takes a whole number, 1 or more/);
+  });
+});
+
+// ---- new since the last forecast (since 1.16.1) ---------------------------------------------------------
+
+const hunk = (artefact: string, scope: string, summary: string, n = 1): Hunk => ({ id: `${artefact}:${scope}:${n}`, artefact, scope, summary, severity: "fail" }) as Hunk;
+
+/** A release run with these unclaimed differences, beside `baseline`, as `<root>/<ranAt>-release/`. */
+function releaseRun(root: string, ranAt: string, unclaimed: Hunk[], o: { baseline?: string; candidate?: string; harness?: string } = {}): string {
+  const dir = join(root, "runs", `${ranAt.replace(/:/g, "-")}-release`);
+  mkdirSync(dir, { recursive: true });
+  const harness = o.harness ?? "1.16.1";
+  const report = {
+    schemaVersion: 1,
+    harness: { version: harness, gitSha: null, contractVersion: harness },
+    harnessVersion: harness,
+    mode: "release",
+    ranAt,
+    verdict: unclaimed.length ? "fail" : "pass",
+    reasons: [`${unclaimed.length} unclaimed diff(s)`],
+    compare: { hunks: unclaimed, matches: unclaimed.map((h) => ({ hunk: h })), unclaimed, staleClaims: [], broadUnapproved: [] },
+    sides: { a: { reader: `quay.io/tutors-sdk/tutors-reader:${o.baseline ?? "16.2.2"}` }, b: { reader: `quay.io/tutors-sdk/tutors-reader:${o.candidate ?? "sha-0000001"}` } }
+  };
+  writeFileSync(join(dir, "report.json"), JSON.stringify(report));
+  writeFileSync(join(dir, "report.md"), "## release\n");
+  writeFileSync(join(dir, "report.html"), "<p>report</p>");
+  return dir;
+}
+
+describe("new since the last forecast: the delta (since 1.16.1)", () => {
+  it("a difference is the same across runs when its artefact, scope and summary with every number masked are", () => {
+    expect(deltaKey(hunk("dom", "reader:home", "semantic DOM differs (+51 −25 lines at line 4)"))).toBe(deltaKey(hunk("dom", "reader:home", "semantic DOM differs (+6 −7 lines at line 36)", 9)));
+    expect(deltaKey(hunk("dom", "reader:home", "x 1.5 ms"))).not.toBe(deltaKey(hunk("dom", "reader:course", "x 1.5 ms")));
+    expect(deltaKey(hunk("dom", "reader:home", "x"))).not.toBe(deltaKey(hunk("axe", "reader:home", "x")));
+  });
+
+  it("counts as multisets, so new − gone is always the change in the unclaimed count", () => {
+    const prev = [hunk("dom", "a", "moved 1"), hunk("dom", "a", "moved 2"), hunk("sbom", "reader", "package removed: curl"), hunk("sbom", "reader", "package removed: git")];
+    const cur = [hunk("dom", "a", "moved 7"), hunk("dom", "a", "moved 8"), hunk("dom", "a", "moved 9"), hunk("network", "GET /x", "requested 3 times")];
+    const { fresh, gone } = unclaimedDelta(cur, prev);
+    expect(fresh.map((h) => h.summary)).toEqual(["moved 9", "requested 3 times"]);
+    expect(gone.map((h) => h.summary)).toEqual(["package removed: curl", "package removed: git"]);
+    expect(fresh.length - gone.length).toBe(cur.length - prev.length);
+    expect(unclaimedDelta(cur, cur)).toEqual({ fresh: [], gone: [] });
+  });
+
+  it("stores the delta against the previous kept release run beside the same baseline, and starts again when production moves", () => {
+    const root = tmp();
+    const store = join(root, "store");
+    const first = keepReport({ dir: releaseRun(root, "2026-09-27T09:14:51.000Z", [hunk("dom", "reader:home", "moved 1"), hunk("sbom", "reader", "package removed: curl")], { candidate: "sha-54a8f83" }), store }).entry;
+    expect(first.delta).toEqual({ baseline: "16.2.2", against: null });
+    const second = keepReport({ dir: releaseRun(root, "2026-09-28T03:45:17.000Z", [hunk("dom", "reader:home", "moved 4"), hunk("axe", "reader:course", "color-contrast"), hunk("axe", "reader:topic", "color-contrast")], { candidate: "sha-017ceb6", harness: "1.16.1" }), store }).entry;
+    expect(second.delta).toEqual({
+      baseline: "16.2.2",
+      against: { id: "2026-09-27T09-14-51Z-release", ranAt: "2026-09-27T09:14:51.000Z", candidate: "sha-54a8f83", harnessVersion: "1.16.1" },
+      new: 2,
+      gone: 1,
+      byArtefact: { axe: { new: 2, gone: 0 }, sbom: { new: 0, gone: 1 } }
+    });
+    // production moved: nothing is compared across baselines
+    const moved = keepReport({ dir: releaseRun(root, "2026-09-29T03:45:17.000Z", [hunk("dom", "reader:home", "moved 4")], { baseline: "16.3.0" }), store }).entry;
+    expect(moved.delta).toEqual({ baseline: "16.3.0", against: null });
+    // back on 16.2.2 (a run by hand), the previous 16.2.2 run is the one compared with, not the newest
+    const back = keepReport({ dir: releaseRun(root, "2026-09-29T09:00:00.000Z", [hunk("dom", "reader:home", "moved 4")]), store }).entry;
+    expect(back.delta).toMatchObject({ against: { id: "2026-09-28T03-45-17Z-release" }, new: 0, gone: 2 });
+    // kept again (a re-run of the same job): compared with the run before it, never with itself
+    expect(keepReport({ dir: releaseRun(root, "2026-09-29T09:00:00.000Z", [hunk("dom", "reader:home", "moved 4")]), store }).entry.delta).toEqual(back.delta);
+    expect(parseIndex(readFileSync(join(store, "reports", "index.json"), "utf8")).runs.find((r) => r.id === second.id)!.delta).toEqual(second.delta);
+  });
+
+  it("passes over an earlier run whose kept report cannot be read, and never computes a delta for a noise run", () => {
+    const root = tmp();
+    const store = join(root, "store");
+    keepReport({ dir: releaseRun(root, "2026-09-27T00:00:00.000Z", [hunk("dom", "a", "x")], { candidate: "sha-aaaaaaa" }), store });
+    keepReport({ dir: releaseRun(root, "2026-09-28T00:00:00.000Z", [], { candidate: "sha-bbbbbbb" }), store });
+    writeFileSync(join(store, "reports", "2026-09-28T00-00-00Z-release", "report.json"), "{not json");
+    const { entry: kept } = keepReport({ dir: releaseRun(root, "2026-09-29T00:00:00.000Z", [hunk("dom", "a", "x"), hunk("dom", "b", "y")]), store });
+    expect(kept.delta).toMatchObject({ against: { candidate: "sha-aaaaaaa" }, new: 1, gone: 0 });
+    expect(keepReport({ dir: runDir(root, "2026-09-29T02:17:00.000Z"), store }).entry.delta).toBeUndefined();
+  });
+
+  it("leads a kept forecast with the new differences, under the Gate and above the RCS, each linked to its row", async () => {
+    const ranAt = "2026-09-28T05:00:00.000Z";
+    const id = "2026-09-28T05-00-00Z-release";
+    const root = tmp();
+    const store = join(root, "store");
+    keepReport({ dir: await scoredRun(join(root, "one"), { ranAt: "2026-09-27T05:00:00.000Z", unclaimed: 1 }), store });
+    const dir = await scoredRun(join(root, "two"), { ranAt, unclaimed: 3 });
+    const { entry: kept } = keepReport({ dir, store });
+    // "screenshot /topic moved 0", "... moved 1", "... moved 2": the same kind, one more of it each night
+    expect(kept.delta).toMatchObject({ new: 2, gone: 0, byArtefact: { screenshot: { new: 2, gone: 0 } } });
+    const md = readFileSync(join(store, "reports", id, "report.md"), "utf8");
+    const at = (s: string) => md.indexOf(s);
+    expect(at("**Gate: FAIL**")).toBeLessThan(at("#### New since the last forecast"));
+    expect(at("#### New since the last forecast")).toBeLessThan(at("**RCS") >= 0 ? at("**RCS") : at("No RCS"));
+    expect(md).toContain("**2 new, 0 gone** in the unclaimed set since the forecast of 2026-09-27T05:00:00.000Z (`sha-3f1c2a9`), beside the same baseline `1.0.4`. By artefact: screenshot +2 −0.");
+    expect(md).toContain("| screenshot | /topic | screenshot /topic moved 2 |");
+    const html = readFileSync(join(store, "reports", id, "report.html"), "utf8");
+    expect(html.indexOf('<p class="gate fail">')).toBeLessThan(html.indexOf('<h2 id="delta">New since the last forecast</h2>'));
+    expect(html.indexOf('<h2 id="delta">')).toBeLessThan(html.indexOf('<p class="rcs'));
+    expect(html).toContain('<a href="#hunk-screenshot:/topic:4"><code>/topic</code></a>');
+    // the first forecast beside a baseline says so
+    const first = readFileSync(join(store, "reports", "2026-09-27T05-00-00Z-release", "report.md"), "utf8");
+    expect(first).toContain("The first kept forecast beside `1.0.4`: nothing earlier to compare with.");
+  }, 60_000);
+
+  it("lists at most the first new and gone differences, counts the rest, escapes what it shows, and names a harness change", async () => {
+    const { deltaLeadHtml, deltaLeadMarkdown } = await import("../src/report/lead.ts");
+    const fresh = Array.from({ length: DELTA_LISTED.fresh + 2 }, (_, i) => hunk("dom", `p${i}`, `a | b <i>`, i));
+    const gone = Array.from({ length: DELTA_LISTED.gone + 1 }, (_, i) => hunk("axe", `q${i}`, "gone", i));
+    const d = { delta: { baseline: "16.2.2", against: { id: "x", ranAt: "2026-09-28T08:59:53.000Z", candidate: "sha-185e87f", harnessVersion: "1.15.0" }, new: fresh.length, gone: gone.length, byArtefact: { axe: { new: 0, gone: gone.length }, dom: { new: fresh.length, gone: 0 } } }, harnessVersion: "1.16.1", fresh, gone };
+    const md = deltaLeadMarkdown(d);
+    expect(md.match(/^\| dom \|/gm)).toHaveLength(DELTA_LISTED.fresh);
+    expect(md).toContain("| dom | p0 | a \\| b <i> |");
+    expect(md).toContain("and 2 more new");
+    expect(md).toContain("; and 1 more.");
+    expect(md).toContain("judged by harness 1.15.0, this one by 1.16.1");
+    const html = deltaLeadHtml(d);
+    expect(html).not.toContain("<i>");
+    expect(html).toContain("a | b &lt;i&gt;");
+    expect(html).toContain("<strong>17 new, 11 gone</strong>");
+  });
+
+  it("the index matches docs/contract/reports-index.schema.json, delta included", () => {
+    const root = tmp();
+    const store = join(root, "store");
+    keepReport({ dir: releaseRun(root, "2026-09-27T00:00:00.000Z", [hunk("dom", "a", "x")]), store, runUrl: "https://github.com/o/r/actions/runs/1" });
+    keepReport({ dir: releaseRun(root, "2026-09-28T00:00:00.000Z", [hunk("axe", "a", "x")]), store });
+    keepReport({ dir: runDir(root, "2026-09-28T02:17:00.000Z"), store });
+    const ajv = new Ajv({ allErrors: true, strict: true });
+    ajv.addFormat("date-time", /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/);
+    const validate = ajv.compile(JSON.parse(readFileSync(join(import.meta.dirname, "..", "docs", "contract", "reports-index.schema.json"), "utf8")));
+    const index = JSON.parse(readFileSync(join(store, "reports", "index.json"), "utf8"));
+    expect(index.runs.map((r: ReportEntry) => (r.delta ? (r.delta.against?.id ?? null) : "-"))).toEqual(["-", "2026-09-27T00-00-00Z-release", null]);
+    validate(index);
+    expect(validate.errors ?? []).toEqual([]);
+    // every field an entry can carry is in the schema (additionalProperties: false does the rest)
+    const full: Required<ReportEntry> = {
+      ...index.runs[1],
+      runUrl: "u",
+      confidence: { gate: "FAIL", rcs: null, band: null, meaning: "m", note: "n", glance: 1, scoredBy: "1.16.1" },
+      changes: { score: 0, prs: 1, risky: 1, floorBreached: true, range: "v1..v2" }
+    };
+    validate({ schemaVersion: 1, runs: [full] });
+    expect(validate.errors ?? []).toEqual([]);
+    validate({ schemaVersion: 1, runs: [{ ...full, delta: { baseline: "16.2.2", against: null, surprise: 1 } }] });
+    expect(validate.errors?.length).toBeGreaterThan(0);
   });
 });
