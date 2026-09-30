@@ -208,7 +208,7 @@ describe("report.json", () => {
     const cli = json("docs/contract/cli.json");
     for (const flag of cli.flags.filter((f: { since?: string }) => f.since === "1.2.0")) expect(changes, flag.name).toContain(`--${flag.name === "runtime" ? "no-runtime" : flag.name}`);
     for (const [name, v] of Object.entries(cli.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.2.0")) expect(changes, name).toContain(name);
-    expect(CONTRACT_VERSION).toBe("1.16.1");
+    expect(CONTRACT_VERSION).toBe("1.17.0");
     // The harness version is package.json's and moves at least as far as the contract's (docs/contract.md, Versioning):
     // a mask or engine PR bumps the patch of the harness alone, so do not pin a literal here.
     expect(json("package.json").version).toBe(HARNESS_VERSION);
@@ -278,6 +278,20 @@ describe("report.json", () => {
     for (const command of cliJson.commands.filter((c: { since?: string }) => c.since === "1.5.0")) expect(changes, command.name).toContain(command.name);
     for (const [name, v] of Object.entries(cliJson.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.5.0")) expect(changes, name).toContain(name);
     for (const workflow of ["main-preview.yml", "pages.yml"]) expect(changes, workflow).toContain(workflow);
+  });
+
+  it("1.17.0: its changelog and release note name the command, the schema, the pages step and the link on the index", () => {
+    const start = contractMd.indexOf("### 1.17.0");
+    const end = contractMd.indexOf("### 1.16.1");
+    expect(start).toBeGreaterThan(0);
+    expect(end).toBeGreaterThan(start);
+    const changes = contractMd.slice(start, end);
+    expect(changes).toContain("releases/1.17.0.md");
+    const note = readFileSync(resolve(ROOT, "docs/releases/1.17.0.md"), "utf8");
+    for (const item of ["harness readiness --site", "readiness.schema.json", "pages.yml", "site/index.html", "No new permission"]) expect(changes.replace(/\s+/g, " "), item).toContain(item);
+    for (const item of ["readiness.html", "unchanged since", "not known", "No band"]) expect(note, item).toContain(item);
+    expect(contractMd).toContain("## The overnight readiness page");
+    expect(contractMd).toContain("| [`readiness.schema.json`](contract/readiness.schema.json) |");
   });
 
   it("1.13.1: its changelog and release note name the rehearsals' artifacts, the kept score, the index fields and the page", () => {

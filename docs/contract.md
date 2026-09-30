@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.16.1`
+Contract version: `1.17.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -21,6 +21,7 @@ The machine-readable half lives in [`docs/contract/`](contract/):
 | [`scoreboard-line.schema.json`](contract/scoreboard-line.schema.json) | one line of `scoreboard/releases.jsonl`, the release scoreboard (since 1.11.0, not stable) |
 | [`glance-marks.schema.json`](contract/glance-marks.schema.json) | one line of `glance-marks.jsonl`, the Reviewer's marks on the glance (since 1.12.0, not stable) |
 | [`reports-index.schema.json`](contract/reports-index.schema.json) | `reports/index.json`, the kept reports of a branch (since 1.5.0; the schema since 1.16.1, not stable) |
+| [`readiness.schema.json`](contract/readiness.schema.json) | `readiness.json`, the overnight readiness page (since 1.17.0, not stable) |
 | [`cli.json`](contract/cli.json) | every command and flag, which are stable, the exit codes |
 | [`workflows.json`](contract/workflows.json) | dispatch events and payloads, repository variables, artifacts, permissions the workflows never hold |
 
@@ -995,6 +996,39 @@ written, `2` for a usage error (no `--site`, a directory that does not exist, an
 reads `a3.json` but the site. `pages.yml` runs it after the reports are copied, with
 `actions: read` for the workflow runs; a failure is a warning and the site deploys without it.
 
+## The overnight readiness page
+
+**`harness readiness --site <dir> [--github f]`** (not stable, since 1.17.0) reads the Main to
+RC forecasts the pages workflow has copied into the site (`main-preview/reports/index.json` and
+the kept `report.json` and rehearsals beside each run) and Main to RC's workflow runs from
+`github.json` (the snapshot `harness a3 --fetch-github` writes into the site; `--github f` reads
+another), and writes `readiness.html` and `readiness.json`
+([`readiness.schema.json`](contract/readiness.schema.json)) into the site.
+
+One row per **calendar night** (UTC) for the last ten nights, tonight included, newest on top.
+A night on which a forecast was kept carries, for each run that night (the newest leads): the
+commit side b was built from (the full sha when every image agrees, with a link to it in the
+monorepo) and its image digests, side a (production) and side b's tag, the Gate
+(`confidence.json`'s, or the verdict for a run kept before the score), the unclaimed count, the
+index entry's `delta` (new and gone since the previous forecast beside the same production;
+"not counted" for a run kept before 1.16.1), and links to the kept `report.html`, its
+rehearsals (since 1.16.0, with their verdicts) and the workflow run. The band is left off the
+row: while the change-risk review floor caps the score at 74 it is Red on any night the Gate
+passes, so the Gate is what the row carries.
+
+A night that kept nothing is said in words, from the workflow history: **unchanged** when Main
+to RC finished green and kept nothing (`harness preview resolve` skipped a pair it had already
+judged), shown in grey with the Gate of the forecast it repeats and that forecast's commit;
+**not judged** when it failed or was cancelled; **running**; **not yet** (tonight, before a
+run); **did not run**. Without `github.json`, or when GitHub did not answer for
+`main-preview.yml`, such a night is **not known**, never "did not run". Where production moved
+between two rows the page draws a rule and says so: the delta starts again.
+
+Exit `0` when the page is written, `2` for a usage error (no `--site`, a directory that does not
+exist, a `--github` that is not a snapshot). Advisory: **nothing here changes a verdict, a Gate
+or an exit code**. `pages.yml` runs it after the A3, which writes `github.json`; a failure is a
+warning and the site deploys without it.
+
 ## CLI
 
 Full list: [`contract/cli.json`](contract/cli.json). Invoke as `pnpm harness
@@ -1251,6 +1285,8 @@ today": its Gate, RCS and band with the band's meaning, what stops the line, the
 with its links, the change risk per PR, when it ran and with which harness, and links to
 the full report, [docs/lean.md](lean.md) and the how-to-run guide. A forecast kept
 before the score existed says so and shows no number.
+Since 1.17.0 its top links `readiness.html`, [the overnight readiness page](#the-overnight-readiness-page),
+which `pages.yml` builds after the A3.
 
 Each kept run also has `scorecard.json` and `scorecard.md` (`harness scorecard`,
 `src/ci/scorecard.ts`), derived from its `report.json` alone. **Informational:
@@ -1383,6 +1419,21 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.17.0 (minor; the overnight readiness page: `harness readiness`)
+
+The release note is [releases/1.17.0.md](releases/1.17.0.md). The third step of the "Page"
+release. Additive for a consumer written against 1.16.1: no `report.json` field, verdict or
+exit code of an existing command changes. A minor because it adds a command.
+
+- `harness readiness --site <dir> [--github f]` (not stable): writes `readiness.html` and
+  `readiness.json` ([the overnight readiness page](#the-overnight-readiness-page)): one row per
+  night for the last ten, from the kept Main to RC forecasts and Main to RC's workflow runs in
+  `github.json`; no flag is new.
+- `readiness.schema.json`: the schema of `readiness.json`.
+- `pages.yml`: a step "The overnight readiness page" after the A3 (a failure is a warning). No
+  new permission, job or artifact.
+- `site/index.html`: a link to `readiness.html` at the top.
 
 ### 1.16.1 (patch; new since the last forecast)
 

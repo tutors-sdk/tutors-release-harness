@@ -72,6 +72,12 @@ describe("site/index.html", () => {
     expect(PAGE).toContain("What main would ship today");
   });
 
+  it("links the overnight readiness page at the top, before every section (since 1.17.0)", () => {
+    const at = PAGE.indexOf('href="readiness.html"');
+    expect(at).toBeGreaterThan(PAGE.indexOf("<h1>"));
+    expect(at).toBeLessThan(PAGE.indexOf("<section"));
+  });
+
   it("stays a static page: no external script, stylesheet or font", () => {
     expect(PAGE).not.toMatch(/<script[^>]+src=/);
     expect(PAGE).not.toMatch(/<link[^>]+stylesheet/);
