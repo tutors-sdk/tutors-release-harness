@@ -38,14 +38,43 @@ export function releaseReport(o: { ranAt: string; unclaimed?: number; harness?: 
   } as unknown as RunReport;
 }
 
-/** `<root>/out/<ranAt>-release/` with the report, changes.json and confidence.json, as the preview job leaves it. */
-export async function scoredRun(root: string, o: { ranAt: string; unclaimed?: number }): Promise<string> {
+/**
+ * `<root>/rehearsals/<mode>/<ranAt>-<mode>/` with report.json, report.md and report.html, as the publish job of
+ * main-preview.yml downloads a rehearsal's artifact. An upgrade rehearsal carries its rollout under load.
+ */
+export function rehearsalRun(root: string, mode: "migration" | "upgrade", o: { ranAt: string; verdict?: "pass" | "fail" }): string {
+  const dir = join(root, "rehearsals", mode, `${o.ranAt.replace(/[:.]/g, "-")}-${mode}`);
+  mkdirSync(dir, { recursive: true });
+  const verdict = o.verdict ?? "pass";
+  const report = {
+    schemaVersion: 1,
+    harness: { version: "1.15.0", gitSha: null, contractVersion: "1.15.0" },
+    harnessVersion: "1.15.0",
+    mode,
+    ranAt: o.ranAt,
+    verdict,
+    reasons: verdict === "fail" ? ["778 finding(s) during the rollout"] : ["no findings"],
+    sides: { a: { reader: "1.0.4" }, b: { reader: "sha-3f1c2a9" } },
+    compare: { hunks: [], matches: [], unclaimed: [], staleClaims: [], broadUnapproved: [] },
+    ...(mode === "upgrade" ? { upgrade: { substrate: "compose", requests: 600, failed: 0, serverErrors: 0, byUpstream: {} } } : {})
+  };
+  writeFileSync(join(dir, "report.json"), JSON.stringify(report, null, 2));
+  writeFileSync(join(dir, "report.md"), `## ${mode} rehearsal: ${verdict.toUpperCase()}\n`);
+  writeFileSync(join(dir, "report.html"), `<html><head></head><body><h2 id="${mode}">${mode}</h2></body></html>`);
+  return dir;
+}
+
+/**
+ * `<root>/out/<ranAt>-release/` with the report, changes.json and confidence.json, as the preview job leaves it. With
+ * `rehearsals`, the score read them too, as the publish job's "Score the forecast" step does.
+ */
+export async function scoredRun(root: string, o: { ranAt: string; unclaimed?: number; rehearsals?: { migration?: string; upgrade?: string } }): Promise<string> {
   const dir = join(root, "out", `${o.ranAt.replace(/[:.]/g, "-")}-release`);
   mkdirSync(dir, { recursive: true });
   writeReports(dir, releaseReport(o));
   const changes = join(dir, "changes.json");
   await runChanges({ a: "1.0.4", b: "1.1.0", monorepo: changesRepo(), history: 6, out: changes }, { env: {}, reviews: { approved: async (pr: number) => pr !== 11 } });
-  scoreAndWrite({ outDir: dir, release: dir, changeRisk: changes, harness: { version: "1.13.1", contractVersion: "1.13.1" } });
+  scoreAndWrite({ outDir: dir, release: dir, ...o.rehearsals, changeRisk: changes, harness: { version: "1.13.1", contractVersion: "1.13.1" } });
   return dir;
 }
 

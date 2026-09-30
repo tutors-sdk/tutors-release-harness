@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.15.0`
+Contract version: `1.16.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -1019,7 +1019,7 @@ text; the file `noise-history.json` is what a program reads), `harness prune` (d
 old run directories and an old image cache: a dry run unless `--yes`, and no workflow
 calls it) and the flags only they take (`--only`, `--migrations-a`, `--migrations-b`,
 `--interval`, `--port-offset`, `--dry-run`, `--once`, `--record`, `--last`, `--since`,
-`--older-than-days`, `--keep-last`, `--image-cache-days`, `--yes`, `--strict`, `--no-load`) are not,
+`--older-than-days`, `--keep-last`, `--keep-days` (since 1.16.0), `--image-cache-days`, `--yes`, `--strict`, `--no-load`) are not,
 and neither are `harness release` and the flags only it takes (`--candidate`, `--baseline`,
 `--monorepo`, `--fast`, `--open`; since 1.8.0), nor `harness confidence` and the flags it takes
 (`--run`, `--migration`, `--upgrade`, `--test-signal`, `--traceability`, `--change-risk`,
@@ -1181,7 +1181,7 @@ index, readable by anyone at a raw URL:
 | --- | --- | --- |
 | `noise` | `nightly-noise.yml`, `publish` job | the last 14 nights |
 | `release-records` | `release.yml`, `publish-record` job | every judged candidate |
-| `main-preview` | `main-preview.yml`, `publish` job | the last 60 forecasts ([Main to RC](#main-to-rc)) |
+| `main-preview` | `main-preview.yml`, `publish` job | the last 60 forecasts, and since 1.16.0 every forecast of the last 10 days ([Main to RC](#main-to-rc)) |
 
 `reports/index.json` is `{ "schemaVersion": 1, "runs": [...] }`, newest first. Each
 run has `id` (`<ranAt>-<mode>`, the colons as dashes: `2026-09-26T07-57-09Z-noise`),
@@ -1204,6 +1204,20 @@ report). The run's entry in `index.json` then also has `confidence` (`gate`, `rc
 with a deduction, `floorBreached`, `range`). Both are optional: a run kept before 1.13.1, or
 not scored, has neither, and a reader must not invent them. `report.json` is still kept byte
 for byte.
+
+Since 1.16.0, `--keep-days n` is a floor under `--keep-last`: a run whose `ranAt` is less than
+`n` days before the keep is never dropped, whatever the count, so a day of runs by hand cannot
+push a night out of the record (400 runs is the ceiling of any store either way). And
+`--migration` and `--upgrade` keep the run's two rehearsals beside it, in
+`reports/<id>/migration/` and `reports/<id>/upgrade/` (`report.json`, `report.md` and
+`report.html`, byte for byte, listed in `files`). The kept `confidence.json` then links them
+there: every path it wrote relative to the runner's rehearsal directory
+(`run.reports.migration`, `run.reports.upgrade` and the Rehearsals dimension's evidence, such
+as `../../rehearsals/upgrade/<ranAt>-upgrade/report.html#upgrade`, which the pages never had)
+reads from the kept copy (`upgrade/report.html#upgrade`), and nothing else in it changes. A
+rehearsal that cannot be kept (no report, or a report of another mode) is said and skipped;
+the run is kept without it. Without either flag `confidence.json` is kept byte for byte, as
+before.
 
 Since 1.5.0 the same reports are also a website:
 [tutors-sdk.github.io/tutors-release-harness](https://tutors-sdk.github.io/tutors-release-harness/).
@@ -1277,10 +1291,13 @@ and it cannot be mistaken for a judged candidate, because it never writes the
   Both are advisory: a step that cannot run says why and the forecast is kept without it.
   Nothing is appended to the scoreboard: a forecast is not a release.
 - **Kept** on the `main-preview` branch, one commit per run, never forced, the last
-  60 runs: `reports/index.json` and each run's report and scorecard, as in
-  [Kept reports](#kept-reports), and since 1.13.1 its `confidence.json` and
-  `changes.json`, the kept report led by the Gate, the RCS, the glance and the change
-  risk. The report pages show the newest at the top.
+  60 runs and (since 1.16.0) every run of the last 10 days: `reports/index.json` and each
+  run's report and scorecard, as in [Kept reports](#kept-reports), and since 1.13.1 its
+  `confidence.json` and `changes.json`, the kept report led by the Gate, the RCS, the glance
+  and the change risk. Since 1.16.0 the migration and upgrade rehearsals are kept beside it
+  (`migration/`, `upgrade/`) and the kept `confidence.json` links them there, so the
+  Rehearsals dimension's evidence opens on the pages after the 14-day artifact is gone. The
+  report pages show the newest at the top.
 
 ## What the harness does to a pull request
 
@@ -1346,6 +1363,24 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.16.0 (minor; the record keeps its rehearsals and ten days)
+
+The release note is [releases/1.16.0.md](releases/1.16.0.md). The first step of the "Page"
+release (the overnight readiness page). Additive for a consumer written against 1.15.0: no
+verdict, exit code, `report.json` field, stable command or flag changes; a new flag on a
+command that is not stable.
+
+- `harness reports keep` (not stable) takes `--keep-days n`: a floor under `--keep-last`, so a
+  run younger than `n` days is never pruned, whatever the count.
+- `harness reports keep` takes `--migration` and `--upgrade`: the run's rehearsals are kept
+  beside it in `reports/<id>/migration/` and `reports/<id>/upgrade/`, and the kept
+  `confidence.json` links them there instead of the runner's `../../rehearsals/...`, which did
+  not exist on the pages. Its `run.reports.migration`, `run.reports.upgrade` and the
+  Rehearsals dimension's evidence change; nothing else in it does. Kept before 1.16.0, a
+  forecast still has the dead links: nothing rewrites history.
+- `main-preview.yml`'s `publish` job passes both rehearsals and `--keep-days 10` beside
+  `--keep-last 60`. No new permission, job or artifact.
 
 ### 1.15.0 (minor; fixes on b are decisions, not failures)
 

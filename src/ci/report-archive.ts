@@ -1,7 +1,8 @@
 /**
  * The reports that outlive their artifact.
  *
- *   harness reports keep --dir <run dir> [--store dir] [--run-url U] [--keep-last n]
+ *   harness reports keep --dir <run dir> [--store dir] [--run-url U] [--keep-last n] [--keep-days n]
+ *                        [--migration <run dir>] [--upgrade <run dir>]
  *
  * An Actions artifact is gone after 8 to 30 days, and reading one needs a token
  * and the artifact storage host. The branches the workflows already publish
@@ -19,6 +20,8 @@
  *   <store>/reports/<id>/scorecard.md
  *   <store>/reports/<id>/confidence.json  since 1.13.1, when the run was scored beside it (harness confidence --run <run dir>)
  *   <store>/reports/<id>/changes.json     since 1.13.1, when harness changes wrote it beside the run
+ *   <store>/reports/<id>/migration/report.{json,md,html}  since 1.16.0, the rehearsals given by --migration and --upgrade
+ *   <store>/reports/<id>/upgrade/report.{json,md,html}
  *
  * A release run scored beside it (Main to RC does this) is kept with its score: confidence.json and changes.json byte
  * for byte, and report.md and report.html led by the Gate, the RCS and its band, the reviewer's glance and the change
@@ -26,14 +29,22 @@
  * unchanged. The index entry then carries the Gate, the RCS, the band and its meaning, and the glance and PR counts, so a
  * page can say what main would ship without opening a file. A confidence.json that scored another run is not kept.
  *
+ * Since 1.16.0 the migration and upgrade rehearsals of the run (--migration, --upgrade) are kept beside it, in
+ * `migration/` and `upgrade/`, report files only. confidence.json linked each one relative to where it was scored
+ * (`../../rehearsals/upgrade/<ranAt>-upgrade/report.html#upgrade`, a directory of a runner that is gone); the kept
+ * confidence.json names the kept copy instead (`upgrade/report.html#upgrade`), and is otherwise as written.
+ *
  * `<id>` is the run's ranAt and mode (`2026-09-26T07-57-09Z-noise`), so a re-run
  * of the same job replaces its entry and never duplicates it. With --keep-last
  * only the newest n runs are kept and older directories are removed: the
  * `noise` branch is force-pushed every night and must not grow. Without it every
- * run is kept (the release records are one commit per candidate).
+ * run is kept (the release records are one commit per candidate). Since 1.16.0
+ * --keep-days n is a floor under --keep-last: a run that ran less than n days
+ * ago is never dropped, whatever the count, so a day of runs by hand cannot push
+ * a night out of the record. No store keeps more than 400 runs either way.
  */
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { join, relative, resolve } from "node:path";
 import type { Mode, RunReport, Verdict } from "../types.ts";
 import { readRulePrs, renderScorecard, scorecard, type Scorecard } from "./scorecard.ts";
 import { CHANGES_FILE, type Changes } from "../changes/signals.ts";
@@ -45,7 +56,11 @@ import { renderGateSummary } from "../local/tasks.ts";
 export const REPORTS_DIR = "reports";
 export const INDEX_FILE = "index.json";
 export const KEPT_FILES = ["report.json", "report.md", "report.html"] as const;
+/** The rehearsals kept beside a run (since 1.16.0), each in the directory of its name. */
+export const REHEARSALS = ["migration", "upgrade"] as const;
+export type Rehearsal = (typeof REHEARSALS)[number];
 const MAX_ENTRIES = 400;
+const DAY_MS = 86_400_000;
 
 export interface ReportEntry {
   id: string;
@@ -93,11 +108,24 @@ export function parseIndex(text: string | undefined): ReportIndex {
   }
 }
 
-/** Upsert by id, newest first, bounded. Returns the index and the ids that fell off the end. */
-export function addEntry(index: ReportIndex, entry: ReportEntry, keepLast?: number): { index: ReportIndex; dropped: string[] } {
+/** How far back --keep-days reaches: never drop a run that ran at or after `since` (ms since the epoch). */
+export interface KeepFloor {
+  keepDays: number;
+  now: number;
+}
+
+/**
+ * Upsert by id, newest first, bounded. Returns the index and the ids that fell off the end. `keepLast` bounds the count;
+ * `floor` (since 1.16.0) keeps every run younger than its days even past that count. 400 runs is the ceiling of both.
+ */
+export function addEntry(index: ReportIndex, entry: ReportEntry, keepLast?: number, floor?: KeepFloor): { index: ReportIndex; dropped: string[] } {
   const runs = [entry, ...index.runs.filter((r) => r.id !== entry.id)].sort((x, y) => y.ranAt.localeCompare(x.ranAt));
   const limit = Math.min(keepLast ?? MAX_ENTRIES, MAX_ENTRIES);
-  return { index: { schemaVersion: 1, runs: runs.slice(0, limit) }, dropped: runs.slice(limit).map((r) => r.id) };
+  const since = floor ? floor.now - floor.keepDays * DAY_MS : undefined;
+  // Newest first, so the runs inside the floor are a prefix: keep whichever of the two prefixes is longer.
+  const young = since === undefined ? 0 : runs.filter((r) => Date.parse(r.ranAt) >= since).length;
+  const keep = Math.min(Math.max(limit, young), MAX_ENTRIES);
+  return { index: { schemaVersion: 1, runs: runs.slice(0, keep) }, dropped: runs.slice(keep).map((r) => r.id) };
 }
 
 /** The run's report.json: the directory that holds it, or the file itself. */
@@ -113,11 +141,18 @@ export interface KeepOptions {
   store: string;
   runUrl?: string;
   keepLast?: number;
+  /** Since 1.16.0: never drop a run younger than this many days, whatever --keep-last says. */
+  keepDays?: number;
+  /** The clock --keep-days reads (ms since the epoch); the wall clock when absent. */
+  now?: number;
   /** rules.json, for the PRs a Rule names; optional. */
   rules?: string;
+  /** Since 1.16.0: the migration and upgrade rehearsals of this run, a run directory or its report.json each. */
+  migration?: string;
+  upgrade?: string;
 }
 
-export function keepReport(opts: KeepOptions): { entry: ReportEntry; dropped: string[] } {
+export function keepReport(opts: KeepOptions): { entry: ReportEntry; dropped: string[]; notKept: string[] } {
   const reportFile = reportFileOf(opts.dir);
   const runDir = resolve(reportFile, "..");
   const report = JSON.parse(readFileSync(reportFile, "utf8")) as RunReport;
@@ -128,7 +163,23 @@ export function keepReport(opts: KeepOptions): { entry: ReportEntry; dropped: st
   rmSync(target, { recursive: true, force: true });
   mkdirSync(target, { recursive: true });
   const files: string[] = [];
-  const scored = scoredBeside(runDir, report);
+  // The rehearsals first: where each was, as confidence.json linked it, so the kept score can name the kept copy.
+  // A rehearsal that cannot be kept is said and skipped: it must not cost the run its record.
+  const moved: [string, string][] = [];
+  const notKept: string[] = [];
+  for (const name of REHEARSALS) {
+    const where = opts[name];
+    if (!where) continue;
+    const from = keepRehearsal(name, where, join(target, name));
+    if (typeof from === "string") {
+      notKept.push(from);
+      continue;
+    }
+    files.push(...from.files.map((f) => `${id}/${name}/${f}`));
+    moved.push([relative(runDir, from.dir).replaceAll("\\", "/"), name]);
+  }
+  const beside = scoredBeside(runDir, report);
+  const scored = beside && moved.length ? { ...beside, confidence: relink(beside.confidence, moved) } : beside;
   for (const name of KEPT_FILES) {
     const from = join(runDir, name);
     if (!existsSync(from)) continue;
@@ -139,7 +190,9 @@ export function keepReport(opts: KeepOptions): { entry: ReportEntry; dropped: st
   }
   if (scored) {
     for (const name of [CONFIDENCE_FILE, ...(scored.changes ? [CHANGES_FILE] : [])]) {
-      writeFileSync(join(target, name), readFileSync(join(runDir, name)));
+      // Byte for byte, except confidence.json when a rehearsal it links was kept beside it: then with the kept links.
+      const relinked = name === CONFIDENCE_FILE && scored.confidence !== beside!.confidence;
+      writeFileSync(join(target, name), relinked ? `${JSON.stringify(scored.confidence, null, 2)}\n` : readFileSync(join(runDir, name)));
       files.push(`${id}/${name}`);
     }
   }
@@ -164,13 +217,60 @@ export function keepReport(opts: KeepOptions): { entry: ReportEntry; dropped: st
     files
   };
   const indexFile = join(root, INDEX_FILE);
-  const { index, dropped } = addEntry(parseIndex(existsSync(indexFile) ? readFileSync(indexFile, "utf8") : undefined), entry, opts.keepLast);
+  const floor = opts.keepDays ? { keepDays: opts.keepDays, now: opts.now ?? Date.now() } : undefined;
+  const { index, dropped } = addEntry(parseIndex(existsSync(indexFile) ? readFileSync(indexFile, "utf8") : undefined), entry, opts.keepLast, floor);
   for (const old of dropped) rmSync(join(root, old), { recursive: true, force: true });
   // A directory the index no longer names (a damaged index, a hand edit) is not kept either.
   const named = new Set(index.runs.map((r) => r.id));
   for (const name of readdirSync(root)) if (name !== INDEX_FILE && !named.has(name)) rmSync(join(root, name), { recursive: true, force: true });
   writeFileSync(indexFile, JSON.stringify(index, null, 2) + "\n");
-  return { entry, dropped };
+  return { entry, dropped, notKept };
+}
+
+// ---- the rehearsals kept beside it (since 1.16.0) ------------------------------------------------------
+
+/**
+ * Copy a rehearsal's report files into `into`: its directory and the files copied, or why it was not kept (no report,
+ * not JSON, or a run of another mode).
+ */
+function keepRehearsal(name: Rehearsal, where: string, into: string): { dir: string; files: string[] } | string {
+  let file: string;
+  let mode: unknown;
+  try {
+    file = reportFileOf(where);
+    mode = (JSON.parse(readFileSync(file, "utf8")) as Partial<RunReport>).mode;
+  } catch (e) {
+    return `--${name} ${where}: ${e instanceof Error ? e.message : String(e)}`;
+  }
+  if (mode !== name) return `--${name} ${where}: a ${String(mode)}-mode report, not ${name}`;
+  const dir = resolve(file, "..");
+  mkdirSync(into, { recursive: true });
+  const files: string[] = [];
+  for (const f of KEPT_FILES) {
+    if (!existsSync(join(dir, f))) continue;
+    writeFileSync(join(into, f), readFileSync(join(dir, f)));
+    files.push(f);
+  }
+  return { dir, files };
+}
+
+/**
+ * The score with each link into a rehearsal's old directory pointed at the kept copy: every string that is `from`, or
+ * starts with `from/` or `from#`, gets `to` in place of `from`. Anything else, and a score that links none, is unchanged.
+ */
+export function relink(c: Confidence, moved: [from: string, to: string][]): Confidence {
+  let changed = false;
+  const one = (s: string): string => {
+    for (const [from, to] of moved) {
+      if (!from || !(s === from || s.startsWith(`${from}/`) || s.startsWith(`${from}#`))) continue;
+      changed = true;
+      return `${to}${s.slice(from.length)}`;
+    }
+    return s;
+  };
+  const walk = (x: unknown): unknown => (typeof x === "string" ? one(x) : Array.isArray(x) ? x.map(walk) : x && typeof x === "object" ? Object.fromEntries(Object.entries(x).map(([k, v]) => [k, walk(v)])) : x);
+  const out = walk(c) as Confidence;
+  return changed ? out : c;
 }
 
 // ---- a release run scored beside it (since 1.13.1) ------------------------------------------------------
