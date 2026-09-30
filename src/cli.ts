@@ -19,7 +19,7 @@ import { harnessInfo } from "./version.ts";
 import { helpFor, parseArgsErrorText } from "./local/usage.ts";
 import { RequirementError, requirements } from "./not-collected.ts";
 import { previewResolve } from "./ci/main-preview.ts";
-import { UsageError, changesCommand, confidenceCommand, doctorCommand, glanceCommand, guardCommand, localCommand, noiseCommand, overrideCommand, pruneCommand, recordAppliedOverride, releaseCommand, reportsCommand, scoreboardCommand, scorecardCommand, vulnDbCommand, whyCommand, a3Command } from "./local/cli.ts";
+import { UsageError, changesCommand, confidenceCommand, doctorCommand, glanceCommand, guardCommand, localCommand, noiseCommand, overrideCommand, pruneCommand, recordAppliedOverride, releaseCommand, reportsCommand, scoreboardCommand, scorecardCommand, vulnDbCommand, whyCommand, a3Command, readinessCommand } from "./local/cli.ts";
 import { defaultNoise } from "./local/noise-store.ts";
 
 const USAGE = `tutors-release-harness
@@ -231,6 +231,14 @@ const USAGE = `tutors-release-harness
       differences, the line stops, the confidence lost and the change risk, the root cause questions with the 5 Whys that
       answer them, and the countermeasures, plan and follow-up. What it cannot read is said to be not measured. Advisory:
       never an input to the Gate, a verdict or an exit code. Exit 0 when written, 2 for what it cannot read. Not stable.
+  harness readiness --site <dir> [--github f] [--json]
+      The overnight readiness page (since 1.17.0): one row per night (UTC) for the last ten nights, newest on top, from
+      the Main to RC forecasts under --site (main-preview/reports/index.json and the reports beside it): the commit
+      judged, the Gate, the unclaimed count, what is new and gone since the previous forecast, and links to the kept
+      report and its rehearsals. A night that kept nothing is read from the workflow history (github.json in the site, as
+      harness a3 --fetch-github writes it, or --github): unchanged since a commit (a skipped pair, in grey), did not run,
+      or not known without it. Writes readiness.html and readiness.json into --site. Advisory: never an input to the Gate,
+      a verdict or an exit code. Exit 0 when written, 2 for what it cannot read. Not stable.
 `;
 
 function fail(message: string): never {
@@ -574,6 +582,8 @@ async function main(argv: string[]): Promise<number> {
       return whyCommand(positionals[0], positionals.slice(1), values);
     case "a3":
       return a3Command(values);
+    case "readiness":
+      return readinessCommand(values);
     case "journeys":
       for (const j of journeys) console.log(`${j.name.padEnd(34)} set=${j.set.padEnd(9)} ${j.anonymous ? "anonymous" : "signed-in"}`);
       return 0;

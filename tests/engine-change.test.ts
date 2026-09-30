@@ -89,7 +89,7 @@ describe("every top-level entry is classified, so the list cannot silently rot",
 
   it("the engine paths cover every directory under src/ except those listed as non-engine", () => {
     const dirs = readdirSync(new URL("src", ROOT), { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => `src/${d.name}`);
-    expect(dirs.filter((d) => classify(d) === "non-engine").sort()).toEqual(["src/a3", "src/changes", "src/ci", "src/glance", "src/local", "src/report", "src/score", "src/scoreboard", "src/why"]);
+    expect(dirs.filter((d) => classify(d) === "non-engine").sort()).toEqual(["src/a3", "src/changes", "src/ci", "src/glance", "src/local", "src/readiness", "src/report", "src/score", "src/scoreboard", "src/why"]);
   });
 });
 

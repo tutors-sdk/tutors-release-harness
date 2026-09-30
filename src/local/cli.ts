@@ -31,6 +31,7 @@ import { KAIZEN_DIR, checkFiles, openEscalated, openWhy, renderChecked } from ".
 import { registerOf, registerSummary } from "../why/register.ts";
 import { WhyInputError } from "../why/trace.ts";
 import { A3InputError, runA3 } from "../a3/command.ts";
+import { ReadinessInputError, runReadiness } from "../readiness/command.ts";
 import { keepReport } from "../ci/report-archive.ts";
 import { readReport, readRulePrs, renderScorecard, scorecard } from "../ci/scorecard.ts";
 import { appendOverride, overrideFromReport, readOverrides } from "./override-log.ts";
@@ -511,6 +512,31 @@ export async function a3Command(v: Values, deps: A3Deps = {}): Promise<number> {
     return 0;
   } catch (e) {
     if (e instanceof A3InputError) throw new UsageError(e.message);
+    throw e;
+  }
+}
+
+// ---- harness readiness --------------------------------------------------------------------------------
+
+/**
+ * `harness readiness --site <dir> [--github f]`: the overnight readiness page (src/readiness/), written into the site
+ * beside the reports. Advisory: exit 0 when written, 2 for what it cannot read.
+ */
+export function readinessCommand(v: Values, deps: { now?: () => Date; log?: (m: string) => void } = {}): number {
+  const log = deps.log ?? ((m: string) => console.log(m));
+  const site = str(v, "site");
+  if (!site) throw new UsageError("readiness needs --site <dir>: the site with main-preview/reports/index.json [--github github.json]");
+  try {
+    const { readiness, files } = runReadiness({ site: resolve(site), ...(str(v, "github") ? { github: resolve(str(v, "github")!) } : {}), now: (deps.now ?? (() => new Date()))(), harness: harnessInfo().version });
+    if (flag(v, "json")) log(JSON.stringify(readiness, null, 2));
+    else {
+      log(`Overnight readiness: ${readiness.nights.length} nights, ${readiness.sources.forecasts} forecast(s) kept; workflow history ${readiness.sources.github}`);
+      for (const n of readiness.nights) log(`  ${n.night} ${n.state.padEnd(11)} ${n.note}`);
+      log(`wrote ${files.join(", ")}`);
+    }
+    return 0;
+  } catch (e) {
+    if (e instanceof ReadinessInputError) throw new UsageError(e.message);
     throw e;
   }
 }

@@ -1,0 +1,116 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/tutors-sdk/tutors-release-harness/blob/main/docs/contract/readiness.schema.json",
+  "title": "readiness.json: the overnight readiness page (contract 1.17.0, not stable)",
+  "description": "Since 1.17.0. Written by `harness readiness --site <dir>` beside readiness.html on the reports site: one row per calendar night (UTC) for the last ten nights, newest first, from the Main to RC forecasts kept on the `main-preview` branch and Main to RC's workflow runs (github.json). Derived from Readiness in src/readiness/model.ts. The band is deliberately absent: while the review floor caps the score the row carries the Gate only. Advisory: never read by a verdict, the Gate or an exit code. Not stable: it may change in a minor release.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "builtAt", "harness", "nights", "sources"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "builtAt": { "type": "string", "format": "date-time" },
+    "harness": { "type": "string", "description": "The harness version that built the page." },
+    "nights": { "type": "array", "maxItems": 10, "items": { "$ref": "#/definitions/night" } },
+    "sources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["forecasts", "github"],
+      "properties": {
+        "forecasts": { "type": "integer", "minimum": 0, "description": "Forecasts kept within these nights." },
+        "github": { "type": "string", "description": "What was read of the workflow history, or why it was not. For people: do not parse." }
+      }
+    }
+  },
+  "definitions": {
+    "night": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["night", "state", "forecasts", "runs", "note"],
+      "properties": {
+        "night": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$", "description": "The UTC date." },
+        "state": {
+          "enum": ["judged", "unchanged", "not judged", "running", "not yet", "did not run", "not known"],
+          "description": "judged: a forecast was kept that night. unchanged: Main to RC finished green and kept nothing (the pair was already judged); `since` names the forecast it repeats. not judged: it ran and failed or was cancelled. running: a run has not finished. not yet: tonight, before any run. did not run: no run that night. not known: nothing kept and the workflow history was not read."
+        },
+        "forecasts": { "type": "array", "items": { "$ref": "#/definitions/forecast" }, "description": "The forecasts kept that night, newest first; empty unless judged." },
+        "since": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "night", "candidate", "commit", "gate", "baseline"],
+          "description": "On an unchanged night: the newest forecast kept before it, whose verdict it repeats.",
+          "properties": {
+            "id": { "type": "string" },
+            "night": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+            "candidate": { "type": "string" },
+            "commit": { "type": ["string", "null"] },
+            "gate": { "type": "string" },
+            "baseline": { "type": "string" }
+          }
+        },
+        "runs": {
+          "type": "array",
+          "description": "Main to RC's workflow runs that night, newest first; empty when there were none or the history was not read.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["url", "conclusion", "event", "createdAt"],
+            "properties": {
+              "url": { "type": "string" },
+              "conclusion": { "type": ["string", "null"], "description": "null while running." },
+              "event": { "type": "string" },
+              "createdAt": { "type": "string" }
+            }
+          }
+        },
+        "baselineMoved": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["from", "to"],
+          "description": "Production moved between this row and the row below it: the delta starts again.",
+          "properties": { "from": { "type": "string" }, "to": { "type": "string" } }
+        },
+        "note": { "type": "string", "description": "One sentence for the row. For people: do not parse." }
+      }
+    },
+    "forecast": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "ranAt", "harnessVersion", "baseline", "candidate", "commit", "commitUrl", "digests", "gate", "verdict", "unclaimed", "delta", "links"],
+      "properties": {
+        "id": { "type": "string", "description": "The run's directory under main-preview/reports/." },
+        "ranAt": { "type": "string", "format": "date-time" },
+        "harnessVersion": { "type": "string" },
+        "runUrl": { "type": "string" },
+        "baseline": { "type": "string", "description": "Side a's reader tag: production." },
+        "candidate": { "type": "string", "description": "Side b's reader tag (sha-<short>)." },
+        "commit": { "type": ["string", "null"], "description": "The commit side b's images were built from, when they all agree; the one to branch a release from." },
+        "commitUrl": { "type": ["string", "null"] },
+        "digests": { "type": "object", "additionalProperties": { "type": "string" }, "description": "Side b's image digests, by app." },
+        "gate": { "type": "string", "description": "confidence.json's Gate, or the verdict in capitals for a forecast kept before the score." },
+        "verdict": { "type": "string" },
+        "unclaimed": { "type": ["integer", "null"], "minimum": 0 },
+        "delta": {
+          "description": "The index entry's delta (reports-index.schema.json); null for a forecast kept before 1.16.1.",
+          "oneOf": [{ "type": "null" }, { "$ref": "reports-index.schema.json#/definitions/run/properties/delta" }]
+        },
+        "links": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["rehearsals"],
+          "properties": {
+            "report": { "type": "string", "description": "The kept report.html, relative to the site." },
+            "rehearsals": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["mode", "href", "verdict"],
+                "properties": { "mode": { "enum": ["migration", "upgrade"] }, "href": { "type": "string" }, "verdict": { "type": ["string", "null"] } }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
