@@ -34,6 +34,10 @@
  * (`../../rehearsals/upgrade/<ranAt>-upgrade/report.html#upgrade`, a directory of a runner that is gone); the kept
  * confidence.json names the kept copy instead (`upgrade/report.html#upgrade`), and is otherwise as written.
  *
+ * Since 1.16.1 a release run's entry carries `delta`: what moved in its unclaimed set since the previous kept release run
+ * beside the same baseline (side a's tag), read from that run's kept report.json (src/report/delta.ts). A new baseline
+ * starts again (`against: null`). A kept report that is led (a scored run) leads with the new differences, under the Gate.
+ *
  * `<id>` is the run's ranAt and mode (`2026-09-26T07-57-09Z-noise`), so a re-run
  * of the same job replaces its entry and never duplicates it. With --keep-last
  * only the newest n runs are kept and older directories are removed: the
@@ -45,12 +49,13 @@
  */
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
-import type { Mode, RunReport, Verdict } from "../types.ts";
+import type { Hunk, Mode, RunReport, Verdict } from "../types.ts";
 import { readRulePrs, renderScorecard, scorecard, type Scorecard } from "./scorecard.ts";
 import { CHANGES_FILE, type Changes } from "../changes/signals.ts";
 import type { Confidence } from "../score/confidence.ts";
 import { CONFIDENCE_FILE } from "../score/read.ts";
-import { LEAD_CSS, gateLineHtml, scoreLeadHtml, scoreLeadMarkdown } from "../report/lead.ts";
+import { LEAD_CSS, deltaLeadHtml, deltaLeadMarkdown, gateLineHtml, scoreLeadHtml, scoreLeadMarkdown } from "../report/lead.ts";
+import { deltaCounts, unclaimedDelta, type DeltaLead, type ReportDelta } from "../report/delta.ts";
 import { renderGateSummary } from "../local/tasks.ts";
 
 export const REPORTS_DIR = "reports";
@@ -79,6 +84,11 @@ export interface ReportEntry {
   confidence?: { gate: Confidence["gate"]; rcs: number | null; band: Confidence["band"]; meaning?: string; note?: string; glance: number; scoredBy?: string };
   /** Since 1.13.1: the change signals kept with the run (changes.json beside it). */
   changes?: { score: number; prs: number; risky: number; floorBreached: boolean; range: string };
+  /**
+   * Since 1.16.1, release runs only: what moved in the unclaimed set since the previous kept release run beside the same
+   * baseline. Absent on a run kept before 1.16.1 or of another mode; `against: null` when there was no such run.
+   */
+  delta?: ReportDelta;
   /** Paths relative to the store's reports/ directory. */
   files: string[];
 }
@@ -178,13 +188,16 @@ export function keepReport(opts: KeepOptions): { entry: ReportEntry; dropped: st
     files.push(...from.files.map((f) => `${id}/${name}/${f}`));
     moved.push([relative(runDir, from.dir).replaceAll("\\", "/"), name]);
   }
+  const indexFile = join(root, INDEX_FILE);
+  const before = parseIndex(existsSync(indexFile) ? readFileSync(indexFile, "utf8") : undefined);
+  const delta = deltaLead(report, id, before, root);
   const beside = scoredBeside(runDir, report);
   const scored = beside && moved.length ? { ...beside, confidence: relink(beside.confidence, moved) } : beside;
   for (const name of KEPT_FILES) {
     const from = join(runDir, name);
     if (!existsSync(from)) continue;
     // Byte for byte: what is kept is exactly what the run wrote; a scored run's report.md and report.html get the lead on top.
-    const lead = scored && name !== "report.json" ? withLead(name, readFileSync(from, "utf8"), report, scored, `${REPORTS_DIR}/${id}`) : undefined;
+    const lead = scored && name !== "report.json" ? withLead(name, readFileSync(from, "utf8"), report, scored, `${REPORTS_DIR}/${id}`, delta) : undefined;
     writeFileSync(join(target, name), lead ?? readFileSync(from));
     files.push(`${id}/${name}`);
   }
@@ -214,17 +227,44 @@ export function keepReport(opts: KeepOptions): { entry: ReportEntry; dropped: st
     score: { score: card.score, grade: card.grade, normalness: card.normalness.state, manual: card.manual.length },
     ...(scored ? { confidence: confidenceHeadline(scored.confidence) } : {}),
     ...(scored?.changes ? { changes: changesHeadline(scored.changes) } : {}),
+    ...(delta ? { delta: delta.delta } : {}),
     files
   };
-  const indexFile = join(root, INDEX_FILE);
   const floor = opts.keepDays ? { keepDays: opts.keepDays, now: opts.now ?? Date.now() } : undefined;
-  const { index, dropped } = addEntry(parseIndex(existsSync(indexFile) ? readFileSync(indexFile, "utf8") : undefined), entry, opts.keepLast, floor);
+  const { index, dropped } = addEntry(before, entry, opts.keepLast, floor);
   for (const old of dropped) rmSync(join(root, old), { recursive: true, force: true });
   // A directory the index no longer names (a damaged index, a hand edit) is not kept either.
   const named = new Set(index.runs.map((r) => r.id));
   for (const name of readdirSync(root)) if (name !== INDEX_FILE && !named.has(name)) rmSync(join(root, name), { recursive: true, force: true });
   writeFileSync(indexFile, JSON.stringify(index, null, 2) + "\n");
   return { entry, dropped, notKept };
+}
+
+// ---- new since the last forecast (since 1.16.1) --------------------------------------------------------
+
+const unclaimedOf = (r: Partial<RunReport> | undefined): Hunk[] | undefined => (Array.isArray(r?.compare?.unclaimed) ? r.compare.unclaimed : undefined);
+
+/**
+ * The delta of a release run against the newest kept release run before it with the same baseline whose report.json can
+ * be read (one that cannot is passed over). Undefined for another mode, or a run with no side a or no unclaimed set.
+ */
+export function deltaLead(report: RunReport, id: string, index: ReportIndex, root: string): DeltaLead | undefined {
+  const baseline = tagOf(report.sides?.a?.reader);
+  const current = unclaimedOf(report);
+  if (report.mode !== "release" || !baseline || !current) return undefined;
+  const at = Date.parse(report.ranAt);
+  const harnessVersion = report.harness?.version ?? report.harnessVersion;
+  const earlier = index.runs
+    .filter((r) => r.id !== id && r.mode === report.mode && Date.parse(r.ranAt) < at && tagOf(r.sides?.a?.reader) === baseline)
+    .sort((x, y) => Date.parse(y.ranAt) - Date.parse(x.ranAt));
+  for (const r of earlier) {
+    const previous = unclaimedOf(readJson<RunReport>(join(root, r.id, "report.json")));
+    if (!previous) continue;
+    const { fresh, gone } = unclaimedDelta(current, previous);
+    const against = { id: r.id, ranAt: r.ranAt, candidate: tagOf(r.sides?.b?.reader), harnessVersion: r.harnessVersion };
+    return { delta: { baseline, against, ...deltaCounts(fresh, gone) }, harnessVersion, fresh, gone };
+  }
+  return { delta: { baseline, against: null }, harnessVersion, fresh: [], gone: [] };
 }
 
 // ---- the rehearsals kept beside it (since 1.16.0) ------------------------------------------------------
@@ -316,17 +356,17 @@ const tagOf = (ref: string | undefined) => ref?.split("@")[0]?.split(":").pop() 
  * it. report.md is the gate summary `harness release` writes (gate.md), with this one run as its only step; report.html
  * is the run's own page with the Gate and the lead first. Undefined (keep it as written) when the page has no body.
  */
-export function withLead(name: string, text: string, report: RunReport, s: Scored, dir: string): string | undefined {
+export function withLead(name: string, text: string, report: RunReport, s: Scored, dir: string, delta?: DeltaLead): string | undefined {
   const overridden = report.override?.applied === true;
   const code = report.verdict === "fail" && !overridden ? 1 : 0;
   if (name === "report.md") {
     const entry = { id: "release", title: "release", code, verdict: report.verdict, reasons: report.reasons ?? [], overridden, markdown: text };
-    return renderGateSummary({ production: tagOf(report.sides?.a?.reader), candidate: tagOf(report.sides?.b?.reader), entries: [entry], code, at: report.ranAt, gate: s.confidence.gate, score: scoreLeadMarkdown(s.confidence, s.changes, dir) });
+    return renderGateSummary({ production: tagOf(report.sides?.a?.reader), candidate: tagOf(report.sides?.b?.reader), entries: [entry], code, at: report.ranAt, gate: s.confidence.gate, score: `${delta ? `${deltaLeadMarkdown(delta)}\n\n` : ""}${scoreLeadMarkdown(s.confidence, s.changes, dir)}` });
   }
   const body = /<body[^>]*>/.exec(text);
   const head = text.indexOf("</head>");
   if (!body || head < 0 || head > body.index) return undefined;
-  const lead = `\n<section class="lead">\n${gateLineHtml(s.confidence.gate, code)}\n${scoreLeadHtml(s.confidence, s.changes, dir)}\n</section>\n`;
+  const lead = `\n<section class="lead">\n${gateLineHtml(s.confidence.gate, code)}\n${delta ? `${deltaLeadHtml(delta)}\n` : ""}${scoreLeadHtml(s.confidence, s.changes, dir)}\n</section>\n`;
   const at = body.index + body[0].length;
   return `${text.slice(0, head)}<style>\n${LEAD_CSS}\n</style>\n${text.slice(head, at)}${lead}${text.slice(at)}`;
 }

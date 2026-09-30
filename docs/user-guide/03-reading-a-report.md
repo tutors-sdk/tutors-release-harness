@@ -249,7 +249,7 @@ A **run** (`harness run`, one mode) writes `out/<UTC timestamp>-<mode>/`. A **re
 
 | File | Where | For | Notes |
 | --- | --- | --- | --- |
-| `report.html` | both | people | one self-contained page (no scripts, no external requests). A release's leads with the Gate, the RCS and the glance; a run's with the verdict and the sides |
+| `report.html` | both | people | one self-contained page (no scripts, no external requests). A release's leads with the Gate, the RCS and the glance; a run's with the verdict and the sides. A kept forecast (since 1.16.1) leads with what is new since the last forecast, right under the Gate |
 | `report.md` | both | the pull-request comment | GitHub-flavoured Markdown, verdict first. The harness never posts it |
 | `report.json` | run | programs | schema in `docs/contract/report.schema.json`. What gating and re-comparison read |
 | `gate.md`, `gate.json` | release | the release PR | the Gate, the RCS and its band, the glance, the dimension table, the per-PR table, then each step's result and comment |

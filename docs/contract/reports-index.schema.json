@@ -1,0 +1,110 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/tutors-sdk/tutors-release-harness/blob/main/docs/contract/reports-index.schema.json",
+  "title": "reports/index.json: the kept reports of a branch (contract 1.16.1, not stable)",
+  "description": "Since 1.5.0 (this schema since 1.16.1). Written by `harness reports keep` on the `noise`, `release-records` and `main-preview` branches: every kept run, newest first, with the headlines a page needs so it can list runs without opening each one. Derived from ReportIndex in src/ci/report-archive.ts. Every field added since 1.5.0 is optional, and a reader must not invent one a run does not carry. Not stable: it may change in a minor release.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "runs"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "runs": { "type": "array", "items": { "$ref": "#/definitions/run" } }
+  },
+  "definitions": {
+    "refs": { "type": "object", "additionalProperties": { "type": "string" }, "description": "The ref each app ran, by app." },
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "mode", "ranAt", "verdict", "reasons", "sides", "harnessVersion", "files"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$", "description": "<ranAt>-<mode>, the colons as dashes: the run's directory under reports/." },
+        "mode": { "enum": ["noise", "release", "any-two", "upgrade", "migration", "post-deploy"] },
+        "ranAt": { "type": "string", "format": "date-time" },
+        "verdict": { "enum": ["pass", "fail", "warn"] },
+        "reasons": { "type": "array", "items": { "type": "string" }, "description": "As in the report. For people: do not parse." },
+        "sides": { "type": "object", "additionalProperties": false, "required": ["a", "b"], "properties": { "a": { "$ref": "#/definitions/refs" }, "b": { "$ref": "#/definitions/refs" } } },
+        "harnessVersion": { "type": "string" },
+        "runUrl": { "type": "string" },
+        "score": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["score", "grade", "normalness", "manual"],
+          "description": "The scorecard's headline (scorecard.json beside the run).",
+          "properties": {
+            "score": { "type": "number", "minimum": 0, "maximum": 100 },
+            "grade": { "enum": ["A", "B", "C", "D"] },
+            "normalness": { "enum": ["normal", "noisy", "degraded", "unknown"] },
+            "manual": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "confidence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["gate", "rcs", "band", "glance"],
+          "description": "Since 1.13.1: the Release Confidence Score kept with the run (confidence.json beside it); absent when it was not scored.",
+          "properties": {
+            "gate": { "enum": ["PASS", "WARN", "FAIL", "FAIL (OVERRIDDEN)", "NOT JUDGED"] },
+            "rcs": { "type": ["number", "null"] },
+            "band": { "enum": ["Green", "Amber", "Red", null] },
+            "meaning": { "type": "string" },
+            "note": { "type": "string" },
+            "glance": { "type": "integer", "minimum": 0 },
+            "scoredBy": { "type": "string" }
+          }
+        },
+        "changes": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["score", "prs", "risky", "floorBreached", "range"],
+          "description": "Since 1.13.1: the change signals kept with the run (changes.json beside it).",
+          "properties": {
+            "score": { "type": "number" },
+            "prs": { "type": "integer", "minimum": 0 },
+            "risky": { "type": "integer", "minimum": 0 },
+            "floorBreached": { "type": "boolean" },
+            "range": { "type": "string" }
+          }
+        },
+        "delta": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["baseline", "against"],
+          "description": "Since 1.16.1, release runs only: what moved in the unclaimed set since the previous kept release run beside the same baseline. A difference is the same in both when its artefact, scope and summary with every number masked are; counted as multisets, so new - gone is the change in the unclaimed count. Absent on a run kept before 1.16.1 or of another mode. Advisory: never read by a verdict or the Gate.",
+          "properties": {
+            "baseline": { "type": "string", "minLength": 1, "description": "Side a's tag (the reader's)." },
+            "against": {
+              "description": "The run compared with; null when none was kept beside this baseline (the first forecast, or production moved). new, gone and byArtefact are present exactly when this is not null.",
+              "oneOf": [
+                { "type": "null" },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["id", "ranAt", "candidate", "harnessVersion"],
+                  "properties": {
+                    "id": { "type": "string" },
+                    "ranAt": { "type": "string", "format": "date-time" },
+                    "candidate": { "type": "string", "description": "Its side b tag (the reader's)." },
+                    "harnessVersion": { "type": "string", "description": "The harness that judged it: a harness change can move differences too." }
+                  }
+                }
+              ]
+            },
+            "new": { "type": "integer", "minimum": 0 },
+            "gone": { "type": "integer", "minimum": 0 },
+            "byArtefact": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["new", "gone"],
+                "properties": { "new": { "type": "integer", "minimum": 0 }, "gone": { "type": "integer", "minimum": 0 } }
+              },
+              "description": "Only the artefacts where something moved."
+            }
+          }
+        },
+        "files": { "type": "array", "items": { "type": "string" }, "description": "Paths relative to reports/." }
+      }
+    }
+  }
+}
