@@ -23,7 +23,12 @@ export interface WeeklyMutants {
   caught: number | null;
   total: number;
   runUrl?: string;
+  /** Since 1.25.0: the mutants that escaped, and every mutant planted, by name (absent on an older line). */
+  escaped?: string[];
+  planted?: string[];
 }
+
+const names = (x: unknown) => (Array.isArray(x) && x.every((n) => typeof n === "string") ? (x as string[]) : undefined);
 
 /** mutants.jsonl, one self-test per line, oldest first. A line that cannot be read is skipped: it is the harness's health. */
 export function parseWeeklyMutants(text: string): WeeklyMutants[] {
@@ -33,7 +38,7 @@ export function parseWeeklyMutants(text: string): WeeklyMutants[] {
     try {
       const o = JSON.parse(line) as Record<string, unknown>;
       if (typeof o.ranAt === "string" && Number.isFinite(Date.parse(o.ranAt)) && (o.caught === null || Number.isInteger(o.caught)) && Number.isInteger(o.total))
-        out.push({ ranAt: o.ranAt, caught: o.caught as number | null, total: o.total as number, ...(typeof o.runUrl === "string" ? { runUrl: o.runUrl } : {}) });
+        out.push({ ranAt: o.ranAt, caught: o.caught as number | null, total: o.total as number, ...(typeof o.runUrl === "string" ? { runUrl: o.runUrl } : {}), ...(names(o.escaped) ? { escaped: names(o.escaped)! } : {}), ...(names(o.planted) ? { planted: names(o.planted)! } : {}) });
     } catch {
       /* skipped */
     }

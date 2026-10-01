@@ -1,0 +1,12 @@
+# The "vulnerable-package" mutant: the production image plus the manifest of one npm package with a known critical
+# advisory that has a fix (ejs 3.1.6: GHSA-phwq-j96m-2c2q, CVE-2022-29078, fixed in 3.1.7).
+#
+#   docker build -f mutants/Dockerfile.planted-vuln --build-arg BASE=tutors/reader:16.2.0 \
+#     -t tutors-harness/mutant-vulnerable-package mutants
+#
+# Only package.json is copied, under /opt, away from the app's own node_modules: no code, nothing loads it, and the
+# app runs exactly as production does. An inventory of the image (syft) lists it, and the scanner (grype) matches it,
+# so what the vuln-ceiling policy check must find on b is a critical advisory with a fix available.
+ARG BASE
+FROM ${BASE}
+COPY planted-vuln/ /opt/harness-planted-vuln/node_modules/

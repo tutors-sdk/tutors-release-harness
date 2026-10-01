@@ -1,6 +1,6 @@
 import { runsAsRoot } from "../image-static/manifest.ts";
 import { IMAGE_APPS, type AppImageStatic, type BuildProvenanceData, type ImageApp, type ImageManifest, type VulnData } from "../image-static/types.ts";
-import type { Artefact, Hunk, SideCapture } from "../types.ts";
+import type { Artefact, Hunk, Provenance, SideCapture } from "../types.ts";
 import { hunkId } from "./pages.ts";
 
 /**
@@ -12,9 +12,10 @@ import { hunkId } from "./pages.ts";
  *   image-hardening   <app>/user, <app>/healthcheck, <app>/env/<NAME>, <app>/history/<NAME>
  *                     b's image config, as the manifest engine collects it: runs as root, declares no HEALTHCHECK, or
  *                     carries something secret-shaped in its environment or its layer history (src/image-static/secrets.ts)
- *   build-provenance  <app>/slsa, <app>/builder
+ *   build-provenance  <app>/slsa, <app>/builder, <app>/unverified
  *                     the SLSA provenance cosign verified on b's digest, under the publishing workflow's identity: none,
- *                     or one whose builder is not the monorepo's image-build.yml
+ *                     or one whose builder is not the monorepo's image-build.yml; since 1.25.0, an image the run did not
+ *                     pull and verify at all (local, built from a ref, pulled unsigned) is `unverified`
  *   vuln-ceiling      <app>/<advisory id>
  *                     the grype scan already run on b: any critical or high advisory with a fix available, whether or not
  *                     production has it too
@@ -32,6 +33,8 @@ type Outcome = { findings: { key: string; text: string }[]; checked: string } | 
 /** A builder or workflow that is the monorepo's publishing workflow. */
 export const PUBLISHING_WORKFLOW = /\.github\/workflows\/image-build\.ya?ml/;
 const SEVERE = /^(critical|high)$/i;
+/** How an image came to the run when no signature was verified on it in this run, so no attestation can be either. */
+const UNVERIFIABLE: ReadonlySet<Provenance> = new Set<Provenance>(["local", "pulled-unverified", "built-from-ref"]);
 
 // ---- the three checks, over one image -----------------------------------------------------------------
 
@@ -75,9 +78,15 @@ function outcome(check: PolicyCheck, s: AppImageStatic | undefined, side: SideCa
   switch (check) {
     case "image-hardening":
       return s.manifest.ok ? hardening(s.manifest.data) : { notEvaluated: `no image config: ${s.manifest.reason}` };
-    case "build-provenance":
+    case "build-provenance": {
+      // Since 1.25.0: an image this run did not pull and verify (a local build, a build from a monorepo ref, a pull
+      // under --allow-unsigned) cannot carry SLSA provenance verified under the publishing identity, so that is the
+      // finding, not "could not be evaluated". A cached image was verified when it was pulled, so it stays unevaluated.
+      const how = side.provenance?.images[app]?.provenance;
+      if (how && UNVERIFIABLE.has(how)) return { findings: [{ key: "unverified", text: `is ${how === "local" ? "a local image" : how}, not pulled and signature-verified in this run, so it carries no verified SLSA provenance` }], checked: "" };
       if (!s.buildProvenance) return { notEvaluated: "the capture was recorded before 1.22.0 and has no provenance" };
       return s.buildProvenance.ok ? provenance(s.buildProvenance.data, side.provenance?.images[app]?.digest) : { notEvaluated: s.buildProvenance.reason };
+    }
     case "vuln-ceiling":
       return s.vulns.ok ? ceiling(s.vulns.data) : { notEvaluated: `no vulnerability scan: ${s.vulns.reason}` };
   }

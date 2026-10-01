@@ -12,6 +12,7 @@
 import { QUALITY_CSS, qualityMarksHtml, qualityStripHtml, safeHref } from "../a3/render.ts";
 import { CONTROL_CSS, controlHtml } from "./control-render.ts";
 import { NIGHTS, deltaWords, type Forecast, type Night, type Readiness } from "./model.ts";
+import type { Soak } from "./soak.ts";
 
 const esc = (s: string) => s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
 const when = (iso: string) => `${iso.slice(0, 10)} ${iso.slice(11, 16)} UTC`;
@@ -85,6 +86,51 @@ function rowsHtml(r: Readiness): string {
       return body + rule;
     })
     .join("\n");
+}
+
+const SOAK_TONE: Record<string, string> = { clean: "pass", paused: "none", broken: "fail", "not yet": "none" };
+const MUTANT_WORDS: Record<string, string> = { caught: "caught", escaped: "escaped", "not run yet": "not run yet", none: "none planted" };
+
+/** Since 1.25.0: the soak toward 2.0, the count the go-live release waits on, then each check that may become blocking. */
+function soakHtml(s: Soak): string {
+  const boxes = Array.from({ length: s.target }, (_, n) => `<span class="box${n < s.clean ? " on" : ""}"></span>`).join("");
+  const nights = s.nights.length
+    ? `<table class="strip soak-nights"><thead><tr><th>Night</th><th>Counts as</th><th>Run</th><th>What it read</th></tr></thead><tbody>
+${s.nights
+  .map(
+    (n) => `<tr><td data-k="Night"><span class="v"><strong>${esc(nightLabel(n.night))}</strong></span></td>
+<td data-k="Counts as"><span class="v"><span class="verdict ${SOAK_TONE[n.state] ?? "none"}${n.state === "paused" || n.state === "not yet" ? " grey" : ""}">${esc(n.state)}</span></span></td>
+<td data-k="Run" class="num"><span class="v">${n.streak} of ${s.target}</span></td>
+<td data-k="What it read"><span class="v">${esc(n.note)}</span></td></tr>`
+  )
+  .join("\n")}
+</tbody></table>`
+    : `<p class="empty">The soak starts on ${esc(nightLabel(s.from))}: its first night is not here yet.</p>`;
+  const mutant = (c: Soak["checks"][number]) => {
+    const words = `${MUTANT_WORDS[c.mutant.state] ?? c.mutant.state}${c.mutant.names.length ? ` (<code>${c.mutant.names.map(esc).join("</code>, <code>")}</code>)` : ""}`;
+    return c.mutant.runUrl ? `${words} · ${link(c.mutant.ranAt ? c.mutant.ranAt.slice(0, 10) : "run", c.mutant.runUrl)}` : words;
+  };
+  const checks = `<table class="strip soak-checks"><thead><tr><th>Check</th><th>Level now</th><th>Quiet nights</th><th>Planted mutant</th><th>For 2.0</th></tr></thead><tbody>
+${s.checks
+  .map(
+    (c) => `<tr><td data-k="Check"><span class="v"><code>${esc(c.check)}</code></span></td>
+<td data-k="Level now"><span class="v">${esc(c.level)}${c.blockingFrom ? ` until ${esc(c.blockingFrom)}` : ""}</span></td>
+<td data-k="Quiet nights" class="num"><span class="v">${c.quietNights} of ${s.target}</span></td>
+<td data-k="Planted mutant"><span class="v">${mutant(c)}</span></td>
+<td data-k="For 2.0"><span class="v">${c.eligible ? `<strong>may become blocking.</strong> ` : ""}${esc(c.why)}</span></td></tr>`
+  )
+  .join("\n")}
+</tbody></table>`;
+  const m = s.mutants;
+  return `<section class="soak" id="soak" aria-labelledby="soak-title">
+<h2 id="soak-title">Soak toward 2.0: ${s.clean} of ${s.target} clean nights</h2>
+<div class="meter" role="img" aria-label="${s.clean} of ${s.target} clean nights in a row">${boxes}</div>
+<p class="note">${esc(s.headline)} A night is clean when its nightly A/A was clean and verified and that night's Main to RC forecast found no difference between production and a second production stack in the same run (a-to-a2). A night on which main did not change pauses the count; anything else starts it again. Counted from ${esc(nightLabel(s.from))}. Nothing becomes blocking by itself: 2.0 is a release, made by a person, once the count and the checks below say so.</p>
+${nights}
+<h3>Checks that 2.0 may make blocking</h3>
+<p class="note">Each must be quiet on main for ${s.target} judged nights and catch its planted mutant in the weekly self-test${m ? ` (latest: ${m.caught === null ? "did not run" : `${m.caught} of ${m.total} caught`}, ${esc(m.ranAt.slice(0, 10))}${m.runUrl ? `, ${link("run", m.runUrl)}` : ""})` : " (no self-test recorded yet)"}. A check that fires on production too cannot get there until production is fixed.</p>
+${checks}
+</section>`;
 }
 
 /** Last night, expanded: the newest judged forecast on the page, with everything needed to cut a release from it. */
@@ -164,6 +210,10 @@ table.strip{border-collapse:collapse;width:100%;margin:8px 0 0;font-size:14px;ba
 .quality-strip details summary{margin-top:2px}
 ${QUALITY_CSS}
 ${CONTROL_CSS}
+.soak{background:var(--sheet);border:1px solid var(--rule);border-radius:8px;padding:6px 16px 14px;margin:16px 0}
+.soak h2{font-size:1.1rem;margin:10px 0 6px} .soak h3{font-size:1rem;margin:16px 0 2px}
+.soak table.strip{background:transparent} .soak .empty{font-size:14px} .soak-checks td[data-k="Check"] code{white-space:nowrap}
+.meter{display:flex;gap:4px;flex-wrap:wrap;margin:4px 0 6px} .meter .box{width:22px;height:14px;border:1px solid var(--pass);border-radius:3px} .meter .box.on{background:var(--pass)}
 footer{font-size:12px;color:var(--ink2);border-top:1px solid var(--rule);margin-top:20px;padding-top:10px}
 .empty{color:var(--ink2)}
 @media (max-width:640px){
@@ -192,16 +242,17 @@ export function renderReadiness(r: Readiness): string {
 <body>
 <main class="page">
 <header class="title"><h1>Overnight readiness <span>· main against production, the last ${NIGHTS} nights</span></h1>
-<p class="meta">Built ${esc(when(r.builtAt))} by harness <code>${esc(r.harness)}</code> · <a href="./">all reports</a> · <a href="a3.html">A3</a> · <a href="readiness.json">readiness.json</a></p></header>
+<p class="meta">Built ${esc(when(r.builtAt))} by harness <code>${esc(r.harness)}</code> · <a href="./">all reports</a> · <a href="a3.html">A3</a> · <a href="#soak">soak toward 2.0</a> · <a href="readiness.json">readiness.json</a></p></header>
 <p class="note">One row per night (UTC), newest on top, from the Main to RC forecasts kept on the <code>main-preview</code> branch. To pick a night, read two rows: what the later one added, and whether its Gate moved. The quality marks (Speed, Metrics, Tests) are a reading aid and never change the Gate. A night that kept nothing says why in words. The band is left off the rows while the review floor caps the score; the Gate is what decides. A forecast, never a gate.</p>
 ${controlHtml(r.control)}
+${soakHtml(r.soak)}
 ${lastNight(r)}
 <h2 class="strip-title">Night by night</h2>
 <table class="strip"><thead><tr><th>Night</th><th>Main</th><th>Gate</th><th>Unclaimed</th><th>New / gone</th><th>Quality</th><th>Evidence</th></tr></thead>
 <tbody>
 ${rowsHtml(r)}
 </tbody></table>
-<footer>${r.sources.forecasts} forecast(s) kept in these ${NIGHTS} nights. Workflow history: ${esc(r.sources.github)}. Advisory: nothing here is an input to the Gate, a verdict or an exit code. Run by hand with Main to RC's workflow_dispatch (force judges a pair again); the page rebuilds when it finishes.</footer>
+<footer>${r.sources.forecasts} forecast(s) kept in these ${NIGHTS} nights. Workflow history: ${esc(r.sources.github)}. A/A history: ${esc(r.sources.aa)}. Advisory: nothing here is an input to the Gate, a verdict or an exit code. Run by hand with Main to RC's workflow_dispatch (force judges a pair again); the page rebuilds when it finishes.</footer>
 </main>
 </body>
 </html>

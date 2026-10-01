@@ -130,9 +130,12 @@ kept running. CI and a maintainer run the same command: `pnpm smoke`
 
 ### Mutants (`pnpm harness mutants`, ~15 minutes, weekly and on demand)
 
-The harness's own negative fixtures: ten planted regressions
+The harness's own negative fixtures: thirteen planted regressions
 (`mutants/mutants.yaml`), each of which must produce a FAIL verdict
-attributed to the expected artefact. Eight plant a fault at the HTTP edge;
+attributed to the expected artefact (since 1.25.0 the three policy-check mutants,
+`secret-env`, `vulnerable-package` and `unsigned-build`, are caught instead by a
+finding of their informing check that the base did not have, until 2.0 makes the
+check blocking). Eight plant a fault at the HTTP edge;
 two (`base-swap`, `added-package`) change what the image *is*, and are caught
 by the static image artefacts (`image-manifest`, `sbom`). They are built
 locally, so `harness mutants` generates their SBOMs with a local `syft` on both
@@ -240,7 +243,7 @@ for. Setup, scheduling and the parity matrix are in [docs/local.md](docs/local.m
 | --- | --- | --- |
 | A/A diff count on the production tag | stays 0 once it reaches 0 | nightly `publish` job fails on a regression; gate degrades |
 | Consecutive clean, verified nightly A/As | reaches 7 (R3 exit) | the nightly summary |
-| Mutants caught and attributed | 10 of 10 | weekly mutants; required on PRs that change an engine, mask, journey, gate or mutant |
+| Mutants caught and attributed | 13 of 13 | weekly mutants; required on PRs that change an engine, mask, journey, gate or mutant |
 | Harness version on such PRs | goes up | `src/ci/engine-change.ts` in the same workflow |
 | `report.json`, `noise-status.json`, CLI, dispatch payloads vs `docs/contract.md` | no drift | `tests/contract.test.ts` |
 | Masks in `normalise/masks.yaml` | grow only with review, in their own PR, and stay under ~40 | CODEOWNERS; CI "Masks land in their own PR (required)" |

@@ -125,6 +125,14 @@ The WIP limit is the UCL. **Provisional limits:** with fewer than 10 releases me
 
 Like the rest of the page it is **advisory**: it never changes the Gate, a verdict or an exit code. It tells you when to start step 1, not whether the candidate may ship.
 
+## Before 2.0: the soak count
+
+Since harness 1.25.0 the readiness page has a **soak** panel ([readiness.html#soak](https://tutors-sdk.github.io/tutors-release-harness/readiness.html#soak)), after the control chart. It counts the clean nights the go-live release (harness 2.0) waits on: a night is **clean** when that night's nightly A/A was clean and verified and the Main to RC forecast found no difference between production and a second copy of production run beside it (a-to-a2). A night on which `main` did not change **pauses** the count; anything else **breaks** it and the count starts again. The target is ten in a row, counted from 2 October 2026.
+
+Under the count, one row per check that 2.0 may make blocking (image hardening, build provenance, the vulnerability ceiling): how many judged nights in a row it found nothing on `main`, whether the weekly self-test caught its planted mutant, and whether it may become blocking. A check that fires on production too (today: no `HEALTHCHECK`, no SLSA provenance) cannot get there until production is fixed in the monorepo, and the panel says so.
+
+It is a count, not a switch: nothing becomes blocking by itself. To read it locally, build the page with the noise history beside it: `pnpm harness readiness --site _site --noise-history noise-history.json`.
+
 ## Step 1: cut the branch and tag the candidate
 
 **Owner:** Captain. **Input:** `main` at the cut commit.

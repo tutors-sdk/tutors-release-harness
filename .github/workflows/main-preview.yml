@@ -48,12 +48,14 @@ on:
         type: boolean
         default: false
       # Since 1.24.0: side a2, a second production stack in the same run, for the in-run noise (four more containers
-      # and one more capture). Off unless asked for: the cost is measured before it runs every day.
+      # and one more capture, about a minute and a half). Since 1.25.0 it is on every night and by default: the soak
+      # toward 2.0 counts nights with a clean A/A AND a clean a-to-a2 (the readiness page's soak panel), so a night
+      # without a2 cannot count. Untick it on a dispatch to save the minute.
       a2:
         description: "Also start side a2 and report the in-run noise beside the nightly A/A (never changes the verdict)"
         required: false
         type: boolean
-        default: false
+        default: true
 
 permissions:
   contents: read
@@ -225,7 +227,8 @@ jobs:
       - name: Release mode
         env:
           NOISE_FILE: ${{ steps.noise.outputs.noise_file }}
-          A2: ${{ inputs.a2 == true && 'yes' || '' }}
+          # Every night (workflow_run has no inputs), and on a dispatch unless a2 was unticked.
+          A2: ${{ (github.event_name != 'workflow_dispatch' || inputs.a2) && 'yes' || '' }}
         run: |
           rules=""; if [ -s rules.json ]; then rules=rules.json; fi
           vex=""; if [ -s openvex.json ]; then vex=openvex.json; fi

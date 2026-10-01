@@ -135,10 +135,13 @@ export function recordMutants(o: { from: string; file: string; runUrl?: string }
   const p = resolve(o.from);
   const src = existsSync(p) && statSync(p).isDirectory() ? join(p, MUTANTS_SUMMARY) : p;
   if (!existsSync(src)) throw new ScoreboardInputError(`--run: no ${MUTANTS_SUMMARY} at ${o.from} (harness mutants writes it into its --out)`);
-  const s = readJson<{ ranAt?: unknown; caught?: unknown; total?: unknown; escaped?: unknown; base?: unknown; harnessVersion?: unknown; note?: unknown }>(src, basename(src));
+  const s = readJson<{ ranAt?: unknown; caught?: unknown; total?: unknown; escaped?: unknown; planted?: unknown; byInforming?: unknown; base?: unknown; harnessVersion?: unknown; note?: unknown }>(src, basename(src));
+  const names = (x: unknown) => (Array.isArray(x) && x.every((n) => typeof n === "string") ? (x as string[]) : undefined);
+  const planted = names(s.planted);
+  const byInforming = names(s.byInforming);
   if (typeof s.ranAt !== "string" || !(s.caught === null || Number.isInteger(s.caught)) || !Number.isInteger(s.total)) throw new ScoreboardInputError(`${src} is not a mutants summary (ranAt, caught, total)`);
   const file = resolve(o.file);
-  const record = { ranAt: s.ranAt, caught: s.caught, total: s.total, escaped: Array.isArray(s.escaped) ? s.escaped : [], ...(typeof s.base === "string" ? { base: s.base } : {}), ...(typeof s.harnessVersion === "string" ? { harnessVersion: s.harnessVersion } : {}), ...(typeof s.note === "string" ? { note: s.note } : {}), ...(o.runUrl ? { runUrl: o.runUrl } : {}) };
+  const record = { ranAt: s.ranAt, caught: s.caught, total: s.total, escaped: Array.isArray(s.escaped) ? s.escaped : [], ...(planted ? { planted } : {}), ...(byInforming ? { byInforming } : {}), ...(typeof s.base === "string" ? { base: s.base } : {}), ...(typeof s.harnessVersion === "string" ? { harnessVersion: s.harnessVersion } : {}), ...(typeof s.note === "string" ? { note: s.note } : {}), ...(o.runUrl ? { runUrl: o.runUrl } : {}) };
   // The same self-test recorded twice (a re-run of the publishing job) is one record.
   if (readMutants(file).some((m) => m.ranAt === s.ranAt)) return { record, file };
   appendLine(file, record);

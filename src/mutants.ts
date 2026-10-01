@@ -68,6 +68,10 @@ export interface MutantsSummary {
   caught: number | null;
   total: number;
   escaped: string[];
+  /** Since 1.25.0: every mutant this self-test planted, by name, so a reader can tell which were part of it. */
+  planted?: string[];
+  /** Since 1.25.0: the mutants caught only by an informing check (a policy check before 2.0): a finding the base did not have. */
+  byInforming?: string[];
   harnessVersion: string;
   note?: string;
 }
@@ -76,6 +80,32 @@ export interface MutantsSummary {
 export function writeMutantsSummary(outDir: string, s: Omit<MutantsSummary, "schemaVersion" | "harnessVersion">): void {
   mkdirSync(outDir, { recursive: true });
   writeFileSync(join(outDir, MUTANTS_SUMMARY), `${JSON.stringify({ schemaVersion: 1, ...s, harnessVersion: HARNESS_VERSION }, null, 2)}\n`);
+}
+
+/** `artefact` and `scope` of every informing finding in a run's hunks: what an informing check would have failed. */
+export function informingKeys(hunks: readonly Hunk[]): Set<string> {
+  return new Set(hunks.filter((h) => h.level === "informing").map((h) => `${h.artefact}\u0000${h.scope}`));
+}
+
+/**
+ * Was a mutant caught, and attributed to the artefact it plants a fault in? A blocking engine catches a mutant the way it
+ * always has: the verdict is FAIL and an unclaimed hunk is of an expected artefact. An informing check (since 1.21.0;
+ * the policy family until 2.0) can never FAIL a run, so it catches a mutant when it reports a finding (`level:
+ * "informing"`) of an expected artefact whose scope it did not report on the base in the self-test's own A/A: a
+ * finding the planted fault made, not one production already has. The day the check becomes blocking, the same
+ * mutant must FAIL the run like any other.
+ */
+export function judgeMutant(mutant: { expect: readonly string[] }, verdict: string, unclaimed: readonly Hunk[], hunks: readonly Hunk[], baseInforming: ReadonlySet<string>): { caught: boolean; attributed: boolean; byInforming: boolean; artefacts: string[] } {
+  const blocking: string[] = [...new Set(unclaimed.map((h) => h.artefact))];
+  const informing: string[] = [...new Set(hunks.filter((h) => h.level === "informing" && !baseInforming.has(`${h.artefact}\u0000${h.scope}`)).map((h) => h.artefact))].filter((a) => !blocking.includes(a));
+  const byBlocking = mutant.expect.some((a) => blocking.includes(a));
+  const byInforming = mutant.expect.some((a) => informing.includes(a));
+  return {
+    caught: verdict === "fail" || byInforming,
+    attributed: byBlocking || byInforming,
+    byInforming: byInforming && !(verdict === "fail" && byBlocking),
+    artefacts: [...blocking, ...informing.map((a) => `${a} (informing)`)]
+  };
 }
 
 export interface MutantsOptions extends Omit<RunOptions, "mode" | "a" | "b"> {
@@ -114,11 +144,13 @@ export async function runMutants(options: MutantsOptions): Promise<boolean> {
     for (const reason of noise.report.reasons) opts.log(`  reason: ${reason}`);
     for (const line of describeNoiseHunks(noise.report.compare.hunks)) opts.log(line);
     opts.log(`A/A is not clean (${noise.report.compare.hunks.length} diff(s)); the mutant self-test cannot be trusted. Report: ${noise.files.html}`);
-    writeMutantsSummary(opts.outDir, { ranAt, base: opts.base, caught: null, total: mutants.length, escaped: [], note: "the A/A on the base was not clean, so no mutant ran" });
+    writeMutantsSummary(opts.outDir, { ranAt, base: opts.base, caught: null, total: mutants.length, escaped: [], planted: mutants.map((m) => m.name), note: "the A/A on the base was not clean, so no mutant ran" });
     return false;
   }
 
-  const results: { name: string; caught: boolean; attributed: boolean; verdict: string; artefacts: string[]; report: string }[] = [];
+  // What the informing checks already report on the base: a mutant is caught by one only for a finding beyond these.
+  const baseInforming = informingKeys(noise.report.compare.hunks);
+  const results: { name: string; caught: boolean; attributed: boolean; byInforming: boolean; verdict: string; artefacts: string[]; report: string }[] = [];
   for (const mutant of mutants) {
     const image = buildMutant(mutant, baseImages.reader, opts.log);
     const bSpec = specFor({ ...baseImages, reader: image });
@@ -128,16 +160,14 @@ export async function runMutants(options: MutantsOptions): Promise<boolean> {
       outcome = await run({ ...opts, static: staticOpts, sets, mode: "release", recordRelease: false, a: baseSpec, b: bSpec, noise: noiseStatus, runs: Math.max(opts.runs, mutant.runs ?? 1) });
     } catch (e) {
       const message = e instanceof Error ? e.message.split("\n")[0]! : String(e);
-      results.push({ name: mutant.name, caught: false, attributed: false, verdict: "error", artefacts: [], report: message });
+      results.push({ name: mutant.name, caught: false, attributed: false, byInforming: false, verdict: "error", artefacts: [], report: message });
       opts.log(`mutant ${mutant.name}: ERROR, not caught (${message})`);
       continue;
     }
-    const artefacts = [...new Set(outcome.report.compare.unclaimed.map((h) => h.artefact))];
-    const caught = outcome.report.verdict === "fail";
-    const attributed = mutant.expect.some((a) => artefacts.includes(a));
-    results.push({ name: mutant.name, caught, attributed, verdict: outcome.report.verdict, artefacts, report: outcome.files.html });
+    const judged = judgeMutant(mutant, outcome.report.verdict, outcome.report.compare.unclaimed, outcome.report.compare.hunks, baseInforming);
+    results.push({ name: mutant.name, ...judged, verdict: outcome.report.verdict, report: outcome.files.html });
     // As it finishes, so a run that is killed later still says what it had found.
-    opts.log(`mutant ${mutant.name}: ${caught ? "caught" : "NOT caught"}, ${attributed ? "attributed" : "NOT attributed"} (${outcome.report.verdict}${artefacts.length ? `; ${artefacts.join(", ")}` : ""})`);
+    opts.log(`mutant ${mutant.name}: ${judged.caught ? "caught" : "NOT caught"}${judged.byInforming ? " by an informing check" : ""}, ${judged.attributed ? "attributed" : "NOT attributed"} (${outcome.report.verdict}${judged.artefacts.length ? `; ${judged.artefacts.join(", ")}` : ""})`);
   }
 
   opts.log("");
@@ -146,7 +176,7 @@ export async function runMutants(options: MutantsOptions): Promise<boolean> {
     opts.log(`${r.name.padEnd(16)} ${(r.caught ? "yes" : "NO").padEnd(7)} ${(r.attributed ? "yes" : "NO").padEnd(11)} ${r.artefacts.join(", ") || "—"}`);
   }
   const failed = results.filter((r) => !r.caught || !r.attributed);
-  writeMutantsSummary(opts.outDir, { ranAt, base: opts.base, caught: results.length - failed.length, total: results.length, escaped: failed.map((r) => r.name) });
+  writeMutantsSummary(opts.outDir, { ranAt, base: opts.base, caught: results.length - failed.length, total: results.length, escaped: failed.map((r) => r.name), planted: results.map((r) => r.name), byInforming: results.filter((r) => r.byInforming && r.caught && r.attributed).map((r) => r.name) });
   if (failed.length) {
     opts.log("");
     for (const r of failed) opts.log(`escaped: ${r.name} (verdict ${r.verdict}) — ${r.report}`);

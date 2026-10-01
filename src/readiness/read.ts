@@ -11,6 +11,8 @@ import { QUALITY_FILE, parseQualityRecord } from "../a3/quality.ts";
 import type { ReportDelta } from "../report/delta.ts";
 import type { RunReport } from "../types.ts";
 import { parseReleaseHistory, type ReleaseHistory } from "./releases.ts";
+import { POLICY_FAMILY } from "../compare/policy.ts";
+import { policyFacts, type AaNight } from "./soak.ts";
 import { MAIN_TO_RC, REHEARSALS, STREAM_DIR, type KeptForecast, type Rehearsal } from "./model.ts";
 
 function json<T>(file: string): T | undefined {
@@ -80,7 +82,10 @@ export function readForecasts(site: string): KeptForecast[] {
       ...(Object.keys(rehearsals).length ? { rehearsals } : {}),
       ...(report?.compare ? { report: { ...(report.ranAt ? { ranAt: report.ranAt } : {}), compare: report.compare, ...(report.load ? { load: report.load } : {}), ...(report.noise ? { noise: report.noise } : {}), ...(report.provenance ? { provenance: report.provenance } : {}) } } : {}),
       ...(quality !== undefined ? { quality } : {}),
-      ...(unreleased ? { unreleased } : {})
+      ...(unreleased ? { unreleased } : {}),
+      // Since 1.25.0, for the soak: the in-run noise this forecast measured, and what each policy check found on b.
+      ...(Array.isArray(report?.inRunNoise?.hunks) ? { a2Hunks: report.inRunNoise.hunks.length } : {}),
+      ...(Array.isArray(report?.compare?.matches) && report.compare.hunks?.some((h) => (POLICY_FAMILY as readonly string[]).includes(h.artefact)) ? { policy: policyFacts(report.compare.matches) } : {})
     });
   }
   return out;
@@ -105,4 +110,16 @@ export function readReleaseHistory(file: string): { history?: ReleaseHistory; so
   const h = parseReleaseHistory(json<unknown>(file));
   if (!h) return { source: "not read (releases.json is not a release history)" };
   return { history: h, source: `read ${h.fetchedAt || "?"}${h.errors.length ? `; GitHub did not answer everything: ${h.errors.join("; ")}` : ""}` };
+}
+
+/** Since 1.25.0, for the soak: the nightly A/As from noise-history.json, and a line saying what was read. */
+export function readAaNights(file: string): { aa?: AaNight[]; source: string } {
+  if (!existsSync(file)) return { source: "not read (no noise-history.json in the site: the pages were built without the noise branch)" };
+  const h = json<{ entries?: unknown }>(file);
+  if (!h || !Array.isArray(h.entries)) return { source: "not read (noise-history.json has no entries)" };
+  const aa = h.entries.flatMap((e: unknown) => {
+    const o = e as { ranAt?: unknown; hunks?: unknown; degraded?: unknown };
+    return typeof o?.ranAt === "string" && Number.isFinite(Date.parse(o.ranAt)) && typeof o.hunks === "number" ? [{ ranAt: o.ranAt, hunks: o.hunks, degraded: Array.isArray(o.degraded) ? o.degraded.map(String) : [] }] : [];
+  });
+  return { aa, source: `read, ${aa.length} A/A(s)` };
 }

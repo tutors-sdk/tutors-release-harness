@@ -215,7 +215,7 @@ describe("report.json", () => {
     const cli = json("docs/contract/cli.json");
     for (const flag of cli.flags.filter((f: { since?: string }) => f.since === "1.2.0")) expect(changes, flag.name).toContain(`--${flag.name === "runtime" ? "no-runtime" : flag.name}`);
     for (const [name, v] of Object.entries(cli.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.2.0")) expect(changes, name).toContain(name);
-    expect(CONTRACT_VERSION).toBe("1.24.0");
+    expect(CONTRACT_VERSION).toBe("1.25.0");
     // The harness version is package.json's and moves at least as far as the contract's (docs/contract.md, Versioning):
     // a mask or engine PR bumps the patch of the harness alone, so do not pin a literal here.
     expect(json("package.json").version).toBe(HARNESS_VERSION);
@@ -285,6 +285,19 @@ describe("report.json", () => {
     for (const command of cliJson.commands.filter((c: { since?: string }) => c.since === "1.5.0")) expect(changes, command.name).toContain(command.name);
     for (const [name, v] of Object.entries(cliJson.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.5.0")) expect(changes, name).toContain(name);
     for (const workflow of ["main-preview.yml", "pages.yml"]) expect(changes, workflow).toContain(workflow);
+  });
+
+  it("1.25.0: its changelog and release note name the three policy mutants, unverified, a2 every night and the soak count", () => {
+    const start = contractMd.indexOf("### 1.25.0");
+    const end = contractMd.indexOf("### 1.24.0");
+    expect(start).toBeGreaterThan(0);
+    expect(end).toBeGreaterThan(start);
+    const changes = contractMd.slice(start, end).replace(/\s+/g, " ");
+    for (const item of ["releases/1.25.0.md", "minor", "`secret-env`", "`vulnerable-package`", "`unsigned-build`", "`<app>/unverified`", "`byInforming`", "--a2", "--noise-history", "`soak`"]) expect(changes, item).toContain(item);
+    const section = contractMd.slice(contractMd.indexOf("## The overnight readiness page"), contractMd.indexOf("## CLI")).replace(/\s+/g, " ");
+    for (const item of ["**The soak toward 2.0**", "2026-10-02", "**paused**", "**broken**", "the target is **10**", "**quiet nights**", "**eligible**"]) expect(section, item).toContain(item);
+    const note = readFileSync(resolve(ROOT, "docs/releases/1.25.0.md"), "utf8").replace(/\s+/g, " ");
+    for (const item of ["2 October 2026", "No engine level changes and nothing new gates", "caught by an informing check", "a2 every night", "fires every night on production too"]) expect(note, item).toContain(item);
   });
 
   it("1.24.0: its changelog and release note name side a2, the deterministic artefacts, that it never gates and what it costs", () => {
