@@ -47,7 +47,7 @@ The format is part of [the contract](../docs/contract.md#claims-file).
 
 | field | meaning |
 | --- | --- |
-| `artefact` | `dom`, `screenshot`, `network`, `console`, `headers`, `axe`, `focus`, `metrics`, `logs`, `timing`, `persistence`, `bus`, `migration`, `upgrade`, `image-manifest`, `sbom`, `vulns`, `runtime`, `startup`, `image-hardening`, `build-provenance`, `vuln-ceiling`, `timing-tolerance` (since 1.26.0), `asset-graph` (since 1.27.0), or `*` |
+| `artefact` | `dom`, `screenshot`, `network`, `console`, `headers`, `axe`, `focus`, `metrics`, `logs`, `timing`, `persistence`, `bus`, `migration`, `upgrade`, `image-manifest`, `sbom`, `vulns`, `runtime`, `startup`, `image-hardening`, `build-provenance`, `vuln-ceiling`, `timing-tolerance` (since 1.26.0), `asset-graph` (since 1.27.0), `replay` (since 1.28.0), or `*` |
 | `scope` | a glob matched against the hunk's scope **or** its route (see below) |
 | `reason` | the Rule id or changelog entry. "see PR" and "approved" are rejected by the schema. Required, unless the claim has a `rule` (then it is optional free text) |
 | `rule` | since 1.3.0: a Rule's four digits, quoted (`"0031"`), which must be in the rules file given with `--rules`. The report shows its title |

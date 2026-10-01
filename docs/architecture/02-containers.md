@@ -157,7 +157,7 @@ flowchart LR
   nightly["<b>nightly-noise.yml</b><br/>[Container: workflow]<br/>A/A, five runs, on the production tag, then publish"]:::container
   release["<b>release.yml</b><br/>[Container: workflow, run-name release candidate]<br/>release, migration, upgrade, publish-record, override-record"]:::container
   post["<b>post-deploy.yml</b><br/>[Container: workflow]<br/>reference journeys against production"]:::container
-  weekly["<b>weekly-mutants.yml</b><br/>[Container: workflow]<br/>engine-change guard, fifteen mutants, also on every PR"]:::container
+  weekly["<b>weekly-mutants.yml</b><br/>[Container: workflow]<br/>engine-change guard, sixteen mutants, also on every PR"]:::container
 
   noiseb[("<b>noise branch</b><br/>[git branch, force-pushed]<br/>status, history, summary")]:::store
   recb[("<b>release-records branch</b><br/>[git branch, one commit per candidate]")]:::store

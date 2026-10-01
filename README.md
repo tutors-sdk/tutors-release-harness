@@ -76,7 +76,7 @@ export HARNESS_IMAGE_PREFIX='quay.io/tutors-sdk/tutors-{app}'  # default is `tut
 pnpm harness images ensure --a 16.2.0 --b 16.3.0-rc.1          # needs cosign >= 3 on PATH for pulled images
 pnpm harness run --mode migration --a v16.2.0 --b release/16.3.0
 pnpm harness run --mode upgrade   --a 16.2.0 --b 16.3.0-rc.1
-pnpm harness mutants --base local                              # fifteen planted regressions, all caught
+pnpm harness mutants --base local                              # sixteen planted regressions, all caught
 ```
 
 **What does `main` change since the last release?** One command; it finds the release itself
@@ -201,17 +201,18 @@ blind spot you chose.
 
 ### Journeys
 
-Three sets, all role-and-name selectors, all parameterised by base URL:
+Four sets, all role-and-name selectors, all parameterised by base URL:
 
 | Set | Journeys | Against |
 | --- | --- | --- |
 | `fixture` | anonymous student reads a course; searches; catalogue; live | the pinned course in `fixtures/course-server` |
 | `auth` | a student signs in through the identity stub, reads a topic; what the reader persists is compared | the signed-in reader per side + the persistence stub |
 | `reference` | anonymous reader of the published reference course | `reference-course.netlify.app` — the same upstream for both sides, and the only set that can run against production |
+| `replay` (since 1.28.0) | a fixed list of course URLs ([`traffic/replay/urls.ts`](traffic/replay/urls.ts)) opened once, compared on status, headers and network only, as the informing `replay` artefact | the pinned course in `fixtures/course-server` |
 
 ### The harness's own signal
 
-[`mutants/`](mutants/README.md) holds fifteen planted regressions built from the
+[`mutants/`](mutants/README.md) holds sixteen planted regressions built from the
 base reader image: a dropped security header, a 500 on a route, a console
 error, an extra landmark, an image with no alt text, a 400 ms slower SSR path,
 a page that writes a row for anonymous readers, navigator links that leave the
@@ -225,7 +226,7 @@ mutants has no business gating a release.
 
 ```
 harness run --mode <mode> --a <ref> --b <ref> [--substrate compose|kind] [--claims f] [--noise f|skip]
-            [--runs n] [--set fixture,auth,reference] [--journey name]... [--load 20x30s]
+            [--runs n] [--set fixture,auth,reference,replay] [--journey name]... [--load 20x30s]
             [--now iso] [--out dir] [--image-prefix p|template-with-{app}] [--allow-unsigned]
             [--no-screenshots] [--no-axe] [--no-focus] [--no-runtime] [--startup-restarts n] [--keep] [--no-stack]
             post-deploy: --recorded <release run dir> --production reader=URL,catalogue=URL,live=URL[,time=URL]
@@ -287,7 +288,7 @@ prints the same), and the HTML and Markdown reports name it in their footer.
 | `pages.yml` | after any workflow that keeps a report, or by hand | publishes every kept report, with an index, and the scoreboard's trends to [GitHub Pages](https://tutors-sdk.github.io/tutors-release-harness/) so a report can be shared as a link |
 | `post-deploy.yml` | monorepo dispatch after deploy, then every 15 minutes | reference journeys against production vs the recorded candidate; opens a rollback issue on a new difference, with its 5 Whys stub |
 | `tags.yml` | a version change lands on main, or by hand | tags `v<version>` on the first commit of main that carries it |
-| `weekly-mutants.yml` | weekly, and on every PR | the fifteen mutants; on a PR only when it touches an engine, a collector, a mask, a journey, a fixture, a stack, the gate or a mutant (`src/ci/engine-change.ts`), which also needs a version bump |
+| `weekly-mutants.yml` | weekly, and on every PR | the sixteen mutants; on a PR only when it touches an engine, a collector, a mask, a journey, a fixture, a stack, the gate or a mutant (`src/ci/engine-change.ts`), which also needs a version bump |
 
 Images are pulled from Quay (`HARNESS_IMAGE_PREFIX`, default in CI
 `quay.io/tutors-sdk/tutors-{app}`) and their cosign signatures verified — the
@@ -348,7 +349,7 @@ migration fixtures under `tests/fixtures/migrations`. See [TESTING.md](TESTING.m
 
 ## Where to stop
 
-Six journeys in three sets, not a hundred; fifteen mutants, not thirty. The harness
+Seven journeys in four sets, not a hundred; sixteen mutants, not thirty. The harness
 compares artefacts, so its power comes from breadth of *capture* per journey,
 not from the number of journeys. Add a journey only when a real regression
 escaped that a journey would have caught.

@@ -3,6 +3,7 @@
  * the scoreboard (for novelty) and the harness's masks (for a mask's reason). Kept apart from src/glance/rank.ts, which
  * is pure. Anything missing is a reason, which the glance turns into `notChecked`; nothing here throws for a missing file.
  */
+import { isReplayJourney } from "../compare/replay.ts";
 import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import type { Changes } from "../changes/signals.ts";
@@ -25,7 +26,8 @@ export function captures(runDir: string): NonNullable<GlanceInputs["captures"]> 
     }
     try {
       const c = readJson(file) as Partial<SideCapture>;
-      if (Array.isArray(c.journeys)) out[side] = { journeys: c.journeys };
+      // Since 1.28.0 the replay set is left out: the glance ranks what the journeys exercise, and replay is informing.
+      if (Array.isArray(c.journeys)) out[side] = { journeys: c.journeys.filter((j) => !isReplayJourney(j.journey)) };
       else missing.push(`${side}/capture.json (no journeys)`);
     } catch {
       missing.push(`${side}/capture.json (not JSON)`);

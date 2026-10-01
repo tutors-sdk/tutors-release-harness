@@ -12,9 +12,9 @@ const WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "e
 const read = (f: string) => readFileSync(resolve(ROOT, f), "utf8");
 
 describe("journey counts written in prose", () => {
-  it("there are six journeys in three sets", () => {
-    expect(journeys).toHaveLength(6);
-    expect(new Set(journeys.map((j) => j.set)).size).toBe(3);
+  it("there are seven journeys in four sets (the replay set since 1.28.0)", () => {
+    expect(journeys).toHaveLength(7);
+    expect(new Set(journeys.map((j) => j.set)).size).toBe(4);
   });
 
   it.each(["README.md", "TESTING.md", "traffic/journeys/journeys.ts", "docs/contract.md", "docs/modes.md", "src/types.ts", "compose.harness.yaml"])(

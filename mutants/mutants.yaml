@@ -1,4 +1,4 @@
-# The harness's own negative fixtures: fifteen planted regressions the release
+# The harness's own negative fixtures: sixteen planted regressions the release
 # gate must catch, each attributed to the right artefact. `harness mutants`
 # builds each one from the base reader image, runs release mode (base vs
 # mutant) and asserts the verdict is FAIL with at least one unclaimed hunk of
@@ -95,3 +95,9 @@ mutants:
   - name: extra-chunk
     plants: every page loads one more hashed JS chunk under /_app/immutable/
     expect: [asset-graph]
+
+  # Since 1.28.0: the replay set (src/compare/replay.ts), informing until 2.0. The fault is on pages only the replay set
+  # opens, so no other engine sees it: the run passes, and only replay's finding catches it.
+  - name: replay-header
+    plants: the X-Content-Type-Options header is no longer sent on /note/ pages
+    expect: [replay]

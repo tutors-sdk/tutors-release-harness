@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.27.0`
+Contract version: `1.28.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -149,10 +149,10 @@ written). Source of truth: `RunReport` in `src/types.ts`.
 `artefact` is one of `dom`, `screenshot`, `network`, `console`, `headers`,
 `axe`, `focus`, `metrics`, `logs`, `timing`, `persistence`, `bus`, `migration`,
 `upgrade`, `image-manifest`, `sbom`, `vulns`, `runtime`, `startup`, `image-hardening`,
-`build-provenance`, `vuln-ceiling`, `timing-tolerance`, `asset-graph`. `bus` and `image-manifest` to `startup` are since 1.2.0;
+`build-provenance`, `vuln-ceiling`, `timing-tolerance`, `asset-graph`, `replay`. `bus` and `image-manifest` to `startup` are since 1.2.0;
 `image-hardening` to `vuln-ceiling`, the policy family, since 1.22.0 (see [The policy family](#the-policy-family));
 `timing-tolerance` since 1.26.0 (see [The timing tolerance](#the-timing-tolerance)); `asset-graph` since
-1.27.0 (see [Asset-graph folding](#asset-graph-folding)) (see [Static image artefacts](#static-image-artefacts)
+1.27.0 (see [Asset-graph folding](#asset-graph-folding)); `replay` since 1.28.0 (see [The replay set](#the-replay-set)) (see [Static image artefacts](#static-image-artefacts)
 and [Container runtime artefacts](#container-runtime-artefacts)); a consumer
 must tolerate an artefact name it does not know. `severity` is `fail` (gates unless claimed) or `info` (reported,
 never gates). `scope` and `path` are what a claim's glob is matched against.
@@ -357,7 +357,7 @@ Every diff engine is **blocking**, so a run decides exactly what it decided befo
 new engine or check ships informing, with the date it starts to block when there is one, and is
 watched on the readiness page before it may stop a release: since 1.22.0 the three checks of
 [the policy family](#the-policy-family) are informing, with no date set, since 1.26.0
-[the timing tolerance](#the-timing-tolerance), and since 1.27.0 [asset-graph folding](#asset-graph-folding). An engine missing from
+[the timing tolerance](#the-timing-tolerance), since 1.27.0 [asset-graph folding](#asset-graph-folding), and since 1.28.0 [the replay set](#the-replay-set). An engine missing from
 the table is blocking: no check escapes the Gate by being left out.
 
 ### The policy family
@@ -448,6 +448,31 @@ its claim. At 2.0 it becomes blocking. Each failing churn hunk then becomes info
 `<app>` covers a re-chunking. Its planted mutant is `extra-chunk` (every page loads one more chunk).
 The capture's network entries gain `bytes` (the response's `content-length`, when sent). No engine
 diffs it.
+
+### The replay set
+
+Since 1.28.0 (runway improvement G) a fourth journey set, `replay`, gives breadth without new
+journeys to write. Its one journey, `replay-course-urls` (anonymous, read-only), opens each URL of
+a fixed list (`traffic/replay/urls.ts`) directly on both sides. It runs once (run 1 of `--runs`) and
+takes no screenshot, axe scan or focus walk. The list starts with the pinned fixture course: the
+second topic, a talk, both notes, a step of the second lab, and a topic that does not exist. Page
+keys are `replay:<key>`. `--set` takes `replay`, and it is in the default.
+
+The `replay` artefact (`src/compare/replay.ts`) compares those pages on **status, headers and
+network only**, with the words of `network`, `headers` and journey outcomes, relabelled `replay`:
+
+| Scope | A finding when |
+| --- | --- |
+| `replay:<key>/<header>` | a document header was added, dropped or changed |
+| `replay:<key> <METHOD> <route>` | a request appeared, went, was made a different number of times, or its status (the document's among them), content type, cache header or schema changed |
+| `replay-course-urls` | the journey failed on b only |
+
+No other engine sees replay pages, so they add no `dom`, `screenshot`, `console`, `timing` or
+`persistence` hunks. The glance and the scoreboard's journey counts leave the set out, and the set
+failing on both sides does not degrade an A/A. The check is **informing**, with no date
+([Engine levels](#engine-levels)). The runway puts G after 2.0, so it is the last to be promoted.
+Its planted mutant is `replay-header`: `X-Content-Type-Options` dropped on `/note/` pages, which
+only the replay set opens on the fixture course.
 
 ## Verdicts and exit codes
 
@@ -780,7 +805,7 @@ claims:
     digests: { reader: "sha256:…" }                     # since 1.25.1, optional: the images it was written against, by app
 ```
 
-- `artefact`: one of the twenty-four artefact names above, or `*`.
+- `artefact`: one of the twenty-five artefact names above, or `*`.
 - `scope`: matched with picomatch (`dot: true`, case-insensitive) against the
   hunk's `scope` **or** its `path`.
 - `reason`: at least 8 characters, and must not start with `see pr`,
@@ -1403,7 +1428,7 @@ confidence`), nor `harness guard scoreboard` (since 1.11.0; `guard all` runs it 
 
 | Command | Stable flags |
 | --- | --- |
-| `harness run` | `--mode` (required), `--a`, `--b` (required except in post-deploy), `--claims <file>`, `--rules <path\|url>` (since 1.3.0: the Rules a claim may name, see [The rules file](#the-rules-file)), `--vex <file>` (since 1.23.0: the release's OpenVEX file, handed to the scanner, see [OpenVEX](#openvex-exceptions-the-scanner-reads)), `--a2` (since 1.24.0, not stable: side a2, see [In-run noise](#in-run-noise-side-a2)), `--noise <file\|dir\|skip\|none>` (omitted: the latest status in the local store, see [`noise-status.json`](#noise-statusjson-and-the-7-day-rule)), `--runs <n>`, `--set <fixture,auth,reference>`, `--journey <name>` (repeatable), `--load <rate>x<duration>`, `--out <dir>`, `--image-prefix <prefix or {app} template>`, `--allow-unsigned`, `--require-verified` (noise mode: write the status `degraded` unless every image on both sides was pulled and verified in this run), `--override-reason <text>` and `--override-by <who>` (see [Overriding a FAIL](#overriding-a-fail)), `--a-digests <digests>` and `--b-digests <digests>` (since 1.3.0: pin a side's images, see [Image digests](#image-digests-and-the-release-record)); post-deploy: `--recorded <release run dir>`, `--production reader=URL,catalogue=URL,live=URL[,time=URL]`, and since 1.3.0 `--deployed <tag>`, `--deployed-digests <digests>` and `--release-record <file\|dir>` (see [Checking a deployment](#checking-a-deployment)) |
+| `harness run` | `--mode` (required), `--a`, `--b` (required except in post-deploy), `--claims <file>`, `--rules <path\|url>` (since 1.3.0: the Rules a claim may name, see [The rules file](#the-rules-file)), `--vex <file>` (since 1.23.0: the release's OpenVEX file, handed to the scanner, see [OpenVEX](#openvex-exceptions-the-scanner-reads)), `--a2` (since 1.24.0, not stable: side a2, see [In-run noise](#in-run-noise-side-a2)), `--noise <file\|dir\|skip\|none>` (omitted: the latest status in the local store, see [`noise-status.json`](#noise-statusjson-and-the-7-day-rule)), `--runs <n>`, `--set <fixture,auth,reference,replay>` (`replay` since 1.28.0), `--journey <name>` (repeatable), `--load <rate>x<duration>`, `--out <dir>`, `--image-prefix <prefix or {app} template>`, `--allow-unsigned`, `--require-verified` (noise mode: write the status `degraded` unless every image on both sides was pulled and verified in this run), `--override-reason <text>` and `--override-by <who>` (see [Overriding a FAIL](#overriding-a-fail)), `--a-digests <digests>` and `--b-digests <digests>` (since 1.3.0: pin a side's images, see [Image digests](#image-digests-and-the-release-record)); post-deploy: `--recorded <release run dir>`, `--production reader=URL,catalogue=URL,live=URL[,time=URL]`, and since 1.3.0 `--deployed <tag>`, `--deployed-digests <digests>` and `--release-record <file\|dir>` (see [Checking a deployment](#checking-a-deployment)) |
 | `harness compare` | `--dir <run dir>` (required), `--mode` (required), `--claims`, `--rules`, `--noise` |
 | `harness images ensure` | `--a`, `--b` (required), `--a-digests`, `--b-digests` (since 1.3.0: pull by digest, verify on it, refuse a tag that has moved; a pinned image is never built), `--ref-a`, `--ref-b` (monorepo git refs to build from when the pull fails), `--image-prefix`, `--allow-unsigned`, `--image-cache <dir>` (since 1.2.0: refreshed from images pulled and verified in this run; used, as provenance `cached`, only when the registry cannot be reached, and never for a tag the registry says does not exist). With `GITHUB_OUTPUT` set it writes `image_cache=none\|used\|refreshed` |
 | `harness mutants` | `--base <tag or reader image>` (required), `--out`, `--image-prefix`, `--allow-unsigned` |
@@ -1807,6 +1832,20 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.28.0 (minor; the replay set, informing)
+
+The release note is [releases/1.28.0.md](releases/1.28.0.md). Runway improvement G. A minor: a new
+journey set (`replay`), a new journey (`replay-course-urls`) and a new artefact name (`replay`).
+The check ships **informing**, so no verdict, Gate or exit code moves.
+
+- [The replay set](#the-replay-set): a fixed list of fixture-course URLs (`traffic/replay/urls.ts`),
+  opened once per side and compared on status, headers and network only. No other engine sees those
+  pages.
+- `--set` takes `replay`, and the default is all four sets. Seven journeys in four sets.
+- A claim may name `replay` (twenty-five artefact names). `report.schema.json`'s artefact enum gains it.
+- A new planted mutant, `replay-header`, must be attributed to it: sixteen mutants. The readiness
+  soak watches it beside the other informing checks.
 
 ### 1.27.0 (minor; asset-graph folding, informing)
 
