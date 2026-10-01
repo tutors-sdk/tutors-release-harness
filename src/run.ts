@@ -30,6 +30,7 @@ import { HARNESS_VERSION, SCHEMA_VERSION, harnessInfo } from "./version.ts";
 import { DEFAULT_RESTARTS } from "./runtime/startup.ts";
 import { parseNoiseStatus } from "./noise.ts";
 import { collectImageStatic, staticPolicyFromEnv } from "./image-static/collect.ts"; // R5
+import { loadOpenVex } from "./image-static/vex.ts";
 import { imageArtefactsSection, imageStaticReasons } from "./image-static/report.ts"; // R5
 
 export { HARNESS_VERSION };
@@ -47,6 +48,8 @@ export interface RunOptions {
   sets: JourneySet[];
   journeys: string[];
   claimsFile?: string;
+  /** Since 1.23.0: the release's OpenVEX file (`--vex`), handed to the scanner on both sides (src/image-static/vex.ts). */
+  vexFile?: string;
   /** Since 1.3.0: the release's rules.json, a path or an http(s) URL (`--rules`). A claim's `rule` must be in it. */
   rules?: string;
   masksFile: string;
@@ -283,6 +286,8 @@ export async function run(opts: RunOptions): Promise<RunOutcome> {
   // Before anything starts: an unreadable rules file, or a claim naming a rule it does not hold, is exit 2 with no stack up.
   const rules = opts.rules ? await loadRules(opts.rules) : undefined;
   const claims = opts.claimsFile ? loadClaims(opts.claimsFile, rules) : [];
+  // Since 1.23.0: the release's OpenVEX file (--vex), checked now so a bad one is exit 2 with no stack up.
+  const vex = opts.vexFile ? { path: opts.vexFile, info: loadOpenVex(opts.vexFile) } : undefined;
   // The directory is named now and made once the run has something to put in it (`makeOutDir`): a run that cannot judge (an image
   // that is not there, or is not verified: exit 2) leaves nothing behind, not an empty directory.
   const outDir = resolve(opts.outDir, timestampDir(opts.mode));
@@ -342,7 +347,8 @@ export async function run(opts: RunOptions): Promise<RunOutcome> {
   opts.log(`  a: ${APPS.map((app) => a.images[app]).join(", ")} — ${a.provenance.summary}`);
   opts.log(`  b: ${APPS.map((app) => b.images[app]).join(", ")} — ${b.provenance.summary}`);
   // R5: what the images are (manifest, SBOM, vulnerabilities), read from the images before anything runs.
-  const staticPolicy = { ...staticPolicyFromEnv(process.env, trust.policy), ...opts.static };
+  const staticPolicy = { ...staticPolicyFromEnv(process.env, trust.policy), ...(vex ? { vex } : {}), ...opts.static };
+  if (vex) opts.log(`  OpenVEX: ${vex.info.source}, ${vex.info.statements} statement(s), ${vex.info.excepts} that take an advisory out of the scan, on both sides`);
   opts.log("collecting static image artefacts (manifest, SBOM, vulnerabilities)…");
   a.imageStatic = collectImageStatic(a.images, a.provenance, { exec: realExec, policy: staticPolicy, log: opts.log });
   b.imageStatic = collectImageStatic(b.images, b.provenance, { exec: realExec, policy: staticPolicy, log: opts.log });

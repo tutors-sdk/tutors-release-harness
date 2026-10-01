@@ -12,7 +12,7 @@ function describeApp(s: AppImageStatic): Record<ImageArtefactKind, ImageArtefact
   return {
     manifest: status(s.manifest, (m) => `${m.layers} layers, ${(m.size / MB).toFixed(1)} MB, USER ${m.user || "unset"}, ports ${m.ports.join(", ") || "none"}`),
     sbom: status(s.sbom, (d) => `${Object.keys(d.packages).length} distinct package(s)`),
-    vulns: status(s.vulns, (d) => `${Object.keys(d.findings).length} advisories${d.scanner.db ? `, db ${d.scanner.db}` : ""}`)
+    vulns: status(s.vulns, (d) => `${Object.keys(d.findings).length} advisories${d.scanner.db ? `, db ${d.scanner.db}` : ""}${d.vex ? `, OpenVEX ${d.vex.source} (${d.vex.statements} statement(s)): ${d.vex.excepted.length ? `${d.vex.excepted.length} set aside, ${d.vex.excepted.join(", ")}` : "none set aside"}` : ""}`)
   };
 }
 

@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { userInfo } from "node:os";
 import { basename, join, resolve } from "node:path";
 import { isUrl } from "../claims/rules.ts";
+import { OPENVEX_FILE } from "../image-static/vex.ts";
 import { ROOT } from "../stack.ts";
 import type { RunReport } from "../types.ts";
 import { DEFAULT_SCOPES, SCOPES, renderDoctor, runDoctor, type Scope } from "./doctor.ts";
@@ -663,6 +664,7 @@ export function buildPlan(task: string | undefined, v: Values, env: NodeJS.Proce
         candidate: b,
         ...(str(v, "claims") ? { claims: resolve(str(v, "claims")!) } : {}),
         ...(str(v, "rules") ? { rules: isUrl(str(v, "rules")!) ? str(v, "rules")! : resolve(str(v, "rules")!) } : {}),
+        ...(str(v, "vex") ? { vex: resolve(str(v, "vex")!) } : {}),
         ...(str(v, "runs") ? { runs: integer(v, "runs", WORKFLOW_DEFAULTS.runs, 1) } : {}),
         ...(str(v, "migrations-a") ? { migrationsA: str(v, "migrations-a")! } : {}),
         ...(str(v, "migrations-b") ? { migrationsB: str(v, "migrations-b")! } : {}),
@@ -923,6 +925,9 @@ export function releaseCommand(v: Values, deps: ReleaseCommandDeps = {}): number
   // The claims the release carries: --claims, else release/claims.yaml in the monorepo checkout, when there is one.
   const monorepoClaims = monorepo ? resolve(monorepo, "release", "claims.yaml") : undefined;
   const claims = str(v, "claims") ? resolve(str(v, "claims")!) : monorepoClaims && existsSync(monorepoClaims) ? monorepoClaims : undefined;
+  // Since 1.23.0: the OpenVEX file beside them the same way: --vex, else release/openvex.json in the checkout, when there is one.
+  const monorepoVex = monorepo ? resolve(monorepo, "release", OPENVEX_FILE) : undefined;
+  const vex = str(v, "vex") ? resolve(str(v, "vex")!) : monorepoVex && existsSync(monorepoVex) ? monorepoVex : undefined;
   const rulesArg = str(v, "rules");
   const rules = rulesArg ? (isUrl(rulesArg) ? rulesArg : resolve(rulesArg)) : undefined;
   const fast = flag(v, "fast");
@@ -934,7 +939,7 @@ export function releaseCommand(v: Values, deps: ReleaseCommandDeps = {}): number
   // The scoreboard line goes to the local store unless --scoreboard names a file: never into the repository checkout unasked.
   const scoreboard = { file: str(v, "scoreboard") ? resolve(str(v, "scoreboard")!) : defaultScoreboardFile(home), noiseHistory: join(noiseDir(home), "noise-history.json") };
   const kaizen = deps.kaizen ?? join(ROOT, KAIZEN_DIR);
-  const options = { candidate, baseline, fast, ...(claims ? { claims } : {}), ...(rules ? { rules } : {}), ...(out ? { out } : {}), ...(Object.keys(extras).length ? { score: extras } : {}), ...(monorepo ? { monorepo: resolve(monorepo) } : {}), scoreboard, kaizen };
+  const options = { candidate, baseline, fast, ...(claims ? { claims } : {}), ...(rules ? { rules } : {}), ...(vex ? { vex } : {}), ...(out ? { out } : {}), ...(Object.keys(extras).length ? { score: extras } : {}), ...(monorepo ? { monorepo: resolve(monorepo) } : {}), scoreboard, kaizen };
   if (flag(v, "dry-run")) {
     say(renderReleasePlan({ candidate, baseline, fast, stages: planRelease(options, noise), env: planEnv, scoreboard: scoreboard.file, kaizen }));
     return 0;
@@ -956,6 +961,7 @@ export function releaseCommand(v: Values, deps: ReleaseCommandDeps = {}): number
   try {
     say(`harness release: ${candidate} beside ${baseline.tag} (${baseline.how}); state in ${home}`);
     if (claims) say(`claims: ${claims}`);
+    if (vex) say(`OpenVEX: ${vex}`);
     const outcome = runRelease(
       { ...options, outRoot: out ?? outRoot(), noise },
       {

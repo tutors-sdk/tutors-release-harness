@@ -1,6 +1,7 @@
 import type { Exec } from "../images.ts";
 import { failureReason, fillCommand, type TempFiles } from "./command.ts";
 import type { Collected, VulnData, VulnFinding } from "./types.ts";
+import type { VexInfo } from "./vex.ts";
 
 /**
  * The scanner is a command, not a dependency. `{sbom}` is replaced by the path
@@ -18,7 +19,13 @@ export interface VulnDeps {
   dbDir?: string;
   /** How old the database may be (HARNESS_VULN_DB_MAX_AGE_DAYS), exported as grype's own limit; unset, grype's default of 5 days applies. */
   dbMaxAgeDays?: number;
+  /** Since 1.23.0: an OpenVEX file, checked (src/image-static/vex.ts), handed to grype or trivy as `--vex <path>`. */
+  vex?: { path: string; info: VexInfo };
 }
+
+/** The scanners that take `--vex <file>`: grype (since 0.9x) and trivy. Another scanner command (HARNESS_VULN_CMD) is run without it, and its scan carries no `vex`. */
+export const VEX_SCANNERS = new Set(["grype", "trivy"]);
+const scannerName = (argv0: string) => argv0.split(/[\\/]/).pop()!.replace(/\.exe$/i, "");
 
 /**
  * Pinning: the scanner may never update its database during a run, or a CVE
@@ -56,6 +63,8 @@ function add(findings: Record<string, VulnFinding>, id: string, severity: string
 
 interface GrypeOutput {
   matches?: { vulnerability?: { id?: string; severity?: string; fix?: { versions?: string[] } }; artifact?: { name?: string; version?: string } }[];
+  /** Since 1.23.0: what grype set aside; one whose rule carries a `vex-status` was set aside by the OpenVEX file. */
+  ignoredMatches?: { vulnerability?: { id?: string }; appliedIgnoreRules?: { "vex-status"?: string }[] }[];
   descriptor?: { name?: string; version?: string; db?: { built?: string; schemaVersion?: number; status?: { built?: string; schemaVersion?: number } } };
 }
 interface TrivyOutput {
@@ -76,10 +85,12 @@ export function parseScannerOutput(text: string): Collected<VulnData> {
     for (const m of o.matches) if (m.vulnerability?.id) add(findings, m.vulnerability.id, m.vulnerability.severity ?? "Unknown", pkg(m.artifact?.name, m.artifact?.version), m.vulnerability.fix?.versions?.join(", ") || undefined);
     const d = o.descriptor;
     const db = d?.db?.status ?? d?.db;
+    const excepted = [...new Set((o.ignoredMatches ?? []).filter((m) => m.vulnerability?.id && (m.appliedIgnoreRules ?? []).some((r) => r["vex-status"])).map((m) => m.vulnerability!.id!))].sort();
     return {
       ok: true,
       source: `${d?.name ?? "grype"}${d?.version ? ` ${d.version}` : ""}`,
-      data: { scanner: { name: d?.name ?? "grype", ...(d?.version ? { version: d.version } : {}), ...(db?.built ? { db: `built ${db.built}${db.schemaVersion ? ` schema ${db.schemaVersion}` : ""}` } : {}) }, findings }
+      data: { scanner: { name: d?.name ?? "grype", ...(d?.version ? { version: d.version } : {}), ...(db?.built ? { db: `built ${db.built}${db.schemaVersion ? ` schema ${db.schemaVersion}` : ""}` } : {}) }, findings },
+      ...(excepted.length ? { excepted } : {})
     };
   }
   if (Array.isArray(o.Results) || (o.Results === undefined && "SchemaVersion" in (raw as object))) {
@@ -100,11 +111,16 @@ export function collectVulns(deps: VulnDeps, app: string, sbomText: string | und
     return { ok: false, reason: `HARNESS_VULN_CMD: ${e instanceof Error ? e.message : String(e)}` };
   }
   if (!argv.length) return { ok: false, reason: "HARNESS_VULN_CMD is empty" };
+  // Since 1.23.0: the release's OpenVEX file, to a scanner that takes one; another scanner runs without it.
+  const vex = deps.vex && VEX_SCANNERS.has(scannerName(argv[0]!)) ? deps.vex : undefined;
+  if (vex) argv.push("--vex", vex.path);
   const result = deps.exec(argv[0]!, argv.slice(1), { env: scannerEnv(deps.dbDir, deps.dbMaxAgeDays) });
   if (result.error || result.status !== 0) {
     const reason = failureReason(argv[0]!, result, SCANNER_HINT);
     return { ok: false, reason: !result.error && DB_FAILURE.test(result.stderr) ? `${reason} (${DB_HINT})` : reason };
   }
   const parsed = parseScannerOutput(result.stdout);
-  return parsed.ok ? parsed : { ok: false, reason: `${argv[0]}: ${parsed.reason}` };
+  if (!parsed.ok) return { ok: false, reason: `${argv[0]}: ${parsed.reason}` };
+  const { excepted = [], ...collected } = parsed as typeof parsed & { excepted?: string[] };
+  return vex ? { ...collected, data: { ...collected.data, vex: { ...vex.info, excepted } } } : collected;
 }
