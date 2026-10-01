@@ -139,7 +139,7 @@ Because the gate does not pass `--noise`, the release step reads the local noise
 pnpm harness local mutants [--base T] [--dry-run]
 ```
 
-`images ensure --a T --b T`, then `mutants --base T`: an A/A first, then each of the fourteen planted regressions must be caught and attributed (a FAIL, or, for the three policy-check mutants while those checks are informing, a finding the base did not have). The mutants are built locally and syft must be installed (`harness doctor --for mutants`). `--base` defaults like the nightly's tag. See [chapter 5](05-noise-and-self-test.md#the-mutant-self-test).
+`images ensure --a T --b T`, then `mutants --base T`: an A/A first, then each of the fifteen planted regressions must be caught and attributed (a FAIL, or, for the three policy-check mutants while those checks are informing, a finding the base did not have). The mutants are built locally and syft must be installed (`harness doctor --for mutants`). `--base` defaults like the nightly's tag. See [chapter 5](05-noise-and-self-test.md#the-mutant-self-test).
 
 ### The two-stacks smoke: `harness local smoke`
 

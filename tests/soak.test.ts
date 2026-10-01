@@ -187,11 +187,11 @@ describe("the soak count", () => {
         m({ artefact: "dom", severity: "fail" }),
         m({ artefact: "timing-tolerance", scope: "reader:home", severity: "info", level: "informing", summary: "reader:home TTFB slower on b beyond the 10% tolerance" })
       ])
-    ).toEqual({ "image-hardening": { findings: 2, productionToo: 1 }, "build-provenance": { findings: 0, productionToo: 0 }, "vuln-ceiling": { findings: 1, productionToo: 0 }, "timing-tolerance": { findings: 1, productionToo: 0 } });
+    ).toEqual({ "image-hardening": { findings: 2, productionToo: 1 }, "build-provenance": { findings: 0, productionToo: 0 }, "vuln-ceiling": { findings: 1, productionToo: 0 }, "timing-tolerance": { findings: 1, productionToo: 0 }, "asset-graph": { findings: 0, productionToo: 0 } });
   });
 
-  it("watches every check that ships informing: the policy family, then the timing tolerance (since 1.26.0)", () => {
-    expect(SOAK_CHECKS).toEqual(["image-hardening", "build-provenance", "vuln-ceiling", "timing-tolerance"]);
+  it("watches every check that ships informing: the policy family, the timing tolerance (since 1.26.0), asset-graph folding (since 1.27.0)", () => {
+    expect(SOAK_CHECKS).toEqual(["image-hardening", "build-provenance", "vuln-ceiling", "timing-tolerance", "asset-graph"]);
   });
 });
 

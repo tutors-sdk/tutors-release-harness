@@ -5,7 +5,7 @@ production reader image plus one planted fault, listed in `mutants.yaml` with
 the artefact the report must attribute it to.
 
 ```bash
-pnpm harness mutants --base 16.2.0          # builds fourteen images, runs A/A then fourteen A/B runs
+pnpm harness mutants --base 16.2.0          # builds fifteen images, runs A/A then fifteen A/B runs
 ```
 
 The self-test first runs noise mode on the base (so the harness has the right
@@ -21,13 +21,13 @@ edge — a dropped header, a 500 on a route, injected HTML, a delay. Nothing
 else about the image changes, so a mutant is a fair stand-in for a release
 that shipped that regression.
 
-Nine mutants are edge faults (`kind: edge`, the default), all built this way:
+Ten mutants are edge faults (`kind: edge`, the default), all built this way:
 `dropped-header`, `route-500`, `console-error`, `dom-note`, `missing-alt`,
 `slow-ssr`, `anon-write` (every page records a learning event for anonymous readers,
 caught by the `persistence` collector), `focus-order` (navigator links leave
-the tab order, caught by the `focus` collector) and, since 1.26.0, `slow-ssr-mild`
-(the timing tolerance's mutant, below). All nine are in `mutants.yaml` and are
-built and run; none is waiting on anything.
+the tab order, caught by the `focus` collector), since 1.26.0 `slow-ssr-mild`
+(the timing tolerance's mutant) and since 1.27.0 `extra-chunk` (asset-graph's), both
+below. All ten are in `mutants.yaml` and are built and run; none is waiting on anything.
 
 ## Image-level mutants (R5)
 
@@ -80,6 +80,15 @@ or a journey's duration. The tolerance is **informing** until 2.0, so the mutant
 mutants are, by a finding the self-test's A/A did not have. Most pages' TTFB is far below 150 ms, so
 `timing` also FAILs the run. The mutant shows that the tolerance check can fire, not that it is the only
 check that sees the slowdown. Like `slow-ssr` it needs five runs.
+
+## Asset-graph's mutant (since 1.27.0)
+
+`extra-chunk` makes every page load one more module, `/_app/immutable/chunks/harness-planted.js`,
+which the wrapper serves (`export {};`, with a `content-length`). That is a re-chunked build in
+miniature, and it must be attributed to `asset-graph` (`src/compare/asset-graph.ts`): the app's
+immutable requests moved. `network` also FAILs the run, because a new request is a new request.
+The point is that asset-graph reports it. Asset-graph is informing until 2.0. At 2.0 it folds
+that network hunk into its own, and the mutant must then FAIL the run on `asset-graph`.
 
 ## Adding one
 

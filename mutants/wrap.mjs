@@ -24,7 +24,9 @@ child.on("exit", (code) => process.exit(code ?? 1));
 for (const signal of ["SIGTERM", "SIGINT"]) process.on(signal, () => child.kill(signal));
 
 const isHtml = (headers) => /text\/html/.test(headers["content-type"] ?? "");
-const REWRITING = ["console-error", "dom-note", "missing-alt", "anon-write", "focus-order"];
+const REWRITING = ["console-error", "dom-note", "missing-alt", "anon-write", "focus-order", "extra-chunk"];
+// extra-chunk (since 1.27.0, asset-graph's mutant): one more hashed JS chunk on every page, served by this wrapper.
+const PLANTED_CHUNK = "/_app/immutable/chunks/harness-planted.js";
 
 function mutateHtml(html) {
   switch (MUTANT) {
@@ -48,6 +50,9 @@ function mutateHtml(html) {
         "</body>",
         `<script>(() => { const plant = () => { for (const a of document.querySelectorAll("nav a")) if (a.tabIndex !== -1) a.tabIndex = -1; }; new MutationObserver(plant).observe(document.documentElement, { childList: true, subtree: true }); plant(); })();</script></body>`
       );
+    case "extra-chunk":
+      // A re-chunked build: every page loads one more module under /_app/immutable/. It does nothing.
+      return html.replace("</body>", `<script type="module" src="${PLANTED_CHUNK}"></script></body>`);
     default:
       return html;
   }
@@ -55,6 +60,11 @@ function mutateHtml(html) {
 
 http
   .createServer((req, res) => {
+    if (MUTANT === "extra-chunk" && (req.url ?? "").split("?")[0] === PLANTED_CHUNK) {
+      const body = "export {};\n";
+      res.writeHead(200, { "content-type": "text/javascript", "content-length": String(Buffer.byteLength(body)), "cache-control": "public, max-age=31536000, immutable" });
+      return res.end(body);
+    }
     if (MUTANT === "route-500" && ROUTE.test(req.url ?? "")) {
       res.writeHead(500, { "content-type": "text/plain" });
       return res.end("mutant: planted 500");

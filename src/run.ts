@@ -8,6 +8,7 @@ import { DEFAULT_CLAIM_MAX_HUNKS, claimHygiene, claimMaxHunksFromEnv } from "./c
 import { loadClaims } from "./claims/schema.ts";
 import { loadRules } from "./claims/rules.ts";
 import { captureSide } from "./collectors/index.ts";
+import { foldAssetChurn } from "./compare/asset-graph.ts";
 import { compareCaptures } from "./compare/index.ts";
 import { ENGINE_LEVELS, applyLevels, levelsOn, type EngineLevels } from "./compare/levels.ts";
 import { gate, rollbackIssueConfigured } from "./gate.ts";
@@ -183,7 +184,8 @@ export function compareFromCaptures(input: CompareInput): RunOutcome {
   const ranAt = input.ranAt ?? new Date();
   // Since 1.21.0: an informing engine's findings are reported, never gated (src/compare/levels.ts). Every engine is blocking today.
   const levelTable = input.levels ?? ENGINE_LEVELS;
-  const hunks = applyLevels([...compareCaptures(na.capture, nb.capture, masks, input.captureDir), ...(input.extraHunks ?? [])], ranAt, levelTable);
+  // Since 1.27.0: asset-graph folding; it changes nothing until asset-graph is blocking (src/compare/asset-graph.ts).
+  const hunks = foldAssetChurn(applyLevels([...compareCaptures(na.capture, nb.capture, masks, input.captureDir), ...(input.extraHunks ?? [])], ranAt, levelTable), ranAt, levelTable);
   // Since 1.25.1: claims with a lifetime. Informing: an expired claim still covers, and is reported (src/claims/lifetime.ts).
   const lifeCtx = lifetimeContext(ranAt, input.a, input.b);
   const compare = matchClaims(hunks, claimsInForce(input.claims, lifeCtx));

@@ -73,7 +73,7 @@ Journeys are deliberately few. The harness's power comes from how much it captur
 
 ## Artefacts
 
-An **artefact** is one kind of thing the harness captures and compares. Each has its own diff engine and its own scope format. There are twenty-three: nineteen diff engines, since 1.22.0 the three checks of the policy family (`image-hardening`, `build-provenance`, `vuln-ceiling`), which judge the candidate alone, and since 1.26.0 the timing tolerance (`timing-tolerance`). A **hunk** is one difference an engine found; it has an artefact, a **scope** (what a claim's glob is matched against), a summary and a severity.
+An **artefact** is one kind of thing the harness captures and compares. Each has its own diff engine and its own scope format. There are twenty-four: nineteen diff engines, since 1.22.0 the three checks of the policy family (`image-hardening`, `build-provenance`, `vuln-ceiling`), which judge the candidate alone, since 1.26.0 the timing tolerance (`timing-tolerance`), and since 1.27.0 asset-graph folding (`asset-graph`). A **hunk** is one difference an engine found; it has an artefact, a **scope** (what a claim's glob is matched against), a summary and a severity.
 
 Severity is `fail` (gates unless claimed) or `info` (reported, never gates, needs no claim).
 
@@ -84,6 +84,7 @@ Severity is `fail` (gates unless claimed) or `info` (reported, never gates, need
 | `dom` | Playwright's accessibility-tree snapshot of the page body, as a line diff | the page key, e.g. `reader:course`; a journey name when a journey itself failed | Content or structure changed. A journey that completed on a and failed on b is the loudest hunk there is. |
 | `screenshot` | 1280 by 800 PNG, light theme, reduced motion, compared with pixelmatch | the page key | More than 0.1% of pixels differ, or the image size changed. |
 | `network` | method, path, status, content type, cache header and a hash of a JSON response's shape, as a multiset per page | `GET /route`, e.g. `GET /api/presence` | A request appeared, disappeared, or was made a different number of times; a status, cache header or response shape changed. |
+| `asset-graph` (since 1.27.0, informing) | the requests under `/_app/immutable/` (hashed JS chunks and CSS), their count and bytes, and the `link` preload header | the app, e.g. `reader` | The build was chunked differently. One hunk per app says how, and how many `network` and `headers` differences are that churn. Until 2.0 those still need their own claims; from 2.0 they are folded into this one. |
 | `console` | console errors and warnings, page errors, as a set | the page key | A new message on b. A message gone on b is information. |
 | `headers` | the document response headers, exact, per header (`content-type` and `cache-control` in their canonical form) | `<page key>/<header>`, e.g. `reader:course/content-security-policy` | A header was added, dropped or changed. Security headers live here. |
 | `axe` | WCAG 2.1 A and AA violations by rule and node | the page key | A new violation fails; a fixed one is information. |

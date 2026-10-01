@@ -57,7 +57,7 @@ Read in this order the first time: 01, 10, 03, 04, then the rest as you need the
 
 Older, narrower documents this guide builds on and links to: [the integration contract](../contract.md), [Lean in the harness](../lean.md), [where the images come from](../images.md), [modes](../modes.md), [running locally (parity matrix)](../local.md), [the noise burn-down playbook](../noise-burndown.md), [the kaizen register](../../kaizen/README.md), [claims](../../claims/README.md), [mutants](../../mutants/README.md) and [TESTING.md](../../TESTING.md). Where they and this guide disagree, the code and the contract win; please report the difference.
 
-This guide describes what is on `main`: harness 1.26.0, contract 1.26.0 (`pnpm harness version` prints both). What changed in each release is in [docs/releases/](../releases/1.20.2.md).
+This guide describes what is on `main`: harness 1.27.0, contract 1.27.0 (`pnpm harness version` prints both). What changed in each release is in [docs/releases/](../releases/1.20.2.md).
 
 ## Quickstart: ten minutes to a first local run
 
