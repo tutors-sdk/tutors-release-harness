@@ -2,7 +2,7 @@ import { structuredPatch } from "diff";
 import type { EngineConfig } from "../normalise/masks.ts";
 import type { Hunk, SideCapture } from "../types.ts";
 import { notCollectedHunk, requirements } from "../not-collected.ts";
-import { mannWhitney, smallestAttainableP } from "./stats.ts";
+import { detectableNote, mannWhitney, smallestAttainableP } from "./stats.ts";
 import { ledgerHunks } from "./ledger.ts";
 import { hunkId, pagePairs } from "./pages.ts";
 
@@ -104,7 +104,7 @@ export const load: Engine = (a, b, ctx) => {
       return hunks;
     }
     const { p } = mannWhitney(a.load.samples, b.load.samples);
-    const summary = `${shift}, p=${p.toExponential(1)}`;
+    const summary = `${shift}, p=${p.toExponential(1)}; ${detectableNote(a.load.samples, b.load.samples, alpha, "samples")}`;
     hunks.push({ id: hunkId("timing", scope), artefact: "timing", scope, severity: p < alpha ? "fail" : "info", summary });
   } else if (a.load.p95 > 0 && effect <= -minEffect) {
     hunks.push({ id: hunkId("timing", scope), artefact: "timing", scope, severity: "info", summary: `under load, p95 improved ${a.load.p95}ms → ${b.load.p95}ms` });

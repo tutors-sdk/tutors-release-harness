@@ -74,6 +74,8 @@ describe("load", () => {
   it("a significant p95 regression under load fails", () => {
     const hunks = diff(withLoad("a", 60, spread(50)), withLoad("b", 120, spread(100)));
     expect(hunks.map((h) => [h.artefact, h.scope, h.severity])).toEqual([["timing", "load/http_req_duration", "fail"]]);
+    // Beside the verdict, never judged (1.20.3): 200 samples a side of a spread of 20 around 50.
+    expect(hunks[0]!.summary).toMatch(/, p=[0-9.]+e-\d+; smallest slowdown 200\/200 samples could detect: about \d+%$/);
   });
 
   it("a k6 run that kept too few samples to ever reach alpha says so instead of passing quietly", () => {

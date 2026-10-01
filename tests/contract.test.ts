@@ -213,7 +213,7 @@ describe("report.json", () => {
     const cli = json("docs/contract/cli.json");
     for (const flag of cli.flags.filter((f: { since?: string }) => f.since === "1.2.0")) expect(changes, flag.name).toContain(`--${flag.name === "runtime" ? "no-runtime" : flag.name}`);
     for (const [name, v] of Object.entries(cli.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.2.0")) expect(changes, name).toContain(name);
-    expect(CONTRACT_VERSION).toBe("1.20.2");
+    expect(CONTRACT_VERSION).toBe("1.20.3");
     // The harness version is package.json's and moves at least as far as the contract's (docs/contract.md, Versioning):
     // a mask or engine PR bumps the patch of the harness alone, so do not pin a literal here.
     expect(json("package.json").version).toBe(HARNESS_VERSION);
@@ -283,6 +283,17 @@ describe("report.json", () => {
     for (const command of cliJson.commands.filter((c: { since?: string }) => c.since === "1.5.0")) expect(changes, command.name).toContain(command.name);
     for (const [name, v] of Object.entries(cliJson.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.5.0")) expect(changes, name).toContain(name);
     for (const workflow of ["main-preview.yml", "pages.yml"]) expect(changes, workflow).toContain(workflow);
+  });
+
+  it("1.20.3: its changelog and release note name the smallest detectable slowdown, and that it is reported, never judged", () => {
+    const start = contractMd.indexOf("### 1.20.3");
+    const end = contractMd.indexOf("### 1.20.2");
+    expect(start).toBeGreaterThan(0);
+    expect(end).toBeGreaterThan(start);
+    const changes = contractMd.slice(start, end).replace(/\s+/g, " ");
+    for (const item of ["releases/1.20.3.md", "patch", "smallest slowdown", "smallestDetectableSlowdown", "Reported, never judged", "not a tolerance", "first `p=`"]) expect(changes, item).toContain(item);
+    const note = readFileSync(resolve(ROOT, "docs/releases/1.20.3.md"), "utf8").replace(/\s+/g, " ");
+    for (const item of ["smallest detectable slowdown", "scaled to a's median", "Reported, never judged", "not a tolerance", "p=0.095"]) expect(note, item).toContain(item);
   });
 
   it("1.20.2: its changelog and release note name the claims owed, the refused rule and that a candidate keeps its glance", () => {
