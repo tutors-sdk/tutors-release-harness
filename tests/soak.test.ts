@@ -15,7 +15,7 @@ import { DEFAULT_ALT_BASE, buildMutantImage } from "../src/mutant-build.ts";
 import { informingKeys, judgeMutant, loadMutants } from "../src/mutants.ts";
 import { buildReadiness, type KeptForecast } from "../src/readiness/model.ts";
 import { renderReadiness } from "../src/readiness/render.ts";
-import { SOAK_FROM, SOAK_TARGET, buildSoak, policyFacts, type AaNight } from "../src/readiness/soak.ts";
+import { SOAK_CHECKS, SOAK_FROM, SOAK_TARGET, buildSoak, policyFacts, type AaNight } from "../src/readiness/soak.ts";
 import { parseWeeklyMutants } from "../src/score/test-signal.ts";
 import type { Hunk, ImageInfo, SideCapture } from "../src/types.ts";
 import { manifest, staticSide, vulns, withStatic } from "./support/image-static.ts";
@@ -184,9 +184,14 @@ describe("the soak count", () => {
         m({ severity: "info", level: "informing", summary: "claimed" }, { id: "c" }),
         m({ severity: "info", summary: "reader: holds" }),
         m({ artefact: "vuln-ceiling", severity: "fail", summary: "GHSA (new on b)" }),
-        m({ artefact: "dom", severity: "fail" })
+        m({ artefact: "dom", severity: "fail" }),
+        m({ artefact: "timing-tolerance", scope: "reader:home", severity: "info", level: "informing", summary: "reader:home TTFB slower on b beyond the 10% tolerance" })
       ])
-    ).toEqual({ "image-hardening": { findings: 2, productionToo: 1 }, "build-provenance": { findings: 0, productionToo: 0 }, "vuln-ceiling": { findings: 1, productionToo: 0 } });
+    ).toEqual({ "image-hardening": { findings: 2, productionToo: 1 }, "build-provenance": { findings: 0, productionToo: 0 }, "vuln-ceiling": { findings: 1, productionToo: 0 }, "timing-tolerance": { findings: 1, productionToo: 0 } });
+  });
+
+  it("watches every check that ships informing: the policy family, then the timing tolerance (since 1.26.0)", () => {
+    expect(SOAK_CHECKS).toEqual(["image-hardening", "build-provenance", "vuln-ceiling", "timing-tolerance"]);
   });
 });
 

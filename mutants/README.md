@@ -5,7 +5,7 @@ production reader image plus one planted fault, listed in `mutants.yaml` with
 the artefact the report must attribute it to.
 
 ```bash
-pnpm harness mutants --base 16.2.0          # builds thirteen images, runs A/A then thirteen A/B runs
+pnpm harness mutants --base 16.2.0          # builds fourteen images, runs A/A then fourteen A/B runs
 ```
 
 The self-test first runs noise mode on the base (so the harness has the right
@@ -21,12 +21,13 @@ edge — a dropped header, a 500 on a route, injected HTML, a delay. Nothing
 else about the image changes, so a mutant is a fair stand-in for a release
 that shipped that regression.
 
-Eight mutants are edge faults (`kind: edge`, the default), all built this way:
+Nine mutants are edge faults (`kind: edge`, the default), all built this way:
 `dropped-header`, `route-500`, `console-error`, `dom-note`, `missing-alt`,
 `slow-ssr`, `anon-write` (every page records a learning event for anonymous readers,
-caught by the `persistence` collector) and `focus-order` (navigator links leave
-the tab order, caught by the `focus` collector). All eight are in
-`mutants.yaml` and are built and run; none is waiting on anything.
+caught by the `persistence` collector), `focus-order` (navigator links leave
+the tab order, caught by the `focus` collector) and, since 1.26.0, `slow-ssr-mild`
+(the timing tolerance's mutant, below). All nine are in `mutants.yaml` and are
+built and run; none is waiting on anything.
 
 ## Image-level mutants (R5)
 
@@ -70,6 +71,15 @@ becomes blocking its mutant must FAIL the run like any other.
 `vulnerable-package` needs the scanner database the weekly job fetches; `unsigned-build` needs the
 base pulled and verified (a registry prefix), or the A/A already reports `unverified` on the base
 and the mutant has nothing new to show.
+
+## The timing tolerance's mutant (since 1.26.0)
+
+`slow-ssr-mild` adds 150 ms to every HTML response (`slow-ssr` adds 400 ms) and must be attributed to
+`timing-tolerance` (`src/compare/tolerance.ts`): a significant slowdown of 10% or more on a page's TTFB
+or a journey's duration. The tolerance is **informing** until 2.0, so the mutant is caught as the policy
+mutants are, by a finding the self-test's A/A did not have. Most pages' TTFB is far below 150 ms, so
+`timing` also FAILs the run. The mutant shows that the tolerance check can fire, not that it is the only
+check that sees the slowdown. Like `slow-ssr` it needs five runs.
 
 ## Adding one
 

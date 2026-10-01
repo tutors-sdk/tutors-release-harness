@@ -21,7 +21,9 @@ import { ARTEFACTS, type Hunk, type NoiseStatus } from "../src/types.ts";
 import { capture, clone } from "./support/captures.ts";
 
 const AT = new Date("2026-10-01T09:00:00Z");
-const DIFF = ARTEFACTS.filter((a) => !(POLICY_FAMILY as readonly string[]).includes(a));
+// The checks that ship informing: the policy family (1.22.0) and the timing tolerance (1.26.0).
+const INFORMING: readonly string[] = [...POLICY_FAMILY, "timing-tolerance"];
+const DIFF = ARTEFACTS.filter((a) => !INFORMING.includes(a));
 const clean: NoiseStatus = { ranAt: "2026-10-01T02:00:00.000Z", clean: true, hunks: 0 };
 const hunk = (artefact: Hunk["artefact"], severity: Hunk["severity"] = "fail", scope = "reader:home/x-frame-options"): Hunk => ({ id: `${artefact}:${scope}`, artefact, scope, summary: `${artefact} moved`, severity });
 const informing = (blockingFrom?: string): EngineLevels => ({ ...ENGINE_LEVELS, headers: { level: "informing", ...(blockingFrom ? { blockingFrom } : {}) } });
@@ -30,8 +32,8 @@ describe("the levels", () => {
   it("every engine has one: every diff engine is blocking, and the policy family (since 1.22.0) informing with no date", () => {
     expect(Object.keys(ENGINE_LEVELS).sort()).toEqual([...ARTEFACTS].sort());
     for (const a of DIFF) expect(levelOn(a, AT), a).toEqual({ level: "blocking" });
-    for (const a of POLICY_FAMILY) expect(levelOn(a, AT), a).toEqual({ level: "informing" });
-    expect(levelsLine(levelsOn(AT))).toBe(`${DIFF.length} of ${ARTEFACTS.length} engines are blocking; informing (reported, never gates): image-hardening (no date set to block), build-provenance (no date set to block), vuln-ceiling (no date set to block).`);
+    for (const a of INFORMING) expect(levelOn(a, AT), a).toEqual({ level: "informing" });
+    expect(levelsLine(levelsOn(AT))).toBe(`${DIFF.length} of ${ARTEFACTS.length} engines are blocking; informing (reported, never gates): image-hardening (no date set to block), build-provenance (no date set to block), vuln-ceiling (no date set to block), timing-tolerance (no date set to block).`);
     const blocking = Object.fromEntries(ARTEFACTS.map((a) => [a, { level: "blocking" as const }]));
     expect(levelsLine(levelsOn(AT, blocking))).toBe(`Every engine is blocking (${ARTEFACTS.length} of ${ARTEFACTS.length}).`);
   });

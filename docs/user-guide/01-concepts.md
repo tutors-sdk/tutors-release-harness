@@ -73,7 +73,7 @@ Journeys are deliberately few. The harness's power comes from how much it captur
 
 ## Artefacts
 
-An **artefact** is one kind of thing the harness captures and compares. Each has its own diff engine and its own scope format. There are twenty-two: nineteen diff engines, and since 1.22.0 the three checks of the policy family (`image-hardening`, `build-provenance`, `vuln-ceiling`), which judge the candidate alone. A **hunk** is one difference an engine found; it has an artefact, a **scope** (what a claim's glob is matched against), a summary and a severity.
+An **artefact** is one kind of thing the harness captures and compares. Each has its own diff engine and its own scope format. There are twenty-three: nineteen diff engines, since 1.22.0 the three checks of the policy family (`image-hardening`, `build-provenance`, `vuln-ceiling`), which judge the candidate alone, and since 1.26.0 the timing tolerance (`timing-tolerance`). A **hunk** is one difference an engine found; it has an artefact, a **scope** (what a claim's glob is matched against), a summary and a severity.
 
 Severity is `fail` (gates unless claimed) or `info` (reported, never gates, needs no claim).
 
@@ -89,6 +89,7 @@ Severity is `fail` (gates unless claimed) or `info` (reported, never gates, need
 | `axe` | WCAG 2.1 A and AA violations by rule and node | the page key | A new violation fails; a fixed one is information. |
 | `focus` | what each successive Tab focuses, up to 12 stops | the page key | A focus stop was lost or reordered. |
 | `timing` | document TTFB per page and journey duration, over `--runs` runs, by Mann-Whitney U; with `--load`, every k6 request's duration and the failure rate | the page key (TTFB), the journey name (duration), `load/http_req_duration`, `load/errors` | Slower on b beyond noise. Needs at least four runs per side to reach significance. |
+| `timing-tolerance` (since 1.26.0, informing) | the same samples as `timing` | the same scopes as `timing` | A significant slowdown of 10% or more: "slower and it matters". Under timing's 20% floor only this check reports it. It never gates until 2.0. |
 
 ### Captured per side, around the journeys
 

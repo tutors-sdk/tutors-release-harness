@@ -290,32 +290,34 @@ export const logs: Engine = (a, b, ctx) => {
 
 // ---- timing --------------------------------------------------------------------------------------------
 
-function median(xs: number[]): number {
+export function median(xs: number[]): number {
   const s = [...xs].sort((p, q) => p - q);
   const mid = Math.floor(s.length / 2);
   return s.length % 2 ? s[mid]! : (s[mid - 1]! + s[mid]!) / 2;
+}
+
+/** A side's timing samples: each page's TTFBs (one per visit) and each journey's durations (one per completed run). */
+export function timingSamples(capture: SideCapture): { byPage: Map<string, { ttfb: number[]; path: string }>; byJourney: Map<string, number[]> } {
+  const byPage = new Map<string, { ttfb: number[]; path: string }>();
+  const byJourney = new Map<string, number[]>();
+  for (const j of capture.journeys) {
+    if (!j.error) byJourney.set(j.journey, [...(byJourney.get(j.journey) ?? []), j.durationMs]);
+    for (const p of j.pages) {
+      if (p.timing.ttfbMs < 0) continue;
+      const entry = byPage.get(p.pageKey) ?? { ttfb: [], path: p.path };
+      entry.ttfb.push(p.timing.ttfbMs);
+      byPage.set(p.pageKey, entry);
+    }
+  }
+  return { byPage, byJourney };
 }
 
 export const timing: Engine = (a, b, ctx) => {
   const hunks: Hunk[] = [];
   // A laptop's stack and a live deployment behind a CDN are not the same clock.
   if (a.external || b.external) return hunks;
-  const samples = (capture: SideCapture) => {
-    const byPage = new Map<string, { ttfb: number[]; path: string }>();
-    const byJourney = new Map<string, number[]>();
-    for (const j of capture.journeys) {
-      if (!j.error) byJourney.set(j.journey, [...(byJourney.get(j.journey) ?? []), j.durationMs]);
-      for (const p of j.pages) {
-        if (p.timing.ttfbMs < 0) continue;
-        const entry = byPage.get(p.pageKey) ?? { ttfb: [], path: p.path };
-        entry.ttfb.push(p.timing.ttfbMs);
-        byPage.set(p.pageKey, entry);
-      }
-    }
-    return { byPage, byJourney };
-  };
-  const sa = samples(a);
-  const sb = samples(b);
+  const sa = timingSamples(a);
+  const sb = timingSamples(b);
   const { minRuns, alpha, minEffect, minShiftMs } = ctx.config.timing;
 
   const judge = (scope: string, path: string | undefined, label: string, xs: number[], ys: number[]) => {

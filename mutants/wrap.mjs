@@ -12,7 +12,9 @@ const MUTANT = process.env.MUTANT ?? "none";
 const PORT = Number(process.env.PORT ?? 3000);
 const INNER = PORT + 1000;
 const ROUTE = new RegExp(process.env.MUTANT_ROUTE ?? "^/course/");
-const DELAY_MS = Number(process.env.MUTANT_DELAY_MS ?? 400);
+// slow-ssr plants 400 ms; slow-ssr-mild (since 1.26.0, the timing tolerance's mutant) 150 ms.
+const SLOW = { "slow-ssr": 400, "slow-ssr-mild": 150 };
+const DELAY_MS = Number(process.env.MUTANT_DELAY_MS ?? SLOW[MUTANT] ?? 400);
 // Where this side persists: set on the anonymous readers as HARNESS_PERSISTENCE_URL
 // (ignored by the apps) and on the signed-in readers as PUBLIC_SUPABASE_URL.
 const PERSISTENCE = process.env.HARNESS_PERSISTENCE_URL ?? process.env.PUBLIC_SUPABASE_URL ?? "";
@@ -62,7 +64,7 @@ http
       if (MUTANT === "dropped-header") delete headers["x-content-type-options"];
 
       const rewrite = REWRITING.includes(MUTANT) && isHtml(headers) && !headers["content-encoding"];
-      const delay = MUTANT === "slow-ssr" && isHtml(headers) ? DELAY_MS : 0;
+      const delay = MUTANT in SLOW && isHtml(headers) ? DELAY_MS : 0;
 
       if (!rewrite) {
         setTimeout(() => {

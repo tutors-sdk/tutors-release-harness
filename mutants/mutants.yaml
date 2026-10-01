@@ -1,4 +1,4 @@
-# The harness's own negative fixtures: thirteen planted regressions the release
+# The harness's own negative fixtures: fourteen planted regressions the release
 # gate must catch, each attributed to the right artefact. `harness mutants`
 # builds each one from the base reader image, runs release mode (base vs
 # mutant) and asserts the verdict is FAIL with at least one unclaimed hunk of
@@ -82,3 +82,10 @@ mutants:
     kind: unsigned
     plants: the candidate is the production image under a local name, not pulled and signature-verified, so it has no verified build provenance
     expect: [build-provenance]
+
+  # Since 1.26.0: the timing tolerance (src/compare/tolerance.ts), informing until 2.0, caught when it reports a
+  # significant slowdown of 10% or more that the self-test's A/A did not have.
+  - name: slow-ssr-mild
+    plants: 150 ms added to every HTML response
+    expect: [timing-tolerance]
+    runs: 5

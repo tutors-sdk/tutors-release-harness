@@ -11,7 +11,7 @@ import type { Digests } from "./digests.ts";
 export type SideName = "a" | "b";
 
 /** Every kind of thing the harness captures or rehearses. Claims and masks name these. */
-export const ARTEFACTS = ["dom", "screenshot", "network", "console", "headers", "axe", "focus", "metrics", "logs", "timing", "persistence", "bus", "migration", "upgrade", /* R5 static image artefacts */ "image-manifest", "sbom", "vulns", /* R5 runtime artefacts */ "runtime", "startup", /* 1.22.0: the policy family, on the candidate alone */ "image-hardening", "build-provenance", "vuln-ceiling"] as const;
+export const ARTEFACTS = ["dom", "screenshot", "network", "console", "headers", "axe", "focus", "metrics", "logs", "timing", "persistence", "bus", "migration", "upgrade", /* R5 static image artefacts */ "image-manifest", "sbom", "vulns", /* R5 runtime artefacts */ "runtime", "startup", /* 1.22.0: the policy family, on the candidate alone */ "image-hardening", "build-provenance", "vuln-ceiling", /* 1.26.0: the timing tolerance */ "timing-tolerance"] as const;
 export type Artefact = (typeof ARTEFACTS)[number];
 
 export const MODES = ["noise", "release", "any-two", "upgrade", "migration", "post-deploy"] as const;

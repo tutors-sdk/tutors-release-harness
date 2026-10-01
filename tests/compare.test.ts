@@ -160,7 +160,9 @@ describe("timing", () => {
 
   it("with five runs, a consistent 30%+ regression fails", () => {
     const hunks = diff(withRuns("a", [40, 42, 41, 43, 40], [4000, 4100, 4050, 4020, 4080]), withRuns("b", [70, 72, 69, 71, 73], [5600, 5700, 5650, 5620, 5710]));
-    const fails = hunks.filter((h) => h.severity === "fail");
+    // since 1.26.0 the timing tolerance (informing once levels apply) reports the same two scopes beside them
+    expect(hunks.filter((h) => h.artefact === "timing-tolerance").map((h) => h.scope).sort()).toEqual(["anonymous-student-reads-course", "reader:course"]);
+    const fails = hunks.filter((h) => h.severity === "fail" && h.artefact === "timing");
     expect(fails.map((h) => h.scope).sort()).toEqual(["anonymous-student-reads-course", "reader:course"]);
     // a page's TTFB counts visits (samples), a journey's duration counts runs
     expect(fails.find((h) => h.scope === "reader:course")!.summary).toBe("reader:course TTFB slower on b: median 41ms → 71ms (+73%, p=0.012, n=5/5; smallest slowdown 5/5 samples could detect: about 6%)");
@@ -191,7 +193,7 @@ describe("timing", () => {
 
   it("four runs is the least that can reach alpha 0.05 (p = 0.030 when perfectly separated)", () => {
     const hunks = diff(withRuns("a", [40, 42, 41, 43], [4000, 4100, 4050, 4020]), withRuns("b", [70, 72, 69, 71], [5600, 5700, 5650, 5620]));
-    expect(hunks.filter((h) => h.severity === "fail")).toHaveLength(2);
+    expect(hunks.filter((h) => h.severity === "fail" && h.artefact === "timing")).toHaveLength(2);
   });
 
   it("with five runs and overlapping samples, nothing fails", () => {
