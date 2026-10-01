@@ -76,7 +76,7 @@ export HARNESS_IMAGE_PREFIX='quay.io/tutors-sdk/tutors-{app}'  # default is `tut
 pnpm harness images ensure --a 16.2.0 --b 16.3.0-rc.1          # needs cosign >= 3 on PATH for pulled images
 pnpm harness run --mode migration --a v16.2.0 --b release/16.3.0
 pnpm harness run --mode upgrade   --a 16.2.0 --b 16.3.0-rc.1
-pnpm harness mutants --base local                              # fourteen planted regressions, all caught
+pnpm harness mutants --base local                              # fifteen planted regressions, all caught
 ```
 
 **What does `main` change since the last release?** One command; it finds the release itself
@@ -211,7 +211,7 @@ Three sets, all role-and-name selectors, all parameterised by base URL:
 
 ### The harness's own signal
 
-[`mutants/`](mutants/README.md) holds fourteen planted regressions built from the
+[`mutants/`](mutants/README.md) holds fifteen planted regressions built from the
 base reader image: a dropped security header, a 500 on a route, a console
 error, an extra landmark, an image with no alt text, a 400 ms slower SSR path,
 a page that writes a row for anonymous readers, navigator links that leave the
@@ -287,7 +287,7 @@ prints the same), and the HTML and Markdown reports name it in their footer.
 | `pages.yml` | after any workflow that keeps a report, or by hand | publishes every kept report, with an index, and the scoreboard's trends to [GitHub Pages](https://tutors-sdk.github.io/tutors-release-harness/) so a report can be shared as a link |
 | `post-deploy.yml` | monorepo dispatch after deploy, then every 15 minutes | reference journeys against production vs the recorded candidate; opens a rollback issue on a new difference, with its 5 Whys stub |
 | `tags.yml` | a version change lands on main, or by hand | tags `v<version>` on the first commit of main that carries it |
-| `weekly-mutants.yml` | weekly, and on every PR | the fourteen mutants; on a PR only when it touches an engine, a collector, a mask, a journey, a fixture, a stack, the gate or a mutant (`src/ci/engine-change.ts`), which also needs a version bump |
+| `weekly-mutants.yml` | weekly, and on every PR | the fifteen mutants; on a PR only when it touches an engine, a collector, a mask, a journey, a fixture, a stack, the gate or a mutant (`src/ci/engine-change.ts`), which also needs a version bump |
 
 Images are pulled from Quay (`HARNESS_IMAGE_PREFIX`, default in CI
 `quay.io/tutors-sdk/tutors-{app}`) and their cosign signatures verified — the
@@ -348,7 +348,7 @@ migration fixtures under `tests/fixtures/migrations`. See [TESTING.md](TESTING.m
 
 ## Where to stop
 
-Six journeys in three sets, not a hundred; fourteen mutants, not thirty. The harness
+Six journeys in three sets, not a hundred; fifteen mutants, not thirty. The harness
 compares artefacts, so its power comes from breadth of *capture* per journey,
 not from the number of journeys. Add a journey only when a real regression
 escaped that a journey would have caught.

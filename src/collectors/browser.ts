@@ -147,7 +147,9 @@ async function entryFor(response: Response, spec: SideSpec): Promise<NetworkEntr
     status: response.status(),
     contentType,
     cacheControl: headers["cache-control"] ?? "",
-    schemaHash: hash
+    schemaHash: hash,
+    // Since 1.27.0: what the response said its body weighs, for asset-graph's bytes. Never compared by network.
+    ...(/^\d+$/.test(headers["content-length"] ?? "") ? { bytes: Number(headers["content-length"]) } : {})
   };
 }
 

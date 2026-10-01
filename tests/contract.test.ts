@@ -204,7 +204,7 @@ describe("report.json", () => {
   });
 
   it("the contract counts the artefacts truthfully and its 1.2.0 changelog lists every addition", () => {
-    const words = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty", "twenty-one", "twenty-two", "twenty-three"];
+    const words = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty", "twenty-one", "twenty-two", "twenty-three", "twenty-four"];
     expect(contractMd).toContain(`one of the ${words[ARTEFACTS.length]} artefact names above`);
     for (const stale of words.slice(1, 25).filter((w) => w !== words[ARTEFACTS.length])) expect(contractMd, stale).not.toContain(`one of the ${stale} artefact names`);
     const changes = contractMd.slice(contractMd.indexOf("### 1.2.0"));
@@ -216,7 +216,7 @@ describe("report.json", () => {
     const cli = json("docs/contract/cli.json");
     for (const flag of cli.flags.filter((f: { since?: string }) => f.since === "1.2.0")) expect(changes, flag.name).toContain(`--${flag.name === "runtime" ? "no-runtime" : flag.name}`);
     for (const [name, v] of Object.entries(cli.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.2.0")) expect(changes, name).toContain(name);
-    expect(CONTRACT_VERSION).toBe("1.26.0");
+    expect(CONTRACT_VERSION).toBe("1.27.0");
     // The harness version is package.json's and moves at least as far as the contract's (docs/contract.md, Versioning):
     // a mask or engine PR bumps the patch of the harness alone, so do not pin a literal here.
     expect(json("package.json").version).toBe(HARNESS_VERSION);
@@ -286,6 +286,15 @@ describe("report.json", () => {
     for (const command of cliJson.commands.filter((c: { since?: string }) => c.since === "1.5.0")) expect(changes, command.name).toContain(command.name);
     for (const [name, v] of Object.entries(cliJson.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.5.0")) expect(changes, name).toContain(name);
     for (const workflow of ["main-preview.yml", "pages.yml"]) expect(changes, workflow).toContain(workflow);
+  });
+
+  it("1.27.0: its changelog and release note name asset-graph, the fold, its mutant and bytes", () => {
+    const changes = contractMd.slice(contractMd.indexOf("### 1.27.0"), contractMd.indexOf("### 1.26.0")).replace(/\s+/g, " ");
+    for (const item of ["releases/1.27.0.md", "minor", "`asset-graph`", "**informing**", "`foldAssetChurn`", "`extra-chunk`", "`bytes`", "twenty-four"]) expect(changes, item).toContain(item);
+    const section = contractMd.slice(contractMd.indexOf("### Asset-graph folding"), contractMd.indexOf("## Verdicts and exit codes")).replace(/\s+/g, " ");
+    for (const item of ["**one hunk per app**", "79 of 85", "(folded into asset-graph)", "`extra-chunk`"]) expect(section, item).toContain(item);
+    const note = readFileSync(resolve(ROOT, "docs/releases/1.27.0.md"), "utf8").replace(/\s+/g, " ");
+    for (const item of ["The verdict never moves", "Informing, with no date", "extra-chunk", "79 network and 8 headers"]) expect(note, item).toContain(item);
   });
 
   it("1.26.0: its changelog and release note name the timing tolerance, its level, its mutant and the soak", () => {

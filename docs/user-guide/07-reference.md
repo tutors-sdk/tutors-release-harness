@@ -386,7 +386,7 @@ By command:
 | `scoreboard/releases.jsonl`, `scoreboard/mutants.jsonl` | the `scoreboard` branch; a PR may copy lines to `main` | the CI copy of the scoreboard; only gains lines |
 | `kaizen/<date>-<tag>-<finding>.md`, `kaizen/README.md` | people; `why register --write` (1.13.0) | the 5 Whys and the kaizen register |
 | `normalise/masks.yaml` | people | the masks and thresholds |
-| `mutants/mutants.yaml` | people | the fourteen mutants and what each must be attributed to |
+| `mutants/mutants.yaml` | people | the fifteen mutants and what each must be attributed to |
 | `claims/example.claims.yaml` | people | an example claims file (real ones live in the monorepo) |
 | `compose.harness.yaml`, `deploy/kind/` | people | the two stacks; the kind substrate |
 | `docs/contract/*.json`, `docs/contract.md` | people | the contract |

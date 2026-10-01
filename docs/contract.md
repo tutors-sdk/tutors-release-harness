@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.26.0`
+Contract version: `1.27.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -149,9 +149,10 @@ written). Source of truth: `RunReport` in `src/types.ts`.
 `artefact` is one of `dom`, `screenshot`, `network`, `console`, `headers`,
 `axe`, `focus`, `metrics`, `logs`, `timing`, `persistence`, `bus`, `migration`,
 `upgrade`, `image-manifest`, `sbom`, `vulns`, `runtime`, `startup`, `image-hardening`,
-`build-provenance`, `vuln-ceiling`, `timing-tolerance`. `bus` and `image-manifest` to `startup` are since 1.2.0;
+`build-provenance`, `vuln-ceiling`, `timing-tolerance`, `asset-graph`. `bus` and `image-manifest` to `startup` are since 1.2.0;
 `image-hardening` to `vuln-ceiling`, the policy family, since 1.22.0 (see [The policy family](#the-policy-family));
-`timing-tolerance` since 1.26.0 (see [The timing tolerance](#the-timing-tolerance)) (see [Static image artefacts](#static-image-artefacts)
+`timing-tolerance` since 1.26.0 (see [The timing tolerance](#the-timing-tolerance)); `asset-graph` since
+1.27.0 (see [Asset-graph folding](#asset-graph-folding)) (see [Static image artefacts](#static-image-artefacts)
 and [Container runtime artefacts](#container-runtime-artefacts)); a consumer
 must tolerate an artefact name it does not know. `severity` is `fail` (gates unless claimed) or `info` (reported,
 never gates). `scope` and `path` are what a claim's glob is matched against.
@@ -355,8 +356,8 @@ shows the unclaimed informing results of each kept forecast beside its Gate, lab
 Every diff engine is **blocking**, so a run decides exactly what it decided before 1.21.0. A
 new engine or check ships informing, with the date it starts to block when there is one, and is
 watched on the readiness page before it may stop a release: since 1.22.0 the three checks of
-[the policy family](#the-policy-family) are informing, with no date set, and since 1.26.0
-[the timing tolerance](#the-timing-tolerance). An engine missing from
+[the policy family](#the-policy-family) are informing, with no date set, since 1.26.0
+[the timing tolerance](#the-timing-tolerance), and since 1.27.0 [asset-graph folding](#asset-graph-folding). An engine missing from
 the table is blocking: no check escapes the Gate by being left out.
 
 ### The policy family
@@ -423,6 +424,30 @@ is **informing**, with no date ([Engine levels](#engine-levels)): every finding 
 none gates, and the readiness page's soak watches it beside the policy family. At 2.0 it becomes
 blocking: a significant slowdown of 10% or more then fails a release, where today it takes 20%.
 Its planted mutant is `slow-ssr-mild` (150 ms on every HTML response).
+
+### Asset-graph folding
+
+Since 1.27.0 (runway change 9), `asset-graph` (`src/compare/asset-graph.ts`) handles build churn.
+A change to how an app is chunked repeats on every page: the hashed JS chunks and CSS under
+`/_app/immutable/` are requested more or fewer times, appear or go, and the document's `link`
+preload header changes with them. On the 2026-10-01 forecast that was 79 of 85 `network` hunks
+and all 8 `headers` hunks. The check folds it into **one hunk per app**, scope `<app>` (e.g.
+`reader`). The hunk gives the immutable requests a to b (JS and CSS, from run 1 of the pages both
+sides reached), their bytes when every response sent a `content-length`, and how many `network` and
+`headers` differences are this churn.
+
+| What is churn | What is not |
+| --- | --- |
+| a `network` hunk for a request under `/_app/immutable/` that was made more or fewer times, or on one side only | the same request answering with another status, content type, cache header or schema; any request outside `/_app/immutable/` |
+| a `headers` hunk on `<page>/link` whose links, on both sides, all point under `/_app/immutable/` | any other header, or a `link` header naming anything else |
+
+The check is **informing**, with no date ([Engine levels](#engine-levels)). Its hunk is reported and
+never gates, and `network` and `headers` are exactly as they were, so each churn hunk still needs
+its claim. At 2.0 it becomes blocking. Each failing churn hunk then becomes information ending
+"(folded into asset-graph)", and the app's one `asset-graph` hunk is what gates: one claim on
+`<app>` covers a re-chunking. Its planted mutant is `extra-chunk` (every page loads one more chunk).
+The capture's network entries gain `bytes` (the response's `content-length`, when sent). No engine
+diffs it.
 
 ## Verdicts and exit codes
 
@@ -755,7 +780,7 @@ claims:
     digests: { reader: "sha256:…" }                     # since 1.25.1, optional: the images it was written against, by app
 ```
 
-- `artefact`: one of the twenty-three artefact names above, or `*`.
+- `artefact`: one of the twenty-four artefact names above, or `*`.
 - `scope`: matched with picomatch (`dot: true`, case-insensitive) against the
   hunk's `scope` **or** its `path`.
 - `reason`: at least 8 characters, and must not start with `see pr`,
@@ -1782,6 +1807,21 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.27.0 (minor; asset-graph folding, informing)
+
+The release note is [releases/1.27.0.md](releases/1.27.0.md). Runway change 9. A minor: a new
+check and artefact name, `asset-graph`. It ships **informing**, so no verdict, Gate or exit code
+moves, and `network` and `headers` are unchanged.
+
+- `asset-graph` ([Asset-graph folding](#asset-graph-folding)): one hunk per app whose immutable
+  assets moved, with the requests a to b (JS, CSS), their bytes, and how many `network` and `headers`
+  differences are this churn. `foldAssetChurn` turns those into information once the check is
+  blocking (2.0). Until then it returns the hunks unchanged.
+- A claim may name it (twenty-four artefact names). `report.schema.json`'s artefact enum gains it.
+  A capture's network entry gains optional `bytes` (`content-length`).
+- A new planted mutant, `extra-chunk`, must be attributed to it: fifteen mutants. The readiness
+  soak watches it beside the other informing checks.
 
 ### 1.26.0 (minor; the timing tolerance, informing)
 

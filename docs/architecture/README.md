@@ -28,7 +28,7 @@ command-line tool (`harness`) that runs the same on a laptop as on GitHub
 Actions; the workflows are thin wrappers that add scheduling, dispatch, and a
 place to keep the noise history and release records. It gates a release only
 while its own A/A run is clean, fresh and verified. Otherwise the same findings
-are a warning. Its own signal is fourteen planted regressions (mutants) it must
+are a warning. Its own signal is fifteen planted regressions (mutants) it must
 catch. It stacks four apps (`reader`, `catalogue`, `live`, `time`), runs six
 journeys in three sets, and compares 19 artefacts.
 
@@ -127,7 +127,7 @@ flowchart LR
   `HARNESS_REQUIRE_ARTEFACTS=bus` makes that a failing `bus/not-collected` hunk
   (`docs/bus.md`, `src/not-collected.ts`).
 - **Three proposed mutants: `posture-root`, `posture-volume`, `slow-boot`.** They
-  are not in `mutants/mutants.yaml` (fourteen mutants), and no file in the repository
+  are not in `mutants/mutants.yaml` (fifteen mutants), and no file in the repository
   names them; they are taken from the owner's plan. The self-test does say why
   there is no slow-boot mutant: it turns startup sampling off
   (`src/mutants.ts:74-76`).

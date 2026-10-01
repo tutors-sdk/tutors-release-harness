@@ -1,4 +1,4 @@
-# The harness's own negative fixtures: fourteen planted regressions the release
+# The harness's own negative fixtures: fifteen planted regressions the release
 # gate must catch, each attributed to the right artefact. `harness mutants`
 # builds each one from the base reader image, runs release mode (base vs
 # mutant) and asserts the verdict is FAIL with at least one unclaimed hunk of
@@ -89,3 +89,9 @@ mutants:
     plants: 150 ms added to every HTML response
     expect: [timing-tolerance]
     runs: 5
+
+  # Since 1.27.0: asset-graph folding (src/compare/asset-graph.ts), informing until 2.0, caught when it reports an
+  # app whose immutable assets moved, which the self-test's A/A did not have.
+  - name: extra-chunk
+    plants: every page loads one more hashed JS chunk under /_app/immutable/
+    expect: [asset-graph]

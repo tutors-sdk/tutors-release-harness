@@ -126,7 +126,7 @@ The messages of an invalid claims file are in [chapter 4](04-writing-claims.md#r
 
 ### `claim 1 of 1 (claims.0), artefact: "header" is not an artefact`
 
-**Cause.** The artefact is not one of the twenty-three names or `*`: a typo (`header`, `a11y`). **Fix.** The message prints the valid names and, when it can, `did you mean "headers"?`. Exit 2, before any stack starts, with no output directory.
+**Cause.** The artefact is not one of the twenty-four names or `*`: a typo (`header`, `a11y`). **Fix.** The message prints the valid names and, when it can, `did you mean "headers"?`. Exit 2, before any stack starts, with no output directory.
 
 ### `rule: rule is the Rule's four digits, quoted: rule: "0031" ...`
 
