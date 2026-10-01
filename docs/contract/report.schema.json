@@ -68,6 +68,55 @@
         "summary": { "type": "string", "description": "One line for people." }
       }
     },
+    "causes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["unclaimed", "causes", "together"],
+      "description": "Since contract 1.20.0. The unclaimed differences folded into causes, computed from compare.unclaimed after the verdict (src/report/causes.ts). A cause is an artefact and a kind: the summary with its app or page prefix taken off, the name it ends in (a package, a log field) folded into items, hashed build assets folded into one, and every number masked. A network request keeps its route unless it is a hashed build asset. Informational: never read by a verdict or the Gate.",
+      "properties": {
+        "unclaimed": { "type": "integer", "minimum": 0, "description": "The unclaimed differences folded: compare.unclaimed's length." },
+        "causes": {
+          "type": "array",
+          "description": "Biggest first, then by key. The hunks of all causes add up to unclaimed.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "key", "artefact", "kind", "hunks", "apps", "pages", "items", "example"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^[0-9a-f]{8}$", "description": "The first 8 hex characters of sha256(key): the same cause has the same id in every report." },
+              "key": { "type": "string", "description": "`<artefact>: <kind>`: the identity of the cause across runs." },
+              "artefact": { "$ref": "#/definitions/artefact" },
+              "kind": { "type": "string", "description": "What the differences are, with the app, page, folded name, hashed assets and numbers taken out. For people; the wording follows the engines' summaries." },
+              "hunks": { "type": "integer", "minimum": 1 },
+              "apps": { "type": "array", "items": { "enum": ["reader", "catalogue", "live", "time"] }, "description": "The apps it spans, in this order. Empty when the hunks name none (a journey's table)." },
+              "pages": { "type": "array", "items": { "type": "string" }, "description": "The pages it spans (`app:page`), sorted." },
+              "items": { "type": "array", "items": { "type": "string" }, "description": "What was folded: package names, log fields, header names, routes of hashed assets. Sorted, distinct." },
+              "example": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["id", "scope", "summary"],
+                "properties": { "id": { "type": "string" }, "scope": { "type": "string" }, "summary": { "type": "string" } },
+                "description": "The first difference it covers, by its hunk id."
+              }
+            }
+          }
+        },
+        "together": {
+          "type": "array",
+          "description": "Pages on which two or more artefacts moved, grouped by the same set of artefacts: likely one change each. Most pages first.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["artefacts", "pages", "hunks"],
+            "properties": {
+              "artefacts": { "type": "array", "minItems": 2, "items": { "$ref": "#/definitions/artefact" } },
+              "pages": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+              "hunks": { "type": "integer", "minimum": 2 }
+            }
+          }
+        }
+      }
+    },
     "verdict": { "enum": ["pass", "fail", "warn"] },
     "reasons": { "type": "array", "items": { "type": "string" }, "description": "Why the verdict is what it is, one line each. For people; the wording is not part of the contract." },
     "noise": { "$ref": "#/definitions/noiseStatus" },

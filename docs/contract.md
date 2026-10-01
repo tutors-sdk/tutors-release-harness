@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.19.0`
+Contract version: `1.20.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -141,6 +141,7 @@ written). Source of truth: `RunReport` in `src/types.ts`.
 | `override` | optional — since 1.2.0 | present only when an override of a FAIL was requested; see [Overriding a FAIL](#overriding-a-fail) |
 | `deployment` | optional — since 1.3.0 | post-deploy mode, when the deploy reported what it deployed: `{ production?, status, digests, recorded?, record?, problems[] }`, the deployed digests against the release record; see [Checking a deployment](#checking-a-deployment). Advisory: a `status` other than `match` turns a `pass` into a `warn` and never touches a `fail` |
 | `productionBuild` | optional — since 1.6.0 | post-deploy mode only: `{ url, status, recordedRevision?, buildName?, builtAt?, revision?, summary }`, which build production's reader says it serves against the recorded candidate's commit; see [Which build production serves](#which-build-production-serves). Informational: never changes the verdict and is never a hunk |
+| `causes` | optional — since 1.20.0 | `{ unclaimed, causes[], together[] }`: the unclaimed differences folded into causes, computed after the verdict when the report is written; see [Causes](#causes). Informational: never read by a verdict or the Gate |
 
 **Hunk**: `{ id, artefact, scope, path?, summary, detail?, severity }`.
 `artefact` is one of `dom`, `screenshot`, `network`, `console`, `headers`,
@@ -302,6 +303,30 @@ has them it counts as not collected.
 Informational `runtime/summary` and `startup/summary` hunks list what was
 collected (per app, both sides), so a report that found nothing still shows what
 it looked at. The startup restarts leave every app running.
+
+
+### Causes
+
+Since 1.20.0 every report carries `causes`: the unclaimed differences folded by kind across apps,
+pages and packages (`src/report/causes.ts`), so 899 differences read as the 19 changes behind them.
+It is computed from `compare.unclaimed` after the verdict, when the report is written, and nothing
+that judges reads it: no verdict, Gate, score or exit code changes.
+
+A **cause** is an artefact and a kind. The kind is the hunk's summary with its app or page prefix
+taken off (`reader:home: `), the name it ends in folded into `items` (`package removed:
+@isaacs/cliui@8.0.2` is `package removed`, the package an item), hashed build assets
+(`{{hash}}` in a route) folded into one `{{asset}}`, and every number masked (`#`). A network
+request keeps its route unless it is a hashed build asset: a new `/logo.svg` is a cause of its own.
+Each cause carries `id` (8 hex characters of sha256 of `key`, the same in every report), `key`
+(`<artefact>: <kind>`), `artefact`, `kind`, `hunks`, `apps` (reader, catalogue, live, time, in that
+order), `pages` (`app:page`), `items` and `example` (the first hunk's `id`, `scope` and
+`summary`). Causes are listed biggest first; their `hunks` add up to `unclaimed`.
+
+`together` lists the pages on which two or more artefacts moved, grouped by the same set of
+artefacts (`dom`, `focus`, `network`, `screenshot` on 16 pages): likely one change each, to be
+claimed together. `report.md` and `report.html` lead their differences with the cause table
+("899 unclaimed differences, 19 causes") and these groups. The wording of `kind` follows the
+engines' summaries and may change in a patch; `key` is stable within a harness version.
 
 ## Verdicts and exit codes
 
@@ -1511,6 +1536,18 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.20.0 (minor; causes, not hunks)
+
+The release note is [releases/1.20.0.md](releases/1.20.0.md). The first step of the "Explain"
+release. Additive for a consumer written against 1.19.0: no command, flag, verdict, Gate or exit
+code changes. A minor because `report.json` gains an optional field.
+
+- `report.json` gains the optional `causes` (`unclaimed`, `causes[]`, `together[]`): the unclaimed
+  differences folded by kind across apps, pages and packages, computed after the verdict. See
+  [Causes](#causes); `report.schema.json` describes it.
+- `report.md` and `report.html` lead their differences with the cause table and the pages on which
+  several artefacts moved together.
 
 ### 1.19.0 (minor; release size under control: the control chart and the WIP limit)
 

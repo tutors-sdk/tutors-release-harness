@@ -149,6 +149,11 @@ const full: DeepRequired<RunReport> = {
     builtAt: "2026-09-21T14:13:20.000Z",
     revision: "unknown",
     summary: "cannot tell whether production serves the recorded candidate's commit 0123456789ab: /version names no commit; built at 2026-09-21T14:13:20.000Z from an unnamed build"
+  },
+  causes: {
+    unclaimed: 1,
+    causes: [{ id: "0a1b2c3d", key: "headers: header dropped", artefact: "headers", kind: "header dropped", hunks: 1, apps: ["reader"], pages: ["reader:home"], items: ["x-frame-options"], example: { id: "2", scope: "reader:home/x-frame-options", summary: "header dropped" } }],
+    together: [{ artefacts: ["dom", "screenshot"], pages: ["reader:home"], hunks: 2 }]
   }
 };
 
@@ -208,7 +213,7 @@ describe("report.json", () => {
     const cli = json("docs/contract/cli.json");
     for (const flag of cli.flags.filter((f: { since?: string }) => f.since === "1.2.0")) expect(changes, flag.name).toContain(`--${flag.name === "runtime" ? "no-runtime" : flag.name}`);
     for (const [name, v] of Object.entries(cli.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.2.0")) expect(changes, name).toContain(name);
-    expect(CONTRACT_VERSION).toBe("1.19.0");
+    expect(CONTRACT_VERSION).toBe("1.20.0");
     // The harness version is package.json's and moves at least as far as the contract's (docs/contract.md, Versioning):
     // a mask or engine PR bumps the patch of the harness alone, so do not pin a literal here.
     expect(json("package.json").version).toBe(HARNESS_VERSION);
@@ -278,6 +283,20 @@ describe("report.json", () => {
     for (const command of cliJson.commands.filter((c: { since?: string }) => c.since === "1.5.0")) expect(changes, command.name).toContain(command.name);
     for (const [name, v] of Object.entries(cliJson.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.5.0")) expect(changes, name).toContain(name);
     for (const workflow of ["main-preview.yml", "pages.yml"]) expect(changes, workflow).toContain(workflow);
+  });
+
+  it("1.20.0: its changelog and release note name causes, its fields and that nothing judges it", () => {
+    const start = contractMd.indexOf("### 1.20.0");
+    const end = contractMd.indexOf("### 1.19.0");
+    expect(start).toBeGreaterThan(0);
+    expect(end).toBeGreaterThan(start);
+    const changes = contractMd.slice(start, end).replace(/\s+/g, " ");
+    expect(changes).toContain("releases/1.20.0.md");
+    for (const item of ["`causes`", "`together[]`", "report.schema.json", "after the verdict", "[Causes](#causes)"]) expect(changes, item).toContain(item);
+    const note = readFileSync(resolve(ROOT, "docs/releases/1.20.0.md"), "utf8").replace(/\s+/g, " ");
+    for (const item of ["899 unclaimed differences, 19 causes", "src/report/causes.ts", "after the verdict", "Moved together", "nothing that judges reads"]) expect(note, item).toContain(item);
+    expect(contractMd).toContain("| `causes` | optional — since 1.20.0 |");
+    expect(contractMd).toContain("### Causes");
   });
 
   it("1.19.0: its changelog and release note name the control chart, its schema, the flags and the pages step", () => {

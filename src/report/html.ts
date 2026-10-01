@@ -4,6 +4,7 @@ import { claimLabel } from "../claims/rules.ts";
 import { loudProvenance } from "./provenance.ts";
 import { deploymentHtml, loudDeployment, productionBuildHtml } from "./deployment.ts";
 import { imageArtefactsHtml } from "./image-static.ts";
+import { causesHtml } from "./causes.ts";
 
 const esc = (s: string) => s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
 
@@ -60,6 +61,15 @@ export function renderHtml(report: RunReport): string {
   pre { white-space:pre-wrap; margin:6px 0 0; padding:8px; background:#8881; border-radius:4px; }
   details summary { cursor:pointer; font-size:13px; opacity:.8; }
   ul { padding-left:1.2rem; }
+  td code, td a, td pre { overflow-wrap:anywhere; }
+  .causes small { opacity:.8; }
+  @media (max-width: 640px) {
+    .causes thead { display:none; }
+    .causes table, .causes tbody, .causes tr, .causes td { display:block; }
+    .causes tr { border-bottom:1px solid var(--rule); padding:6px 0; }
+    .causes td { border:0; padding:2px 0; }
+    .causes td[data-label]::before { content:attr(data-label) ": "; font-size:12px; opacity:.7; }
+  }
   footer { font-size:12px; opacity:.7; border-top:1px solid var(--rule); padding-top:12px; }
 </style>
 </head>
@@ -69,6 +79,7 @@ export function renderHtml(report: RunReport): string {
 ${loud ? `<p class="loud">${esc(loud.text)}</p>` : ""}
 ${loudDeployment(report) ? `<p class="loud">${esc(loudDeployment(report)!)}</p>` : ""}
 <ul>${report.reasons.map((r) => `<li>${esc(r)}</li>`).join("")}${report.noise ? `<li id="noise">A/A consulted: ${report.noise.clean ? "clean" : `${report.noise.hunks} diff(s)`}${report.noise.degraded?.length ? " but DEGRADED (does not count)" : ""} at ${esc(report.noise.ranAt)}</li>` : ""}</ul>
+${causesHtml(report.causes, esc)}
 
 <table>
 <thead><tr><th></th><th>a</th><th>b</th></tr></thead>
