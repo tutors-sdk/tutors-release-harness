@@ -35,7 +35,8 @@ function deltaHtml(f: Forecast): string {
 }
 
 /** Since 1.21.0: informing results beside the Gate, labelled so they are never read as part of it. */
-const informingBadge = (f: Forecast) => (f.informing ? ` <a class="inf" href="${esc(safeHref(f.links.report ? `${f.links.report}#informing` : undefined) ?? "#")}" title="found by informing engines: reported, never gates">${f.informing} informing</a>` : "");
+const byEngine = (f: Forecast) => Object.entries(f.informingBy ?? {}).map(([e, n]) => `${e} ${n}`).join(" · ");
+const informingBadge = (f: Forecast) => (f.informing ? ` <a class="inf" href="${esc(safeHref(f.links.report ? `${f.links.report}#informing` : undefined) ?? "#")}" title="${esc(`found by informing engines: reported, never gates${byEngine(f) ? ` (${byEngine(f)})` : ""}`)}">${f.informing} informing</a>` : "");
 
 function evidence(f: Forecast): string {
   const parts = [f.links.report ? link("report", f.links.report) : "", ...f.links.rehearsals.map((r) => `${link(r.mode, r.href)}${r.verdict ? ` <span class="rv ${tone(r.verdict)}">${esc(r.verdict)}</span>` : ""}`), f.runUrl ? link("run", f.runUrl) : ""].filter(Boolean);
@@ -100,7 +101,7 @@ function lastNight(r: Readiness): string {
 <div class="tiles">
 <div class="tile gate ${tone(f.gate)}"><span class="k">Gate</span><span class="huge">${esc(f.gate)}</span><span class="sub">main ${esc(f.candidate)} beside production ${esc(f.baseline)}</span></div>
 <div class="tile"><span class="k">Unclaimed</span><span class="big">${f.unclaimed ?? "?"}</span><span class="sub">differences the next release owes a claim or a fix</span></div>
-${f.informing === null ? "" : `<div class="tile informing"><span class="k">Informing</span><span class="big">${f.informing}</span><span class="sub">found by informing engines and not claimed: reported, never gates${f.informing && f.links.report ? ` · ${link("see them", `${f.links.report}#informing`)}` : ""}</span></div>`}
+${f.informing === null ? "" : `<div class="tile informing"><span class="k">Informing</span><span class="big">${f.informing}</span><span class="sub">${byEngine(f) ? `${esc(byEngine(f))}. ` : ""}found by informing engines and not claimed: reported, never gates${f.informing && f.links.report ? ` · ${link("see them", `${f.links.report}#informing`)}` : ""}</span></div>`}
 <div class="tile"><span class="k">New / gone since the last forecast</span><span class="big">${deltaHtml(f)}</span><span class="sub">${f.delta?.against ? `against ${esc(f.delta.against.candidate)}, ${esc(when(f.delta.against.ranAt))}` : f.delta ? "nothing earlier beside this production" : "kept before harness 1.16.1 counted it"}</span></div>
 </div>
 ${by.length ? `<p class="by">By artefact: ${by.map(([a, v]) => `<code>${esc(a)}</code> <span class="new">+${v.new}</span>/<span class="gone">−${v.gone}</span>`).join(" · ")}${f.links.report ? ` · ${link("the new ones, in the report", `${f.links.report}#delta`)}` : ""}</p>` : ""}

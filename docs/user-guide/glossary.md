@@ -12,7 +12,7 @@ Terms as this guide uses them. Where a term has a chapter, it is linked. The Lea
 
 **app.** One of the monorepo's deployable images: `reader`, `catalogue`, `live`, `time`. A side has one image per app.
 
-**artefact.** One kind of observable thing the harness captures and compares (`dom`, `headers`, `sbom`, and so on; nineteen). Claims and masks name artefacts. [01](01-concepts.md#artefacts)
+**artefact.** One kind of observable thing the harness captures and compares (`dom`, `headers`, `sbom`, and so on; twenty-two, three of them the policy family). Claims and masks name artefacts. [01](01-concepts.md#artefacts)
 
 **attribution.** In the mutant self-test: a mutant is attributed when the unclaimed hunks of its FAIL include an artefact the mutant was expected to trip. Catching a mutant for the wrong reason does not count. [05](05-noise-and-self-test.md#the-mutant-self-test)
 

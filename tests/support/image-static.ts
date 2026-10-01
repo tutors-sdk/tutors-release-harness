@@ -73,6 +73,8 @@ export function withStatic(side: "a" | "b", imageStatic: SideImageStatic): SideC
 export interface FakeTools {
   /** docker image inspect by reference. */
   images?: Record<string, { config?: Record<string, unknown>; layers?: string[]; size?: number; os?: string; arch?: string }>;
+  /** docker image history: the `CreatedBy` lines, by reference (since 1.22.0). */
+  history?: Record<string, string[]>;
   /** cosign verify-attestation / download attestation stdout, by `repo@digest`. */
   attestations?: Record<string, string>;
   cosign?: "installed" | "missing";
@@ -89,6 +91,11 @@ export function fakeTools(tools: FakeTools = {}) {
   const missing = (cmd: string): ExecResult => ({ status: null, stdout: "", stderr: "", error: Object.assign(new Error(`spawnSync ${cmd} ENOENT`), { code: "ENOENT" }) });
   const exec: Exec = (cmd, args, opts) => {
     calls.push({ cmd, args, ...(opts?.env ? { env: opts.env } : {}) });
+    if (cmd === "docker" && args[0] === "image" && args[1] === "history") {
+      // Since 1.22.0 (the image-hardening policy): `CreatedBy` lines, newest first, one JSON object per line.
+      const lines = tools.history?.[args.at(-1)!];
+      return lines ? ok(lines.map((CreatedBy) => JSON.stringify({ CreatedBy })).join("\n")) : no("Error: No such image");
+    }
     if (cmd === "docker" && args[0] === "image" && args[1] === "inspect") {
       const image = tools.images?.[args.at(-1)!];
       if (!image) return no("Error: No such image");

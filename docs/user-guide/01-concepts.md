@@ -73,7 +73,7 @@ Journeys are deliberately few. The harness's power comes from how much it captur
 
 ## Artefacts
 
-An **artefact** is one kind of thing the harness captures and compares. Each has its own diff engine and its own scope format. There are nineteen. A **hunk** is one difference an engine found; it has an artefact, a **scope** (what a claim's glob is matched against), a summary and a severity.
+An **artefact** is one kind of thing the harness captures and compares. Each has its own diff engine and its own scope format. There are twenty-two: nineteen diff engines, and since 1.22.0 the three checks of the policy family (`image-hardening`, `build-provenance`, `vuln-ceiling`), which judge the candidate alone. A **hunk** is one difference an engine found; it has an artefact, a **scope** (what a claim's glob is matched against), a summary and a severity.
 
 Severity is `fail` (gates unless claimed) or `info` (reported, never gates, needs no claim).
 

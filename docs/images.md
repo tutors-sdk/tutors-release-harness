@@ -354,6 +354,16 @@ those hunks into failures, which is what a release pipeline that must never pass
 without an SBOM diff sets. The same convention covers every artefact:
 [docs/contract.md](contract.md#not-collected-one-convention).
 
+**The policy family reads the same images** (since 1.22.0, informing; see
+[contract.md](contract.md#the-policy-family)). Two more reads per image, both
+read-only: `docker image history --no-trunc` (the layer history's `CreatedBy`
+lines, scanned for secret-shaped build arguments; names only, never a value),
+and, for an image pulled and signature-verified in the run, `cosign
+verify-attestation --type slsaprovenance1` and then `--type slsaprovenance` on
+its digest, against the same identity and issuer as the signature. The monorepo's
+`image-build.yml` attests the SBOM and no SLSA provenance today, so
+`build-provenance` finds none on either side until it does.
+
 ### The vulnerability database
 
 Since 1.4.0 the workflows that judge images install grype and fetch its database,

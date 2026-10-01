@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.21.0`
+Contract version: `1.22.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -147,8 +147,9 @@ written). Source of truth: `RunReport` in `src/types.ts`.
 **Hunk**: `{ id, artefact, scope, path?, summary, detail?, severity, level?, blockingFrom? }`.
 `artefact` is one of `dom`, `screenshot`, `network`, `console`, `headers`,
 `axe`, `focus`, `metrics`, `logs`, `timing`, `persistence`, `bus`, `migration`,
-`upgrade`, `image-manifest`, `sbom`, `vulns`, `runtime`, `startup`. `bus` and
-the last five are since 1.2.0 (see [Static image artefacts](#static-image-artefacts)
+`upgrade`, `image-manifest`, `sbom`, `vulns`, `runtime`, `startup`, `image-hardening`,
+`build-provenance`, `vuln-ceiling`. `bus` and `image-manifest` to `startup` are since 1.2.0; the last
+three, the policy family, since 1.22.0 (see [The policy family](#the-policy-family)) (see [Static image artefacts](#static-image-artefacts)
 and [Container runtime artefacts](#container-runtime-artefacts)); a consumer
 must tolerate an artefact name it does not know. `severity` is `fail` (gates unless claimed) or `info` (reported,
 never gates). `scope` and `path` are what a claim's glob is matched against.
@@ -349,10 +350,46 @@ engine's level, and `report.json` records every engine's level in `levels`. The 
 shows the unclaimed informing results of each kept forecast beside its Gate, labelled
 "informing", and in a tile of their own on the latest forecast.
 
-Every engine is **blocking** today, so a run decides exactly what it decided before 1.21.0. A
+Every diff engine is **blocking**, so a run decides exactly what it decided before 1.21.0. A
 new engine or check ships informing, with the date it starts to block when there is one, and is
-watched on the readiness page before it may stop a release. An engine missing from the table is
-blocking: no check escapes the Gate by being left out.
+watched on the readiness page before it may stop a release: since 1.22.0 the three checks of
+[the policy family](#the-policy-family) are informing, with no date set. An engine missing from
+the table is blocking: no check escapes the Gate by being left out.
+
+### The policy family
+
+Since 1.22.0 a second kind of check judges the candidate alone (`src/compare/policy.ts`): not
+"b equals a" but "b must". Its results are hunks beside the diff, under the same Gate and
+claimable the same way (artefact and scope), and all three checks are **informing**: a finding is
+reported and never gates ([Engine levels](#engine-levels)). Only side b is judged; each finding
+ends "(production too)" when side a, judged the same way, has it, or "(new on b)", so a fault on
+both sides is visible, which no diff can show.
+
+| Artefact | Scopes | A finding when b's image | Reads |
+| --- | --- | --- | --- |
+| `image-hardening` | `<app>/user`, `<app>/healthcheck`, `<app>/env/<NAME>`, `<app>/history/<NAME>` | runs as root; declares no `HEALTHCHECK` (unset, empty or `NONE`); has an environment variable, or a build argument or command in its layer history, that looks like a secret | the image config the manifest engine collects (`docker image inspect`), and `docker image history --no-trunc` |
+| `build-provenance` | `<app>/slsa`, `<app>/builder` | carries no SLSA provenance verified under the publishing identity; or one whose builder and workflow do not name `image-build.yml` | `cosign verify-attestation --type slsaprovenance1`, then `slsaprovenance`, on the digest, with the same identity and issuer as its signature and SBOM attestation (`HARNESS_COSIGN_IDENTITY`, `HARNESS_COSIGN_ISSUER`) |
+| `vuln-ceiling` | `<app>/<advisory id>` | has a critical or high advisory with a fix available, whether or not production has it | the vulnerability scan already run on b (`vulns`) |
+
+What looks like a secret (`src/image-static/secrets.ts`): a variable whose name says it holds one
+(`PASSWORD`, `SECRET`, `TOKEN`, `API_KEY`, `ACCESS_KEY`, `PRIVATE_KEY`, `CREDENTIALS` and the
+like, as a whole word) and has a value, or a value shaped like an AWS access key id, a GitHub,
+GitLab, Slack or npm token, a Stripe live key, a private key or a JSON web token under any name.
+SvelteKit's `PUBLIC_` variables are public by design and only a token-shaped value in one is
+flagged. Names and reasons are kept; **a value is never stored, logged or reported**. File
+contents inside the layers are not read.
+
+Every app also gets an informational `<app>/summary` hunk saying what was checked, or
+`<app>/not-evaluated` saying why it could not be (an image that was not pulled and
+signature-verified in the run has no verified attestation to read; a capture recorded before
+1.22.0 has no healthcheck, environment or provenance), so a quiet check reads differently from one
+that did not run. `report.html` and `report.md` show a **Policy** table, one row per app and one
+column per check, under the differences; the findings are listed under Informing. The readiness
+page's informing count is broken down by engine (`informingBy`).
+
+The capture (not `report.json`) gains, per app, the manifest's `healthcheck`, `secretEnv` and
+`secretHistory` (names and reasons only) and `buildProvenance` (the verified SLSA statements:
+predicate type, builder and workflow). The manifest engine compares none of them, so no diff moves.
 
 ## Verdicts and exit codes
 
@@ -658,7 +695,7 @@ claims:
     rule: "0031"                                        # four digits, quoted; must be in the rules file (--rules)
 ```
 
-- `artefact`: one of the nineteen artefact names above, or `*`.
+- `artefact`: one of the twenty-two artefact names above, or `*`.
 - `scope`: matched with picomatch (`dot: true`, case-insensitive) against the
   hunk's `scope` **or** its `path`.
 - `reason`: at least 8 characters, and must not start with `see pr`,
@@ -1123,7 +1160,8 @@ between two rows the page draws a rule and says so: the delta starts again.
 Since 1.21.0 each forecast carries `informing`: its kept report's informing results that no
 claim covers ([Engine levels](#engine-levels)), shown beside the Gate as "N informing" and, on
 the latest forecast, in a tile of their own, labelled "reported, never gates"; `null` for a
-forecast kept before engine levels.
+forecast kept before engine levels. Since 1.22.0 `informingBy` breaks it down by engine (the
+policy family's checks among them), in the badge's title and the tile.
 
 Since 1.18.0 each forecast carries `quality`, the same strip the A3 draws under its Gate
 ([the A3 Aggregator](#the-a3-aggregator)): the row shows Speed, Metrics and Tests as marks, and
@@ -1603,6 +1641,29 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.22.0 (minor; the policy family: what b must be)
+
+The release note is [releases/1.22.0.md](releases/1.22.0.md). The second step of the "Policy"
+release. A minor for three artefacts and the new capture and `readiness.json` fields; no command,
+flag, verdict, Gate or exit code changes, because all three checks are informing.
+
+- Three artefacts, the policy family, judged on b alone (`src/compare/policy.ts`):
+  `image-hardening` (root user, no healthcheck, a secret in the environment or the layer
+  history), `build-provenance` (no SLSA provenance verified under the publishing identity, or a
+  builder other than `image-build.yml`) and `vuln-ceiling` (a critical or high advisory with a
+  fix available). See [The policy family](#the-policy-family). All three are **informing**
+  (`ENGINE_LEVELS`), with no date set: reported, never gated, claimable like any hunk.
+- Collection gains `docker image history --no-trunc` per image (scanned for secrets; names only)
+  and, for an image pulled and signature-verified in the run, `cosign verify-attestation --type
+  slsaprovenance1` and `slsaprovenance` on its digest. The capture's manifest gains
+  `healthcheck`, `secretEnv`, `secretHistory`, and each app `buildProvenance`. The manifest engine
+  compares none of them.
+- `report.html` and `report.md` gain a **Policy** table (one row per app, one column per check).
+  `readiness.json`'s forecast gains `informingBy`.
+- The claims file accepts the three new artefact names. The monorepo's `pnpm
+  check:release-claims` mirrors the nineteen diff names and does not accept them yet; an
+  informing finding needs no claim.
 
 ### 1.21.0 (minor; engine levels: informing before blocking)
 

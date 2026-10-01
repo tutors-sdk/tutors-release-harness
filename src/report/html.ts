@@ -7,6 +7,7 @@ import { imageArtefactsHtml } from "./image-static.ts";
 import { causesHtml } from "./causes.ts";
 import { NARROW_CSS } from "./narrow.ts";
 import { informingHtml } from "./informing.ts";
+import { policyHtml } from "./policy.ts";
 
 const esc = (s: string) => s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
 
@@ -71,11 +72,11 @@ export function renderHtml(report: RunReport): string {
     .causes tr { border-bottom:1px solid var(--rule); padding:6px 0; }
     .causes td { border:0; padding:2px 0; }
     .causes td[data-label]::before { content:attr(data-label) ": "; font-size:12px; opacity:.7; }
-    table.informing thead { display:none; }
-    table.informing, table.informing tbody, table.informing tr, table.informing td { display:block; overflow:visible; }
-    table.informing tr { border-bottom:1px solid var(--rule); padding:6px 0; }
-    table.informing td { border:0; padding:2px 0; overflow-wrap:anywhere; }
-    table.informing td[data-label]::before { content:attr(data-label) ": "; font-size:12px; opacity:.7; }
+    table.informing thead, table.policy thead { display:none; }
+    table.informing, table.informing tbody, table.informing tr, table.informing td, table.policy, table.policy tbody, table.policy tr, table.policy td { display:block; overflow:visible; }
+    table.informing tr, table.policy tr { border-bottom:1px solid var(--rule); padding:6px 0; }
+    table.informing td, table.policy td { border:0; padding:2px 0; overflow-wrap:anywhere; }
+    table.informing td[data-label]::before, table.policy td[data-label]::before { content:attr(data-label) ": "; font-size:12px; opacity:.7; }
   }
   ${NARROW_CSS}
   .level { white-space:nowrap; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; padding:1px 8px; border-radius:4px; border:1px solid currentColor; opacity:.8; vertical-align:middle; }
@@ -122,6 +123,8 @@ ${
 
 <h2 id="differences">Differences (${compare.hunks.length}; ${compare.unclaimed.length} unclaimed)</h2>
 ${compare.hunks.length ? `<table><thead><tr><th>artefact</th><th>scope</th><th>what changed</th><th>claimed by</th></tr></thead><tbody>${rows}</tbody></table>` : "<p>None. The two sides are observably identical after normalisation.</p>"}
+
+${policyHtml(report, esc)}
 
 ${informingHtml(report, esc)}
 

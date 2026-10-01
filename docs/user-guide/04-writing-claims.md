@@ -27,7 +27,7 @@ claims:
 
 | Field | Rules |
 | --- | --- |
-| `artefact` | One of the nineteen artefact names (`dom`, `screenshot`, `network`, `console`, `headers`, `axe`, `focus`, `metrics`, `logs`, `timing`, `persistence`, `bus`, `migration`, `upgrade`, `image-manifest`, `sbom`, `vulns`, `runtime`, `startup`), or `*`. |
+| `artefact` | One of the twenty-two artefact names (`dom`, `screenshot`, `network`, `console`, `headers`, `axe`, `focus`, `metrics`, `logs`, `timing`, `persistence`, `bus`, `migration`, `upgrade`, `image-manifest`, `sbom`, `vulns`, `runtime`, `startup`, and since 1.22.0 the policy family `image-hardening`, `build-provenance`, `vuln-ceiling`), or `*`. |
 | `scope` | A non-empty glob, matched with picomatch (dot files allowed, case-insensitive) against the hunk's scope or its path. Quote it: colons and spaces are YAML syntax. |
 | `reason` | At least 8 characters, and it must not start with `see pr`, `approved`, `all`, `ok` or `misc` (a whole word, any case). It names the Rule or the changelog entry that intends the change. **Required unless the claim has a `rule`.** |
 | `rule` | A Rule's four digits, **quoted** (`"0031"`; unquoted, YAML reads `0031` as the number 31 and the harness refuses it). It must be in the rules file given with `--rules` (in the dispatch, `rules_url`). With a `rule`, `reason` becomes optional free text, and the report shows `Rule 0031: <title>` (then your reason, if you gave one). |
@@ -387,7 +387,7 @@ A claims file is checked as a whole, and a bad one stops the run with exit `2` b
 
 | Message | Cause | Fix |
 | --- | --- | --- |
-| `claim 1 of 1 (claims.0), artefact: "header" is not an artefact` then `valid artefacts: dom, screenshot, ...; or "*" for every artefact` and `did you mean "headers"?` | the artefact is not one of the nineteen names or `*` (a typo such as `header`, or `a11y`) | use the name the message suggests, or one from the [schema](#the-schema) |
+| `claim 1 of 1 (claims.0), artefact: "header" is not an artefact` then `valid artefacts: dom, screenshot, ...; or "*" for every artefact` and `did you mean "headers"?` | the artefact is not one of the twenty-two names or `*` (a typo such as `header`, or `a11y`) | use the name the message suggests, or one from the [schema](#the-schema) |
 | `claim 1 of 1 (claims.0), reason: a reason names a Rule or a changelog entry, not a rubber stamp` | the reason starts with `see pr`, `approved`, `all`, `ok` or `misc` | cite the Rule or the changelog entry |
 | `... reason: a reason is at least 8 characters` | too short | say what changed and why |
 | `... reason: a claim needs a reason (a Rule or a changelog entry), or a rule: "0031" that the rules file contains` | no `reason` and no `rule` | add a reason, or a `rule` and `--rules` |
@@ -418,7 +418,7 @@ Findings that are not file errors:
 pnpm check:release-claims
 ```
 
-It mirrors the harness's schema so a bad file fails on the pull request in minutes, not in the harness run. It accepts all nineteen artefact names, the optional `version: 1`, and `rule: "0031"` in place of a `reason`. It is stricter than the harness in ways worth knowing:
+It mirrors the harness's schema so a bad file fails on the pull request in minutes, not in the harness run. It accepts the nineteen diff artefact names (not yet the policy family's three, which are informing and need no claim), the optional `version: 1`, and `rule: "0031"` in place of a `reason`. It is stricter than the harness in ways worth knowing:
 
 - It rejects **unknown fields and unknown top-level keys** (`approvedby`); the harness ignores them. This is the check that catches the typo.
 - It rejects a **broad claim with no `approvedBy`** at once; the harness lets the run start and fails it.

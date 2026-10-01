@@ -126,7 +126,7 @@ The messages of an invalid claims file are in [chapter 4](04-writing-claims.md#r
 
 ### `claim 1 of 1 (claims.0), artefact: "header" is not an artefact`
 
-**Cause.** The artefact is not one of the nineteen names or `*`: a typo (`header`, `a11y`). **Fix.** The message prints the valid names and, when it can, `did you mean "headers"?`. Exit 2, before any stack starts, with no output directory.
+**Cause.** The artefact is not one of the twenty-two names or `*`: a typo (`header`, `a11y`). **Fix.** The message prints the valid names and, when it can, `did you mean "headers"?`. Exit 2, before any stack starts, with no output directory.
 
 ### `rule: rule is the Rule's four digits, quoted: rule: "0031" ...`
 
@@ -150,7 +150,7 @@ The messages of an invalid claims file are in [chapter 4](04-writing-claims.md#r
 
 ### The monorepo pre-check rejects a claim the harness accepts
 
-**Cause.** The pre-check is stricter in three ways: it rejects unknown fields (`approvedby`), a broad claim with no `approvedBy`, and a cited Rule that no feature under `tests/bdd/features` defines at the ref being checked. It accepts all nineteen artefact names. **Fix.** Fix the claim as its message says; the harness's parse is the authority if the two ever disagree.
+**Cause.** The pre-check is stricter in three ways: it rejects unknown fields (`approvedby`), a broad claim with no `approvedBy`, and a cited Rule that no feature under `tests/bdd/features` defines at the ref being checked. It accepts the nineteen diff artefact names, not yet the policy family's three (informing, so they need no claim). **Fix.** Fix the claim as its message says; the harness's parse is the authority if the two ever disagree.
 
 ### `--override-reason must say why the FAIL is being accepted, in at least 20 characters ...`, or `an override needs both --override-reason and --override-by`
 
