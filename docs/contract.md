@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.20.0`
+Contract version: `1.20.1`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -1376,6 +1376,18 @@ by another harness version, since a harness change can move differences too. `de
 on a run kept before 1.16.1 and on a run of another mode. Advisory like the rest of the index: no
 verdict, Gate or exit code reads it.
 
+Since 1.20.1 a led report follows **New since the last forecast** with **Causes and the PRs
+behind them** (`src/changes/attribute.ts`): each cause of the run ([Causes](#causes)) with the
+pull requests of its kept `changes.json` that could have made it. A cause whose key the previous
+forecast (the delta's `against`) did not have is new, and only the PRs merged since can have made
+it: those in this run's `changes.json` and not in that run's. Of those, the ones whose files
+match the cause's paths are named, or all of them when none match. Every other cause is matched
+by path: for a page, log, metric or journey table the app's own source (`apps/<app>/**`, direct)
+and then `packages/**`; for an image a Dockerfile (direct) and then a package manifest or
+`pnpm-lock.yaml` (`sbom`, `vulns`). Documentation, tests and workflows never match. The first
+three PRs of each cause are named, most direct files first. No field is added to `report.json` or
+the index; a lead to ask, never read by a verdict, the Gate or an exit code.
+
 Since 1.18.0 a release run keeps `quality.json` beside it, byte for byte and listed in `files`,
 when its directory holds the monorepo's quality record ([`confidence.json`](#confidencejson-the-release-confidence-score),
 Test signal's two halves): [Main to RC](#main-to-rc) fetches it there. A file that is not a
@@ -1469,6 +1481,7 @@ and it cannot be mistaken for a judged candidate, because it never writes the
   Rehearsals dimension's evidence opens on the pages after the 14-day artifact is gone. Since
   1.16.1 each forecast's entry carries `delta`, what is new and gone in its unclaimed set since
   the previous forecast beside the same production, and its kept report leads with the new ones.
+  Since 1.20.1 the lead names the PRs behind each cause: a new one against those merged since.
   Since 1.18.0 the quality record the score read is kept beside it (`quality.json`).
   The report pages show the newest at the top.
 
@@ -1536,6 +1549,16 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.20.1 (patch; which PR did it)
+
+The release note is [releases/1.20.1.md](releases/1.20.1.md). The second step of the "Explain"
+release. A patch: no command, flag, `report.json` or index field, verdict, Gate or exit code
+changes; only what a kept forecast's `report.md` and `report.html` lead with.
+
+- A kept, scored report (Main to RC) follows "New since the last forecast" with "Causes and the
+  PRs behind them": a cause new since the previous forecast against the PRs merged since, the
+  rest by path. See [Kept reports](#kept-reports).
 
 ### 1.20.0 (minor; causes, not hunks)
 

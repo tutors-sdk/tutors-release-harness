@@ -9,12 +9,16 @@
  *
  * Since 1.16.1 a kept forecast leads with what is new since the last forecast, right under the Gate: the unclaimed
  * differences it has that the previous kept forecast beside the same baseline did not (src/report/delta.ts).
+ *
+ * Since 1.20.1 it follows that with its causes and the PRs behind them (src/changes/attribute.ts): the new causes against
+ * the PRs merged since the last forecast, the rest by path.
  */
 import { renderChangesHtml, renderChangesMarkdown } from "../changes/render.ts";
 import type { Changes } from "../changes/signals.ts";
 import { renderGlanceHtml, renderGlanceMarkdown } from "../glance/render.ts";
 import { hunkAnchor, type Confidence } from "../score/confidence.ts";
 import type { DeltaLead } from "./delta.ts";
+import type { Attribution, AttributedPr } from "../changes/attribute.ts";
 import { renderScoreHtml, renderScoreMarkdown } from "../score/render.ts";
 
 /** The styles the lead's blocks use (the Gate, the RCS band, the glance, the marks), for any page that shows it. */
@@ -25,6 +29,7 @@ export const LEAD_CSS = `.gate{font-size:1.6rem;font-weight:700;padding:.6rem 1r
 .rcs.green{background:#e3f4e6}.rcs.amber{background:#fff4e0}.rcs.red{background:#fbe3e3}.rcs.none{background:#f1f1f1}
 .glance{border-left:4px solid #1f5fa8;padding:0 1rem;margin:1rem 0}.glance li{margin:.5rem 0}
 .delta{border-left:4px solid #8a5a00;padding:0 1rem;margin:1rem 0}.delta table{font-size:.9rem}
+.attribution{border-left:4px solid #5a4a8a;padding:0 1rem;margin:1rem 0}.attribution table{font-size:.9rem}.attribution td{overflow-wrap:anywhere}
 .mark{font-size:.8rem;padding:0 .4rem;border-radius:4px;background:#f1f1f1;color:#1b1b1b}.mark.verified{background:#e3f4e6}.mark.disputed{background:#fbe3e3}.mark.escalated{background:#fff4e0}`;
 
 const esc = (s: string) => s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
@@ -96,4 +101,51 @@ export function deltaLeadHtml(d: DeltaLead): string {
   }
   parts.push("</section>");
   return parts.join("\n");
+}
+
+// ---- causes and the PRs behind them (since 1.20.1) --------------------------------------------------------
+
+/** How many PRs a cause row names; the rest are counted. */
+export const ATTRIBUTION_LISTED = 3;
+
+const prName = (p: AttributedPr) => (p.pr !== null ? `#${p.pr}` : p.sha.slice(0, 7));
+const prWhy = (p: AttributedPr) => (!p.files ? "" : ` (${p.files} file${p.files === 1 ? "" : "s"}${p.direct === p.files ? "" : `, ${p.direct} direct`})`);
+
+/** The sentence over the table: how many causes, which are new and what was merged since, how the rest were matched. */
+function attributionSentence(a: Attribution, f: { code: (s: string) => string; pr: (p: AttributedPr) => string }): string {
+  const fresh = a.causes.filter((c) => c.how === "new").length;
+  const total = a.causes.length;
+  const since = a.mergedSince;
+  const head = `${total} cause${total === 1 ? "" : "s"}, ${a.attributed} with a PR named.`;
+  const delta = a.against
+    ? since?.length
+      ? ` Merged since the forecast of ${f.code(a.against.candidate)}: ${since.map(f.pr).join(", ")}. ${fresh ? `${fresh} cause${fresh === 1 ? " is" : "s are"} new since then, and only these PRs can have made ${fresh === 1 ? "it" : "them"}.` : "No cause is new since then."}`
+      : ` Nothing was merged since the forecast of ${f.code(a.against.candidate)}.`
+    : "";
+  return `${head}${delta} ${fresh ? "The others are" : "Each is"} matched by path: the PRs whose files touch what the cause is about, ranked by the direct ones (the app's own source for a page, a Dockerfile for an image) before the indirect (the shared packages, a manifest). A lead to ask, never a verdict.`;
+}
+
+/** The kept forecast's report.md: one row per cause, the new ones first, with the PRs that could have made it. */
+export function attributionLeadMarkdown(a: Attribution): string {
+  const pr = (p: AttributedPr) => (p.url ? `[${prName(p)}](${p.url})` : prName(p));
+  const lines = ["#### Causes and the PRs behind them", "", attributionSentence(a, { code: (s) => `\`${s}\``, pr }), "", "| cause | differences | PRs |", "| --- | --- | --- |"];
+  for (const c of [...a.causes].sort((x, y) => Number(y.how === "new") - Number(x.how === "new"))) {
+    const named = c.prs.slice(0, ATTRIBUTION_LISTED).map((p) => `${pr(p)}${prWhy(p)}`).join(", ");
+    const more = c.prs.length > ATTRIBUTION_LISTED ? ` and ${c.prs.length - ATTRIBUTION_LISTED} more` : "";
+    lines.push(`| ${c.how === "new" ? "**new** " : ""}${mdCell(c.key)} | ${c.hunks} | ${named ? `${named}${more}` : "none matched"} |`);
+  }
+  return lines.join("\n");
+}
+
+/** The kept forecast's report.html: the same, each cause linked to its row in the cause table below. */
+export function attributionLeadHtml(a: Attribution): string {
+  const pr = (p: AttributedPr) => (p.url ? `<a href="${esc(p.url)}">${esc(prName(p))}</a>` : esc(prName(p)));
+  const rows = [...a.causes]
+    .sort((x, y) => Number(y.how === "new") - Number(x.how === "new"))
+    .map((c) => {
+      const named = c.prs.slice(0, ATTRIBUTION_LISTED).map((p) => `${pr(p)}${esc(prWhy(p))}`).join(", ");
+      const more = c.prs.length > ATTRIBUTION_LISTED ? ` and ${c.prs.length - ATTRIBUTION_LISTED} more` : "";
+      return `<tr><td>${c.how === "new" ? "<strong>new</strong> " : ""}<a href="#cause-${esc(c.cause)}">${esc(c.key)}</a></td><td>${c.hunks}</td><td>${named ? `${named}${more}` : "none matched"}</td></tr>`;
+    });
+  return [`<section class="attribution">`, `<h2 id="attribution">Causes and the PRs behind them</h2>`, `<p>${attributionSentence(a, { code: (s) => `<code>${esc(s)}</code>`, pr })}</p>`, "<table><thead><tr><th>cause</th><th>differences</th><th>PRs</th></tr></thead><tbody>", ...rows, "</tbody></table>", "</section>"].join("\n");
 }
