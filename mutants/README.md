@@ -5,7 +5,7 @@ production reader image plus one planted fault, listed in `mutants.yaml` with
 the artefact the report must attribute it to.
 
 ```bash
-pnpm harness mutants --base 16.2.0          # builds ten images, runs A/A then ten A/B runs
+pnpm harness mutants --base 16.2.0          # builds thirteen images, runs A/A then thirteen A/B runs
 ```
 
 The self-test first runs noise mode on the base (so the harness has the right
@@ -46,6 +46,30 @@ mutant, so the two SBOMs come from the same tool. `syft` must be on `PATH`;
 without it `added-package` escapes, loudly. A `base-swap` build that did not
 change the lowest layer (the alternative base is the production base) is refused
 rather than run as a mutant that plants nothing.
+
+## Policy-check mutants (since 1.25.0)
+
+Each check of the policy family (`src/compare/policy.ts`) has a planted fault of its own, so each check that
+2.0 may make blocking is first shown to fail at all (the runway's soak, on the readiness page):
+
+| Mutant | `kind` | Built as | Must be attributed to |
+| --- | --- | --- | --- |
+| `secret-env` | `planted-secret` | `mutants/Dockerfile.planted-secret`: the production image plus `ENV HARNESS_PLANTED_API_TOKEN=...`, a harmless fixed value under a name that says it is a secret | `image-hardening` (`reader/env/HARNESS_PLANTED_API_TOKEN`) |
+| `vulnerable-package` | `planted-vuln` | `mutants/Dockerfile.planted-vuln`: the manifest of `ejs` 3.1.6 (critical, fixed in 3.1.7) copied to `/opt/harness-planted-vuln/node_modules/`, no code and nothing loads it | `vuln-ceiling` (`reader/<advisory id>`) |
+| `unsigned-build` | `unsigned` | `docker tag` of the production image to a local name: the same bytes, but this run did not pull it and verify its signature | `build-provenance` (`reader/unverified`) |
+
+The three checks are **informing** until 2.0 (`src/compare/levels.ts`), so none of them can FAIL a run.
+Such a mutant is caught when its check reports a finding that the base did not have in the
+self-test's own A/A (a "new on b" finding), and the log says `caught by an informing check`;
+`mutants.json` lists it under `byInforming`. Two of them also trip a blocking engine on the way
+(`secret-env` changes the image config, `image-manifest`; `vulnerable-package` adds a package and an
+advisory, `sbom` and `vulns`), so the run FAILs; `unsigned-build` changes nothing a diff engine
+reads and the run passes, which is the point: only the provenance check can see it. The day a check
+becomes blocking its mutant must FAIL the run like any other.
+
+`vulnerable-package` needs the scanner database the weekly job fetches; `unsigned-build` needs the
+base pulled and verified (a registry prefix), or the A/A already reports `unverified` on the base
+and the mutant has nothing new to show.
 
 ## Adding one
 

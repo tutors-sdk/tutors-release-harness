@@ -1,4 +1,4 @@
-# The harness's own negative fixtures: ten planted regressions the release
+# The harness's own negative fixtures: thirteen planted regressions the release
 # gate must catch, each attributed to the right artefact. `harness mutants`
 # builds each one from the base reader image, runs release mode (base vs
 # mutant) and asserts the verdict is FAIL with at least one unclaimed hunk of
@@ -16,6 +16,14 @@
 # the wrapper in wrap.mjs planting a fault at the HTTP edge; `planted-package`
 # and `base-swap` change what the image IS, and are caught by the static image
 # artefacts (image-manifest, sbom) rather than by anything a browser sees.
+#
+# Since 1.25.0 every policy check (src/compare/policy.ts) has one too: `secret-env`,
+# `vulnerable-package` and `unsigned-build`. A policy check is informing until 2.0
+# (src/compare/levels.ts), so it cannot FAIL a run yet: its mutant is caught when the
+# check reports a finding on the mutant that it did not report on the base in the
+# self-test's own A/A ("new on b"). The day a check becomes blocking, the same mutant
+# must FAIL the run, as every other mutant does. This is the soak's proof that each
+# check that may become blocking can fail at all.
 mutants:
   - name: dropped-header
     plants: the X-Content-Type-Options header is no longer sent
@@ -59,3 +67,18 @@ mutants:
     kind: planted-package
     plants: the candidate carries one package the production image does not
     expect: [sbom]
+
+  - name: secret-env
+    kind: planted-secret
+    plants: the candidate's image config carries an environment variable whose name says it holds a secret
+    expect: [image-hardening]
+
+  - name: vulnerable-package
+    kind: planted-vuln
+    plants: the candidate carries a package with a known critical advisory that has a fix
+    expect: [vuln-ceiling]
+
+  - name: unsigned-build
+    kind: unsigned
+    plants: the candidate is the production image under a local name, not pulled and signature-verified, so it has no verified build provenance
+    expect: [build-provenance]

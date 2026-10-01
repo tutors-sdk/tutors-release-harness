@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.24.0`
+Contract version: `1.25.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -369,7 +369,7 @@ both sides is visible, which no diff can show.
 | Artefact | Scopes | A finding when b's image | Reads |
 | --- | --- | --- | --- |
 | `image-hardening` | `<app>/user`, `<app>/healthcheck`, `<app>/env/<NAME>`, `<app>/history/<NAME>` | runs as root; declares no `HEALTHCHECK` (unset, empty or `NONE`); has an environment variable, or a build argument or command in its layer history, that looks like a secret | the image config the manifest engine collects (`docker image inspect`), and `docker image history --no-trunc` |
-| `build-provenance` | `<app>/slsa`, `<app>/builder` | carries no SLSA provenance verified under the publishing identity; or one whose builder and workflow do not name `image-build.yml` | `cosign verify-attestation --type slsaprovenance1`, then `slsaprovenance`, on the digest, with the same identity and issuer as its signature and SBOM attestation (`HARNESS_COSIGN_IDENTITY`, `HARNESS_COSIGN_ISSUER`) |
+| `build-provenance` | `<app>/slsa`, `<app>/builder`, `<app>/unverified` (since 1.25.0) | carries no SLSA provenance verified under the publishing identity; or one whose builder and workflow do not name `image-build.yml`; or (since 1.25.0) was not pulled and signature-verified in this run at all (`local`, `built-from-ref`, `pulled-unverified`), so it cannot carry any | `cosign verify-attestation --type slsaprovenance1`, then `slsaprovenance`, on the digest, with the same identity and issuer as its signature and SBOM attestation (`HARNESS_COSIGN_IDENTITY`, `HARNESS_COSIGN_ISSUER`) |
 | `vuln-ceiling` | `<app>/<advisory id>` | has a critical or high advisory with a fix available, whether or not production has it | the vulnerability scan already run on b (`vulns`) |
 
 What looks like a secret (`src/image-static/secrets.ts`): a variable whose name says it holds one
@@ -381,9 +381,10 @@ flagged. Names and reasons are kept; **a value is never stored, logged or report
 contents inside the layers are not read.
 
 Every app also gets an informational `<app>/summary` hunk saying what was checked, or
-`<app>/not-evaluated` saying why it could not be (an image that was not pulled and
-signature-verified in the run has no verified attestation to read; a capture recorded before
-1.22.0 has no healthcheck, environment or provenance), so a quiet check reads differently from one
+`<app>/not-evaluated` saying why it could not be (a `cached` image, verified when it was pulled,
+whose attestations were not asked for in this run; a capture recorded before 1.22.0 has no
+healthcheck, environment or provenance; before 1.25.0 also any image not pulled and verified in the
+run, which is now the `unverified` finding), so a quiet check reads differently from one
 that did not run. `report.html` and `report.md` show a **Policy** table, one row per app and one
 column per check, under the differences; the findings are listed under Informing. The readiness
 page's informing count is broken down by engine (`informingBy`).
@@ -391,6 +392,14 @@ page's informing count is broken down by engine (`informingBy`).
 The capture (not `report.json`) gains, per app, the manifest's `healthcheck`, `secretEnv` and
 `secretHistory` (names and reasons only) and `buildProvenance` (the verified SLSA statements:
 predicate type, builder and workflow). The manifest engine compares none of them, so no diff moves.
+
+Since 1.25.0 each check has a **planted mutant** in `mutants/mutants.yaml`: `secret-env`
+(image hardening), `vulnerable-package` (the ceiling) and `unsigned-build` (build provenance).
+While a check is informing, `harness mutants` counts its mutant caught and attributed when the
+check reports a finding whose scope it did not report on the base in the self-test's own A/A;
+the day the check is blocking, the mutant must FAIL the run like any other. `mutants.json` (and
+the line `harness scoreboard mutants` appends) gains `planted`, every mutant run by name, and
+`byInforming`, those caught only by an informing check.
 
 ## Verdicts and exit codes
 
@@ -522,8 +531,10 @@ reference. Replacing that reference with a2 is a 2.0 decision, after nights of c
 
 a2's capture is kept in `a2/capture.json`, and `harness compare --dir` reports the same in-run noise
 from it. Any other mode or substrate logs that `--a2` was dropped. The cost is four containers and
-one capture of the anonymous journeys (`main-preview.yml` runs it only when dispatched with
-`a2: true`; see [releases/1.24.0.md](releases/1.24.0.md)).
+one capture of the anonymous journeys. `main-preview.yml` ran it only when dispatched with
+`a2: true` in 1.24.0 ([releases/1.24.0.md](releases/1.24.0.md)); since 1.25.0 it runs it every
+night and by default, because the soak toward 2.0 counts nights with a clean a-to-a2
+([the readiness page](#the-overnight-readiness-page)).
 
 ## Claim hygiene
 
@@ -1187,7 +1198,7 @@ reads `a3.json` but the site. `pages.yml` runs it after the reports are copied, 
 
 ## The overnight readiness page
 
-**`harness readiness --site <dir> [--github f] [--mutants f] [--releases f | --fetch-releases]`** (not stable, since 1.17.0) reads the Main to
+**`harness readiness --site <dir> [--github f] [--mutants f] [--releases f | --fetch-releases] [--noise-history f]`** (not stable, since 1.17.0) reads the Main to
 RC forecasts the pages workflow has copied into the site (`main-preview/reports/index.json` and
 the kept `report.json` and rehearsals beside each run) and Main to RC's workflow runs from
 `github.json` (the snapshot `harness a3 --fetch-github` writes into the site; `--github f` reads
@@ -1254,9 +1265,34 @@ What GitHub did not answer is a line in its `errors`, and a release it could not
 out. Without a history the page draws the batch from the newest forecast's `changes.json` with
 no limits and says why; never a guess.
 
+**The soak toward 2.0** (since 1.25.0): `soak` in `readiness.json` and a panel after the control
+chart (`#soak`). It counts what the go-live release waits on, from the first night,
+**2026-10-02** (`SOAK_FROM` in `src/readiness/soak.ts`), so nobody counts nights by hand:
+
+- a night is **clean** when every nightly A/A of that UTC night was clean and verified (the noise
+  history, `noise/noise-history.json` in the site as `pages.yml` copies it, or
+  `--noise-history f`) **and** that night's Main to RC forecast measured side a against side a2
+  with no difference (its kept `report.json`'s `inRunNoise`);
+- **paused** when the A/A was clean and Main to RC skipped a pair it had already judged (an
+  unchanged night): a-to-a2 was not measured again, so the night neither counts nor breaks;
+- **broken** otherwise: an A/A with differences or on weak evidence, no A/A, a-to-a2 differences,
+  a forecast run without a2, a Main to RC run that did not judge or did not run; and every night
+  when the A/A history was not read;
+- **not yet**: tonight, until its A/A and its forecast have both finished.
+
+The count is the clean nights since the last broken one; the target is **10**, the runway's
+"ten consecutive nights with a clean A/A and a clean a-to-a2". Below it, one row per check that
+2.0 may make blocking (the policy family): its level now, its **quiet nights** (judged nights
+in a row, newest back to the soak's start, with no unclaimed finding on b), its planted mutant
+and the newest weekly self-test that planted it (`caught`, `escaped`, `not run yet`), and
+whether it is **eligible**: quiet for the target and its mutant caught. A check that fires on
+production too is named as such: it cannot stay quiet until production is fixed. The panel is
+advisory: it never changes an engine level, a verdict or an exit code; promoting a check stays a
+change to `ENGINE_LEVELS`, made at 2.0.
+
 Exit `0` when the page is written, `2` for a usage error (no `--site`, a directory that does not
-exist, a `--github` that is not a snapshot, a `--releases` that is not a release history, or
-both `--releases` and `--fetch-releases`). Advisory: **nothing here changes a verdict, a Gate
+exist, a `--github` that is not a snapshot, a `--releases` that is not a release history, a
+`--noise-history` that is not a noise history, or both `--releases` and `--fetch-releases`). Advisory: **nothing here changes a verdict, a Gate
 or an exit code**. `pages.yml` runs it after the A3, which writes `github.json`; a failure is a
 warning and the site deploys without it.
 
@@ -1580,8 +1616,8 @@ Since 1.5.0. `main-preview.yml` answers "what would release mode say
 if main were cut as a release candidate today?", every day as soon as the nightly
 A/A on main finishes (`workflow_run`, whether it passed or failed; not a cancelled
 one, nor one on another branch) (and by hand, `workflow_dispatch` with optional `production`, `candidate`,
-`force` and, since 1.24.0, `a2`: side a2 and the [in-run noise](#in-run-noise-side-a2), off unless
-dispatched with it). It is a **forecast, never a gate**: it tags, records and deploys nothing,
+`force` and, since 1.24.0, `a2`: side a2 and the [in-run noise](#in-run-noise-side-a2); since
+1.25.0 on every night and on a dispatch unless unticked). It is a **forecast, never a gate**: it tags, records and deploys nothing,
 and it cannot be mistaken for a judged candidate, because it never writes the
 `release-records` branch that post-deploy reads.
 
@@ -1699,6 +1735,26 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.25.0 (minor; soak prep: a planted mutant per policy check, a2 every night, the clean-night count)
+
+The release note is [releases/1.25.0.md](releases/1.25.0.md). The soak toward 2.0 can be counted
+from the night of 2026-10-02. A minor for three mutant kinds, one finding and one optional field;
+no engine level changes and nothing new gates.
+
+- `mutants/mutants.yaml` plants one fault per policy check: `secret-env` (`planted-secret`),
+  `vulnerable-package` (`planted-vuln`) and `unsigned-build` (`unsigned`), thirteen mutants in
+  all. An informing check catches its mutant with a finding the base did not have in the A/A;
+  `mutants.json` and `scoreboard/mutants.jsonl` gain `planted` and `byInforming`. See
+  [The policy family](#the-policy-family).
+- `build-provenance` reports an image the run did not pull and verify (`local`,
+  `built-from-ref`, `pulled-unverified`) as the finding `<app>/unverified`, where it said
+  `not-evaluated`. Informing, so no verdict moves.
+- `main-preview.yml` passes `--a2` every night, and its dispatch input `a2` defaults to on.
+- `harness readiness` takes `--noise-history` and writes `soak` into `readiness.json`
+  ([`readiness.schema.json`](contract/readiness.schema.json)), drawn as the soak panel: clean
+  nights in a row against 10, and each check's quiet nights and planted mutant. See
+  [The overnight readiness page](#the-overnight-readiness-page).
 
 ### 1.24.0 (minor; in-run noise: side a2)
 

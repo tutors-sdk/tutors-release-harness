@@ -63,7 +63,7 @@ A mask is a blind spot you chose. The steps exist to make choosing one a review.
 
    Narrowest possible: keep the surrounding text. A temporary mask says so and names the item that removes the need.
 4. **Its own pull request.** `harness guard masks --base <ref>` fails a change that adds or loosens a mask and also changes anything except `normalise/masks.yaml`, `docs/noise-burndown.md`, `docs/masks.md`, `tests/normalise.test.ts`, `tests/masks*.test.ts`, `tests/fixtures/masks/**` and the version bump. A threshold (`screenshot`, `metrics`, `logs`, `timing`, `startup`) counts as a mask. `normalise/masks.yaml` is owned by the maintainers through CODEOWNERS.
-5. **Bump the version and re-run the mutants.** A mask is an engine change (`harness guard engine`). The mutants proving the harness still catches its ten planted faults is the price of narrowing what it looks at.
+5. **Bump the version and re-run the mutants.** A mask is an engine change (`harness guard engine`). The mutants proving the harness still catches its thirteen planted faults is the price of narrowing what it looks at.
 6. **Watch it.** A mask listed under *Silent this run* in every report for a week is deleted, in a pull request that may travel with anything. Past about forty masks, fix determinism at the source.
 
 ## Adding a mutant

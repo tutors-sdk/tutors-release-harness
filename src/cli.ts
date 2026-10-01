@@ -241,7 +241,7 @@ const USAGE = `tutors-release-harness
       Metrics and Tests, within reason, look or not measured (--mutants, default mutants.jsonl beside --scoreboard, is the
       weekly self-test Tests reads). What it cannot read is said to be not measured. Advisory: never an input to the Gate,
       a verdict or an exit code. Exit 0 when written, 2 for what it cannot read. Not stable.
-  harness readiness --site <dir> [--github f] [--mutants f] [--releases f | --fetch-releases] [--json]
+  harness readiness --site <dir> [--github f] [--mutants f] [--releases f | --fetch-releases] [--noise-history f] [--json]
       The overnight readiness page (since 1.17.0): one row per night (UTC) for the last ten nights, newest on top, from
       the Main to RC forecasts under --site (main-preview/reports/index.json and the reports beside it): the commit
       judged, the Gate, the unclaimed count, what is new and gone since the previous forecast, and links to the kept
@@ -252,7 +252,10 @@ const USAGE = `tutors-release-harness
       control chart: each past release of the monorepo in merged PRs, its XmR limits (centre, UCL, LCL; provisional
       under 10 releases), and the PRs on main not yet released against the WIP limit, named in words (below the centre
       line, a good time to release, release now), with the count night by night. --fetch-releases asks GitHub (GITHUB_TOKEN
-      or GH_TOKEN) for the release sizes and writes releases.json into --site; --releases reads one. Writes
+      or GH_TOKEN) for the release sizes and writes releases.json into --site; --releases reads one. Since 1.25.0 the
+      soak toward 2.0: clean nights in a row since 2026-10-02 (a clean, verified nightly A/A and a clean a-to-a2 on that
+      night's forecast; a skipped night pauses the count) against the target of 10, and per policy check its quiet nights
+      and its planted mutant; --noise-history (default noise/noise-history.json in --site) is the A/A record. Writes
       readiness.html and readiness.json into --site. Advisory: never an input to the Gate, a verdict or an exit code. Exit 0 when written, 2 for what it cannot
       read. Not stable.
 `;

@@ -10,8 +10,19 @@ import type { TempFiles } from "./image-static/command.ts";
  *                    needing no root, no network and no package manager, so it also works on a distroless image
  *   base-swap        the production filesystem laid over a different base image: same app, same configuration,
  *                    different lowest layers
+ *
+ * Since 1.25.0, one kind per policy check (src/compare/policy.ts), so each check that 2.0 may make blocking has a
+ * planted fault it must catch first:
+ *   planted-secret   the production image plus one environment variable whose name says it holds a secret
+ *                    (mutants/Dockerfile.planted-secret): the image-hardening check
+ *   planted-vuln     the production image plus the manifest of one npm package with a known critical advisory that
+ *                    has a fix, copied under /opt where nothing loads it (mutants/Dockerfile.planted-vuln): the
+ *                    vuln-ceiling check
+ *   unsigned         the production image under a local name, byte for byte (`docker tag`): nothing about it differs
+ *                    except that this run did not pull it and verify its signature, so it carries no verified SLSA
+ *                    provenance: the build-provenance check
  */
-export const MUTANT_KINDS = ["edge", "planted-package", "base-swap"] as const;
+export const MUTANT_KINDS = ["edge", "planted-package", "base-swap", "planted-secret", "planted-vuln", "unsigned"] as const;
 export type MutantKind = (typeof MUTANT_KINDS)[number];
 
 /**
@@ -78,8 +89,16 @@ export function buildMutantImage(mutant: { name: string; kind: MutantKind }, bas
       docker([...common, "-f", join(ctx.mutantsDir, "Dockerfile"), "--build-arg", `MUTANT=${mutant.name}`, ctx.mutantsDir]);
       return image;
     case "planted-package":
-      docker([...common, "-f", join(ctx.mutantsDir, "Dockerfile.planted-package"), ctx.mutantsDir]);
+    case "planted-secret":
+    case "planted-vuln":
+      docker([...common, "-f", join(ctx.mutantsDir, `Dockerfile.${mutant.kind}`), ctx.mutantsDir]);
       return image;
+    case "unsigned": {
+      // The same image id under a name no registry served and no ledger entry vouches for: the run records it as local.
+      const result = ctx.exec("docker", ["tag", dockerRef(base), image]);
+      if (result.status !== 0) throw new Error(`docker tag for mutant ${mutant.name} exited ${result.status}: ${result.stderr.trim().split(/\r?\n/).slice(-3).join(" / ")}`);
+      return image;
+    }
     case "base-swap": {
       const config = inspect(ctx.exec, base).Config ?? {};
       const dockerfile = ctx.files.write(`Dockerfile.${mutant.name}`, baseSwapDockerfile(base, ctx.altBase, config));

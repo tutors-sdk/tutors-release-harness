@@ -25,6 +25,7 @@ import { qualityOf, type QualityInputs, type QualityRecord, type QualityStrip, t
 import type { ReportDelta } from "../report/delta.ts";
 import { buildControl, type Control } from "./control.ts";
 import type { ReleaseHistory } from "./releases.ts";
+import { SOAK_FROM, buildSoak, type AaNight, type Soak, type SoakForecast } from "./soak.ts";
 
 export const READINESS_SCHEMA_VERSION = 1 as const;
 /** Calendar nights on the page, tonight included. */
@@ -64,6 +65,10 @@ export interface KeptForecast {
   quality?: QualityRecord | null;
   /** Since 1.19.0: the PRs since production its kept changes.json counts (release/* and direct commits left out). */
   unreleased?: { prs: number; base: string };
+  /** Since 1.25.0: the kept report's a-to-a2 differences (its `inRunNoise`); absent when it ran without a2. */
+  a2Hunks?: number;
+  /** Since 1.25.0: what each policy check found on b that no claim covers, and how much of it production has too. */
+  policy?: SoakForecast["policy"];
 }
 
 export type Rehearsal = "migration" | "upgrade";
@@ -83,6 +88,13 @@ export interface ReadinessInputs {
   releases?: ReleaseHistory;
   /** What releases.json said about itself: when it was fetched, or why it was not read. */
   releasesSource?: string;
+  /** Since 1.25.0: the nightly A/As (noise-history.json's entries); undefined when not read. */
+  aa?: AaNight[];
+  aaSource?: string;
+  /** Since 1.25.0: each policy check's planted mutants, by name (mutants/mutants.yaml). */
+  planted?: Partial<Record<string, string[]>>;
+  /** The soak's first night; SOAK_FROM unless a test says otherwise. */
+  soakFrom?: string;
 }
 
 export interface Forecast {
@@ -139,7 +151,10 @@ export interface Readiness {
   nights: Night[];
   /** Since 1.19.0: the release-size control chart and the WIP limit on what is waiting on main (src/readiness/control.ts). */
   control: Control;
-  sources: { forecasts: number; github: string };
+  /** Since 1.25.0: the soak toward 2.0: clean nights in a row, and each check's quiet nights and planted mutant (src/readiness/soak.ts). */
+  soak: Soak;
+  /** `aa` since 1.25.0: what noise-history.json said about itself. */
+  sources: { forecasts: number; github: string; aa: string };
 }
 
 // ---- helpers -------------------------------------------------------------------------------------------
@@ -201,12 +216,17 @@ export function deltaWords(d: ReportDelta | null): string {
 
 // ---- the page ------------------------------------------------------------------------------------------
 
+/** The soak may reach further back than the page's ten nights: every night since it began, up to this many. */
+const SOAK_REACH = 60;
+
 export function buildReadiness(i: ReadinessInputs): Readiness {
-  const nights = nightsUpTo(i.now);
+  // Every night the soak counts (since SOAK_FROM), at least the page's ten; the page shows the newest ten.
+  const sinceSoak = Math.floor((Date.parse(i.now.toISOString().slice(0, 10)) - Date.parse(`${i.soakFrom ?? SOAK_FROM}T00:00:00Z`)) / DAY_MS) + 1;
+  const nights = nightsUpTo(i.now, Math.min(SOAK_REACH, Math.max(NIGHTS, sinceSoak)));
   const today = nights[0]!;
   const forecasts = i.forecasts.map((k) => forecastOf(k, i.mutants)).sort((x, y) => Date.parse(y.ranAt) - Date.parse(x.ranAt));
   const runs = [...(i.workflowRuns ?? [])].sort((x, y) => Date.parse(y.createdAt) - Date.parse(x.createdAt));
-  const rows: Night[] = nights.map((night) => {
+  let rows: Night[] = nights.map((night) => {
     const kept = forecasts.filter((f) => nightOf(f.ranAt) === night);
     const those = runs.filter((r) => r.createdAt && nightOf(r.createdAt) === night).map((r) => ({ url: r.url, conclusion: r.conclusion, event: r.event, createdAt: r.createdAt }));
     const base = { night, runs: those };
@@ -235,6 +255,17 @@ export function buildReadiness(i: ReadinessInputs): Readiness {
     if (night === today) return { ...base, state: "not yet", forecasts: [], note: "Not run yet tonight." };
     return { ...base, state: "did not run", forecasts: [], note: "Main to RC did not run." };
   });
+  const all = rows;
+  const soak = buildSoak({
+    now: i.now,
+    nights: all,
+    facts: Object.fromEntries(i.forecasts.map((k) => [k.id, { ranAt: k.ranAt, ...(k.a2Hunks !== undefined ? { a2Hunks: k.a2Hunks } : {}), ...(k.policy ? { policy: k.policy } : {}) }])),
+    ...(i.aa ? { aa: i.aa } : {}),
+    ...(i.mutants ? { mutants: i.mutants } : {}),
+    planted: i.planted ?? {},
+    ...(i.soakFrom ? { from: i.soakFrom } : {})
+  });
+  rows = all.slice(0, NIGHTS);
   // Production moved: mark the row where the baseline changed from the judged row below it.
   let below: string | undefined;
   for (let n = rows.length - 1; n >= 0; n--) {
@@ -244,7 +275,7 @@ export function buildReadiness(i: ReadinessInputs): Readiness {
     if (below && below !== baseline) row.baselineMoved = { from: below, to: baseline };
     below = row.forecasts[0]?.baseline ?? baseline;
   }
-  const inWindow = new Set(nights);
+  const inWindow = new Set(nights.slice(0, NIGHTS));
   return {
     schemaVersion: READINESS_SCHEMA_VERSION,
     builtAt: i.now.toISOString(),
@@ -259,6 +290,7 @@ export function buildReadiness(i: ReadinessInputs): Readiness {
         return [{ ranAt: k.ranAt, prs: k.unreleased.prs, baseline: f.baseline || k.unreleased.base, candidate: f.candidate, head: f.commit }];
       })
     }),
-    sources: { forecasts: forecasts.filter((f) => inWindow.has(nightOf(f.ranAt))).length, github: i.github }
+    soak,
+    sources: { forecasts: forecasts.filter((f) => inWindow.has(nightOf(f.ranAt))).length, github: i.github, aa: i.aaSource ?? "not read" }
   };
 }

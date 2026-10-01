@@ -150,7 +150,7 @@ One class of noise is known and has a fix in flight (a deterministic settle of t
 
 ## The mutant self-test
 
-A harness that cannot catch its own planted faults has no business gating a release. `harness mutants --base <tag>` builds **ten mutants** from the base reader image (so a mutant is production plus exactly one fault), runs an A/A on the base, then runs release mode against each mutant. It passes only when every mutant produces a FAIL whose unclaimed hunks include an artefact the mutant was expected to trip.
+A harness that cannot catch its own planted faults has no business gating a release. `harness mutants --base <tag>` builds **thirteen mutants** from the base reader image (so a mutant is production plus exactly one fault), runs an A/A on the base, then runs release mode against each mutant. It passes only when every mutant produces a FAIL whose unclaimed hunks include an artefact the mutant was expected to trip.
 
 ```console
 pnpm harness local mutants           # pull and verify the base images, then the self-test
@@ -168,10 +168,13 @@ pnpm harness local mutants           # pull and verify the base images, then the
 | `focus-order` | navigator links leave the tab order | `focus` | 1 |
 | `base-swap` | the candidate is built FROM a different base image (the production filesystem over another distribution) | `image-manifest` | 1 |
 | `added-package` | the candidate carries one package the production image does not | `sbom` | 1 |
+| `secret-env` | the candidate's image config carries an environment variable whose name says it holds a secret | `image-hardening` (informing) | 1 |
+| `vulnerable-package` | the candidate carries a package with a known critical advisory that has a fix (`ejs` 3.1.6, manifest only, under `/opt`) | `vuln-ceiling` (informing) | 1 |
+| `unsigned-build` | the candidate is the production image under a local name, not pulled and signature-verified | `build-provenance` (informing) | 1 |
 
-Eight are planted at the HTTP edge by a wrapper (`mutants/wrap.mjs`); two (`base-swap`, `added-package`) change what the image *is* and are caught by the image artefacts. `slow-ssr` needs five runs because the timing test cannot reach significance with fewer than four ([chapter 3](03-reading-a-report.md#timing-and-statistics)). `base-swap` swaps onto `ubuntu:24.04` (Alpine cannot receive the production filesystem); `HARNESS_MUTANT_ALT_BASE` names another base. `focus-order` is applied by an observer, because the reader serves a bare shell and renders every page in the browser, so there is no `<nav>` at the `load` event. The target is 10 of 10 caught **and attributed**.
+Eight are planted at the HTTP edge by a wrapper (`mutants/wrap.mjs`); two (`base-swap`, `added-package`) change what the image *is* and are caught by the image artefacts. `slow-ssr` needs five runs because the timing test cannot reach significance with fewer than four ([chapter 3](03-reading-a-report.md#timing-and-statistics)). `base-swap` swaps onto `ubuntu:24.04` (Alpine cannot receive the production filesystem); `HARNESS_MUTANT_ALT_BASE` names another base. `focus-order` is applied by an observer, because the reader serves a bare shell and renders every page in the browser, so there is no `<nav>` at the `load` event. Since 1.25.0 three more each plant a fault for one policy check (`secret-env` for image hardening, `vulnerable-package` for the vulnerability ceiling, `unsigned-build` for build provenance). Those checks are informing until 2.0, so they cannot FAIL a run: such a mutant is caught when its check reports a finding the base did not have in the self-test's own A/A, and the log says "caught by an informing check". The target is 13 of 13 caught **and attributed**.
 
-**What "attribution" means.** A mutant is *caught* when the release-mode verdict is FAIL. It is *attributed* when the artefacts of its unclaimed hunks include one of the artefacts it was expected to trip. Both must be true. Catching `dropped-header` because a different, unrelated hunk failed is not a catch: the harness would be failing for the wrong reason, and would miss the fault when the noise went away.
+**What "attribution" means.** A mutant is *caught* when the release-mode verdict is FAIL. It is *attributed* when the artefacts of its unclaimed hunks include one of the artefacts it was expected to trip. For an informing check (since 1.25.0) both are a finding of the expected check whose scope the base did not have in the self-test's A/A: an informing check never FAILs a run, and a finding production already has proves nothing about the planted fault. Both must be true. Catching `dropped-header` because a different, unrelated hunk failed is not a catch: the harness would be failing for the wrong reason, and would miss the fault when the noise went away.
 
 **The flow and its output.** The self-test runs an A/A on the base first, with the fixture and auth journey sets only (no `reference`), one run, startup sampling off. If that A/A is not `PASS`, it stops with `A/A is not clean (N diff(s)); the mutant self-test cannot be trusted` and exit 1: a harness whose A/A is not clean cannot fail anything. Then, for each mutant, it builds the image, runs release mode with the A/A's status as the noise, and prints a table:
 
@@ -179,10 +182,10 @@ Eight are planted at the HTTP edge by a wrapper (`mutants/wrap.mjs`); two (`base
 mutant           caught  attributed  unclaimed artefacts
 dropped-header   yes     yes         headers
 ...
-10 of 10 mutants caught and attributed.
+13 of 13 mutants caught and attributed.
 ```
 
-When the A/A on the base is not clean, the log now lists the hunks that made it so, one line each (severity, artefact, scope and summary of every non-info hunk, at most 40, then a count of the info hunks), after the reasons; a CI log therefore says *what* failed, not only `N diff(s)`. Anything that escaped is listed with its report, and the run ends `N of 10 mutants escaped; the harness must not gate releases until this is 0 of 10.` Exit `0` only when all ten are caught and attributed, else `1`.
+When the A/A on the base is not clean, the log now lists the hunks that made it so, one line each (severity, artefact, scope and summary of every non-info hunk, at most 40, then a count of the info hunks), after the reasons; a CI log therefore says *what* failed, not only `N diff(s)`. Anything that escaped is listed with its report, and the run ends `N of 13 mutants escaped; the harness must not gate releases until this is 0 of 13.` Exit `0` only when all thirteen are caught and attributed, else `1`.
 
 **Practicalities.**
 

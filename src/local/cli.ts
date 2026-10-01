@@ -535,12 +535,14 @@ export function readinessCommand(v: Values, deps: { now?: () => Date; log?: (m: 
   const now = (deps.now ?? (() => new Date()))();
   const write = (fetched?: ReleaseHistory): number => {
     try {
-      const { readiness, files } = runReadiness({ site: resolve(site), ...(str(v, "github") ? { github: resolve(str(v, "github")!) } : {}), ...(str(v, "mutants") ? { mutants: resolve(str(v, "mutants")!) } : {}), ...(str(v, "releases") ? { releases: resolve(str(v, "releases")!) } : {}), ...(fetched ? { fetched } : {}), now, harness: harnessInfo().version });
+      const { readiness, files } = runReadiness({ site: resolve(site), ...(str(v, "github") ? { github: resolve(str(v, "github")!) } : {}), ...(str(v, "mutants") ? { mutants: resolve(str(v, "mutants")!) } : {}), ...(str(v, "releases") ? { releases: resolve(str(v, "releases")!) } : {}), ...(str(v, "noise-history") ? { noiseHistory: resolve(str(v, "noise-history")!) } : {}), ...(fetched ? { fetched } : {}), now, harness: harnessInfo().version });
       if (flag(v, "json")) log(JSON.stringify(readiness, null, 2));
       else {
         log(`Overnight readiness: ${readiness.nights.length} nights, ${readiness.sources.forecasts} forecast(s) kept; workflow history ${readiness.sources.github}`);
         for (const n of readiness.nights) log(`  ${n.night} ${n.state.padEnd(11)} ${n.note}`);
         log(`  release size: ${readiness.control.summary} Release history ${readiness.control.source}.`);
+        log(`  soak toward 2.0: ${readiness.soak.headline} A/A history ${readiness.sources.aa}.`);
+        for (const c of readiness.soak.checks) log(`    ${c.check.padEnd(16)} ${c.level}, mutant ${c.mutant.state}: ${c.why}`);
         log(`wrote ${files.join(", ")}`);
       }
       return 0;

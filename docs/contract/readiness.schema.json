@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/tutors-sdk/tutors-release-harness/blob/main/docs/contract/readiness.schema.json",
-  "title": "readiness.json: the overnight readiness page (contract 1.19.0, not stable)",
-  "description": "Since 1.17.0 (each forecast's `quality` since 1.18.0; `control` since 1.19.0). Written by `harness readiness --site <dir>` beside readiness.html on the reports site: one row per calendar night (UTC) for the last ten nights, newest first, from the Main to RC forecasts kept on the `main-preview` branch and Main to RC's workflow runs (github.json). Derived from Readiness in src/readiness/model.ts. The band is deliberately absent: while the review floor caps the score the row carries the Gate only. Advisory: never read by a verdict, the Gate or an exit code. Not stable: it may change in a minor release.",
+  "title": "readiness.json: the overnight readiness page (contract 1.25.0, not stable)",
+  "description": "Since 1.17.0 (each forecast's `quality` since 1.18.0; `control` since 1.19.0; `soak` since 1.25.0). Written by `harness readiness --site <dir>` beside readiness.html on the reports site: one row per calendar night (UTC) for the last ten nights, newest first, from the Main to RC forecasts kept on the `main-preview` branch and Main to RC's workflow runs (github.json). Derived from Readiness in src/readiness/model.ts. The band is deliberately absent: while the review floor caps the score the row carries the Gate only. Advisory: never read by a verdict, the Gate or an exit code. Not stable: it may change in a minor release.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schemaVersion", "builtAt", "harness", "nights", "sources"],
@@ -12,13 +12,65 @@
     "harness": { "type": "string", "description": "The harness version that built the page." },
     "nights": { "type": "array", "maxItems": 10, "items": { "$ref": "#/definitions/night" } },
     "control": { "allOf": [{ "$ref": "release-control.schema.json" }], "description": "Since 1.19.0: the release-size control chart (XmR) and the WIP limit on the PRs waiting on main. Absent from a readiness.json written before 1.19.0." },
+    "soak": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Since 1.25.0: the soak toward 2.0 (src/readiness/soak.ts). A clean night is a clean, verified nightly A/A and a clean a-to-a2 on that night's Main to RC forecast; a night on which Main to RC skipped an already-judged pair pauses the count; anything else breaks it. Advisory: never an input to the Gate, a verdict, an engine level or an exit code. Absent on a page built before 1.25.0.",
+      "required": ["from", "target", "clean", "met", "nights", "checks", "mutants", "headline"],
+      "properties": {
+        "from": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$", "description": "The first night counted." },
+        "target": { "type": "integer", "minimum": 1, "description": "Consecutive clean nights 2.0 waits on (10)." },
+        "clean": { "type": "integer", "minimum": 0, "description": "Clean nights since the last broken one." },
+        "met": { "type": "boolean" },
+        "brokenOn": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$", "description": "The newest broken night since the start, when there is one." },
+        "nights": {
+          "type": "array",
+          "description": "Newest first, at most 21.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["night", "state", "aa", "a2", "streak", "note"],
+            "properties": {
+            "night": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+            "state": { "enum": ["clean", "paused", "broken", "not yet"] },
+            "aa": { "type": "object", "additionalProperties": false, "required": ["state", "runs", "hunks"], "properties": { "state": { "enum": ["clean", "unclean", "degraded", "missing"] }, "runs": { "type": "integer", "minimum": 0 }, "hunks": { "type": "integer", "minimum": 0 } } },
+            "a2": { "type": "object", "additionalProperties": false, "required": ["state"], "properties": { "state": { "enum": ["clean", "differences", "not measured", "unchanged", "not judged", "did not run", "not known", "pending"] }, "hunks": { "type": "integer", "minimum": 0 } } },
+            "streak": { "type": "integer", "minimum": 0, "description": "The count after this night." },
+            "note": { "type": "string", "description": "For people: do not parse." }
+            }
+          }
+        },
+        "checks": {
+          "type": "array",
+          "description": "One per check that 2.0 may make blocking (the policy family).",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["check", "level", "quietNights", "mutant", "eligible", "why"],
+            "properties": {
+            "check": { "type": "string" },
+            "level": { "enum": ["blocking", "informing"] },
+            "blockingFrom": { "type": "string" },
+            "quietNights": { "type": "integer", "minimum": 0, "description": "Judged nights in a row, newest back to the soak's start, with no finding of this check on b." },
+            "lastFinding": { "type": "object", "additionalProperties": false, "required": ["night", "findings", "productionToo"], "properties": { "night": { "type": "string" }, "findings": { "type": "integer", "minimum": 0 }, "productionToo": { "type": "integer", "minimum": 0 } } },
+            "mutant": { "type": "object", "additionalProperties": false, "required": ["names", "state"], "properties": { "names": { "type": "array", "items": { "type": "string" } }, "state": { "enum": ["caught", "escaped", "not run yet", "none"] }, "ranAt": { "type": "string" }, "runUrl": { "type": "string" } } },
+            "eligible": { "type": "boolean", "description": "Quiet for the target and its planted mutant caught." },
+            "why": { "type": "string", "description": "For people: do not parse." }
+            }
+          }
+        },
+        "mutants": { "oneOf": [{ "type": "null" }, { "type": "object", "additionalProperties": false, "required": ["ranAt", "caught", "total"], "properties": { "ranAt": { "type": "string" }, "caught": { "type": ["integer", "null"] }, "total": { "type": "integer" }, "runUrl": { "type": "string" } } }] },
+        "headline": { "type": "string", "description": "For people: do not parse." }
+      }
+    },
     "sources": {
       "type": "object",
       "additionalProperties": false,
       "required": ["forecasts", "github"],
       "properties": {
         "forecasts": { "type": "integer", "minimum": 0, "description": "Forecasts kept within these nights." },
-        "github": { "type": "string", "description": "What was read of the workflow history, or why it was not. For people: do not parse." }
+        "github": { "type": "string", "description": "What was read of the workflow history, or why it was not. For people: do not parse." },
+        "aa": { "type": "string", "description": "Since 1.25.0: what was read of the nightly A/A history (noise-history.json), or why it was not. For people: do not parse." }
       }
     }
   },

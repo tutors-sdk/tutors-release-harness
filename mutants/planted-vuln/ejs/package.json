@@ -1,0 +1,6 @@
+{
+  "name": "ejs",
+  "version": "3.1.6",
+  "description": "Planted by the release harness's vulnerable-package mutant: the manifest only, no code. A known critical advisory with a fix (CVE-2022-29078, fixed in 3.1.7).",
+  "license": "Apache-2.0"
+}

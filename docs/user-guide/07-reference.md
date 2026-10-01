@@ -211,7 +211,7 @@ Every flag, alphabetically. Types: strings unless noted. "Stable" is from `cli.j
 | `--noise-max-age-days` | no | | Days after which a status is too old (default 7) |
 | `--no-stack` (`--stack`, boolean) | no | | Do not start or stop the stack; assume it is up |
 | `--note` | no | 1.12.0 | `glance mark`: one line of what the Reviewer saw |
-| `--noise-history` | no | 1.11.0 | `scoreboard trends`: the noise history for the harness's health (default the local store's) |
+| `--noise-history` | no | 1.11.0 | `scoreboard trends`: the noise history for the harness's health (default the local store's). Since 1.14.0 also `a3`, and since 1.25.0 `readiness` (the A/As the soak counts; default `noise/noise-history.json` in the site) |
 | `--now` | no | | The frozen clock, an ISO instant (default `HARNESS_NOW`, else `2026-09-16T09:05:00.000Z`) |
 | `--once` (boolean) | no | 1.3.0 | `local watch`: one comparison and exit |
 | `--older-than-days`, `--keep-last`, `--image-cache-days` | no | 1.4.0 | `prune`: age, newest-per-mode and image-cache thresholds (14, 5, 30) |
@@ -386,7 +386,7 @@ By command:
 | `scoreboard/releases.jsonl`, `scoreboard/mutants.jsonl` | the `scoreboard` branch; a PR may copy lines to `main` | the CI copy of the scoreboard; only gains lines |
 | `kaizen/<date>-<tag>-<finding>.md`, `kaizen/README.md` | people; `why register --write` (1.13.0) | the 5 Whys and the kaizen register |
 | `normalise/masks.yaml` | people | the masks and thresholds |
-| `mutants/mutants.yaml` | people | the ten mutants and what each must be attributed to |
+| `mutants/mutants.yaml` | people | the thirteen mutants and what each must be attributed to |
 | `claims/example.claims.yaml` | people | an example claims file (real ones live in the monorepo) |
 | `compose.harness.yaml`, `deploy/kind/` | people | the two stacks; the kind substrate |
 | `docs/contract/*.json`, `docs/contract.md` | people | the contract |
