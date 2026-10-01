@@ -1,4 +1,4 @@
-import { inRunNoiseMarkdown } from "./in-run-noise.ts";
+import { inRunNoiseMarkdown, lifetimesMarkdown } from "./in-run-noise.ts";
 import { APPS } from "../image-ref.ts";
 import type { RunReport } from "../types.ts";
 import { claimLabel } from "../claims/rules.ts";
@@ -47,6 +47,7 @@ export function renderMarkdown(report: RunReport): string {
   for (const reason of report.reasons) lines.push(`- ${reason}`);
   if (report.noise) lines.push(`- A/A consulted: ${report.noise.clean ? "clean" : `${report.noise.hunks} diff(s)`}${report.noise.degraded?.length ? " but DEGRADED (does not count)" : ""} at ${report.noise.ranAt}`);
   lines.push(...inRunNoiseMarkdown(report));
+  lines.push(...lifetimesMarkdown(report));
   lines.push("");
 
   lines.push(...causesMarkdown(report.causes)); // 1.20.0

@@ -4,12 +4,20 @@ import { z } from "zod";
 import { ARTEFACTS, type Claim } from "../types.ts";
 import { CLAIMS_VERSION } from "../version.ts";
 import { InputFileError, didYouMean, inputProblems, nearest, unreadable, type Problem } from "./input-error.ts";
+import { APPS } from "../image-ref.ts";
+import { DIGEST, UNTIL_DATE, UNTIL_RELEASE } from "./lifetime.ts";
 import { RULE_ID, ruleReason, type Rules } from "./rules.ts";
+
+/** A YYYY-MM-DD that is a day of the calendar (2026-02-30 is not, though Date.parse rolls it over). */
+const realDay = (v: string) => {
+  const t = Date.parse(`${v}T00:00:00Z`);
+  return Number.isFinite(t) && new Date(t).toISOString().slice(0, 10) === v;
+};
 
 const RUBBER_STAMP = /^(see pr|approved|all|ok|misc)\b/i;
 
 /** The keys a claim has; a key that is close to one of them and is not one is a typo. */
-const CLAIM_KEYS = ["artefact", "scope", "reason", "approvedBy", "rule"] as const;
+const CLAIM_KEYS = ["artefact", "scope", "reason", "approvedBy", "rule", "until", "digests"] as const;
 
 /**
  * A claim names an artefact, a scope glob and the Rule or changelog entry that
@@ -30,6 +38,19 @@ export const ClaimSchema = z
     rule: z
       .string({ error: 'rule is the Rule\'s four digits, quoted: rule: "0031" (unquoted, YAML reads 0031 as the number 31)' })
       .regex(RULE_ID, { message: 'rule is four digits, e.g. "0031"' })
+      .optional(),
+    // Since 1.25.1: a lifetime (src/claims/lifetime.ts).
+    until: z
+      .string({ error: 'until is the last day ("2026-11-30") or release ("16.3.0") the claim is for, as text' })
+      .refine((v) => (UNTIL_DATE.test(v) && realDay(v)) || UNTIL_RELEASE.test(v), { message: 'until is a date, "YYYY-MM-DD", or a release, "X.Y.Z"' })
+      .optional(),
+    digests: z
+      .record(z.string(), z.string({ error: "a digest is sha256: and 64 hex characters, quoted" }).regex(DIGEST, { message: "a digest is sha256: and 64 hex characters" }))
+      .superRefine((d, ctx) => {
+        if (!Object.keys(d).length) ctx.addIssue({ code: "custom", message: "digests names at least one app, or is left out" });
+        const odd = Object.keys(d).filter((k) => !(APPS as readonly string[]).includes(k));
+        if (odd.length) ctx.addIssue({ code: "custom", message: `digests are keyed by app (${APPS.join(", ")}), not ${odd.join(", ")}` });
+      })
       .optional()
   })
   .superRefine((claim, ctx) => {
@@ -128,6 +149,8 @@ export function parseClaims(text: string, source = "claims", rules?: Rules): Cla
   const claims = parsed.data.claims.map((c, i) => {
     const claim: Claim = { artefact: c.artefact, scope: c.scope, reason: c.reason?.trim() ?? "" };
     if (c.approvedBy) claim.approvedBy = c.approvedBy;
+    if (c.until !== undefined) claim.until = c.until;
+    if (c.digests) claim.digests = c.digests as Record<string, string>;
     const where = `claim ${i + 1} of ${parsed.data.claims.length} (claims.${i})`;
     if (c.rule !== undefined) {
       const entry = rules?.rules[c.rule];

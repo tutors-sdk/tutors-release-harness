@@ -1,3 +1,4 @@
+import { lifetimesLine } from "../claims/lifetime.ts";
 import type { RunReport } from "../types.ts";
 
 /**
@@ -32,4 +33,21 @@ export function inRunNoiseMarkdown(report: RunReport): string[] {
   const n = report.inRunNoise;
   if (!n) return [];
   return [`- ${words(n, failing(report))}`, ...n.hunks.slice(0, SHOWN).map((h) => `  - \`${h.artefact}\` \`${h.scope}\`: ${h.summary}`), ...(n.hunks.length > SHOWN ? [`  - and ${n.hunks.length - SHOWN} more in report.json (inRunNoise)`] : [])];
+}
+
+/** Since 1.25.1: claims with a lifetime, beside the A/A lines: how many expired and what they still cover. */
+export function lifetimesHtml(report: RunReport, esc: (s: string) => string): string {
+  const l = report.claimLifetimes;
+  const line = lifetimesLine(l);
+  if (!line) return "";
+  const expired = l!.claims.filter((c) => c.state === "expired");
+  const list = expired.length ? `<ul>${expired.map((c) => `<li><code>${esc(c.artefact)}</code> <code>${esc(c.scope)}</code>: ${esc(c.why)} (covers ${c.covers})</li>`).join("")}</ul>` : "";
+  return `<li id="claim-lifetimes">${esc(line)}${list}</li>`;
+}
+
+export function lifetimesMarkdown(report: RunReport): string[] {
+  const l = report.claimLifetimes;
+  const line = lifetimesLine(l);
+  if (!line) return [];
+  return [`- ${line}`, ...l!.claims.filter((c) => c.state === "expired").map((c) => `  - \`${c.artefact}\` \`${c.scope}\`: ${c.why} (covers ${c.covers})`)];
 }

@@ -1,4 +1,4 @@
-import { inRunNoiseHtml } from "./in-run-noise.ts";
+import { inRunNoiseHtml, lifetimesHtml } from "./in-run-noise.ts";
 import { APPS, type App } from "../image-ref.ts";
 import type { Hunk, RunReport } from "../types.ts";
 import { claimLabel } from "../claims/rules.ts";
@@ -90,7 +90,7 @@ export function renderHtml(report: RunReport): string {
 <p><small>${esc(report.ranAt)} · clock ${esc(report.now)} · ${report.runs} run(s) per side · harness ${esc(report.harnessVersion)}</small></p>
 ${loud ? `<p class="loud">${esc(loud.text)}</p>` : ""}
 ${loudDeployment(report) ? `<p class="loud">${esc(loudDeployment(report)!)}</p>` : ""}
-<ul>${report.reasons.map((r) => `<li>${esc(r)}</li>`).join("")}${report.noise ? `<li id="noise">A/A consulted: ${report.noise.clean ? "clean" : `${report.noise.hunks} diff(s)`}${report.noise.degraded?.length ? " but DEGRADED (does not count)" : ""} at ${esc(report.noise.ranAt)}</li>` : ""}${inRunNoiseHtml(report, esc)}</ul>
+<ul>${report.reasons.map((r) => `<li>${esc(r)}</li>`).join("")}${report.noise ? `<li id="noise">A/A consulted: ${report.noise.clean ? "clean" : `${report.noise.hunks} diff(s)`}${report.noise.degraded?.length ? " but DEGRADED (does not count)" : ""} at ${esc(report.noise.ranAt)}</li>` : ""}${inRunNoiseHtml(report, esc)}${lifetimesHtml(report, esc)}</ul>
 ${causesHtml(report.causes, esc)}
 
 <table>

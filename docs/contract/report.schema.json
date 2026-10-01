@@ -103,6 +103,32 @@
         "alsoOnB": { "type": "array", "items": { "type": "string" } }
       }
     },
+    "claimLifetimes": {
+      "type": "object",
+      "description": "Since 1.25.1: every claim of the run that carries a lifetime (`until`, `digests`), live or expired, and the failing differences each covers. level is the lifetime's level: informing (an expired claim still covers; what it covers would be unclaimed once lifetimes block, at 2.0) or blocking (an expired claim is left out before matching). Never read by the verdict while informing (src/claims/lifetime.ts).",
+      "additionalProperties": false,
+      "required": ["level", "claims"],
+      "properties": {
+        "level": { "enum": ["blocking", "informing"] },
+        "claims": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["artefact", "scope", "state", "why", "covers"],
+            "properties": {
+              "artefact": { "type": "string" },
+              "scope": { "type": "string" },
+              "until": { "type": "string" },
+              "digests": { "type": "object", "additionalProperties": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" } },
+              "state": { "enum": ["live", "expired"] },
+              "why": { "type": "string", "description": "For people: do not parse." },
+              "covers": { "type": "integer", "minimum": 0 }
+            }
+          }
+        }
+      }
+    },
     "causes": {
       "type": "object",
       "additionalProperties": false,
@@ -382,7 +408,9 @@
         "reason": { "type": "string", "description": "Always present. For a claim that named a rule and gave no reason, the harness writes `Rule NNNN: <title>`." },
         "approvedBy": { "type": "string" },
         "rule": { "type": "string", "pattern": "^\\d{4}$", "description": "Since 1.3.0. The Rule the claim named; it was in the rules file." },
-        "ruleTitle": { "type": "string", "description": "Since 1.3.0. That Rule's title in the rules file; present exactly when `rule` is." }
+        "ruleTitle": { "type": "string", "description": "Since 1.3.0. That Rule's title in the rules file; present exactly when `rule` is." },
+        "until": { "type": "string", "pattern": "^(\\d{4}-\\d{2}-\\d{2}|v?\\d+\\.\\d+\\.\\d+)$", "description": "Since 1.25.1. The last UTC day or release the claim is meant for." },
+        "digests": { "type": "object", "propertyNames": { "enum": ["reader", "catalogue", "live", "time"] }, "additionalProperties": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }, "description": "Since 1.25.1. The images, by app, the claim was written against." }
       }
     },
     "schemaCatalog": {
