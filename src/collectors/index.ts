@@ -65,6 +65,8 @@ export async function captureSide(spec: SideSpec, journeys: Journey[], opts: Cap
   try {
     for (let run = 1; run <= opts.runs; run += 1) {
       for (const journey of journeys) {
+        // Since 1.28.0: the replay set's journey runs once, and captures no screenshot, axe or focus walk.
+        if (journey.replay && run > 1) continue;
         if (journey.target === "readerAuth" && !spec.urls.readerAuth) {
           opts.log(`  ${label}: ${journey.name} skipped (no signed-in reader on this side)`);
           continue;
@@ -74,9 +76,9 @@ export async function captureSide(spec: SideSpec, journeys: Journey[], opts: Cap
         const result = await captureJourney(browser, spec, journey, run, {
           outDir: sideDir,
           now: opts.now,
-          screenshots: opts.screenshots && run === 1,
-          axe: opts.axe && run === 1,
-          focusStops: run === 1 ? opts.focusStops : 0
+          screenshots: opts.screenshots && run === 1 && !journey.replay,
+          axe: opts.axe && run === 1 && !journey.replay,
+          focusStops: run === 1 && !journey.replay ? opts.focusStops : 0
         });
         Object.assign(result, await readLedgers(ledgers));
         if (result.error) opts.log(`    failed: ${result.error}`);

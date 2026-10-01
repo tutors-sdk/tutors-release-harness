@@ -108,7 +108,7 @@ pnpm harness local mutants [--base 16.2.2] [--dry-run]
 ```
 
 `images ensure --a T --b T`, then `mutants --base T`: A/A first, then each of the
-fifteen planted regressions must be caught and attributed. The mutants are built
+sixteen planted regressions must be caught and attributed. The mutants are built
 locally; syft must be installed (`harness doctor --for mutants`).
 
 ### The two-stacks smoke: `harness local smoke`

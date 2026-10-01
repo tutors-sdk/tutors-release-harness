@@ -9,6 +9,7 @@
  * edit, and the guard (src/ci/scoreboard-append.ts, `harness guard scoreboard`) fails a diff that changes or removes
  * a line already there. Pure: src/scoreboard/store.ts reads the files and appends.
  */
+import { isReplayJourney } from "../compare/replay.ts";
 import type { Changes } from "../changes/signals.ts";
 import { applyMarks, type MarkRecord } from "../glance/marks.ts";
 import type { GlanceKind, MarkWord } from "../glance/rank.ts";
@@ -131,8 +132,10 @@ export const nextRun = (existing: Pick<ScoreboardLine, "tag">[], tag: string) =>
 
 /** Journeys the side completed in every run (no `error`), of the distinct journeys it ran. */
 export function journeysPassed(capture: Pick<SideCapture, "journeys">): { passed: number; total: number } {
-  const names = [...new Set(capture.journeys.map((j) => j.journey))];
-  const failed = new Set(capture.journeys.filter((j) => j.error).map((j) => j.journey));
+  // Since 1.28.0 the replay set (informing) is not counted.
+  const journeys = capture.journeys.filter((j) => !isReplayJourney(j.journey));
+  const names = [...new Set(journeys.map((j) => j.journey))];
+  const failed = new Set(journeys.filter((j) => j.error).map((j) => j.journey));
   return { passed: names.filter((n) => !failed.has(n)).length, total: names.length };
 }
 

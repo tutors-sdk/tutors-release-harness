@@ -5,7 +5,7 @@ production reader image plus one planted fault, listed in `mutants.yaml` with
 the artefact the report must attribute it to.
 
 ```bash
-pnpm harness mutants --base 16.2.0          # builds fifteen images, runs A/A then fifteen A/B runs
+pnpm harness mutants --base 16.2.0          # builds sixteen images, runs A/A then sixteen A/B runs
 ```
 
 The self-test first runs noise mode on the base (so the harness has the right
@@ -21,13 +21,14 @@ edge — a dropped header, a 500 on a route, injected HTML, a delay. Nothing
 else about the image changes, so a mutant is a fair stand-in for a release
 that shipped that regression.
 
-Ten mutants are edge faults (`kind: edge`, the default), all built this way:
+Eleven mutants are edge faults (`kind: edge`, the default), all built this way:
 `dropped-header`, `route-500`, `console-error`, `dom-note`, `missing-alt`,
 `slow-ssr`, `anon-write` (every page records a learning event for anonymous readers,
 caught by the `persistence` collector), `focus-order` (navigator links leave
 the tab order, caught by the `focus` collector), since 1.26.0 `slow-ssr-mild`
-(the timing tolerance's mutant) and since 1.27.0 `extra-chunk` (asset-graph's), both
-below. All ten are in `mutants.yaml` and are built and run; none is waiting on anything.
+(the timing tolerance's mutant), since 1.27.0 `extra-chunk` (asset-graph's) and since
+1.28.0 `replay-header` (the replay set's), all below. All eleven are in `mutants.yaml`
+and are built and run; none is waiting on anything.
 
 ## Image-level mutants (R5)
 
@@ -89,6 +90,13 @@ miniature, and it must be attributed to `asset-graph` (`src/compare/asset-graph.
 immutable requests moved. `network` also FAILs the run, because a new request is a new request.
 The point is that asset-graph reports it. Asset-graph is informing until 2.0. At 2.0 it folds
 that network hunk into its own, and the mutant must then FAIL the run on `asset-graph`.
+
+## The replay set's mutant (since 1.28.0)
+
+`replay-header` drops `X-Content-Type-Options` on `/note/` pages only. On the fixture course no
+journey opens a note except the replay set (`traffic/replay/urls.ts`), and the self-test leaves
+the reference set out. So no blocking engine sees the fault, the run passes, and only the `replay`
+finding catches it. That shows the replay set adds breadth the other journeys do not have.
 
 ## Adding one
 

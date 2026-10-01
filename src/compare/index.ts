@@ -7,11 +7,15 @@ import { policy } from "./policy.ts";
 import { resetHunkIds } from "./pages.ts";
 import { RUNTIME_ENGINES } from "./runtime.ts";
 import { assetGraph } from "./asset-graph.ts";
+import { replay, withoutReplay } from "./replay.ts";
 import { timingTolerance } from "./tolerance.ts";
 
 /** Run every diff engine over two normalised captures. Deterministic: same inputs, same hunks in the same order. */
-export function compareCaptures(a: SideCapture, b: SideCapture, config: EngineConfig, captureDir?: string): Hunk[] {
+export function compareCaptures(sideA: SideCapture, sideB: SideCapture, config: EngineConfig, captureDir?: string): Hunk[] {
   resetHunkIds();
+  // Since 1.28.0: the replay set's pages are compared by `replay` alone (status, headers, network), never by the others.
+  const a = withoutReplay(sideA);
+  const b = withoutReplay(sideB);
   const ctx: EngineContext = captureDir ? { config, captureDir } : { config };
   const hunks: Hunk[] = [];
   for (const engine of Object.values(ENGINES)) hunks.push(...engine(a, b, ctx));
@@ -25,6 +29,8 @@ export function compareCaptures(a: SideCapture, b: SideCapture, config: EngineCo
   hunks.push(...timingTolerance(a, b, ctx));
   // Since 1.27.0: the asset graph, one hunk per app from the churn network and headers found (informing until 2.0).
   hunks.push(...assetGraph(a, b, hunks));
+  // Since 1.28.0: the replay set (informing until 2.0).
+  hunks.push(...replay(sideA, sideB));
   return hunks;
 }
 

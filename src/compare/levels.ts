@@ -42,7 +42,9 @@ export const ENGINE_LEVELS: Readonly<Record<Artefact, EngineLevel>> = Object.fre
   // Since 1.26.0: the timing tolerance (src/compare/tolerance.ts), informing with no date until 2.0.
   "timing-tolerance": { level: "informing" },
   // Since 1.27.0: asset-graph folding (src/compare/asset-graph.ts), informing with no date until 2.0.
-  "asset-graph": { level: "informing" }
+  "asset-graph": { level: "informing" },
+  // Since 1.28.0: the replay set (src/compare/replay.ts), informing with no date; the runway puts it after 2.0.
+  replay: { level: "informing" }
 });
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;

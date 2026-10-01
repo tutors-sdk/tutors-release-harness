@@ -12,7 +12,7 @@ Terms as this guide uses them. Where a term has a chapter, it is linked. The Lea
 
 **app.** One of the monorepo's deployable images: `reader`, `catalogue`, `live`, `time`. A side has one image per app.
 
-**artefact.** One kind of observable thing the harness captures and compares (`dom`, `headers`, `sbom`, and so on; twenty-four: three of them the policy family, one the timing tolerance, one asset-graph folding). Claims and masks name artefacts. [01](01-concepts.md#artefacts)
+**artefact.** One kind of observable thing the harness captures and compares (`dom`, `headers`, `sbom`, and so on; twenty-five: three of them the policy family, one the timing tolerance, one asset-graph folding, one the replay set). Claims and masks name artefacts. [01](01-concepts.md#artefacts)
 
 **attribution.** In the mutant self-test: a mutant is attributed when the unclaimed hunks of its FAIL include an artefact the mutant was expected to trip. Catching a mutant for the wrong reason does not count. [05](05-noise-and-self-test.md#the-mutant-self-test)
 
@@ -84,7 +84,7 @@ Terms as this guide uses them. Where a term has a chapter, it is linked. The Lea
 
 **jidoka.** Lean for stopping the line when something is wrong, so bad work is not handed on. Here, the Gate: an unclaimed difference stops the release, and no score talks it back on. A dirty A/A stops `harness release` before any A/B.
 
-**journey.** A scripted path through the apps. Six exist, in three sets. [01](01-concepts.md#journeys)
+**journey.** A scripted path through the apps. Seven exist, in four sets. [01](01-concepts.md#journeys)
 
 **kaizen.** Lean for continuous improvement of the system. Here: every stop or drop in confidence ends in a 5 Whys and one countermeasure, recorded in the kaizen register until a release shows it working. [kaizen/README.md](../../kaizen/README.md)
 

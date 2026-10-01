@@ -52,7 +52,7 @@ The **kind** substrate (`--substrate kind`) runs the same two sides as two names
 
 ## Journeys
 
-A **journey** is a scripted path a person could take, written with role-and-name selectors and parameterised only by the base URL. There are six, in three sets (`pnpm harness journeys` lists them):
+A **journey** is a scripted path a person could take, written with role-and-name selectors and parameterised only by the base URL. There are seven, in four sets (`pnpm harness journeys` lists them):
 
 | Set | Journey | Page keys it captures | Runs against |
 | --- | --- | --- | --- |
@@ -62,6 +62,7 @@ A **journey** is a scripted path a person could take, written with role-and-name
 | `fixture` | `live-loads` | `live:home` | the live app |
 | `auth` | `student-signs-in` | `reader-auth:sign-in`, `reader-auth:course`, `reader-auth:topic` | the signed-in reader, the identity stub and the persistence stub |
 | `reference` | `reference-course-reads` | `reference:course`, `reference:topic`, `reference:lab`, `reference:note` | the published reference course, the same upstream for both sides; the only set that can also run against production |
+| `replay` (since 1.28.0) | `replay-course-urls` | `replay:topic-02`, `replay:talk-01`, `replay:note-01`, `replay:note-02`, `replay:lab-02-step-03`, `replay:missing-topic` | the pinned fixture course: a fixed list of URLs ([`traffic/replay/urls.ts`](../../traffic/replay/urls.ts)) opened once, with no screenshot, axe or focus walk, and compared on status, headers and network only, as the informing `replay` artefact |
 
 The **page key** (`reader:lab-step`) names a page in every artefact scope, and you will use it in claims. `--set` selects sets and `--journey` selects one journey.
 
@@ -73,7 +74,7 @@ Journeys are deliberately few. The harness's power comes from how much it captur
 
 ## Artefacts
 
-An **artefact** is one kind of thing the harness captures and compares. Each has its own diff engine and its own scope format. There are twenty-four: nineteen diff engines, since 1.22.0 the three checks of the policy family (`image-hardening`, `build-provenance`, `vuln-ceiling`), which judge the candidate alone, since 1.26.0 the timing tolerance (`timing-tolerance`), and since 1.27.0 asset-graph folding (`asset-graph`). A **hunk** is one difference an engine found; it has an artefact, a **scope** (what a claim's glob is matched against), a summary and a severity.
+An **artefact** is one kind of thing the harness captures and compares. Each has its own diff engine and its own scope format. There are twenty-five: nineteen diff engines, since 1.22.0 the three checks of the policy family (`image-hardening`, `build-provenance`, `vuln-ceiling`), which judge the candidate alone, since 1.26.0 the timing tolerance (`timing-tolerance`), since 1.27.0 asset-graph folding (`asset-graph`), and since 1.28.0 the replay set (`replay`). A **hunk** is one difference an engine found; it has an artefact, a **scope** (what a claim's glob is matched against), a summary and a severity.
 
 Severity is `fail` (gates unless claimed) or `info` (reported, never gates, needs no claim).
 

@@ -9,6 +9,7 @@ import { loadClaims } from "./claims/schema.ts";
 import { loadRules } from "./claims/rules.ts";
 import { captureSide } from "./collectors/index.ts";
 import { foldAssetChurn } from "./compare/asset-graph.ts";
+import { isReplayJourney } from "./compare/replay.ts";
 import { compareCaptures } from "./compare/index.ts";
 import { ENGINE_LEVELS, applyLevels, levelsOn, type EngineLevels } from "./compare/levels.ts";
 import { gate, rollbackIssueConfigured } from "./gate.ts";
@@ -268,7 +269,8 @@ function provenanceReasons(a: SideCapture, b: SideCapture): string[] {
  * gated on it would be blind there), and any other run names them in its reasons.
  */
 export function blindJourneys(a: SideCapture, b: SideCapture): string[] {
-  const failedOnB = new Set(b.journeys.filter((j) => j.error).map((j) => j.journey));
+  // Since 1.28.0 the replay set is informing (src/compare/replay.ts): its journey failing does not degrade an A/A.
+  const failedOnB = new Set(b.journeys.filter((j) => j.error && !isReplayJourney(j.journey)).map((j) => j.journey));
   const names = [...new Set(a.journeys.filter((j) => j.error && failedOnB.has(j.journey)).map((j) => j.journey))];
   return names.map((name) => `journey "${name}" failed on both sides, so this run saw nothing of its pages`);
 }
@@ -460,7 +462,7 @@ export const defaultRunOptions = (): Omit<RunOptions, "mode" | "a" | "b"> => ({
   outDir: resolve(ROOT, "out"),
   now: process.env.HARNESS_NOW ?? DEFAULT_NOW,
   runs: 1,
-  sets: ["fixture", "auth", "reference"],
+  sets: ["fixture", "auth", "reference", "replay"],
   journeys: [],
   masksFile: DEFAULT_MASKS_FILE,
   noiseMaxAgeDays: 7,

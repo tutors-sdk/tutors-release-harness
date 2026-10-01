@@ -61,7 +61,7 @@ const USAGE = `tutors-release-harness
       --override-reason, --override-by  accept a FAIL and say so: the verdict stays FAIL, the run exits 0, and the
                     report records who overrode it and why (both required together; reason 20+ characters)
       --runs        journey repetitions per side; timing needs 4+ to ever reach alpha 0.05, 5 recommended (default 1)
-      --set         journey sets, comma separated: fixture,auth,reference (default all three)
+      --set         journey sets, comma separated: fixture,auth,reference,replay (default all four; replay since 1.28.0)
       --journey     run only this journey (repeatable)
       --load        k6 after the journeys on each side: "<rate>x<duration>", e.g. 20x30s
       --now         frozen clock, ISO instant (default ${defaultRunOptions().now})
@@ -421,7 +421,7 @@ async function main(argv: string[]): Promise<number> {
 
   const defaults = defaultRunOptions();
   const sets = values.set ? (values.set.split(",").map((s) => s.trim()) as JourneySet[]) : defaults.sets;
-  for (const s of sets) if (!["fixture", "auth", "reference"].includes(s)) fail(`unknown journey set "${s}"`);
+  for (const s of sets) if (!["fixture", "auth", "reference", "replay"].includes(s)) fail(`unknown journey set "${s}"`);
   const load = parseLoad(values.load);
   let override: ReturnType<typeof parseOverride>;
   try {

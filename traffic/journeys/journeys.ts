@@ -2,6 +2,7 @@ import type { Page } from "playwright";
 import type { StackUrls } from "../../src/types.ts";
 import { fixture } from "./fixture.ts";
 import { reference } from "./reference.ts";
+import { REPLAY_URLS } from "../replay/urls.ts";
 
 /**
  * The named journeys, ported from the monorepo's tier G suite and
@@ -13,13 +14,13 @@ import { reference } from "./reference.ts";
  * something by role, that is an accessibility finding, not a reason to reach
  * for CSS.
  *
- * Six journeys in three sets (fixture 4, auth 1, reference 1), not a hundred: the harness's power is breadth of capture
+ * Seven journeys in four sets (fixture 4, auth 1, reference 1, replay 1), not a hundred: the harness's power is breadth of capture
  * per page, not the number of pages. Add one only when a real regression
  * escaped that a journey would have caught.
  */
 export type OnPage = (pageKey: string) => Promise<void>;
 
-export type JourneySet = "fixture" | "auth" | "reference";
+export type JourneySet = "fixture" | "auth" | "reference" | "replay";
 
 export interface Journey {
   name: string;
@@ -29,6 +30,11 @@ export interface Journey {
   anonymous: boolean;
   /** Which reader the journey drives. */
   target: "reader" | "readerAuth";
+  /**
+   * Since 1.28.0: the replay set's journey. Run once (run 1 of `--runs`), with no screenshot, axe or focus walk:
+   * only status, headers and network are compared for its pages (src/compare/replay.ts).
+   */
+  replay?: true;
   run: (page: Page, urls: StackUrls, onPage: OnPage) => Promise<void>;
 }
 
@@ -254,8 +260,28 @@ export const referenceCourseReads: Journey = {
   }
 };
 
+// ---- the replay set ---------------------------------------------------------------------
+
+/**
+ * Since 1.28.0: a fixed list of course URLs (traffic/replay/urls.ts), each opened directly, anonymous and read-only.
+ * It waits for nothing on the page: a URL that answers 404 is as much a result as one that renders.
+ */
+export const replayCourseUrls: Journey = {
+  name: "replay-course-urls",
+  set: "replay",
+  anonymous: true,
+  target: "reader",
+  replay: true,
+  async run(page, urls, onPage) {
+    for (const u of REPLAY_URLS) {
+      await page.goto(`${urls.reader}${u.path.replace("{course}", urls.courseId)}`);
+      await onPage(`replay:${u.key}`);
+    }
+  }
+};
+
 /** Every journey, in the order they run. */
-export const journeys: Journey[] = [anonymousStudentReadsCourse, anonymousStudentSearches, catalogueLoads, liveLoads, studentSignsIn, referenceCourseReads];
+export const journeys: Journey[] = [anonymousStudentReadsCourse, anonymousStudentSearches, catalogueLoads, liveLoads, studentSignsIn, referenceCourseReads, replayCourseUrls];
 
 export function journeyByName(name: string): Journey {
   const journey = journeys.find((j) => j.name === name);

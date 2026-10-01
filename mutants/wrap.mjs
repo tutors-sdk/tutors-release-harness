@@ -72,6 +72,9 @@ http
     const upstream = http.request({ host: "127.0.0.1", port: INNER, method: req.method, path: req.url, headers: req.headers }, (up) => {
       const headers = { ...up.headers };
       if (MUTANT === "dropped-header") delete headers["x-content-type-options"];
+      // replay-header (since 1.28.0, the replay set's mutant): the same header dropped on /note/ pages only, which no
+      // journey but the replay set opens on the fixture course.
+      if (MUTANT === "replay-header" && /^\/note\//.test(req.url ?? "")) delete headers["x-content-type-options"];
 
       const rewrite = REWRITING.includes(MUTANT) && isHtml(headers) && !headers["content-encoding"];
       const delay = MUTANT in SLOW && isHtml(headers) ? DELAY_MS : 0;
