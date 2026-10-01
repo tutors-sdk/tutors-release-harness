@@ -77,7 +77,7 @@ const USAGE = `tutors-release-harness
       migration:    --snapshot <pg_dump file>
       upgrade:      --upgrade-seconds 45 --upgrade-rate 20
 
-  harness compare --dir <run dir> --mode <mode> [--claims f] [--rules f] [--noise f]
+  harness compare --dir <run dir> --mode <mode> [--claims f] [--rules f] [--noise f] [--masks f]
       Re-run normalise/compare/claim/gate on captures already on disk.
 
   harness images ensure --a <ref> --b <ref> [--a-digests d] [--b-digests d] [--ref-a git-ref] [--ref-b git-ref] [--allow-unsigned] [--image-cache dir]

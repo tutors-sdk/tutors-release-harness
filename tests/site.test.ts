@@ -4,7 +4,7 @@
  * fetch that reads the fixture directory. The top of the page is the exemplar, "What main would ship today", from the
  * newest Main to RC run kept by `harness reports keep`: scored (since 1.13.1), or kept before the score existed.
  */
-import { existsSync, mkdirSync, mkdtempSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { createContext, runInContext } from "node:vm";
@@ -76,6 +76,32 @@ describe("site/index.html", () => {
     const at = PAGE.indexOf('href="readiness.html"');
     expect(at).toBeGreaterThan(PAGE.indexOf("<h1>"));
     expect(at).toBeLessThan(PAGE.indexOf("<section"));
+  });
+
+  it("is the landing page (since 1.25.2): one place that links readiness, the control chart, the soak, A3, forecasts, rehearsals, the scoreboard and the guides", () => {
+    const start = PAGE.slice(PAGE.indexOf('<nav id="start"'), PAGE.indexOf("</nav>"));
+    for (const href of ["readiness.html", "readiness.html#control", "readiness.html#soak", "a3.html", "#main-preview", "#exemplar", "#rehearsals", "scoreboard.html", "#release-records", "#noise", "docs/user-guide/README.md", "docs/user-guide/10-running-a-release.md", "docs/user-guide/03-reading-a-report.md", "docs/contract.md"])
+      expect(start).toContain(`href="${href.startsWith("docs/") ? `https://github.com/tutors-sdk/tutors-release-harness/blob/main/${href}` : href}"`);
+    expect(PAGE.indexOf('<nav id="start"')).toBeLessThan(PAGE.indexOf("<section"));
+    for (const id of ["exemplar", "main-preview", "rehearsals", "release-records", "noise"]) expect(PAGE).toContain(`<section id="${id}"`);
+  });
+
+  it("lists each kept run's rehearsals with the verdicts readiness.json has, and puts the soak and the control chart's words on the readiness card", async () => {
+    const root = site();
+    mkdirSync(join(root, "main-preview/reports"), { recursive: true });
+    const run = (id: string, files: string[]) => ({ id, ranAt: "2026-10-01T09:04:45.000Z", verdict: "fail", reasons: [], sides: { a: { reader: "q/r:16.2.2" }, b: { reader: "q/r:sha-c0a0965" } }, harnessVersion: "1.25.0", files: files.map((f) => `${id}/${f}`) });
+    writeFileSync(join(root, "main-preview/reports/index.json"), JSON.stringify({ runs: [run("n2", ["report.html", "migration/report.html", "upgrade/report.html"]), run("n1", ["report.html"])] }));
+    writeFileSync(join(root, "readiness.json"), JSON.stringify({ nights: [{ night: "2026-10-01", forecasts: [{ id: "n2", links: { rehearsals: [{ mode: "migration", href: "x", verdict: "PASS" }, { mode: "upgrade", href: "y", verdict: null }] } }] }], soak: { headline: "0 of 10 clean nights" }, control: { summary: "Release now: 69 PRs" } }));
+    const out = await render(root);
+    const rows = out["rehearsals"]!;
+    expect(rows).toContain('<a href="main-preview/reports/n2/migration/report.html">migration</a> <span class="verdict pass">PASS</span>');
+    expect(rows).toContain('<a href="main-preview/reports/n2/upgrade/report.html">upgrade</a></td>');
+    expect(text(rows)).toContain("forecast 16.2.2 → sha-c0a0965");
+    expect(rows).not.toContain("n1/");
+    expect(out["readiness-live"]).toBe("0 of 10 clean nights<br>Release now: 69 PRs");
+    const empty = await render(site());
+    expect(empty["rehearsals"]).toContain("No rehearsals kept yet.");
+    expect(empty["readiness-live"] ?? "").toBe("");
   });
 
   it("stays a static page: no external script, stylesheet or font", () => {

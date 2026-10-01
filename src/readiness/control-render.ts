@@ -154,7 +154,7 @@ export function controlHtml(c: Control): string {
     ? `Centre ${fmt(l.centre)}, mean moving range ${fmt(l.mrBar)}, UCL ${fmt(l.ucl)} (centre + 2.66 × ${fmt(l.mrBar)}), LCL ${fmt(l.lcl)}, from ${plural(l.n, "release")}${l.provisional ? `: provisional until ${PROVISIONAL_BELOW}, so the WIP limit is the centre line` : ""}. WIP limit ${fmt(c.wipLimit!)}.`
     : "No limits: an XmR chart needs at least two releases.";
 
-  return `<section class="control" aria-labelledby="control-title">
+  return `<section class="control" id="control" aria-labelledby="control-title">
 <h2 id="control-title">Release size and the WIP limit</h2>
 ${headline}
 <figure class="ccfig"><figcaption><strong>Merged PRs per release</strong>, and what is on main now (the diamond)</figcaption>

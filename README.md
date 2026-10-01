@@ -1,5 +1,14 @@
 # Tutors release harness
 
+**Start here: [tutors-sdk.github.io/tutors-release-harness](https://tutors-sdk.github.io/tutors-release-harness/).**
+The landing page links everything the harness publishes: the
+[overnight readiness](https://tutors-sdk.github.io/tutors-release-harness/readiness.html) page (is main ready
+to release, night by night, with the release-size [control chart](https://tutors-sdk.github.io/tutors-release-harness/readiness.html#control)
+and the [soak toward 2.0](https://tutors-sdk.github.io/tutors-release-harness/readiness.html#soak)), the
+[A3](https://tutors-sdk.github.io/tutors-release-harness/a3.html), every Main to RC forecast and its
+rehearsals, the release candidates, the nightly A/A, the
+[scoreboard](https://tutors-sdk.github.io/tutors-release-harness/scoreboard.html) and the guides.
+
 Runs a Tutors release candidate beside the production image, drives the same
 scripted traffic through both, diffs everything observable, and fails unless
 every difference is one somebody intended.
@@ -221,7 +230,7 @@ harness run --mode <mode> --a <ref> --b <ref> [--substrate compose|kind] [--clai
             [--no-screenshots] [--no-axe] [--no-focus] [--no-runtime] [--startup-restarts n] [--keep] [--no-stack]
             post-deploy: --recorded <release run dir> --production reader=URL,catalogue=URL,live=URL[,time=URL]
             migration:   --snapshot <pg_dump>      upgrade: --upgrade-seconds 45 --upgrade-rate 20
-harness compare --dir <run dir> --mode <mode> [--claims f] [--noise f]
+harness compare --dir <run dir> --mode <mode> [--claims f] [--rules f] [--noise f] [--masks f]
 harness images ensure --a <ref> --b <ref> [--ref-a git-ref] [--ref-b git-ref] [--allow-unsigned]
 harness stack up|down --a <ref> --b <ref>
 harness kind up|down|rollout --a <ref> --b <ref>

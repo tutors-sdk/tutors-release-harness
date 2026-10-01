@@ -222,8 +222,16 @@ pnpm harness run --mode migration --a dir:tests/fixtures/migrations/a --b dir:te
 ```
 
 Upgrade mode's negative fixture is the `route-500` mutant rolled in through
-the edge: `pnpm harness run --mode upgrade --a local --b tutors-harness/mutant-route-500:latest`
-must fail with failures attributed to `b`.
+the edge. `pnpm harness mutants --base local` builds the mutant image; then the
+reader is spelled out beside the other three local apps (a bare
+`--b tutors-harness/mutant-route-500:latest` names no app, so it would quietly
+become `tutors/<app>:latest` for all four and leave the mutant out):
+
+```bash
+pnpm harness run --mode upgrade --a local --b "reader=tutors-harness/mutant-route-500:latest,catalogue=tutors/catalogue:local,live=tutors/live:local,time=tutors/time:local"
+```
+
+It must fail with failures attributed to `b`.
 
 ### Local-first (`pnpm test`, seconds)
 

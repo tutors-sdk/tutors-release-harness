@@ -249,6 +249,7 @@ export function renderSite(t: Trends): string {
 </head>
 <body>
 <h1>Release scoreboard</h1>
+<p class="note"><a href="./">home</a> · <a href="readiness.html">overnight readiness</a> · <a href="a3.html">A3</a></p>
 <p class="note">Visual management over time: one line per release run, drawn from <code>scoreboard/releases.jsonl</code> (${t.releases} release(s), ${t.lines} line(s)). Advisory: the Gate wins, and nothing here changes a verdict or an exit code. The same numbers are in <a href="scoreboard.json">scoreboard.json</a>.</p>
 ${body.join("\n")}
 <footer>Generated ${esc(t.generatedAt)} by <code>harness scoreboard trends --site</code>. <a href="./">All kept reports</a>.</footer>

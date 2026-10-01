@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.25.1`
+Contract version: `1.25.2`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -1605,6 +1605,13 @@ the full report, [docs/lean.md](lean.md) and the how-to-run guide. A forecast ke
 before the score existed says so and shows no number.
 Since 1.17.0 its top links `readiness.html`, [the overnight readiness page](#the-overnight-readiness-page),
 which `pages.yml` builds after the A3.
+Since 1.25.2 the index is the harness's landing page. "Start here", before every section, links
+the readiness page and its `#control` (the release-size control chart) and `#soak` sections,
+`a3.html`, the forecasts, the rehearsals, the release candidates, the nightly A/A,
+`scoreboard.html`, and the user guide on GitHub. Under the readiness link it shows that page's soak headline and
+control-chart summary, read from `readiness.json`. A **Rehearsals** section lists each kept run's
+`migration/report.html` and `upgrade/report.html`, with the verdicts `readiness.json` has for them.
+`readiness.html`, `a3.html` and `scoreboard.html` link back to the index (`home`) and to each other.
 
 Each kept run also has `scorecard.json` and `scorecard.md` (`harness scorecard`,
 `src/ci/scorecard.ts`), derived from its `report.json` alone. **Informational:
@@ -1752,6 +1759,20 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.25.2 (patch; the landing page, and the usage audit)
+
+The release note is [releases/1.25.2.md](releases/1.25.2.md). A patch: no input, output field or exit
+code changes.
+
+- `site/index.html` is the landing page ([kept reports](#kept-reports)): "Start here" links the
+  readiness page with its `#control` and `#soak` sections, the A3, the forecasts, a new
+  **Rehearsals** section, the scoreboard and the guides. `readiness.html`, `a3.html` and
+  `scoreboard.html` link back to it.
+- The documented usage was run from a clean checkout. `harness compare`'s usage now lists
+  `--masks`, which it always took. Several examples in the docs were wrong and are fixed: the
+  `pnpm stack:down` example, the upgrade rehearsal's mutant command in `TESTING.md`, and the
+  version output example.
 
 ### 1.25.1 (patch; claims with a lifetime: until and digests)
 

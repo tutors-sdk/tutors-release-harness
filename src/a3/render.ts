@@ -409,7 +409,7 @@ export function renderA3(a: A3): string {
 </head>
 <body>
 <main class="sheet">
-<header class="title"><h1>A3 Aggregator <span>· Tutors release confidence</span></h1><span class="meta">Built ${esc(when(a.builtAt))} by harness <code>${esc(a.harness)}</code> from ${a.sources.runs} kept runs and the kaizen register · <a href="./">all reports</a> · <a href="scoreboard.html">scoreboard</a> · <a href="a3.json">a3.json</a></span></header>
+<header class="title"><h1>A3 Aggregator <span>· Tutors release confidence</span></h1><span class="meta">Built ${esc(when(a.builtAt))} by harness <code>${esc(a.harness)}</code> from ${a.sources.runs} kept runs and the kaizen register · <a href="./">home</a> · <a href="readiness.html">overnight readiness</a> · <a href="scoreboard.html">scoreboard</a> · <a href="a3.json">a3.json</a></span></header>
 ${andon(s, a)}
 <div class="a3">
 <section class="blk"><h2><span class="n">1</span>Background <span class="hint">why this matters</span></h2>${a.background.map((p) => `<p>${esc(p)}</p>`).join("")}<ul class="facts">${a.current.facts.map((f) => `<li>${esc(f)}</li>`).join("")}</ul></section>

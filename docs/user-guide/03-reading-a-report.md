@@ -41,7 +41,7 @@ pnpm harness confidence --run mp/report.json --change-risk mp/changes.json
 pnpm harness why --run mp --finding band --tag sha-54a8f83
 ```
 
-Every number below is output of those commands. A `harness release` report shows the same sections in the same order, in one file.
+Every number below is output of those commands. Two of them need more than the files: `harness changes` reads the monorepo's whole history (in a shallow clone it stops at `unknown revision`; `git fetch --unshallow` first), and review coverage needs `GITHUB_TOKEN` or `GH_TOKEN` and GitHub's API. Without the token the `reviewed` column says `not measured`, Change risk lists 11 deductions instead of 60 (the 49 PRs with no approving review are not counted), and the full list is 23 rather than 72. A `harness release` report shows the same sections in the same order, in one file.
 
 ## 1. The Gate
 
