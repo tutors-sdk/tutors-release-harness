@@ -506,6 +506,8 @@ jobs:
             1.16.1 the kept report leads with what is new since the last forecast. Since 1.18.0 also `quality.json`,
             the monorepo's quality record the score's Test signal read (for the commit judged, or the newest before it).
             Since 1.20.1 the lead names each cause's PRs: a new cause against the PRs merged since the last forecast.
+            Since 1.20.2 it shows the claims owed, one draft per cause to paste into release/claims.yaml, where the
+            glance was.
 
           See `docs/contract.md`, "Main to RC", on the default branch.
           README

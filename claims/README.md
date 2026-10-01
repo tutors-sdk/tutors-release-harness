@@ -120,6 +120,13 @@ The advisories that leave with the tool are `vulns` info hunks and need no
 claim; a patched base (`node`, `tzdata`) is a bump per package, claimed as
 above (`*/node`, `*/tzdata`).
 
+Since harness 1.20.2 a kept forecast drafts this for you: its **Claims owed**
+section (where the glance was) has one draft per cause of its unclaimed
+differences, this one included, the scope already narrowed and checked to
+cover exactly that cause. Each draft carries `rule: "????"`, which is refused
+until you name the Rule (or drop `rule` and give the CHANGELOG entry as the
+reason): a draft pasted as it is stops the run instead of claiming anything.
+
 ### A fix on b is a decision
 
 An accessibility violation fixed on b, or an error-level console message gone

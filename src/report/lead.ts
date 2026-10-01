@@ -12,6 +12,9 @@
  *
  * Since 1.20.1 it follows that with its causes and the PRs behind them (src/changes/attribute.ts): the new causes against
  * the PRs merged since the last forecast, the rest by path.
+ *
+ * Since 1.20.2 a forecast shows the claims it owes in place of the glance (src/claims/draft.ts): one draft claim per
+ * cause, ready to paste into release/claims.yaml once a Rule is named. The glance stays for release candidates.
  */
 import { renderChangesHtml, renderChangesMarkdown } from "../changes/render.ts";
 import type { Changes } from "../changes/signals.ts";
@@ -19,6 +22,7 @@ import { renderGlanceHtml, renderGlanceMarkdown } from "../glance/render.ts";
 import { hunkAnchor, type Confidence } from "../score/confidence.ts";
 import type { DeltaLead } from "./delta.ts";
 import type { Attribution, AttributedPr } from "../changes/attribute.ts";
+import { DRAFT_RULE, draftsYaml, type ClaimDraft } from "../claims/draft.ts";
 import { renderScoreHtml, renderScoreMarkdown } from "../score/render.ts";
 
 /** The styles the lead's blocks use (the Gate, the RCS band, the glance, the marks), for any page that shows it. */
@@ -29,6 +33,7 @@ export const LEAD_CSS = `.gate{font-size:1.6rem;font-weight:700;padding:.6rem 1r
 .rcs.green{background:#e3f4e6}.rcs.amber{background:#fff4e0}.rcs.red{background:#fbe3e3}.rcs.none{background:#f1f1f1}
 .glance{border-left:4px solid #1f5fa8;padding:0 1rem;margin:1rem 0}.glance li{margin:.5rem 0}
 .delta{border-left:4px solid #8a5a00;padding:0 1rem;margin:1rem 0}.delta table{font-size:.9rem}
+.owed{border-left:4px solid #1f5fa8;padding:0 1rem;margin:1rem 0}.owed pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:.8rem;background:#8881;padding:.5rem;border-radius:4px}
 .attribution{border-left:4px solid #5a4a8a;padding:0 1rem;margin:1rem 0}.attribution table{font-size:.9rem}.attribution td{overflow-wrap:anywhere}
 .mark{font-size:.8rem;padding:0 .4rem;border-radius:4px;background:#f1f1f1;color:#1b1b1b}.mark.verified{background:#e3f4e6}.mark.disputed{background:#fbe3e3}.mark.escalated{background:#fff4e0}`;
 
@@ -40,14 +45,17 @@ export function gateLineHtml(gate: string, code: number): string {
   return `<p class="gate ${tone}">Gate: ${esc(gate)} <small>(exit ${code})</small></p>`;
 }
 
-/** Under the Gate in report.md and gate.md: the RCS and band, the glance, the dimension table, then the change risk per PR. */
-export function scoreLeadMarkdown(c: Confidence, changes: Changes | undefined, dir: string): string {
-  return `${renderScoreMarkdown(c, renderGlanceMarkdown(c, { dir }))}${changes ? `\n\n#### Change risk per PR\n\n${renderChangesMarkdown(changes)}` : ""}`;
+/**
+ * Under the Gate in report.md and gate.md: the RCS and band, the glance, the dimension table, then the change risk per PR.
+ * `inPlaceOfGlance` (since 1.20.2, a forecast's claims owed) is put where the glance would be.
+ */
+export function scoreLeadMarkdown(c: Confidence, changes: Changes | undefined, dir: string, inPlaceOfGlance?: string): string {
+  return `${renderScoreMarkdown(c, inPlaceOfGlance ?? renderGlanceMarkdown(c, { dir }))}${changes ? `\n\n#### Change risk per PR\n\n${renderChangesMarkdown(changes)}` : ""}`;
 }
 
 /** Under the Gate in report.html: the same blocks, in the same order. */
-export function scoreLeadHtml(c: Confidence, changes: Changes | undefined, dir: string): string {
-  return `${renderScoreHtml(c, renderGlanceHtml(c, { dir }))}\n${changes ? renderChangesHtml(changes) : ""}`;
+export function scoreLeadHtml(c: Confidence, changes: Changes | undefined, dir: string, inPlaceOfGlance?: string): string {
+  return `${renderScoreHtml(c, inPlaceOfGlance ?? renderGlanceHtml(c, { dir }))}\n${changes ? renderChangesHtml(changes) : ""}`;
 }
 
 // ---- new since the last forecast (since 1.16.1) ---------------------------------------------------------
@@ -148,4 +156,27 @@ export function attributionLeadHtml(a: Attribution): string {
       return `<tr><td>${c.how === "new" ? "<strong>new</strong> " : ""}<a href="#cause-${esc(c.cause)}">${esc(c.key)}</a></td><td>${c.hunks}</td><td>${named ? `${named}${more}` : "none matched"}</td></tr>`;
     });
   return [`<section class="attribution">`, `<h2 id="attribution">Causes and the PRs behind them</h2>`, `<p>${attributionSentence(a, { code: (s) => `<code>${esc(s)}</code>`, pr })}</p>`, "<table><thead><tr><th>cause</th><th>differences</th><th>PRs</th></tr></thead><tbody>", ...rows, "</tbody></table>", "</section>"].join("\n");
+}
+
+// ---- claims owed, in place of the glance on a forecast (since 1.20.2) ---------------------------------------
+
+/** The sentence over the drafts: how many, what they cover, and what a person still has to do. */
+function owedSentence(drafts: ClaimDraft[], code: (s: string) => string): string {
+  const covered = drafts.reduce((a, d) => a + d.covers, 0);
+  const overlap = drafts.filter((d) => d.alsoCovers).length;
+  return `One draft claim per cause, its scope narrowed and checked against this forecast's unclaimed differences: together they cover all ${covered}${overlap ? `, and ${overlap} would also take differences of another cause` : ", and none takes another cause's"}. Paste them under ${code("claims:")} in ${code("release/claims.yaml")} and name the Rule that intends each (${code(`rule: "${DRAFT_RULE}"`)} is refused until you do), or drop ${code("rule")} and give the CHANGELOG entry as the reason, or fix the difference and drop its draft. On a forecast this takes the glance's place; the glance stays for release candidates.`;
+}
+
+/** report.md of a kept forecast, under the RCS: the drafts as YAML. */
+export function claimsOwedMarkdown(drafts: ClaimDraft[]): string {
+  if (!drafts.length) return "#### Claims owed\n\nNone: no unclaimed difference.";
+  const yaml = draftsYaml(drafts);
+  const fence = "`".repeat(Math.max(3, ...[...yaml.matchAll(/`+/g)].map((m) => m[0].length + 1)));
+  return [`#### Claims owed (${drafts.length})`, "", owedSentence(drafts, (s) => `\`${s}\``), "", `${fence}yaml`, yaml, fence].join("\n");
+}
+
+/** report.html of a kept forecast, under the RCS: the same, in one block to copy. */
+export function claimsOwedHtml(drafts: ClaimDraft[]): string {
+  if (!drafts.length) return `<section class="owed"><h2 id="claims-owed">Claims owed</h2><p>None: no unclaimed difference.</p></section>`;
+  return [`<section class="owed">`, `<h2 id="claims-owed">Claims owed (${drafts.length})</h2>`, `<p>${owedSentence(drafts, (s) => `<code>${esc(s)}</code>`)}</p>`, `<pre><code>${esc(draftsYaml(drafts))}</code></pre>`, "</section>"].join("\n");
 }

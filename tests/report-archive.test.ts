@@ -152,7 +152,8 @@ describe("keeping a release run scored beside it (Main to RC, since 1.13.1)", ()
 
   it("leads report.md as harness release leads its own: the Gate, the RCS, the glance, the dimensions, the change risk per PR, then the run's report", async () => {
     const root = tmp();
-    const dir = await scoredRun(root, { ranAt });
+    // A release candidate kept with its score keeps the glance; a forecast shows its claims owed there (since 1.20.2).
+    const dir = await scoredRun(root, { ranAt, candidate: "1.1.0-rc.1" });
     const store = join(root, "store");
     keepReport({ dir, store });
     const md = readFileSync(join(store, "reports", id, "report.md"), "utf8");
@@ -162,7 +163,7 @@ describe("keeping a release run scored beside it (Main to RC, since 1.13.1)", ()
       expect(i, s).toBeGreaterThanOrEqual(0);
       return i;
     };
-    expect(md.startsWith("## Release gate: sha-3f1c2a9 beside 1.0.4\n\n**Gate: PASS**\n")).toBe(true);
+    expect(md.startsWith("## Release gate: 1.1.0-rc.1 beside 1.0.4\n\n**Gate: PASS**\n")).toBe(true);
     const order = [at("**Gate: PASS**"), at(`**RCS ${c.rcs} ${c.band}: ${c.meaning}**`), at(GLANCE_START), at(GLANCE_END), at("| dimension | weight |"), at("#### Change risk per PR"), at("<details><summary>release: PASS</summary>"), at(readFileSync(join(dir, "report.md"), "utf8").trim())];
     expect([...order].sort((x, y) => x - y)).toEqual(order);
     // the glance's mark hint names the kept directory, not the runner's
@@ -180,7 +181,9 @@ describe("keeping a release run scored beside it (Main to RC, since 1.13.1)", ()
     // the run's own page, from its <body> on, follows the lead unchanged
     const ownBody = own.slice(own.indexOf("<body>") + "<body>".length);
     expect(html.endsWith(ownBody)).toBe(true);
-    const order = [body, html.indexOf('<section class="lead">'), html.indexOf('<p class="gate fail">Gate: FAIL <small>(exit 1)</small></p>'), html.indexOf('<p class="rcs none">'), html.indexOf(GLANCE_START), html.indexOf('<h2 id="change-risk">'), html.length - ownBody.length];
+    // a forecast: the claims owed where the glance would be (since 1.20.2)
+    expect(html).not.toContain(GLANCE_START);
+    const order = [body, html.indexOf('<section class="lead">'), html.indexOf('<p class="gate fail">Gate: FAIL <small>(exit 1)</small></p>'), html.indexOf('<p class="rcs none">'), html.indexOf('<h2 id="claims-owed">Claims owed (1)</h2>'), html.indexOf('<h2 id="change-risk">'), html.length - ownBody.length];
     for (const i of order) expect(i).toBeGreaterThan(0);
     expect([...order].sort((x, y) => x - y)).toEqual(order);
     expect(html).toContain('href="report.html#hunk-dom:/course:1"');

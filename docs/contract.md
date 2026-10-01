@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.20.1`
+Contract version: `1.20.2`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -1388,6 +1388,23 @@ and then `packages/**`; for an image a Dockerfile (direct) and then a package ma
 three PRs of each cause are named, most direct files first. No field is added to `report.json` or
 the index; a lead to ask, never read by a verdict, the Gate or an exit code.
 
+Since 1.20.2 a led report of a **forecast** (side b is a build of main, `sha-<short>`) shows
+**Claims owed** where the reviewer's glance was (`src/claims/draft.ts`); a release candidate
+keeps its glance. One draft claim per cause, as `release/claims.yaml` list items (`artefact`,
+`scope`, `rule`, `reason`, the monorepo's fields), each under a comment that says how many
+differences it covers. The scope is the narrowest glob the harness finds that covers every
+difference of the cause, checked with the claims matcher against the run's unclaimed set: one
+scope as it is, `app/name` scopes as `*/{names}` or `{apps}/{names}`, otherwise a brace list
+with the common prefix and suffix taken out; of these, the one that takes fewest differences of
+other causes, then the shortest. Glob characters in a scope (`{{hash}}`, a comma) are escaped.
+The comment says when a draft would also take a difference of another cause. The `reason` names
+the cause, where it is, and the PRs [attribution](#kept-reports) named for it. The `rule` is
+`"????"`, which the claims schema (and the monorepo's `pnpm check:release-claims`) refuses, so a
+draft pasted unedited stops the run with exit `2` instead of claiming anything: a person names
+the Rule, or gives the CHANGELOG entry as the reason, or fixes the difference. Nothing that
+judges reads a draft. The index's `confidence.glance` still counts the glance in
+`confidence.json`.
+
 Since 1.18.0 a release run keeps `quality.json` beside it, byte for byte and listed in `files`,
 when its directory holds the monorepo's quality record ([`confidence.json`](#confidencejson-the-release-confidence-score),
 Test signal's two halves): [Main to RC](#main-to-rc) fetches it there. A file that is not a
@@ -1482,6 +1499,7 @@ and it cannot be mistaken for a judged candidate, because it never writes the
   1.16.1 each forecast's entry carries `delta`, what is new and gone in its unclaimed set since
   the previous forecast beside the same production, and its kept report leads with the new ones.
   Since 1.20.1 the lead names the PRs behind each cause: a new one against those merged since.
+  Since 1.20.2 it shows the claims it owes, one draft per cause, where the glance was.
   Since 1.18.0 the quality record the score read is kept beside it (`quality.json`).
   The report pages show the newest at the top.
 
@@ -1549,6 +1567,18 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.20.2 (patch; claims owed)
+
+The release note is [releases/1.20.2.md](releases/1.20.2.md). The third step of the "Explain"
+release. A patch: no command, flag, `report.json` or index field, claims key, verdict, Gate or exit
+code changes; what a kept forecast leads with changes. The harness version moves because
+`src/claims/` changed (`src/claims/draft.ts`, new; nothing that matches or gates calls it).
+
+- A kept, scored forecast (side b `sha-<short>`) shows "Claims owed" in place of the reviewer's
+  glance: one draft claim per cause, scope narrowed and checked with the claims matcher,
+  `rule: "????"` until a person names the Rule. A release candidate keeps its glance. See
+  [Kept reports](#kept-reports).
 
 ### 1.20.1 (patch; which PR did it)
 
