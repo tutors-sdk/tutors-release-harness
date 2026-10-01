@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.23.0`
+Contract version: `1.24.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -74,7 +74,7 @@ tag. Check `schemaVersion === 1` before reading a report.
 | `noise-status.json` | `noise` mode only | yes — below |
 | `release-record.json` | `release` mode only (since 1.3.0) | yes — [the release record](#the-release-record) |
 | `confidence.json` | `harness confidence --run <this run>` (since 1.9.0), never `harness run` | not stable: [`confidence.json`](#confidencejson-the-release-confidence-score) |
-| `a/capture.json`, `b/capture.json`, screenshots, `a/load/`, `b/load/` | capturing modes | no. The harness reads its own captures back (`harness compare`, `--recorded`); nobody else should. Each `capture.json` carries the same `harness` stamp as the report |
+| `a/capture.json`, `b/capture.json`, screenshots, `a/load/`, `b/load/`, and since 1.24.0 `a2/capture.json` (with `--a2`) | capturing modes | no. The harness reads its own captures back (`harness compare`, `--recorded`); nobody else should. Each `capture.json` carries the same `harness` stamp as the report |
 
 `harness mutants --out <dir>` writes, since 1.11.0, `<dir>/mutants.json` beside its run
 directories: `{ schemaVersion: 1, ranAt, base, caught, total, escaped, harnessVersion, note? }`,
@@ -142,6 +142,7 @@ written). Source of truth: `RunReport` in `src/types.ts`.
 | `deployment` | optional — since 1.3.0 | post-deploy mode, when the deploy reported what it deployed: `{ production?, status, digests, recorded?, record?, problems[] }`, the deployed digests against the release record; see [Checking a deployment](#checking-a-deployment). Advisory: a `status` other than `match` turns a `pass` into a `warn` and never touches a `fail` |
 | `productionBuild` | optional — since 1.6.0 | post-deploy mode only: `{ url, status, recordedRevision?, buildName?, builtAt?, revision?, summary }`, which build production's reader says it serves against the recorded candidate's commit; see [Which build production serves](#which-build-production-serves). Informational: never changes the verdict and is never a hunk |
 | `levels` | optional — since 1.21.0 | `{ [engine]: { level, blockingFrom? } }`: every engine's level on this run, by engine (its artefact), `blocking` or `informing`, and for an informing one the UTC date (`YYYY-MM-DD`) it becomes blocking when one is set; see [Engine levels](#engine-levels). Absent from a report written before 1.21.0, in which every engine was blocking |
+| `inRunNoise` | optional — since 1.24.0 | `{ stack: "a2", runs, artefacts, journeys, hunks: [{ artefact, scope, summary }], alsoOnB: [hunk id] }`: with `--a2`, side a against a second production stack started in the same run; see [In-run noise: side a2](#in-run-noise-side-a2). Never read by the verdict |
 | `causes` | optional — since 1.20.0 | `{ unclaimed, causes[], together[] }`: the unclaimed differences folded into causes, computed after the verdict when the report is written; see [Causes](#causes). Informational: never read by a verdict or the Gate |
 
 **Hunk**: `{ id, artefact, scope, path?, summary, detail?, severity, level?, blockingFrom? }`.
@@ -500,6 +501,29 @@ The `noise` branch (`noise-status.json`, `noise-history.json`,
 [`noise-burndown.md`](noise-burndown.md).
 
 Not checked: a `ranAt` in the future is trusted (its age is negative).
+
+### In-run noise: side a2
+
+Since 1.24.0, not stable. `harness run --mode release --a2` (compose only) also starts **side
+a2**: side a's four app images again, as a compose profile (`reader-a2`, `catalogue-a2`,
+`live-a2`, `time-a2` on host ports 3400, 3401, 3402 and 3404; anonymous apps only, so no signed-in
+reader and no persistence stub). After a and b, a2 is captured **once**, with no load and no
+screenshots, and compared with a's run 1 for the deterministic artefacts only: `dom`, `network`,
+`console`, `headers`, `axe` and `focus`. Timing, screenshots, metrics, logs and load need the
+repeated runs and the nightly A/A; the images are a's on both, so the static artefacts are equal by
+construction.
+
+A difference between a and a2 is the harness's own noise, measured in this run on these images. An
+a/b difference with the same artefact and scope as one of them is **noise by measurement**.
+`report.json` carries both as `inRunNoise` (`hunks`, and `alsoOnB`, the a/b hunk ids), and
+`report.html` and `report.md` say it on the line after "A/A consulted". **It is reported, never
+judged**: no verdict, Gate, exit code, count or claim reads it, and the A/A above stays the noise
+reference. Replacing that reference with a2 is a 2.0 decision, after nights of clean a-to-a2.
+
+a2's capture is kept in `a2/capture.json`, and `harness compare --dir` reports the same in-run noise
+from it. Any other mode or substrate logs that `--a2` was dropped. The cost is four containers and
+one capture of the anonymous journeys (`main-preview.yml` runs it only when dispatched with
+`a2: true`; see [releases/1.24.0.md](releases/1.24.0.md)).
 
 ## Claim hygiene
 
@@ -1278,7 +1302,7 @@ confidence`), nor `harness guard scoreboard` (since 1.11.0; `guard all` runs it 
 
 | Command | Stable flags |
 | --- | --- |
-| `harness run` | `--mode` (required), `--a`, `--b` (required except in post-deploy), `--claims <file>`, `--rules <path\|url>` (since 1.3.0: the Rules a claim may name, see [The rules file](#the-rules-file)), `--vex <file>` (since 1.23.0: the release's OpenVEX file, handed to the scanner, see [OpenVEX](#openvex-exceptions-the-scanner-reads)), `--noise <file\|dir\|skip\|none>` (omitted: the latest status in the local store, see [`noise-status.json`](#noise-statusjson-and-the-7-day-rule)), `--runs <n>`, `--set <fixture,auth,reference>`, `--journey <name>` (repeatable), `--load <rate>x<duration>`, `--out <dir>`, `--image-prefix <prefix or {app} template>`, `--allow-unsigned`, `--require-verified` (noise mode: write the status `degraded` unless every image on both sides was pulled and verified in this run), `--override-reason <text>` and `--override-by <who>` (see [Overriding a FAIL](#overriding-a-fail)), `--a-digests <digests>` and `--b-digests <digests>` (since 1.3.0: pin a side's images, see [Image digests](#image-digests-and-the-release-record)); post-deploy: `--recorded <release run dir>`, `--production reader=URL,catalogue=URL,live=URL[,time=URL]`, and since 1.3.0 `--deployed <tag>`, `--deployed-digests <digests>` and `--release-record <file\|dir>` (see [Checking a deployment](#checking-a-deployment)) |
+| `harness run` | `--mode` (required), `--a`, `--b` (required except in post-deploy), `--claims <file>`, `--rules <path\|url>` (since 1.3.0: the Rules a claim may name, see [The rules file](#the-rules-file)), `--vex <file>` (since 1.23.0: the release's OpenVEX file, handed to the scanner, see [OpenVEX](#openvex-exceptions-the-scanner-reads)), `--a2` (since 1.24.0, not stable: side a2, see [In-run noise](#in-run-noise-side-a2)), `--noise <file\|dir\|skip\|none>` (omitted: the latest status in the local store, see [`noise-status.json`](#noise-statusjson-and-the-7-day-rule)), `--runs <n>`, `--set <fixture,auth,reference>`, `--journey <name>` (repeatable), `--load <rate>x<duration>`, `--out <dir>`, `--image-prefix <prefix or {app} template>`, `--allow-unsigned`, `--require-verified` (noise mode: write the status `degraded` unless every image on both sides was pulled and verified in this run), `--override-reason <text>` and `--override-by <who>` (see [Overriding a FAIL](#overriding-a-fail)), `--a-digests <digests>` and `--b-digests <digests>` (since 1.3.0: pin a side's images, see [Image digests](#image-digests-and-the-release-record)); post-deploy: `--recorded <release run dir>`, `--production reader=URL,catalogue=URL,live=URL[,time=URL]`, and since 1.3.0 `--deployed <tag>`, `--deployed-digests <digests>` and `--release-record <file\|dir>` (see [Checking a deployment](#checking-a-deployment)) |
 | `harness compare` | `--dir <run dir>` (required), `--mode` (required), `--claims`, `--rules`, `--noise` |
 | `harness images ensure` | `--a`, `--b` (required), `--a-digests`, `--b-digests` (since 1.3.0: pull by digest, verify on it, refuse a tag that has moved; a pinned image is never built), `--ref-a`, `--ref-b` (monorepo git refs to build from when the pull fails), `--image-prefix`, `--allow-unsigned`, `--image-cache <dir>` (since 1.2.0: refreshed from images pulled and verified in this run; used, as provenance `cached`, only when the registry cannot be reached, and never for a tag the registry says does not exist). With `GITHUB_OUTPUT` set it writes `image_cache=none\|used\|refreshed` |
 | `harness mutants` | `--base <tag or reader image>` (required), `--out`, `--image-prefix`, `--allow-unsigned` |
@@ -1555,8 +1579,9 @@ it never changes a verdict, an exit code or the gate.**
 Since 1.5.0. `main-preview.yml` answers "what would release mode say
 if main were cut as a release candidate today?", every day as soon as the nightly
 A/A on main finishes (`workflow_run`, whether it passed or failed; not a cancelled
-one, nor one on another branch) (and by hand, `workflow_dispatch` with optional `production`, `candidate` and
-`force`). It is a **forecast, never a gate**: it tags, records and deploys nothing,
+one, nor one on another branch) (and by hand, `workflow_dispatch` with optional `production`, `candidate`,
+`force` and, since 1.24.0, `a2`: side a2 and the [in-run noise](#in-run-noise-side-a2), off unless
+dispatched with it). It is a **forecast, never a gate**: it tags, records and deploys nothing,
 and it cannot be mistaken for a judged candidate, because it never writes the
 `release-records` branch that post-deploy reads.
 
@@ -1674,6 +1699,24 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.24.0 (minor; in-run noise: side a2)
+
+The release note is [releases/1.24.0.md](releases/1.24.0.md). The fourth and last step of the
+"Policy" release. A minor for one new flag (not stable) and one optional `report.json` field; a run
+without `--a2` is the run it was, and a run with it decides exactly what it would without it.
+
+- `harness run --mode release --a2` (compose) starts side a2, a second copy of side a's four apps
+  (compose profile `a2`, host ports 3400 to 3404), captures it once for `dom`, `network`,
+  `console`, `headers`, `axe` and `focus`, and compares it with a's run 1. See
+  [In-run noise: side a2](#in-run-noise-side-a2).
+- `report.json` gains `inRunNoise` (the a/a2 differences, and `alsoOnB`, the a/b differences with
+  the same artefact and scope); `report.html` and `report.md` say it beside the A/A line. Never
+  read by the verdict, Gate or exit code.
+- `harness compare --dir` reads `a2/capture.json` when the run kept one. `harness local gate`
+  takes `--a2`. `main-preview.yml` gains the dispatch input `a2` (default off).
+- The compose file publishes 19 host ports (four for a2), each with a variable
+  (`READER_PORT_A2`, `CATALOGUE_PORT_A2`, `LIVE_PORT_A2`, `TIME_PORT_A2`).
 
 ### 1.23.0 (minor; OpenVEX: exceptions the scanner reads)
 

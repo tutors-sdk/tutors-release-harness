@@ -49,7 +49,7 @@ run needs is missing, `2` is a usage error. `--json` prints the same as data;
 | Playwright's Chromium | every journey, including the post-deploy watch |
 | helper images already local: k6, `postgres:16-alpine`, the fixture stubs' `node:22-bookworm-slim` | a run that has to work offline |
 | free disk, `HARNESS_HOME` writable | images, SBOMs and captures |
-| the 15 host ports the stack publishes | a developer's own service on 8080 or 3100 |
+| the 19 host ports the stack publishes | a developer's own service on 8080 or 3100 |
 | the fixed subnet `172.29.0.0/24` against every other Docker network | `docker compose up` fails with "Pool overlaps" otherwise |
 | a leftover compose project of this checkout (`tutors-harness-<8 hex>`) | a run replaces it, `--remove-orphans` included. A stack under the old default name `tutors-harness` is reported by `harness doctor` as "legacy stack, not touched" and never removed |
 | Windows: WSL's `bash` first on PATH, CRLF in `scripts/*.sh`, long paths off | see [Windows notes](#windows-notes) |
@@ -265,7 +265,7 @@ document on stdout (the plan with `--dry-run`, else the summary) and sends every
 stderr.
 
 **Windows.** The same in PowerShell and Git Bash; `pnpm compare` needs no `bash` (no image is
-built, no migration fetched). The stack uses a fixed compose subnet and 15 host ports, so it
+built, no migration fetched). The stack uses a fixed compose subnet and 19 host ports (four of them, 3400 to 3404, only with `--a2`), so it
 cannot run while another harness stack is up on the machine, from this checkout or another
 worktree (the run fails with "Pool overlaps", exit `2`): check `docker network ls` for a
 `tutors-harness-<8 hex>_default` network, and move the ports beside a stack of your own with
@@ -852,7 +852,7 @@ and survives sleep better than cron.
 | --- | --- | --- |
 | Compose project name | yes | `HARNESS_COMPOSE_PROJECT`, then `HARNESS_PROJECT`, else `tutors-harness-<first 8 hex of sha256(real path of the harness checkout, lowercased on Windows)>`: never `tutors`, so a developer's own project is not touched, and **two checkouts or git worktrees of the harness on one machine get two names** (the same checkout always gets the same one; `harness doctor` prints it). Host ports and the compose subnet are still fixed: use `--port-offset` and stop one stack before starting the other |
 | Container names | not set anywhere | compose derives them from the project name |
-| Host ports (15) | yes | one variable each (`READER_PORT_A`, `COURSE_PORT`, `IDENTITY_PORT`, `EDGE_PORT`, ...), or all at once with `--port-offset 1000` on `harness local ...` and `harness doctor` (a variable you set yourself wins). `COURSE_PORT` also changes the course id, identically on both sides |
+| Host ports (19) | yes | one variable each (`READER_PORT_A`, `COURSE_PORT`, `IDENTITY_PORT`, `EDGE_PORT`, ...), or all at once with `--port-offset 1000` on `harness local ...` and `harness doctor` (a variable you set yourself wins). `COURSE_PORT` also changes the course id, identically on both sides |
 | The network subnet `172.29.0.0/24` and the identity stub's address `172.29.0.10` | **no**, fixed in `compose.harness.yaml` | two harness stacks, or any other Docker network on that range, cannot coexist. The run lock serialises harness runs; `harness doctor` names the network that clashes |
 | kind cluster | name yes (derived from the checkout, `HARNESS_KIND_CLUSTER`, `HARNESS_PROJECT`), ports no | see X9 |
 

@@ -44,7 +44,7 @@ describe("compose.harness.yaml", () => {
   const apps = [...APPS, "reader-auth"];
 
   it("has both sides for every app, a persistence stub per side, and the shared fixtures", () => {
-    const expected = [...apps.flatMap((app) => [`${app}-a`, `${app}-b`]), "persistence-a", "persistence-b", "course", "identity", "edge"].sort();
+    const expected = [...apps.flatMap((app) => [`${app}-a`, `${app}-b`]), ...["reader", "catalogue", "live", "time"].map((app) => `${app}-a2`), "persistence-a", "persistence-b", "course", "identity", "edge"].sort();
     expect(Object.keys(compose.services).sort()).toEqual(expected);
   });
 
@@ -84,8 +84,23 @@ describe("compose.harness.yaml", () => {
     }
   });
 
+  it("side a2 (profile a2, since 1.24.0) is side a's four apps again: a's images, its own ports and origin, nothing else", () => {
+    for (const app of ["reader", "catalogue", "live", "time"]) {
+      const a = compose.services[`${app}-a`]!;
+      const a2 = compose.services[`${app}-a2`]!;
+      expect(a2.profiles, app).toEqual(["a2"]);
+      expect(a2.image, app).toBe(a.image);
+      const strip = (s: Record<string, unknown>) => {
+        const { ports: _p, profiles: _pr, environment, ...rest } = s;
+        const { ORIGIN: _o, HARNESS_PERSISTENCE_URL: _h, ...env } = environment as Record<string, unknown>;
+        return { ...rest, environment: env };
+      };
+      expect(strip(a2), app).toEqual(strip(a));
+    }
+  });
+
   it("no host port is published twice", () => {
-    const published = Object.values(compose.services).flatMap((s) => ((s.ports as string[] | undefined) ?? []).map((p) => /^"?\$\{[A-Z_]+:-(\d+)\}/.exec(p)?.[1]));
+    const published = Object.values(compose.services).flatMap((s) => ((s.ports as string[] | undefined) ?? []).map((p) => /^"?\$\{[A-Z0-9_]+:-(\d+)\}/.exec(p)?.[1]));
     expect(published.filter(Boolean).length).toBeGreaterThan(8);
     expect(new Set(published).size).toBe(published.length);
   });

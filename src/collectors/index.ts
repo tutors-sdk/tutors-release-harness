@@ -51,7 +51,9 @@ async function metricsFor(spec: SideSpec): Promise<Record<string, MetricsSnapsho
  * and the screenshots under `outDir`.
  */
 export async function captureSide(spec: SideSpec, journeys: Journey[], opts: CaptureOptions): Promise<SideCapture> {
-  const sideDir = join(opts.outDir, spec.name);
+  // Since 1.24.0 a side may be written somewhere other than its name: side a2 is side a again, in a2/.
+  const label = spec.dir ?? spec.name;
+  const sideDir = join(opts.outDir, label);
   mkdirSync(sideDir, { recursive: true });
 
   const startedAt = new Date().toISOString();
@@ -64,10 +66,10 @@ export async function captureSide(spec: SideSpec, journeys: Journey[], opts: Cap
     for (let run = 1; run <= opts.runs; run += 1) {
       for (const journey of journeys) {
         if (journey.target === "readerAuth" && !spec.urls.readerAuth) {
-          opts.log(`  ${spec.name}: ${journey.name} skipped (no signed-in reader on this side)`);
+          opts.log(`  ${label}: ${journey.name} skipped (no signed-in reader on this side)`);
           continue;
         }
-        opts.log(`  ${spec.name}: ${journey.name} (run ${run}/${opts.runs})`);
+        opts.log(`  ${label}: ${journey.name} (run ${run}/${opts.runs})`);
         await resetLedgers(ledgers);
         const result = await captureJourney(browser, spec, journey, run, {
           outDir: sideDir,

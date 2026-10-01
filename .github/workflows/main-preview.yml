@@ -47,6 +47,13 @@ on:
         required: false
         type: boolean
         default: false
+      # Since 1.24.0: side a2, a second production stack in the same run, for the in-run noise (four more containers
+      # and one more capture). Off unless asked for: the cost is measured before it runs every day.
+      a2:
+        description: "Also start side a2 and report the in-run noise beside the nightly A/A (never changes the verdict)"
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -218,12 +225,13 @@ jobs:
       - name: Release mode
         env:
           NOISE_FILE: ${{ steps.noise.outputs.noise_file }}
+          A2: ${{ inputs.a2 == true && 'yes' || '' }}
         run: |
           rules=""; if [ -s rules.json ]; then rules=rules.json; fi
           vex=""; if [ -s openvex.json ]; then vex=openvex.json; fi
           set +e
           pnpm harness run --mode release --a "$PRODUCTION" --b "$CANDIDATE" --runs 5 --load 20x30s \
-            --claims claims.yaml ${rules:+--rules "$rules"} ${vex:+--vex "$vex"} ${NOISE_FILE:+--noise "$NOISE_FILE"}
+            --claims claims.yaml ${rules:+--rules "$rules"} ${vex:+--vex "$vex"} ${A2:+--a2} ${NOISE_FILE:+--noise "$NOISE_FILE"}
           code=$?
           set -e
           if [ -f rules.json ]; then mkdir -p out && cp rules.json out/rules.json; fi

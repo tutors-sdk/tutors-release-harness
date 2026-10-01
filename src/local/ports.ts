@@ -18,7 +18,12 @@ export const DEFAULT_PORTS: Record<string, number> = {
   CATALOGUE_PORT_B: 3201,
   LIVE_PORT_B: 3202,
   READER_AUTH_PORT_B: 3203,
-  TIME_PORT_B: 3204
+  TIME_PORT_B: 3204,
+  // Since 1.24.0: side a2 (profile a2, `harness run --a2`), a second copy of side a's apps for in-run noise.
+  READER_PORT_A2: 3400,
+  CATALOGUE_PORT_A2: 3401,
+  LIVE_PORT_A2: 3402,
+  TIME_PORT_A2: 3404
 };
 
 /**

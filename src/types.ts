@@ -47,6 +47,8 @@ export type PerApp<T> = Record<"reader" | "catalogue" | "live", T> & { time?: T 
 
 export interface SideSpec {
   name: SideName;
+  /** Since 1.24.0: where the capture is written and what the log calls the side, when not its name (side a2 is side a again, in `a2/`). */
+  dir?: string;
   /** Image references per app, as passed to compose. */
   images: AppImages;
   urls: StackUrls;
@@ -409,6 +411,26 @@ export interface RunReport {
    * (reported, never gates) with the date it becomes blocking when one is set. src/compare/levels.ts.
    */
   levels?: Record<string, { level: "blocking" | "informing"; blockingFrom?: string }>;
+  /**
+   * Since 1.24.0, with `--a2`: the in-run noise, side a against a second production stack (a2) in the same run, for
+   * the deterministic artefacts. Reported beside the nightly A/A; never read by the verdict. src/compare/in-run-noise.ts.
+   */
+  inRunNoise?: InRunNoise;
+}
+
+/** Since 1.24.0: a against a2 (src/compare/in-run-noise.ts). */
+export interface InRunNoise {
+  stack: "a2";
+  /** a2 is captured once; a's run 1 is what it is compared with. */
+  runs: number;
+  /** The artefacts compared: dom, network, console, headers, axe, focus. */
+  artefacts: string[];
+  /** The journeys a2 ran (the anonymous ones: a2 has no signed-in reader). */
+  journeys: string[];
+  /** The differences between a and a2, one per artefact and scope. Empty is a clean in-run A/A. */
+  hunks: { artefact: string; scope: string; summary: string }[];
+  /** The ids of this run's a/b differences with the same artefact and scope as one of those: noise by measurement. */
+  alsoOnB: string[];
 }
 
 /** Whether production's reader serves the build of the recorded candidate. */

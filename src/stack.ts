@@ -40,6 +40,23 @@ export const COURSE_ID = process.env.COURSE_ID ?? `localhost:${process.env.COURS
 export const IDENTITY_URL = `https://localhost:${process.env.IDENTITY_PORT ?? 8443}`;
 export const EDGE_URL = `http://localhost:${process.env.EDGE_PORT ?? 3300}`;
 
+/**
+ * Since 1.24.0: side a2, a second copy of side a's four apps (compose profile `a2`, `harness run --a2`), for the
+ * deterministic artefacts. Anonymous apps only: no signed-in reader and no persistence stub, so the signed-in journeys
+ * are skipped on it. It is side a again, so its capture says `side: "a"`; it is written to `a2/`.
+ */
+const PORTS_A2: Record<App, number> = {
+  reader: Number(process.env.READER_PORT_A2 ?? 3400),
+  catalogue: Number(process.env.CATALOGUE_PORT_A2 ?? 3401),
+  live: Number(process.env.LIVE_PORT_A2 ?? 3402),
+  time: Number(process.env.TIME_PORT_A2 ?? 3404)
+};
+
+export function a2Spec(a: SideSpec): SideSpec {
+  const p = PORTS_A2;
+  return { name: "a", dir: "a2", images: a.images, urls: { reader: `http://localhost:${p.reader}`, catalogue: `http://localhost:${p.catalogue}`, live: `http://localhost:${p.live}`, time: `http://localhost:${p.time}`, courseId: COURSE_ID } };
+}
+
 export function urlsFor(side: SideName): StackUrls {
   const p = PORTS[side];
   return {
@@ -113,13 +130,16 @@ export interface StackOptions {
   profiles?: string[];
 }
 
+/** Every profile `stackDown` takes down: what any run may have started. */
+const ALL_PROFILES = ["upgrade", "a2"];
+
 /** Start both sides and the shared fixtures; returns when every healthcheck passes. */
 export function stackUp(a: SideSpec, b: SideSpec, now: string, opts: StackOptions = {}): void {
   compose(["up", "-d", "--wait", "--remove-orphans"], composeEnv(a, b, now), { ...(opts.profiles ? { profiles: opts.profiles } : {}) });
 }
 
 export function stackDown(a: SideSpec, b: SideSpec, now: string): void {
-  compose(["down", "--remove-orphans", "--timeout", "5"], composeEnv(a, b, now), { profiles: ["upgrade"] });
+  compose(["down", "--remove-orphans", "--timeout", "5"], composeEnv(a, b, now), { profiles: ALL_PROFILES });
 }
 
 /** Stop one service (the old version's pods going away during a rollout). */

@@ -81,6 +81,28 @@
         }
       }
     },
+    "inRunNoise": {
+      "type": "object",
+      "description": "Since 1.24.0, with --a2: side a against a second production stack (a2) started in the same run, for the deterministic artefacts, a2 captured once against a's run 1. hunks are the a/a2 differences (one per artefact and scope; empty is a clean in-run A/A); alsoOnB the ids of this run's a/b differences with the same artefact and scope: noise by measurement. Reported beside the nightly A/A; never read by the verdict (src/compare/in-run-noise.ts).",
+      "additionalProperties": false,
+      "required": ["stack", "runs", "artefacts", "journeys", "hunks", "alsoOnB"],
+      "properties": {
+        "stack": { "const": "a2" },
+        "runs": { "type": "integer", "minimum": 1 },
+        "artefacts": { "type": "array", "items": { "type": "string" } },
+        "journeys": { "type": "array", "items": { "type": "string" } },
+        "hunks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["artefact", "scope", "summary"],
+            "properties": { "artefact": { "type": "string" }, "scope": { "type": "string" }, "summary": { "type": "string" } }
+          }
+        },
+        "alsoOnB": { "type": "array", "items": { "type": "string" } }
+      }
+    },
     "causes": {
       "type": "object",
       "additionalProperties": false,

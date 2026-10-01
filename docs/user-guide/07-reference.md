@@ -52,7 +52,7 @@ Invoke as `pnpm harness <command>` from a checkout (Node 22 or newer, `pnpm inst
 | Group | Flags |
 | --- | --- |
 | images | `--a`, `--b`, `--image-prefix`, `--a-digests`, `--b-digests`, `--allow-unsigned`, `--require-verified` |
-| judging | `--claims`, `--rules`, `--vex`, `--noise`, `--claim-max-hunks`, `--noise-max-age-days`, `--override-reason`, `--override-by`, `--masks` |
+| judging | `--claims`, `--rules`, `--vex`, `--a2`, `--noise`, `--claim-max-hunks`, `--noise-max-age-days`, `--override-reason`, `--override-by`, `--masks` |
 | traffic | `--runs`, `--set`, `--journey` (repeatable), `--load`, `--now` |
 | output and control | `--out`, `--substrate`, `--no-screenshots`, `--no-axe`, `--no-focus`, `--no-runtime`, `--startup-restarts`, `--keep`, `--no-stack` |
 | post-deploy | `--recorded`, `--production`, `--deployed`, `--deployed-digests`, `--release-record` |
@@ -167,6 +167,7 @@ Every flag, alphabetically. Types: strings unless noted. "Stable" is from `cli.j
 | Flag | Stable | Since | Meaning |
 | --- | --- | --- | --- |
 | `--a`, `--b` | yes | | The two sides: an image spec ([below](#image-specs)); in migration mode a monorepo git ref or `dir:<path>`; in `local gate` the production and candidate tags |
+| `--a2` (boolean) | no | 1.24.0 | `run` (release mode, compose), `local gate`: also start side a2, side a's images again on ports 3400 to 3404, capture it once and report a against a2 beside the A/A (in-run noise). Never changes the verdict |
 | `--a-digests`, `--b-digests` | yes | 1.3.0 | Pin a side's images by digest: a JSON object or `reader=sha256:...,catalogue=sha256:...`. Pulled and verified by digest; refused (exit 2) when the tag has moved; a pinned image is never built |
 | `--allow-unsigned` (boolean) | yes | 1.1.0 | Judge registry images whose cosign signature could not be verified. Local work only; the report records it. Same as `HARNESS_ALLOW_UNSIGNED=1` |
 | `--axe`, `--focus`, `--screenshots`, `--runtime` (boolean, negated as `--no-...`) | no | `--runtime` 1.2.0 | Collectors that are on by default. `--no-runtime` skips container posture |

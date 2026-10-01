@@ -24,7 +24,8 @@
 # the image reference: any other difference would show up in the report as the
 # harness's own noise.
 #
-# Profiles: `upgrade` adds the edge proxy in front of both readers.
+# Profiles: `upgrade` adds the edge proxy in front of both readers; `a2` (since
+# 1.24.0) adds a second copy of side a's four apps, for in-run noise.
 name: tutors-harness
 
 networks:
@@ -282,6 +283,51 @@ services:
         condition: service_started
       persistence-b:
         condition: service_healthy
+
+  # ---- side a2 (since 1.24.0, profile a2) ------------------------------------
+  # A second production stack: side a's images again, for the deterministic artefacts (dom, network, console, headers,
+  # axe, focus). A difference between a and a2 is noise measured in this run (src/compare/in-run-noise.ts); it is
+  # reported beside the nightly A/A and never changes a verdict. Anonymous apps only: no signed-in reader and no
+  # persistence stub, so the signed-in journeys are not run on a2. Started only by `harness run --a2`.
+  reader-a2:
+    <<: *app
+    profiles: ["a2"]
+    image: ${READER_IMAGE_A:-tutors/reader:local}
+    ports:
+      - "${READER_PORT_A2:-3400}:3000"
+    environment:
+      <<: *env
+      ORIGIN: http://localhost:${READER_PORT_A2:-3400}
+
+  catalogue-a2:
+    <<: *app
+    profiles: ["a2"]
+    image: ${CATALOGUE_IMAGE_A:-tutors/catalogue:local}
+    ports:
+      - "${CATALOGUE_PORT_A2:-3401}:3000"
+    environment:
+      <<: *env
+      ORIGIN: http://localhost:${CATALOGUE_PORT_A2:-3401}
+
+  live-a2:
+    <<: *app
+    profiles: ["a2"]
+    image: ${LIVE_IMAGE_A:-tutors/live:local}
+    ports:
+      - "${LIVE_PORT_A2:-3402}:3000"
+    environment:
+      <<: *env
+      ORIGIN: http://localhost:${LIVE_PORT_A2:-3402}
+
+  time-a2:
+    <<: *app
+    profiles: ["a2"]
+    image: ${TIME_IMAGE_A:-tutors/time:local}
+    ports:
+      - "${TIME_PORT_A2:-3404}:3000"
+    environment:
+      <<: *env
+      ORIGIN: http://localhost:${TIME_PORT_A2:-3404}
 
   # ---- upgrade rehearsal ------------------------------------------------------
   # The router in front of a rolling deployment: starts on a, is switched to b
