@@ -200,6 +200,29 @@ A vulnerability that is new on b fails. If you have decided to ship it, say why.
 
 A `<app>/db` hunk means the two sides were scanned with different databases: fix that rather than claiming it.
 
+**Not affected at all? Say it in OpenVEX instead** (since 1.23.0). When the advisory cannot reach the release (the vulnerable code is never run, the package is only a build tool), a statement in `release/openvex.json` beside the claims file says so in a form every scanner reads, and the harness hands that file to grype (`--vex`) on both sides, so the advisory is not reported at all, nor counted against the vulnerability ceiling:
+
+```json
+{
+  "@context": "https://openvex.dev/ns/v0.2.0",
+  "@id": "https://github.com/tutors-sdk/tutors-mono-repo/release/openvex.json",
+  "author": "tutors release",
+  "timestamp": "2026-10-01T00:00:00Z",
+  "version": 1,
+  "statements": [
+    {
+      "vulnerability": { "name": "CVE-2026-1234" },
+      "products": [{ "@id": "pkg:npm/tar@7.4.3" }],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "tar is only used by the build; the runtime never extracts an archive"
+    }
+  ]
+}
+```
+
+A product is the vulnerable package's purl, not the image: the harness scans SBOMs. `not_affected` needs one of the five standard justifications (`component_not_present`, `vulnerable_code_not_present`, `vulnerable_code_not_in_execute_path`, `vulnerable_code_cannot_be_controlled_by_adversary`, `inline_mitigations_already_exist`); `affected` needs an `action_statement`. A file the harness cannot use is exit `2` before anything starts, naming the statement and field. A claim says "we accept this change"; a VEX statement says "this is not a vulnerability here". Use a claim when you are shipping something real.
+
 ### 10. A contract migration
 
 Dropping or narrowing a column that version a still reads is an `expand/contract` violation. If the drop is deliberate, claim it on the release that contains it:

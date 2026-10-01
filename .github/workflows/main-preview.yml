@@ -185,6 +185,9 @@ jobs:
       # release-dispatch.yml builds them (pnpm release:rules at the commit); best effort, as there.
       - name: Fetch main's claims
         run: curl -fsSL "$CLAIMS_URL" -o claims.yaml
+      # Since 1.23.0: main's OpenVEX file beside them, handed to the scanner (--vex); none (a 404) scans without one.
+      - name: Fetch main's OpenVEX file
+        run: curl -fsSL "${CLAIMS_URL%claims.yaml}openvex.json" -o openvex.json || { rm -f openvex.json; echo "no openvex.json beside main's claims, scanning without one"; }
       - name: Check out the monorepo at that commit, for its Rules
         if: env.SHA != ''
         continue-on-error: true
@@ -217,9 +220,10 @@ jobs:
           NOISE_FILE: ${{ steps.noise.outputs.noise_file }}
         run: |
           rules=""; if [ -s rules.json ]; then rules=rules.json; fi
+          vex=""; if [ -s openvex.json ]; then vex=openvex.json; fi
           set +e
           pnpm harness run --mode release --a "$PRODUCTION" --b "$CANDIDATE" --runs 5 --load 20x30s \
-            --claims claims.yaml ${rules:+--rules "$rules"} ${NOISE_FILE:+--noise "$NOISE_FILE"}
+            --claims claims.yaml ${rules:+--rules "$rules"} ${vex:+--vex "$vex"} ${NOISE_FILE:+--noise "$NOISE_FILE"}
           code=$?
           set -e
           if [ -f rules.json ]; then mkdir -p out && cp rules.json out/rules.json; fi

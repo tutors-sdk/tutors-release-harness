@@ -168,6 +168,8 @@ export interface ReleaseOptions {
   baseline: Baseline;
   claims?: string;
   rules?: string;
+  /** Since 1.23.0: the release's OpenVEX file, --vex or release/openvex.json in the monorepo checkout. */
+  vex?: string;
   fast: boolean;
   /** Given with --out: every run step writes there too. */
   out?: string;
@@ -213,6 +215,7 @@ export function planRelease(o: ReleaseOptions, noise: NoiseDecision): PlannedSta
     load: o.fast ? false : RELEASE_DEFAULTS.load,
     ...(o.claims ? { claims: o.claims } : {}),
     ...(o.rules ? { rules: o.rules } : {}),
+    ...(o.vex ? { vex: o.vex } : {}),
     ...(o.baseline.digests ? { productionDigests: o.baseline.digests } : {}),
     ...(o.fast ? { only: "release" as const } : {})
   });

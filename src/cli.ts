@@ -46,6 +46,9 @@ const USAGE = `tutors-release-harness
       --claims      claims.yaml for release mode
       --rules       rules.json (a path, or a URL the runner can GET without credentials): the Rules a claim may name with
                     rule: "0031". A claim naming a rule that is not in it, or naming one with no --rules, is invalid (exit 2).
+      --vex         the release's OpenVEX file (release/openvex.json beside claims.yaml): handed to the vulnerability
+                    scanner on both sides (grype or trivy, --vex), so an advisory it says does not affect the release
+                    is left out of vulns and the vulnerability ceiling. Checked first: an invalid one is exit 2
       --claim-max-hunks  flag a claim that covers more than this many hunks (default 10, or HARNESS_CLAIM_MAX_HUNKS); reported, never gates
       --noise       noise-status.json (or its directory) from a recent A/A run; "skip" waives it, loudly;
                     "none" does not look. Release and post-deploy mode without it read the latest status from the
@@ -319,6 +322,7 @@ async function main(argv: string[]): Promise<number> {
       "noise-max-age-days": { type: "string" },
       "claim-max-hunks": { type: "string" },
       rules: { type: "string" },
+      vex: { type: "string" },
       "a-digests": { type: "string" },
       "b-digests": { type: "string" },
       deployed: { type: "string" },
@@ -476,6 +480,7 @@ async function main(argv: string[]): Promise<number> {
         b: values.b ?? "production",
         ...(values.claims ? { claimsFile: resolve(values.claims) } : {}),
         ...(values.rules ? { rules: rulesWhere(values.rules) } : {}),
+        ...(values.vex ? { vexFile: resolve(values.vex) } : {}),
         ...(noise(m) ? { noise: noise(m)! } : {})
       });
       printOutcome(outcome.report.verdict, outcome.report.reasons, outcome.files);

@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.22.0`
+Contract version: `1.23.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -749,6 +749,38 @@ credentials). What the harness does with it, and nothing more:
   is what it intends. Matching, the stale-claim report and the broad-claim rule
   are exactly as before.
 
+### OpenVEX: exceptions the scanner reads
+
+Since 1.23.0. The monorepo may keep `release/openvex.json` beside `release/claims.yaml`: an
+[OpenVEX](https://openvex.dev) document saying which advisories do not affect the release, in a
+form any scanner reads. `--vex <file>` takes it, and the harness hands it to the scanner it already
+pins, on **both** sides (`grype ... --vex <file>`; trivy takes the same flag; a scanner command of
+another kind, `HARNESS_VULN_CMD`, runs without it). An advisory the scanner sets aside under a
+statement is left out of `vulns` and of the vulnerability ceiling on both sides; the scan records
+the file (name, sha256, statement counts) and the advisories it set aside, and the report's image
+artefacts line for `vulns` says "OpenVEX openvex.json (N statement(s)): M set aside, ids".
+
+The harness checks the file before any stack starts, as `pnpm check:openvex` in the monorepo does,
+and a file it cannot use is exit `2` naming the statement and field:
+
+- `@context` is the OpenVEX context (`https://openvex.dev/ns/v0.2.0`); `@id`, `author`,
+  `timestamp` and `version` (a whole number from 1) are present; `statements` is a list, which
+  may be empty;
+- each statement names `vulnerability.name`, at least one product whose `@id` is a package URL
+  (`pkg:npm/tar@7.4.3`), and a `status` of `not_affected`, `affected`, `fixed` or
+  `under_investigation`;
+- `not_affected` needs one of the five standard justifications (`component_not_present`,
+  `vulnerable_code_not_present`, `vulnerable_code_not_in_execute_path`,
+  `vulnerable_code_cannot_be_controlled_by_adversary`, `inline_mitigations_already_exist`); an
+  `impact_statement` alone is not enough. `affected` needs an `action_statement`.
+
+A product is a package URL because the harness scans each image's SBOM, not the image: grype
+matches a statement whose product is the vulnerable package's purl, and cannot tell which image an
+SBOM describes. `release.yml` fetches `openvex.json` from beside `claims_url` (a `claims_url`
+ending `/claims.yaml`), and Main to RC from beside main's claims; none there (a 404) runs without
+one, exactly as before. **The harness never reads a statement to decide anything itself**: the
+scanner applies it, and a run with no file, or with an empty one, is the run it was.
+
 ## `confidence.json`: the Release Confidence Score
 
 Since 1.9.0, not stable: [`contract/confidence.schema.json`](contract/confidence.schema.json).
@@ -1246,7 +1278,7 @@ confidence`), nor `harness guard scoreboard` (since 1.11.0; `guard all` runs it 
 
 | Command | Stable flags |
 | --- | --- |
-| `harness run` | `--mode` (required), `--a`, `--b` (required except in post-deploy), `--claims <file>`, `--rules <path\|url>` (since 1.3.0: the Rules a claim may name, see [The rules file](#the-rules-file)), `--noise <file\|dir\|skip\|none>` (omitted: the latest status in the local store, see [`noise-status.json`](#noise-statusjson-and-the-7-day-rule)), `--runs <n>`, `--set <fixture,auth,reference>`, `--journey <name>` (repeatable), `--load <rate>x<duration>`, `--out <dir>`, `--image-prefix <prefix or {app} template>`, `--allow-unsigned`, `--require-verified` (noise mode: write the status `degraded` unless every image on both sides was pulled and verified in this run), `--override-reason <text>` and `--override-by <who>` (see [Overriding a FAIL](#overriding-a-fail)), `--a-digests <digests>` and `--b-digests <digests>` (since 1.3.0: pin a side's images, see [Image digests](#image-digests-and-the-release-record)); post-deploy: `--recorded <release run dir>`, `--production reader=URL,catalogue=URL,live=URL[,time=URL]`, and since 1.3.0 `--deployed <tag>`, `--deployed-digests <digests>` and `--release-record <file\|dir>` (see [Checking a deployment](#checking-a-deployment)) |
+| `harness run` | `--mode` (required), `--a`, `--b` (required except in post-deploy), `--claims <file>`, `--rules <path\|url>` (since 1.3.0: the Rules a claim may name, see [The rules file](#the-rules-file)), `--vex <file>` (since 1.23.0: the release's OpenVEX file, handed to the scanner, see [OpenVEX](#openvex-exceptions-the-scanner-reads)), `--noise <file\|dir\|skip\|none>` (omitted: the latest status in the local store, see [`noise-status.json`](#noise-statusjson-and-the-7-day-rule)), `--runs <n>`, `--set <fixture,auth,reference>`, `--journey <name>` (repeatable), `--load <rate>x<duration>`, `--out <dir>`, `--image-prefix <prefix or {app} template>`, `--allow-unsigned`, `--require-verified` (noise mode: write the status `degraded` unless every image on both sides was pulled and verified in this run), `--override-reason <text>` and `--override-by <who>` (see [Overriding a FAIL](#overriding-a-fail)), `--a-digests <digests>` and `--b-digests <digests>` (since 1.3.0: pin a side's images, see [Image digests](#image-digests-and-the-release-record)); post-deploy: `--recorded <release run dir>`, `--production reader=URL,catalogue=URL,live=URL[,time=URL]`, and since 1.3.0 `--deployed <tag>`, `--deployed-digests <digests>` and `--release-record <file\|dir>` (see [Checking a deployment](#checking-a-deployment)) |
 | `harness compare` | `--dir <run dir>` (required), `--mode` (required), `--claims`, `--rules`, `--noise` |
 | `harness images ensure` | `--a`, `--b` (required), `--a-digests`, `--b-digests` (since 1.3.0: pull by digest, verify on it, refuse a tag that has moved; a pinned image is never built), `--ref-a`, `--ref-b` (monorepo git refs to build from when the pull fails), `--image-prefix`, `--allow-unsigned`, `--image-cache <dir>` (since 1.2.0: refreshed from images pulled and verified in this run; used, as provenance `cached`, only when the registry cannot be reached, and never for a tag the registry says does not exist). With `GITHUB_OUTPUT` set it writes `image_cache=none\|used\|refreshed` |
 | `harness mutants` | `--base <tag or reader image>` (required), `--out`, `--image-prefix`, `--allow-unsigned` |
@@ -1299,7 +1331,7 @@ Environment variables in the contract, all since 1.1.0 unless the row says other
 | `HARNESS_VULN_DB_MAX_AGE_DAYS` | `5` | since 1.4.0. Days since the vulnerability database was built beyond which `harness doctor` warns; also passed to grype as its own limit (`GRYPE_DB_MAX_ALLOWED_BUILT_AGE`), so a scan and the doctor agree. 5 days is grype's own default |
 | `HARNESS_ROLLBACK_ISSUE` | unset | since 1.4.0. Post-deploy wording only: `1`, `true` or `yes` says a CI step opens a rollback issue on a FAIL (the reason says `open a rollback issue`); `0`, `false` or `no` says none does (`decide whether to roll back`). Unset: GitHub Actions has the step, anything else does not |
 | `HARNESS_REQUIRE_ARTEFACTS` | unset | since 1.4.0. A comma separated list of artefacts (`image-manifest`, `sbom`, `vulns`, `runtime`, `startup`, `bus`), or `static` (the first three), or `all`, whose "not collected" gap is a failing hunk instead of an informational one. It only adds to what is already required (`runtime` and `startup`); a name it does not know is an error (exit 2), so a typo cannot loosen a gate. See [Not collected](#not-collected-one-convention) |
-| `HARNESS_MONOREPO_DIR` | unset | since 1.8.0. The monorepo checkout `harness release` reads `release/deployed.json` (the baseline, when `--baseline` is `prod` or omitted) and `release/claims.yaml` (when `--claims` is omitted) from; `--monorepo` overrides |
+| `HARNESS_MONOREPO_DIR` | unset | since 1.8.0. The monorepo checkout `harness release` reads `release/deployed.json` (the baseline, when `--baseline` is `prod` or omitted) and `release/claims.yaml` (when `--claims` is omitted) from, and since 1.23.0 `release/openvex.json` (when `--vex` is omitted); `--monorepo` overrides |
 | `HARNESS_REQUIRE_STATIC` | unset | `1`, `true` or `yes`, since 1.2.0: the same as `HARNESS_REQUIRE_ARTEFACTS=static`, kept as an alias; the two add up |
 
 Stdout is for people, except `harness version --json`. The last lines of
@@ -1535,7 +1567,8 @@ and it cannot be mistaken for a judged candidate, because it never writes the
   pushed before it is signed; a run that picks it up in that window cannot verify it.)
 - **Claims** are `release/claims.yaml` at that commit, the next release's claims so
   far; the Rules they may name come from `pnpm release:rules` at the commit, best
-  effort, as in the monorepo. Every unclaimed diff is a claim, or a fix, the next
+  effort, as in the monorepo. Since 1.23.0 `release/openvex.json` beside them, when main has
+  one, goes to the scanner ([OpenVEX](#openvex-exceptions-the-scanner-reads)). Every unclaimed diff is a claim, or a fix, the next
   release needs, which is the forecast's point.
 - **The judging** is the release job's: 5 runs, k6 `20x30s`, the pinned
   vulnerability database with `HARNESS_REQUIRE_STATIC=1`, the latest noise status.
@@ -1641,6 +1674,22 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.23.0 (minor; OpenVEX: exceptions the scanner reads)
+
+The release note is [releases/1.23.0.md](releases/1.23.0.md). The third step of the "Policy"
+release. A minor for one new stable flag; a run without it is the run it was, so no verdict, Gate
+or exit code changes for a run that passes today.
+
+- New stable flag `harness run --vex <file>`: the release's OpenVEX document, checked before any
+  stack starts (exit `2` with the statement and field when the harness cannot use it) and handed
+  to grype or trivy as `--vex` on both sides. See
+  [OpenVEX](#openvex-exceptions-the-scanner-reads). `not_affected` needs a standard justification.
+- The capture's vulnerability scan gains `vex` (the file's name, sha256, statement counts and the
+  advisories set aside); the report's image artefacts line for `vulns` says what it set aside.
+- `release.yml` fetches `openvex.json` beside `claims_url`, and Main to RC beside main's claims;
+  none there runs without one. `harness local gate` takes `--vex`, and `harness release` reads
+  `release/openvex.json` in the monorepo checkout when `--vex` is omitted.
 
 ### 1.22.0 (minor; the policy family: what b must be)
 

@@ -89,6 +89,11 @@ export interface VulnData {
   scanner: { name: string; version?: string; /** the vulnerability database it ran with, as far as the output says */ db?: string };
   /** CVE (or other advisory) id -> finding. */
   findings: Record<string, VulnFinding>;
+  /**
+   * Since 1.23.0: the OpenVEX file the scan was given (`--vex`, src/image-static/vex.ts), and the advisories the scanner
+   * set aside under it (grype's ignoredMatches with a VEX status). Absent when the scan had none.
+   */
+  vex?: { source: string; sha256: string; statements: number; excepts: number; excepted: string[] };
 }
 
 export interface AppImageStatic {

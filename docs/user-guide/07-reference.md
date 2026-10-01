@@ -52,7 +52,7 @@ Invoke as `pnpm harness <command>` from a checkout (Node 22 or newer, `pnpm inst
 | Group | Flags |
 | --- | --- |
 | images | `--a`, `--b`, `--image-prefix`, `--a-digests`, `--b-digests`, `--allow-unsigned`, `--require-verified` |
-| judging | `--claims`, `--rules`, `--noise`, `--claim-max-hunks`, `--noise-max-age-days`, `--override-reason`, `--override-by`, `--masks` |
+| judging | `--claims`, `--rules`, `--vex`, `--noise`, `--claim-max-hunks`, `--noise-max-age-days`, `--override-reason`, `--override-by`, `--masks` |
 | traffic | `--runs`, `--set`, `--journey` (repeatable), `--load`, `--now` |
 | output and control | `--out`, `--substrate`, `--no-screenshots`, `--no-axe`, `--no-focus`, `--no-runtime`, `--startup-restarts`, `--keep`, `--no-stack` |
 | post-deploy | `--recorded`, `--production`, `--deployed`, `--deployed-digests`, `--release-record` |
@@ -107,7 +107,7 @@ The last lines are `verdict: <VERDICT>`, the reasons, and `report: <path to repo
 
 ### `harness release`
 
-`--candidate <tag>` (required), `--baseline <tag | prod>` (default `prod`: `release/deployed.json` in the monorepo checkout, else `HARNESS_PRODUCTION_TAG`, else exit `2`), `--monorepo <dir>` (else `HARNESS_MONOREPO_DIR`), `--claims` (default `release/claims.yaml` in the checkout), `--rules`, `--fast`, `--open`, `--out`, `--dry-run`, and the score's inputs `--test-signal`, `--traceability`, `--change-risk`, `--post-deploy`, `--scoreboard` (default `<HARNESS_HOME>/scoreboard/releases.jsonl`). Release mode runs 3 runs with k6 at `20x30s`; the A/A, when the store cannot license a FAIL, 3 runs. Holds the run lock. Exit `0` PASS or WARN, `1` FAIL, `2` not judged (a stopped line before the A/B, Ctrl-C) or usage. The stages and what each prints are in [chapter 10](10-running-a-release.md#what-each-stage-prints).
+`--candidate <tag>` (required), `--baseline <tag | prod>` (default `prod`: `release/deployed.json` in the monorepo checkout, else `HARNESS_PRODUCTION_TAG`, else exit `2`), `--monorepo <dir>` (else `HARNESS_MONOREPO_DIR`), `--claims` (default `release/claims.yaml` in the checkout), `--rules`, `--vex` (since 1.23.0; default `release/openvex.json` in the checkout, when there is one), `--fast`, `--open`, `--out`, `--dry-run`, and the score's inputs `--test-signal`, `--traceability`, `--change-risk`, `--post-deploy`, `--scoreboard` (default `<HARNESS_HOME>/scoreboard/releases.jsonl`). Release mode runs 3 runs with k6 at `20x30s`; the A/A, when the store cannot license a FAIL, 3 runs. Holds the run lock. Exit `0` PASS or WARN, `1` FAIL, `2` not judged (a stopped line before the A/B, Ctrl-C) or usage. The stages and what each prints are in [chapter 10](10-running-a-release.md#what-each-stage-prints).
 
 ### `harness confidence`
 
@@ -244,6 +244,7 @@ Every flag, alphabetically. Types: strings unless noted. "Stable" is from `cli.j
 | `--substrate` | no | | `compose` (default) or `kind` |
 | `--summary` | yes | 1.3.0 | `noise record`: a file the summary is appended to |
 | `--tag` | yes | 1.3.0 | `noise record`, `local nightly`: the production tag; `scoreboard append`, `why`: the release the line or the 5 Whys is for |
+| `--vex` | yes | 1.23.0 | `run` (any mode that scans images), `local gate`, `release`: the release's OpenVEX file (`release/openvex.json`), handed to the scanner on both sides; checked first, an invalid one is exit `2`. `release` defaults it to `release/openvex.json` in the checkout. See [chapter 04](04-writing-claims.md#9-a-vulnerability-you-accept) |
 | `--write` (boolean) | no | 1.13.0 | `why register`: write the regenerated table into `kaizen/README.md` |
 | `--yes` (boolean) | no | 1.4.0 | `prune`: delete (the default is a dry run) |
 | `--strict` (boolean) | no | 1.4.0 | `local compare`: exit code follows the verdict, as `local gate` does |

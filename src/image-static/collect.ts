@@ -8,6 +8,7 @@ import { collectBuildProvenance } from "./provenance.ts";
 import { collectSbom, defaultSbomCmd, type SbomAcquired, type SbomSourcePolicy } from "./sbom.ts";
 import { IMAGE_APPS, type AppImageStatic, type Collected, type ImageApp, type SbomData, type SideImageStatic } from "./types.ts";
 import { DEFAULT_VULN_CMD, collectVulns } from "./vulns.ts";
+import type { VexInfo } from "./vex.ts";
 
 /** How static image artefacts are collected. Every field has an environment variable (docs/contract.md). */
 export interface StaticPolicy {
@@ -18,6 +19,8 @@ export interface StaticPolicy {
   vulnDbDir?: string;
   /** The oldest database a scan may read (HARNESS_VULN_DB_MAX_AGE_DAYS), in days; unset, grype's own limit (5 days). */
   vulnDbMaxAgeDays?: number;
+  /** Since 1.23.0: the release's OpenVEX file (`--vex`), already checked, handed to the scanner. */
+  vex?: { path: string; info: VexInfo };
   trust: TrustPolicy;
 }
 
@@ -63,7 +66,7 @@ function collectApp(app: ImageApp, ref: string, info: ImageInfo | undefined, dep
   const { exec, files, policy, log } = deps;
   const manifest = collectManifest(exec, ref);
   const sbom = collectSbom({ exec, policy: policy.trust, sbomSource: policy.sbomSource, sbomCmd: policy.sbomCmd }, ref, info);
-  const vulns = collectVulns({ exec, files, vulnCmd: policy.vulnCmd, ...(policy.vulnDbDir ? { dbDir: policy.vulnDbDir } : {}), ...(policy.vulnDbMaxAgeDays ? { dbMaxAgeDays: policy.vulnDbMaxAgeDays } : {}) }, app, sbom.ok ? sbom.spdxText : undefined, sbom.ok ? undefined : sbom.reason);
+  const vulns = collectVulns({ exec, files, vulnCmd: policy.vulnCmd, ...(policy.vulnDbDir ? { dbDir: policy.vulnDbDir } : {}), ...(policy.vulnDbMaxAgeDays ? { dbMaxAgeDays: policy.vulnDbMaxAgeDays } : {}), ...(policy.vex ? { vex: policy.vex } : {}) }, app, sbom.ok ? sbom.spdxText : undefined, sbom.ok ? undefined : sbom.reason);
   // The text was only for the scanner; what is kept is the package multiset.
   const { spdxText: _text, ...keptSbom } = sbom as SbomAcquired;
   for (const [kind, value] of [["manifest", manifest], ["sbom", sbom], ["vulns", vulns]] as const) {

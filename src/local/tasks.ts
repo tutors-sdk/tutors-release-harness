@@ -97,6 +97,8 @@ export interface GateOptions {
   claims?: string;
   /** Since 1.3.0: the release's rules.json, a path or a URL (`--rules`). */
   rules?: string;
+  /** Since 1.23.0: the release's OpenVEX file (`--vex`), absolute. */
+  vex?: string;
   runs?: number;
   /** The release step's k6 load, `<rate>x<duration>`; `false` drops the load leg. Default: the gate's ({@link WORKFLOW_DEFAULTS}.load). */
   load?: string | false;
@@ -122,7 +124,7 @@ export function planGate(o: GateOptions): Plan {
     steps.push({
       id: "release",
       title: "release mode: A/B, claims, k6",
-      argv: ["run", "--mode", "release", "--a", o.production, "--b", o.candidate, "--runs", String(o.runs ?? WORKFLOW_DEFAULTS.runs), ...(o.load === false ? [] : ["--load", o.load ?? WORKFLOW_DEFAULTS.load]), ...pins, ...(o.claims ? ["--claims", o.claims] : []), ...(o.rules ? ["--rules", o.rules] : []), ...override],
+      argv: ["run", "--mode", "release", "--a", o.production, "--b", o.candidate, "--runs", String(o.runs ?? WORKFLOW_DEFAULTS.runs), ...(o.load === false ? [] : ["--load", o.load ?? WORKFLOW_DEFAULTS.load]), ...pins, ...(o.claims ? ["--claims", o.claims] : []), ...(o.rules ? ["--rules", o.rules] : []), ...(o.vex ? ["--vex", o.vex] : []), ...override],
       stream: "release",
       gatesStream: false
     });
