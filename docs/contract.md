@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.18.0`
+Contract version: `1.19.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -23,6 +23,7 @@ The machine-readable half lives in [`docs/contract/`](contract/):
 | [`reports-index.schema.json`](contract/reports-index.schema.json) | `reports/index.json`, the kept reports of a branch (since 1.5.0; the schema since 1.16.1, not stable) |
 | [`readiness.schema.json`](contract/readiness.schema.json) | `readiness.json`, the overnight readiness page (since 1.17.0, not stable) |
 | [`quality-strip.schema.json`](contract/quality-strip.schema.json) | `quality` in `a3.json` and on each forecast of `readiness.json`: the quality strip (since 1.18.0, not stable) |
+| [`release-control.schema.json`](contract/release-control.schema.json) | `control` in `readiness.json` and `releases.json`: the release-size control chart (since 1.19.0, not stable) |
 | [`cli.json`](contract/cli.json) | every command and flag, which are stable, the exit codes |
 | [`workflows.json`](contract/workflows.json) | dispatch events and payloads, repository variables, artifacts, permissions the workflows never hold |
 
@@ -1041,7 +1042,7 @@ reads `a3.json` but the site. `pages.yml` runs it after the reports are copied, 
 
 ## The overnight readiness page
 
-**`harness readiness --site <dir> [--github f] [--mutants f]`** (not stable, since 1.17.0) reads the Main to
+**`harness readiness --site <dir> [--github f] [--mutants f] [--releases f | --fetch-releases]`** (not stable, since 1.17.0) reads the Main to
 RC forecasts the pages workflow has copied into the site (`main-preview/reports/index.json` and
 the kept `report.json` and rehearsals beside each run) and Main to RC's workflow runs from
 `github.json` (the snapshot `harness a3 --fetch-github` writes into the site; `--github f` reads
@@ -1073,8 +1074,38 @@ the latest forecast at the top shows the whole strip. `--mutants <mutants.jsonl>
 mark's weekly self-tests; without it that check is not measured. An unchanged night repeats no
 marks ("as then").
 
+**The release-size control chart** (since 1.19.0) leads the page: `control` in `readiness.json`
+([`release-control.schema.json`](contract/release-control.schema.json)). It plots the size of
+each past release of the monorepo in **merged PRs** (the PRs on the first-parent line from the
+tag before it, counted as `harness changes` counts them: release/* branches and direct commits
+left out), and the batch on main not yet released as a distinct marker. A release is a plain
+`vX.Y.Z` tag; two tags more than one major apart are not consecutive releases, so the older only
+starts the series. The chart is an XmR (individuals) chart over at most the 30 most recent
+releases:
+
+- **centre line** = the mean release size; **mR̄** = the mean moving range |xᵢ − xᵢ₋₁|;
+- **UCL** = centre + 2.66 × mR̄; **LCL** = max(0, centre − 2.66 × mR̄);
+- a release above the UCL or below the LCL is a **special cause** (`special`);
+- with fewer than **10** releases the limits are **provisional** and the WIP limit is the
+  centre line instead of the UCL;
+- the **WIP limit** on the PRs on main: at or below the centre line, **below the centre line**
+  (`below centre`, green); above it and at or below the WIP limit, **a good time to release**
+  (`release soon`, amber); over it, **release now** (`release now`, red). The zone is always
+  named in words beside its colour.
+
+A second chart plots the count of PRs not yet released, night by night (the newest kept
+forecast of each UTC night, from its kept `changes.json`) against the same lines. The sizes come from `releases.json`
+([`release-control.schema.json`](contract/release-control.schema.json), `definitions/history`),
+which `--fetch-releases` reads from GitHub once per build (GET the monorepo's tags and a compare
+per pair of releases; GITHUB_TOKEN or GH_TOKEN, read only) and writes into the site;
+`--releases f` reads one, and without either the site's own `releases.json` is read when present.
+What GitHub did not answer is a line in its `errors`, and a release it could not count is left
+out. Without a history the page draws the batch from the newest forecast's `changes.json` with
+no limits and says why; never a guess.
+
 Exit `0` when the page is written, `2` for a usage error (no `--site`, a directory that does not
-exist, a `--github` that is not a snapshot). Advisory: **nothing here changes a verdict, a Gate
+exist, a `--github` that is not a snapshot, a `--releases` that is not a release history, or
+both `--releases` and `--fetch-releases`). Advisory: **nothing here changes a verdict, a Gate
 or an exit code**. `pages.yml` runs it after the A3, which writes `github.json`; a failure is a
 warning and the site deploys without it.
 
@@ -1480,6 +1511,25 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.19.0 (minor; release size under control: the control chart and the WIP limit)
+
+The release note is [releases/1.19.0.md](releases/1.19.0.md). Additive for a consumer written
+against 1.18.0: no `report.json` field, verdict, Gate or exit code changes, and the new field is
+optional. A minor because `harness readiness` takes two flags it did not (`--releases`,
+`--fetch-releases`).
+
+- `readiness.json` gains the optional `control`
+  ([the release-size control chart](#the-overnight-readiness-page)): each past release's size in
+  merged PRs, the XmR limits (centre, UCL, LCL; provisional under 10 releases), the WIP limit and
+  the zone of the PRs waiting on main, and the count night by night; `readiness.html` draws it
+  at the top of the page.
+- `releases.json`: the monorepo's release history, written into the site by
+  `harness readiness --fetch-releases` (GITHUB_TOKEN or GH_TOKEN); `--releases f` reads one.
+- `release-control.schema.json`: the schema of `control` and of `releases.json`, referenced by
+  `readiness.schema.json`.
+- `pages.yml`: "The overnight readiness page" passes `--fetch-releases` with the job's token,
+  which already reads. No new permission, job or artifact.
 
 ### 1.18.0 (minor; the quality strip: Speed, Metrics, Tests)
 

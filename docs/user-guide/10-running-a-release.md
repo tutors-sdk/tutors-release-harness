@@ -97,6 +97,34 @@ git -C ../tutors-mono-repo pull --ff-only && git -C ../tutors-mono-repo fetch --
 
 **Done when:** `harness doctor --for gate` exits `0`, and `harness release --candidate <any tag> --dry-run` prints a plan (below) instead of an error.
 
+## When to cut: the release-size control chart
+
+Since harness 1.19.0 the top of the [overnight readiness page](https://tutors-sdk.github.io/tutors-release-harness/readiness.html) answers "is it time to release?" with a control chart. Small, regular releases are easier to judge, to review at the glance and to roll back; the chart tells the Captain when the batch waiting on `main` is getting bigger than this project's releases usually are.
+
+**What it plots.** Each point is one past release of the monorepo (a plain `vX.Y.Z` tag), counted in **merged PRs** since the release before it, the way `harness changes` counts them: release branches and commits pushed straight to `main` are left out. After the last release, a **diamond** is what is on `main` now, not yet released.
+
+**The lines.** It is an XmR (individuals) chart, the Shewhart chart for one number per release:
+
+- the **centre line** is the mean release size;
+- the **UCL** (upper control limit) is the centre + 2.66 × the mean moving range (the average change in size from one release to the next); the **LCL** is the centre − 2.66 × the same, and never below 0;
+- a release above the UCL or below the LCL is a **special cause**, ringed on the chart and named under it: something other than the usual variation made it that size, and it is worth asking why.
+
+**The WIP limit and its three zones.** The diamond is read against a WIP (work in progress) limit, and the zone is always written in words beside its colour:
+
+| Unreleased PRs on `main` | Zone | What to do |
+| --- | --- | --- |
+| at or below the centre line | **Below the centre line** (green) | keep merging |
+| above the centre line, up to the WIP limit | **A good time to release** (amber) | cut a candidate in the next day or two |
+| over the WIP limit | **Release now** (red) | cut a candidate now; the batch is already unusually large |
+
+The WIP limit is the UCL. **Provisional limits:** with fewer than 10 releases measured the limits are labelled provisional and will move as releases are added, and the WIP limit is the centre line instead, so a short history never licenses a big batch (while provisional there is no amber zone).
+
+**Night by night.** The second chart is the unreleased count from each night's Main to RC forecast against the same lines, so you can see the batch climbing towards the limit before it gets there. Each chart has a table of its numbers under "The numbers".
+
+**Where the numbers come from.** The pages workflow asks GitHub once per build for the monorepo's tags and the PRs between them (`harness readiness --fetch-releases`) and keeps the answer in the site as `releases.json`; the night-by-night counts are each forecast's kept `changes.json`. If GitHub does not answer, the page says so and draws the batch from the newest forecast with no limits. To build it locally: `pnpm harness readiness --site _site --fetch-releases` (set `GITHUB_TOKEN` or `GH_TOKEN`; behind a proxy also `NODE_USE_ENV_PROXY=1`).
+
+Like the rest of the page it is **advisory**: it never changes the Gate, a verdict or an exit code. It tells you when to start step 1, not whether the candidate may ship.
+
 ## Step 1: cut the branch and tag the candidate
 
 **Owner:** Captain. **Input:** `main` at the cut commit.

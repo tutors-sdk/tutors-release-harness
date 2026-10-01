@@ -32,6 +32,8 @@ import { registerOf, registerSummary } from "../why/register.ts";
 import { WhyInputError } from "../why/trace.ts";
 import { A3InputError, runA3 } from "../a3/command.ts";
 import { ReadinessInputError, runReadiness } from "../readiness/command.ts";
+import { fetchReleaseHistory, type ReleaseHistory } from "../readiness/releases.ts";
+import { tokenFrom, type FetchLike as GithubFetch } from "../changes/github.ts";
 import { keepReport } from "../ci/report-archive.ts";
 import { readReport, readRulePrs, renderScorecard, scorecard } from "../ci/scorecard.ts";
 import { appendOverride, overrideFromReport, readOverrides } from "./override-log.ts";
@@ -520,26 +522,35 @@ export async function a3Command(v: Values, deps: A3Deps = {}): Promise<number> {
 // ---- harness readiness --------------------------------------------------------------------------------
 
 /**
- * `harness readiness --site <dir> [--github f]`: the overnight readiness page (src/readiness/), written into the site
- * beside the reports. Advisory: exit 0 when written, 2 for what it cannot read.
+ * `harness readiness --site <dir> [--github f] [--releases f | --fetch-releases]`: the overnight readiness page
+ * (src/readiness/), written into the site beside the reports. Advisory: exit 0 when written, 2 for what it cannot read.
+ * --fetch-releases asks GitHub for the monorepo's release sizes first, so it answers with a promise.
  */
-export function readinessCommand(v: Values, deps: { now?: () => Date; log?: (m: string) => void } = {}): number {
+export function readinessCommand(v: Values, deps: { now?: () => Date; log?: (m: string) => void; env?: NodeJS.ProcessEnv; fetch?: GithubFetch } = {}): number | Promise<number> {
   const log = deps.log ?? ((m: string) => console.log(m));
   const site = str(v, "site");
-  if (!site) throw new UsageError("readiness needs --site <dir>: the site with main-preview/reports/index.json [--github github.json]");
-  try {
-    const { readiness, files } = runReadiness({ site: resolve(site), ...(str(v, "github") ? { github: resolve(str(v, "github")!) } : {}), ...(str(v, "mutants") ? { mutants: resolve(str(v, "mutants")!) } : {}), now: (deps.now ?? (() => new Date()))(), harness: harnessInfo().version });
-    if (flag(v, "json")) log(JSON.stringify(readiness, null, 2));
-    else {
-      log(`Overnight readiness: ${readiness.nights.length} nights, ${readiness.sources.forecasts} forecast(s) kept; workflow history ${readiness.sources.github}`);
-      for (const n of readiness.nights) log(`  ${n.night} ${n.state.padEnd(11)} ${n.note}`);
-      log(`wrote ${files.join(", ")}`);
+  if (!site) throw new UsageError("readiness needs --site <dir>: the site with main-preview/reports/index.json [--github github.json] [--releases releases.json | --fetch-releases]");
+  if (str(v, "releases") && flag(v, "fetch-releases")) throw new UsageError("readiness: --releases reads a release history, --fetch-releases asks GitHub: give one");
+  const now = (deps.now ?? (() => new Date()))();
+  const write = (fetched?: ReleaseHistory): number => {
+    try {
+      const { readiness, files } = runReadiness({ site: resolve(site), ...(str(v, "github") ? { github: resolve(str(v, "github")!) } : {}), ...(str(v, "mutants") ? { mutants: resolve(str(v, "mutants")!) } : {}), ...(str(v, "releases") ? { releases: resolve(str(v, "releases")!) } : {}), ...(fetched ? { fetched } : {}), now, harness: harnessInfo().version });
+      if (flag(v, "json")) log(JSON.stringify(readiness, null, 2));
+      else {
+        log(`Overnight readiness: ${readiness.nights.length} nights, ${readiness.sources.forecasts} forecast(s) kept; workflow history ${readiness.sources.github}`);
+        for (const n of readiness.nights) log(`  ${n.night} ${n.state.padEnd(11)} ${n.note}`);
+        log(`  release size: ${readiness.control.summary} Release history ${readiness.control.source}.`);
+        log(`wrote ${files.join(", ")}`);
+      }
+      return 0;
+    } catch (e) {
+      if (e instanceof ReadinessInputError) throw new UsageError(e.message);
+      throw e;
     }
-    return 0;
-  } catch (e) {
-    if (e instanceof ReadinessInputError) throw new UsageError(e.message);
-    throw e;
-  }
+  };
+  if (!flag(v, "fetch-releases")) return write();
+  const token = tokenFrom(deps.env ?? process.env);
+  return fetchReleaseHistory({ fetch: deps.fetch ?? (fetch as unknown as GithubFetch), ...(token ? { token } : {}), now }).then(write);
 }
 
 // ---- harness prune ------------------------------------------------------------------------------------

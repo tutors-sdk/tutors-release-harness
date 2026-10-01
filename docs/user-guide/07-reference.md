@@ -183,6 +183,7 @@ Every flag, alphabetically. Types: strings unless noted. "Stable" is from `cli.j
 | `--dir` | yes | | `harness compare`: the run directory containing `a/` and `b/`; `reports keep`: the run to keep; `why register`: the kaizen directory |
 | `--dry-run` (boolean) | no | 1.3.0 | `harness local`, `release` (1.8.0): print the plan, start nothing |
 | `--fast` (boolean) | no | 1.8.0 | `release`: one run, no load, no rehearsals, no A/A of its own; cannot be used for a go decision |
+| `--fetch-releases` (boolean) | no | 1.19.0 | `readiness`: ask GitHub for the monorepo's release sizes and write `releases.json` into the site (`GITHUB_TOKEN` or `GH_TOKEN`) |
 | `--file` | no | 1.11.0 | `scoreboard`: the `releases.jsonl` (or `mutants.jsonl`) to read or append to |
 | `--finding` | no | 1.13.0 | `why`: what the 5 Whys is about (`gate`, `band`, `rollback`, a run rule, a glance item, a hunk id) |
 | `--force` (boolean) | no | 1.5.0 | `preview resolve`: judge a pair already judged |
@@ -224,6 +225,7 @@ Every flag, alphabetically. Types: strings unless noted. "Stable" is from `cli.j
 | `--record` (`--no-record`, boolean) | no | 1.3.0 | `local nightly`: record the night (default on) |
 | `--ref-a`, `--ref-b` | yes | | `images ensure`: monorepo git refs to build from when a pull fails |
 | `--release-record` | yes | 1.3.0 | Post-deploy: a release record file, or a directory holding `<tag>.json` (default `<HARNESS_HOME>/releases`) |
+| `--releases` | no | 1.19.0 | `readiness`: a `releases.json` release history for the control chart (default the site's own) |
 | `--report` | yes | 1.3.0 | `noise record`: the `report.json` of the run (default: beside the status) |
 | `--require` (boolean) | yes | 1.3.0 | `noise status`: exit 1 when the status does not license a FAIL |
 | `--require-verified` (boolean) | yes | 1.2.0 | Noise mode: write the status `degraded` unless every image on both sides was pulled and verified in this run |

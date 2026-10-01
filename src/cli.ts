@@ -235,15 +235,19 @@ const USAGE = `tutors-release-harness
       Metrics and Tests, within reason, look or not measured (--mutants, default mutants.jsonl beside --scoreboard, is the
       weekly self-test Tests reads). What it cannot read is said to be not measured. Advisory: never an input to the Gate,
       a verdict or an exit code. Exit 0 when written, 2 for what it cannot read. Not stable.
-  harness readiness --site <dir> [--github f] [--mutants f] [--json]
+  harness readiness --site <dir> [--github f] [--mutants f] [--releases f | --fetch-releases] [--json]
       The overnight readiness page (since 1.17.0): one row per night (UTC) for the last ten nights, newest on top, from
       the Main to RC forecasts under --site (main-preview/reports/index.json and the reports beside it): the commit
       judged, the Gate, the unclaimed count, what is new and gone since the previous forecast, and links to the kept
       report and its rehearsals. A night that kept nothing is read from the workflow history (github.json in the site, as
       harness a3 --fetch-github writes it, or --github): unchanged since a commit (a skipped pair, in grey), did not run,
       or not known without it. Since 1.18.0 each row carries the quality marks (Speed, Metrics, Tests; --mutants is the
-      weekly mutants record) and the latest forecast the whole strip. Writes readiness.html and readiness.json into
-      --site. Advisory: never an input to the Gate, a verdict or an exit code. Exit 0 when written, 2 for what it cannot
+      weekly mutants record) and the latest forecast the whole strip. Since 1.19.0 the page leads with the release-size
+      control chart: each past release of the monorepo in merged PRs, its XmR limits (centre, UCL, LCL; provisional
+      under 10 releases), and the PRs on main not yet released against the WIP limit, named in words (below the centre
+      line, a good time to release, release now), with the count night by night. --fetch-releases asks GitHub (GITHUB_TOKEN
+      or GH_TOKEN) for the release sizes and writes releases.json into --site; --releases reads one. Writes
+      readiness.html and readiness.json into --site. Advisory: never an input to the Gate, a verdict or an exit code. Exit 0 when written, 2 for what it cannot
       read. Not stable.
 `;
 
@@ -387,6 +391,9 @@ async function main(argv: string[]): Promise<number> {
       kaizen: { type: "string" },
       github: { type: "string" },
       "fetch-github": { type: "boolean", default: false },
+      // Since 1.19.0: harness readiness reads the monorepo's release sizes (--releases) or asks GitHub for them (--fetch-releases).
+      releases: { type: "string" },
+      "fetch-releases": { type: "boolean", default: false },
       help: { type: "boolean", short: "h", default: false }
     },
     allowNegative: true

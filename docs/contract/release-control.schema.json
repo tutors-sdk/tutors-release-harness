@@ -1,0 +1,135 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/tutors-sdk/tutors-release-harness/blob/main/docs/contract/release-control.schema.json",
+  "title": "The release-size control chart and the WIP limit (contract 1.19.0, not stable)",
+  "description": "Since 1.19.0. `control` in readiness.json, derived from Control in src/readiness/control.ts; and, under definitions/history, releases.json, the release history `harness readiness --fetch-releases` reads from GitHub once per build of the pages (ReleaseHistory in src/readiness/releases.ts). An XmR (individuals) chart of the monorepo's release sizes in merged PRs: centre = mean, UCL = mean + 2.66 x mean moving range, LCL = max(0, mean - 2.66 x mean moving range); provisional with fewer than 10 releases, when the WIP limit is the centre line instead of the UCL. Advisory: never read by a verdict, the Gate, the score or an exit code. Not stable: it may change in a minor release.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["unit", "releases", "limits", "wipLimit", "current", "nights", "source", "summary"],
+  "properties": {
+    "unit": { "const": "merged PRs" },
+    "releases": {
+      "type": "array",
+      "description": "Past releases, oldest first, each flagged when it falls outside the limits.",
+      "items": {
+        "type": "object",
+        "allOf": [{ "$ref": "#/definitions/release" }],
+        "properties": { "special": { "$ref": "#/definitions/special" } },
+        "required": ["special"]
+      }
+    },
+    "limits": {
+      "description": "Null with fewer than two releases (no moving range).",
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["n", "centre", "mrBar", "ucl", "lcl", "provisional"],
+          "properties": {
+            "n": { "type": "integer", "minimum": 2, "description": "Releases the limits were computed from." },
+            "centre": { "type": "number", "minimum": 0, "description": "The mean release size, to two decimals." },
+            "mrBar": { "type": "number", "minimum": 0, "description": "The mean moving range |x(i) - x(i-1)|." },
+            "ucl": { "type": "number", "minimum": 0 },
+            "lcl": { "type": "number", "minimum": 0 },
+            "provisional": { "type": "boolean", "description": "Fewer than 10 releases: the limits will move, and the WIP limit is the centre line." }
+          }
+        }
+      ]
+    },
+    "wipLimit": { "type": ["number", "null"], "minimum": 0, "description": "The UCL, or the centre line while the limits are provisional; null without limits." },
+    "current": {
+      "description": "The batch on main not yet released; null when nothing counts it.",
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["prs", "since", "head", "at", "from", "zone", "special"],
+          "properties": {
+            "prs": { "type": "integer", "minimum": 0 },
+            "since": { "type": "string", "description": "The release it counts from." },
+            "head": { "type": "string" },
+            "at": { "type": "string", "description": "When main was at `head`." },
+            "from": { "enum": ["github", "forecast"], "description": "github: releases.json, read when the pages were built. forecast: the newest kept forecast's changes.json." },
+            "zone": {
+              "oneOf": [
+                { "type": "null" },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["zone", "tone", "label", "words"],
+                  "properties": {
+                    "zone": { "$ref": "#/definitions/zone" },
+                    "tone": { "enum": ["green", "amber", "red"], "description": "The colour the page draws; never shown without `label`." },
+                    "label": { "type": "string" },
+                    "words": { "type": "string", "description": "For people: do not parse." }
+                  }
+                }
+              ]
+            },
+            "special": { "$ref": "#/definitions/special" }
+          }
+        }
+      ]
+    },
+    "nights": {
+      "type": "array",
+      "description": "The unreleased count night by night (the newest kept forecast of each UTC night), oldest first.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["night", "ranAt", "prs", "baseline", "candidate", "zone"],
+        "properties": {
+          "night": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+          "ranAt": { "type": "string" },
+          "prs": { "type": "integer", "minimum": 0, "description": "PRs since production in the forecast's changes.json (release/* and direct commits left out)." },
+          "baseline": { "type": "string" },
+          "candidate": { "type": "string" },
+          "zone": { "oneOf": [{ "type": "null" }, { "$ref": "#/definitions/zone" }] }
+        }
+      }
+    },
+    "source": { "type": "string", "description": "What was read of the release history, or why it was not. For people: do not parse." },
+    "summary": { "type": "string", "description": "For people: do not parse." }
+  },
+  "definitions": {
+    "zone": {
+      "enum": ["below centre", "release soon", "release now"],
+      "description": "below centre: at or below the centre line. release soon: above the centre line, within the WIP limit (a good time to release). release now: over the WIP limit."
+    },
+    "special": { "enum": ["above UCL", "below LCL", null], "description": "Outside the limits: a special cause." },
+    "release": {
+      "type": "object",
+      "required": ["tag", "previous", "sha", "releasedAt", "prs"],
+      "properties": {
+        "tag": { "type": "string" },
+        "previous": { "type": "string", "description": "The tag before it: the size counts from here." },
+        "sha": { "type": "string" },
+        "releasedAt": { "type": "string", "description": "The tag commit's committer date." },
+        "prs": { "type": "integer", "minimum": 0, "description": "PRs merged on the first-parent line from `previous` to `tag`, release/* branches and direct commits left out." },
+        "special": true
+      },
+      "additionalProperties": false
+    },
+    "history": {
+      "title": "releases.json: the monorepo's release history",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "fetchedAt", "repo", "releases", "errors"],
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "fetchedAt": { "type": "string", "format": "date-time" },
+        "repo": { "type": "string" },
+        "releases": { "type": "array", "items": { "$ref": "#/definitions/release" }, "description": "At most the 30 most recent, oldest first." },
+        "unreleased": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["base", "head", "headDate", "prs"],
+          "properties": { "base": { "type": "string" }, "head": { "type": "string" }, "headDate": { "type": "string" }, "prs": { "type": "integer", "minimum": 0 } }
+        },
+        "errors": { "type": "array", "items": { "type": "string" }, "description": "What GitHub did not answer, or a range too big to count. For people: do not parse." }
+      }
+    }
+  }
+}
