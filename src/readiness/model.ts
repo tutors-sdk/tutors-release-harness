@@ -52,6 +52,8 @@ export interface KeptForecast {
   unclaimed?: number;
   /** Since 1.21.0: the kept report.json's informing results no claim covers; absent when it was kept before engine levels. */
   informing?: number;
+  /** Since 1.22.0: the same, by engine (the policy family's checks among them); absent with `informing`. */
+  informingBy?: Record<string, number>;
   /** Side b's images: the commit each was built from and its digest. */
   images?: Record<string, { revision?: string; digest?: string }>;
   /** The kept rehearsals' verdicts (since 1.16.0), by mode, when their report.json could be read. */
@@ -103,6 +105,8 @@ export interface Forecast {
   unclaimed: number | null;
   /** Since 1.21.0: informing results no claim covers (reported, never gates); null for a forecast kept before engine levels. */
   informing: number | null;
+  /** Since 1.22.0: `informing` by engine, e.g. `{ "vuln-ceiling": 3 }`; absent when `informing` is null or 0. */
+  informingBy?: Record<string, number>;
   /** New and gone since the previous forecast beside the same baseline; null when it was kept before 1.16.1. */
   delta: ReportDelta | null;
   links: { report?: string; rehearsals: { mode: Rehearsal; href: string; verdict: string | null }[] };
@@ -175,6 +179,7 @@ export function forecastOf(k: KeptForecast, mutants?: WeeklyMutants[]): Forecast
     verdict: k.verdict,
     unclaimed: k.unclaimed ?? null,
     informing: k.informing ?? null,
+    ...(k.informing && k.informingBy ? { informingBy: k.informingBy } : {}),
     delta: k.delta ?? null,
     links: {
       ...(report ? { report } : {}),

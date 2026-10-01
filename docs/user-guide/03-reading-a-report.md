@@ -222,6 +222,10 @@ Two reports are comparable only when the same harness version judged them.
 
 What to do with each unclaimed hunk (a missing claim, a real regression, noise, or missing evidence) is [below](#real-regression-noise-or-missing-claim).
 
+### Policy: what b must be
+
+Since 1.22.0 a **Policy** table follows the differences: one row per app, one column per check of the policy family ([contract](../contract.md#the-policy-family)), which judges the candidate alone, whatever production is. `image-hardening` (root user, no healthcheck, something secret-shaped in the environment or the layer history), `build-provenance` (SLSA provenance verified under the publishing identity, from `image-build.yml`) and `vuln-ceiling` (a critical or high advisory with a fix available). A cell says *holds* (hover it for what was checked), *N findings* (linked to the list; "on production too" when side a has the same), or *not evaluated* (hover for why: an image built here has no verified attestation to read). All three are informing, so a finding is listed under Informing and never gates. Read "(production too)" as a fault the diff could never show: both sides have it.
+
 ### Informing: reported, never gates
 
 Since 1.21.0 every engine has a level ([contract](../contract.md#engine-levels)): **blocking**, whose unclaimed differences gate as they always have, or **informing**, a check being watched before it may stop a release. Under the differences, **Informing** lists what informing engines found on this run, each with the date its engine starts to block (or "no date set"), and says which engines are informing ("Every engine is blocking (19 of 19)" on 1.21.0). An informing result is never in the unclaimed count, never changes the verdict, the Gate or the exit code, and never counts against the A/A; in the differences table its row says *informing* where a failing one says **unclaimed**. You can still claim one, the same way as any difference, and a claim that covers one is not stale. The readiness page puts each forecast's unclaimed informing results beside its Gate ("2 informing"), labelled so they are never read as part of it.

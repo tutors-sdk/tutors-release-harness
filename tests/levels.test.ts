@@ -8,6 +8,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { matchClaims } from "../src/claims/matcher.ts";
 import { ENGINE_LEVELS, applyLevels, levelOn, levelsLine, levelsOn, type EngineLevels } from "../src/compare/levels.ts";
+import { POLICY_FAMILY } from "../src/compare/policy.ts";
 import { exitCodeFor, gate } from "../src/gate.ts";
 import { DEFAULT_MASKS_FILE } from "../src/normalise/masks.ts";
 import { buildReadiness, type KeptForecast } from "../src/readiness/model.ts";
@@ -20,19 +21,23 @@ import { ARTEFACTS, type Hunk, type NoiseStatus } from "../src/types.ts";
 import { capture, clone } from "./support/captures.ts";
 
 const AT = new Date("2026-10-01T09:00:00Z");
+const DIFF = ARTEFACTS.filter((a) => !(POLICY_FAMILY as readonly string[]).includes(a));
 const clean: NoiseStatus = { ranAt: "2026-10-01T02:00:00.000Z", clean: true, hunks: 0 };
 const hunk = (artefact: Hunk["artefact"], severity: Hunk["severity"] = "fail", scope = "reader:home/x-frame-options"): Hunk => ({ id: `${artefact}:${scope}`, artefact, scope, summary: `${artefact} moved`, severity });
 const informing = (blockingFrom?: string): EngineLevels => ({ ...ENGINE_LEVELS, headers: { level: "informing", ...(blockingFrom ? { blockingFrom } : {}) } });
 
 describe("the levels", () => {
-  it("every engine has one, and every engine is blocking today", () => {
+  it("every engine has one: every diff engine is blocking, and the policy family (since 1.22.0) informing with no date", () => {
     expect(Object.keys(ENGINE_LEVELS).sort()).toEqual([...ARTEFACTS].sort());
-    for (const a of ARTEFACTS) expect(levelOn(a, AT), a).toEqual({ level: "blocking" });
-    expect(levelsLine(levelsOn(AT))).toBe(`Every engine is blocking (${ARTEFACTS.length} of ${ARTEFACTS.length}).`);
+    for (const a of DIFF) expect(levelOn(a, AT), a).toEqual({ level: "blocking" });
+    for (const a of POLICY_FAMILY) expect(levelOn(a, AT), a).toEqual({ level: "informing" });
+    expect(levelsLine(levelsOn(AT))).toBe(`${DIFF.length} of ${ARTEFACTS.length} engines are blocking; informing (reported, never gates): image-hardening (no date set to block), build-provenance (no date set to block), vuln-ceiling (no date set to block).`);
+    const blocking = Object.fromEntries(ARTEFACTS.map((a) => [a, { level: "blocking" as const }]));
+    expect(levelsLine(levelsOn(AT, blocking))).toBe(`Every engine is blocking (${ARTEFACTS.length} of ${ARTEFACTS.length}).`);
   });
 
-  it("A/A: with every engine blocking the hunks are the same objects, so the run is the run it was before levels", () => {
-    const hunks = ARTEFACTS.flatMap((a) => [hunk(a), hunk(a, "info")]);
+  it("A/A: with every diff engine blocking their hunks are the same objects, so the run is the run it was before levels", () => {
+    const hunks = DIFF.flatMap((a) => [hunk(a), hunk(a, "info")]);
     const out = applyLevels(hunks, AT);
     expect(out).toHaveLength(hunks.length);
     out.forEach((h, i) => expect(h).toBe(hunks[i]));
@@ -87,13 +92,19 @@ describe("through a run", () => {
     return compareFromCaptures({ mode: "release", substrate: "compose", captureDir: mkdtempSync(join(tmpdir(), "harness-levels-")), a: capture("a"), b, claims: [], masksFile: DEFAULT_MASKS_FILE, noise: "skip", noiseMaxAgeDays: defaultRunOptions().noiseMaxAgeDays, now: "2026-09-16T09:05:00.000Z", runs: 1, ranAt: AT, log: () => {}, ...(levels ? { levels } : {}) }).report;
   };
 
-  it("today: the dropped header fails as before, and the report records every engine as blocking", () => {
+  it("today: the dropped header fails as before, and the report records every diff engine as blocking", () => {
     const r = run();
     expect(r.verdict).toBe("fail");
     expect(r.compare.unclaimed.map((h) => h.artefact)).toContain("headers");
-    expect(Object.values(r.levels!).every((l) => l.level === "blocking")).toBe(true);
-    expect(renderHtml(r)).toContain("Every engine is blocking");
+    for (const a of DIFF) expect(r.levels![a]).toEqual({ level: "blocking" });
+    expect(renderHtml(r)).toContain(`${DIFF.length} of ${ARTEFACTS.length} engines are blocking`);
     expect(renderHtml(r)).toContain("No informing results on this run.");
+  });
+
+  it("with every engine blocking and nothing found, the pull-request comment says nothing of levels", () => {
+    const blocking = Object.fromEntries(ARTEFACTS.map((a) => [a, { level: "blocking" as const }]));
+    const r = run(blocking);
+    expect(renderHtml(r)).toContain("Every engine is blocking");
     expect(renderMarkdown(r)).not.toContain("Informing");
   });
 
@@ -127,5 +138,9 @@ describe("through a run", () => {
     writeFileSync(join(base, "index.json"), JSON.stringify({ runs: ["new", "old"].map((id, i) => ({ id, mode: "release", ranAt: `2026-10-0${2 - i}T08:00:00Z`, verdict: "pass", harnessVersion: "1.21.0", files: [`${id}/report.json`] })) }));
     const f = readForecasts(site);
     expect(f.map((x) => x.informing)).toEqual([1, undefined]);
+    expect(f[0]!.informingBy).toEqual({ headers: 1 });
+    const page = renderReadiness(buildReadiness({ now: new Date("2026-10-02T12:00:00Z"), harness: "1.22.0", forecasts: [{ ...f[0]!, files: [...f[0]!.files, "new/report.html"] }], github: "read" }));
+    expect(page).toContain('title="found by informing engines: reported, never gates (headers 1)">1 informing</a>');
+    expect(page).toContain("headers 1. found by informing engines and not claimed");
   });
 });

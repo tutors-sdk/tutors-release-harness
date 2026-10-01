@@ -34,6 +34,14 @@ interface IndexRun {
   files?: string[];
 }
 
+/** Since 1.21.0: a kept report's informing results no claim covers, and (since 1.22.0) how many by engine. */
+function informingOf(matches: NonNullable<RunReport["compare"]>["matches"]): { informing: number; informingBy: Record<string, number> } {
+  const open = matches.filter((m) => m?.hunk?.level === "informing" && !m.claim);
+  const informingBy: Record<string, number> = {};
+  for (const m of open) informingBy[m.hunk.artefact] = (informingBy[m.hunk.artefact] ?? 0) + 1;
+  return { informing: open.length, informingBy };
+}
+
 /** Every kept Main to RC release run under `<site>/main-preview/reports`, with what its report.json and rehearsals say. */
 export function readForecasts(site: string): KeptForecast[] {
   const base = join(site, STREAM_DIR);
@@ -67,7 +75,7 @@ export function readForecasts(site: string): KeptForecast[] {
       files,
       ...(Array.isArray(report?.compare?.unclaimed) ? { unclaimed: report.compare.unclaimed.length } : {}),
       // Since 1.21.0: a report that records its engine levels says what its informing engines found; an older one is not counted.
-      ...(report?.levels && Array.isArray(report.compare?.matches) ? { informing: report.compare.matches.filter((m) => m?.hunk?.level === "informing" && !m.claim).length } : {}),
+      ...(report?.levels && Array.isArray(report.compare?.matches) ? informingOf(report.compare.matches) : {}),
       ...(images ? { images: Object.fromEntries(Object.entries(images).map(([app, i]) => [app, { ...(i?.revision ? { revision: i.revision } : {}), ...(i?.digest ? { digest: i.digest } : {}) }])) } : {}),
       ...(Object.keys(rehearsals).length ? { rehearsals } : {}),
       ...(report?.compare ? { report: { ...(report.ranAt ? { ranAt: report.ranAt } : {}), compare: report.compare, ...(report.load ? { load: report.load } : {}), ...(report.noise ? { noise: report.noise } : {}), ...(report.provenance ? { provenance: report.provenance } : {}) } } : {}),

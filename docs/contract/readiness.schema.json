@@ -91,6 +91,7 @@
         "verdict": { "type": "string" },
         "unclaimed": { "type": ["integer", "null"], "minimum": 0 },
         "informing": { "type": ["integer", "null"], "minimum": 0, "description": "Since 1.21.0: the kept report's informing results no claim covers (reported, never gates); null for a forecast kept before engine levels." },
+        "informingBy": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 1 }, "description": "Since 1.22.0: informing by engine (its artefact), e.g. the policy family's checks; absent when informing is null or 0." },
         "delta": {
           "description": "The index entry's delta (reports-index.schema.json); null for a forecast kept before 1.16.1.",
           "oneOf": [{ "type": "null" }, { "$ref": "reports-index.schema.json#/definitions/run/properties/delta" }]

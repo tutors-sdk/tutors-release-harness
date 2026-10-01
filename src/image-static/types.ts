@@ -36,6 +36,38 @@ export interface ImageManifest {
   baseDigest?: string;
   /** Every `org.opencontainers.*` label. */
   labels: Record<string, string>;
+  /**
+   * Since 1.22.0, for the policy family: `Config.Healthcheck.Test` joined by spaces, or null when the image declares
+   * none (or `NONE`). Absent from a capture recorded before 1.22.0.
+   */
+  healthcheck?: string | null;
+  /** Since 1.22.0: environment variables whose name or value looks like a secret (src/image-static/secrets.ts). Names and why only: a value is never kept. */
+  secretEnv?: SecretFinding[];
+  /**
+   * Since 1.22.0: build arguments and commands in the image's layer history (`docker image history`) that look like a
+   * secret, names and why only; null when the history could not be read. Absent from a capture recorded before 1.22.0.
+   */
+  secretHistory?: SecretFinding[] | null;
+}
+
+/** Something in an image that looks like a secret. Never the value. */
+export interface SecretFinding {
+  /** The variable's name, or the pattern's name when the value alone gave it away. */
+  name: string;
+  /** For the history: the 0-based position of the history entry, newest first, as `docker image history` lists it. */
+  entry?: number;
+  /** Why it looks like a secret, for people: "its name says it is a token", "the value is a GitHub token". */
+  why: string;
+}
+
+/**
+ * Since 1.22.0, for the policy family: the SLSA provenance cosign verified on an image's digest, under the same
+ * signing identity as its signature. `statements` is empty when the image carries none.
+ */
+export interface BuildProvenanceData {
+  /** The certificate identity the attestations were verified against (HARNESS_COSIGN_IDENTITY). */
+  identity: string;
+  statements: { predicateType: string; builder: string | null; workflow: string | null }[];
 }
 
 export type SbomSource = "attestation" | "attestation-unverified" | "generated";
@@ -63,6 +95,8 @@ export interface AppImageStatic {
   manifest: Collected<ImageManifest>;
   sbom: Collected<SbomData>;
   vulns: Collected<VulnData>;
+  /** Since 1.22.0: the image's verified SLSA provenance, for the build-provenance policy. Absent from a capture recorded before 1.22.0. */
+  buildProvenance?: Collected<BuildProvenanceData>;
 }
 
 /** Everything collected for one side: per app. */

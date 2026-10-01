@@ -5,6 +5,7 @@ import { loudProvenance } from "./provenance.ts";
 import { imageArtefactsMarkdown } from "./image-static.ts";
 import { causesMarkdown } from "./causes.ts";
 import { informingMarkdown } from "./informing.ts";
+import { policyMarkdown } from "./policy.ts";
 import { deploymentMarkdown, loudDeployment, productionBuildMarkdown } from "./deployment.ts";
 
 const ICON = { pass: "✅", warn: "⚠️", fail: "❌" } as const;
@@ -60,6 +61,7 @@ export function renderMarkdown(report: RunReport): string {
     lines.push("");
   }
 
+  lines.push(...policyMarkdown(report)); // 1.22.0
   lines.push(...informingMarkdown(report)); // 1.21.0
 
   if (report.override) {

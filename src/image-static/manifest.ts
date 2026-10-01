@@ -1,5 +1,6 @@
 import { dockerRef } from "../image-ref.ts";
 import type { Exec } from "../images.ts";
+import { secretsInEnv, secretsInHistory } from "./secrets.ts";
 import type { Collected, ImageManifest } from "./types.ts";
 
 const BASE_NAME = "org.opencontainers.image.base.name";
@@ -9,7 +10,7 @@ interface RawInspect {
   Os?: string;
   Architecture?: string;
   Size?: number;
-  Config?: { User?: string; ExposedPorts?: Record<string, unknown> | null; Entrypoint?: string[] | null; Cmd?: string[] | null; Labels?: Record<string, string> | null };
+  Config?: { User?: string; ExposedPorts?: Record<string, unknown> | null; Entrypoint?: string[] | null; Cmd?: string[] | null; Labels?: Record<string, string> | null; Env?: string[] | null; Healthcheck?: { Test?: string[] | null } | null };
   RootFS?: { Layers?: string[] | null };
 }
 
@@ -28,6 +29,10 @@ export function collectManifest(exec: Exec, ref: string): Collected<ImageManifes
   if (!layers.length) return { ok: false, reason: `${ref}: docker reports no filesystem layers (the containerd image store needs a build that keeps them, or the image is a manifest list for another platform)` };
   const labels = Object.fromEntries(Object.entries(raw.Config?.Labels ?? {}).filter(([k]) => k.startsWith("org.opencontainers.")));
   const config = raw.Config ?? {};
+  // Since 1.22.0, for the image-hardening policy: the healthcheck, and what looks like a secret in the environment and in
+  // the layer history. Names and reasons only; no value is kept. The manifest engine compares none of these.
+  const secretEnv = secretsInEnv(config.Env);
+  const secretHistory = historySecrets(exec, ref, secretEnv.map((f) => f.name));
   return {
     ok: true,
     source: "docker image inspect",
@@ -43,9 +48,34 @@ export function collectManifest(exec: Exec, ref: string): Collected<ImageManifes
       bottomLayer: layers[0]!,
       ...(labels[BASE_NAME] ? { baseName: labels[BASE_NAME] } : {}),
       ...(labels[BASE_DIGEST] ? { baseDigest: labels[BASE_DIGEST] } : {}),
-      labels
+      labels,
+      healthcheck: healthcheckOf(config.Healthcheck?.Test),
+      secretEnv,
+      secretHistory
     }
   };
+}
+
+/** `Config.Healthcheck.Test` as one line, or null when there is none: unset, empty, or `["NONE"]` (a healthcheck switched off). */
+export function healthcheckOf(test: string[] | null | undefined): string | null {
+  if (!test?.length || test[0] === "NONE") return null;
+  return test.join(" ");
+}
+
+/** The layer history's `CreatedBy` lines through the injected runner, scanned for secrets; null when docker cannot list it. */
+function historySecrets(exec: Exec, ref: string, flaggedInEnv: string[]) {
+  const result = exec("docker", ["image", "history", "--no-trunc", "--format", "{{json .}}", dockerRef(ref)]);
+  if (result.error || result.status !== 0) return null;
+  const lines: string[] = [];
+  for (const line of result.stdout.split(/\r?\n/)) {
+    if (!line.trim()) continue;
+    try {
+      lines.push(String((JSON.parse(line) as { CreatedBy?: unknown }).CreatedBy ?? ""));
+    } catch {
+      return null;
+    }
+  }
+  return secretsInHistory(lines, flaggedInEnv);
 }
 
 /** True when the image's USER means root: unset, `root`, or uid 0 (with or without a group). */

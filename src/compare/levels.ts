@@ -16,7 +16,7 @@ import { ARTEFACTS, type Artefact, type Hunk } from "../types.ts";
  * engine's (`report.json` `levels`), so a reader can tell a quiet engine from an informing one.
  *
  * An engine is named by its artefact, the word claims and masks already use; every artefact must be here (the type
- * says so). Today every engine is blocking, so a run that passed before 1.21.0 passes now and one that failed fails.
+ * says so). Every diff engine is blocking, so a run that passed before 1.21.0 passes now and one that failed fails.
  * A new engine or check ships informing, with a date when there is one (TESTING.md, "Rules for a new engine").
  */
 export type Level = "blocking" | "informing";
@@ -29,8 +29,17 @@ export interface EngineLevel {
 
 export type EngineLevels = Readonly<Record<string, EngineLevel>>;
 
-/** The level of every engine, by artefact. The single place a level is set. */
-export const ENGINE_LEVELS: Readonly<Record<Artefact, EngineLevel>> = Object.freeze(Object.fromEntries(ARTEFACTS.map((a) => [a, { level: "blocking" }])) as Record<Artefact, EngineLevel>);
+/**
+ * The level of every engine, by artefact. The single place a level is set. Every diff engine is blocking. The policy
+ * family (src/compare/policy.ts, since 1.22.0) ships informing with no date: 2.0 decides which become blocking, and
+ * none does before it has a planted mutant that it catches.
+ */
+export const ENGINE_LEVELS: Readonly<Record<Artefact, EngineLevel>> = Object.freeze({
+  ...(Object.fromEntries(ARTEFACTS.map((a) => [a, { level: "blocking" }])) as Record<Artefact, EngineLevel>),
+  "image-hardening": { level: "informing" },
+  "build-provenance": { level: "informing" },
+  "vuln-ceiling": { level: "informing" }
+});
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
