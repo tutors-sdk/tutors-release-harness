@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { selectJourneys, type Journey, type JourneySet } from "../traffic/journeys/journeys.ts";
 import { reference } from "../traffic/journeys/reference.ts";
+import { CLAIM_LIFETIME_LEVEL, claimLifetimes, claimsInForce, lifetimeContext } from "./claims/lifetime.ts";
 import { matchClaims } from "./claims/matcher.ts";
 import { DEFAULT_CLAIM_MAX_HUNKS, claimHygiene, claimMaxHunksFromEnv } from "./claims/hygiene.ts";
 import { loadClaims } from "./claims/schema.ts";
@@ -183,7 +184,10 @@ export function compareFromCaptures(input: CompareInput): RunOutcome {
   // Since 1.21.0: an informing engine's findings are reported, never gated (src/compare/levels.ts). Every engine is blocking today.
   const levelTable = input.levels ?? ENGINE_LEVELS;
   const hunks = applyLevels([...compareCaptures(na.capture, nb.capture, masks, input.captureDir), ...(input.extraHunks ?? [])], ranAt, levelTable);
-  const compare = matchClaims(hunks, input.claims);
+  // Since 1.25.1: claims with a lifetime. Informing: an expired claim still covers, and is reported (src/claims/lifetime.ts).
+  const lifeCtx = lifetimeContext(ranAt, input.a, input.b);
+  const compare = matchClaims(hunks, claimsInForce(input.claims, lifeCtx));
+  const lifetimes = claimLifetimes(input.claims, compare.matches, lifeCtx);
   const noise = readNoise(input.noise, input.log);
   const blind = blindJourneys(input.a, input.b);
   const degraded = input.mode === "noise" ? [...(input.requireVerified ? evidenceGaps(input.a, input.b) : []), ...blind] : [];
@@ -226,7 +230,8 @@ export function compareFromCaptures(input: CompareInput): RunOutcome {
     ...(input.deployment ? { deployment: input.deployment } : {}),
     ...(input.productionBuild ? { productionBuild: input.productionBuild } : {}),
     levels: levelsOn(ranAt, levelTable),
-    ...(input.a2 && aToA2 ? { inRunNoise: inRunNoise(input.a2, aToA2, compare.hunks) } : {})
+    ...(input.a2 && aToA2 ? { inRunNoise: inRunNoise(input.a2, aToA2, compare.hunks) } : {}),
+    ...(lifetimes.length ? { claimLifetimes: { level: CLAIM_LIFETIME_LEVEL, claims: lifetimes } } : {})
   };
 
   const files = writeReports(input.captureDir, report);

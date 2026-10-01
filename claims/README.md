@@ -47,11 +47,18 @@ The format is part of [the contract](../docs/contract.md#claims-file).
 
 | field | meaning |
 | --- | --- |
-| `artefact` | `dom`, `screenshot`, `network`, `console`, `headers`, `axe`, `focus`, `metrics`, `logs`, `timing`, `persistence`, `bus`, `migration`, `upgrade`, `image-manifest`, `sbom`, `vulns`, `runtime`, `startup`, or `*` |
+| `artefact` | `dom`, `screenshot`, `network`, `console`, `headers`, `axe`, `focus`, `metrics`, `logs`, `timing`, `persistence`, `bus`, `migration`, `upgrade`, `image-manifest`, `sbom`, `vulns`, `runtime`, `startup`, `image-hardening`, `build-provenance`, `vuln-ceiling`, or `*` |
 | `scope` | a glob matched against the hunk's scope **or** its route (see below) |
 | `reason` | the Rule id or changelog entry. "see PR" and "approved" are rejected by the schema. Required, unless the claim has a `rule` (then it is optional free text) |
 | `rule` | since 1.3.0: a Rule's four digits, quoted (`"0031"`), which must be in the rules file given with `--rules`. The report shows its title |
 | `approvedBy` | required for a broad claim; a person, never a bot |
+| `until` | since 1.25.1: the last UTC day (`2026-11-30`) or release (`16.3.0`) the claim is meant for. Past it the claim is **expired**: a later date, a later candidate, or production already at that release |
+| `digests` | since 1.25.1: the images it was written against, by app (`reader: "sha256:…"`). Expired when side b's digest for a named app is another, or b has none |
+
+An expired claim is reported under "claims with a lifetime" with the failing differences it still
+covers. Until 2.0 lifetimes are **informing**: the claim still covers, and the verdict is unchanged.
+At 2.0 they block: an expired claim covers nothing and is stale. A claim without `until` or
+`digests` never expires.
 
 ## What a scope matches
 

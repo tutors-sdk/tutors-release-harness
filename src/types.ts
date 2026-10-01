@@ -328,6 +328,10 @@ export interface Claim {
   rule?: string;
   /** Since 1.3.0. That Rule's title in the rules file, which the report shows. Present exactly when `rule` is. */
   ruleTitle?: string;
+  /** Since 1.25.1. The last UTC day (YYYY-MM-DD) or release (X.Y.Z) the claim is meant for (src/claims/lifetime.ts). */
+  until?: string;
+  /** Since 1.25.1. The images, app -> sha256 digest, the claim was written against. */
+  digests?: Record<string, string>;
 }
 
 export interface ClaimMatch {
@@ -416,6 +420,11 @@ export interface RunReport {
    * the deterministic artefacts. Reported beside the nightly A/A; never read by the verdict. src/compare/in-run-noise.ts.
    */
   inRunNoise?: InRunNoise;
+  /**
+   * Since 1.25.1: every claim with a lifetime (`until`, `digests`), live or expired, and the failing differences each
+   * covers. Informing until 2.0: an expired claim still covers. src/claims/lifetime.ts.
+   */
+  claimLifetimes?: { level: "blocking" | "informing"; claims: import("./claims/lifetime.ts").ClaimLifetime[] };
 }
 
 /** Since 1.24.0: a against a2 (src/compare/in-run-noise.ts). */

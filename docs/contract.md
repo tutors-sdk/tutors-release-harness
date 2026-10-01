@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.25.0`
+Contract version: `1.25.1`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -728,6 +728,8 @@ claims:
   - artefact: dom                                       # since 1.3.0: a claim may name a Rule instead
     scope: "reader:lab-step*"
     rule: "0031"                                        # four digits, quoted; must be in the rules file (--rules)
+    until: "16.3.0"                                     # since 1.25.1, optional: the last day (YYYY-MM-DD) or release (X.Y.Z)
+    digests: { reader: "sha256:…" }                     # since 1.25.1, optional: the images it was written against, by app
 ```
 
 - `artefact`: one of the twenty-two artefact names above, or `*`.
@@ -747,6 +749,21 @@ claims:
 - Unknown keys are ignored (before 1.3.0 that included `rule`). An empty file is
   no claims. An invalid file stops the run with exit `2`, before any stack starts.
 - Each failing hunk is assigned to at most one claim; `info` hunks need none.
+- `until` and `digests` (since 1.25.1) give a claim a **lifetime**
+  (`src/claims/lifetime.ts`). `until` is a calendar day, `"YYYY-MM-DD"` (a real one), or a
+  release, `"X.Y.Z"` or `"vX.Y.Z"`. `digests` maps one or more of `reader`, `catalogue`, `live`
+  and `time` to `sha256:` and 64 hex characters. A claim is **expired** when the run's UTC day is
+  after its date; when side b's reader tag is a later release than its release (a release
+  candidate `X.Y.Z-rc.N` of that release is not later); when side a's reader tag has reached its
+  release (a forecast, whose side b is `sha-<short>`); or when side b's registry digest for a
+  named app is another, or absent. Anything else in either field is an invalid claim (exit `2`).
+- Claim lifetimes have a level, as an engine does (`CLAIM_LIFETIME_LEVEL`), and ship
+  **informing**: an expired claim still covers what it matches, so the verdict is what it would be
+  without the fields. `report.json` gains `claimLifetimes` (`{ level, claims: [{ artefact, scope,
+  until?, digests?, state: live | expired, why, covers }] }`, only when a claim has a lifetime;
+  `covers` is the failing differences it covers), and `report.html` and `report.md` say how many
+  expired and what they still cover, beside the A/A lines. At 2.0 the level becomes **blocking**:
+  an expired claim is left out before matching, covers nothing and is stale.
 
 The claims file lives with the release (the monorepo's `release/claims.yaml`),
 never in this repository.
@@ -1735,6 +1752,21 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.25.1 (patch; claims with a lifetime: until and digests)
+
+The release note is [releases/1.25.1.md](releases/1.25.1.md). Runway improvement E. A patch for two
+optional claim fields and one optional `report.json` field; a claims file without them is read and
+matched exactly as before, and a run with them decides exactly what it would without them.
+
+- A claim may carry `until` (the last UTC day, `"YYYY-MM-DD"`, or release, `"X.Y.Z"`) and `digests`
+  (app to `sha256:` digest), [the claims file](#claims-file). A claim past either is **expired**.
+- `CLAIM_LIFETIME_LEVEL` is **informing**: an expired claim still covers. `report.json` gains
+  `claimLifetimes` (`level`, and per claim `state`, `why` and `covers`), shown beside the A/A lines
+  in `report.html` and `report.md`. 2.0 makes it blocking: an expired claim is left out before
+  matching and is stale.
+- The monorepo's `pnpm check:release-claims` accepts both fields and the three policy-check
+  artefacts (tutors-mono-repo, Rules 0230 to 0233).
 
 ### 1.25.0 (minor; soak prep: a planted mutant per policy check, a2 every night, the clean-night count)
 

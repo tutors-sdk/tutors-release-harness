@@ -23,6 +23,9 @@ claims:
   - artefact: dom                                       # since 1.3.0: a claim may name a Rule instead of a reason
     scope: "reader:lab-step*"
     rule: "0031"                                        # four digits, quoted; must be in the rules file
+    until: "16.3.0"                                     # since 1.25.1: optional; the last release (or "2026-11-30", day) it is for
+    digests:                                            # since 1.25.1: optional; the images it was written against
+      reader: "sha256:4593…"                            # sha256: and 64 hex characters, by app
 ```
 
 | Field | Rules |
@@ -32,6 +35,10 @@ claims:
 | `reason` | At least 8 characters, and it must not start with `see pr`, `approved`, `all`, `ok` or `misc` (a whole word, any case). It names the Rule or the changelog entry that intends the change. **Required unless the claim has a `rule`.** |
 | `rule` | A Rule's four digits, **quoted** (`"0031"`; unquoted, YAML reads `0031` as the number 31 and the harness refuses it). It must be in the rules file given with `--rules` (in the dispatch, `rules_url`). With a `rule`, `reason` becomes optional free text, and the report shows `Rule 0031: <title>` (then your reason, if you gave one). |
 | `approvedBy` | A person, never a bot. Required on a broad claim. |
+| `until` | Since 1.25.1, optional. The last UTC day (`"2026-11-30"`) or release (`"16.3.0"`, `v` allowed) the claim is meant for. The claim **expires** after that day, when the candidate is a later release than that, or (on a forecast, whose candidate is `sha-<short>`) once production has reached that release. |
+| `digests` | Since 1.25.1, optional. The images the claim was written against, as `app: "sha256:<64 hex>"` for any of `reader`, `catalogue`, `live`, `time`. The claim expires when side b's digest for a named app is another, or b has none. Take them from the forecast or candidate report you wrote the claim from (`provenance.b.images.<app>.digest`, or the readiness page's digests). |
+
+**Expired claims (since 1.25.1).** A claim with a lifetime that has run out is listed in the report beside the A/A lines ("claims with a lifetime") with what it still covers. Until 2.0 that is all: lifetimes are **informing**, so an expired claim still covers its differences and the verdict does not move. At 2.0 they block: an expired claim covers nothing, the differences it covered are unclaimed, and it is reported stale. Use `until` for a claim written for one release, so it cannot quietly cover the next; use `digests` when it is about one build exactly (an SBOM or image change).
 
 Also true of the file:
 

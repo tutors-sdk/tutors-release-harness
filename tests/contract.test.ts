@@ -114,10 +114,10 @@ const full: DeepRequired<RunReport> = {
   noise: { schemaVersion: SCHEMA_VERSION, ranAt: "2026-09-16T02:00:00.000Z", clean: true, hunks: 0, degraded: ["side a did not run pulled+verified images (cached)"] },
   compare: {
     hunks: [{ id: "1", artefact: "dom", scope: "reader:lab-step", path: "/lab/x", summary: "semantic DOM differs", detail: "+ x", severity: "info", level: "informing", blockingFrom: "2026-11-01" }],
-    matches: [{ hunk: { id: "1", artefact: "dom", scope: "reader:lab-step", path: "/lab/x", summary: "semantic DOM differs", detail: "+ x", severity: "info", level: "informing", blockingFrom: "2026-11-01" }, claim: { artefact: "*", scope: "**", reason: "Rule 0031: Lab steps show estimated reading time", approvedBy: "a-maintainer", rule: "0031", ruleTitle: "Lab steps show estimated reading time" } }],
+    matches: [{ hunk: { id: "1", artefact: "dom", scope: "reader:lab-step", path: "/lab/x", summary: "semantic DOM differs", detail: "+ x", severity: "info", level: "informing", blockingFrom: "2026-11-01" }, claim: { artefact: "*", scope: "**", reason: "Rule 0031: Lab steps show estimated reading time", approvedBy: "a-maintainer", rule: "0031", ruleTitle: "Lab steps show estimated reading time", until: "16.3.0", digests: { reader: `sha256:${"a".repeat(64)}` } } }],
     unclaimed: [{ id: "2", artefact: "headers", scope: "reader:home/x-frame-options", path: "/", summary: "header dropped", detail: "-", severity: "fail", level: "informing", blockingFrom: "2026-11-01" }],
-    staleClaims: [{ artefact: "network", scope: "GET /gone", reason: "Rule 0002: Nothing here is cached", approvedBy: "a-maintainer", rule: "0002", ruleTitle: "Nothing here is cached" }],
-    broadUnapproved: [{ artefact: "*", scope: "**", reason: "everything changed in this one", approvedBy: "", rule: "0003", ruleTitle: "Everything may change" }]
+    staleClaims: [{ artefact: "network", scope: "GET /gone", reason: "Rule 0002: Nothing here is cached", approvedBy: "a-maintainer", rule: "0002", ruleTitle: "Nothing here is cached", until: "16.3.0", digests: { reader: `sha256:${"a".repeat(64)}` } }],
+    broadUnapproved: [{ artefact: "*", scope: "**", reason: "everything changed in this one", approvedBy: "", rule: "0003", ruleTitle: "Everything may change", until: "16.3.0", digests: { reader: `sha256:${"a".repeat(64)}` } }]
   },
   masksApplied: { "response-date": 4, etag: 0 },
   migration: { a: { ref: "v16.2.0", files: ["0001.sql"], catalog }, b: { ref: "release/16.3.0", files: ["0001.sql", "0002.sql"], catalog }, rolledBack: catalog },
@@ -129,7 +129,7 @@ const full: DeepRequired<RunReport> = {
     hunksPerClaim: 6.5,
     maxHunksPerClaim: 12,
     threshold: 10,
-    flagged: [{ claim: { artefact: "*", scope: "**", reason: "Rule 0031: Lab steps show estimated reading time", approvedBy: "a-maintainer", rule: "0031", ruleTitle: "Lab steps show estimated reading time" }, hunks: 12, flags: ["covers-many-hunks", "broad-with-approval"] }]
+    flagged: [{ claim: { artefact: "*", scope: "**", reason: "Rule 0031: Lab steps show estimated reading time", approvedBy: "a-maintainer", rule: "0031", ruleTitle: "Lab steps show estimated reading time", until: "16.3.0", digests: { reader: `sha256:${"a".repeat(64)}` } }, hunks: 12, flags: ["covers-many-hunks", "broad-with-approval"] }]
   },
   override: { reason: "Rule 0044: payments hotfix, frame options restored in 16.3.1", by: "a-maintainer", verdict: "fail", applied: true, at: "2026-09-16T09:20:00.000Z" },
   imageArtefacts: { a: sideArtefacts, b: sideArtefacts },
@@ -156,7 +156,8 @@ const full: DeepRequired<RunReport> = {
     together: [{ artefacts: ["dom", "screenshot"], pages: ["reader:home"], hunks: 2 }]
   },
   levels: { dom: { level: "blocking", blockingFrom: "2026-11-01" }, headers: { level: "informing", blockingFrom: "2026-11-01" } },
-  inRunNoise: { stack: "a2", runs: 1, artefacts: ["dom", "network"], journeys: ["anon-browse"], hunks: [{ artefact: "dom", scope: "reader:course", summary: "reader:course: DOM differs" }], alsoOnB: ["dom:reader:course:1"] }
+  inRunNoise: { stack: "a2", runs: 1, artefacts: ["dom", "network"], journeys: ["anon-browse"], hunks: [{ artefact: "dom", scope: "reader:course", summary: "reader:course: DOM differs" }], alsoOnB: ["dom:reader:course:1"] },
+  claimLifetimes: { level: "informing", claims: [{ artefact: "network", scope: "GET /gone", until: "16.3.0", digests: { reader: `sha256:${"a".repeat(64)}` }, state: "expired", why: "until 16.3.0, and the candidate is 16.3.1", covers: 2 }] }
 };
 
 function runFixture(mode: Mode, opts: { mutate?: boolean; claims?: string; noise?: string } = {}) {
@@ -215,7 +216,7 @@ describe("report.json", () => {
     const cli = json("docs/contract/cli.json");
     for (const flag of cli.flags.filter((f: { since?: string }) => f.since === "1.2.0")) expect(changes, flag.name).toContain(`--${flag.name === "runtime" ? "no-runtime" : flag.name}`);
     for (const [name, v] of Object.entries(cli.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.2.0")) expect(changes, name).toContain(name);
-    expect(CONTRACT_VERSION).toBe("1.25.0");
+    expect(CONTRACT_VERSION).toBe("1.25.1");
     // The harness version is package.json's and moves at least as far as the contract's (docs/contract.md, Versioning):
     // a mask or engine PR bumps the patch of the harness alone, so do not pin a literal here.
     expect(json("package.json").version).toBe(HARNESS_VERSION);
@@ -285,6 +286,19 @@ describe("report.json", () => {
     for (const command of cliJson.commands.filter((c: { since?: string }) => c.since === "1.5.0")) expect(changes, command.name).toContain(command.name);
     for (const [name, v] of Object.entries(cliJson.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.5.0")) expect(changes, name).toContain(name);
     for (const workflow of ["main-preview.yml", "pages.yml"]) expect(changes, workflow).toContain(workflow);
+  });
+
+  it("1.25.1: its changelog and release note name until, digests, the informing level and the monorepo's pre-check", () => {
+    const start = contractMd.indexOf("### 1.25.1");
+    const end = contractMd.indexOf("### 1.25.0");
+    expect(start).toBeGreaterThan(0);
+    expect(end).toBeGreaterThan(start);
+    const changes = contractMd.slice(start, end).replace(/\s+/g, " ");
+    for (const item of ["releases/1.25.1.md", "patch", "`until`", "`digests`", "**informing**", "`claimLifetimes`", "check:release-claims", "0230 to 0233"]) expect(changes, item).toContain(item);
+    const section = contractMd.slice(contractMd.indexOf("## Claims file"), contractMd.indexOf("### The rules file")).replace(/\s+/g, " ");
+    for (const item of ["**lifetime**", "**expired**", "`CLAIM_LIFETIME_LEVEL`", "**blocking**"]) expect(section, item).toContain(item);
+    const note = readFileSync(resolve(ROOT, "docs/releases/1.25.1.md"), "utf8").replace(/\s+/g, " ");
+    for (const item of ["The verdict never moves", "The 2.0 switch is one line", "Rules 0230 to 0233"]) expect(note, item).toContain(item);
   });
 
   it("1.25.0: its changelog and release note name the three policy mutants, unverified, a2 every night and the soak count", () => {
