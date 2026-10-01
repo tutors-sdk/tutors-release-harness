@@ -14,7 +14,7 @@ import { changesRepo } from "./changes-repo.ts";
 const side = (failed: number) => ({ requests: 600, failed, serverErrors: 0, p50: 1.2, p95: 2.1, rate: 20, duration: "30s" });
 
 /** A release report shaped as the harness writes one: one diff under a broad claim, and `unclaimed` diffs no claim covers. */
-export function releaseReport(o: { ranAt: string; unclaimed?: number; harness?: string }): RunReport {
+export function releaseReport(o: { ranAt: string; unclaimed?: number; harness?: string; candidate?: string }): RunReport {
   const broad: Claim = { artefact: "dom", scope: "**", reason: "PR #10 restyles every page", approvedBy: "ada" };
   const claimed: Hunk = { id: "dom:/course:1", artefact: "dom", scope: "/course", summary: "dom /course moved", severity: "fail" };
   const unclaimed: Hunk[] = Array.from({ length: o.unclaimed ?? 0 }, (_, i) => ({ id: `screenshot:/topic:${i + 2}`, artefact: "screenshot", scope: "/topic", summary: `screenshot /topic moved ${i}`, severity: "fail" }));
@@ -30,7 +30,7 @@ export function releaseReport(o: { ranAt: string; unclaimed?: number; harness?: 
     runs: 5,
     verdict: unclaimed.length ? "fail" : "pass",
     reasons: unclaimed.length ? [`${unclaimed.length} unclaimed diff(s)`] : ["no unclaimed differences"],
-    sides: { a: { reader: "quay.io/tutors-sdk/tutors-reader:1.0.4", catalogue: "c", live: "l" }, b: { reader: "quay.io/tutors-sdk/tutors-reader:sha-3f1c2a9", catalogue: "c", live: "l" } },
+    sides: { a: { reader: "quay.io/tutors-sdk/tutors-reader:1.0.4", catalogue: "c", live: "l" }, b: { reader: `quay.io/tutors-sdk/tutors-reader:${o.candidate ?? "sha-3f1c2a9"}`, catalogue: "c", live: "l" } },
     compare: { hunks: [claimed, ...unclaimed], matches: [{ hunk: claimed, claim: broad }, ...unclaimed.map((hunk) => ({ hunk }))], unclaimed, staleClaims: [], broadUnapproved: [] },
     noise: { ranAt: "2026-09-27T02:00:00.000Z", clean: true, hunks: 0 },
     masksApplied: { "a-mask": 4 },
@@ -66,9 +66,10 @@ export function rehearsalRun(root: string, mode: "migration" | "upgrade", o: { r
 
 /**
  * `<root>/out/<ranAt>-release/` with the report, changes.json and confidence.json, as the preview job leaves it. With
- * `rehearsals`, the score read them too, as the publish job's "Score the forecast" step does.
+ * `rehearsals`, the score read them too, as the publish job's "Score the forecast" step does. Side b is a build of main
+ * (`sha-3f1c2a9`, a forecast) unless `candidate` names a release candidate's tag.
  */
-export async function scoredRun(root: string, o: { ranAt: string; unclaimed?: number; rehearsals?: { migration?: string; upgrade?: string } }): Promise<string> {
+export async function scoredRun(root: string, o: { ranAt: string; unclaimed?: number; candidate?: string; rehearsals?: { migration?: string; upgrade?: string } }): Promise<string> {
   const dir = join(root, "out", `${o.ranAt.replace(/[:.]/g, "-")}-release`);
   mkdirSync(dir, { recursive: true });
   writeReports(dir, releaseReport(o));

@@ -58,9 +58,10 @@ import { readRulePrs, renderScorecard, scorecard, type Scorecard } from "./score
 import { CHANGES_FILE, type Changes } from "../changes/signals.ts";
 import type { Confidence } from "../score/confidence.ts";
 import { CONFIDENCE_FILE } from "../score/read.ts";
-import { LEAD_CSS, attributionLeadHtml, attributionLeadMarkdown, deltaLeadHtml, deltaLeadMarkdown, gateLineHtml, scoreLeadHtml, scoreLeadMarkdown } from "../report/lead.ts";
+import { LEAD_CSS, attributionLeadHtml, attributionLeadMarkdown, claimsOwedHtml, claimsOwedMarkdown, deltaLeadHtml, deltaLeadMarkdown, gateLineHtml, scoreLeadHtml, scoreLeadMarkdown } from "../report/lead.ts";
 import { attribute, type Attribution } from "../changes/attribute.ts";
 import { foldCauses } from "../report/causes.ts";
+import { draftClaims, type ClaimDraft } from "../claims/draft.ts";
 import { deltaCounts, unclaimedDelta, type DeltaLead, type ReportDelta } from "../report/delta.ts";
 import { renderGateSummary } from "../local/tasks.ts";
 import { QUALITY_FILE, parseQualityRecord } from "../a3/quality.ts";
@@ -301,6 +302,20 @@ export function attributionLead(report: RunReport, changes: Changes, delta: Delt
   return attribute(causes, changes, previous);
 }
 
+// ---- claims owed, in place of the glance on a forecast (since 1.20.2) -------------------------------------
+
+/** A forecast judges a build of main, `sha-<short>` on side b (Main to RC); a release candidate carries a version tag. */
+export const isForecast = (report: Pick<RunReport, "sides">) => /^sha-[0-9a-f]{7,40}$/.test(tagOf(report.sides?.b?.reader));
+
+/** One draft claim per cause of the run, each naming the first PRs attribution found for it. */
+export function claimsOwed(report: RunReport, attribution?: Attribution): ClaimDraft[] | undefined {
+  const causes = causesOf(report);
+  const unclaimed = unclaimedOf(report);
+  if (!causes || !unclaimed) return undefined;
+  const prs = Object.fromEntries((attribution?.causes ?? []).map((c) => [c.cause, c.prs.slice(0, 3).map((p) => (p.pr !== null ? `#${p.pr}` : p.sha.slice(0, 7)))]));
+  return draftClaims(causes, unclaimed, prs);
+}
+
 // ---- the rehearsals kept beside it (since 1.16.0) ------------------------------------------------------
 
 /**
@@ -393,14 +408,16 @@ const tagOf = (ref: string | undefined) => ref?.split("@")[0]?.split(":").pop() 
 export function withLead(name: string, text: string, report: RunReport, s: Scored, dir: string, delta?: DeltaLead, attribution?: Attribution): string | undefined {
   const overridden = report.override?.applied === true;
   const code = report.verdict === "fail" && !overridden ? 1 : 0;
+  // Since 1.20.2 a forecast shows the claims it owes where the glance would be; a release candidate keeps its glance.
+  const owed = isForecast(report) ? claimsOwed(report, attribution) : undefined;
   if (name === "report.md") {
     const entry = { id: "release", title: "release", code, verdict: report.verdict, reasons: report.reasons ?? [], overridden, markdown: text };
-    return renderGateSummary({ production: tagOf(report.sides?.a?.reader), candidate: tagOf(report.sides?.b?.reader), entries: [entry], code, at: report.ranAt, gate: s.confidence.gate, score: `${delta ? `${deltaLeadMarkdown(delta)}\n\n` : ""}${attribution?.causes.length ? `${attributionLeadMarkdown(attribution)}\n\n` : ""}${scoreLeadMarkdown(s.confidence, s.changes, dir)}` });
+    return renderGateSummary({ production: tagOf(report.sides?.a?.reader), candidate: tagOf(report.sides?.b?.reader), entries: [entry], code, at: report.ranAt, gate: s.confidence.gate, score: `${delta ? `${deltaLeadMarkdown(delta)}\n\n` : ""}${attribution?.causes.length ? `${attributionLeadMarkdown(attribution)}\n\n` : ""}${scoreLeadMarkdown(s.confidence, s.changes, dir, owed && claimsOwedMarkdown(owed))}` });
   }
   const body = /<body[^>]*>/.exec(text);
   const head = text.indexOf("</head>");
   if (!body || head < 0 || head > body.index) return undefined;
-  const lead = `\n<section class="lead">\n${gateLineHtml(s.confidence.gate, code)}\n${delta ? `${deltaLeadHtml(delta)}\n` : ""}${attribution?.causes.length ? `${attributionLeadHtml(attribution)}\n` : ""}${scoreLeadHtml(s.confidence, s.changes, dir)}\n</section>\n`;
+  const lead = `\n<section class="lead">\n${gateLineHtml(s.confidence.gate, code)}\n${delta ? `${deltaLeadHtml(delta)}\n` : ""}${attribution?.causes.length ? `${attributionLeadHtml(attribution)}\n` : ""}${scoreLeadHtml(s.confidence, s.changes, dir, owed && claimsOwedHtml(owed))}\n</section>\n`;
   const at = body.index + body[0].length;
   return `${text.slice(0, head)}<style>\n${LEAD_CSS}\n</style>\n${text.slice(head, at)}${lead}${text.slice(at)}`;
 }
