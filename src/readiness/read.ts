@@ -10,6 +10,7 @@ import type { GithubSnapshot, WorkflowRun } from "../a3/github.ts";
 import { QUALITY_FILE, parseQualityRecord } from "../a3/quality.ts";
 import type { ReportDelta } from "../report/delta.ts";
 import type { RunReport } from "../types.ts";
+import { parseReleaseHistory, type ReleaseHistory } from "./releases.ts";
 import { MAIN_TO_RC, REHEARSALS, STREAM_DIR, type KeptForecast, type Rehearsal } from "./model.ts";
 
 function json<T>(file: string): T | undefined {
@@ -46,6 +47,9 @@ export function readForecasts(site: string): KeptForecast[] {
     const images = report?.provenance?.b?.images;
     // Since 1.18.0: the monorepo's quality record kept beside it. Kept but not a record is null, never a guess.
     const quality = files.includes(`${r.id}/${QUALITY_FILE}`) ? (parseQualityRecord(at<unknown>(QUALITY_FILE)) ?? null) : undefined;
+    // Since 1.19.0: the PRs since production its changes.json counts, for the control chart's night-by-night run.
+    const changes = at<{ refs?: { a?: string }; a?: string; prs?: { pr?: number | null; release?: boolean }[] }>("changes.json");
+    const unreleased = Array.isArray(changes?.prs) ? { prs: changes.prs.filter((p) => typeof p?.pr === "number" && !p.release).length, base: String(changes.refs?.a ?? changes.a ?? "") } : undefined;
     const rehearsals: Partial<Record<Rehearsal, string>> = {};
     for (const mode of REHEARSALS) {
       const v = at<Partial<RunReport>>(`${mode}/report.json`)?.verdict;
@@ -65,7 +69,8 @@ export function readForecasts(site: string): KeptForecast[] {
       ...(images ? { images: Object.fromEntries(Object.entries(images).map(([app, i]) => [app, { ...(i?.revision ? { revision: i.revision } : {}), ...(i?.digest ? { digest: i.digest } : {}) }])) } : {}),
       ...(Object.keys(rehearsals).length ? { rehearsals } : {}),
       ...(report?.compare ? { report: { ...(report.ranAt ? { ranAt: report.ranAt } : {}), compare: report.compare, ...(report.load ? { load: report.load } : {}), ...(report.noise ? { noise: report.noise } : {}), ...(report.provenance ? { provenance: report.provenance } : {}) } } : {}),
-      ...(quality !== undefined ? { quality } : {})
+      ...(quality !== undefined ? { quality } : {}),
+      ...(unreleased ? { unreleased } : {})
     });
   }
   return out;
@@ -82,4 +87,12 @@ export function readWorkflowRuns(file: string): { runs?: WorkflowRun[]; github: 
   const runs = g.workflows?.[MAIN_TO_RC];
   if (!Array.isArray(runs)) return { github: `read ${g.fetchedAt ?? "?"}, but GitHub did not answer for ${MAIN_TO_RC}` };
   return { runs, github: `read ${g.fetchedAt ?? "?"}` };
+}
+
+/** The release history (releases.json) and a line saying what was read; undefined history when missing or not one. */
+export function readReleaseHistory(file: string): { history?: ReleaseHistory; source: string } {
+  if (!existsSync(file)) return { source: "not read (no releases.json: the pages were built without harness readiness --fetch-releases)" };
+  const h = parseReleaseHistory(json<unknown>(file));
+  if (!h) return { source: "not read (releases.json is not a release history)" };
+  return { history: h, source: `read ${h.fetchedAt || "?"}${h.errors.length ? `; GitHub did not answer everything: ${h.errors.join("; ")}` : ""}` };
 }

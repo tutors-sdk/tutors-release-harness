@@ -125,6 +125,7 @@ describe("harness readiness", () => {
     ajv.addFormat("date-time", /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/);
     ajv.addSchema(JSON.parse(readFileSync(join(ROOT, "docs/contract/reports-index.schema.json"), "utf8")), "reports-index.schema.json");
     ajv.addSchema(JSON.parse(readFileSync(join(ROOT, "docs/contract/quality-strip.schema.json"), "utf8")), "quality-strip.schema.json");
+    ajv.addSchema(JSON.parse(readFileSync(join(ROOT, "docs/contract/release-control.schema.json"), "utf8")), "release-control.schema.json");
     const validate = ajv.compile(JSON.parse(readFileSync(join(ROOT, "docs/contract/readiness.schema.json"), "utf8")));
     validate(r);
     expect(validate.errors ?? []).toEqual([]);

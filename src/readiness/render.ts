@@ -3,10 +3,14 @@
  * one row per night for the last ten, newest on top. A night that kept nothing is said in words (unchanged, in grey, with
  * the verdict it repeats; or did not run), never left out, so a quiet night cannot be mistaken for a missing one.
  *
+ * Since 1.19.0 the release-size control chart leads the page (src/readiness/control-render.ts): how big each release
+ * was, the XmR limits, and where the batch on main sits against the WIP limit.
+ *
  * Self-contained like a3.html: inline CSS, no script, no external request. Light and dark follow the reader's setting,
  * and below 640px each row becomes a card, so the page never scrolls sideways on a phone.
  */
 import { QUALITY_CSS, qualityMarksHtml, qualityStripHtml, safeHref } from "../a3/render.ts";
+import { CONTROL_CSS, controlHtml } from "./control-render.ts";
 import { NIGHTS, deltaWords, type Forecast, type Night, type Readiness } from "./model.ts";
 
 const esc = (s: string) => s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
@@ -152,6 +156,7 @@ table.strip{border-collapse:collapse;width:100%;margin:8px 0 0;font-size:14px;ba
 .quality{margin:10px 0 0} .quality .quality-strip{background:transparent}
 .quality-strip details summary{margin-top:2px}
 ${QUALITY_CSS}
+${CONTROL_CSS}
 footer{font-size:12px;color:var(--ink2);border-top:1px solid var(--rule);margin-top:20px;padding-top:10px}
 .empty{color:var(--ink2)}
 @media (max-width:640px){
@@ -182,6 +187,7 @@ export function renderReadiness(r: Readiness): string {
 <header class="title"><h1>Overnight readiness <span>· main against production, the last ${NIGHTS} nights</span></h1>
 <p class="meta">Built ${esc(when(r.builtAt))} by harness <code>${esc(r.harness)}</code> · <a href="./">all reports</a> · <a href="a3.html">A3</a> · <a href="readiness.json">readiness.json</a></p></header>
 <p class="note">One row per night (UTC), newest on top, from the Main to RC forecasts kept on the <code>main-preview</code> branch. To pick a night, read two rows: what the later one added, and whether its Gate moved. The quality marks (Speed, Metrics, Tests) are a reading aid and never change the Gate. A night that kept nothing says why in words. The band is left off the rows while the review floor caps the score; the Gate is what decides. A forecast, never a gate.</p>
+${controlHtml(r.control)}
 ${lastNight(r)}
 <h2 class="strip-title">Night by night</h2>
 <table class="strip"><thead><tr><th>Night</th><th>Main</th><th>Gate</th><th>Unclaimed</th><th>New / gone</th><th>Quality</th><th>Evidence</th></tr></thead>

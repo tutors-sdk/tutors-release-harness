@@ -23,6 +23,8 @@
 import type { WorkflowRun } from "../a3/github.ts";
 import { qualityOf, type QualityInputs, type QualityRecord, type QualityStrip, type WeeklyMutants } from "../a3/quality.ts";
 import type { ReportDelta } from "../report/delta.ts";
+import { buildControl, type Control } from "./control.ts";
+import type { ReleaseHistory } from "./releases.ts";
 
 export const READINESS_SCHEMA_VERSION = 1 as const;
 /** Calendar nights on the page, tonight included. */
@@ -56,6 +58,8 @@ export interface KeptForecast {
   report?: QualityInputs["report"];
   /** Since 1.18.0: the monorepo's quality record kept beside it; null when kept and not a record. */
   quality?: QualityRecord | null;
+  /** Since 1.19.0: the PRs since production its kept changes.json counts (release/* and direct commits left out). */
+  unreleased?: { prs: number; base: string };
 }
 
 export type Rehearsal = "migration" | "upgrade";
@@ -71,6 +75,10 @@ export interface ReadinessInputs {
   github: string;
   /** Since 1.18.0: the harness's weekly mutants self-tests (mutants.jsonl); undefined when not read. */
   mutants?: WeeklyMutants[];
+  /** Since 1.19.0: the monorepo's release sizes (releases.json); undefined when not read. */
+  releases?: ReleaseHistory;
+  /** What releases.json said about itself: when it was fetched, or why it was not read. */
+  releasesSource?: string;
 }
 
 export interface Forecast {
@@ -121,6 +129,8 @@ export interface Readiness {
   builtAt: string;
   harness: string;
   nights: Night[];
+  /** Since 1.19.0: the release-size control chart and the WIP limit on what is waiting on main (src/readiness/control.ts). */
+  control: Control;
   sources: { forecasts: number; github: string };
 }
 
@@ -230,6 +240,15 @@ export function buildReadiness(i: ReadinessInputs): Readiness {
     builtAt: i.now.toISOString(),
     harness: i.harness,
     nights: rows,
+    control: buildControl({
+      ...(i.releases ? { history: i.releases } : {}),
+      source: i.releasesSource ?? "not read",
+      forecasts: i.forecasts.flatMap((k) => {
+        if (!k.unreleased) return [];
+        const f = forecastOf(k);
+        return [{ ranAt: k.ranAt, prs: k.unreleased.prs, baseline: f.baseline || k.unreleased.base, candidate: f.candidate, head: f.commit }];
+      })
+    }),
     sources: { forecasts: forecasts.filter((f) => inWindow.has(nightOf(f.ranAt))).length, github: i.github }
   };
 }
