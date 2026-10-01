@@ -249,7 +249,8 @@ jobs:
           if [ ! -f summary/mutants.json ]; then echo "the self-test wrote no mutants.json (it stopped before the A/A): nothing to record"; exit 0; fi
           remote="https://github.com/${GITHUB_REPOSITORY}.git"
           auth="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
-          if git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth}" ls-remote --exit-code --heads "$remote" scoreboard > /dev/null 2>&1; then
+          # The full ref: a bare `scoreboard` is a tail match, and refs/heads/feat/scoreboard answered it (the clone then failed).
+          if git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth}" ls-remote --exit-code --heads "$remote" refs/heads/scoreboard > /dev/null 2>&1; then
             git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth}" clone -q --depth 1 --branch scoreboard "$remote" publish
           else
             git init -q -b scoreboard publish

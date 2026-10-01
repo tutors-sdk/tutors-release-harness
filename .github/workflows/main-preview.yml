@@ -472,7 +472,7 @@ jobs:
           if [ -z "$report" ]; then echo "no report was written (release mode did not reach a verdict): nothing to keep"; exit 0; fi
           remote="https://github.com/${GITHUB_REPOSITORY}.git"
           auth="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
-          if git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth}" ls-remote --exit-code --heads "$remote" main-preview > /dev/null 2>&1; then
+          if git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth}" ls-remote --exit-code --heads "$remote" refs/heads/main-preview > /dev/null 2>&1; then
             git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth}" clone -q --depth 1 --branch main-preview "$remote" publish
           else
             git init -q -b main-preview publish
