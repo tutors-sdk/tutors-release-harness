@@ -39,6 +39,9 @@
  * beside the same baseline (side a's tag), read from that run's kept report.json (src/report/delta.ts). A new baseline
  * starts again (`against: null`). A kept report that is led (a scored run) leads with the new differences, under the Gate.
  *
+ * Since 1.20.1 a led report follows that with its causes and the PRs behind them (src/changes/attribute.ts): a cause new
+ * since the previous forecast against the PRs merged since (its changes.json less the previous one's), the rest by path.
+ *
  * `<id>` is the run's ranAt and mode (`2026-09-26T07-57-09Z-noise`), so a re-run
  * of the same job replaces its entry and never duplicates it. With --keep-last
  * only the newest n runs are kept and older directories are removed: the
@@ -55,7 +58,9 @@ import { readRulePrs, renderScorecard, scorecard, type Scorecard } from "./score
 import { CHANGES_FILE, type Changes } from "../changes/signals.ts";
 import type { Confidence } from "../score/confidence.ts";
 import { CONFIDENCE_FILE } from "../score/read.ts";
-import { LEAD_CSS, deltaLeadHtml, deltaLeadMarkdown, gateLineHtml, scoreLeadHtml, scoreLeadMarkdown } from "../report/lead.ts";
+import { LEAD_CSS, attributionLeadHtml, attributionLeadMarkdown, deltaLeadHtml, deltaLeadMarkdown, gateLineHtml, scoreLeadHtml, scoreLeadMarkdown } from "../report/lead.ts";
+import { attribute, type Attribution } from "../changes/attribute.ts";
+import { foldCauses } from "../report/causes.ts";
 import { deltaCounts, unclaimedDelta, type DeltaLead, type ReportDelta } from "../report/delta.ts";
 import { renderGateSummary } from "../local/tasks.ts";
 import { QUALITY_FILE, parseQualityRecord } from "../a3/quality.ts";
@@ -195,11 +200,12 @@ export function keepReport(opts: KeepOptions): { entry: ReportEntry; dropped: st
   const delta = deltaLead(report, id, before, root);
   const beside = scoredBeside(runDir, report);
   const scored = beside && moved.length ? { ...beside, confidence: relink(beside.confidence, moved) } : beside;
+  const attribution = scored?.changes ? attributionLead(report, scored.changes, delta, root) : undefined;
   for (const name of KEPT_FILES) {
     const from = join(runDir, name);
     if (!existsSync(from)) continue;
     // Byte for byte: what is kept is exactly what the run wrote; a scored run's report.md and report.html get the lead on top.
-    const lead = scored && name !== "report.json" ? withLead(name, readFileSync(from, "utf8"), report, scored, `${REPORTS_DIR}/${id}`, delta) : undefined;
+    const lead = scored && name !== "report.json" ? withLead(name, readFileSync(from, "utf8"), report, scored, `${REPORTS_DIR}/${id}`, delta, attribution) : undefined;
     writeFileSync(join(target, name), lead ?? readFileSync(from));
     files.push(`${id}/${name}`);
   }
@@ -274,6 +280,25 @@ export function deltaLead(report: RunReport, id: string, index: ReportIndex, roo
     return { delta: { baseline, against, ...deltaCounts(fresh, gone) }, harnessVersion, fresh, gone };
   }
   return { delta: { baseline, against: null }, harnessVersion, fresh: [], gone: [] };
+}
+
+// ---- causes and the PRs behind them (since 1.20.1) -----------------------------------------------------
+
+const causesOf = (r: Partial<RunReport> | undefined) => r?.causes?.causes ?? (unclaimedOf(r) ? foldCauses(unclaimedOf(r)!).causes : undefined);
+
+/**
+ * The causes of a scored release run beside the PRs that could have made them: by delta against the previous forecast
+ * the delta was counted against (its kept report.json and changes.json), by path for the rest. Undefined for a run with
+ * no unclaimed set.
+ */
+export function attributionLead(report: RunReport, changes: Changes, delta: DeltaLead | undefined, root: string): Attribution | undefined {
+  const causes = causesOf(report);
+  if (!causes) return undefined;
+  const against = delta?.delta.against;
+  const prev = against ? causesOf(readJson<RunReport>(join(root, against.id, "report.json"))) : undefined;
+  const prevChanges = against ? readJson<Changes>(join(root, against.id, CHANGES_FILE)) : undefined;
+  const previous = against && prev ? { id: against.id, candidate: against.candidate, keys: new Set(prev.map((c) => c.key)), ...(prevChanges && Array.isArray(prevChanges.prs) ? { changes: prevChanges } : {}) } : undefined;
+  return attribute(causes, changes, previous);
 }
 
 // ---- the rehearsals kept beside it (since 1.16.0) ------------------------------------------------------
@@ -365,17 +390,17 @@ const tagOf = (ref: string | undefined) => ref?.split("@")[0]?.split(":").pop() 
  * it. report.md is the gate summary `harness release` writes (gate.md), with this one run as its only step; report.html
  * is the run's own page with the Gate and the lead first. Undefined (keep it as written) when the page has no body.
  */
-export function withLead(name: string, text: string, report: RunReport, s: Scored, dir: string, delta?: DeltaLead): string | undefined {
+export function withLead(name: string, text: string, report: RunReport, s: Scored, dir: string, delta?: DeltaLead, attribution?: Attribution): string | undefined {
   const overridden = report.override?.applied === true;
   const code = report.verdict === "fail" && !overridden ? 1 : 0;
   if (name === "report.md") {
     const entry = { id: "release", title: "release", code, verdict: report.verdict, reasons: report.reasons ?? [], overridden, markdown: text };
-    return renderGateSummary({ production: tagOf(report.sides?.a?.reader), candidate: tagOf(report.sides?.b?.reader), entries: [entry], code, at: report.ranAt, gate: s.confidence.gate, score: `${delta ? `${deltaLeadMarkdown(delta)}\n\n` : ""}${scoreLeadMarkdown(s.confidence, s.changes, dir)}` });
+    return renderGateSummary({ production: tagOf(report.sides?.a?.reader), candidate: tagOf(report.sides?.b?.reader), entries: [entry], code, at: report.ranAt, gate: s.confidence.gate, score: `${delta ? `${deltaLeadMarkdown(delta)}\n\n` : ""}${attribution?.causes.length ? `${attributionLeadMarkdown(attribution)}\n\n` : ""}${scoreLeadMarkdown(s.confidence, s.changes, dir)}` });
   }
   const body = /<body[^>]*>/.exec(text);
   const head = text.indexOf("</head>");
   if (!body || head < 0 || head > body.index) return undefined;
-  const lead = `\n<section class="lead">\n${gateLineHtml(s.confidence.gate, code)}\n${delta ? `${deltaLeadHtml(delta)}\n` : ""}${scoreLeadHtml(s.confidence, s.changes, dir)}\n</section>\n`;
+  const lead = `\n<section class="lead">\n${gateLineHtml(s.confidence.gate, code)}\n${delta ? `${deltaLeadHtml(delta)}\n` : ""}${attribution?.causes.length ? `${attributionLeadHtml(attribution)}\n` : ""}${scoreLeadHtml(s.confidence, s.changes, dir)}\n</section>\n`;
   const at = body.index + body[0].length;
   return `${text.slice(0, head)}<style>\n${LEAD_CSS}\n</style>\n${text.slice(head, at)}${lead}${text.slice(at)}`;
 }
