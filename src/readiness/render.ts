@@ -242,7 +242,7 @@ export function renderReadiness(r: Readiness): string {
 <body>
 <main class="page">
 <header class="title"><h1>Overnight readiness <span>· main against production, the last ${NIGHTS} nights</span></h1>
-<p class="meta">Built ${esc(when(r.builtAt))} by harness <code>${esc(r.harness)}</code> · <a href="./">all reports</a> · <a href="a3.html">A3</a> · <a href="#soak">soak toward 2.0</a> · <a href="readiness.json">readiness.json</a></p></header>
+<p class="meta">Built ${esc(when(r.builtAt))} by harness <code>${esc(r.harness)}</code> · <a href="./">home</a> · <a href="a3.html">A3</a> · <a href="scoreboard.html">scoreboard</a> · <a href="#control">control chart</a> · <a href="#soak">soak toward 2.0</a> · <a href="readiness.json">readiness.json</a></p></header>
 <p class="note">One row per night (UTC), newest on top, from the Main to RC forecasts kept on the <code>main-preview</code> branch. To pick a night, read two rows: what the later one added, and whether its Gate moved. The quality marks (Speed, Metrics, Tests) are a reading aid and never change the Gate. A night that kept nothing says why in words. The band is left off the rows while the review floor caps the score; the Gate is what decides. A forecast, never a gate.</p>
 ${controlHtml(r.control)}
 ${soakHtml(r.soak)}

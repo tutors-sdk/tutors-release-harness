@@ -26,7 +26,7 @@ It is not:
 
 - **To run a release:** [10 Running a release](10-running-a-release.md). Every step of the release SOP with its command, what you see, and when it is done.
 - **To read a report:** [03 Reading a report](03-reading-a-report.md). A real Main to RC report, top to bottom: the Gate, the score, the glance, the differences.
-- **To see one now:** the [report pages](https://tutors-sdk.github.io/tutors-release-harness/). Main to RC judges today's `main` against production every day, exactly as a release candidate would be judged. It is the live example the guide teaches from.
+- **To see one now:** the [landing page](https://tutors-sdk.github.io/tutors-release-harness/), which links the overnight readiness page (with its control chart and the soak toward 2.0), the A3, every forecast and its rehearsals, the scoreboard and these guides. Main to RC judges today's `main` against production every day, exactly as a release candidate would be judged. It is the live example the guide teaches from.
 
 ## Who reads which chapter
 
@@ -57,7 +57,7 @@ Read in this order the first time: 01, 10, 03, 04, then the rest as you need the
 
 Older, narrower documents this guide builds on and links to: [the integration contract](../contract.md), [Lean in the harness](../lean.md), [where the images come from](../images.md), [modes](../modes.md), [running locally (parity matrix)](../local.md), [the noise burn-down playbook](../noise-burndown.md), [the kaizen register](../../kaizen/README.md), [claims](../../claims/README.md), [mutants](../../mutants/README.md) and [TESTING.md](../../TESTING.md). Where they and this guide disagree, the code and the contract win; please report the difference.
 
-This guide describes what is on `main`: harness 1.25.1, contract 1.25.1 (`pnpm harness version` prints both). What changed in each release is in [docs/releases/](../releases/1.20.2.md).
+This guide describes what is on `main`: harness 1.25.2, contract 1.25.2 (`pnpm harness version` prints both). What changed in each release is in [docs/releases/](../releases/1.20.2.md).
 
 ## Quickstart: ten minutes to a first local run
 

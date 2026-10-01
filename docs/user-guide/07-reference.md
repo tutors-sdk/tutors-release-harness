@@ -197,7 +197,7 @@ Every flag, alphabetically. Types: strings unless noted. "Stable" is from `cli.j
 | `--item` | no | 1.12.0 | `glance mark`: the glance item's number |
 | `--journey` (repeatable) | yes | | Run only this journey |
 | `--json` (boolean) | yes | | `version`, `doctor`, `noise status`, `noise history`, `override list`, `prune`, `vuln-db status`, and the release commands (`confidence`, `changes`, `scoreboard`, `glance`, `why`): print data |
-| `--keep` (boolean) | no | | Leave the stack running afterwards (`pnpm stack:down` stops it) |
+| `--keep` (boolean) | no | | Leave the stack running afterwards (`pnpm stack:down --a <ref> --b <ref>`, with the same refs, stops it) |
 | `--last` | no | 1.3.0 | `noise history`: how many nights to show |
 | `--load` | yes | | k6 after the journeys on each side: `<rate>x<duration>`, e.g. `20x30s` (the duration is `<n>s`, `<n>m` or `<n>h`) |
 | `--mark` | no | 1.12.0 | `glance mark`: `verified`, `disputed` or `escalated` |
@@ -433,9 +433,9 @@ Three numbers, stamped where a reader can see them:
 
 ```console
 $ pnpm harness version
-harness 1.13.0 (<git sha>) · contract 1.13.0
+harness X.Y.Z (<git sha>) · contract X.Y.Z
 $ pnpm harness version --json
-{"version":"1.13.0","gitSha":"<git sha>","contractVersion":"1.13.0"}
+{"version":"X.Y.Z","gitSha":"<git sha>","contractVersion":"X.Y.Z"}
 ```
 
 `gitSha` is `git rev-parse HEAD` of the checkout, or `HARNESS_GIT_SHA` when set, or `null`.
