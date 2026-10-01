@@ -144,7 +144,7 @@ describe("main-preview.yml", () => {
 });
 
 describe("main-preview.yml: the forecast is scored as a candidate is (since 1.13.1), and nothing of the score reaches a verdict", () => {
-  type Step = { name?: string; run?: string; uses?: string; if?: string; with?: Record<string, unknown>; "continue-on-error"?: boolean; "working-directory"?: string };
+  type Step = { name?: string; run?: string; uses?: string; if?: string; with?: Record<string, unknown>; "continue-on-error"?: boolean; "working-directory"?: string; env?: Record<string, string> };
   type Job = { needs?: string | string[]; if?: string; permissions?: Record<string, string>; steps: Step[] };
   const wf = parse(readFileSync(resolve(ROOT, ".github/workflows/main-preview.yml"), "utf8")) as { jobs: Record<string, Job> };
   const release = parse(readFileSync(resolve(ROOT, ".github/workflows/release.yml"), "utf8")) as { jobs: Record<string, Job> };
@@ -184,7 +184,18 @@ describe("main-preview.yml: the forecast is scored as a candidate is (since 1.13
     const changes = run("publish", "What changed between production and main");
     expect(changes["continue-on-error"]).toBe(true);
     expect(changes.if).toBe("needs.resolve.outputs.sha != ''");
-    expect(changes.run).toContain('pnpm harness changes --a "$PRODUCTION" --b "$SHA" --monorepo ../mono --out "$(dirname "$report")/changes.json"');
+    expect(changes.run).toContain('pnpm harness changes --a "$PRODUCTION" --b "$SHA" --monorepo ../mono ${changelog:+--changelog "$changelog"} --out "$(dirname "$report")/changes.json"');
+    // since 1.20.4: the monorepo's changelog of the range, built from the full-history checkout in a step of its own that
+    // holds no token, and given to changes only when it is version 1
+    const changelog = run("publish", "The monorepo's changelog of that range");
+    expect(changelog["continue-on-error"]).toBe(true);
+    expect(changelog["working-directory"]).toBe("mono");
+    expect(changelog.if).toBe("needs.resolve.outputs.sha != ''");
+    expect(Object.keys(changelog.env ?? {}).sort()).toEqual(["PRODUCTION", "SHA"]);
+    expect(changelog.run).toContain('pnpm --silent release:changelog --from "v$PRODUCTION" --to "$SHA" --json ../changelog.json');
+    expect(p.steps.indexOf(mono)).toBeLessThan(at("The monorepo's changelog of that range"));
+    expect(at("The monorepo's changelog of that range")).toBeLessThan(at("What changed between production and main"));
+    expect(changes.run).toContain("jq -e '.version == 1 and (.entries | type == \"array\")' ../changelog.json");
 
     const score = run("publish", "Score the forecast");
     expect(score["continue-on-error"]).toBe(true);

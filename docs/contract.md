@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.20.3`
+Contract version: `1.20.4`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -1481,6 +1481,10 @@ and it cannot be mistaken for a judged candidate, because it never writes the
   --a <production> --b <commit>` over the monorepo's history (`changes.json`), then
   `harness confidence` over the release run, both rehearsals and `changes.json`, with the
   `scoreboard` branch's `releases.jsonl` for the glance's novelty (`confidence.json`).
+  Since 1.20.4 `harness changes` is given `--changelog`: the monorepo's `pnpm release:changelog
+  --from v<production> --to <commit> --json`, built in the same full-history checkout, so orphan
+  diffs are measured on a forecast, whose CHANGELOG.md has no section for a commit. When it cannot
+  be built, or is not version 1, changes runs without it and orphan diffs stay not measured.
   Since 1.18.0 the score's Test signal reads the monorepo's quality record for the judged
   commit, or the newest first-parent commit before it that has one (the last 60; the
   monorepo's Nightly starts at 03:00 UTC, so a forecast can finish first), saved beside the
@@ -1567,6 +1571,20 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.20.4 (patch; orphan diffs measured on a forecast)
+
+The release note is [releases/1.20.4.md](releases/1.20.4.md). The fifth step of the "Explain"
+release. A patch: no command, flag, `report.json`, `changes.json` or index field, verdict, Gate
+or exit code changes; `main-preview.yml`'s publish job gives `harness changes` a flag it has
+taken since 1.10.0.
+
+- Main to RC's "What changed between production and main" step builds the monorepo's
+  `pnpm release:changelog --from v<production> --to <commit> --json` in its full-history
+  checkout, in a step of its own that holds no token, and passes it as `--changelog`, so orphan diffs (a diff with no changelog entry) are
+  measured on a forecast instead of "not measured". Orphan entries stay not measured: the
+  tooling's changelog is derived from the diff. Best effort: when it cannot be built, or is not
+  version 1, changes runs as before. See [Main to RC](#main-to-rc).
 
 ### 1.20.3 (patch; the smallest detectable slowdown)
 
