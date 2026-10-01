@@ -307,6 +307,13 @@ export interface Hunk {
    * info: reported, never gates (an improvement, or a statistic without enough runs).
    */
   severity: "fail" | "info";
+  /**
+   * Since 1.21.0. Present only on a hunk its engine would have failed, had the engine been blocking: the engine is
+   * informing on this run (src/compare/levels.ts), so `severity` is "info" and the hunk is reported, never gated.
+   */
+  level?: "informing";
+  /** Since 1.21.0, with `level`: the UTC date (YYYY-MM-DD) from which its engine is blocking, when one is set. */
+  blockingFrom?: string;
 }
 
 export interface Claim {
@@ -397,6 +404,11 @@ export interface RunReport {
    * `compare.unclaimed` after the verdict when the report is written. Informational: never read by a verdict or the Gate.
    */
   causes?: Causes;
+  /**
+   * Since contract 1.21.0. Every engine's level on this run, by engine (its artefact): blocking, or informing
+   * (reported, never gates) with the date it becomes blocking when one is set. src/compare/levels.ts.
+   */
+  levels?: Record<string, { level: "blocking" | "informing"; blockingFrom?: string }>;
 }
 
 /** Whether production's reader serves the build of the recorded candidate. */

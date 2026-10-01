@@ -6,12 +6,13 @@ import { deploymentHtml, loudDeployment, productionBuildHtml } from "./deploymen
 import { imageArtefactsHtml } from "./image-static.ts";
 import { causesHtml } from "./causes.ts";
 import { NARROW_CSS } from "./narrow.ts";
+import { informingHtml } from "./informing.ts";
 
 const esc = (s: string) => s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
 
 function hunkRow(h: Hunk, claimedBy?: string): string {
   const detail = h.detail ? `<details><summary>detail</summary><pre>${esc(h.detail)}</pre></details>` : "";
-  return `<tr id="hunk-${esc(h.id)}" class="${h.severity}"><td><code>${h.artefact}</code></td><td><code>${esc(h.scope)}</code>${h.path ? `<br><small>${esc(h.path)}</small>` : ""}</td><td>${esc(h.summary)}${detail}</td><td>${claimedBy ? esc(claimedBy) : h.severity === "info" ? "<em>informational</em>" : "<strong>unclaimed</strong>"}</td></tr>`;
+  return `<tr id="hunk-${esc(h.id)}" class="${h.severity}"><td><code>${h.artefact}</code></td><td><code>${esc(h.scope)}</code>${h.path ? `<br><small>${esc(h.path)}</small>` : ""}</td><td>${esc(h.summary)}${detail}</td><td>${claimedBy ? esc(claimedBy) : h.level === "informing" ? `<em>informing</em> <a href="#informing">(reported, never gates)</a>` : h.severity === "info" ? "<em>informational</em>" : "<strong>unclaimed</strong>"}</td></tr>`;
 }
 
 const short = (v: string | undefined) => (v ? v.replace(/^sha256:/, "").slice(0, 12) : "");
@@ -70,8 +71,15 @@ export function renderHtml(report: RunReport): string {
     .causes tr { border-bottom:1px solid var(--rule); padding:6px 0; }
     .causes td { border:0; padding:2px 0; }
     .causes td[data-label]::before { content:attr(data-label) ": "; font-size:12px; opacity:.7; }
+    table.informing thead { display:none; }
+    table.informing, table.informing tbody, table.informing tr, table.informing td { display:block; overflow:visible; }
+    table.informing tr { border-bottom:1px solid var(--rule); padding:6px 0; }
+    table.informing td { border:0; padding:2px 0; overflow-wrap:anywhere; }
+    table.informing td[data-label]::before { content:attr(data-label) ": "; font-size:12px; opacity:.7; }
   }
   ${NARROW_CSS}
+  .level { white-space:nowrap; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; padding:1px 8px; border-radius:4px; border:1px solid currentColor; opacity:.8; vertical-align:middle; }
+  table.informing td:first-child code { font-style:italic; }
   footer { font-size:12px; opacity:.7; border-top:1px solid var(--rule); padding-top:12px; }
 </style>
 </head>
@@ -114,6 +122,8 @@ ${
 
 <h2 id="differences">Differences (${compare.hunks.length}; ${compare.unclaimed.length} unclaimed)</h2>
 ${compare.hunks.length ? `<table><thead><tr><th>artefact</th><th>scope</th><th>what changed</th><th>claimed by</th></tr></thead><tbody>${rows}</tbody></table>` : "<p>None. The two sides are observably identical after normalisation.</p>"}
+
+${informingHtml(report, esc)}
 
 ${compare.staleClaims.length ? `<h2 id="stale-claims">Stale claims (${compare.staleClaims.length})</h2><ul>${compare.staleClaims.map((c) => `<li><code>${c.artefact}</code> <code>${esc(c.scope)}</code> — ${esc(claimLabel(c))}</li>`).join("")}</ul>` : ""}
 ${compare.broadUnapproved.length ? `<h2 id="broad-claims">Broad claims without approval (${compare.broadUnapproved.length})</h2><ul>${compare.broadUnapproved.map((c) => `<li><code>${c.artefact}</code> <code>${esc(c.scope)}</code> — ${esc(claimLabel(c))}</li>`).join("")}</ul>` : ""}

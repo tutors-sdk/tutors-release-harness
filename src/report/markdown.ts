@@ -4,6 +4,7 @@ import { claimLabel } from "../claims/rules.ts";
 import { loudProvenance } from "./provenance.ts";
 import { imageArtefactsMarkdown } from "./image-static.ts";
 import { causesMarkdown } from "./causes.ts";
+import { informingMarkdown } from "./informing.ts";
 import { deploymentMarkdown, loudDeployment, productionBuildMarkdown } from "./deployment.ts";
 
 const ICON = { pass: "✅", warn: "⚠️", fail: "❌" } as const;
@@ -58,6 +59,8 @@ export function renderMarkdown(report: RunReport): string {
     lines.push("Claim each one in the release's `claims.yaml` with the Rule or changelog entry that intends it, or fix it.");
     lines.push("");
   }
+
+  lines.push(...informingMarkdown(report)); // 1.21.0
 
   if (report.override) {
     const o = report.override;
