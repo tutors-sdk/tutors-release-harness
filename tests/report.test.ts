@@ -7,6 +7,7 @@ import { compareFromCaptures } from "../src/run.ts";
 import { DEFAULT_MASKS_FILE } from "../src/normalise/masks.ts";
 import { capture } from "./support/captures.ts";
 import { renderHtml, renderMarkdown, writeReports } from "../src/report/index.ts";
+import { LEAD_CSS, NARROW_CSS } from "../src/report/lead.ts";
 import type { Hunk, ImageInfo, RunReport, SideProvenance } from "../src/types.ts";
 
 const hunks: Hunk[] = [
@@ -55,6 +56,11 @@ describe("html", () => {
     expect(html).toContain("&lt;planted&gt;");
     expect(html).not.toContain("<planted>");
     expect(html).toContain("Silent this run: <code>etag</code>");
+  });
+  it("never scrolls a phone sideways: under 640px its tables scroll in their own box, in the report and in the lead a kept report is given", () => {
+    expect(NARROW_CSS).toMatch(/@media \(max-width:640px\)\{table\{display:block;overflow-x:auto;max-width:100%\}/);
+    expect(html).toContain(NARROW_CSS);
+    expect(LEAD_CSS).toContain(NARROW_CSS);
   });
 });
 

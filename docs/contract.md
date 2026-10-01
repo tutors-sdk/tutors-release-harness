@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.20.4`
+Contract version: `1.20.5`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -1571,6 +1571,19 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.20.5 (patch; a report fits a phone)
+
+The release note is [releases/1.20.5.md](releases/1.20.5.md). A patch: no command, flag,
+`report.json` or index field, verdict, Gate or exit code changes; the styling of `report.html`
+and of the lead a kept report is given does.
+
+- Under 640px wide a table in `report.html` (provenance, differences, image artefacts) or in the
+  lead (the score's dimensions, the glance, the change risk per PR) scrolls inside its own box, and
+  a long name in a sentence breaks where it must, so the page itself never scrolls sideways. At
+  375px the 30 Sep forecast was 1,131px wide; it is now 375px. `NARROW_CSS` in
+  `src/report/narrow.ts`, in both the report's own style and `LEAD_CSS`, so a kept report rendered
+  by an older harness gets it when it is kept.
 
 ### 1.20.4 (patch; orphan diffs measured on a forecast)
 
