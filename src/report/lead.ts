@@ -24,6 +24,9 @@ import type { DeltaLead } from "./delta.ts";
 import type { Attribution, AttributedPr } from "../changes/attribute.ts";
 import { DRAFT_RULE, draftsYaml, type ClaimDraft } from "../claims/draft.ts";
 import { renderScoreHtml, renderScoreMarkdown } from "../score/render.ts";
+import { NARROW_CSS } from "./narrow.ts";
+
+export { NARROW_CSS };
 
 /** The styles the lead's blocks use (the Gate, the RCS band, the glance, the marks), for any page that shows it. */
 export const LEAD_CSS = `.gate{font-size:1.6rem;font-weight:700;padding:.6rem 1rem;border-radius:6px;color:#1b1b1b}
@@ -35,7 +38,8 @@ export const LEAD_CSS = `.gate{font-size:1.6rem;font-weight:700;padding:.6rem 1r
 .delta{border-left:4px solid #8a5a00;padding:0 1rem;margin:1rem 0}.delta table{font-size:.9rem}
 .owed{border-left:4px solid #1f5fa8;padding:0 1rem;margin:1rem 0}.owed pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:.8rem;background:#8881;padding:.5rem;border-radius:4px}
 .attribution{border-left:4px solid #5a4a8a;padding:0 1rem;margin:1rem 0}.attribution table{font-size:.9rem}.attribution td{overflow-wrap:anywhere}
-.mark{font-size:.8rem;padding:0 .4rem;border-radius:4px;background:#f1f1f1;color:#1b1b1b}.mark.verified{background:#e3f4e6}.mark.disputed{background:#fbe3e3}.mark.escalated{background:#fff4e0}`;
+.mark{font-size:.8rem;padding:0 .4rem;border-radius:4px;background:#f1f1f1;color:#1b1b1b}.mark.verified{background:#e3f4e6}.mark.disputed{background:#fbe3e3}.mark.escalated{background:#fff4e0}
+${NARROW_CSS}`;
 
 const esc = (s: string) => s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
 

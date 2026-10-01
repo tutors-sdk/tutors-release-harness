@@ -5,6 +5,7 @@ import { loudProvenance } from "./provenance.ts";
 import { deploymentHtml, loudDeployment, productionBuildHtml } from "./deployment.ts";
 import { imageArtefactsHtml } from "./image-static.ts";
 import { causesHtml } from "./causes.ts";
+import { NARROW_CSS } from "./narrow.ts";
 
 const esc = (s: string) => s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
 
@@ -70,6 +71,7 @@ export function renderHtml(report: RunReport): string {
     .causes td { border:0; padding:2px 0; }
     .causes td[data-label]::before { content:attr(data-label) ": "; font-size:12px; opacity:.7; }
   }
+  ${NARROW_CSS}
   footer { font-size:12px; opacity:.7; border-top:1px solid var(--rule); padding-top:12px; }
 </style>
 </head>
