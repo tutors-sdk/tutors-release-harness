@@ -14,7 +14,7 @@ import { renderA3 } from "./render.ts";
 
 export class A3InputError extends Error {}
 
-export async function runA3(o: { site: string; kaizen: string; noiseHistory?: string; scoreboard?: string; github?: string; fetchGithub?: boolean; now: Date; harness: string; env?: NodeJS.ProcessEnv; fetch?: FetchLike }): Promise<{ a3: A3; files: string[] }> {
+export async function runA3(o: { site: string; kaizen: string; noiseHistory?: string; scoreboard?: string; mutants?: string; github?: string; fetchGithub?: boolean; now: Date; harness: string; env?: NodeJS.ProcessEnv; fetch?: FetchLike }): Promise<{ a3: A3; files: string[] }> {
   if (!existsSync(o.site)) throw new A3InputError(`a3: no site directory at ${o.site}: build the site first (pages.yml copies each stream's reports into it)`);
   let github: GithubSnapshot | undefined;
   if (o.github) {
@@ -25,7 +25,7 @@ export async function runA3(o: { site: string; kaizen: string; noiseHistory?: st
     }
   }
   // Read once without GitHub to learn which commits the value stream spans, then ask GitHub about exactly those.
-  const first = readInputs({ site: o.site, kaizen: o.kaizen, ...(o.noiseHistory ? { noiseHistory: o.noiseHistory } : {}), ...(o.scoreboard ? { scoreboard: o.scoreboard } : {}), now: o.now, harness: o.harness });
+  const first = readInputs({ site: o.site, kaizen: o.kaizen, ...(o.noiseHistory ? { noiseHistory: o.noiseHistory } : {}), ...(o.scoreboard ? { scoreboard: o.scoreboard } : {}), ...(o.mutants ? { mutants: o.mutants } : {}), now: o.now, harness: o.harness });
   if (!github && o.fetchGithub) {
     const subject = subjectRun(first.runs);
     const prov = subject?.report?.provenance;

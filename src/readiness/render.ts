@@ -6,7 +6,7 @@
  * Self-contained like a3.html: inline CSS, no script, no external request. Light and dark follow the reader's setting,
  * and below 640px each row becomes a card, so the page never scrolls sideways on a phone.
  */
-import { safeHref } from "../a3/render.ts";
+import { QUALITY_CSS, qualityMarksHtml, qualityStripHtml, safeHref } from "../a3/render.ts";
 import { NIGHTS, deltaWords, type Forecast, type Night, type Readiness } from "./model.ts";
 
 const esc = (s: string) => s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
@@ -37,7 +37,7 @@ function evidence(f: Forecast): string {
 
 const commitHtml = (f: Forecast) => `<code>${esc(f.candidate || "?")}</code>${f.commitUrl ? ` <a class="sha" href="${esc(f.commitUrl)}" title="${esc(f.commit!)}">commit</a>` : ""}`;
 
-function forecastRow(night: Night, f: Forecast, first: boolean): string {
+function forecastRow(night: Night, f: Forecast, first: boolean, lastId?: string): string {
   const nightCell = first ? `<strong>${esc(nightLabel(night.night))}</strong> <span class="t">${esc(time(f.ranAt))}</span>` : `<span class="t">earlier, ${esc(time(f.ranAt))}</span>`;
   return `<tr class="judged${first ? "" : " earlier"}">
 <td data-k="Night"><span class="v">${nightCell}</span></td>
@@ -45,6 +45,7 @@ function forecastRow(night: Night, f: Forecast, first: boolean): string {
 <td data-k="Gate"><span class="v">${gateBadge(f.gate)}</span></td>
 <td data-k="Unclaimed" class="num"><span class="v">${f.unclaimed === null ? `<span class="muted">?</span>` : f.unclaimed}</span></td>
 <td data-k="New / gone" class="num"><span class="v">${deltaHtml(f)}</span></td>
+<td data-k="Quality"><span class="v">${qualityMarksHtml(f.quality, first && f.id === lastId ? "#quality" : f.links.report)}</span></td>
 <td data-k="Evidence"><span class="v">${evidence(f)}</span></td>
 </tr>`;
 }
@@ -58,19 +59,21 @@ function quietRow(n: Night): string {
 <td data-k="Gate"><span class="v">${gateBadge(n.since.gate, true)}</span></td>
 <td data-k="Unclaimed" class="num muted"><span class="v">as then</span></td>
 <td data-k="New / gone" class="num muted"><span class="v">+0 / −0</span></td>
+<td data-k="Quality" class="muted"><span class="v">as then</span></td>
 <td data-k="Evidence"><span class="v">${runs ? `skipped: ${runs}` : ""}</span></td>
 </tr>`;
   return `<tr class="quiet ${n.state.replaceAll(" ", "-")}">
 <td data-k="Night"><span class="v"><strong>${esc(nightLabel(n.night))}</strong></span></td>
-<td data-k="State" colspan="5"><span class="v"><span class="state">${esc(n.state)}</span> ${esc(n.note)}${runs ? ` ${runs}` : ""}</span></td>
+<td data-k="State" colspan="6"><span class="v"><span class="state">${esc(n.state)}</span> ${esc(n.note)}${runs ? ` ${runs}` : ""}</span></td>
 </tr>`;
 }
 
 function rowsHtml(r: Readiness): string {
+  const lastId = r.nights.find((x) => x.forecasts.length)?.forecasts[0]?.id;
   return r.nights
     .map((n) => {
-      const body = n.forecasts.length ? n.forecasts.map((f, i) => forecastRow(n, f, i === 0)).join("\n") : quietRow(n);
-      const rule = n.baselineMoved ? `\n<tr class="rule"><td colspan="6">Production moved here: ${esc(n.baselineMoved.from)} below, ${esc(n.baselineMoved.to)} above. The delta starts again: two baselines are never compared.</td></tr>` : "";
+      const body = n.forecasts.length ? n.forecasts.map((f, i) => forecastRow(n, f, i === 0, lastId)).join("\n") : quietRow(n);
+      const rule = n.baselineMoved ? `\n<tr class="rule"><td colspan="7">Production moved here: ${esc(n.baselineMoved.from)} below, ${esc(n.baselineMoved.to)} above. The delta starts again: two baselines are never compared.</td></tr>` : "";
       return body + rule;
     })
     .join("\n");
@@ -98,17 +101,18 @@ ${by.length ? `<p class="by">By artefact: ${by.map(([a, v]) => `<code>${esc(a)}<
 <div><dt>Evidence</dt><dd>${evidence(f)}</dd></div>
 <div><dt>Judged by</dt><dd>harness <code>${esc(f.harnessVersion)}</code></dd></div>
 </dl>
+<div class="quality" id="quality">${qualityStripHtml(f.quality)}</div>
 ${digests.length ? `<details><summary>The ${digests.length} image digests</summary><ul class="digests">${digests.map(([app, d]) => `<li><code>${esc(app)}</code> <code class="dg">${esc(d)}</code></li>`).join("")}</ul></details>` : ""}
 </section>`;
 }
 
 const CSS = `
 :root{color-scheme:light;--bg:#f4f3ef;--sheet:#fcfcfb;--ink:#0b0b0b;--ink2:#52514e;--muted:#6f6d68;--rule:#dddbd4;--grey:#8a8883;
---pass:#2f7a4f;--warn:#8a6119;--fail:#a12a2a;--accent:#2a78d6;--new:#a12a2a;--gone:#2f7a4f}
+--pass:#2f7a4f;--warn:#8a6119;--fail:#a12a2a;--accent:#2a78d6;--new:#a12a2a;--gone:#2f7a4f;--hatch:#c9c7c0}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#121211;--sheet:#1a1a19;--ink:#ffffff;--ink2:#c3c2b7;--muted:#a19f96;--rule:#383835;--grey:#77756f;
---pass:#3f9a66;--warn:#c28a2a;--fail:#d05050;--accent:#3987e5;--new:#e07070;--gone:#5fb886}}
+--pass:#3f9a66;--warn:#c28a2a;--fail:#d05050;--accent:#3987e5;--new:#e07070;--gone:#5fb886;--hatch:#4a4945}}
 :root[data-theme="dark"]{color-scheme:dark;--bg:#121211;--sheet:#1a1a19;--ink:#ffffff;--ink2:#c3c2b7;--muted:#a19f96;--rule:#383835;--grey:#77756f;
---pass:#3f9a66;--warn:#c28a2a;--fail:#d05050;--accent:#3987e5;--new:#e07070;--gone:#5fb886}
+--pass:#3f9a66;--warn:#c28a2a;--fail:#d05050;--accent:#3987e5;--new:#e07070;--gone:#5fb886;--hatch:#4a4945}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
 a{color:var(--accent)} a:focus-visible,summary:focus-visible{outline:2px solid currentColor;outline-offset:2px}
@@ -145,6 +149,9 @@ table.strip{border-collapse:collapse;width:100%;margin:8px 0 0;font-size:14px;ba
 .strip tr.quiet td{color:var(--muted)} .strip tr.quiet code{color:var(--muted)}
 .strip .state{display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;border:1px solid var(--grey);border-radius:4px;padding:0 6px;margin-right:4px}
 .strip tr.rule td{border-top:3px double var(--ink);font-size:12.5px;color:var(--ink2);font-style:italic}
+.quality{margin:10px 0 0} .quality .quality-strip{background:transparent}
+.quality-strip details summary{margin-top:2px}
+${QUALITY_CSS}
 footer{font-size:12px;color:var(--ink2);border-top:1px solid var(--rule);margin-top:20px;padding-top:10px}
 .empty{color:var(--ink2)}
 @media (max-width:640px){
@@ -174,10 +181,10 @@ export function renderReadiness(r: Readiness): string {
 <main class="page">
 <header class="title"><h1>Overnight readiness <span>· main against production, the last ${NIGHTS} nights</span></h1>
 <p class="meta">Built ${esc(when(r.builtAt))} by harness <code>${esc(r.harness)}</code> · <a href="./">all reports</a> · <a href="a3.html">A3</a> · <a href="readiness.json">readiness.json</a></p></header>
-<p class="note">One row per night (UTC), newest on top, from the Main to RC forecasts kept on the <code>main-preview</code> branch. To pick a night, read two rows: what the later one added, and whether its Gate moved. A night that kept nothing says why in words. The band is left off the rows while the review floor caps the score; the Gate is what decides. A forecast, never a gate.</p>
+<p class="note">One row per night (UTC), newest on top, from the Main to RC forecasts kept on the <code>main-preview</code> branch. To pick a night, read two rows: what the later one added, and whether its Gate moved. The quality marks (Speed, Metrics, Tests) are a reading aid and never change the Gate. A night that kept nothing says why in words. The band is left off the rows while the review floor caps the score; the Gate is what decides. A forecast, never a gate.</p>
 ${lastNight(r)}
 <h2 class="strip-title">Night by night</h2>
-<table class="strip"><thead><tr><th>Night</th><th>Main</th><th>Gate</th><th>Unclaimed</th><th>New / gone</th><th>Evidence</th></tr></thead>
+<table class="strip"><thead><tr><th>Night</th><th>Main</th><th>Gate</th><th>Unclaimed</th><th>New / gone</th><th>Quality</th><th>Evidence</th></tr></thead>
 <tbody>
 ${rowsHtml(r)}
 </tbody></table>

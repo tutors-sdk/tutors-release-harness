@@ -412,8 +412,34 @@ jobs:
           report="$(find ../reports -path '*-release/report.json' 2>/dev/null | head -1)"
           if [ -z "$report" ]; then echo "no release report: nothing to put changes beside"; exit 0; fi
           pnpm harness changes --a "$PRODUCTION" --b "$SHA" --monorepo ../mono --out "$(dirname "$report")/changes.json"
+      # Since 1.18.0: the monorepo's quality record (its Nightly's mutation scores and job results, pushed to its `quality`
+      # branch as quality/<sha>.json; public, read-only) for the commit judged, or the newest commit before it that has one:
+      # the Nightly starts at 03:00 UTC and this run can finish first. Kept beside the run as quality.json, where the quality
+      # strip says which commit it is for and how old, and passed to the score as --test-signal. No record (no branch yet,
+      # or none in the last 60 commits) leaves Test signal and the strip's monorepo half "not measured", never an error.
+      - name: The monorepo's quality record
+        if: needs.resolve.outputs.sha != ''
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ needs.resolve.outputs.sha }}
+        run: |
+          report="$(find reports -path '*-release/report.json' 2>/dev/null | head -1)"
+          if [ -z "$report" ]; then echo "no release report: nothing to put the quality record beside"; exit 0; fi
+          kept="$(gh api "repos/tutors-sdk/tutors-mono-repo/contents/quality?ref=quality" --jq '.[].name' 2>/dev/null || true)"
+          if [ -z "$kept" ]; then echo "the monorepo has no quality branch yet: Test signal stays not measured"; exit 0; fi
+          for commit in $(git -C mono rev-list --first-parent --max-count=60 "$SHA" 2>/dev/null || echo "$SHA"); do
+            if grep -qx "${commit}.json" <<< "$kept"; then
+              curl -fsSL --retry 2 "https://raw.githubusercontent.com/tutors-sdk/tutors-mono-repo/quality/quality/${commit}.json" -o "$(dirname "$report")/quality.json"
+              echo "quality record for ${commit}$([ "$commit" = "$SHA" ] && echo ", the commit judged" || echo ", the newest before ${SHA}")"
+              exit 0
+            fi
+          done
+          echo "no quality record for ${SHA} or the 60 commits before it: Test signal stays not measured"
       # The score, its band and the reviewer's glance, beside the release run (confidence.json), from the release run, the
       # rehearsals and changes.json. The glance's novelty reads the release scoreboard (the `scoreboard` branch, read only).
+      # Since 1.18.0 Test signal reads the quality record (--test-signal), joined by the harness's own newest weekly mutants
+      # self-test (--mutants, mutants.jsonl on the same branch); without the record it is not measured.
       - name: Score the forecast
         continue-on-error: true
         env:
@@ -430,6 +456,9 @@ jobs:
           if [ -f "$run_dir/changes.json" ]; then score+=(--change-risk "$run_dir/changes.json"); fi
           gh api -H "Accept: application/vnd.github.raw" "repos/${GITHUB_REPOSITORY}/contents/scoreboard/releases.jsonl?ref=scoreboard" > scoreboard.jsonl 2>/dev/null || rm -f scoreboard.jsonl
           if [ -s scoreboard.jsonl ]; then score+=(--scoreboard "$PWD/scoreboard.jsonl"); fi
+          if [ -f "$run_dir/quality.json" ]; then score+=(--test-signal "$run_dir/quality.json"); fi
+          gh api -H "Accept: application/vnd.github.raw" "repos/${GITHUB_REPOSITORY}/contents/scoreboard/mutants.jsonl?ref=scoreboard" > mutants.jsonl 2>/dev/null || rm -f mutants.jsonl
+          if [ -s mutants.jsonl ]; then score+=(--mutants "$PWD/mutants.jsonl"); fi
           (cd harness && pnpm harness confidence "${score[@]}")
           jq -r '"### Main to RC, scored", "", "**Gate: \(.gate)** · " + (if .rcs == null then (.note // "no RCS") else "RCS \(.rcs) \(.band): \(.meaning)" end) + " · the glance: \(.glance | length) place(s) to look"' "$run_dir/confidence.json" >> "$GITHUB_STEP_SUMMARY"
       - name: Push the report to the main-preview branch
@@ -474,7 +503,8 @@ jobs:
             `confidence.json` and `changes.json`, with report.md and report.html led by the Gate, the RCS and its
             band, the reviewer's glance and the change risk per PR, as `harness release` leads its report; since
             1.16.0 also `migration/` and `upgrade/`, the two rehearsals' reports, which `confidence.json` links. Since
-            1.16.1 the kept report leads with what is new since the last forecast.
+            1.16.1 the kept report leads with what is new since the last forecast. Since 1.18.0 also `quality.json`,
+            the monorepo's quality record the score's Test signal read (for the commit judged, or the newest before it).
 
           See `docs/contract.md`, "Main to RC", on the default branch.
           README

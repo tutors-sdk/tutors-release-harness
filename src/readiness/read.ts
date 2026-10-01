@@ -7,6 +7,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { GithubSnapshot, WorkflowRun } from "../a3/github.ts";
+import { QUALITY_FILE, parseQualityRecord } from "../a3/quality.ts";
 import type { ReportDelta } from "../report/delta.ts";
 import type { RunReport } from "../types.ts";
 import { MAIN_TO_RC, REHEARSALS, STREAM_DIR, type KeptForecast, type Rehearsal } from "./model.ts";
@@ -43,6 +44,8 @@ export function readForecasts(site: string): KeptForecast[] {
     const at = <T>(path: string) => (files.includes(`${r.id}/${path}`) ? json<T>(join(base, r.id!, path)) : undefined);
     const report = at<Partial<RunReport>>("report.json");
     const images = report?.provenance?.b?.images;
+    // Since 1.18.0: the monorepo's quality record kept beside it. Kept but not a record is null, never a guess.
+    const quality = files.includes(`${r.id}/${QUALITY_FILE}`) ? (parseQualityRecord(at<unknown>(QUALITY_FILE)) ?? null) : undefined;
     const rehearsals: Partial<Record<Rehearsal, string>> = {};
     for (const mode of REHEARSALS) {
       const v = at<Partial<RunReport>>(`${mode}/report.json`)?.verdict;
@@ -60,7 +63,9 @@ export function readForecasts(site: string): KeptForecast[] {
       files,
       ...(Array.isArray(report?.compare?.unclaimed) ? { unclaimed: report.compare.unclaimed.length } : {}),
       ...(images ? { images: Object.fromEntries(Object.entries(images).map(([app, i]) => [app, { ...(i?.revision ? { revision: i.revision } : {}), ...(i?.digest ? { digest: i.digest } : {}) }])) } : {}),
-      ...(Object.keys(rehearsals).length ? { rehearsals } : {})
+      ...(Object.keys(rehearsals).length ? { rehearsals } : {}),
+      ...(report?.compare ? { report: { ...(report.ranAt ? { ranAt: report.ranAt } : {}), compare: report.compare, ...(report.load ? { load: report.load } : {}), ...(report.noise ? { noise: report.noise } : {}), ...(report.provenance ? { provenance: report.provenance } : {}) } } : {}),
+      ...(quality !== undefined ? { quality } : {})
     });
   }
   return out;

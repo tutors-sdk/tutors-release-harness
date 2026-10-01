@@ -14,7 +14,8 @@
 #   <pages>/a3.html, a3.json, github.json     the A3 Aggregator: one Lean A3 from every kept report, the kaizen register
 #                                             and the value stream's workflow history (harness a3 --site; since 1.14.0)
 #   <pages>/readiness.html, readiness.json    the overnight readiness page: Main to RC night by night, the last ten nights
-#                                             (harness readiness --site, from the forecasts and github.json; since 1.17.0)
+#                                             (harness readiness --site, from the forecasts and github.json; since 1.17.0),
+#                                             each forecast with the quality marks (since 1.18.0)
 #
 # Rebuilt after every workflow that keeps a report, when the page changes on
 # main, and by hand. Repository setting: Pages, source "GitHub Actions".
@@ -78,13 +79,14 @@ jobs:
           # The A3 Aggregator reads what is now in _site, the kaizen register of this checkout and the workflows' history.
           # It is advisory and never fails the site: a failure leaves a3.html out and the index says so.
           if [ -f src-noise/noise-history.json ]; then mkdir -p _site/noise && cp src-noise/noise-history.json _site/noise/noise-history.json; fi
-          pnpm harness a3 --site _site --kaizen kaizen --noise-history _site/noise/noise-history.json --scoreboard src-scoreboard/scoreboard/releases.jsonl --fetch-github || echo "::warning title=A3 Aggregator::harness a3 did not write the A3"
+          pnpm harness a3 --site _site --kaizen kaizen --noise-history _site/noise/noise-history.json --scoreboard src-scoreboard/scoreboard/releases.jsonl --mutants src-scoreboard/scoreboard/mutants.jsonl --fetch-github || echo "::warning title=A3 Aggregator::harness a3 did not write the A3"
           jq -n --arg at "$(date -u +%FT%TZ)" '{builtAt: $at}' > _site/built.json
           touch _site/.nojekyll
       # Since 1.17.0: one row per night for the last ten, from the kept forecasts and the github.json the A3 just wrote
       # (without it, a night that kept nothing is "not known"). Advisory like the A3: a failure is a warning, never a broken site.
+      # Since 1.18.0 each row carries the quality marks; --mutants is the Tests mark's weekly self-test (not measured without it).
       - name: The overnight readiness page
-        run: pnpm harness readiness --site _site || echo "::warning title=Overnight readiness::harness readiness did not write the page"
+        run: pnpm harness readiness --site _site --mutants src-scoreboard/scoreboard/mutants.jsonl || echo "::warning title=Overnight readiness::harness readiness did not write the page"
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: _site

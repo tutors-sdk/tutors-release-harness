@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/tutors-sdk/tutors-release-harness/blob/main/docs/contract/readiness.schema.json",
-  "title": "readiness.json: the overnight readiness page (contract 1.17.0, not stable)",
-  "description": "Since 1.17.0. Written by `harness readiness --site <dir>` beside readiness.html on the reports site: one row per calendar night (UTC) for the last ten nights, newest first, from the Main to RC forecasts kept on the `main-preview` branch and Main to RC's workflow runs (github.json). Derived from Readiness in src/readiness/model.ts. The band is deliberately absent: while the review floor caps the score the row carries the Gate only. Advisory: never read by a verdict, the Gate or an exit code. Not stable: it may change in a minor release.",
+  "title": "readiness.json: the overnight readiness page (contract 1.18.0, not stable)",
+  "description": "Since 1.17.0 (each forecast's `quality` since 1.18.0). Written by `harness readiness --site <dir>` beside readiness.html on the reports site: one row per calendar night (UTC) for the last ten nights, newest first, from the Main to RC forecasts kept on the `main-preview` branch and Main to RC's workflow runs (github.json). Derived from Readiness in src/readiness/model.ts. The band is deliberately absent: while the review floor caps the score the row carries the Gate only. Advisory: never read by a verdict, the Gate or an exit code. Not stable: it may change in a minor release.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schemaVersion", "builtAt", "harness", "nights", "sources"],
@@ -75,7 +75,7 @@
     "forecast": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "ranAt", "harnessVersion", "baseline", "candidate", "commit", "commitUrl", "digests", "gate", "verdict", "unclaimed", "delta", "links"],
+      "required": ["id", "ranAt", "harnessVersion", "baseline", "candidate", "commit", "commitUrl", "digests", "gate", "verdict", "unclaimed", "delta", "links", "quality"],
       "properties": {
         "id": { "type": "string", "description": "The run's directory under main-preview/reports/." },
         "ranAt": { "type": "string", "format": "date-time" },
@@ -93,6 +93,7 @@
           "description": "The index entry's delta (reports-index.schema.json); null for a forecast kept before 1.16.1.",
           "oneOf": [{ "type": "null" }, { "$ref": "reports-index.schema.json#/definitions/run/properties/delta" }]
         },
+        "quality": { "allOf": [{ "$ref": "quality-strip.schema.json" }], "description": "Since 1.18.0: Speed, Metrics and Tests for this forecast, as the A3 draws them under its Gate." },
         "links": {
           "type": "object",
           "additionalProperties": false,

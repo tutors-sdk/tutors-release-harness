@@ -101,6 +101,10 @@ export interface TestSignal {
   packages?: { name: string; mutationScore: number; changed?: boolean; evidence?: string }[];
   harnessMutants?: { caught: number; total: number; evidence?: string };
   evidence?: string;
+  /** Since 1.18.0: the monorepo commit, when the file is its quality record (quality/<sha>.json). */
+  commit?: string;
+  /** Set by the harness, never read from the file: why the weekly mutants could not join (src/score/test-signal.ts). */
+  mutantsGap?: string;
 }
 
 /** `--traceability <json>`: the changelog against the EARS files and the claims. */
@@ -303,6 +307,8 @@ export function testSignal(t: Located<TestSignal> | undefined): DimensionScore {
   const d: Deduction[] = [];
   const gaps: string[] = [];
   const src = t.data.evidence ?? t.where;
+  // Since 1.18.0: a quality record with no mutation scores and no harness mutants measures nothing.
+  if (!t.data.packages && !t.data.harnessMutants) return notMeasured("test-signal", `${t.where} has no mutation scores${t.data.commit ? ` for ${t.data.commit.slice(0, 7)}` : ""} (the monorepo's Nightly wrote no Stryker report) and no harness mutants`);
   const changed = (t.data.packages ?? []).filter((p) => p.changed !== false);
   for (const p of changed) {
     if (p.mutationScore >= R.target) continue;
@@ -310,7 +316,7 @@ export function testSignal(t: Located<TestSignal> | undefined): DimensionScore {
   }
   if (!t.data.packages) gaps.push("mutation scores on the changed packages (none given)");
   const m = t.data.harnessMutants;
-  if (!m) gaps.push("the weekly harness mutants (none given)");
+  if (!m) gaps.push(`the weekly harness mutants (${t.data.mutantsGap ?? "none given"})`);
   else if (m.caught < m.total) d.push({ points: R.mutantMissed * (m.total - m.caught), why: `${m.total - m.caught} of ${m.total} harness mutants missed this week`, evidence: m.evidence ?? src, floor: true });
   return measured("test-signal", d, [src], gaps);
 }

@@ -6,18 +6,21 @@
  */
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { readWeeklyMutants } from "../a3/read.ts";
 import { buildReadiness, type Readiness } from "./model.ts";
 import { readForecasts, readWorkflowRuns } from "./read.ts";
 import { renderReadiness } from "./render.ts";
 
 export class ReadinessInputError extends Error {}
 
-export function runReadiness(o: { site: string; github?: string; now: Date; harness: string }): { readiness: Readiness; files: string[] } {
+export function runReadiness(o: { site: string; github?: string; mutants?: string; now: Date; harness: string }): { readiness: Readiness; files: string[] } {
   if (!existsSync(o.site)) throw new ReadinessInputError(`readiness: no site directory at ${o.site}: build the site first (pages.yml copies the main-preview reports into it)`);
   // An explicit --github must be readable; the default, the site's own github.json, may be missing (not read, and said).
   const gh = readWorkflowRuns(o.github ?? join(o.site, "github.json"));
   if (o.github && !gh.runs && !gh.github.includes("did not answer")) throw new ReadinessInputError(`readiness: --github ${o.github} is not a GitHub snapshot (${gh.github})`);
-  const readiness = buildReadiness({ now: o.now, harness: o.harness, forecasts: readForecasts(o.site), ...(gh.runs ? { workflowRuns: gh.runs } : {}), github: gh.github });
+  // Since 1.18.0: the weekly mutants self-tests for the Tests mark's harness half (--mutants; absent, not measured).
+  const mutants = readWeeklyMutants(o.mutants);
+  const readiness = buildReadiness({ now: o.now, harness: o.harness, forecasts: readForecasts(o.site), ...(gh.runs ? { workflowRuns: gh.runs } : {}), github: gh.github, ...(mutants ? { mutants } : {}) });
   mkdirSync(o.site, { recursive: true });
   const files = [join(o.site, "readiness.html"), join(o.site, "readiness.json")];
   writeFileSync(files[0]!, renderReadiness(readiness));

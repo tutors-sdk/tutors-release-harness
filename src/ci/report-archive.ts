@@ -22,6 +22,7 @@
  *   <store>/reports/<id>/changes.json     since 1.13.1, when harness changes wrote it beside the run
  *   <store>/reports/<id>/migration/report.{json,md,html}  since 1.16.0, the rehearsals given by --migration and --upgrade
  *   <store>/reports/<id>/upgrade/report.{json,md,html}
+ *   <store>/reports/<id>/quality.json     since 1.18.0, the monorepo's quality record beside a release run (main-preview.yml)
  *
  * A release run scored beside it (Main to RC does this) is kept with its score: confidence.json and changes.json byte
  * for byte, and report.md and report.html led by the Gate, the RCS and its band, the reviewer's glance and the change
@@ -57,6 +58,7 @@ import { CONFIDENCE_FILE } from "../score/read.ts";
 import { LEAD_CSS, deltaLeadHtml, deltaLeadMarkdown, gateLineHtml, scoreLeadHtml, scoreLeadMarkdown } from "../report/lead.ts";
 import { deltaCounts, unclaimedDelta, type DeltaLead, type ReportDelta } from "../report/delta.ts";
 import { renderGateSummary } from "../local/tasks.ts";
+import { QUALITY_FILE, parseQualityRecord } from "../a3/quality.ts";
 
 export const REPORTS_DIR = "reports";
 export const INDEX_FILE = "index.json";
@@ -208,6 +210,13 @@ export function keepReport(opts: KeepOptions): { entry: ReportEntry; dropped: st
       writeFileSync(join(target, name), relinked ? `${JSON.stringify(scored.confidence, null, 2)}\n` : readFileSync(join(runDir, name)));
       files.push(`${id}/${name}`);
     }
+  }
+
+  // Since 1.18.0: the monorepo's quality record the score read (main-preview.yml fetches it beside the run), byte for byte,
+  // so the quality strip on the A3 and the readiness page can read it. Kept only when it is one; anything else is left.
+  if (report.mode === "release" && parseQualityRecord(readJson<unknown>(join(runDir, QUALITY_FILE)))) {
+    writeFileSync(join(target, QUALITY_FILE), readFileSync(join(runDir, QUALITY_FILE)));
+    files.push(`${id}/${QUALITY_FILE}`);
   }
 
   const card = scorecard(report, readRulePrs(opts.rules));
