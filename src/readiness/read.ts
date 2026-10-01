@@ -11,8 +11,7 @@ import { QUALITY_FILE, parseQualityRecord } from "../a3/quality.ts";
 import type { ReportDelta } from "../report/delta.ts";
 import type { RunReport } from "../types.ts";
 import { parseReleaseHistory, type ReleaseHistory } from "./releases.ts";
-import { POLICY_FAMILY } from "../compare/policy.ts";
-import { policyFacts, type AaNight } from "./soak.ts";
+import { SOAK_CHECKS, policyFacts, type AaNight } from "./soak.ts";
 import { MAIN_TO_RC, REHEARSALS, STREAM_DIR, type KeptForecast, type Rehearsal } from "./model.ts";
 
 function json<T>(file: string): T | undefined {
@@ -85,7 +84,7 @@ export function readForecasts(site: string): KeptForecast[] {
       ...(unreleased ? { unreleased } : {}),
       // Since 1.25.0, for the soak: the in-run noise this forecast measured, and what each policy check found on b.
       ...(Array.isArray(report?.inRunNoise?.hunks) ? { a2Hunks: report.inRunNoise.hunks.length } : {}),
-      ...(Array.isArray(report?.compare?.matches) && report.compare.hunks?.some((h) => (POLICY_FAMILY as readonly string[]).includes(h.artefact)) ? { policy: policyFacts(report.compare.matches) } : {})
+      ...(Array.isArray(report?.compare?.matches) && report.compare.hunks?.some((h) => SOAK_CHECKS.includes(h.artefact)) ? { policy: policyFacts(report.compare.matches) } : {})
     });
   }
   return out;

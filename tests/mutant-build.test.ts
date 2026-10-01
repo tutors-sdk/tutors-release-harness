@@ -40,7 +40,7 @@ function docker(layersAfter: string[], opts: { failBuild?: boolean } = {}) {
 }
 
 describe("mutants.yaml", () => {
-  it("lists thirteen mutants: the eight edge faults, the two that change what the image is, then one per policy check", () => {
+  it("lists fourteen mutants: the eight edge faults, the two that change what the image is, one per policy check, then the timing tolerance's", () => {
     const mutants = loadMutants();
     expect(mutants.map((m) => `${m.name}:${m.kind}:${m.expect.join("+")}`)).toEqual([
       "dropped-header:edge:headers",
@@ -55,9 +55,10 @@ describe("mutants.yaml", () => {
       "added-package:planted-package:sbom",
       "secret-env:planted-secret:image-hardening",
       "vulnerable-package:planted-vuln:vuln-ceiling",
-      "unsigned-build:unsigned:build-provenance"
+      "unsigned-build:unsigned:build-provenance",
+      "slow-ssr-mild:edge:timing-tolerance"
     ]);
-    expect(mutants).toHaveLength(13);
+    expect(mutants).toHaveLength(14);
     for (const m of mutants) expect(MUTANT_KINDS).toContain(m.kind);
   });
 

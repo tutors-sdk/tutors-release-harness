@@ -30,7 +30,7 @@ claims:
 
 | Field | Rules |
 | --- | --- |
-| `artefact` | One of the twenty-two artefact names (`dom`, `screenshot`, `network`, `console`, `headers`, `axe`, `focus`, `metrics`, `logs`, `timing`, `persistence`, `bus`, `migration`, `upgrade`, `image-manifest`, `sbom`, `vulns`, `runtime`, `startup`, and since 1.22.0 the policy family `image-hardening`, `build-provenance`, `vuln-ceiling`), or `*`. |
+| `artefact` | One of the twenty-three artefact names (`dom`, `screenshot`, `network`, `console`, `headers`, `axe`, `focus`, `metrics`, `logs`, `timing`, `persistence`, `bus`, `migration`, `upgrade`, `image-manifest`, `sbom`, `vulns`, `runtime`, `startup`, since 1.22.0 the policy family `image-hardening`, `build-provenance`, `vuln-ceiling`, and since 1.26.0 `timing-tolerance`), or `*`. |
 | `scope` | A non-empty glob, matched with picomatch (dot files allowed, case-insensitive) against the hunk's scope or its path. Quote it: colons and spaces are YAML syntax. |
 | `reason` | At least 8 characters, and it must not start with `see pr`, `approved`, `all`, `ok` or `misc` (a whole word, any case). It names the Rule or the changelog entry that intends the change. **Required unless the claim has a `rule`.** |
 | `rule` | A Rule's four digits, **quoted** (`"0031"`; unquoted, YAML reads `0031` as the number 31 and the harness refuses it). It must be in the rules file given with `--rules` (in the dispatch, `rules_url`). With a `rule`, `reason` becomes optional free text, and the report shows `Rule 0031: <title>` (then your reason, if you gave one). |

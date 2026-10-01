@@ -6,6 +6,7 @@ import { imageStatic } from "./image-static.ts"; // R5
 import { policy } from "./policy.ts";
 import { resetHunkIds } from "./pages.ts";
 import { RUNTIME_ENGINES } from "./runtime.ts";
+import { timingTolerance } from "./tolerance.ts";
 
 /** Run every diff engine over two normalised captures. Deterministic: same inputs, same hunks in the same order. */
 export function compareCaptures(a: SideCapture, b: SideCapture, config: EngineConfig, captureDir?: string): Hunk[] {
@@ -19,6 +20,8 @@ export function compareCaptures(a: SideCapture, b: SideCapture, config: EngineCo
   for (const engine of Object.values(RUNTIME_ENGINES)) hunks.push(...engine(a, b, ctx));
   // Since 1.22.0: the policy family, on the candidate alone (informing: src/compare/levels.ts).
   hunks.push(...policy(a, b));
+  // Since 1.26.0: the timing tolerance, informing until 2.0.
+  hunks.push(...timingTolerance(a, b, ctx));
   return hunks;
 }
 

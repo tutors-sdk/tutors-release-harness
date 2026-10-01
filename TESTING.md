@@ -130,7 +130,7 @@ kept running. CI and a maintainer run the same command: `pnpm smoke`
 
 ### Mutants (`pnpm harness mutants`, ~15 minutes, weekly and on demand)
 
-The harness's own negative fixtures: thirteen planted regressions
+The harness's own negative fixtures: fourteen planted regressions
 (`mutants/mutants.yaml`), each of which must produce a FAIL verdict
 attributed to the expected artefact (since 1.25.0 the three policy-check mutants,
 `secret-env`, `vulnerable-package` and `unsigned-build`, are caught instead by a
@@ -251,7 +251,7 @@ for. Setup, scheduling and the parity matrix are in [docs/local.md](docs/local.m
 | --- | --- | --- |
 | A/A diff count on the production tag | stays 0 once it reaches 0 | nightly `publish` job fails on a regression; gate degrades |
 | Consecutive clean, verified nightly A/As | reaches 7 (R3 exit) | the nightly summary |
-| Mutants caught and attributed | 13 of 13 | weekly mutants; required on PRs that change an engine, mask, journey, gate or mutant |
+| Mutants caught and attributed | 14 of 14 | weekly mutants; required on PRs that change an engine, mask, journey, gate or mutant |
 | Harness version on such PRs | goes up | `src/ci/engine-change.ts` in the same workflow |
 | `report.json`, `noise-status.json`, CLI, dispatch payloads vs `docs/contract.md` | no drift | `tests/contract.test.ts` |
 | Masks in `normalise/masks.yaml` | grow only with review, in their own PR, and stay under ~40 | CODEOWNERS; CI "Masks land in their own PR (required)" |

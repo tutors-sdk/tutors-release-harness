@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.25.2`
+Contract version: `1.26.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -149,8 +149,9 @@ written). Source of truth: `RunReport` in `src/types.ts`.
 `artefact` is one of `dom`, `screenshot`, `network`, `console`, `headers`,
 `axe`, `focus`, `metrics`, `logs`, `timing`, `persistence`, `bus`, `migration`,
 `upgrade`, `image-manifest`, `sbom`, `vulns`, `runtime`, `startup`, `image-hardening`,
-`build-provenance`, `vuln-ceiling`. `bus` and `image-manifest` to `startup` are since 1.2.0; the last
-three, the policy family, since 1.22.0 (see [The policy family](#the-policy-family)) (see [Static image artefacts](#static-image-artefacts)
+`build-provenance`, `vuln-ceiling`, `timing-tolerance`. `bus` and `image-manifest` to `startup` are since 1.2.0;
+`image-hardening` to `vuln-ceiling`, the policy family, since 1.22.0 (see [The policy family](#the-policy-family));
+`timing-tolerance` since 1.26.0 (see [The timing tolerance](#the-timing-tolerance)) (see [Static image artefacts](#static-image-artefacts)
 and [Container runtime artefacts](#container-runtime-artefacts)); a consumer
 must tolerate an artefact name it does not know. `severity` is `fail` (gates unless claimed) or `info` (reported,
 never gates). `scope` and `path` are what a claim's glob is matched against.
@@ -354,7 +355,8 @@ shows the unclaimed informing results of each kept forecast beside its Gate, lab
 Every diff engine is **blocking**, so a run decides exactly what it decided before 1.21.0. A
 new engine or check ships informing, with the date it starts to block when there is one, and is
 watched on the readiness page before it may stop a release: since 1.22.0 the three checks of
-[the policy family](#the-policy-family) are informing, with no date set. An engine missing from
+[the policy family](#the-policy-family) are informing, with no date set, and since 1.26.0
+[the timing tolerance](#the-timing-tolerance). An engine missing from
 the table is blocking: no check escapes the Gate by being left out.
 
 ### The policy family
@@ -400,6 +402,27 @@ check reports a finding whose scope it did not report on the base in the self-te
 the day the check is blocking, the mutant must FAIL the run like any other. `mutants.json` (and
 the line `harness scoreboard mutants` appends) gains `planted`, every mutant run by name, and
 `byInforming`, those caught only by an informing check.
+
+### The timing tolerance
+
+Since 1.26.0 (runway improvement D) the timing engine's samples are judged a second time, by
+`timing-tolerance` (`src/compare/tolerance.ts`). `timing` says "slower" when Mann-Whitney is
+significant at `timing.alpha` and the median moved by at least `timing.minEffect` (20%). A
+significant slowdown under that floor is not reported at all, so nothing separates "slower" from
+"slower and it matters". The tolerance draws that line at `TIMING_TOLERANCE`, **10%** of a's
+median.
+
+| Artefact | Scopes | A finding when | Reads |
+| --- | --- | --- | --- |
+| `timing-tolerance` | timing's own: a page key (its TTFB), a journey (its duration), `load/http_req_duration` (the k6 leg's p95) | the slowdown is significant (p below `timing.alpha`, at least `timing.minRuns` samples a side, and samples that can reach alpha), at least 10% of a's median, and at least `timing.minShiftMs` | the same samples as `timing` |
+
+A finding says whether `timing` fails it too (at or over its floor) or only the tolerance reports
+it (between 10% and the floor). It also says the smallest slowdown the samples could have
+detected. A significant slowdown under 10% is **within tolerance** and is not a finding. The check
+is **informing**, with no date ([Engine levels](#engine-levels)): every finding is reported and
+none gates, and the readiness page's soak watches it beside the policy family. At 2.0 it becomes
+blocking: a significant slowdown of 10% or more then fails a release, where today it takes 20%.
+Its planted mutant is `slow-ssr-mild` (150 ms on every HTML response).
 
 ## Verdicts and exit codes
 
@@ -732,7 +755,7 @@ claims:
     digests: { reader: "sha256:…" }                     # since 1.25.1, optional: the images it was written against, by app
 ```
 
-- `artefact`: one of the twenty-two artefact names above, or `*`.
+- `artefact`: one of the twenty-three artefact names above, or `*`.
 - `scope`: matched with picomatch (`dot: true`, case-insensitive) against the
   hunk's `scope` **or** its `path`.
 - `reason`: at least 8 characters, and must not start with `see pr`,
@@ -1759,6 +1782,23 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.26.0 (minor; the timing tolerance, informing)
+
+The release note is [releases/1.26.0.md](releases/1.26.0.md). Runway improvement D. A minor:
+a new check and artefact name, `timing-tolerance`. It ships **informing**, so no verdict, Gate or
+exit code moves.
+
+- `timing-tolerance` ([The timing tolerance](#the-timing-tolerance), `src/compare/tolerance.ts`):
+  a significant slowdown of at least `TIMING_TOLERANCE` (10%) of a's median, on timing's own
+  samples and scopes (page TTFB, journey duration, the k6 leg's p95). A finding says whether
+  `timing` fails it too or only the tolerance reports it, and the smallest slowdown the samples
+  could have detected. `ENGINE_LEVELS` lists it as informing with no `blockingFrom`.
+- A claim may name it (twenty-three artefact names). `report.schema.json`'s artefact enum gains it.
+- A new planted mutant, `slow-ssr-mild` (150 ms on every HTML response), must be attributed to
+  it: fourteen mutants.
+- The readiness page's soak watches every informing check (`SOAK_CHECKS`): the policy family and
+  now the timing tolerance, each with its quiet nights and its planted mutant.
 
 ### 1.25.2 (patch; the landing page, and the usage audit)
 

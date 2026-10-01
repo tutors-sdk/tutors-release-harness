@@ -24,9 +24,14 @@
  * exit code. Promoting a check stays a change to ENGINE_LEVELS (src/compare/levels.ts), made by a person, at 2.0.
  */
 import { ENGINE_LEVELS, levelOn } from "../compare/levels.ts";
-import { POLICY_FAMILY, type PolicyCheck } from "../compare/policy.ts";
 import type { WeeklyMutants } from "../a3/quality.ts";
 import type { Night } from "./model.ts";
+
+/**
+ * The checks the soak watches: every engine that ships informing (src/compare/levels.ts), the ones 2.0 may promote.
+ * The policy family since 1.25.0, the timing tolerance since 1.26.0. A check made blocking leaves the list.
+ */
+export const SOAK_CHECKS: readonly string[] = Object.entries(ENGINE_LEVELS).filter(([, l]) => l.level === "informing").map(([e]) => e);
 
 /** The first night the soak counts: the night after the a2 stack was switched on for every Main to RC run (1.25.0). */
 export const SOAK_FROM = "2026-10-02";
@@ -51,8 +56,8 @@ export interface SoakForecast {
   ranAt: string;
   /** a-to-a2 differences; absent when the forecast ran without a2 (or before 1.24.0). */
   a2Hunks?: number;
-  /** Per policy check: findings on b no claim covers, and how many of them production has too. Absent before 1.22.0. */
-  policy?: Partial<Record<PolicyCheck, { findings: number; productionToo: number }>>;
+  /** Per informing check (SOAK_CHECKS): findings on b no claim covers, and how many of them production has too. Absent before 1.22.0. */
+  policy?: Partial<Record<string, { findings: number; productionToo: number }>>;
 }
 
 export interface SoakNight {
@@ -191,7 +196,7 @@ export function buildSoak(i: SoakInputs): Soak {
 
   // Per check: quiet judged nights, newest back, from the lead forecast of each judged night since the start.
   const judged = counted.filter((n) => n.state === "judged" && n.forecasts.length);
-  const checks: SoakCheck[] = POLICY_FAMILY.map((check) => {
+  const checks: SoakCheck[] = SOAK_CHECKS.map((check) => {
     const level = levelOn(check, i.now, ENGINE_LEVELS);
     let quietNights = 0;
     let lastFinding: SoakCheck["lastFinding"];
@@ -239,14 +244,14 @@ export function buildSoak(i: SoakInputs): Soak {
 
 /** A night's `{ findings, productionToo }` per policy check, from a kept report's matches: findings on b no claim covers. */
 export function policyFacts(matches: readonly { hunk?: { artefact?: string; severity?: string; level?: string; summary?: string }; claim?: unknown }[]): SoakForecast["policy"] {
-  const out: Partial<Record<PolicyCheck, { findings: number; productionToo: number }>> = {};
-  for (const check of POLICY_FAMILY) out[check] = { findings: 0, productionToo: 0 };
+  const out: Partial<Record<string, { findings: number; productionToo: number }>> = {};
+  for (const check of SOAK_CHECKS) out[check] = { findings: 0, productionToo: 0 };
   for (const m of matches) {
     const h = m?.hunk;
-    if (!h || !(POLICY_FAMILY as readonly string[]).includes(h.artefact ?? "") || m.claim) continue;
+    if (!h || !SOAK_CHECKS.includes(h.artefact ?? "") || m.claim) continue;
     // A finding is what the check would fail: informing (turned to info) before 2.0, a failing hunk once blocking.
     if (h.level !== "informing" && h.severity !== "fail") continue;
-    const o = out[h.artefact as PolicyCheck]!;
+    const o = out[h.artefact!]!;
     o.findings += 1;
     if (/\(production too\)$/.test(h.summary ?? "")) o.productionToo += 1;
   }

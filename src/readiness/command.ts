@@ -9,7 +9,7 @@ import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { readWeeklyMutants } from "../a3/read.ts";
 import { buildReadiness, type Readiness } from "./model.ts";
-import { POLICY_FAMILY } from "../compare/policy.ts";
+import { SOAK_CHECKS } from "./soak.ts";
 import { loadMutants } from "../mutants.ts";
 import { readAaNights, readForecasts, readReleaseHistory, readWorkflowRuns } from "./read.ts";
 import { RELEASES_FILE, type ReleaseHistory } from "./releases.ts";
@@ -34,11 +34,11 @@ export function runReadiness(o: { site: string; github?: string; mutants?: strin
   const rel = readReleaseHistory(o.releases ?? releasesFile);
   if (o.releases && !rel.history) throw new ReadinessInputError(`readiness: --releases ${o.releases} is not a release history (${rel.source})`);
   // Since 1.25.0, for the soak: the nightly A/As (--noise-history, else the copy pages.yml puts in the site), and each
-  // policy check's planted mutants from this checkout's mutants.yaml.
+  // informing check's planted mutants (the policy family, the timing tolerance) from this checkout's mutants.yaml.
   const aa = readAaNights(o.noiseHistory ?? join(o.site, "noise", "noise-history.json"));
   if (o.noiseHistory && !aa.aa) throw new ReadinessInputError(`readiness: --noise-history ${o.noiseHistory} is not a noise history (${aa.source})`);
   const planted: Record<string, string[]> = {};
-  for (const m of loadMutants()) for (const a of m.expect) if ((POLICY_FAMILY as readonly string[]).includes(a)) (planted[a] ??= []).push(m.name);
+  for (const m of loadMutants()) for (const a of m.expect) if (SOAK_CHECKS.includes(a)) (planted[a] ??= []).push(m.name);
   const readiness = buildReadiness({ now: o.now, harness: o.harness, forecasts: readForecasts(o.site), ...(gh.runs ? { workflowRuns: gh.runs } : {}), github: gh.github, ...(mutants ? { mutants } : {}), ...(rel.history ? { releases: rel.history } : {}), releasesSource: rel.source, ...(aa.aa ? { aa: aa.aa } : {}), aaSource: aa.source, planted });
   mkdirSync(o.site, { recursive: true });
   const files = [join(o.site, "readiness.html"), join(o.site, "readiness.json"), ...(o.fetched ? [releasesFile] : [])];
