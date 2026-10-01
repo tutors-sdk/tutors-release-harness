@@ -222,6 +222,10 @@ Two reports are comparable only when the same harness version judged them.
 
 What to do with each unclaimed hunk (a missing claim, a real regression, noise, or missing evidence) is [below](#real-regression-noise-or-missing-claim).
 
+### Informing: reported, never gates
+
+Since 1.21.0 every engine has a level ([contract](../contract.md#engine-levels)): **blocking**, whose unclaimed differences gate as they always have, or **informing**, a check being watched before it may stop a release. Under the differences, **Informing** lists what informing engines found on this run, each with the date its engine starts to block (or "no date set"), and says which engines are informing ("Every engine is blocking (19 of 19)" on 1.21.0). An informing result is never in the unclaimed count, never changes the verdict, the Gate or the exit code, and never counts against the A/A; in the differences table its row says *informing* where a failing one says **unclaimed**. You can still claim one, the same way as any difference, and a claim that covers one is not stale. The readiness page puts each forecast's unclaimed informing results beside its Gate ("2 informing"), labelled so they are never read as part of it.
+
 ## 7. The 5 Whys stubs
 
 A Red band is one of the triggers of a 5 Whys, so `harness release` would have opened one by itself; here `harness why --finding band` did:
@@ -288,7 +292,7 @@ A release's `report.md` and `gate.md` start `## Release gate: <candidate> beside
 
 A release's `report.html` has the sections of `gate.md` (above) on one page, and each deduction and glance item links into the release run's own `report.html` by anchor (`#hunk-<id>`, `#stale-claims`, `#masks`, `#noise`, `#load`, `#migration`, `#upgrade`), so a link lands on the row it is about.
 
-A run's `report.html` has the same content as its `report.md`, in this order: the title with a coloured verdict badge; the time, the frozen clock, the run count and the harness version; the banners; the reasons list (including the A/A line); since 1.20.0 the causes and the pages that moved together; the sides table; the provenance table; the deployment table, the image artefacts table and the rehearsal and load tables when they apply; **Differences** (every hunk, failing and informational); stale claims; broad claims without approval; the override, if any; claim hygiene; the masks, split into *Fired* and *Silent this run*; and the footer.
+A run's `report.html` has the same content as its `report.md`, in this order: the title with a coloured verdict badge; the time, the frozen clock, the run count and the harness version; the banners; the reasons list (including the A/A line); since 1.20.0 the causes and the pages that moved together; the sides table; the provenance table; the deployment table, the image artefacts table and the rehearsal and load tables when they apply; **Differences** (every hunk, failing and informational); since 1.21.0 **Informing** (what informing engines found, and every engine's level); stale claims; broad claims without approval; the override, if any; claim hygiene; the masks, split into *Fired* and *Silent this run*; and the footer.
 
 The Differences table has four columns: artefact, scope (with the page path underneath), what changed (with a fold for the detail), and *claimed by*. A failing hunk with no claim says **unclaimed** in red; an information hunk says *informational* and is dimmed. The detail of a `dom` or `focus` hunk is a small diff (lines starting with `-` exist on a, `+` on b). A `screenshot` hunk's detail names the difference image under `diff/`.
 
@@ -327,7 +331,7 @@ The report is the machine-readable record. Its shape (`additionalProperties: fal
 }
 ```
 
-Other optional fields appear when they apply: `causes` (since 1.20.0, the unclaimed differences folded into causes), `imageArtefacts` (per side, per app: was each of manifest, SBOM and vulnerabilities collected, and if not, why), `load`, `migration`, `upgrade`, `override`, and `deployment` (post-deploy mode). The score, the glance and the change signals are not in `report.json`: they are in `confidence.json` and `changes.json` beside a release ([docs/contract.md](../contract.md#confidencejson-the-release-confidence-score)). To check whether a run is evidence for a release, read `verdict`, `provenance.*.images.*.provenance` (all `pulled+verified`), `compare.unclaimed.length`, `compare.broadUnapproved.length` and `noise`. A consumer must tolerate an artefact name or provenance value it does not know.
+Other optional fields appear when they apply: `levels` (since 1.21.0, every engine's level on the run; a hunk an informing engine found carries `level: "informing"` and is `info`), `causes` (since 1.20.0, the unclaimed differences folded into causes), `imageArtefacts` (per side, per app: was each of manifest, SBOM and vulnerabilities collected, and if not, why), `load`, `migration`, `upgrade`, `override`, and `deployment` (post-deploy mode). The score, the glance and the change signals are not in `report.json`: they are in `confidence.json` and `changes.json` beside a release ([docs/contract.md](../contract.md#confidencejson-the-release-confidence-score)). To check whether a run is evidence for a release, read `verdict`, `provenance.*.images.*.provenance` (all `pulled+verified`), `compare.unclaimed.length`, `compare.broadUnapproved.length` and `noise`. A consumer must tolerate an artefact name or provenance value it does not know.
 
 ## How to read a hunk
 

@@ -8,6 +8,7 @@ import { loadClaims } from "./claims/schema.ts";
 import { loadRules } from "./claims/rules.ts";
 import { captureSide } from "./collectors/index.ts";
 import { compareCaptures } from "./compare/index.ts";
+import { ENGINE_LEVELS, applyLevels, levelsOn, type EngineLevels } from "./compare/levels.ts";
 import { gate, rollbackIssueConfigured } from "./gate.ts";
 import { runMigration } from "./modes/migration.ts";
 import { runUpgrade } from "./modes/upgrade.ts";
@@ -143,6 +144,9 @@ interface CompareInput {
   /** Hunks produced by a rehearsal mode rather than by capture comparison. */
   extraHunks?: Hunk[];
   extras?: Pick<RunReport, "migration" | "upgrade">;
+  /** Since 1.21.0, for tests: the engine levels to judge with (default ENGINE_LEVELS) and the instant they are read on (default now). */
+  levels?: EngineLevels;
+  ranAt?: Date;
   log: (m: string) => void;
 }
 
@@ -160,9 +164,11 @@ export function compareFromCaptures(input: CompareInput): RunOutcome {
   const masksApplied: MaskHits = {};
   for (const id of Object.keys(na.hits)) masksApplied[id] = (na.hits[id] ?? 0) + (nb.hits[id] ?? 0);
 
-  const hunks = [...compareCaptures(na.capture, nb.capture, masks, input.captureDir), ...(input.extraHunks ?? [])];
+  const ranAt = input.ranAt ?? new Date();
+  // Since 1.21.0: an informing engine's findings are reported, never gated (src/compare/levels.ts). Every engine is blocking today.
+  const levelTable = input.levels ?? ENGINE_LEVELS;
+  const hunks = applyLevels([...compareCaptures(na.capture, nb.capture, masks, input.captureDir), ...(input.extraHunks ?? [])], ranAt, levelTable);
   const compare = matchClaims(hunks, input.claims);
-  const ranAt = new Date();
   const noise = readNoise(input.noise, input.log);
   const blind = blindJourneys(input.a, input.b);
   const degraded = input.mode === "noise" ? [...(input.requireVerified ? evidenceGaps(input.a, input.b) : []), ...blind] : [];
@@ -203,7 +209,8 @@ export function compareFromCaptures(input: CompareInput): RunOutcome {
     ...(override ? { override } : {}),
     ...(imageArtefacts ? { imageArtefacts } : {}),
     ...(input.deployment ? { deployment: input.deployment } : {}),
-    ...(input.productionBuild ? { productionBuild: input.productionBuild } : {})
+    ...(input.productionBuild ? { productionBuild: input.productionBuild } : {}),
+    levels: levelsOn(ranAt, levelTable)
   };
 
   const files = writeReports(input.captureDir, report);

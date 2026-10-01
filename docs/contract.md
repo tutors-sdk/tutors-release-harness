@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.20.5`
+Contract version: `1.21.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -141,9 +141,10 @@ written). Source of truth: `RunReport` in `src/types.ts`.
 | `override` | optional — since 1.2.0 | present only when an override of a FAIL was requested; see [Overriding a FAIL](#overriding-a-fail) |
 | `deployment` | optional — since 1.3.0 | post-deploy mode, when the deploy reported what it deployed: `{ production?, status, digests, recorded?, record?, problems[] }`, the deployed digests against the release record; see [Checking a deployment](#checking-a-deployment). Advisory: a `status` other than `match` turns a `pass` into a `warn` and never touches a `fail` |
 | `productionBuild` | optional — since 1.6.0 | post-deploy mode only: `{ url, status, recordedRevision?, buildName?, builtAt?, revision?, summary }`, which build production's reader says it serves against the recorded candidate's commit; see [Which build production serves](#which-build-production-serves). Informational: never changes the verdict and is never a hunk |
+| `levels` | optional — since 1.21.0 | `{ [engine]: { level, blockingFrom? } }`: every engine's level on this run, by engine (its artefact), `blocking` or `informing`, and for an informing one the UTC date (`YYYY-MM-DD`) it becomes blocking when one is set; see [Engine levels](#engine-levels). Absent from a report written before 1.21.0, in which every engine was blocking |
 | `causes` | optional — since 1.20.0 | `{ unclaimed, causes[], together[] }`: the unclaimed differences folded into causes, computed after the verdict when the report is written; see [Causes](#causes). Informational: never read by a verdict or the Gate |
 
-**Hunk**: `{ id, artefact, scope, path?, summary, detail?, severity }`.
+**Hunk**: `{ id, artefact, scope, path?, summary, detail?, severity, level?, blockingFrom? }`.
 `artefact` is one of `dom`, `screenshot`, `network`, `console`, `headers`,
 `axe`, `focus`, `metrics`, `logs`, `timing`, `persistence`, `bus`, `migration`,
 `upgrade`, `image-manifest`, `sbom`, `vulns`, `runtime`, `startup`. `bus` and
@@ -152,7 +153,10 @@ and [Container runtime artefacts](#container-runtime-artefacts)); a consumer
 must tolerate an artefact name it does not know. `severity` is `fail` (gates unless claimed) or `info` (reported,
 never gates). `scope` and `path` are what a claim's glob is matched against.
 `id` is stable for the same difference within a run; do not rely on it across
-harness versions. `summary` and `detail` are for people.
+harness versions. `summary` and `detail` are for people. `level` (since 1.21.0) is
+`informing` on a hunk its engine would have failed had the engine been blocking: its
+`severity` is then `info`, so it never gates, and `blockingFrom` carries the date its
+engine becomes blocking when one is set; see [Engine levels](#engine-levels).
 
 The `bus` artefact (since 1.2.0) is the topics a side published to during a
 journey, under the same two rules as `persistence`. It is produced only when
@@ -328,6 +332,28 @@ claimed together. `report.md` and `report.html` lead their differences with the 
 ("899 unclaimed differences, 19 causes") and these groups. The wording of `kind` follows the
 engines' summaries and may change in a patch; `key` is stable within a harness version.
 
+### Engine levels
+
+Since 1.21.0 every engine has a level (`src/compare/levels.ts`, `ENGINE_LEVELS`): **blocking**,
+whose failing hunks gate as they always have, or **informing**, whose findings are reported and
+never gate. An engine is named by its artefact, the word claims and masks already use. An
+informing engine may carry `blockingFrom`, a UTC date: from that date on it is blocking, with no
+harness release in between. The level a run used is the one on its `ranAt`.
+
+A hunk an informing engine would have failed is written with `severity: info`, `level:
+informing` and its `blockingFrom`, so no verdict, Gate, exit code or A/A count reads it; it is
+not in `compare.unclaimed`. It is still claimable: a claim that names it is recorded in
+`compare.matches` as matching it, as for any informational hunk, and is not stale. `report.html`
+and `report.md` list these results under **Informing** ("reported, never gates") with each
+engine's level, and `report.json` records every engine's level in `levels`. The readiness page
+shows the unclaimed informing results of each kept forecast beside its Gate, labelled
+"informing", and in a tile of their own on the latest forecast.
+
+Every engine is **blocking** today, so a run decides exactly what it decided before 1.21.0. A
+new engine or check ships informing, with the date it starts to block when there is one, and is
+watched on the readiness page before it may stop a release. An engine missing from the table is
+blocking: no check escapes the Gate by being left out.
+
 ## Verdicts and exit codes
 
 | Exit code | Meaning |
@@ -363,7 +389,8 @@ Per mode, for `harness run` and `harness compare` (`src/gate.ts`):
 | `upgrade` | no unclaimed finding | never | any unclaimed failed or 5xx request, or b never serving; needs no A/A |
 
 Stale claims add a reason and never change the verdict. Claims apply in every
-mode.
+mode. A "failing hunk" is one with `severity: fail`; since 1.21.0 an informing engine's findings
+are `info` ([Engine levels](#engine-levels)) and never count.
 
 ## `noise-status.json` and the 7-day rule
 
@@ -1093,6 +1120,11 @@ run); **did not run**. Without `github.json`, or when GitHub did not answer for
 `main-preview.yml`, such a night is **not known**, never "did not run". Where production moved
 between two rows the page draws a rule and says so: the delta starts again.
 
+Since 1.21.0 each forecast carries `informing`: its kept report's informing results that no
+claim covers ([Engine levels](#engine-levels)), shown beside the Gate as "N informing" and, on
+the latest forecast, in a tile of their own, labelled "reported, never gates"; `null` for a
+forecast kept before engine levels.
+
 Since 1.18.0 each forecast carries `quality`, the same strip the A3 draws under its Gate
 ([the A3 Aggregator](#the-a3-aggregator)): the row shows Speed, Metrics and Tests as marks, and
 the latest forecast at the top shows the whole strip. `--mutants <mutants.jsonl>` is the Tests
@@ -1571,6 +1603,23 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.21.0 (minor; engine levels: informing before blocking)
+
+The release note is [releases/1.21.0.md](releases/1.21.0.md). The first step of the "Policy"
+release. A minor for the new `report.json` and `readiness.json` fields; no command, flag,
+verdict, Gate or exit code changes for any run, because every engine is blocking.
+
+- Every engine has a level, `blocking` or `informing`, with an optional `blockingFrom` date
+  (`src/compare/levels.ts`, `ENGINE_LEVELS`); see [Engine levels](#engine-levels). An informing
+  engine's findings are written as `severity: info` with `level: informing` (and
+  `blockingFrom`), so they never gate and never count in the A/A; they stay claimable.
+- `report.json` gains the optional `levels` (every engine's level on the run), and a hunk the
+  optional `level` and `blockingFrom`. `report.html` and `report.md` gain an **Informing**
+  section, "reported, never gates", with every engine's level.
+- `readiness.json`'s forecast gains `informing` (unclaimed informing results; `null` before
+  1.21.0); the readiness page shows it beside the Gate and in a tile on the latest forecast.
+- Every engine is blocking: no run decides anything differently.
 
 ### 1.20.5 (patch; a report fits a phone)
 

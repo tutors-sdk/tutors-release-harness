@@ -34,6 +34,9 @@ function deltaHtml(f: Forecast): string {
   return `<span class="delta" title="${esc(`against ${d.against.candidate} (${when(d.against.ranAt)}), judged by harness ${d.against.harnessVersion}`)}"><span class="new">+${d.new ?? 0}</span> / <span class="gone">−${d.gone ?? 0}</span></span>`;
 }
 
+/** Since 1.21.0: informing results beside the Gate, labelled so they are never read as part of it. */
+const informingBadge = (f: Forecast) => (f.informing ? ` <a class="inf" href="${esc(safeHref(f.links.report ? `${f.links.report}#informing` : undefined) ?? "#")}" title="found by informing engines: reported, never gates">${f.informing} informing</a>` : "");
+
 function evidence(f: Forecast): string {
   const parts = [f.links.report ? link("report", f.links.report) : "", ...f.links.rehearsals.map((r) => `${link(r.mode, r.href)}${r.verdict ? ` <span class="rv ${tone(r.verdict)}">${esc(r.verdict)}</span>` : ""}`), f.runUrl ? link("run", f.runUrl) : ""].filter(Boolean);
   return parts.join(" · ") || `<span class="muted">none kept</span>`;
@@ -46,7 +49,7 @@ function forecastRow(night: Night, f: Forecast, first: boolean, lastId?: string)
   return `<tr class="judged${first ? "" : " earlier"}">
 <td data-k="Night"><span class="v">${nightCell}</span></td>
 <td data-k="Main"><span class="v">${commitHtml(f)}<span class="base">beside ${esc(f.baseline || "?")}</span></span></td>
-<td data-k="Gate"><span class="v">${gateBadge(f.gate)}</span></td>
+<td data-k="Gate"><span class="v">${gateBadge(f.gate)}${informingBadge(f)}</span></td>
 <td data-k="Unclaimed" class="num"><span class="v">${f.unclaimed === null ? `<span class="muted">?</span>` : f.unclaimed}</span></td>
 <td data-k="New / gone" class="num"><span class="v">${deltaHtml(f)}</span></td>
 <td data-k="Quality"><span class="v">${qualityMarksHtml(f.quality, first && f.id === lastId ? "#quality" : f.links.report)}</span></td>
@@ -97,6 +100,7 @@ function lastNight(r: Readiness): string {
 <div class="tiles">
 <div class="tile gate ${tone(f.gate)}"><span class="k">Gate</span><span class="huge">${esc(f.gate)}</span><span class="sub">main ${esc(f.candidate)} beside production ${esc(f.baseline)}</span></div>
 <div class="tile"><span class="k">Unclaimed</span><span class="big">${f.unclaimed ?? "?"}</span><span class="sub">differences the next release owes a claim or a fix</span></div>
+${f.informing === null ? "" : `<div class="tile informing"><span class="k">Informing</span><span class="big">${f.informing}</span><span class="sub">found by informing engines and not claimed: reported, never gates${f.informing && f.links.report ? ` · ${link("see them", `${f.links.report}#informing`)}` : ""}</span></div>`}
 <div class="tile"><span class="k">New / gone since the last forecast</span><span class="big">${deltaHtml(f)}</span><span class="sub">${f.delta?.against ? `against ${esc(f.delta.against.candidate)}, ${esc(when(f.delta.against.ranAt))}` : f.delta ? "nothing earlier beside this production" : "kept before harness 1.16.1 counted it"}</span></div>
 </div>
 ${by.length ? `<p class="by">By artefact: ${by.map(([a, v]) => `<code>${esc(a)}</code> <span class="new">+${v.new}</span>/<span class="gone">−${v.gone}</span>`).join(" · ")}${f.links.report ? ` · ${link("the new ones, in the report", `${f.links.report}#delta`)}` : ""}</p>` : ""}
@@ -135,6 +139,8 @@ code{font:13px ui-monospace,Menlo,Consolas,monospace;overflow-wrap:anywhere}
 .tile.gate{color:#fff;border:0} .tile.gate .k,.tile.gate .sub{color:#ffffffd9}
 .tile.gate.fail{background:var(--fail)} .tile.gate.warn{background:var(--warn)} .tile.gate.pass{background:var(--pass)} .tile.gate.none{background:var(--grey)}
 .by{font-size:13px;margin:4px 0}
+.tile.informing{border-style:dashed}
+a.inf{display:inline-block;margin-left:6px;font-size:11.5px;padding:0 6px;border:1px dashed var(--ink2);border-radius:4px;color:var(--ink2);text-decoration:none;white-space:nowrap}
 dl.pick{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:6px 18px;margin:8px 0 0} dl.pick dt{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink2)} dl.pick dd{margin:0;font-size:13.5px}
 ul.digests{margin:6px 0 0;padding-left:1.1rem;font-size:12.5px} .dg{font-size:11.5px}
 details summary{cursor:pointer;font-size:13px;color:var(--ink2);margin-top:8px}

@@ -66,6 +66,8 @@ export function readForecasts(site: string): KeptForecast[] {
       ...(r.delta && typeof r.delta === "object" ? { delta: r.delta } : {}),
       files,
       ...(Array.isArray(report?.compare?.unclaimed) ? { unclaimed: report.compare.unclaimed.length } : {}),
+      // Since 1.21.0: a report that records its engine levels says what its informing engines found; an older one is not counted.
+      ...(report?.levels && Array.isArray(report.compare?.matches) ? { informing: report.compare.matches.filter((m) => m?.hunk?.level === "informing" && !m.claim).length } : {}),
       ...(images ? { images: Object.fromEntries(Object.entries(images).map(([app, i]) => [app, { ...(i?.revision ? { revision: i.revision } : {}), ...(i?.digest ? { digest: i.digest } : {}) }])) } : {}),
       ...(Object.keys(rehearsals).length ? { rehearsals } : {}),
       ...(report?.compare ? { report: { ...(report.ranAt ? { ranAt: report.ranAt } : {}), compare: report.compare, ...(report.load ? { load: report.load } : {}), ...(report.noise ? { noise: report.noise } : {}), ...(report.provenance ? { provenance: report.provenance } : {}) } } : {}),

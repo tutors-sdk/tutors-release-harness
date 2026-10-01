@@ -76,7 +76,7 @@
     "forecast": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "ranAt", "harnessVersion", "baseline", "candidate", "commit", "commitUrl", "digests", "gate", "verdict", "unclaimed", "delta", "links", "quality"],
+      "required": ["id", "ranAt", "harnessVersion", "baseline", "candidate", "commit", "commitUrl", "digests", "gate", "verdict", "unclaimed", "informing", "delta", "links", "quality"],
       "properties": {
         "id": { "type": "string", "description": "The run's directory under main-preview/reports/." },
         "ranAt": { "type": "string", "format": "date-time" },
@@ -90,6 +90,7 @@
         "gate": { "type": "string", "description": "confidence.json's Gate, or the verdict in capitals for a forecast kept before the score." },
         "verdict": { "type": "string" },
         "unclaimed": { "type": ["integer", "null"], "minimum": 0 },
+        "informing": { "type": ["integer", "null"], "minimum": 0, "description": "Since 1.21.0: the kept report's informing results no claim covers (reported, never gates); null for a forecast kept before engine levels." },
         "delta": {
           "description": "The index entry's delta (reports-index.schema.json); null for a forecast kept before 1.16.1.",
           "oneOf": [{ "type": "null" }, { "$ref": "reports-index.schema.json#/definitions/run/properties/delta" }]

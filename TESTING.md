@@ -74,7 +74,11 @@ image, `/proc/self/mountinfo`, the health status format): the first
 clean before the harness gates on these artefacts.
 
 Rules for a new engine or rule: it does not merge without (1) the A/A test,
-(2) a planted change it catches, (3) a change it must *not* flag.
+(2) a planted change it catches, (3) a change it must *not* flag. Since 1.21.0 it also
+ships **informing** (`ENGINE_LEVELS` in `src/compare/levels.ts`), with the date it starts to
+block when there is one, and is watched on the readiness page before it may stop a release;
+it becomes blocking only with a planted mutant that it catches (`tests/levels.test.ts` holds
+the levels themselves: every engine named, informing never gating, the date honoured).
 
 #### Coverage floor (`pnpm test:coverage`)
 
