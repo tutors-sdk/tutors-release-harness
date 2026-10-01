@@ -169,14 +169,16 @@ const USAGE = `tutors-release-harness
       (--scoreboard <file> writes there instead; never into the checkout unasked; a --fast run is not appended), prints it
       and any run rule firing. Exit 0 pass or warn, 1 FAIL, 2 not judged or usage. Not stable.
   harness confidence --run <release run dir | report.json | harness release dir> [--migration dir] [--upgrade dir] [--json]
-                     [--test-signal f] [--traceability f] [--change-risk f] [--post-deploy dir] [--scoreboard f]
+                     [--test-signal f] [--traceability f] [--change-risk f] [--post-deploy dir] [--scoreboard f] [--mutants f]
       The Release Confidence Score: writes confidence.json beside the run and prints the board. The Gate first, then the
       RCS (0-100, only when the Gate is PASS or WARN) and its band (Green >= 90, Amber 75-89, Red < 75), then eight
       dimensions, each with every point lost and where. A dimension without its input is "not measured" and left out of
       the mean; a breached floor caps the RCS at 74. The optional inputs are JSON files (docs/contract.md). Never changes
       a verdict or an exit code: exit 0 when written, 2 for an input it cannot read. --change-risk also takes a
       changes.json. Since 1.12.0 it also ranks the reviewer's glance into confidence.json (at most seven places to look,
-      novelty x exposure; --scoreboard, default HARNESS_HOME/scoreboard/releases.jsonl, is the history). Not stable.
+      novelty x exposure; --scoreboard, default HARNESS_HOME/scoreboard/releases.jsonl, is the history). Since 1.18.0
+      --test-signal also reads the monorepo's quality record (quality/<sha>.json) as it is, one with no packages being
+      not measured, and --mutants <mutants.jsonl> joins the newest weekly mutants self-test as harnessMutants. Not stable.
   harness changes --a <tag> --b <tag> [--monorepo dir] [--history 6] [--changelog f] [--json] [--out file]
       What changed between two tags of the monorepo (git log A..B in the checkout: --monorepo or HARNESS_MONOREPO_DIR;
       16.2.2 finds v16.2.2), one risk line per PR: churn per app against its median over the last --history releases,
@@ -223,22 +225,26 @@ const USAGE = `tutors-release-harness
       a due date; exit 1 when one is not ready (a docs lint, never a release gate). register: the table of kaizen/README.md
       regenerated from the files (--write writes it; without, exit 1 when README.md is out of date) with the open and
       overdue counts. harness release opens one by itself for each trigger. Exit 2 for what it cannot read. Not stable.
-  harness a3 --site <dir> [--kaizen kaizen/] [--noise-history f] [--scoreboard f] [--github f | --fetch-github] [--json]
+  harness a3 --site <dir> [--kaizen kaizen/] [--noise-history f] [--scoreboard f] [--mutants f] [--github f | --fetch-github] [--json]
       The A3 Aggregator (since 1.14.0): one Lean A3 from every kept run under --site (each stream's reports/index.json and
       the reports beside it), the kaizen register, the noise history and, with --fetch-github (GITHUB_TOKEN or GH_TOKEN),
       the value stream workflows' history on GitHub. Writes a3.html and a3.json (and github.json when it asked GitHub)
       into --site: the Gate and the RCS as confidence.json has them, a value stream map, Paretos of the unclaimed
       differences, the line stops, the confidence lost and the change risk, the root cause questions with the 5 Whys that
-      answer them, and the countermeasures, plan and follow-up. What it cannot read is said to be not measured. Advisory:
-      never an input to the Gate, a verdict or an exit code. Exit 0 when written, 2 for what it cannot read. Not stable.
-  harness readiness --site <dir> [--github f] [--json]
+      answer them, and the countermeasures, plan and follow-up. Since 1.18.0 the quality strip under the Gate: Speed,
+      Metrics and Tests, within reason, look or not measured (--mutants, default mutants.jsonl beside --scoreboard, is the
+      weekly self-test Tests reads). What it cannot read is said to be not measured. Advisory: never an input to the Gate,
+      a verdict or an exit code. Exit 0 when written, 2 for what it cannot read. Not stable.
+  harness readiness --site <dir> [--github f] [--mutants f] [--json]
       The overnight readiness page (since 1.17.0): one row per night (UTC) for the last ten nights, newest on top, from
       the Main to RC forecasts under --site (main-preview/reports/index.json and the reports beside it): the commit
       judged, the Gate, the unclaimed count, what is new and gone since the previous forecast, and links to the kept
       report and its rehearsals. A night that kept nothing is read from the workflow history (github.json in the site, as
       harness a3 --fetch-github writes it, or --github): unchanged since a commit (a skipped pair, in grey), did not run,
-      or not known without it. Writes readiness.html and readiness.json into --site. Advisory: never an input to the Gate,
-      a verdict or an exit code. Exit 0 when written, 2 for what it cannot read. Not stable.
+      or not known without it. Since 1.18.0 each row carries the quality marks (Speed, Metrics, Tests; --mutants is the
+      weekly mutants record) and the latest forecast the whole strip. Writes readiness.html and readiness.json into
+      --site. Advisory: never an input to the Gate, a verdict or an exit code. Exit 0 when written, 2 for what it cannot
+      read. Not stable.
 `;
 
 function fail(message: string): never {

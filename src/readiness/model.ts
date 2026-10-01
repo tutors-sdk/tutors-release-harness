@@ -21,6 +21,7 @@
  * here is an input to the Gate, a verdict or an exit code.
  */
 import type { WorkflowRun } from "../a3/github.ts";
+import { qualityOf, type QualityInputs, type QualityRecord, type QualityStrip, type WeeklyMutants } from "../a3/quality.ts";
 import type { ReportDelta } from "../report/delta.ts";
 
 export const READINESS_SCHEMA_VERSION = 1 as const;
@@ -51,6 +52,10 @@ export interface KeptForecast {
   images?: Record<string, { revision?: string; digest?: string }>;
   /** The kept rehearsals' verdicts (since 1.16.0), by mode, when their report.json could be read. */
   rehearsals?: Partial<Record<Rehearsal, string>>;
+  /** Since 1.18.0: what the quality strip reads of the kept report.json, when it could be read. */
+  report?: QualityInputs["report"];
+  /** Since 1.18.0: the monorepo's quality record kept beside it; null when kept and not a record. */
+  quality?: QualityRecord | null;
 }
 
 export type Rehearsal = "migration" | "upgrade";
@@ -64,6 +69,8 @@ export interface ReadinessInputs {
   workflowRuns?: WorkflowRun[];
   /** What github.json said about itself: when it was fetched, or why it was not read. */
   github: string;
+  /** Since 1.18.0: the harness's weekly mutants self-tests (mutants.jsonl); undefined when not read. */
+  mutants?: WeeklyMutants[];
 }
 
 export interface Forecast {
@@ -87,6 +94,8 @@ export interface Forecast {
   /** New and gone since the previous forecast beside the same baseline; null when it was kept before 1.16.1. */
   delta: ReportDelta | null;
   links: { report?: string; rehearsals: { mode: Rehearsal; href: string; verdict: string | null }[] };
+  /** Since 1.18.0: Speed, Metrics and Tests, as the A3 draws them under its Gate (src/a3/quality.ts). */
+  quality: QualityStrip;
 }
 
 export type NightState = "judged" | "unchanged" | "not judged" | "running" | "not yet" | "did not run" | "not known";
@@ -133,7 +142,7 @@ function commitOf(images: KeptForecast["images"]): string | null {
   return revs.size === 1 ? [...revs][0]! : null;
 }
 
-export function forecastOf(k: KeptForecast): Forecast {
+export function forecastOf(k: KeptForecast, mutants?: WeeklyMutants[]): Forecast {
   const commit = commitOf(k.images);
   const file = (path: string) => (k.files.includes(`${k.id}/${path}`) ? `${STREAM_DIR}/${k.id}/${path}` : undefined);
   const digests = Object.fromEntries(Object.entries(k.images ?? {}).flatMap(([app, i]) => (i.digest ? [[app, i.digest]] : [])));
@@ -158,7 +167,8 @@ export function forecastOf(k: KeptForecast): Forecast {
         const href = file(`${mode}/report.html`);
         return href ? [{ mode, href, verdict: k.rehearsals?.[mode]?.toUpperCase() ?? null }] : [];
       })
-    }
+    },
+    quality: qualityOf({ ...(k.report ? { report: k.report } : {}), ...(k.quality !== undefined ? { record: k.quality } : {}), ...(mutants ? { mutants } : {}), dir: `${STREAM_DIR}/${k.id}` })
   };
 }
 
@@ -174,7 +184,7 @@ export function deltaWords(d: ReportDelta | null): string {
 export function buildReadiness(i: ReadinessInputs): Readiness {
   const nights = nightsUpTo(i.now);
   const today = nights[0]!;
-  const forecasts = i.forecasts.map(forecastOf).sort((x, y) => Date.parse(y.ranAt) - Date.parse(x.ranAt));
+  const forecasts = i.forecasts.map((k) => forecastOf(k, i.mutants)).sort((x, y) => Date.parse(y.ranAt) - Date.parse(x.ranAt));
   const runs = [...(i.workflowRuns ?? [])].sort((x, y) => Date.parse(y.createdAt) - Date.parse(x.createdAt));
   const rows: Night[] = nights.map((night) => {
     const kept = forecasts.filter((f) => nightOf(f.ranAt) === night);

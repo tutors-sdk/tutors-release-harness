@@ -1,0 +1,79 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/tutors-sdk/tutors-release-harness/blob/main/docs/contract/quality-strip.schema.json",
+  "title": "The quality strip: Speed, Metrics, Tests (contract 1.18.0, not stable)",
+  "description": "Since 1.18.0. `quality` in a3.json (the A3's subject run, under the Gate) and on each forecast of readiness.json. Derived from QualityStrip in src/a3/quality.ts, from kept files only: the forecast's report.json, the monorepo's quality record kept beside it (quality.json) and the harness's weekly mutants (mutants.jsonl). Each light is within reason, look or not measured; a light is within reason only when every check under it was read and in reason. Advisory: never read by a verdict, the Gate, the score or an exit code. Not stable: it may change in a minor release.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["lights", "note"],
+  "properties": {
+    "lights": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "description": "Speed, Metrics and Tests, in that order.",
+      "items": { "$ref": "#/definitions/light" }
+    },
+    "record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["commit", "judged", "generatedAt", "ageMs", "href"],
+      "description": "The monorepo's quality record the Tests light read; absent when none was kept beside the forecast.",
+      "properties": {
+        "commit": { "type": "string", "pattern": "^[0-9a-f]{7,40}$" },
+        "judged": { "type": "boolean", "description": "true when the record is for the commit side b was built from; false when it is for an earlier one (the newest before it with a record)." },
+        "generatedAt": { "type": ["string", "null"] },
+        "ageMs": { "type": ["number", "null"], "description": "How long before the forecast ran the record was generated." },
+        "href": { "type": "string", "description": "The kept quality.json, relative to the site." },
+        "evidence": { "type": "string", "description": "The record's own evidence: the Nightly run." }
+      }
+    },
+    "note": { "type": "string", "description": "One sentence for people. Do not parse." }
+  },
+  "definitions": {
+    "state": { "enum": ["within reason", "look", "not measured"] },
+    "link": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label"],
+      "properties": { "label": { "type": "string" }, "href": { "type": "string" } }
+    },
+    "light": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "state", "reading", "rule", "checks", "evidence"],
+      "properties": {
+        "id": { "enum": ["speed", "metrics", "tests"] },
+        "name": { "type": "string" },
+        "state": { "$ref": "#/definitions/state" },
+        "reading": { "type": "string", "description": "The number, in one line. For people." },
+        "rule": { "type": "string", "description": "When the light is within reason. For people." },
+        "checks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "label", "state", "reading", "evidence"],
+            "properties": {
+              "id": { "enum": ["slower", "load", "metrics", "journeys", "aa", "mutants", "nightly", "mutation"] },
+              "half": { "enum": ["harness", "monorepo"], "description": "Tests only." },
+              "label": { "type": "string" },
+              "state": { "$ref": "#/definitions/state" },
+              "reading": { "type": "string" },
+              "evidence": { "type": "array", "items": { "$ref": "#/definitions/link" } }
+            }
+          }
+        },
+        "halves": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["harness", "monorepo"],
+          "description": "Tests only: each half's own state, so a half-measured light says which half.",
+          "properties": { "harness": { "$ref": "#/definitions/state" }, "monorepo": { "$ref": "#/definitions/state" } }
+        },
+        "beside": { "type": "string", "description": "Shown beside the light, never counted (the log differences beside Metrics)." },
+        "evidence": { "type": "array", "items": { "$ref": "#/definitions/link" } }
+      }
+    }
+  }
+}

@@ -9,6 +9,7 @@
  * table too, and every bar and box says its value on hover.
  */
 import { REPO, duration, type A3, type Decisions, type FiveWhys, type Pareto, type Rca, type Score, type ValueStream } from "./model.ts";
+import type { LightState, QualityLight, QualityStrip } from "./quality.ts";
 
 const esc = (s: string) => s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
 const day = (iso?: string) => (iso ? iso.slice(0, 10) : "");
@@ -93,10 +94,58 @@ function andon(s: Score | null, a: A3): string {
   ].join("");
   return `<section class="andon" aria-label="Final scoring">
   <div class="tile gate ${t}"><span class="k">Gate · ${esc(s.subject)}</span><span class="huge">${esc(s.gate)}</span><span class="sub">${esc(s.candidate ?? "")} beside ${esc(s.baseline ?? "")} · ${esc(s.ranAt ? when(s.ranAt) : "")}<br>${link("full report", s.report)}${s.runUrl ? ` · ${link("the run", s.runUrl)}` : ""}${s.scorecard ? ` · scorecard ${s.scorecard.score} (${esc(s.scorecard.grade)})` : ""}${s.glance ? ` · ${s.glance} glance items` : ""}</span></div>
-  ${rcs}${dims}${small}${decideStrip(a.decisions)}
+  ${rcs}${dims}${a.quality ? qualityStripHtml(a.quality) : ""}${small}${decideStrip(a.decisions)}
 </section>
 <p class="note andon-note">${esc(s.note)}</p>`;
 }
+
+// ---- the quality strip (since 1.18.0) ---------------------------------------------------------------------
+
+const stateClass = (s: LightState) => (s === "within reason" ? "q-ok" : s === "look" ? "q-look" : "q-nm");
+const lamp = (s: LightState) => `<span class="lamp ${stateClass(s)}" aria-hidden="true">${s === "look" ? "!" : ""}</span>`;
+
+function lightHtml(l: QualityLight): string {
+  const halves = l.halves ? `<span class="halves">${(["harness", "monorepo"] as const).map((h) => `<span class="half ${stateClass(l.halves![h])}">${lamp(l.halves![h])}${h} half: ${esc(l.halves![h])}</span>`).join("")}</span>` : "";
+  const ev = l.evidence.length ? `<span class="lev">${l.evidence.map((e) => link(e.label, e.href)).join(" · ")}</span>` : "";
+  return `<div class="light ${stateClass(l.state)}" id="quality-${esc(l.id)}">${lamp(l.state)}<div class="lb"><span class="lt"><strong>${esc(l.name)}</strong> <span class="ls">${esc(l.state)}</span></span>${halves}<span class="lr">${esc(l.reading)}</span>${l.beside ? `<span class="beside">Beside it: ${esc(l.beside)}</span>` : ""}<span class="rule">Within reason when: ${esc(l.rule)}</span>${ev}</div></div>`;
+}
+
+/** The three lights under the Gate: Speed, Metrics, Tests. Not measured is hatched, never green. */
+export function qualityStripHtml(q: QualityStrip): string {
+  const rows = q.lights.flatMap((l) => l.checks.map((c) => `<tr><td>${esc(l.name)}${c.half ? ` <span class="src">(${c.half})</span>` : ""}</td><td>${esc(c.label)}</td><td><span class="chip-q ${stateClass(c.state)}">${esc(c.state)}</span></td><td>${esc(c.reading)}${c.evidence.length ? `<br><span class="src">${c.evidence.map((e) => link(e.label, e.href)).join(" · ")}</span>` : ""}</td></tr>`));
+  return `<div class="quality-strip" role="group" aria-label="Quality strip: Speed, Metrics, Tests"><span class="k">Quality · a reading aid beside the Gate, never an input to it</span>
+  <div class="lights">${q.lights.map(lightHtml).join("")}</div>
+  <p class="sub">${esc(q.note)}</p>
+  <details><summary>What each light read</summary><div class="scroll"><table><thead><tr><th>Light</th><th>Check</th><th>State</th><th>Reading</th></tr></thead><tbody>${rows.join("")}</tbody></table></div></details></div>`;
+}
+
+/** The same three, small, for a row of the readiness page: a lamp and a name each, the reading on hover. */
+export function qualityMarksHtml(q: QualityStrip, href?: string): string {
+  const marks = q.lights.map((l) => `<span class="qm ${stateClass(l.state)}" title="${esc(`${l.name}: ${l.state}. ${l.reading}`)}">${lamp(l.state)}${esc(l.name)}<span class="vh">: ${esc(l.state)}</span></span>`).join("");
+  const h = href && /^#[A-Za-z][\w-]*$/.test(href) ? href : safeHref(href);
+  return h ? `<a class="qmarks" href="${esc(h)}">${marks}</a>` : `<span class="qmarks">${marks}</span>`;
+}
+
+/** The strip's styles, for any page that defines --pass, --warn, --rule, --ink2 and --hatch. */
+export const QUALITY_CSS = `
+.quality-strip{grid-column:1/-1;background:var(--sheet);border:1px solid var(--rule);border-radius:8px;padding:8px 12px 10px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.quality-strip>.k{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink2)}
+.quality-strip>.sub{font-size:12px;color:var(--ink2);margin:0}
+.lights{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:8px 14px}
+.light{display:grid;grid-template-columns:1.5rem minmax(0,1fr);gap:8px;align-items:start;padding:6px 0 0;border-top:3px solid var(--rule);min-width:0}
+.light.q-ok{border-top-color:var(--pass)} .light.q-look{border-top-color:var(--warn)} .light.q-nm{border-top-style:dashed}
+.light .lb{display:flex;flex-direction:column;gap:2px;min-width:0;font-size:12.5px}
+.light .lt{font-size:14px} .light .ls{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink2)}
+.light .lr{font-weight:600;overflow-wrap:anywhere} .light .rule,.light .beside{color:var(--ink2);font-size:12px} .light .lev{font-size:12px;overflow-wrap:anywhere}
+.lamp{display:inline-grid;place-items:center;width:1.1rem;height:1.1rem;border-radius:50%;flex:none;font-size:11px;font-weight:800;line-height:1;color:#fff;vertical-align:-3px}
+.lamp.q-ok{background:var(--pass)} .lamp.q-look{background:var(--warn)}
+.lamp.q-nm{border:1.5px dashed var(--ink2);background:repeating-linear-gradient(45deg,var(--hatch) 0 2px,transparent 2px 4px)}
+.halves{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:12px} .half{display:inline-flex;gap:4px;align-items:center} .half .lamp{width:.8rem;height:.8rem;font-size:9px}
+.chip-q{display:inline-block;padding:0 6px;border-radius:4px;font-size:11px;font-weight:700;white-space:nowrap;border:1px solid var(--rule)}
+.chip-q.q-ok{background:var(--pass);color:#fff;border-color:var(--pass)} .chip-q.q-look{background:var(--warn);color:#fff;border-color:var(--warn)} .chip-q.q-nm{border-style:dashed;color:var(--ink2)}
+.qmarks{display:inline-flex;flex-wrap:wrap;gap:3px 8px;text-decoration:none;color:inherit} .qm{display:inline-flex;gap:3px;align-items:center;font-size:12px;white-space:nowrap} .qm .lamp{width:.8rem;height:.8rem;font-size:9px}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+`;
 
 // ---- Pareto ---------------------------------------------------------------------------------------------
 
@@ -337,6 +386,7 @@ footer{font-size:12px;color:var(--ink2);border-top:1px solid var(--rule);margin-
 .empty{color:var(--ink2)}
 @media (max-width:980px){.a3{grid-template-columns:minmax(0,1fr)} .andon{grid-template-columns:repeat(2,minmax(0,1fr))} .tile.gate,.tile.dims{grid-column:1/-1} .tile.rcs,.tile.small{grid-column:span 1}}
 @media (max-width:520px){.phead,.bars li{grid-template-columns:minmax(0,9rem) minmax(30px,1fr) 2.6rem 2.4rem}}
+${QUALITY_CSS}
 @media print{@page{size:A3 landscape;margin:10mm} body{background:#fff;font-size:10.5px} .sheet{max-width:none;padding:0} details{display:none} .blk{break-inside:avoid}}
 `;
 

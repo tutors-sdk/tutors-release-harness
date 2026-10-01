@@ -207,6 +207,29 @@ describe("main-preview.yml: the forecast is scored as a candidate is (since 1.13
     expect(push).toContain("confidence.json");
   });
 
+  it("reads the monorepo's quality record for the commit judged, or the newest before it, into Test signal (since 1.18.0)", () => {
+    const p = wf.jobs.publish!;
+    const names = p.steps.map((s) => s.name ?? s.uses ?? "");
+    const q = run("publish", "The monorepo's quality record");
+    // after the monorepo checkout it walks back through, before the score that reads it; never fails the forecast
+    expect(names.indexOf("The monorepo's quality record")).toBeGreaterThan(p.steps.findIndex((s) => s.with?.repository === "tutors-sdk/tutors-mono-repo"));
+    expect(names.indexOf("The monorepo's quality record")).toBeLessThan(names.indexOf("Score the forecast"));
+    expect(q["continue-on-error"]).toBe(true);
+    expect(q.if).toBe("needs.resolve.outputs.sha != ''");
+    expect(q.run).toContain('git -C mono rev-list --first-parent --max-count=60 "$SHA"');
+    expect(q.run).toContain("repos/tutors-sdk/tutors-mono-repo/contents/quality?ref=quality");
+    expect(q.run).toContain('https://raw.githubusercontent.com/tutors-sdk/tutors-mono-repo/quality/quality/${commit}.json" -o "$(dirname "$report")/quality.json"');
+    // no branch, or no record: said and skipped, so Test signal stays not measured
+    expect(q.run).toMatch(/no quality branch yet: Test signal stays not measured"; exit 0/);
+    // the score reads it only when it is there, joined by the harness's own weekly mutants from the scoreboard branch
+    const score = run("publish", "Score the forecast").run!;
+    expect(score).toContain('if [ -f "$run_dir/quality.json" ]; then score+=(--test-signal "$run_dir/quality.json"); fi');
+    expect(score).toContain("contents/scoreboard/mutants.jsonl?ref=scoreboard");
+    expect(score).toContain('if [ -s mutants.jsonl ]; then score+=(--mutants "$PWD/mutants.jsonl"); fi');
+    // nothing of it reaches the preview job, which decides the verdict
+    expect(JSON.stringify(wf.jobs.preview)).not.toMatch(/quality|--test-signal|mutants\.jsonl/);
+  });
+
   it("keeps both rehearsals beside the forecast, and ten days of forecasts whatever the count (since 1.16.0)", () => {
     const push = run("publish", "Push the report to the main-preview branch").run!;
     expect(push).toContain("--keep-last 60 --keep-days 10");

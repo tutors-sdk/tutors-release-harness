@@ -224,7 +224,7 @@ export function confidenceSources(v: Values): ScoreSources {
   if (!where) throw new UsageError("confidence needs --run <release run dir | report.json | harness release dir> [--migration dir] [--upgrade dir] [--json]");
   const dir = runDirOf(where);
   const gateFile = join(dir, "gate.json");
-  const explicit: Partial<ScoreSources> = { ...(str(v, "migration") ? { migration: resolve(str(v, "migration")!) } : {}), ...(str(v, "upgrade") ? { upgrade: resolve(str(v, "upgrade")!) } : {}), ...scoreExtras(v) };
+  const explicit: Partial<ScoreSources> = { ...(str(v, "migration") ? { migration: resolve(str(v, "migration")!) } : {}), ...(str(v, "upgrade") ? { upgrade: resolve(str(v, "upgrade")!) } : {}), ...scoreExtras(v), ...(str(v, "mutants") ? { mutants: resolve(str(v, "mutants")!) } : {}) };
   const harness = (({ version, contractVersion }) => ({ version, contractVersion }))(harnessInfo());
   // The glance's novelty reads the scoreboard: --scoreboard, else the local one (HARNESS_HOME/scoreboard/releases.jsonl).
   explicit.scoreboard = str(v, "scoreboard") ? resolve(str(v, "scoreboard")!) : defaultScoreboardFile(harnessHome());
@@ -493,6 +493,7 @@ export async function a3Command(v: Values, deps: A3Deps = {}): Promise<number> {
       kaizen: at("kaizen") ?? join(ROOT, KAIZEN_DIR),
       ...(at("noise-history") ? { noiseHistory: at("noise-history")! } : {}),
       ...(at("scoreboard") ? { scoreboard: at("scoreboard")! } : {}),
+      ...(at("mutants") ? { mutants: at("mutants")! } : {}),
       ...(at("github") ? { github: at("github")! } : {}),
       fetchGithub: flag(v, "fetch-github"),
       now: (deps.now ?? (() => new Date()))(),
@@ -527,7 +528,7 @@ export function readinessCommand(v: Values, deps: { now?: () => Date; log?: (m: 
   const site = str(v, "site");
   if (!site) throw new UsageError("readiness needs --site <dir>: the site with main-preview/reports/index.json [--github github.json]");
   try {
-    const { readiness, files } = runReadiness({ site: resolve(site), ...(str(v, "github") ? { github: resolve(str(v, "github")!) } : {}), now: (deps.now ?? (() => new Date()))(), harness: harnessInfo().version });
+    const { readiness, files } = runReadiness({ site: resolve(site), ...(str(v, "github") ? { github: resolve(str(v, "github")!) } : {}), ...(str(v, "mutants") ? { mutants: resolve(str(v, "mutants")!) } : {}), now: (deps.now ?? (() => new Date()))(), harness: harnessInfo().version });
     if (flag(v, "json")) log(JSON.stringify(readiness, null, 2));
     else {
       log(`Overnight readiness: ${readiness.nights.length} nights, ${readiness.sources.forecasts} forecast(s) kept; workflow history ${readiness.sources.github}`);

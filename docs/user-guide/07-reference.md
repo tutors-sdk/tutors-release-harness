@@ -111,7 +111,7 @@ The last lines are `verdict: <VERDICT>`, the reasons, and `report: <path to repo
 
 ### `harness confidence`
 
-`--run <release run dir | report.json | harness release dir>` (required), `--migration <dir>`, `--upgrade <dir>`, `--test-signal <json>`, `--traceability <json>`, `--change-risk <json | changes.json>`, `--post-deploy <dir | report.json>`, `--scoreboard <file>` (the history the glance's novelty reads), `--json`. Writes `confidence.json` beside what it scored. Exit `0` when written, whatever the Gate or the score; `2` for an input it cannot read.
+`--run <release run dir | report.json | harness release dir>` (required), `--migration <dir>`, `--upgrade <dir>`, `--test-signal <json>`, `--traceability <json>`, `--change-risk <json | changes.json>`, `--post-deploy <dir | report.json>`, `--scoreboard <file>` (the history the glance's novelty reads), `--mutants <mutants.jsonl>` (since 1.18.0: the newest weekly self-test joins `--test-signal`'s packages as `harnessMutants`), `--json`. Since 1.18.0 `--test-signal` also takes the monorepo's quality record (`quality/<sha>.json`) as it is. Writes `confidence.json` beside what it scored. Exit `0` when written, whatever the Gate or the score; `2` for an input it cannot read.
 
 ### `harness changes`
 
@@ -202,7 +202,7 @@ Every flag, alphabetically. Types: strings unless noted. "Stable" is from `cli.j
 | `--masks` | no | | An alternative `masks.yaml` (for trying a mask on captures) |
 | `--migration`, `--upgrade` | no | 1.9.0 | `confidence`: the rehearsal run directories to score |
 | `--monorepo` | no | 1.8.0 | `release`, `changes`: the monorepo checkout (else `HARNESS_MONOREPO_DIR`) |
-| `--mutants` | no | 1.11.0 | `scoreboard`: the `mutants.jsonl` to read or append to |
+| `--mutants` | no | 1.11.0 | `scoreboard`: the `mutants.jsonl` to read or append to. Since 1.18.0 also `confidence` (joined to `--test-signal`), `a3` and `readiness` (the quality strip's weekly mutants) |
 | `--migrations-a`, `--migrations-b` | no | 1.3.0 | `local gate`: monorepo git refs for the migration rehearsal (default `v<a>`, `v<b>`) |
 | `--mode` | yes | | `noise`, `release`, `any-two`, `upgrade`, `migration`, `post-deploy` |
 | `--noise` | yes | | A noise status file or the directory that holds it; `skip` waives the requirement (logged, recorded); `none` does not look. Omitted in release and post-deploy mode: the latest status in the local store |

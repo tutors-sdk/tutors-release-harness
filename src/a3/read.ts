@@ -5,13 +5,15 @@
  * could not read.
  */
 import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import type { Changes } from "../changes/signals.ts";
 import type { Confidence } from "../score/confidence.ts";
 import type { RunReport } from "../types.ts";
 import { parseWhy } from "../why/format.ts";
 import { entryOf, whyFiles } from "../why/register.ts";
 import type { GithubSnapshot } from "./github.ts";
+import { readMutantsFile } from "../score/test-signal.ts";
+import { QUALITY_FILE, parseQualityRecord } from "./quality.ts";
 import { STREAMS, type A3Inputs, type KaizenFile, type KeptRun, type NoiseNight, type Stream } from "./model.ts";
 
 function json<T>(file: string): T | undefined {
@@ -47,6 +49,8 @@ export function readRuns(site: string): KeptRun[] {
       const report = at<RunReport>("report.json");
       const confidence = at<Confidence>("confidence.json");
       const changes = at<Changes>("changes.json");
+      // Since 1.18.0: the monorepo's quality record kept beside a forecast. Kept but not a record is null, never a guess.
+      const quality = file(QUALITY_FILE) ? (parseQualityRecord(at<unknown>(QUALITY_FILE)) ?? null) : undefined;
       out.push({
         stream,
         id: r.id,
@@ -60,7 +64,8 @@ export function readRuns(site: string): KeptRun[] {
         score: r.score ?? null,
         ...(report?.compare ? { report } : {}),
         ...(confidence?.dimensions ? { confidence } : {}),
-        ...(changes?.prs ? { changes } : {})
+        ...(changes?.prs ? { changes } : {}),
+        ...(quality !== undefined ? { quality } : {})
       });
     }
   }
@@ -95,9 +100,14 @@ export function readScoreboardReleases(file: string | undefined): number | undef
   return tags.size;
 }
 
-export function readInputs(o: { site: string; kaizen: string; noiseHistory?: string; scoreboard?: string; github?: GithubSnapshot; now: Date; harness: string }): A3Inputs {
+/** The weekly mutants self-tests (mutants.jsonl); undefined when there is no such file. */
+export const readWeeklyMutants = readMutantsFile;
+
+export function readInputs(o: { site: string; kaizen: string; noiseHistory?: string; scoreboard?: string; mutants?: string; github?: GithubSnapshot; now: Date; harness: string }): A3Inputs {
   const noise = readNoise(o.noiseHistory ?? join(o.site, "noise", "noise-history.json"));
   const releases = readScoreboardReleases(o.scoreboard);
+  // The weekly mutants: --mutants, else the mutants.jsonl beside --scoreboard (as harness scoreboard trends reads it).
+  const mutants = readWeeklyMutants(o.mutants ?? (o.scoreboard ? join(dirname(o.scoreboard), "mutants.jsonl") : undefined));
   return {
     now: o.now,
     harness: o.harness,
@@ -105,6 +115,7 @@ export function readInputs(o: { site: string; kaizen: string; noiseHistory?: str
     ...(noise ? { noise } : {}),
     kaizen: readKaizen(o.kaizen),
     ...(o.github ? { github: o.github } : {}),
-    ...(releases !== undefined ? { scoreboardReleases: releases } : {})
+    ...(releases !== undefined ? { scoreboardReleases: releases } : {}),
+    ...(mutants ? { mutants } : {})
   };
 }

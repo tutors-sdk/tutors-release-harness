@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "commit": "90cb998977c587e5e2c1147287db6ea5bb9aeb1e",
+  "base": null,
+  "generatedAt": "2026-09-29T03:44:12Z",
+  "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/actions/runs/17000000000",
+  "nightly": { "result": "failure", "jobs": { "mutation-nightly": "failure", "suite-health": "success", "e2e": "success", "lighthouse": "success", "load": "success" } }
+}

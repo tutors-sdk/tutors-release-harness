@@ -338,7 +338,7 @@ The one command (`harness release`), the score, the change signals, the glance, 
 
 ### `Test signal`, `Requirements traceability` or `Post-deploy history`: `not measured`
 
-**Cause.** These dimensions read data the harness does not produce: the monorepo's mutation scores (`--test-signal`), the changelog, EARS files and claims side by side (`--traceability`), and the last release's post-deploy record (`--post-deploy`). **Fix.** None is needed to decide: a dimension that is not measured is left out of the mean, and `confidence.json` records the weights used. Pass the input to `harness confidence` (or `harness release`) to measure it.
+**Cause.** These dimensions read data the harness does not produce: the monorepo's mutation scores (`--test-signal`), the changelog, EARS files and claims side by side (`--traceability`), and the last release's post-deploy record (`--post-deploy`). **Fix.** None is needed to decide: a dimension that is not measured is left out of the mean, and `confidence.json` records the weights used. Pass the input to `harness confidence` (or `harness release`) to measure it. Since 1.18.0 Main to RC passes the monorepo's quality record as `--test-signal` when its `quality` branch has one for the judged commit or one before it; the publish job's log says which, or why not (no branch yet, or a record with no mutation scores).
 
 ### `Rehearsals −50 (floor): the migration rehearsal was skipped`, and the RCS is capped at 74
 

@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "commit": "76cd877126a7cb5e7cee00e88edcaaacb624d6e8",
+  "base": "caa53d0d1a0c4a0d2c51b0f2a2bb1f1a7d1e7a5b",
+  "generatedAt": "2026-09-30T03:41:07Z",
+  "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/actions/runs/17000000001",
+  "packages": [
+    { "name": "@tutors/tutors-model-lib", "mutationScore": 87.5, "changed": true, "path": "packages/jsr/model" },
+    { "name": "@tutors/tutors-reader-lib", "mutationScore": 72.1, "changed": true, "path": "packages/reader-lib" },
+    { "name": "@tutors/tutors-time-lib", "mutationScore": 55, "changed": false, "path": "packages/time-lib" }
+  ],
+  "nightly": { "result": "failure", "jobs": { "mutation-nightly": "success", "suite-health": "success", "e2e": "success", "lighthouse": "failure", "load": "skipped" } }
+}

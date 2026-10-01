@@ -21,6 +21,7 @@ import type { WhyFile } from "../why/format.ts";
 import { chainEnd, countermeasureOf } from "../why/format.ts";
 import type { RegisterEntry } from "../why/register.ts";
 import { runMs, type GithubSnapshot, type WorkflowRun } from "./github.ts";
+import { qualityOf, type QualityRecord, type QualityStrip, type WeeklyMutants } from "./quality.ts";
 
 export const A3_SCHEMA_VERSION = 1 as const;
 /** The Pareto rule: the causes that together make up this share are the vital few. */
@@ -51,6 +52,8 @@ export interface KeptRun {
   report?: RunReport;
   confidence?: Confidence;
   changes?: Changes;
+  /** Since 1.18.0: the monorepo's quality record kept beside the run (quality.json); null when kept and not a record. */
+  quality?: QualityRecord | null;
 }
 
 export interface NoiseNight {
@@ -76,6 +79,8 @@ export interface A3Inputs {
   github?: GithubSnapshot;
   /** Releases on the scoreboard (the `scoreboard` branch); undefined when there is none yet. */
   scoreboardReleases?: number;
+  /** Since 1.18.0: the harness's weekly mutants self-tests (mutants.jsonl); undefined when not read. */
+  mutants?: WeeklyMutants[];
 }
 
 export interface Link {
@@ -230,6 +235,8 @@ export interface A3 {
   fiveWhys: FiveWhys[];
   /** Since 1.15.0; absent when the subject run kept no report. */
   decisions?: Decisions;
+  /** Since 1.18.0: Speed, Metrics and Tests under the Gate (src/a3/quality.ts); absent without a subject run. */
+  quality?: QualityStrip;
   countermeasures: { kind: string; what: string; owner: string; due: string; status: FiveWhys["status"]; from: string; rca: string[] }[];
   plan: { what: string; who: string; when: string; status: string }[];
   followUp: { check: string; state: string; met: boolean }[];
@@ -704,6 +711,7 @@ export function buildA3(i: A3Inputs): A3 {
   whys.sort((x, y) => order(x) - order(y));
   const score = scoreOf(i, subject, postDeployState(i.github));
   const decisions = decisionsFor(subject);
+  const quality = subject ? qualityOf({ ...(subject.report ? { report: subject.report } : {}), ...(subject.quality !== undefined ? { record: subject.quality } : {}), ...(i.mutants ? { mutants: i.mutants } : {}), dir: subject.dir }) : undefined;
   const times = i.runs.map((r) => r.ranAt).sort();
   const streams: Partial<Record<Stream, number>> = {};
   for (const r of i.runs) streams[r.stream] = (streams[r.stream] ?? 0) + 1;
@@ -721,6 +729,7 @@ export function buildA3(i: A3Inputs): A3 {
   if (score?.lastRelease) facts.push(`Last release candidate kept: ${score.lastRelease.candidate} beside ${score.lastRelease.baseline}, ${score.lastRelease.verdict} on ${score.lastRelease.ranAt.slice(0, 10)}.`);
   if (score?.postDeploy) facts.push(`Post-deploy: ${score.postDeploy.red ? `red ${score.postDeploy.red} runs running` : "green"}${score.postDeploy.issue ? `, rollback issue #${score.postDeploy.issue.number} open` : ""}.`);
   if (score?.aa) facts.push(`A/A: ${score.aa.verdict} on ${score.aa.ranAt.slice(0, 10)}.`);
+  if (quality) facts.push(`Quality: ${quality.lights.map((l) => `${l.name} ${l.state}`).join(", ")}.`);
 
   const unclaimed = subject?.report?.compare.unclaimed.length;
   const glances = 0;
@@ -760,6 +769,7 @@ export function buildA3(i: A3Inputs): A3 {
     rca,
     fiveWhys: whys,
     ...(decisions ? { decisions } : {}),
+    ...(quality ? { quality } : {}),
     countermeasures,
     plan,
     followUp,

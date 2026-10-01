@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.17.0`
+Contract version: `1.18.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -22,6 +22,7 @@ The machine-readable half lives in [`docs/contract/`](contract/):
 | [`glance-marks.schema.json`](contract/glance-marks.schema.json) | one line of `glance-marks.jsonl`, the Reviewer's marks on the glance (since 1.12.0, not stable) |
 | [`reports-index.schema.json`](contract/reports-index.schema.json) | `reports/index.json`, the kept reports of a branch (since 1.5.0; the schema since 1.16.1, not stable) |
 | [`readiness.schema.json`](contract/readiness.schema.json) | `readiness.json`, the overnight readiness page (since 1.17.0, not stable) |
+| [`quality-strip.schema.json`](contract/quality-strip.schema.json) | `quality` in `a3.json` and on each forecast of `readiness.json`: the quality strip (since 1.18.0, not stable) |
 | [`cli.json`](contract/cli.json) | every command and flag, which are stable, the exit codes |
 | [`workflows.json`](contract/workflows.json) | dispatch events and payloads, repository variables, artifacts, permissions the workflows never hold |
 
@@ -733,6 +734,29 @@ and are named in its `reason` while it is not). The board and the report show it
 
 `--post-deploy` takes the last release's post-deploy run directory or its `report.json`.
 
+**Test signal's two halves** (since 1.18.0). `--test-signal` also reads the monorepo's
+**quality record** as it is: the file its Nightly publishes per commit on its `quality` branch
+(`quality/<sha>.json`, written by `pnpm release:quality`):
+
+```jsonc
+{ "schemaVersion": 1, "commit": "<sha>", "base": "<ref the packages are compared with, or null>",
+  "generatedAt": "2026-09-30T03:41:07Z", "evidence": "<the Nightly run>",
+  "packages": [{ "name": "@tutors/tutors-model-lib", "mutationScore": 87.5, "changed": true, "path": "packages/jsr/model" }],
+  "nightly": { "result": "failure", "jobs": { "mutation-nightly": "success", "lighthouse": "failure" } } }
+```
+
+`packages` is the shape above; the other keys are read by the quality strip, not the score. A
+record (`schemaVersion` 1 and a `commit`) with no `packages` (the Nightly wrote no Stryker
+report) is **not measured**, with a `reason` naming the file and the commit, never exit `2`; a
+file that is not a record still needs `packages` or `harnessMutants`. The record never carries
+`harnessMutants`: that half is the harness's own. **`--mutants <mutants.jsonl>`** (since 1.18.0;
+the weekly self-tests `harness scoreboard mutants` records, on the `scoreboard` branch) joins
+it: when the test signal has `packages` and no `harnessMutants`, the newest self-test that ran
+before the release run is its `harnessMutants` (`evidence`: that self-test's run). One that
+could not run (`caught: null`), one older than 14 days, or no file at all joins nothing, and
+the dimension's `gaps` say which. The weekly mutants never measure Test signal alone: without
+the monorepo's packages they are not read.
+
 `glance` is the reviewer's glance (since 1.12.0; empty before), ranked after the score from the
 same inputs and never read back by it; `glanceBasis` says how it was ranked ([the reviewer's
 glance](#the-reviewers-glance)). `run` names the candidate, the baseline, when the release ran,
@@ -964,8 +988,8 @@ exit code**: `harness release` opens the stubs after its exit code is decided.
 
 ## The A3 Aggregator
 
-**`harness a3 --site <dir> [--kaizen kaizen] [--noise-history f] [--scoreboard f] [--github f |
---fetch-github] [--out <dir>]`** (not stable) reads what the pages workflow has already put
+**`harness a3 --site <dir> [--kaizen kaizen] [--noise-history f] [--scoreboard f] [--mutants f]
+[--github f | --fetch-github] [--out <dir>]`** (not stable) reads what the pages workflow has already put
 together (each stream's `reports/index.json` and kept reports, `confidence.json` and
 `changes.json` beside them, the noise history, the kaizen register, the scoreboard) and writes
 one A3 on one page: `a3.html` (self-contained, printable on A3 landscape), `a3.json` (the same
@@ -989,6 +1013,25 @@ when a claim names it (the claim is the why), undecided when none does, and "fix
 changed?" when the same page also has new failures of that kind; with the share decided per
 artefact.
 
+**The quality strip** (since 1.18.0, `quality` in `a3.json`,
+[`quality-strip.schema.json`](contract/quality-strip.schema.json)): three lights under the Gate,
+for the A3's subject run, each **within reason**, **look** or **not measured** with the number,
+the rule and links to what it read (`src/a3/quality.ts`):
+
+| Light | Reads | Within reason when |
+| --- | --- | --- |
+| Speed | `report.json`'s timing, load and startup hunks and its `load` block | no failing timing, load or startup hunk (claimed or not), and no failed or 5xx k6 request on main; not measured without a k6 leg |
+| Metrics | the unclaimed `metrics` hunks | none; unclaimed `logs` hunks are shown beside it, not counted |
+| Tests, harness half | the journey outcome hunks (`journey "<name>" completed on a but failed on b`, and the rest), `report.noise`, and the newest weekly mutants self-test before the run (`--mutants`, default `mutants.jsonl` beside `--scoreboard`) | every journey completed on both sides; the A/A clean, not degraded and at most 2 days older than the run; every mutant caught (a self-test that could not run, or one older than 14 days, is not measured) |
+| Tests, monorepo half | the quality record kept beside the forecast (`quality.json`, see [Kept reports](#kept-reports)) | its Nightly `result` is `success`, and no changed package is below 80% mutation score (Test signal's target); a record with no `packages` is not measured |
+
+A light is within reason only when every check under it was read and in reason; any look makes
+it look; otherwise it is not measured, drawn hatched and never green. The Tests light carries
+each half's state (`halves`), so a half-measured light says which half, and `record` says which
+commit the monorepo's record is for (the judged one, or the newest before it with a record) and
+how long before the forecast it was generated. CI on the commit is not in the record and is not
+read. **The strip never changes the Gate, the score, a verdict or an exit code.**
+
 What was not read is **not measured**, never a guess: a missing file, a stream with no kept
 run, or a GitHub call that failed (named in `github.json`'s `errors`). Exit `0` when the A3 is
 written, `2` for a usage error (no `--site`, a directory that does not exist, an unreadable
@@ -998,7 +1041,7 @@ reads `a3.json` but the site. `pages.yml` runs it after the reports are copied, 
 
 ## The overnight readiness page
 
-**`harness readiness --site <dir> [--github f]`** (not stable, since 1.17.0) reads the Main to
+**`harness readiness --site <dir> [--github f] [--mutants f]`** (not stable, since 1.17.0) reads the Main to
 RC forecasts the pages workflow has copied into the site (`main-preview/reports/index.json` and
 the kept `report.json` and rehearsals beside each run) and Main to RC's workflow runs from
 `github.json` (the snapshot `harness a3 --fetch-github` writes into the site; `--github f` reads
@@ -1023,6 +1066,12 @@ judged), shown in grey with the Gate of the forecast it repeats and that forecas
 run); **did not run**. Without `github.json`, or when GitHub did not answer for
 `main-preview.yml`, such a night is **not known**, never "did not run". Where production moved
 between two rows the page draws a rule and says so: the delta starts again.
+
+Since 1.18.0 each forecast carries `quality`, the same strip the A3 draws under its Gate
+([the A3 Aggregator](#the-a3-aggregator)): the row shows Speed, Metrics and Tests as marks, and
+the latest forecast at the top shows the whole strip. `--mutants <mutants.jsonl>` is the Tests
+mark's weekly self-tests; without it that check is not measured. An unchanged night repeats no
+marks ("as then").
 
 Exit `0` when the page is written, `2` for a usage error (no `--site`, a directory that does not
 exist, a `--github` that is not a snapshot). Advisory: **nothing here changes a verdict, a Gate
@@ -1271,6 +1320,11 @@ by another harness version, since a harness change can move differences too. `de
 on a run kept before 1.16.1 and on a run of another mode. Advisory like the rest of the index: no
 verdict, Gate or exit code reads it.
 
+Since 1.18.0 a release run keeps `quality.json` beside it, byte for byte and listed in `files`,
+when its directory holds the monorepo's quality record ([`confidence.json`](#confidencejson-the-release-confidence-score),
+Test signal's two halves): [Main to RC](#main-to-rc) fetches it there. A file that is not a
+record is not kept. The quality strip reads it.
+
 Since 1.5.0 the same reports are also a website:
 [tutors-sdk.github.io/tutors-release-harness](https://tutors-sdk.github.io/tutors-release-harness/).
 `pages.yml` copies each branch's `reports/` beside `site/index.html`, which lists
@@ -1342,6 +1396,12 @@ and it cannot be mistaken for a judged candidate, because it never writes the
   --a <production> --b <commit>` over the monorepo's history (`changes.json`), then
   `harness confidence` over the release run, both rehearsals and `changes.json`, with the
   `scoreboard` branch's `releases.jsonl` for the glance's novelty (`confidence.json`).
+  Since 1.18.0 the score's Test signal reads the monorepo's quality record for the judged
+  commit, or the newest first-parent commit before it that has one (the last 60; the
+  monorepo's Nightly starts at 03:00 UTC, so a forecast can finish first), saved beside the
+  run as `quality.json` and passed as `--test-signal`, joined by the harness's own newest
+  weekly mutants self-test (`--mutants`, the `scoreboard` branch's `mutants.jsonl`). No
+  `quality` branch yet, or no record within those commits, leaves Test signal not measured.
   Both are advisory: a step that cannot run says why and the forecast is kept without it.
   Nothing is appended to the scoreboard: a forecast is not a release.
 - **Kept** on the `main-preview` branch, one commit per run, never forced, the last
@@ -1353,6 +1413,7 @@ and it cannot be mistaken for a judged candidate, because it never writes the
   Rehearsals dimension's evidence opens on the pages after the 14-day artifact is gone. Since
   1.16.1 each forecast's entry carries `delta`, what is new and gone in its unclaimed set since
   the previous forecast beside the same production, and its kept report leads with the new ones.
+  Since 1.18.0 the quality record the score read is kept beside it (`quality.json`).
   The report pages show the newest at the top.
 
 ## What the harness does to a pull request
@@ -1419,6 +1480,30 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.18.0 (minor; the quality strip: Speed, Metrics, Tests)
+
+The release note is [releases/1.18.0.md](releases/1.18.0.md). The fourth step of the "Page"
+release, and the last. Additive for a consumer written against 1.17.0: no `report.json` field,
+verdict, Gate or exit code changes, and every new field is optional. A minor because three
+non-stable commands take a flag they did not (`--mutants`, a flag `scoreboard` has had since
+1.11.0).
+
+- `a3.json` gains the optional `quality` ([the quality strip](#the-a3-aggregator)): Speed,
+  Metrics and Tests under the Gate, each within reason, look or not measured; `a3.html` draws
+  it. `harness a3 --mutants f` (default `mutants.jsonl` beside `--scoreboard`).
+- `readiness.json`: each forecast gains `quality`; `readiness.html` marks every row and draws
+  the strip for the latest. `harness readiness --mutants f`.
+- `quality-strip.schema.json`: the schema of `quality`, referenced by `readiness.schema.json`.
+- `harness confidence`: `--test-signal` reads the monorepo's quality record as it is, and a
+  record with no `packages` is not measured instead of exit `2`; `--mutants f` joins the newest
+  weekly mutants self-test as `harnessMutants` when the record has packages
+  ([Test signal's two halves](#confidencejson-the-release-confidence-score)).
+- `reports keep`: keeps `quality.json` beside a release run when it is a quality record.
+- `main-preview.yml`: a step "The monorepo's quality record" in the `publish` job fetches it
+  for the judged commit or the newest before it, and "Score the forecast" passes
+  `--test-signal` and `--mutants`. `pages.yml` passes `--mutants` to `harness a3` and
+  `harness readiness`. No new permission, job or artifact.
 
 ### 1.17.0 (minor; the overnight readiness page: `harness readiness`)
 

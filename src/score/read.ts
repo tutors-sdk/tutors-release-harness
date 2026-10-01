@@ -11,6 +11,7 @@ import { readReport } from "../ci/scorecard.ts";
 import { MARKS_FILE, applyMarks, parseMarks } from "../glance/marks.ts";
 import { glanceOf } from "../glance/read.ts";
 import type { RunReport } from "../types.ts";
+import { readMutantsFile, withHarnessMutants } from "./test-signal.ts";
 import { confidence, gateOfReports, type ChangeRisk, type Confidence, type ConfidenceRun, type GateWord, type Located, type ScoreInputs, type TestSignal, type Traceability } from "./confidence.ts";
 
 export class ScoreInputError extends Error {}
@@ -45,13 +46,18 @@ export function parseTestSignal(raw: unknown, file: string): TestSignal {
   const f = "--test-signal";
   if (!isObj(raw)) bad(f, file, "expected an object");
   const o = raw as Record<string, unknown>;
-  if (o.packages === undefined && o.harnessMutants === undefined) bad(f, file, 'needs "packages" or "harnessMutants"');
+  // Since 1.18.0 the monorepo's quality record (schemaVersion 1 and a commit) is read as it is: one with no "packages" says
+  // its Nightly wrote no mutation scores, and the dimension is then not measured, saying so, never an error.
+  const record = o.schemaVersion === 1 && typeof o.commit === "string";
+  if (o.packages === undefined && o.harnessMutants === undefined && !record) bad(f, file, 'needs "packages" or "harnessMutants"');
   if (o.packages !== undefined && (!Array.isArray(o.packages) || !o.packages.every((p) => isObj(p) && typeof p.name === "string" && typeof p.mutationScore === "number" && p.mutationScore >= 0 && p.mutationScore <= 100 && (p.changed === undefined || typeof p.changed === "boolean") && optStr(p.evidence))))
     bad(f, file, '"packages" must be [{ "name": string, "mutationScore": 0-100, "changed"?: boolean, "evidence"?: string }]');
   const m = o.harnessMutants;
   if (m !== undefined && !(isObj(m) && Number.isInteger(m.caught) && Number.isInteger(m.total) && (m.caught as number) >= 0 && (m.caught as number) <= (m.total as number) && optStr(m.evidence))) bad(f, file, '"harnessMutants" must be { "caught": n, "total": n, "evidence"?: string } with caught <= total');
   if (!optStr(o.evidence)) bad(f, file, '"evidence" must be a string');
-  return o as TestSignal;
+  // What the harness sets itself is never read from the file.
+  const { mutantsGap: _ignored, ...signal } = o;
+  return { ...(signal as TestSignal), ...(record ? { commit: o.commit as string } : {}) };
 }
 
 export function parseTraceability(raw: unknown, file: string): Traceability {
@@ -104,6 +110,11 @@ export interface ScoreSources {
   harness?: { version: string; contractVersion: string };
   /** releases.jsonl: the history the glance's novelty reads (since 1.12.0). */
   scoreboard?: string;
+  /**
+   * mutants.jsonl, the harness's weekly self-tests (since 1.18.0): the newest joins a --test-signal that has the
+   * monorepo's packages and no harnessMutants of its own (src/score/test-signal.ts).
+   */
+  mutants?: string;
 }
 
 function report(where: string | undefined, outDir: string, flag: string, mode?: RunReport["mode"]): Located<RunReport> | undefined {
@@ -127,7 +138,8 @@ export function scoreInputs(s: ScoreSources): ScoreInputs {
   const upgrade = report(s.upgrade, s.outDir, "--upgrade", "upgrade");
   const postDeploy = report(s.postDeploy, s.outDir, "--post-deploy", "post-deploy");
   const file = <T>(where: string | undefined, flag: string, parse: (raw: unknown, f: string) => T): Located<T> | undefined => (where ? { data: parse(json(resolve(where), flag), where), where: rel(s.outDir, resolve(where)) } : undefined);
-  const testSignal = file(s.testSignal, "--test-signal", parseTestSignal);
+  const given = file(s.testSignal, "--test-signal", parseTestSignal);
+  const testSignal = given && s.mutants ? { ...given, data: withHarnessMutants(given.data, readMutantsFile(s.mutants), release?.data.ranAt) } : given;
   const traceability = file(s.traceability, "--traceability", parseTraceability);
   const changeRisk = file(s.changeRisk, "--change-risk", parseChangeRisk);
   const reports = { ...(release ? { release: join(release.where, "report.json").replaceAll("\\", "/") } : {}), ...(migration ? { migration: join(migration.where, "report.json").replaceAll("\\", "/") } : {}), ...(upgrade ? { upgrade: join(upgrade.where, "report.json").replaceAll("\\", "/") } : {}), ...(postDeploy ? { postDeploy: join(postDeploy.where, "report.json").replaceAll("\\", "/") } : {}) };
