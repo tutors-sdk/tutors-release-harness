@@ -400,6 +400,21 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
           path: mono
+      # Since 1.20.4: the monorepo's own changelog of the range (its PRs, and whether CHANGELOG.md names each), given to
+      # harness changes as --changelog, so orphan diffs are measured on a forecast, whose CHANGELOG.md has no section for a
+      # commit. It needs the history from production's tag, which this checkout has and the release job's Rules checkout
+      # (shallow) does not. The monorepo's code runs here with no token. Best effort: without it, changes runs as before.
+      - name: The monorepo's changelog of that range
+        if: needs.resolve.outputs.sha != ''
+        continue-on-error: true
+        timeout-minutes: 5
+        working-directory: mono
+        env:
+          PRODUCTION: ${{ needs.resolve.outputs.production }}
+          SHA: ${{ needs.resolve.outputs.sha }}
+        run: |
+          pnpm install --frozen-lockfile --ignore-scripts --filter .
+          pnpm --silent release:changelog --from "v$PRODUCTION" --to "$SHA" --json ../changelog.json >/dev/null
       - name: What changed between production and main
         if: needs.resolve.outputs.sha != ''
         continue-on-error: true
@@ -411,7 +426,10 @@ jobs:
         run: |
           report="$(find ../reports -path '*-release/report.json' 2>/dev/null | head -1)"
           if [ -z "$report" ]; then echo "no release report: nothing to put changes beside"; exit 0; fi
-          pnpm harness changes --a "$PRODUCTION" --b "$SHA" --monorepo ../mono --out "$(dirname "$report")/changes.json"
+          changelog=""
+          if jq -e '.version == 1 and (.entries | type == "array")' ../changelog.json >/dev/null 2>&1; then changelog=../changelog.json
+          else echo "no changelog from pnpm release:changelog: orphan diffs stay as CHANGELOG.md has them"; fi
+          pnpm harness changes --a "$PRODUCTION" --b "$SHA" --monorepo ../mono ${changelog:+--changelog "$changelog"} --out "$(dirname "$report")/changes.json"
       # Since 1.18.0: the monorepo's quality record (its Nightly's mutation scores and job results, pushed to its `quality`
       # branch as quality/<sha>.json; public, read-only) for the commit judged, or the newest commit before it that has one:
       # the Nightly starts at 03:00 UTC and this run can finish first. Kept beside the run as quality.json, where the quality
