@@ -10,7 +10,7 @@ import { DigestError, parseDigests, pinImages } from "./digests.ts";
 import { isTag } from "./release-record.ts";
 import { EXIT_CANNOT_JUDGE, ImageTrustError, ensureImages, fileLedger, realExec, resolveSideProvenance, trustPolicyFromEnv } from "./images.ts";
 import { runMutants } from "./mutants.ts";
-import { compareFromCaptures, defaultRunOptions, loadCapture, run } from "./run.ts";
+import { compareFromCaptures, defaultRunOptions, loadA2Capture, loadCapture, run } from "./run.ts";
 import { imagesFor, sideSpec, stackDown, stackUp } from "./stack.ts";
 import { CLUSTER, kindDown, kindRollout, kindSide, kindUp } from "./substrate/kind.ts";
 import { refuseLegacyCluster } from "./project.ts";
@@ -49,6 +49,9 @@ const USAGE = `tutors-release-harness
       --vex         the release's OpenVEX file (release/openvex.json beside claims.yaml): handed to the vulnerability
                     scanner on both sides (grype or trivy, --vex), so an advisory it says does not affect the release
                     is left out of vulns and the vulnerability ceiling. Checked first: an invalid one is exit 2
+      --a2          release mode, compose: also start side a2, a second copy of side a's apps (four containers),
+                    capture it once for dom, network, console, headers, axe and focus, and report a against a2 beside
+                    the nightly A/A (in-run noise). Never changes the verdict
       --claim-max-hunks  flag a claim that covers more than this many hunks (default 10, or HARNESS_CLAIM_MAX_HUNKS); reported, never gates
       --noise       noise-status.json (or its directory) from a recent A/A run; "skip" waives it, loudly;
                     "none" does not look. Release and post-deploy mode without it read the latest status from the
@@ -323,6 +326,7 @@ async function main(argv: string[]): Promise<number> {
       "claim-max-hunks": { type: "string" },
       rules: { type: "string" },
       vex: { type: "string" },
+      a2: { type: "boolean" },
       "a-digests": { type: "string" },
       "b-digests": { type: "string" },
       deployed: { type: "string" },
@@ -481,6 +485,7 @@ async function main(argv: string[]): Promise<number> {
         ...(values.claims ? { claimsFile: resolve(values.claims) } : {}),
         ...(values.rules ? { rules: rulesWhere(values.rules) } : {}),
         ...(values.vex ? { vexFile: resolve(values.vex) } : {}),
+        ...(values.a2 ? { a2: true } : {}),
         ...(noise(m) ? { noise: noise(m)! } : {})
       });
       printOutcome(outcome.report.verdict, outcome.report.reasons, outcome.files);
@@ -490,12 +495,14 @@ async function main(argv: string[]): Promise<number> {
     case "compare": {
       if (!values.dir) fail("compare needs --dir <run directory containing a/ and b/>");
       const dir = resolve(values.dir);
+      const a2Capture = loadA2Capture(dir);
       const outcome = compareFromCaptures({
         mode: mode(values.mode),
         substrate: common.substrate,
         captureDir: dir,
         a: loadCapture(dir, "a"),
         b: loadCapture(dir, "b"),
+        ...(a2Capture ? { a2: a2Capture } : {}),
         claims: values.claims ? loadClaims(resolve(values.claims), values.rules ? await loadRules(rulesWhere(values.rules)) : undefined) : [],
         masksFile: common.masksFile,
         noiseMaxAgeDays: common.noiseMaxAgeDays,

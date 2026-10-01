@@ -155,7 +155,8 @@ const full: DeepRequired<RunReport> = {
     causes: [{ id: "0a1b2c3d", key: "headers: header dropped", artefact: "headers", kind: "header dropped", hunks: 1, apps: ["reader"], pages: ["reader:home"], items: ["x-frame-options"], example: { id: "2", scope: "reader:home/x-frame-options", summary: "header dropped" } }],
     together: [{ artefacts: ["dom", "screenshot"], pages: ["reader:home"], hunks: 2 }]
   },
-  levels: { dom: { level: "blocking", blockingFrom: "2026-11-01" }, headers: { level: "informing", blockingFrom: "2026-11-01" } }
+  levels: { dom: { level: "blocking", blockingFrom: "2026-11-01" }, headers: { level: "informing", blockingFrom: "2026-11-01" } },
+  inRunNoise: { stack: "a2", runs: 1, artefacts: ["dom", "network"], journeys: ["anon-browse"], hunks: [{ artefact: "dom", scope: "reader:course", summary: "reader:course: DOM differs" }], alsoOnB: ["dom:reader:course:1"] }
 };
 
 function runFixture(mode: Mode, opts: { mutate?: boolean; claims?: string; noise?: string } = {}) {
@@ -214,7 +215,7 @@ describe("report.json", () => {
     const cli = json("docs/contract/cli.json");
     for (const flag of cli.flags.filter((f: { since?: string }) => f.since === "1.2.0")) expect(changes, flag.name).toContain(`--${flag.name === "runtime" ? "no-runtime" : flag.name}`);
     for (const [name, v] of Object.entries(cli.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.2.0")) expect(changes, name).toContain(name);
-    expect(CONTRACT_VERSION).toBe("1.23.0");
+    expect(CONTRACT_VERSION).toBe("1.24.0");
     // The harness version is package.json's and moves at least as far as the contract's (docs/contract.md, Versioning):
     // a mask or engine PR bumps the patch of the harness alone, so do not pin a literal here.
     expect(json("package.json").version).toBe(HARNESS_VERSION);
@@ -284,6 +285,19 @@ describe("report.json", () => {
     for (const command of cliJson.commands.filter((c: { since?: string }) => c.since === "1.5.0")) expect(changes, command.name).toContain(command.name);
     for (const [name, v] of Object.entries(cliJson.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.5.0")) expect(changes, name).toContain(name);
     for (const workflow of ["main-preview.yml", "pages.yml"]) expect(changes, workflow).toContain(workflow);
+  });
+
+  it("1.24.0: its changelog and release note name side a2, the deterministic artefacts, that it never gates and what it costs", () => {
+    const start = contractMd.indexOf("### 1.24.0");
+    const end = contractMd.indexOf("### 1.23.0");
+    expect(start).toBeGreaterThan(0);
+    expect(end).toBeGreaterThan(start);
+    const changes = contractMd.slice(start, end).replace(/\s+/g, " ");
+    for (const item of ["releases/1.24.0.md", "minor", "--a2", "`inRunNoise`", "`alsoOnB`", "a2/capture.json", "main-preview.yml", "19 host ports"]) expect(changes, item).toContain(item);
+    const section = contractMd.slice(contractMd.indexOf("### In-run noise: side a2"), contractMd.indexOf("## Claim hygiene")).replace(/\s+/g, " ");
+    for (const item of ["once", "`dom`, `network`, `console`, `headers`, `axe` and `focus`", "noise by measurement", "It is reported, never judged", "2.0 decision"]) expect(section, item).toContain(item);
+    const note = readFileSync(resolve(ROOT, "docs/releases/1.24.0.md"), "utf8").replace(/\s+/g, " ");
+    for (const item of ["side a2", "Reported, never judged", "What it costs", "8.3 minutes", "off everywhere"]) expect(note, item).toContain(item);
   });
 
   it("1.23.0: its changelog and release note name OpenVEX, the stable --vex, the justification rule and that no file changes nothing", () => {
@@ -892,7 +906,7 @@ describe("CLI", () => {
 
   it("cli.json lists exactly the flags src/cli.ts parses", () => {
     const block = source.slice(source.indexOf("options: {"), source.indexOf("allowNegative"));
-    const parsed = [...block.matchAll(/^\s*"?([a-z][a-z-]*)"?: \{ type: "(string|boolean)"(, multiple: true)?/gm)].map((m) => ({ name: m[1]!, type: m[2]!, multiple: Boolean(m[3]) }));
+    const parsed = [...block.matchAll(/^\s*"?([a-z][a-z0-9-]*)"?: \{ type: "(string|boolean)"(, multiple: true)?/gm)].map((m) => ({ name: m[1]!, type: m[2]!, multiple: Boolean(m[3]) }));
     expect(parsed.length).toBeGreaterThan(20);
     expect(cli.flags.map((f) => ({ name: f.name, type: f.type, multiple: Boolean(f.multiple) }))).toEqual(parsed);
   });

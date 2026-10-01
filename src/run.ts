@@ -21,7 +21,7 @@ import { APPS } from "./image-ref.ts";
 import { fileLedger, realExec, resolveSideProvenance, trustPolicyFromEnv } from "./images.ts";
 import { pinImages, type Digests } from "./digests.ts";
 import { deploymentReason, findReleaseRecord, judgeDeployment, releaseRecordOf, writeReleaseRecord } from "./release-record.ts";
-import { ROOT, externalSide, imagesFor, sideSpec, stackDown, stackUp } from "./stack.ts";
+import { ROOT, a2Spec, externalSide, imagesFor, sideSpec, stackDown, stackUp } from "./stack.ts";
 import { kindDown, kindSide, kindUp } from "./substrate/kind.ts";
 import { overrideLine, recordOverride, type OverrideRequest } from "./override.ts";
 import type { Claim, Deployment, Hunk, Mode, NoiseStatus, ProductionBuild, RunReport, SideCapture, SideSpec, Substrate } from "./types.ts";
@@ -31,6 +31,7 @@ import { DEFAULT_RESTARTS } from "./runtime/startup.ts";
 import { parseNoiseStatus } from "./noise.ts";
 import { collectImageStatic, staticPolicyFromEnv } from "./image-static/collect.ts"; // R5
 import { loadOpenVex } from "./image-static/vex.ts";
+import { a2Hunks, inRunNoise } from "./compare/in-run-noise.ts";
 import { imageArtefactsSection, imageStaticReasons } from "./image-static/report.ts"; // R5
 
 export { HARNESS_VERSION };
@@ -80,6 +81,12 @@ export interface RunOptions {
   keep: boolean;
   /** Don't start or stop the stack; assume it is up. */
   noStack: boolean;
+  /**
+   * Since 1.24.0 (`--a2`, release mode, compose): also start side a2, a second copy of side a's apps, capture it once
+   * for the deterministic artefacts and report a against a2 beside the nightly A/A (src/compare/in-run-noise.ts). Four
+   * more containers and one more capture; never changes the verdict.
+   */
+  a2?: boolean;
   /** Judge registry images whose signature could not be verified. Loud, and recorded in the report. */
   allowUnsigned: boolean;
   /** R5: overrides for how static image artefacts are collected (the mutants force a local SBOM generator). */
@@ -146,6 +153,8 @@ interface CompareInput {
   productionBuild?: ProductionBuild;
   /** Hunks produced by a rehearsal mode rather than by capture comparison. */
   extraHunks?: Hunk[];
+  /** Since 1.24.0 (`--a2`): side a2's capture, a second copy of side a, for the in-run noise. Reported, never judged. */
+  a2?: SideCapture;
   extras?: Pick<RunReport, "migration" | "upgrade">;
   /** Since 1.21.0, for tests: the engine levels to judge with (default ENGINE_LEVELS) and the instant they are read on (default now). */
   levels?: EngineLevels;
@@ -166,6 +175,9 @@ export function compareFromCaptures(input: CompareInput): RunOutcome {
   const nb = normalise(input.b, masks, input.mode, { origins });
   const masksApplied: MaskHits = {};
   for (const id of Object.keys(na.hits)) masksApplied[id] = (na.hits[id] ?? 0) + (nb.hits[id] ?? 0);
+
+  // Since 1.24.0: a against a2 first, because the a/b comparison resets the hunk counter (src/compare/in-run-noise.ts).
+  const aToA2 = input.a2 ? a2Hunks(na.capture, normalise(input.a2, masks, input.mode, { origins }).capture, masks) : undefined;
 
   const ranAt = input.ranAt ?? new Date();
   // Since 1.21.0: an informing engine's findings are reported, never gated (src/compare/levels.ts). Every engine is blocking today.
@@ -213,7 +225,8 @@ export function compareFromCaptures(input: CompareInput): RunOutcome {
     ...(imageArtefacts ? { imageArtefacts } : {}),
     ...(input.deployment ? { deployment: input.deployment } : {}),
     ...(input.productionBuild ? { productionBuild: input.productionBuild } : {}),
-    levels: levelsOn(ranAt, levelTable)
+    levels: levelsOn(ranAt, levelTable),
+    ...(input.a2 && aToA2 ? { inRunNoise: inRunNoise(input.a2, aToA2, compare.hunks) } : {})
   };
 
   const files = writeReports(input.captureDir, report);
@@ -268,6 +281,12 @@ export function evidenceGaps(a: SideCapture, b: SideCapture): string[] {
     if (Object.values(side.provenance.images).some((i) => i.provenance !== "pulled+verified")) gaps.push(`side ${side.side} did not run pulled+verified images (${side.provenance.summary})`);
   }
   return gaps;
+}
+
+/** Since 1.24.0: side a2's capture when the run had one (`--a2`), so `harness compare` reports the same in-run noise. */
+export function loadA2Capture(dir: string): SideCapture | undefined {
+  const file = join(dir, "a2", "capture.json");
+  return existsSync(file) ? (JSON.parse(readFileSync(file, "utf8")) as SideCapture) : undefined;
 }
 
 export function loadCapture(dir: string, side: "a" | "b"): SideCapture {
@@ -353,12 +372,16 @@ export async function run(opts: RunOptions): Promise<RunOutcome> {
   a.imageStatic = collectImageStatic(a.images, a.provenance, { exec: realExec, policy: staticPolicy, log: opts.log });
   b.imageStatic = collectImageStatic(b.images, b.provenance, { exec: realExec, policy: staticPolicy, log: opts.log });
   opts.log(`  journeys: ${selected.map((j) => j.name).join(", ")}`);
+  // Since 1.24.0: side a2 runs in release mode on compose only; anywhere else the flag is said and dropped.
+  const withA2 = opts.a2 === true && opts.mode === "release" && opts.substrate === "compose";
+  if (opts.a2 && !withA2) opts.log(`  --a2: side a2 runs in release mode on the compose substrate only; not started (mode ${opts.mode}, substrate ${opts.substrate})`);
+  const a2 = withA2 ? a2Spec(a) : undefined;
 
   const up = () => {
     if (opts.noStack) return;
     opts.log(`starting both stacks (${opts.substrate})…`);
     if (opts.substrate === "kind") kindUp(a, b, opts.now, opts.log);
-    else stackUp(a, b, opts.now, { profiles: opts.mode === "upgrade" ? ["upgrade"] : [] });
+    else stackUp(a, b, opts.now, { profiles: opts.mode === "upgrade" ? ["upgrade"] : a2 ? ["a2"] : [] });
   };
   const down = () => {
     if (opts.noStack) return;
@@ -376,6 +399,7 @@ export async function run(opts: RunOptions): Promise<RunOutcome> {
   let captureB: SideCapture;
   let upgrade: RunReport["upgrade"] | undefined;
   let extraHunks: Hunk[] = [];
+  let captureA2: SideCapture | undefined;
   try {
     const captureOpts = { outDir, now: opts.now, runs: opts.runs, screenshots: opts.screenshots, axe: opts.axe, focusStops: opts.focusStops, log: opts.log, ...(opts.substrate === "compose" ? { logsFrom: { a, b } } : {}), ...(opts.load ? { load: opts.load } : {}), runtime: { substrate: opts.substrate, posture: opts.runtime, startupRestarts: opts.mode === "upgrade" ? 0 : opts.startupRestarts } };
     if (opts.mode === "upgrade") {
@@ -394,13 +418,18 @@ export async function run(opts: RunOptions): Promise<RunOutcome> {
       captureA = await captureSide(a, selected, captureOpts);
       opts.log("capturing side b…");
       captureB = await captureSide(b, selected, captureOpts);
+      if (a2) {
+        // Once, for the deterministic artefacts: no load, no screenshots, no logs or posture (it is side a's images again).
+        opts.log("capturing side a2 (in-run noise: one run, deterministic artefacts)…");
+        captureA2 = await captureSide(a2, selected, { outDir, now: opts.now, runs: 1, screenshots: false, axe: opts.axe, focusStops: opts.focusStops, log: opts.log });
+      }
     }
   } finally {
     down();
   }
 
   opts.log("comparing…");
-  const outcome = compareFromCaptures({ ...common, mode: opts.mode, a: captureA, b: captureB, extraHunks, ...(upgrade ? { extras: { upgrade } } : {}) });
+  const outcome = compareFromCaptures({ ...common, mode: opts.mode, a: captureA, b: captureB, extraHunks, ...(upgrade ? { extras: { upgrade } } : {}), ...(captureA2 ? { a2: captureA2 } : {}) });
   // Release mode leaves the record post-deploy mode checks a deployment against (docs/contract.md, "The release record").
   if (opts.mode === "release" && opts.recordRelease !== false) {
     const made = releaseRecordOf(outcome.report, { pinned: opts.bDigests !== undefined });

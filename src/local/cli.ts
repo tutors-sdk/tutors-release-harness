@@ -665,6 +665,7 @@ export function buildPlan(task: string | undefined, v: Values, env: NodeJS.Proce
         ...(str(v, "claims") ? { claims: resolve(str(v, "claims")!) } : {}),
         ...(str(v, "rules") ? { rules: isUrl(str(v, "rules")!) ? str(v, "rules")! : resolve(str(v, "rules")!) } : {}),
         ...(str(v, "vex") ? { vex: resolve(str(v, "vex")!) } : {}),
+        ...(flag(v, "a2") ? { a2: true } : {}),
         ...(str(v, "runs") ? { runs: integer(v, "runs", WORKFLOW_DEFAULTS.runs, 1) } : {}),
         ...(str(v, "migrations-a") ? { migrationsA: str(v, "migrations-a")! } : {}),
         ...(str(v, "migrations-b") ? { migrationsB: str(v, "migrations-b")! } : {}),
