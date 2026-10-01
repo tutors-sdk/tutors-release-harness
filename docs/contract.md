@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.20.2`
+Contract version: `1.20.3`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -1567,6 +1567,22 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.20.3 (patch; the smallest detectable slowdown)
+
+The release note is [releases/1.20.3.md](releases/1.20.3.md). The fourth step of the "Explain"
+release. A patch: no command, flag, `report.json` or index field, claims key, verdict, Gate or
+exit code changes; the wording of `timing` hunks does. The harness version moves because
+`src/compare/` changed.
+
+- A `timing` hunk the test judged (page TTFB, journey duration, load) ends with the smallest
+  slowdown its samples could have detected: `smallest slowdown 5/5 runs could detect: about 25%`
+  (`src/compare/stats.ts`, `smallestDetectableSlowdown`). A not significant one also says its
+  effect and sample sizes: `median 4200ms → 5100ms but not significant (p=0.095, +21%, n=5/5;
+  ...)`. Reported, never judged: the figure is not a tolerance and gates nothing. The first `p=`
+  in a summary is still the test's, the one confidence and the glance read.
+- Because the wording changed, a timing cause's key changes once: the first forecast on 1.20.3
+  lists its timing causes as new beside a 1.20.2 forecast.
 
 ### 1.20.2 (patch; claims owed)
 

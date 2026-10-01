@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { erfc, mannWhitney, normalCdf, normalUpperTail, smallestAttainableP } from "../src/compare/stats.ts";
+import { detectableNote, erfc, mannWhitney, normalCdf, normalUpperTail, smallestAttainableP, smallestDetectableSlowdown } from "../src/compare/stats.ts";
 
 /**
  * Known values, derived by hand or from published tables, never from the code under test.
@@ -185,5 +185,42 @@ describe("smallestAttainableP: the fewest samples that can ever reach alpha", ()
 
   it("with an empty side nothing can be judged (p = 1)", () => {
     expect(smallestAttainableP(0, 5)).toBe(1);
+  });
+});
+
+describe("smallestDetectableSlowdown: reported beside a timing verdict, never judged (1.20.3)", () => {
+  // 5 v 5: mu = 12.5, sigma = sqrt(25 * 11 / 12) = 4.787. U = 2 gives z = (10.5 - 0.5) / 4.787 = 2.089, p = 0.037; U = 3
+  // gives z = 1.880, p = 0.060. So 5 v 5 detects a slowdown once at most two of the 25 pairs still have b below a.
+  const a = [100, 110, 120, 130, 140];
+
+  it("b like a, slowed by d: detected once at most two pairs a_j > a_i (1 + d) remain, i.e. 1 + d above 130/100 = 1.3 but not 140/110 = 1.2727", () => {
+    // The pairs with b_i below a_j are the ratios a_j / a_i above 1 + d: 1.4, 1.3, 1.2727, 1.2, ... At d = 0.270 three
+    // remain (U = 3, p = 0.060); at d = 0.275 two (U = 2, p = 0.037).
+    expect(smallestDetectableSlowdown(a, a, 0.05)).toBeCloseTo(0.275, 10);
+  });
+
+  it("scales b to a's median first: b's own slowdown does not shrink the figure, b's spread does", () => {
+    expect(smallestDetectableSlowdown(a, a.map((v) => v * 2), 0.05)).toBeCloseTo(0.275, 10);
+    expect(smallestDetectableSlowdown(a, [120, 120, 120, 120, 120], 0.05)).toBeLessThan(0.275);
+  });
+
+  it("samples with no spread detect the first step; too few samples detect nothing", () => {
+    expect(smallestDetectableSlowdown([10, 10, 10, 10], [10, 10, 10, 10], 0.05)).toBeCloseTo(0.005, 10);
+    // 3 v 3 cannot reach 0.05 however separated (p = 0.081 at best).
+    expect(smallestDetectableSlowdown([1, 2, 3], [1, 2, 3], 0.05)).toBeNull();
+    expect(smallestDetectableSlowdown([0, 0, 0, 0], [1, 1, 1, 1], 0.05)).toBeNull();
+  });
+
+  it("thousands of samples, as a k6 run keeps, detect about 1% and stay cheap", () => {
+    const x = Array.from({ length: 3000 }, (_, i) => 50 + (i % 20) - 10);
+    const started = Date.now();
+    expect(smallestDetectableSlowdown(x, x, 0.05)).toBeLessThanOrEqual(0.02);
+    expect(Date.now() - started).toBeLessThan(2000);
+  });
+
+  it("the note says the figure, with runs or samples, or that nothing could be detected", () => {
+    expect(detectableNote(a, a, 0.05)).toBe("smallest slowdown 5/5 runs could detect: about 28%");
+    expect(detectableNote([1, 2, 3], [1, 2, 3], 0.05)).toBe("no slowdown could be detected with 3/3 runs");
+    expect(detectableNote([10, 10, 10, 10], [10, 10, 10, 10], 0.05, "samples")).toBe("smallest slowdown 4/4 samples could detect: about 1%");
   });
 });

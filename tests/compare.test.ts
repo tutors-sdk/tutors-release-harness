@@ -162,7 +162,18 @@ describe("timing", () => {
     const hunks = diff(withRuns("a", [40, 42, 41, 43, 40], [4000, 4100, 4050, 4020, 4080]), withRuns("b", [70, 72, 69, 71, 73], [5600, 5700, 5650, 5620, 5710]));
     const fails = hunks.filter((h) => h.severity === "fail");
     expect(fails.map((h) => h.scope).sort()).toEqual(["anonymous-student-reads-course", "reader:course"]);
-    expect(fails[0]!.summary).toContain("p=0.012, n=5/5)");
+    // a page's TTFB counts visits (samples), a journey's duration counts runs
+    expect(fails.find((h) => h.scope === "reader:course")!.summary).toBe("reader:course TTFB slower on b: median 41ms → 71ms (+73%, p=0.012, n=5/5; smallest slowdown 5/5 samples could detect: about 6%)");
+    expect(fails.find((h) => h.scope === "anonymous-student-reads-course")!.summary).toMatch(/p=0\.012, n=5\/5; smallest slowdown 5\/5 runs could detect: about \d+%\)$/);
+  });
+
+  it("a not significant shift says its effect and the smallest slowdown the runs could detect, after the p the scores read (1.20.3)", () => {
+    const hunks = diff(withRuns("a", [40, 60, 45, 52, 41], [4000, 4600, 4200, 4300, 4050]), withRuns("b", [44, 58, 50, 47, 62], [4100, 5100, 5300, 4500, 5400]));
+    const journey = hunks.find((h) => h.scope === "anonymous-student-reads-course")!;
+    expect(journey.severity).toBe("info");
+    // a's median 4200, b's 5100: +21%; four of the 25 pairs have b below a, U = 4, p = 0.095. The first p= in the summary is still the test's, which confidence and the glance read.
+    expect(journey.summary).toMatch(/^journey anonymous-student-reads-course median 4200ms → 5100ms but not significant \(p=0\.095, \+21%, n=5\/5; smallest slowdown 5\/5 runs could detect: about \d+%\)$/);
+    expect(journey.summary.match(/\bp=([0-9.]+(?:e[-+]?\d+)?)/i)![1]).toBe("0.095");
   });
 
   it("with three runs a perfectly separated regression cannot reach alpha, and the engine says so instead of passing quietly", () => {

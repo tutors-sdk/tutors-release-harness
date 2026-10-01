@@ -348,7 +348,7 @@ What the summaries look like, per artefact:
 | `metrics` | `reader: tutors_course_loads_total moved by 1 on a and 9 on b under the same traffic` / `series missing on b` / `new series on b` | |
 | `logs` | `reader: new log field on b: traceId` / `info-level lines: 28 on a, 60 on b` / `request-id propagation fell from 90% to 40%` / `logs are no longer JSON lines on b` | |
 | `persistence` | `student-signs-in: POST progress — 1 row(s) on a, 2 on b` / `anonymous-student-reads-course: anonymous journey wrote 1 row(s) to learner (POST) on b` | |
-| `timing` | `reader:course TTFB slower on b: median 40ms → 90ms (+125%, p=0.012, n=5/5)` | |
+| `timing` | `reader:course TTFB slower on b: median 40ms → 90ms (+125%, p=0.012, n=5/5; smallest slowdown 5/5 samples could detect: about 6%)` | |
 | `image-manifest` | scope `reader/user`, `reader/base`, `reader/ports/3000` ... | |
 | `sbom` | scope `reader/@sveltejs/kit`: name, version on a, version on b | |
 | `runtime`, `startup` | scope `reader/uid`, `reader/ready`, ... | |
@@ -485,11 +485,19 @@ When the runs cannot reach alpha, the harness says so instead of looking quiet. 
 reader:course TTFB median 40ms → 130ms (+225%); 3/3 samples cannot reach alpha 0.05 (best possible p=0.081). Raise --runs
 ```
 
-Below `minRuns` it says `N run(s), need 3 to judge. Raise --runs`. When the samples are enough but the shift is not significant it says `median 100ms → 130ms but not significant (p=0.222)`, also information. A significant one fails:
+Below `minRuns` it says `N run(s), need 3 to judge. Raise --runs`. When the samples are enough but the shift is not significant it says so, with the shift and the smallest slowdown those runs could have detected, also information:
 
 ```text
-reader:course TTFB slower on b: median 40ms → 90ms (+125%, p=0.012, n=5/5)
+journey anonymous-student-searches median 4200ms → 5100ms but not significant (p=0.095, +21%, n=5/5; smallest slowdown 5/5 runs could detect: about 25%)
 ```
+
+A significant one fails:
+
+```text
+reader:course TTFB slower on b: median 40ms → 90ms (+125%, p=0.012, n=5/5; smallest slowdown 5/5 samples could detect: about 6%)
+```
+
+**The smallest slowdown the runs could detect** (since 1.20.3) is a reported figure, never a threshold: nothing judges it, and it changes no verdict, Gate or exit code. It is found by scaling b's samples to a's median, keeping b's spread, and slowing them until the same test says p < alpha. Read a "not significant" beside it: +21% that 5 runs could only have caught at 25% or more is "we could not tell", not "no change". A noisy journey has a large figure; more runs make it smaller. A page's TTFB counts its visits (`n/n samples`), a journey its runs. Under load it counts k6 samples, hundreds a side, so it is small.
 
 The fix for any of these is more runs (`--runs 5` or more), or, with a reason and its own reviewed change, a different threshold in `masks.yaml`. Never a retry. The cost of a run is one more pass of every selected journey on both sides.
 

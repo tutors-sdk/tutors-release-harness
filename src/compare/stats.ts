@@ -70,3 +70,46 @@ export function mannWhitney(x: number[], y: number[]): { u: number; p: number } 
 export function smallestAttainableP(n1: number, n2: number): number {
   return mannWhitney(Array.from({ length: n1 }, (_, i) => i), Array.from({ length: n2 }, (_, i) => n1 + i)).p;
 }
+
+/**
+ * The smallest slowdown a comparison could have detected (since 1.20.3): reported beside a timing verdict, never judged.
+ * `x` is side a, `y` side b. b's samples are scaled to a's median, keeping b's spread, then slowed uniformly by d; the
+ * smallest d, on a grid of `step` (0.5%), at which the test says p < alpha is the slowdown these samples could have told
+ * from noise. Slowing b only moves its ranks up, so p falls as d grows and a binary search over the grid finds it in a
+ * dozen tests, even for a k6 run's thousands of samples. null when no slowdown could be detected (too few samples:
+ * smallestAttainableP is not below alpha), none up to `cap` (500%) is, or a median is not positive.
+ */
+export function smallestDetectableSlowdown(x: number[], y: number[], alpha: number, step = 0.005, cap = 5): number | null {
+  if (!x.length || !y.length || smallestAttainableP(x.length, y.length) >= alpha) return null;
+  const mx = middle(x);
+  const my = middle(y);
+  if (!(mx > 0) || !(my > 0)) return null;
+  const centred = y.map((v) => (v * mx) / my);
+  const detects = (i: number) => mannWhitney(x, centred.map((v) => v * (1 + i * step))).p < alpha;
+  let hi = Math.round(cap / step);
+  if (!detects(hi)) return null;
+  let lo = 0;
+  while (hi - lo > 1) {
+    const mid = (lo + hi) >> 1;
+    if (detects(mid)) hi = mid;
+    else lo = mid;
+  }
+  return hi * step;
+}
+
+function middle(xs: number[]): number {
+  const s = [...xs].sort((p, q) => p - q);
+  const mid = Math.floor(s.length / 2);
+  return s.length % 2 ? s[mid]! : (s[mid - 1]! + s[mid]!) / 2;
+}
+
+/**
+ * "smallest slowdown 5/5 runs could detect: about 38%": beside a timing verdict, so a "not significant" says how large a
+ * slowdown would have had to be to show. Wording only: nothing judges it.
+ */
+export function detectableNote(xs: number[], ys: number[], alpha: number, unit: "runs" | "samples" = "runs"): string {
+  const d = smallestDetectableSlowdown(xs, ys, alpha);
+  const n = `${xs.length}/${ys.length}`;
+  if (d === null && smallestAttainableP(xs.length, ys.length) >= alpha) return `no slowdown could be detected with ${n} ${unit}`;
+  return d === null ? `no slowdown up to 500% could be detected with ${n} ${unit}` : `smallest slowdown ${n} ${unit} could detect: about ${(d * 100).toFixed(0)}%`;
+}
