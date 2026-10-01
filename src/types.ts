@@ -3,6 +3,7 @@
  * claimed and reported is one of these shapes.
  */
 
+import type { Causes } from "./report/causes.ts";
 import type { AppImages } from "./image-ref.ts";
 import type { ImageArtefactKind, ImageArtefactStatus, SideImageArtefacts, SideImageStatic } from "./image-static/types.ts";
 import type { Digests } from "./digests.ts";
@@ -391,6 +392,11 @@ export interface RunReport {
    * `/version`) against the recorded candidate's commit. Informational: never changes the verdict and is never a hunk.
    */
   productionBuild?: ProductionBuild;
+  /**
+   * Since contract 1.20.0. The unclaimed differences folded into causes (src/report/causes.ts), computed from
+   * `compare.unclaimed` after the verdict when the report is written. Informational: never read by a verdict or the Gate.
+   */
+  causes?: Causes;
 }
 
 /** Whether production's reader serves the build of the recorded candidate. */

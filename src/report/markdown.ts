@@ -3,6 +3,7 @@ import type { RunReport } from "../types.ts";
 import { claimLabel } from "../claims/rules.ts";
 import { loudProvenance } from "./provenance.ts";
 import { imageArtefactsMarkdown } from "./image-static.ts";
+import { causesMarkdown } from "./causes.ts";
 import { deploymentMarkdown, loudDeployment, productionBuildMarkdown } from "./deployment.ts";
 
 const ICON = { pass: "✅", warn: "⚠️", fail: "❌" } as const;
@@ -43,6 +44,8 @@ export function renderMarkdown(report: RunReport): string {
   for (const reason of report.reasons) lines.push(`- ${reason}`);
   if (report.noise) lines.push(`- A/A consulted: ${report.noise.clean ? "clean" : `${report.noise.hunks} diff(s)`}${report.noise.degraded?.length ? " but DEGRADED (does not count)" : ""} at ${report.noise.ranAt}`);
   lines.push("");
+
+  lines.push(...causesMarkdown(report.causes)); // 1.20.0
 
   if (compare.unclaimed.length) {
     lines.push(`### Unclaimed differences (${compare.unclaimed.length})`);

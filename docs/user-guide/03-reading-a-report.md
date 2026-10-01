@@ -201,6 +201,8 @@ Below the score comes what the harness found, and this part is the same in every
 | ... | | |
 ```
 
+Since 1.20.0 the report does the counting for you: the differences open with **the causes**, the unclaimed hunks folded by kind across apps, pages and packages, one row each with its count, the apps and pages it spans, what it folded and an example linked to its row. The same forecast, judged by 1.20.0, reads "865 unclaimed differences, 19 causes": `sbom` package removed (696, 174 packages in four images), hashed build assets newly requested (57), the semantic DOM (26), new log fields (15), and fifteen smaller ones. Under it, **moved together** names the pages on which several artefacts moved at once (`dom`, `focus`, `headers`, `network`, `screenshot` on four pages): likely one change, claimed together. Read the causes first; they never change the verdict ([contract](../contract.md#causes)).
+
 With 865 rows, count by artefact before reading any row. Here: `sbom` 709, `network` 70, `dom` 27, `logs` 15, `screenshot` 13, `focus` 11, `image-manifest` 8, `headers` 7, `persistence` 3, `console` 2. Then read in this order:
 
 1. **A journey that failed on b.** It is the loudest hunk there is: `reference-course-reads` completed on a and failed on b. A broken journey is a bug, not a claim.
@@ -286,7 +288,7 @@ A release's `report.md` and `gate.md` start `## Release gate: <candidate> beside
 
 A release's `report.html` has the sections of `gate.md` (above) on one page, and each deduction and glance item links into the release run's own `report.html` by anchor (`#hunk-<id>`, `#stale-claims`, `#masks`, `#noise`, `#load`, `#migration`, `#upgrade`), so a link lands on the row it is about.
 
-A run's `report.html` has the same content as its `report.md`, in this order: the title with a coloured verdict badge; the time, the frozen clock, the run count and the harness version; the banners; the reasons list (including the A/A line); the sides table; the provenance table; the deployment table, the image artefacts table and the rehearsal and load tables when they apply; **Differences** (every hunk, failing and informational); stale claims; broad claims without approval; the override, if any; claim hygiene; the masks, split into *Fired* and *Silent this run*; and the footer.
+A run's `report.html` has the same content as its `report.md`, in this order: the title with a coloured verdict badge; the time, the frozen clock, the run count and the harness version; the banners; the reasons list (including the A/A line); since 1.20.0 the causes and the pages that moved together; the sides table; the provenance table; the deployment table, the image artefacts table and the rehearsal and load tables when they apply; **Differences** (every hunk, failing and informational); stale claims; broad claims without approval; the override, if any; claim hygiene; the masks, split into *Fired* and *Silent this run*; and the footer.
 
 The Differences table has four columns: artefact, scope (with the page path underneath), what changed (with a fold for the detail), and *claimed by*. A failing hunk with no claim says **unclaimed** in red; an information hunk says *informational* and is dimmed. The detail of a `dom` or `focus` hunk is a small diff (lines starting with `-` exist on a, `+` on b). A `screenshot` hunk's detail names the difference image under `diff/`.
 
@@ -325,7 +327,7 @@ The report is the machine-readable record. Its shape (`additionalProperties: fal
 }
 ```
 
-Other optional fields appear when they apply: `imageArtefacts` (per side, per app: was each of manifest, SBOM and vulnerabilities collected, and if not, why), `load`, `migration`, `upgrade`, `override`, and `deployment` (post-deploy mode). The score, the glance and the change signals are not in `report.json`: they are in `confidence.json` and `changes.json` beside a release ([docs/contract.md](../contract.md#confidencejson-the-release-confidence-score)). To check whether a run is evidence for a release, read `verdict`, `provenance.*.images.*.provenance` (all `pulled+verified`), `compare.unclaimed.length`, `compare.broadUnapproved.length` and `noise`. A consumer must tolerate an artefact name or provenance value it does not know.
+Other optional fields appear when they apply: `causes` (since 1.20.0, the unclaimed differences folded into causes), `imageArtefacts` (per side, per app: was each of manifest, SBOM and vulnerabilities collected, and if not, why), `load`, `migration`, `upgrade`, `override`, and `deployment` (post-deploy mode). The score, the glance and the change signals are not in `report.json`: they are in `confidence.json` and `changes.json` beside a release ([docs/contract.md](../contract.md#confidencejson-the-release-confidence-score)). To check whether a run is evidence for a release, read `verdict`, `provenance.*.images.*.provenance` (all `pulled+verified`), `compare.unclaimed.length`, `compare.broadUnapproved.length` and `noise`. A consumer must tolerate an artefact name or provenance value it does not know.
 
 ## How to read a hunk
 
