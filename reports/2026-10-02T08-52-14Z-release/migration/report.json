@@ -1,0 +1,378 @@
+{
+  "schemaVersion": 1,
+  "harness": {
+    "version": "1.28.0",
+    "gitSha": "a33c731e16fb72e3cec42c23b8157f740081d80c",
+    "contractVersion": "1.28.0"
+  },
+  "harnessVersion": "1.28.0",
+  "mode": "migration",
+  "substrate": "compose",
+  "ranAt": "2026-10-02T08:41:19.695Z",
+  "now": "2026-09-16T09:05:00.000Z",
+  "runs": 1,
+  "sides": {
+    "a": {
+      "reader": "migrations:v16.2.2",
+      "catalogue": "-",
+      "live": "-",
+      "time": "-"
+    },
+    "b": {
+      "reader": "migrations:b35eddd742f11a3b1f4709f6f422f168297467fc",
+      "catalogue": "-",
+      "live": "-",
+      "time": "-"
+    }
+  },
+  "verdict": "pass",
+  "reasons": [
+    "the candidate's migrations respect expand/contract and roll back cleanly"
+  ],
+  "compare": {
+    "hunks": [
+      {
+        "id": "migration:rollback:1",
+        "artefact": "migration",
+        "scope": "rollback",
+        "severity": "info",
+        "summary": "rollback restores version a's schema exactly"
+      }
+    ],
+    "matches": [
+      {
+        "hunk": {
+          "id": "migration:rollback:1",
+          "artefact": "migration",
+          "scope": "rollback",
+          "severity": "info",
+          "summary": "rollback restores version a's schema exactly"
+        }
+      }
+    ],
+    "unclaimed": [],
+    "staleClaims": [],
+    "broadUnapproved": []
+  },
+  "masksApplied": {
+    "response-date": 0,
+    "request-id": 0,
+    "etag": 0,
+    "metrics-process": 0,
+    "metrics-timing-histograms": 0,
+    "third-party-requests": 0,
+    "persistence-stub-requests": 0,
+    "realtime-rest-fallback-warning": 0,
+    "hashed-assets": 0,
+    "footer-tutors-version": 0,
+    "transport-length": 0,
+    "transport-connection": 0,
+    "transport-encoding": 0,
+    "transport-transfer": 0,
+    "transport-keepalive": 0
+  },
+  "migration": {
+    "a": {
+      "ref": "v16.2.2",
+      "files": [
+        "20260822_create_app_errors.sql"
+      ],
+      "catalog": {
+        "tables": {
+          "app_errors": {
+            "id": {
+              "type": "uuid",
+              "nullable": false,
+              "default": "gen_random_uuid()"
+            },
+            "created_at": {
+              "type": "timestamp with time zone",
+              "nullable": false,
+              "default": "now()"
+            },
+            "app": {
+              "type": "text",
+              "nullable": false,
+              "default": null
+            },
+            "level": {
+              "type": "text",
+              "nullable": false,
+              "default": null
+            },
+            "message": {
+              "type": "text",
+              "nullable": false,
+              "default": null
+            },
+            "context": {
+              "type": "jsonb",
+              "nullable": true,
+              "default": "'{}'::jsonb"
+            },
+            "url": {
+              "type": "text",
+              "nullable": true,
+              "default": null
+            },
+            "user_agent": {
+              "type": "text",
+              "nullable": true,
+              "default": null
+            },
+            "course_id": {
+              "type": "text",
+              "nullable": true,
+              "default": null
+            },
+            "student_id": {
+              "type": "text",
+              "nullable": true,
+              "default": null
+            }
+          }
+        },
+        "indexes": [
+          "app_errors_pkey",
+          "idx_app_errors_app_created",
+          "idx_app_errors_course",
+          "idx_app_errors_level"
+        ],
+        "functions": [
+          "get_error_counts/1"
+        ],
+        "policies": [
+          "app_errors:anon_insert_app_errors",
+          "app_errors:anon_select_app_errors"
+        ]
+      }
+    },
+    "b": {
+      "ref": "b35eddd742f11a3b1f4709f6f422f168297467fc",
+      "files": [
+        "20260822_create_app_errors.sql",
+        "20260924_enable_rls_public_tables.sql"
+      ],
+      "catalog": {
+        "tables": {
+          "app_errors": {
+            "id": {
+              "type": "uuid",
+              "nullable": false,
+              "default": "gen_random_uuid()"
+            },
+            "created_at": {
+              "type": "timestamp with time zone",
+              "nullable": false,
+              "default": "now()"
+            },
+            "app": {
+              "type": "text",
+              "nullable": false,
+              "default": null
+            },
+            "level": {
+              "type": "text",
+              "nullable": false,
+              "default": null
+            },
+            "message": {
+              "type": "text",
+              "nullable": false,
+              "default": null
+            },
+            "context": {
+              "type": "jsonb",
+              "nullable": true,
+              "default": "'{}'::jsonb"
+            },
+            "url": {
+              "type": "text",
+              "nullable": true,
+              "default": null
+            },
+            "user_agent": {
+              "type": "text",
+              "nullable": true,
+              "default": null
+            },
+            "course_id": {
+              "type": "text",
+              "nullable": true,
+              "default": null
+            },
+            "student_id": {
+              "type": "text",
+              "nullable": true,
+              "default": null
+            }
+          }
+        },
+        "indexes": [
+          "app_errors_pkey",
+          "idx_app_errors_app_created",
+          "idx_app_errors_course",
+          "idx_app_errors_level"
+        ],
+        "functions": [
+          "get_error_counts/1"
+        ],
+        "policies": [
+          "app_errors:anon_insert_app_errors",
+          "app_errors:anon_select_app_errors"
+        ]
+      }
+    },
+    "rolledBack": {
+      "tables": {
+        "app_errors": {
+          "id": {
+            "type": "uuid",
+            "nullable": false,
+            "default": "gen_random_uuid()"
+          },
+          "created_at": {
+            "type": "timestamp with time zone",
+            "nullable": false,
+            "default": "now()"
+          },
+          "app": {
+            "type": "text",
+            "nullable": false,
+            "default": null
+          },
+          "level": {
+            "type": "text",
+            "nullable": false,
+            "default": null
+          },
+          "message": {
+            "type": "text",
+            "nullable": false,
+            "default": null
+          },
+          "context": {
+            "type": "jsonb",
+            "nullable": true,
+            "default": "'{}'::jsonb"
+          },
+          "url": {
+            "type": "text",
+            "nullable": true,
+            "default": null
+          },
+          "user_agent": {
+            "type": "text",
+            "nullable": true,
+            "default": null
+          },
+          "course_id": {
+            "type": "text",
+            "nullable": true,
+            "default": null
+          },
+          "student_id": {
+            "type": "text",
+            "nullable": true,
+            "default": null
+          }
+        }
+      },
+      "indexes": [
+        "app_errors_pkey",
+        "idx_app_errors_app_created",
+        "idx_app_errors_course",
+        "idx_app_errors_level"
+      ],
+      "functions": [
+        "get_error_counts/1"
+      ],
+      "policies": [
+        "app_errors:anon_insert_app_errors",
+        "app_errors:anon_select_app_errors"
+      ]
+    }
+  },
+  "levels": {
+    "dom": {
+      "level": "blocking"
+    },
+    "screenshot": {
+      "level": "blocking"
+    },
+    "network": {
+      "level": "blocking"
+    },
+    "console": {
+      "level": "blocking"
+    },
+    "headers": {
+      "level": "blocking"
+    },
+    "axe": {
+      "level": "blocking"
+    },
+    "focus": {
+      "level": "blocking"
+    },
+    "metrics": {
+      "level": "blocking"
+    },
+    "logs": {
+      "level": "blocking"
+    },
+    "timing": {
+      "level": "blocking"
+    },
+    "persistence": {
+      "level": "blocking"
+    },
+    "bus": {
+      "level": "blocking"
+    },
+    "migration": {
+      "level": "blocking"
+    },
+    "upgrade": {
+      "level": "blocking"
+    },
+    "image-manifest": {
+      "level": "blocking"
+    },
+    "sbom": {
+      "level": "blocking"
+    },
+    "vulns": {
+      "level": "blocking"
+    },
+    "runtime": {
+      "level": "blocking"
+    },
+    "startup": {
+      "level": "blocking"
+    },
+    "image-hardening": {
+      "level": "informing"
+    },
+    "build-provenance": {
+      "level": "informing"
+    },
+    "vuln-ceiling": {
+      "level": "informing"
+    },
+    "timing-tolerance": {
+      "level": "informing"
+    },
+    "asset-graph": {
+      "level": "informing"
+    },
+    "replay": {
+      "level": "informing"
+    }
+  },
+  "causes": {
+    "unclaimed": 0,
+    "causes": [],
+    "together": []
+  }
+}
