@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Harness noise warn</title>
+<style>
+  :root { color-scheme: light dark; --pass:#2f7a4f; --warn:#8a6119; --fail:#a12a2a; --rule:#8884; }
+  body { margin:0; padding:24px 16px; font:15px/1.5 system-ui, sans-serif; max-width: 64rem; margin-inline:auto; }
+  h1 { font-size:1.4rem; margin:0 0 4px; }
+  .verdict { display:inline-block; padding:2px 10px; border-radius:4px; color:#fff; font-weight:600; text-transform:uppercase; letter-spacing:.05em; }
+  .verdict.pass { background:var(--pass);} .verdict.warn { background:var(--warn);} .verdict.fail { background:var(--fail);}
+  table { border-collapse:collapse; width:100%; margin:12px 0 24px; font-size:14px; }
+  th, td { text-align:left; vertical-align:top; padding:6px 8px; border-bottom:1px solid var(--rule); }
+  th { font-size:12px; text-transform:uppercase; letter-spacing:.06em; opacity:.7; }
+  tr.info td { opacity:.75; }
+  tr.fail td:last-child strong { color:var(--fail); }
+  table.provenance td { font-size:13px; word-break:break-all; }
+  .loud { border-left:4px solid var(--warn); padding:6px 10px; font-weight:600; }
+  code, pre { font-family: ui-monospace, Menlo, Consolas, monospace; font-size:13px; }
+  pre { white-space:pre-wrap; margin:6px 0 0; padding:8px; background:#8881; border-radius:4px; }
+  details summary { cursor:pointer; font-size:13px; opacity:.8; }
+  ul { padding-left:1.2rem; }
+  footer { font-size:12px; opacity:.7; border-top:1px solid var(--rule); padding-top:12px; }
+</style>
+</head>
+<body>
+<h1>Tutors release harness — <code>noise</code> <span class="verdict warn">warn</span></h1>
+<p><small>2026-09-27T08:21:17.849Z · clock 2026-09-16T09:05:00.000Z · 5 run(s) per side · harness 1.4.10</small></p>
+
+
+<ul><li>A/A is clean but DEGRADED, so it does not count: journey &quot;reference-course-reads&quot; failed on both sides, so this run saw nothing of its pages</li></ul>
+
+<table>
+<thead><tr><th></th><th>a</th><th>b</th></tr></thead>
+<tbody><tr><td>reader</td><td><code>quay.io/tutors-sdk/tutors-reader:main</code></td><td><code>quay.io/tutors-sdk/tutors-reader:main</code></td></tr><tr><td>catalogue</td><td><code>quay.io/tutors-sdk/tutors-catalogue:main</code></td><td><code>quay.io/tutors-sdk/tutors-catalogue:main</code></td></tr><tr><td>live</td><td><code>quay.io/tutors-sdk/tutors-live:main</code></td><td><code>quay.io/tutors-sdk/tutors-live:main</code></td></tr><tr><td>time</td><td><code>quay.io/tutors-sdk/tutors-time:main</code></td><td><code>quay.io/tutors-sdk/tutors-time:main</code></td></tr></tbody>
+</table>
+<table class="provenance">
+<thead><tr><th>provenance</th><th>a — pulled+verified</th><th>b — pulled+verified</th></tr></thead>
+<tbody><tr><td>reader</td><td>digest <code>sha256:8eaf959c863cd49e06a669294a8a661b39702be657f84c828a0bf0fea98e3e19</code><br>revision <code>c117f56e34a2</code><br>version <code>sha-c117f56</code></td><td>digest <code>sha256:8eaf959c863cd49e06a669294a8a661b39702be657f84c828a0bf0fea98e3e19</code><br>revision <code>c117f56e34a2</code><br>version <code>sha-c117f56</code></td></tr><tr><td>catalogue</td><td>digest <code>sha256:7a9f63d7f239a6dbb90f492df6c2f568c180acd434738cd97bd4f0387db56d76</code><br>revision <code>c117f56e34a2</code><br>version <code>sha-c117f56</code></td><td>digest <code>sha256:7a9f63d7f239a6dbb90f492df6c2f568c180acd434738cd97bd4f0387db56d76</code><br>revision <code>c117f56e34a2</code><br>version <code>sha-c117f56</code></td></tr><tr><td>live</td><td>digest <code>sha256:81fa500e73b1daf488d0aecf6e31ec4d8f7e6ba68fb342cb2db73b36ecb68563</code><br>revision <code>c117f56e34a2</code><br>version <code>sha-c117f56</code></td><td>digest <code>sha256:81fa500e73b1daf488d0aecf6e31ec4d8f7e6ba68fb342cb2db73b36ecb68563</code><br>revision <code>c117f56e34a2</code><br>version <code>sha-c117f56</code></td></tr><tr><td>time</td><td>digest <code>sha256:9fe66d095f0b97a2335ee2ce6f2b121a3ade4d2d075c81175ea10af276f69522</code><br>revision <code>54a8f832d413</code><br>version <code>sha-54a8f83</code></td><td>digest <code>sha256:9fe66d095f0b97a2335ee2ce6f2b121a3ade4d2d075c81175ea10af276f69522</code><br>revision <code>54a8f832d413</code><br>version <code>sha-54a8f83</code></td></tr></tbody>
+</table>
+
+<h2>Image artefacts</h2><p><small>Collected from the images, not the running apps. A cell that says NOT COLLECTED was not compared.</small></p><table><thead><tr><th>app</th><th>artefact</th><th>a</th><th>b</th></tr></thead><tbody><tr><td>reader</td><td>manifest</td><td>10 layers, 256.7 MB, USER 1001, ports 3000/tcp (docker image inspect)</td><td>10 layers, 256.7 MB, USER 1001, ports 3000/tcp (docker image inspect)</td></tr><tr><td>reader</td><td>sbom</td><td>105 distinct package(s) (cosign attestation (signature verified))</td><td>105 distinct package(s) (cosign attestation (signature verified))</td></tr><tr><td>reader</td><td>vulns</td><td>96 advisories, db built 2026-09-27T06:30:30Z schema v6.1.9 (grype 0.119.0)</td><td>96 advisories, db built 2026-09-27T06:30:30Z schema v6.1.9 (grype 0.119.0)</td></tr><tr><td>catalogue</td><td>manifest</td><td>10 layers, 233.8 MB, USER 1001, ports 3000/tcp (docker image inspect)</td><td>10 layers, 233.8 MB, USER 1001, ports 3000/tcp (docker image inspect)</td></tr><tr><td>catalogue</td><td>sbom</td><td>90 distinct package(s) (cosign attestation (signature verified))</td><td>90 distinct package(s) (cosign attestation (signature verified))</td></tr><tr><td>catalogue</td><td>vulns</td><td>96 advisories, db built 2026-09-27T06:30:30Z schema v6.1.9 (grype 0.119.0)</td><td>96 advisories, db built 2026-09-27T06:30:30Z schema v6.1.9 (grype 0.119.0)</td></tr><tr><td>live</td><td>manifest</td><td>10 layers, 233.8 MB, USER 1001, ports 3000/tcp (docker image inspect)</td><td>10 layers, 233.8 MB, USER 1001, ports 3000/tcp (docker image inspect)</td></tr><tr><td>live</td><td>sbom</td><td>90 distinct package(s) (cosign attestation (signature verified))</td><td>90 distinct package(s) (cosign attestation (signature verified))</td></tr><tr><td>live</td><td>vulns</td><td>96 advisories, db built 2026-09-27T06:30:30Z schema v6.1.9 (grype 0.119.0)</td><td>96 advisories, db built 2026-09-27T06:30:30Z schema v6.1.9 (grype 0.119.0)</td></tr><tr><td>time</td><td>manifest</td><td>10 layers, 235.2 MB, USER 1001, ports 3000/tcp (docker image inspect)</td><td>10 layers, 235.2 MB, USER 1001, ports 3000/tcp (docker image inspect)</td></tr><tr><td>time</td><td>sbom</td><td>100 distinct package(s) (cosign attestation (signature verified))</td><td>100 distinct package(s) (cosign attestation (signature verified))</td></tr><tr><td>time</td><td>vulns</td><td>96 advisories, db built 2026-09-27T06:30:30Z schema v6.1.9 (grype 0.119.0)</td><td>96 advisories, db built 2026-09-27T06:30:30Z schema v6.1.9 (grype 0.119.0)</td></tr></tbody></table>
+
+
+
+<h2>Load (k6, 20 req/s for 30s)</h2><table><thead><tr><th>side</th><th>requests</th><th>failed</th><th>5xx</th><th>p50</th><th>p95</th></tr></thead><tbody><tr><td>a</td><td>601</td><td>0</td><td>0</td><td>1.22 ms</td><td>2.13 ms</td></tr><tr><td>b</td><td>601</td><td>0</td><td>0</td><td>1.31 ms</td><td>2.11 ms</td></tr></tbody></table>
+
+<h2>Differences (3; 0 unclaimed)</h2>
+<table><thead><tr><th>artefact</th><th>scope</th><th>what changed</th><th>claimed by</th></tr></thead><tbody><tr class="info"><td><code>dom</code></td><td><code>reference-course-reads</code></td><td>journey &quot;reference-course-reads&quot; failed on both sides<details><summary>detail</summary><pre>a: locator.click: Timeout 30000ms exceeded.
+b: locator.click: Timeout 30000ms exceeded.</pre></details></td><td><em>informational</em></td></tr>
+<tr class="info"><td><code>runtime</code></td><td><code>runtime/summary</code></td><td>container posture collected for catalogue, live, reader, reader-auth, time on both sides (compose)<details><summary>detail</summary><pre>catalogue: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+           b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+live: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+reader: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+        b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+reader-auth: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+             b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+time: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter</pre></details></td><td><em>informational</em></td></tr>
+<tr class="info"><td><code>startup</code></td><td><code>startup/summary</code></td><td>startup time collected on both sides (compose, 5 restart(s) per app)<details><summary>detail</summary><pre>catalogue: first healthy / 330 → 337 ms, ready 2346 → 2383 ms (median, a → b, n=5/5)
+live: first healthy / 419 → 436 ms, ready 2366 → 2380 ms (median, a → b, n=5/5)
+reader: first healthy / 563 → 542 ms, ready 2335 → 2340 ms (median, a → b, n=5/5)
+time: first healthy / 425 → 422 ms, ready 2380 → 2350 ms (median, a → b, n=5/5)</pre></details></td><td><em>informational</em></td></tr></tbody></table>
+
+
+
+
+
+
+
+<h2>Masks</h2>
+<p>Fired: <code>response-date</code>×70, <code>request-id</code>×70, <code>etag</code>×70, <code>metrics-process</code>×599, <code>metrics-timing-histograms</code>×12, <code>third-party-requests</code>×936, <code>persistence-stub-requests</code>×410, <code>hashed-assets</code>×5970, <code>footer-tutors-version</code>×258, <code>transport-length</code>×70, <code>transport-connection</code>×70, <code>transport-keepalive</code>×70.<br>
+Silent this run: <code>realtime-rest-fallback-warning</code>, <code>transport-encoding</code>, <code>transport-transfer</code> — a mask that never fires is a mask to delete.</p>
+
+<footer>Every masked field is listed in <code>normalise/masks.yaml</code> with a reason. A mask is a blind spot you chose.<br>harness 1.4.10 · f03f11da36ce · contract 1.4.0</footer>
+</body>
+</html>

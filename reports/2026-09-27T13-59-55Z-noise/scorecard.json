@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "mode": "noise",
+  "ranAt": "2026-09-27T13:59:55.645Z",
+  "verdict": "warn",
+  "score": 95,
+  "grade": "A",
+  "deductions": [
+    {
+      "points": 5,
+      "why": "1 diff(s) between identical images: noise the gate has to mask or fix"
+    }
+  ],
+  "normalness": {
+    "state": "noisy",
+    "source": "this-run",
+    "hunks": 1,
+    "ranAt": "2026-09-27T13:59:55.645Z"
+  },
+  "rules": [
+    {
+      "rule": null,
+      "hunks": 1,
+      "artefacts": [
+        "network"
+      ],
+      "scopes": [
+        "/note/reference-course/topic-07-reference/note-1"
+      ],
+      "prs": [],
+      "status": "unclaimed"
+    }
+  ],
+  "manual": [
+    {
+      "scope": "/note/reference-course/topic-07-reference/note-1",
+      "path": "/note/reference-course/topic-07-reference/note-1",
+      "artefacts": [
+        "network"
+      ],
+      "hunks": 1,
+      "why": "moved and no claim covers it"
+    }
+  ]
+}
