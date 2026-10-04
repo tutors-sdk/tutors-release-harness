@@ -11,6 +11,7 @@
  *
  * Pure: src/a3/read.ts reads the files, src/a3/github.ts asks GitHub, src/a3/render.ts draws the page.
  */
+import { coverageWords } from "../readiness/claims.ts";
 import type { Changes } from "../changes/signals.ts";
 import { decidingClaims, decisionsOf } from "../claims/decisions.ts";
 import { claimLabel } from "../claims/rules.ts";
@@ -738,6 +739,9 @@ export function buildA3(i: A3Inputs): A3 {
   const goal: GoalRow[] = [];
   if (score) goal.push({ metric: "Gate on the newest forecast", now: score.gate, target: "PASS", met: score.gate === "PASS", source: "confidence.json" });
   if (unclaimed !== undefined) goal.push({ metric: "Unclaimed differences", now: String(unclaimed), target: "0", met: unclaimed === 0, source: "report.json" });
+  // Since 1.28.1: the known side beside the gaps, so the claims that already hold are as visible as the ones owed.
+  const claimed = subject?.report?.compare.matches?.filter((m) => m?.claim).length;
+  if (unclaimed !== undefined && claimed !== undefined) goal.push({ metric: "Claims: known and gaps", now: `${claimed} claimed, ${unclaimed} unclaimed (${coverageWords(claimed + unclaimed ? claimed / (claimed + unclaimed) : null)} covered)`, target: "every difference claimed or fixed", met: unclaimed === 0, source: "report.json" });
   if (score) goal.push({ metric: "Release Confidence Score", now: score.rcs === null ? "none (Gate wins)" : `${score.rcs} ${score.band}`, target: "75 or more (Amber), on the way to 90 (Green)", met: (score.rcs ?? 0) >= 75, source: "docs/lean.md, bands" });
   if (score?.postDeploy) goal.push({ metric: "Post-deploy", now: score.postDeploy.red ? `red, ${score.postDeploy.red} runs` : "green", target: "green on a confirmed build", met: !score.postDeploy.red, source: "post-deploy.yml" });
   goal.push({ metric: "Releases scored (C0 evidence gate)", now: String(scored), target: "3", met: scored >= 3, source: "scoreboard branch" });

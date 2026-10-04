@@ -10,6 +10,7 @@
  * and below 640px each row becomes a card, so the page never scrolls sideways on a phone.
  */
 import { QUALITY_CSS, qualityMarksHtml, qualityStripHtml, safeHref } from "../a3/render.ts";
+import { claimsSentence, coverageWords, type ClaimFindingKind } from "./claims.ts";
 import { CONTROL_CSS, controlHtml } from "./control-render.ts";
 import { NIGHTS, deltaWords, type Forecast, type Night, type Readiness } from "./model.ts";
 import type { Soak } from "./soak.ts";
@@ -44,6 +45,12 @@ function evidence(f: Forecast): string {
   return parts.join(" · ") || `<span class="muted">none kept</span>`;
 }
 
+/** Since 1.28.1: claimed / (claimed + unclaimed), linked to the report's differences when there is one. */
+const coverageHtml = (f: Forecast) => {
+  if (f.coverage === null) return `<span class="muted">?</span>`;
+  return `<span class="cov" title="${esc(`${f.claimed} claimed of ${(f.claimed ?? 0) + (f.unclaimed ?? 0)}: the known side`)}">${coverageWords(f.coverage)}</span>`;
+};
+
 const commitHtml = (f: Forecast) => `<code>${esc(f.candidate || "?")}</code>${f.commitUrl ? ` <a class="sha" href="${esc(f.commitUrl)}" title="${esc(f.commit!)}">commit</a>` : ""}`;
 
 function forecastRow(night: Night, f: Forecast, first: boolean, lastId?: string): string {
@@ -53,6 +60,8 @@ function forecastRow(night: Night, f: Forecast, first: boolean, lastId?: string)
 <td data-k="Main"><span class="v">${commitHtml(f)}<span class="base">beside ${esc(f.baseline || "?")}</span></span></td>
 <td data-k="Gate"><span class="v">${gateBadge(f.gate)}${informingBadge(f)}</span></td>
 <td data-k="Unclaimed" class="num"><span class="v">${f.unclaimed === null ? `<span class="muted">?</span>` : f.unclaimed}</span></td>
+<td data-k="Claimed" class="num"><span class="v">${f.claimed === null ? `<span class="muted">?</span>` : f.claimed}</span></td>
+<td data-k="Coverage" class="num"><span class="v">${coverageHtml(f)}</span></td>
 <td data-k="New / gone" class="num"><span class="v">${deltaHtml(f)}</span></td>
 <td data-k="Quality"><span class="v">${qualityMarksHtml(f.quality, first && f.id === lastId ? "#quality" : f.links.report)}</span></td>
 <td data-k="Evidence"><span class="v">${evidence(f)}</span></td>
@@ -67,13 +76,15 @@ function quietRow(n: Night): string {
 <td data-k="Main"><span class="v"><code>${esc(n.since.candidate || "?")}</code><span class="base">unchanged since ${esc(nightLabel(n.since.night))}</span></span></td>
 <td data-k="Gate"><span class="v">${gateBadge(n.since.gate, true)}</span></td>
 <td data-k="Unclaimed" class="num muted"><span class="v">as then</span></td>
+<td data-k="Claimed" class="num muted"><span class="v">as then</span></td>
+<td data-k="Coverage" class="num muted"><span class="v">as then</span></td>
 <td data-k="New / gone" class="num muted"><span class="v">+0 / −0</span></td>
 <td data-k="Quality" class="muted"><span class="v">as then</span></td>
 <td data-k="Evidence"><span class="v">${runs ? `skipped: ${runs}` : ""}</span></td>
 </tr>`;
   return `<tr class="quiet ${n.state.replaceAll(" ", "-")}">
 <td data-k="Night"><span class="v"><strong>${esc(nightLabel(n.night))}</strong></span></td>
-<td data-k="State" colspan="6"><span class="v"><span class="state">${esc(n.state)}</span> ${esc(n.note)}${runs ? ` ${runs}` : ""}</span></td>
+<td data-k="State" colspan="8"><span class="v"><span class="state">${esc(n.state)}</span> ${esc(n.note)}${runs ? ` ${runs}` : ""}</span></td>
 </tr>`;
 }
 
@@ -82,7 +93,7 @@ function rowsHtml(r: Readiness): string {
   return r.nights
     .map((n) => {
       const body = n.forecasts.length ? n.forecasts.map((f, i) => forecastRow(n, f, i === 0, lastId)).join("\n") : quietRow(n);
-      const rule = n.baselineMoved ? `\n<tr class="rule"><td colspan="7">Production moved here: ${esc(n.baselineMoved.from)} below, ${esc(n.baselineMoved.to)} above. The delta starts again: two baselines are never compared.</td></tr>` : "";
+      const rule = n.baselineMoved ? `\n<tr class="rule"><td colspan="9">Production moved here: ${esc(n.baselineMoved.from)} below, ${esc(n.baselineMoved.to)} above. The delta starts again: two baselines are never compared.</td></tr>` : "";
       return body + rule;
     })
     .join("\n");
@@ -130,6 +141,77 @@ ${nights}
 <h3>Checks that 2.0 may make blocking</h3>
 <p class="note">Each must be quiet on main for ${s.target} judged nights and catch its planted mutant in the weekly self-test${m ? ` (latest: ${m.caught === null ? "did not run" : `${m.caught} of ${m.total} caught`}, ${esc(m.ranAt.slice(0, 10))}${m.runUrl ? `, ${link("run", m.runUrl)}` : ""})` : " (no self-test recorded yet)"}. A check that fires on production too cannot get there until production is fixed.</p>
 ${checks}
+</section>`;
+}
+
+const FINDING_WORDS: Record<ClaimFindingKind, string> = {
+  "covers-many-hunks": "too broad: covers many differences",
+  "broad-with-approval": "broad claim, approved",
+  "broad-unapproved": "broad claim without approval",
+  stale: "stale: matched nothing",
+  expired: "expired: past its lifetime"
+};
+
+/** A bar of two parts, claimed then unclaimed, in proportion; text beside it carries the numbers. */
+function coverageBar(claimed: number, unclaimed: number, label: string): string {
+  const total = claimed + unclaimed;
+  if (!total) return `<span class="cbar empty" role="img" aria-label="${esc(label)}"></span>`;
+  const k = Math.round((claimed / total) * 1000) / 10;
+  return `<span class="cbar" role="img" aria-label="${esc(label)}"><span class="k" style="width:${k}%"></span><span class="g" style="width:${Math.round((100 - k) * 10) / 10}%"></span></span>`;
+}
+
+/**
+ * Since 1.28.1: "Claims: known and gaps", for the latest forecast. The known side (claimed) beside the gaps (unclaimed),
+ * per artefact, with the claims owed and the claim-hygiene findings, each linked to its section of the kept report.
+ */
+function claimsHtml(r: Readiness): string {
+  const n = r.nights.find((x) => x.forecasts.length);
+  const f = n?.forecasts[0];
+  const head = `<h2 id="claims-title">Claims: known and gaps</h2>`;
+  if (!f) return `<section class="claims" id="claims" aria-labelledby="claims-title">${head}<p class="empty">No forecast kept in the last ${NIGHTS} nights, so nothing to count.</p></section>`;
+  const c = f.claims;
+  if (!c) return `<section class="claims" id="claims" aria-labelledby="claims-title">${head}<p class="empty">The latest forecast (${esc(f.candidate)}, ${esc(when(f.ranAt))}) kept no report.json the page could read, so its claims are not counted.</p></section>`;
+  const report = f.links.report;
+  const at = (anchor: string | null) => (report && anchor ? `${report}#${anchor}` : undefined);
+  const row = (id?: string) => (id ? at(`hunk-${id}`) : undefined);
+  const num = (v: number, href?: string) => (v && href ? link(String(v), href) : String(v));
+  const rows = c.byArtefact
+    .map(
+      (a) => `<tr><td data-k="Artefact"><span class="v"><code>${esc(a.artefact)}</code></span></td>
+<td data-k="Claimed (known)" class="num"><span class="v">${num(a.claimed, row(a.firstClaimed))}</span></td>
+<td data-k="Unclaimed (gaps)" class="num"><span class="v">${a.unclaimed ? `<strong class="gap">${num(a.unclaimed, row(a.firstUnclaimed))}</strong>` : "0"}</span></td>
+<td data-k="Covered"><span class="v">${coverageBar(a.claimed, a.unclaimed, `${a.artefact}: ${a.claimed} claimed, ${a.unclaimed} unclaimed`)} <span class="pct">${coverageWords(a.claimed + a.unclaimed ? a.claimed / (a.claimed + a.unclaimed) : null)}</span></span></td></tr>`
+    )
+    .join("\n");
+  const h = c.hygiene;
+  const hygieneLine = h
+    ? `${h.claims} ${h.claims === 1 ? "claim covers" : "claims cover"} ${h.claimedHunks} failing ${h.claimedHunks === 1 ? "difference" : "differences"}: ${h.hunksPerClaim} per claim, at most ${h.maxHunksPerClaim} under one (flagged above ${h.threshold}).`
+    : "The forecast ran without a claims file: no claim to judge.";
+  const findings = c.findings.length
+    ? `<ul class="findings">${c.findings
+        .map((x) => `<li><span class="kind">${esc(FINDING_WORDS[x.kind] ?? x.kind)}</span> <code>${esc(x.artefact)}</code> <code class="scope">${esc(x.scope)}</code>${x.hunks !== undefined ? ` · ${x.hunks} ${x.hunks === 1 ? "difference" : "differences"}` : ""}${at(x.anchor) ? ` · ${link("in the report", at(x.anchor))}` : ""}</li>`)
+        .join("")}</ul>`
+    : `<p class="note">No finding: no claim too broad, stale or expired.</p>`;
+  const owedLink = at(c.anchors.owed);
+  return `<section class="claims" id="claims" aria-labelledby="claims-title">
+${head}
+<p class="note">The latest forecast, ${esc(nightLabel(n!.night))} ${esc(time(f.ranAt))}: main ${esc(f.candidate)} beside production ${esc(f.baseline)}. ${esc(claimsSentence(c))} The known side is what <code>release/claims.yaml</code> already says is intended; the gaps are what the next release owes a claim or a fix. Read from the kept report; it never changes the Gate.</p>
+<div class="tiles">
+<div class="tile known"><span class="k">Claimed: known</span><span class="big">${c.claimed}</span><span class="sub">differences a claim covers${at(c.anchors.claimed) ? ` · ${link("in the report", at(c.anchors.claimed))}` : ""}</span></div>
+<div class="tile gaps"><span class="k">Unclaimed: gaps</span><span class="big">${c.unclaimed}</span><span class="sub">failing differences no claim covers${at(c.anchors.unclaimed) ? ` · ${link("in the report", at(c.anchors.unclaimed))}` : ""}</span></div>
+<div class="tile"><span class="k">Coverage</span><span class="big">${coverageWords(c.coverage)}</span><span class="sub">${coverageBar(c.claimed, c.unclaimed, `${c.claimed} claimed, ${c.unclaimed} unclaimed`)}claimed of claimed plus unclaimed</span></div>
+<div class="tile"><span class="k">Claims owed</span><span class="big">${c.owed ?? "?"}</span><span class="sub">${c.owed === null ? "not drafted for this report" : c.owed ? "draft claims, one per cause, to name a Rule for or fix" : "none: every difference is claimed"}${c.owed && owedLink ? ` · ${link("the drafts", owedLink)}` : ""}</span></div>
+</div>
+${
+  rows
+    ? `<table class="claims-by"><thead><tr><th>Artefact</th><th class="num">Claimed (known)</th><th class="num">Unclaimed (gaps)</th><th>Covered</th></tr></thead><tbody>
+${rows}
+</tbody></table>`
+    : `<p class="note">No difference either side.</p>`
+}
+<h3>Claim hygiene${at(c.anchors.hygiene) ? ` <span class="hint">${link("in the report", at(c.anchors.hygiene))}</span>` : ""}</h3>
+<p class="note">${esc(hygieneLine)}</p>
+${findings}
 </section>`;
 }
 
@@ -210,6 +292,17 @@ table.strip{border-collapse:collapse;width:100%;margin:8px 0 0;font-size:14px;ba
 .quality-strip details summary{margin-top:2px}
 ${QUALITY_CSS}
 ${CONTROL_CSS}
+.claims{background:var(--sheet);border:1px solid var(--rule);border-radius:8px;padding:6px 16px 14px;margin:16px 0}
+.claims h2{font-size:1.1rem;margin:10px 0 6px} .claims h3{font-size:1rem;margin:16px 0 2px} .claims h3 .hint{font-size:13px;font-weight:400}
+table.claims-by{border-collapse:collapse;width:100%;margin:8px 0 0;font-size:14px}
+.claims-by th,.claims-by td{text-align:left;vertical-align:middle;padding:5px 8px;border-bottom:1px solid var(--rule)}
+.claims-by th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink2)} .claims-by td.num{font-variant-numeric:tabular-nums;text-align:right} .claims-by th.num{text-align:right} .claims .tile.known{border-left:4px solid var(--accent)} .claims .tile.gaps{border-left:4px solid var(--fail)}
+.claims strong.gap,.claims strong.gap a{color:var(--fail)}
+.cbar{display:inline-flex;width:120px;max-width:100%;height:10px;border-radius:3px;overflow:hidden;vertical-align:middle;background:var(--hatch);margin-right:6px}
+.cbar .k{background:var(--accent)} .cbar .g{background:var(--fail)} .tile .cbar{display:flex;width:100%;margin:4px 0}
+.claims .pct{font-variant-numeric:tabular-nums;font-size:12.5px;color:var(--ink2)}
+ul.findings{margin:6px 0 0;padding-left:1.1rem;font-size:13.5px} ul.findings li{margin:2px 0;overflow-wrap:anywhere}
+ul.findings .kind{font-weight:700} ul.findings code.scope{font-size:12px}
 .soak{background:var(--sheet);border:1px solid var(--rule);border-radius:8px;padding:6px 16px 14px;margin:16px 0}
 .soak h2{font-size:1.1rem;margin:10px 0 6px} .soak h3{font-size:1rem;margin:16px 0 2px}
 .soak table.strip{background:transparent} .soak .empty{font-size:14px} .soak-checks td[data-k="Check"] code{white-space:nowrap}
@@ -226,6 +319,7 @@ footer{font-size:12px;color:var(--ink2);border-top:1px solid var(--rule);margin-
   .strip td.num{white-space:normal}
   .strip tr.earlier{padding-top:0;margin-left:12px;width:auto;border-left:3px solid var(--rule);padding-left:10px}
   .strip tr.rule td{display:block} .strip tr.rule td::before{content:none}
+  .claims-by th,.claims-by td{padding:4px 4px} .claims-by .cbar{width:44px;margin-right:3px} .claims-by td code{font-size:12px;overflow-wrap:normal}
 }
 `;
 
@@ -242,13 +336,14 @@ export function renderReadiness(r: Readiness): string {
 <body>
 <main class="page">
 <header class="title"><h1>Overnight readiness <span>· main against production, the last ${NIGHTS} nights</span></h1>
-<p class="meta">Built ${esc(when(r.builtAt))} by harness <code>${esc(r.harness)}</code> · <a href="./">home</a> · <a href="a3.html">A3</a> · <a href="scoreboard.html">scoreboard</a> · <a href="#control">control chart</a> · <a href="#soak">soak toward 2.0</a> · <a href="readiness.json">readiness.json</a></p></header>
+<p class="meta">Built ${esc(when(r.builtAt))} by harness <code>${esc(r.harness)}</code> · <a href="./">home</a> · <a href="a3.html">A3</a> · <a href="scoreboard.html">scoreboard</a> · <a href="#claims">claims</a> · <a href="#control">control chart</a> · <a href="#soak">soak toward 2.0</a> · <a href="readiness.json">readiness.json</a></p></header>
 <p class="note">One row per night (UTC), newest on top, from the Main to RC forecasts kept on the <code>main-preview</code> branch. To pick a night, read two rows: what the later one added, and whether its Gate moved. The quality marks (Speed, Metrics, Tests) are a reading aid and never change the Gate. A night that kept nothing says why in words. The band is left off the rows while the review floor caps the score; the Gate is what decides. A forecast, never a gate.</p>
+${claimsHtml(r)}
 ${controlHtml(r.control)}
 ${soakHtml(r.soak)}
 ${lastNight(r)}
 <h2 class="strip-title">Night by night</h2>
-<table class="strip"><thead><tr><th>Night</th><th>Main</th><th>Gate</th><th>Unclaimed</th><th>New / gone</th><th>Quality</th><th>Evidence</th></tr></thead>
+<table class="strip"><thead><tr><th>Night</th><th>Main</th><th>Gate</th><th>Unclaimed</th><th>Claimed</th><th>Coverage</th><th>New / gone</th><th>Quality</th><th>Evidence</th></tr></thead>
 <tbody>
 ${rowsHtml(r)}
 </tbody></table>
