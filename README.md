@@ -1,5 +1,9 @@
 # Tutors release harness
 
+**Daily A3 for the release reviewer: [tutors-sdk.github.io/tutors-release-harness/a3.html](https://tutors-sdk.github.io/tutors-release-harness/a3.html).**
+It rebuilds every night after the nightly A/A and Main to RC, so no one has to run anything; a run can be forced
+from Actions → Report pages → Run workflow.
+
 **Start here: [tutors-sdk.github.io/tutors-release-harness](https://tutors-sdk.github.io/tutors-release-harness/).**
 The landing page links everything the harness publishes: the
 [overnight readiness](https://tutors-sdk.github.io/tutors-release-harness/readiness.html) page (is main ready
