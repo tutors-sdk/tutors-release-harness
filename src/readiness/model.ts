@@ -23,6 +23,7 @@
 import type { WorkflowRun } from "../a3/github.ts";
 import { qualityOf, type QualityInputs, type QualityRecord, type QualityStrip, type WeeklyMutants } from "../a3/quality.ts";
 import type { ReportDelta } from "../report/delta.ts";
+import type { ClaimsView } from "./claims.ts";
 import { buildControl, type Control } from "./control.ts";
 import type { ReleaseHistory } from "./releases.ts";
 import { SOAK_FROM, buildSoak, type AaNight, type Soak, type SoakForecast } from "./soak.ts";
@@ -51,6 +52,8 @@ export interface KeptForecast {
   files: string[];
   /** From the kept report.json, when it could be read. */
   unclaimed?: number;
+  /** Since 1.28.1: the kept report.json's claimed and unclaimed differences, per artefact, claims owed and claim hygiene. */
+  claims?: ClaimsView;
   /** Since 1.21.0: the kept report.json's informing results no claim covers; absent when it was kept before engine levels. */
   informing?: number;
   /** Since 1.22.0: the same, by engine (the policy family's checks among them); absent with `informing`. */
@@ -115,6 +118,12 @@ export interface Forecast {
   gate: string;
   verdict: string;
   unclaimed: number | null;
+  /** Since 1.28.1: differences a claim covers (the known side); null when the kept report.json could not be read. */
+  claimed: number | null;
+  /** Since 1.28.1: claimed / (claimed + unclaimed), to three decimals; null when either is not known or both are 0. */
+  coverage: number | null;
+  /** Since 1.28.1: claimed and unclaimed per artefact, claims owed and claim hygiene (src/readiness/claims.ts). */
+  claims?: ClaimsView;
   /** Since 1.21.0: informing results no claim covers (reported, never gates); null for a forecast kept before engine levels. */
   informing: number | null;
   /** Since 1.22.0: `informing` by engine, e.g. `{ "vuln-ceiling": 3 }`; absent when `informing` is null or 0. */
@@ -193,6 +202,9 @@ export function forecastOf(k: KeptForecast, mutants?: WeeklyMutants[]): Forecast
     gate: k.gate ?? k.verdict.toUpperCase(),
     verdict: k.verdict,
     unclaimed: k.unclaimed ?? null,
+    claimed: k.claims?.claimed ?? null,
+    coverage: k.claims?.coverage ?? null,
+    ...(k.claims ? { claims: k.claims } : {}),
     informing: k.informing ?? null,
     ...(k.informing && k.informingBy ? { informingBy: k.informingBy } : {}),
     delta: k.delta ?? null,

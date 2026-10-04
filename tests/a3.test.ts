@@ -144,6 +144,13 @@ describe("the A3", () => {
     expect(a.goal.find((g) => g.metric === "Release Confidence Score")!.now).toBe("none (Gate wins)");
   });
 
+  it("puts the known side beside the gaps in the goal (since 1.28.1)", () => {
+    const a = buildA3(inputs());
+    const row = a.goal.find((g) => g.metric === "Claims: known and gaps")!;
+    expect(row.now).toMatch(/^\d+ claimed, 14 unclaimed \(\d+% covered\)$/);
+    expect(row).toMatchObject({ target: "every difference claimed or fixed", met: false, source: "report.json" });
+  });
+
   it("ranks the unclaimed differences so one removed tool reads as one cause, counted once per package", () => {
     const u = buildA3(inputs()).current.paretos.find((p) => p.id === "unclaimed")!;
     expect(u.total).toBe(14);

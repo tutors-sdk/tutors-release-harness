@@ -24,7 +24,7 @@
 #             matches, a response answered with any listed status is recorded as s1
 #             on both sides (the URL is not rewritten, and a status NOT listed still
 #             compares). For a status the browser picks, not the server: a media file
-#             fetched whole (200) or by range (206). Since 1.28.1
+#             fetched whole (200) or by range (206). Since 1.28.2
 #   metrics:  `series: <regex>`              drops matching series names
 #   logs:     `key: <name>`                  drops that key from the key-set comparison
 # `replace` may keep parts of the match with $1, $2 …; `modes: [post-deploy]`

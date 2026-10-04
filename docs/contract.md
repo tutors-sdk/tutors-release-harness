@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.28.1`
+Contract version: `1.28.2`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -1326,6 +1326,22 @@ the latest forecast at the top shows the whole strip. `--mutants <mutants.jsonl>
 mark's weekly self-tests; without it that check is not measured. An unchanged night repeats no
 marks ("as then").
 
+**Claims: known and gaps** (since 1.28.1): each forecast carries `claimed`, the differences a
+claim covers (its report's "Claimed differences", the known side), beside `unclaimed` (the gaps),
+and `coverage`, claimed / (claimed + unclaimed) to three decimals; `null` when its `report.json`
+could not be read. The night table shows both, with coverage as a whole percentage rounded down
+(so one gap never reads as 100%). `claims` (`src/readiness/claims.ts`) breaks the latest down: the two sides per artefact, most
+differences first, each linked to its first row in the kept `report.html` (`#hunk-<id>`); the
+**claims owed** (one draft claim per cause, the count the report's "Claims owed" section shows,
+linked to `#claims-owed` on a report kept since 1.20.2); the report's claim hygiene; and every
+finding to look at twice: a claim that covers more differences than the hygiene threshold, a
+broad claim with or without approval, a stale claim (matched nothing), an expired one (past its
+lifetime), each linked to its section of the report. A scope longer than 120 characters is cut;
+the report has it whole. Informing results are in neither side. The panel (`#claims`) comes
+before the control chart. The A3's goal gains a "Claims: known and gaps" row, and the landing
+page's readiness card leads with the same sentence. Advisory: nothing here changes a verdict, a
+Gate or an exit code.
+
 **The release-size control chart** (since 1.19.0) leads the page: `control` in `readiness.json`
 ([`release-control.schema.json`](contract/release-control.schema.json)). It plots the size of
 each past release of the monorepo in **merged PRs** (the PRs on the first-parent line from the
@@ -1833,9 +1849,9 @@ Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on t
 
 ## Changes
 
-### 1.28.1 (patch; a network mask may make two statuses count as one)
+### 1.28.2 (patch; a network mask may make two statuses count as one)
 
-The release note is [releases/1.28.1.md](releases/1.28.1.md). A patch: no `report.json` field, verdict,
+The release note is [releases/1.28.2.md](releases/1.28.2.md). A patch: no `report.json` field, verdict,
 exit code, claims key or flag changes, and **this release adds no mask**; `normalise/masks.yaml` gains a
 mask kind, not an entry.
 
@@ -1847,6 +1863,23 @@ mask kind, not an entry.
 - The schema refuses `status` with `header`, `drop` or `replace`, on any artefact but `network`, without a
   `pattern`, or with fewer than two different statuses.
 - The mask that uses it lands in its own PR (`src/ci/mask-change.ts`).
+
+### 1.28.1 (patch; claims: known and gaps)
+
+The release note is [releases/1.28.1.md](releases/1.28.1.md). A patch: three optional fields on
+each forecast in `readiness.json` (not stable), and pages; no input, `report.json` field, verdict,
+Gate or exit code changes.
+
+- [The overnight readiness page](#the-overnight-readiness-page): each forecast's `claimed`,
+  `coverage` and `claims` ([`readiness.schema.json`](contract/readiness.schema.json)); a Claimed
+  and a Coverage column in the night table; and a **Claims: known and gaps** panel (`#claims`)
+  for the latest forecast: claimed beside unclaimed per artefact, the claims owed, and the
+  claim-hygiene findings (too broad, stale, expired), each linked to its section of the kept
+  report.
+- The A3's goal gains "Claims: known and gaps"; `site/index.html`'s readiness card leads with
+  the same sentence, linked to `readiness.html#claims`.
+- `site/index.html` no longer scrolls sideways at 375px: a long path in the latest forecast's
+  change-risk list wraps.
 
 ### 1.28.0 (minor; the replay set, informing)
 

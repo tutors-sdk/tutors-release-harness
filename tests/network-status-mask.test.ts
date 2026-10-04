@@ -5,7 +5,7 @@ import type { NetworkEntry, SideCapture, SideName } from "../src/types.ts";
 import { capture, journey, page } from "./support/captures.ts";
 
 /**
- * `status: [...]` on a network pattern mask (since 1.28.1). The engine's own test mask: this PR adds no entry to
+ * `status: [...]` on a network pattern mask (since 1.28.2). The engine's own test mask: this PR adds no entry to
  * masks.yaml. The noise it exists for: a media file the browser fetches whole (200) on one side and by range (206)
  * on the other, on the same URL, from the same image.
  */

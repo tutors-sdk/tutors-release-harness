@@ -34,7 +34,7 @@ export const MaskSchema = z
      */
     drop: z.boolean().optional(),
     /**
-     * Since 1.28.1, network pattern masks only: response statuses that count as one on the requests whose URL
+     * Since 1.28.2, network pattern masks only: response statuses that count as one on the requests whose URL
      * matches `pattern`. A matching request answered with any listed status is recorded with the FIRST one, on
      * both sides; the URL is left as it is, and a status not in the list (a 404, a 500) still compares. For a
      * status the browser chooses rather than the server (a media file fetched whole, 200, or by range, 206).

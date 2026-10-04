@@ -104,6 +104,18 @@ describe("site/index.html", () => {
     expect(empty["readiness-live"] ?? "").toBe("");
   });
 
+  it("puts the latest forecast's claims, known and gaps, first on the readiness card (since 1.28.1)", async () => {
+    const root = site();
+    const f = { id: "n2", claimed: 701, unclaimed: 204, coverage: 0.775, claims: { owed: 18 }, links: { rehearsals: [] } };
+    writeFileSync(join(root, "readiness.json"), JSON.stringify({ nights: [{ night: "2026-10-04", forecasts: [] }, { night: "2026-10-03", forecasts: [f] }], soak: { headline: "0 of 10 clean nights" } }));
+    const out = await render(root);
+    expect(out["readiness-live"]).toBe('<a href="readiness.html#claims">Claims: 701 claimed (known), 204 unclaimed (gaps), 77% covered; 18 claims owed.</a><br>0 of 10 clean nights');
+    // a forecast kept before claims were counted says nothing about them
+    writeFileSync(join(root, "readiness.json"), JSON.stringify({ nights: [{ night: "2026-10-03", forecasts: [{ ...f, claimed: null }] }], soak: { headline: "0 of 10 clean nights" } }));
+    expect((await render(root))["readiness-live"]).toBe("0 of 10 clean nights");
+    expect(PAGE).toContain('<a href="readiness.html#claims">Claims</a>: known and gaps');
+  });
+
   it("stays a static page: no external script, stylesheet or font", () => {
     expect(PAGE).not.toMatch(/<script[^>]+src=/);
     expect(PAGE).not.toMatch(/<link[^>]+stylesheet/);

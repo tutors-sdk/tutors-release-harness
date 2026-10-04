@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/tutors-sdk/tutors-release-harness/blob/main/docs/contract/readiness.schema.json",
   "title": "readiness.json: the overnight readiness page (contract 1.25.0, not stable)",
-  "description": "Since 1.17.0 (each forecast's `quality` since 1.18.0; `control` since 1.19.0; `soak` since 1.25.0). Written by `harness readiness --site <dir>` beside readiness.html on the reports site: one row per calendar night (UTC) for the last ten nights, newest first, from the Main to RC forecasts kept on the `main-preview` branch and Main to RC's workflow runs (github.json). Derived from Readiness in src/readiness/model.ts. The band is deliberately absent: while the review floor caps the score the row carries the Gate only. Advisory: never read by a verdict, the Gate or an exit code. Not stable: it may change in a minor release.",
+  "description": "Since 1.17.0 (each forecast's `quality` since 1.18.0; `control` since 1.19.0; `soak` since 1.25.0; each forecast's `claimed`, `coverage` and `claims` since 1.28.1). Written by `harness readiness --site <dir>` beside readiness.html on the reports site: one row per calendar night (UTC) for the last ten nights, newest first, from the Main to RC forecasts kept on the `main-preview` branch and Main to RC's workflow runs (github.json). Derived from Readiness in src/readiness/model.ts. The band is deliberately absent: while the review floor caps the score the row carries the Gate only. Advisory: never read by a verdict, the Gate or an exit code. Not stable: it may change in a minor release.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schemaVersion", "builtAt", "harness", "nights", "sources"],
@@ -142,6 +142,71 @@
         "gate": { "type": "string", "description": "confidence.json's Gate, or the verdict in capitals for a forecast kept before the score." },
         "verdict": { "type": "string" },
         "unclaimed": { "type": ["integer", "null"], "minimum": 0 },
+        "claimed": { "type": ["integer", "null"], "minimum": 0, "description": "Since 1.28.1: the kept report's differences a claim covers (the known side, its \"Claimed differences\"); null when its report.json could not be read." },
+        "coverage": { "type": ["number", "null"], "minimum": 0, "maximum": 1, "description": "Since 1.28.1: claimed / (claimed + unclaimed), to three decimals; null when either is not known or both are 0." },
+        "claims": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["claimed", "unclaimed", "coverage", "byArtefact", "owed", "hygiene", "findings", "anchors"],
+          "description": "Since 1.28.1: claims, known and gaps (src/readiness/claims.ts), read from the kept report.json; absent when it could not be read. Informing results are in neither side. Advisory.",
+          "properties": {
+            "claimed": { "type": "integer", "minimum": 0 },
+            "unclaimed": { "type": "integer", "minimum": 0 },
+            "coverage": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+            "byArtefact": {
+              "type": "array",
+              "description": "Per artefact, most differences first.",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["artefact", "claimed", "unclaimed"],
+                "properties": {
+                  "artefact": { "type": "string" },
+                  "claimed": { "type": "integer", "minimum": 0 },
+                  "unclaimed": { "type": "integer", "minimum": 0 },
+                  "firstClaimed": { "type": "string", "description": "The first claimed difference's id: its row in report.html is #hunk-<id>." },
+                  "firstUnclaimed": { "type": "string", "description": "The first unclaimed difference's id: its row in report.html is #hunk-<id>." }
+                }
+              }
+            },
+            "owed": { "type": ["integer", "null"], "minimum": 0, "description": "Claims owed: one draft per cause of the unclaimed differences (the report's \"Claims owed\")." },
+            "hygiene": {
+              "oneOf": [
+                { "type": "null" },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["claims", "claimedHunks", "hunksPerClaim", "maxHunksPerClaim", "threshold"],
+                  "properties": { "claims": { "type": "integer", "minimum": 0 }, "claimedHunks": { "type": "integer", "minimum": 0 }, "hunksPerClaim": { "type": "number", "minimum": 0 }, "maxHunksPerClaim": { "type": "integer", "minimum": 0 }, "threshold": { "type": "integer", "minimum": 1 } }
+                }
+              ],
+              "description": "The report's claim hygiene; null when it ran without a claims file."
+            },
+            "findings": {
+              "type": "array",
+              "description": "Claims to look at twice: too broad (covers-many-hunks), broad with or without approval, stale (matched nothing), expired (past its lifetime).",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["kind", "artefact", "scope", "anchor"],
+                "properties": {
+                  "kind": { "enum": ["covers-many-hunks", "broad-with-approval", "broad-unapproved", "stale", "expired"] },
+                  "artefact": { "type": "string" },
+                  "scope": { "type": "string", "maxLength": 120, "description": "Cut at 120 characters; the report has it whole." },
+                  "hunks": { "type": "integer", "minimum": 0 },
+                  "anchor": { "type": "string", "description": "The report.html section that lists it." }
+                }
+              }
+            },
+            "anchors": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["claimed", "unclaimed", "owed", "hygiene"],
+              "description": "The report.html sections for each side, the drafts and the hygiene; null where the kept report has no such section.",
+              "properties": { "claimed": { "type": "string" }, "unclaimed": { "type": "string" }, "owed": { "type": ["string", "null"] }, "hygiene": { "type": ["string", "null"] } }
+            }
+          }
+        },
         "informing": { "type": ["integer", "null"], "minimum": 0, "description": "Since 1.21.0: the kept report's informing results no claim covers (reported, never gates); null for a forecast kept before engine levels." },
         "informingBy": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 1 }, "description": "Since 1.22.0: informing by engine (its artefact), e.g. the policy family's checks; absent when informing is null or 0." },
         "delta": {
