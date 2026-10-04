@@ -1,0 +1,37 @@
+# Post-deploy claims: differences between live production and the recorded release run that are known and
+# explained, so the synthetic monitor (.github/workflows/post-deploy.yml, `harness local watch`) does not keep
+# failing on them. Read with `--claims` by post-deploy mode only; release mode reads the release's own
+# claims.yaml from the monorepo, never this file.
+#
+# Same format and matcher as any claims file (claims/README.md): artefact, scope glob, reason. A claim here
+# excuses a difference between production and the tested release, so every one is narrow (one artefact, one page
+# or one request) and carries `until`: the release after which it should no longer be needed. In post-deploy mode
+# side a is the recorded release, so `until: "16.2.3"` expires as soon as the recorded run is any release after
+# 16.2.2 (16.2.3, 16.3.0, ...). Claim lifetimes are informing until harness 2.0: an expired claim is reported and
+# still covers, so remove a claim once it is stale or expired.
+#
+# Empty is the normal state: `claims: []`.
+claims:
+  # tutors-release-harness#38: tutors.dev serves an unnamed build made 2026-09-18T08:06:22Z (`/_app/version.json`, no
+  # `/version`), not the 16.2.2 images the recorded run tested. Its pages are the older course shell, and its Supabase
+  # project has no `app_errors` table. The next release, deployed from the monorepo, replaces that build.
+  - artefact: console
+    scope: "reference:course"
+    until: "16.2.3"
+    reason: "Issue #38: production runs an untracked 2026-09-18 build that the next release replaces; its Supabase has no app_errors table, so the error-report POST to /rest/v1/app_errors logs a 404"
+  - artefact: console
+    scope: "reference:lab"
+    until: "16.2.3"
+    reason: "Issue #38: production runs an untracked 2026-09-18 build that the next release replaces; its Supabase has no app_errors table, so the error-report POST to /rest/v1/app_errors logs a 404"
+  - artefact: console
+    scope: "reference:note"
+    until: "16.2.3"
+    reason: "Issue #38: production runs an untracked 2026-09-18 build that the next release replaces; its unload flush posts to /rest/v1/app_errors with ?Prefer=return=none, which PostgREST answers 400 (mono-repo #353)"
+  - artefact: focus
+    scope: "reference:course"
+    until: "16.2.3"
+    reason: "Issue #38: production runs an untracked 2026-09-18 build that the next release replaces; its older course shell has no skip link or header buttons, so the 12 focus stops differ"
+  - artefact: network
+    scope: "GET {{course}}/course.png"
+    until: "16.2.3"
+    reason: "Issue #38: production runs an untracked 2026-09-18 build that the next release replaces; its older course shell requests the course image on the lab page"

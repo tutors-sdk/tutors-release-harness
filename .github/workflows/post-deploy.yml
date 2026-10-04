@@ -128,6 +128,9 @@ jobs:
           mkdir -p releases
           gh api -H "Accept: application/vnd.github.raw" "repos/${GITHUB_REPOSITORY}/contents/releases/${DEPLOYED}.json?ref=release-records" > "releases/${DEPLOYED}.json" 2>/dev/null || rm -f "releases/${DEPLOYED}.json"
 
+      # Since 1.28.4 the run applies post-deploy/claims.yaml from this checkout: differences between production and the
+      # recorded release that are known and explained (each narrow, each with an `until`). The release's own claims are
+      # not read here: they excuse what a candidate changed against production, not what production changed against it.
       - name: Post-deploy mode
         id: run
         if: steps.recording.outputs.found == 'true'
@@ -137,7 +140,7 @@ jobs:
         run: |
           recorded="$(find recorded -mindepth 1 -maxdepth 1 -type d -name '*-release' | sort | head -1)"
           set +e
-          pnpm harness run --mode post-deploy --recorded "$recorded" --production "$PRODUCTION_URLS" ${NOISE_FILE:+--noise "$NOISE_FILE"} \
+          pnpm harness run --mode post-deploy --recorded "$recorded" --production "$PRODUCTION_URLS" --claims post-deploy/claims.yaml ${NOISE_FILE:+--noise "$NOISE_FILE"} \
             ${DEPLOYED:+--deployed "$DEPLOYED" --release-record releases} ${DEPLOYED_DIGESTS:+--deployed-digests "$DEPLOYED_DIGESTS"}
           code=$?
           set -e

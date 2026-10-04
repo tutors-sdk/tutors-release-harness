@@ -35,6 +35,8 @@ export const ENGINE_PATHS = [
   "src/claims/**",
   "src/normalise/**",
   "normalise/**",
+  // The claims post-deploy mode applies (post-deploy.yml, `harness local watch`): what the monitor excuses.
+  "post-deploy/**",
   // What is captured, from the browser, the stacks, the images and the backends.
   "src/collectors/**",
   "src/runtime/**",
