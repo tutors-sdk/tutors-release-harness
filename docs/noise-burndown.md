@@ -343,6 +343,21 @@ is a `dom` hunk, and needs **M16**: the harness freezes only the browser clock
 (`page.clock.setFixedTime`), so anything the **server** stamps must honour the
 same instant (`HARNESS_NOW`) or it is permanent noise.
 
+### Media range requests and Chromium's compute-pressure message
+
+*Shows as* a `network` hunk `GET {{course}}/…/video.mov status changed: 200 → 206`, and a `console`
+hunk `error: Permissions policy violation: compute-pressure is not allowed in this document.` on
+one side only, both on `reference:note`.
+
+Both are the browser's, not the release's. Chromium fetches a video whole (200) or by range (206)
+depending on what it has buffered; its Compute Pressure probe logs the policy message when it runs
+before the page settles. They broke the 2.0 soak on 2026-10-02 (a to a2 in the forecast) and
+2026-10-03 (the A/A); the 2026-10-01 A/A's single difference was the same `video.mov` status.
+Masked in 1.28.3, in their own PR: `media-range-status` (a `status: [206, 200]` network mask,
+since 1.28.2, on media files under `{{course}}`; any other status still shows) and
+`chromium-compute-pressure-policy` (that exact console message, dropped). Mask count 25 → 27, of
+the review limit of 40.
+
 ### Also on the list
 
 - **Build strings** (git sha, build date) in the DOM: **M20** moves them to one

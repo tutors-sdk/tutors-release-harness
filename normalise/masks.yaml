@@ -113,6 +113,37 @@ masks:
       are dropped by persistence-stub-requests). Blind spot: a regression that makes the reader emit this
       warning where it did not before is invisible on the console artefact.
 
+  - id: media-range-status
+    artefact: network
+    pattern: '^\{\{course\}\}/[^?#]+\.(?:mov|mp4|m4v|webm|ogv|mp3|m4a|oga|ogg|wav)$'
+    status: [206, 200]
+    reason: >-
+      Chromium fetches a course video or audio file either whole (200) or by byte range (206), depending on what
+      its media pipeline has buffered when the element loads, so the same image answers the same URL 200 on one
+      side and 206 on the other. Seen as "GET {{course}}/topic-07-reference/note-1/img/video.mov status changed:
+      200 -> 206" on reference:note in the A/A of 2026-10-01 (src noise report 2026-10-01T09-02-32Z, its only
+      difference) and 2026-10-03 (2026-10-03T08-13-38Z), and a-to-a2 in the forecast of 2026-10-02
+      (main-preview 2026-10-02T08-52-14Z); it broke the 2.0 soak on 2 and 3 October. Only 200 and 206 count as
+      one, only on media files under the fixture course: a 404, 416 or 500 on the same file still shows as
+      "status changed", and so does the request disappearing, a new one, or a changed content type. The
+      engine already counts a streamed media file once however many range requests it took.
+
+  - id: chromium-compute-pressure-policy
+    artefact: console
+    pattern: '^Permissions policy violation: compute-pressure is not allowed in this document\.$'
+    drop: true
+    reason: >-
+      Chromium logs "Permissions policy violation: compute-pressure is not allowed in this document." as an
+      error when its own Compute Pressure probe runs in a document whose policy does not allow it. Whether the
+      probe runs before the page settles is the browser's timing, not the release's: in the A/A of 2026-10-03
+      (src noise report 2026-10-03T08-13-38Z) it appeared on reference:note on side b only, from the same image.
+      The console engine compares a page's messages as a set, so a rewrite cannot hide a message one side never
+      logged; the entry is dropped. Only this exact message, anchored at both ends, is dropped: any other
+      permissions-policy violation, and every other console error, still compares. The document's own
+      Permissions-Policy header is not masked, so a release that changes the policy still shows on the headers
+      artefact. Blind spot: a release whose own code starts calling the Compute Pressure API on a page that
+      forbids it is invisible on the console artefact.
+
   - id: hashed-assets
     artefact: [network, headers]
     pattern: "(/_app/immutable/[a-z]+/(?:[A-Za-z0-9_-]+\\.)?)[A-Za-z0-9_-]{8}(\\.(?:js|css|woff2?|json))"
