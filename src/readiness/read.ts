@@ -10,6 +10,7 @@ import type { GithubSnapshot, WorkflowRun } from "../a3/github.ts";
 import { QUALITY_FILE, parseQualityRecord } from "../a3/quality.ts";
 import type { ReportDelta } from "../report/delta.ts";
 import type { RunReport } from "../types.ts";
+import { claimsView } from "./claims.ts";
 import { parseReleaseHistory, type ReleaseHistory } from "./releases.ts";
 import { SOAK_CHECKS, policyFacts, type AaNight } from "./soak.ts";
 import { MAIN_TO_RC, REHEARSALS, STREAM_DIR, type KeptForecast, type Rehearsal } from "./model.ts";
@@ -59,6 +60,8 @@ export function readForecasts(site: string): KeptForecast[] {
     // Since 1.19.0: the PRs since production its changes.json counts, for the control chart's night-by-night run.
     const changes = at<{ refs?: { a?: string }; a?: string; prs?: { pr?: number | null; release?: boolean }[] }>("changes.json");
     const unreleased = Array.isArray(changes?.prs) ? { prs: changes.prs.filter((p) => typeof p?.pr === "number" && !p.release).length, base: String(changes.refs?.a ?? changes.a ?? "") } : undefined;
+    // Since 1.28.1: the known side beside the gaps, read from the same report.json.
+    const claims = claimsView(report, String(r.harnessVersion ?? ""));
     const rehearsals: Partial<Record<Rehearsal, string>> = {};
     for (const mode of REHEARSALS) {
       const v = at<Partial<RunReport>>(`${mode}/report.json`)?.verdict;
@@ -75,6 +78,7 @@ export function readForecasts(site: string): KeptForecast[] {
       ...(r.delta && typeof r.delta === "object" ? { delta: r.delta } : {}),
       files,
       ...(Array.isArray(report?.compare?.unclaimed) ? { unclaimed: report.compare.unclaimed.length } : {}),
+      ...(claims ? { claims } : {}),
       // Since 1.21.0: a report that records its engine levels says what its informing engines found; an older one is not counted.
       ...(report?.levels && Array.isArray(report.compare?.matches) ? informingOf(report.compare.matches) : {}),
       ...(images ? { images: Object.fromEntries(Object.entries(images).map(([app, i]) => [app, { ...(i?.revision ? { revision: i.revision } : {}), ...(i?.digest ? { digest: i.digest } : {}) }])) } : {}),

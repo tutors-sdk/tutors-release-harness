@@ -104,6 +104,8 @@ describe("harness readiness", () => {
     writeFileSync(join(s, "github.json"), JSON.stringify({ schemaVersion: 1, fetchedAt: "2026-10-06T11:00:00Z", workflows: { "main-preview.yml": [run("2026-10-06T08:40:00Z", "success", 7)] }, errors: [] }));
     const forecasts = readForecasts(s);
     expect(forecasts.map((f) => f.unclaimed)).toEqual([3, 2]);
+    // since 1.28.1: the known side beside the gaps, from the same report.json
+    expect(forecasts.map((f) => [f.claims?.claimed, f.claims?.unclaimed])).toEqual([[1, 3], [1, 2]]);
     expect(forecasts[0]!.rehearsals).toEqual({ migration: "pass", upgrade: "fail" });
     expect(forecasts[0]!.delta).toMatchObject({ new: 1, gone: 0 });
     const logs: string[] = [];
@@ -118,6 +120,8 @@ describe("harness readiness", () => {
     expect(logs.join("\n")).toContain("2026-10-06 unchanged");
     const html = readFileSync(join(s, "readiness.html"), "utf8");
     expect(html).toContain('href="main-preview/reports/2026-10-05T05-00-00Z-release/report.html"');
+    expect(top).toMatchObject({ claimed: 1, unclaimed: 3, coverage: 0.25 });
+    expect(html).toContain("1 claimed (known), 3 unclaimed (gaps): 25% covered;");
     expect(html).toContain('<span class="new">+1</span>');
     expect(html).toContain('<span class="verdict grey">FAIL</span>');
     expect(html).not.toMatch(/<script|class="band/);

@@ -19,6 +19,7 @@
   .verdict { display:inline-block; padding:1px 8px; border-radius:4px; color:#fff; font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.05em; }
   .verdict.pass { background:var(--pass);} .verdict.warn { background:var(--warn);} .verdict.fail { background:var(--fail);}
   .scroll { overflow-x:auto; }
+  #exemplar-body li { overflow-wrap:anywhere; }
   table { border-collapse:collapse; width:100%; margin:10px 0 0; font-size:14px; }
   th, td { text-align:left; vertical-align:top; padding:6px 8px; border-bottom:1px solid var(--rule); }
   th { font-size:12px; text-transform:uppercase; letter-spacing:.06em; opacity:.7; white-space:nowrap; }
@@ -70,7 +71,7 @@
       <h3><a href="readiness.html">Overnight readiness</a></h3>
       <p>Is main ready to release? Main against production night by night: each night's commit, Gate, quality marks and what is new since the night before.</p>
       <p class="live" id="readiness-live"></p>
-      <p class="sub"><a href="readiness.html#control">Control chart</a>: release size and the WIP limit · <a href="readiness.html#soak">Soak toward 2.0</a>: clean nights in a row</p>
+      <p class="sub"><a href="readiness.html#claims">Claims</a>: known and gaps · <a href="readiness.html#control">Control chart</a>: release size and the WIP limit · <a href="readiness.html#soak">Soak toward 2.0</a>: clean nights in a row</p>
     </div>
     <div class="card">
       <h3><a href="a3.html">A3</a></h3>
@@ -332,7 +333,10 @@ async function rehearsals() {
   for (const id of ["release-records", "main-preview"]) rows.push(...rehearsalRows(id, (await json(`${id}/reports/index.json`))?.runs ?? [], verdicts));
   section.insertAdjacentHTML("beforeend", rows.length ? `<div class="scroll"><table><thead><tr><th>Ran</th><th>Kept with</th><th>Images</th><th>Rehearsals</th></tr></thead><tbody>${rows.join("")}</tbody></table></div>` : `<p class="empty">No rehearsals kept yet.</p>`);
   const live = document.getElementById("readiness-live");
-  if (r) live.innerHTML = [r.soak?.headline, r.control?.summary].filter(Boolean).map(esc).join("<br>");
+  // Since 1.28.1: the latest forecast's claims, the known side beside the gaps.
+  const f = (r?.nights ?? []).find((n) => n.forecasts?.length)?.forecasts[0];
+  const claims = f && typeof f.claimed === "number" && typeof f.unclaimed === "number" ? `Claims: ${f.claimed} claimed (known), ${f.unclaimed} unclaimed (gaps), ${f.coverage === null ? "?" : `${Math.floor(f.coverage * 100)}%`} covered${typeof f.claims?.owed === "number" ? `; ${f.claims.owed} claims owed` : ""}.` : "";
+  if (r) live.innerHTML = [claims ? `<a href="readiness.html#claims">${esc(claims)}</a>` : "", ...[r.soak?.headline, r.control?.summary].filter(Boolean).map(esc)].filter(Boolean).join("<br>");
 }
 
 globalThis.siteReady = Promise.all([a3(), exemplar(), rehearsals(), ...["release-records", "main-preview", "noise"].map(stream)]);
