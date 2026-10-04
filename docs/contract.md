@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.28.0`
+Contract version: `1.28.1`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -1832,6 +1832,21 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.28.1 (patch; a network mask may make two statuses count as one)
+
+The release note is [releases/1.28.1.md](releases/1.28.1.md). A patch: no `report.json` field, verdict,
+exit code, claims key or flag changes, and **this release adds no mask**; `normalise/masks.yaml` gains a
+mask kind, not an entry.
+
+- A `network` pattern mask may carry `status: [206, 200]`: on the requests whose URL matches, a response
+  answered with any listed status is recorded with the first listed one, on both sides. The URL is not
+  rewritten, and a status that is not listed (a 404, a 500) still shows as `status changed`. It is for a
+  status the browser picks rather than the server: a media file fetched whole (200) on one side and by
+  range (206) on the other, which broke the 2.0 soak on 2026-10-02 and 2026-10-03.
+- The schema refuses `status` with `header`, `drop` or `replace`, on any artefact but `network`, without a
+  `pattern`, or with fewer than two different statuses.
+- The mask that uses it lands in its own PR (`src/ci/mask-change.ts`).
 
 ### 1.28.0 (minor; the replay set, informing)
 

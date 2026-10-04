@@ -33,6 +33,13 @@ export const MaskSchema = z
      * is empty on one side and not on the other).
      */
     drop: z.boolean().optional(),
+    /**
+     * Since 1.28.1, network pattern masks only: response statuses that count as one on the requests whose URL
+     * matches `pattern`. A matching request answered with any listed status is recorded with the FIRST one, on
+     * both sides; the URL is left as it is, and a status not in the list (a 404, a 500) still compares. For a
+     * status the browser chooses rather than the server (a media file fetched whole, 200, or by range, 206).
+     */
+    status: z.array(z.number().int().min(100).max(599)).min(2).optional(),
     series: z.string().optional(),
     key: z.string().optional()
   })
@@ -47,6 +54,12 @@ export const MaskSchema = z
   .refine((m) => !m.drop || (m.pattern !== undefined && m.header === undefined && m.artefact.every((a) => a === "network" || a === "console")), {
     message: "drop applies to network and console pattern masks only"
   })
+  .refine(
+    (m) =>
+      m.status === undefined ||
+      (m.pattern !== undefined && m.header === undefined && !m.drop && m.replace === undefined && m.artefact.every((a) => a === "network") && new Set(m.status).size === m.status.length),
+    { message: "status applies to network pattern masks only (no header, drop or replace), and lists two or more different statuses" }
+  )
   .refine((m) => m.header === undefined || m.artefact.every((a) => a === "headers" || a === "network"), {
     message: "a header mask applies to the headers and network artefacts only"
   })
@@ -147,7 +160,16 @@ function normalisePage(raw: PageCapture, masks: Mask[], hits: MaskHits, origins:
       if (artefact === "dom" && mask.pattern) aria = applyPattern(aria, mask, hits);
       // Each keyboard stop is its element's role and accessible name, the same text the ARIA snapshot carries.
       if (artefact === "focus" && mask.pattern) focus = focus.map((stop) => applyPattern(stop, mask, hits));
-      if (artefact === "network" && mask.pattern && !mask.header && mask.drop) {
+      if (artefact === "network" && mask.pattern && mask.status) {
+        // The URL selects; only a status in the list is rewritten (to the first listed), on both sides alike.
+        const re = new RegExp(mask.pattern);
+        const [as] = mask.status;
+        network = network.map((n) => {
+          if (!re.test(n.url) || !mask.status!.includes(n.status)) return n;
+          hit(hits, mask.id);
+          return n.status === as ? n : { ...n, status: as! };
+        });
+      } else if (artefact === "network" && mask.pattern && !mask.header && mask.drop) {
         const re = new RegExp(mask.pattern);
         const kept = network.filter((n) => !re.test(n.url));
         hit(hits, mask.id, network.length - kept.length);

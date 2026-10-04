@@ -20,6 +20,11 @@
 #             timing: a rewrite cannot hide a message that one side logged
 #             twice and the other never)
 #             (`drop` is accepted on network and console pattern masks only)
+#             `network` + `pattern` + `status: [s1, s2, ...]`: on the requests whose URL
+#             matches, a response answered with any listed status is recorded as s1
+#             on both sides (the URL is not rewritten, and a status NOT listed still
+#             compares). For a status the browser picks, not the server: a media file
+#             fetched whole (200) or by range (206). Since 1.28.1
 #   metrics:  `series: <regex>`              drops matching series names
 #   logs:     `key: <name>`                  drops that key from the key-set comparison
 # `replace` may keep parts of the match with $1, $2 …; `modes: [post-deploy]`
