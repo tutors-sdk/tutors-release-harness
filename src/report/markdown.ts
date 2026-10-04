@@ -60,7 +60,11 @@ export function renderMarkdown(report: RunReport): string {
     for (const h of compare.unclaimed) lines.push(`| \`${h.artefact}\` | \`${h.scope}\` | ${escape(h.summary)} |`);
     lines.push("");
     lines.push(...detailsMarkdown(compare.unclaimed));
-    lines.push("Claim each one in the release's `claims.yaml` with the Rule or changelog entry that intends it, or fix it.");
+    lines.push(
+      report.mode === "post-deploy"
+        ? "Fix production, or, when a difference is known and explained, claim it in `post-deploy/claims.yaml` of the harness repository: narrow, with a reason and an `until`."
+        : "Claim each one in the release's `claims.yaml` with the Rule or changelog entry that intends it, or fix it."
+    );
     lines.push("");
   }
 

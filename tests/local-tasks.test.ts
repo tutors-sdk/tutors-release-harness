@@ -10,6 +10,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parse } from "yaml";
+import { POST_DEPLOY_CLAIMS_FILE } from "../src/claims/schema.ts";
 import { QUAY_IMAGE_TEMPLATE } from "../src/image-ref.ts";
 import { LockHeldError, acquireLock } from "../src/local/lock.ts";
 import { appendOverride, overrideFromReport, readOverrides } from "../src/local/override-log.ts";
@@ -82,7 +83,7 @@ describe("the plans", () => {
   });
 
   it("watch: post-deploy against production, with the recorded run found at run time unless named", () => {
-    expect(argvOf(planWatch({ production: "reader=u,catalogue=v,live=w" }))[1]).toBe(`run --mode post-deploy --recorded ${LATEST_RECORDED} --production reader=u,catalogue=v,live=w`);
+    expect(argvOf(planWatch({ production: "reader=u,catalogue=v,live=w" }))[1]).toBe(`run --mode post-deploy --recorded ${LATEST_RECORDED} --production reader=u,catalogue=v,live=w --claims ${POST_DEPLOY_CLAIMS_FILE}`);
     expect(argvOf(planWatch({ production: "x", recorded: "/out/r" }))[1]).toContain("--recorded /out/r");
   });
 

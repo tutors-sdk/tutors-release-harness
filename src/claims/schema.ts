@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { parse, YAMLParseError } from "yaml";
 import { z } from "zod";
 import { ARTEFACTS, type Claim } from "../types.ts";
@@ -7,6 +8,14 @@ import { InputFileError, didYouMean, inputProblems, nearest, unreadable, type Pr
 import { APPS } from "../image-ref.ts";
 import { DIGEST, UNTIL_DATE, UNTIL_RELEASE } from "./lifetime.ts";
 import { RULE_ID, ruleReason, type Rules } from "./rules.ts";
+import { ROOT } from "../stack.ts";
+
+/**
+ * Since 1.28.4: the claims post-deploy mode applies in post-deploy.yml and `harness local watch`. They excuse a known
+ * difference between production and the recorded release (docs/contract.md, "The post-deploy claims"); release mode
+ * never reads them.
+ */
+export const POST_DEPLOY_CLAIMS_FILE = resolve(ROOT, "post-deploy", "claims.yaml");
 
 /** A YYYY-MM-DD that is a day of the calendar (2026-02-30 is not, though Date.parse rolls it over). */
 const realDay = (v: string) => {

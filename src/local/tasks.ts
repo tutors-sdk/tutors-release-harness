@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { POST_DEPLOY_CLAIMS_FILE } from "../claims/schema.ts";
 import { QUAY_IMAGE_TEMPLATE } from "../image-ref.ts";
 export { DEFAULT_PORTS, portEnv } from "./ports.ts";
 
@@ -185,12 +186,13 @@ export interface Deployed {
   record?: string;
 }
 
+/** Since 1.28.4 the run applies the post-deploy claims (post-deploy/claims.yaml), as post-deploy.yml does. */
 export function planWatch(o: { recorded?: string; production: string; deployed?: Deployed }): Plan {
   return {
     task: "watch",
     steps: [
       { id: "noise-status", title: "the local noise status", argv: ["noise", "status"], stream: "info", gatesStream: false, informational: true },
-      { id: "post-deploy", title: "reference journeys against production vs the recorded candidate", argv: ["run", "--mode", "post-deploy", "--recorded", o.recorded ?? LATEST_RECORDED, "--production", o.production, ...(o.deployed ? ["--deployed", o.deployed.tag, ...(o.deployed.record ? ["--release-record", o.deployed.record] : []), ...(o.deployed.digests ? ["--deployed-digests", o.deployed.digests] : [])] : [])], stream: "post-deploy", gatesStream: false }
+      { id: "post-deploy", title: "reference journeys against production vs the recorded candidate", argv: ["run", "--mode", "post-deploy", "--recorded", o.recorded ?? LATEST_RECORDED, "--production", o.production, "--claims", POST_DEPLOY_CLAIMS_FILE, ...(o.deployed ? ["--deployed", o.deployed.tag, ...(o.deployed.record ? ["--release-record", o.deployed.record] : []), ...(o.deployed.digests ? ["--deployed-digests", o.deployed.digests] : [])] : [])], stream: "post-deploy", gatesStream: false }
     ]
   };
 }

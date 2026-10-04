@@ -152,6 +152,7 @@ touches:
 | --- | --- |
 | `src/compare/**`, `src/gate.ts`, `src/not-collected.ts`, `src/claims/**` | engines, the gate, the "NOT COLLECTED" convention, and the matcher that decides what is claimed |
 | `normalise/**`, `src/normalise/**` | masks and how they are applied |
+| `post-deploy/**` | the claims post-deploy mode applies (post-deploy.yml, `harness local watch`): what the monitor excuses (since 1.28.4) |
 | `src/collectors/**`, `src/runtime/**`, `src/image-static/**`, `src/persistence/**`, `src/migration/**`, `src/bus/**`, `src/clock-probe.ts` | what is captured: a report can change with no engine touched |
 | `src/run.ts`, `src/modes/**`, `src/noise.ts`, `src/stack.ts`, `src/substrate/**` | how a run, a mode and a stack are put together, and the noise rule the gate consults |
 | `src/images.ts`, `src/image-ref.ts`, `src/image-cache.ts`, `src/digests.ts`, `src/release-record.ts` | which images are judged (pinned by digest, or not), whether they are trusted, and what a deployment is compared with |

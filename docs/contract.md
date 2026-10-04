@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.28.2`
+Contract version: `1.28.4`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -838,8 +838,24 @@ claims:
   expired and what they still cover, beside the A/A lines. At 2.0 the level becomes **blocking**:
   an expired claim is left out before matching, covers nothing and is stale.
 
-The claims file lives with the release (the monorepo's `release/claims.yaml`),
-never in this repository.
+A release's claims file lives with the release (the monorepo's `release/claims.yaml`),
+never in this repository. The one claims file here is the post-deploy one, below.
+
+### The post-deploy claims
+
+Since 1.28.4. `post-deploy.yml` and `harness local watch` run post-deploy mode with
+`--claims post-deploy/claims.yaml` from this repository. The file says which differences between
+live production and the recorded release run are known and explained, so the synthetic monitor stops
+failing (and commenting on the rollback issue) on them; release mode never reads it, and the
+release's own claims are not applied after a deploy (they excuse what a candidate changed against
+production, not what production changed against the tested release). Same format and matcher as
+above. Each claim is narrow (one artefact, one page or one request), has a reason that names the
+issue it explains, and has an `until`: in post-deploy mode side a is the recorded release, so
+`until: "X.Y.Z"` expires once the recorded run is that release or a later one. Lifetimes are
+informing, so an expired claim still covers until it is removed; a claim that covers nothing is
+reported as stale and never changes the verdict. The normal state is `claims: []`.
+`post-deploy/**` is an engine path: changing the file bumps the harness version and re-runs the
+mutants.
 
 ### The rules file
 
@@ -1848,6 +1864,24 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.28.4 (patch; the post-deploy claims)
+
+The release note is [releases/1.28.4.md](releases/1.28.4.md). A patch: no `report.json` field,
+verdict, exit code, claims key or flag changes, and no mask.
+
+- `post-deploy.yml` passes `--claims post-deploy/claims.yaml`, and `harness local watch` plans the
+  same; before, post-deploy mode ran with no claims at all, so a known difference could only be
+  masked or fixed. See [The post-deploy claims](#the-post-deploy-claims).
+- The file starts with five claims for tutors-release-harness#38: production (tutors.dev) serves an
+  unnamed 2026-09-18 build, not 16.2.2. A console error on `reference:course`, `reference:lab` and
+  `reference:note` (Supabase `app_errors` answering 404, and 400 on the note page), the focus order
+  of `reference:course` (no skip link or header buttons), and `GET {{course}}/course.png` on the lab
+  page. Each has `until: "16.2.3"`, so it expires once the recorded release is any release after 16.2.2.
+- `post-deploy/**` is an engine path (`src/ci/engine-change.ts`).
+- A post-deploy report's "Unclaimed differences" now points at `post-deploy/claims.yaml`, not the
+  release's `claims.yaml`. This changes the rollback signature once, so the next failing run with the
+  same differences comments on the open rollback issue once more.
 
 ### 1.28.2 (patch; a network mask may make two statuses count as one)
 
