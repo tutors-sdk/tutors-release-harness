@@ -82,7 +82,7 @@ jobs:
       # release has passed in the artifact's 30 days), and then there is nothing to compare production with: the
       # monitor says so in the summary and stands down, rather than failing every run and teaching people to ignore it.
       - name: Fetch the recorded release run
-        uses: dawidd6/action-download-artifact@634d83b91986fcec9be314054943fa5c976aeb0e # v25
+        uses: dawidd6/action-download-artifact@27e4ae67c24b67d3b54bc6d6a45475be1e28031b # v26
         with:
           workflow: release.yml
           name: release-report
