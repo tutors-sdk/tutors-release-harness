@@ -1,0 +1,1185 @@
+{
+  "schemaVersion": 1,
+  "gate": "FAIL",
+  "weightsUsed": {
+    "claim-coverage": 23.53,
+    "noise-health": 17.65,
+    "statistical-margin": 11.76,
+    "rehearsals": 11.76,
+    "test-signal": 17.65,
+    "change-risk": 17.65
+  },
+  "weightsVersion": "5943f7bc2e73",
+  "dimensions": [
+    {
+      "id": "claim-coverage",
+      "name": "Claim coverage",
+      "weight": 20,
+      "status": "measured",
+      "score": 0,
+      "floorBreached": false,
+      "deductions": [
+        {
+          "points": 20,
+          "why": "unclaimed: dom /: reader:home: semantic DOM differs (+51 −25 lines at line 4)",
+          "evidence": "report.html#hunk-dom:reader:home:1"
+        },
+        {
+          "points": 20,
+          "why": "unclaimed: dom /: reader:home: semantic DOM differs (+6 −7 lines at line 36)",
+          "evidence": "report.html#hunk-dom:reader:home:2"
+        },
+        {
+          "points": 20,
+          "why": "unclaimed: dom /course/localhost:8080: reader:course: semantic DOM differs (+32 −33 lines at line 4)",
+          "evidence": "report.html#hunk-dom:reader:course:3"
+        },
+        {
+          "points": 20,
+          "why": "unclaimed: dom /course/localhost:8080: reader:course: semantic DOM differs (+6 −7 lines at line 47)",
+          "evidence": "report.html#hunk-dom:reader:course:4"
+        },
+        {
+          "points": 20,
+          "why": "unclaimed: dom /topic/localhost:8080/unit-1/topic-01: reader:topic: semantic DOM differs (+45 −43 lines at line 4) (and 207 more like it, not counted again: report.html#differences)",
+          "evidence": "report.html#hunk-dom:reader:topic:5"
+        },
+        {
+          "points": 5,
+          "why": "claim sbom */{@isaacs/cliui,@isaacs/fs-minipass,@isaacs/string-locale-compare,@npmcli/agent,@npmcli/arborist,@npmcli/config,@npmcli/fs,@npmcli/git,@npmcli/installed-package-contents,@npmcli/map-workspaces,@npmcli/metavuln-calculator,@npmcli/name-from-folder,@npmcli/node-gyp,@npmcli/package-json,@npmcli/promise-spawn,@npmcli/query,@npmcli/redact,@npmcli/run-script,@pkgjs/parseargs,@sigstore/bundle,@sigstore/core,@sigstore/protobuf-specs,@sigstore/sign,@sigstore/tuf,@sigstore/verify,@tufjs/canonical-json,@tufjs/models,abbrev,agent-base,ansi-regex,ansi-styles,aproba,archy,balanced-match,bin-links,binary-extensions,brace-expansion,cacache,chalk,chownr,ci-info,cidr-regex,cli-columns,cmd-shim,color-convert,color-name,common-ancestor-path,corepack,cross-spawn,cssesc,debug,diff,eastasianwidth,emoji-regex,encoding,env-paths,err-code,exponential-backoff,fastest-levenshtein,fdir,foreground-child,fs-minipass,glob,graceful-fs,hosted-git-info,http-cache-semantics,http-proxy-agent,https-proxy-agent,iconv-lite,ignore-walk,imurmurhash,ini,init-package-json,ip-address,ip-regex,is-cidr,is-fullwidth-code-point,isexe,jackspeak,json-parse-even-better-errors,json-stringify-nice,jsonparse,just-diff,just-diff-apply,libnpmaccess,libnpmdiff,libnpmexec,libnpmfund,libnpmhook,libnpmorg,libnpmpack,libnpmpublish,libnpmsearch,libnpmteam,libnpmversion,lru-cache,make-fetch-happen,minimatch,minipass,minipass-collect,minipass-fetch,minipass-flush,minipass-pipeline,minipass-sized,minizlib,ms,mute-stream,negotiator,node-gyp,nopt,normalize-package-data,npm,npm-audit-report,npm-bundled,npm-install-checks,npm-normalize-package-bin,npm-package-arg,npm-packlist,npm-pick-manifest,npm-profile,npm-registry-fetch,npm-user-validate,p-map,package-json-from-dist,pacote,parse-conflict-json,path-key,path-scurry,picomatch,postcss-selector-parser,proc-log,proggy,promise-all-reject-late,promise-call-limit,promise-retry,promzard,qrcode-terminal,read,read-cmd-shim,read-package-json-fast,retry,safer-buffer,semver,shebang-command,shebang-regex,signal-exit,sigstore,smart-buffer,socks,socks-proxy-agent,spdx-correct,spdx-exceptions,spdx-expression-parse,spdx-license-ids,ssri,string-width,strip-ansi,supports-color,text-table,tiny-relative-date,tinyglobby,treeverse,tuf-js,unique-filename,unique-slug,util-deprecate,validate-npm-package-license,validate-npm-package-name,walk-up-path,which,wrap-ansi,write-file-atomic,yallist,yarn} covers 696 hunks at once (not narrow)",
+          "evidence": "report.html#claim-hygiene"
+        }
+      ],
+      "evidence": [
+        "report.html#differences"
+      ]
+    },
+    {
+      "id": "noise-health",
+      "name": "Noise health",
+      "weight": 15,
+      "status": "measured",
+      "score": 80,
+      "floorBreached": false,
+      "deductions": [
+        {
+          "points": 5,
+          "why": "mask realtime-rest-fallback-warning fired nothing in this run (a mask that never fires is a mask to delete)",
+          "evidence": "report.html#masks"
+        },
+        {
+          "points": 5,
+          "why": "mask chromium-compute-pressure-policy fired nothing in this run (a mask that never fires is a mask to delete)",
+          "evidence": "report.html#masks"
+        },
+        {
+          "points": 5,
+          "why": "mask transport-encoding fired nothing in this run (a mask that never fires is a mask to delete)",
+          "evidence": "report.html#masks"
+        },
+        {
+          "points": 5,
+          "why": "mask transport-transfer fired nothing in this run (a mask that never fires is a mask to delete)",
+          "evidence": "report.html#masks"
+        }
+      ],
+      "evidence": [
+        "report.html#noise",
+        "report.html#masks"
+      ],
+      "gaps": [
+        "masks added this release (needs the diff of normalise/masks.yaml between the two tags: C1)"
+      ]
+    },
+    {
+      "id": "statistical-margin",
+      "name": "Statistical margin",
+      "weight": 10,
+      "status": "measured",
+      "score": 100,
+      "floorBreached": false,
+      "deductions": [],
+      "evidence": [
+        "report.html#differences",
+        "report.html#load"
+      ]
+    },
+    {
+      "id": "rehearsals",
+      "name": "Rehearsals",
+      "weight": 10,
+      "status": "measured",
+      "score": 50,
+      "floorBreached": false,
+      "deductions": [
+        {
+          "points": 50,
+          "why": "the upgrade rehearsal FAILED: 787 finding(s) during the rollout",
+          "evidence": "upgrade/report.html#upgrade"
+        }
+      ],
+      "evidence": [
+        "migration/report.html#migration",
+        "upgrade/report.html#upgrade"
+      ]
+    },
+    {
+      "id": "test-signal",
+      "name": "Test signal",
+      "weight": 15,
+      "status": "measured",
+      "score": 0,
+      "floorBreached": true,
+      "deductions": [
+        {
+          "points": 30,
+          "why": "mutation score 68.69% on @tutors/community, below 80%",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/actions/runs/37295568135"
+        },
+        {
+          "points": 30,
+          "why": "mutation score 51.66% on @tutors/course, below 80%",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/actions/runs/37295568135",
+          "floor": true
+        },
+        {
+          "points": 30,
+          "why": "mutation score 27.27% on @tutors/i18n, below 80%",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/actions/runs/37295568135",
+          "floor": true
+        },
+        {
+          "points": 30,
+          "why": "mutation score 76.26% on @tutors/logger, below 80%",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/actions/runs/37295568135"
+        },
+        {
+          "points": 30,
+          "why": "mutation score 50.71% on @tutors/rbac, below 80%",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/actions/runs/37295568135",
+          "floor": true
+        },
+        {
+          "points": 30,
+          "why": "mutation score 31.43% on @tutors/runes, below 80%",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/actions/runs/37295568135",
+          "floor": true
+        },
+        {
+          "points": 30,
+          "why": "mutation score 44.74% on @tutors/themes, below 80%",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/actions/runs/37295568135",
+          "floor": true
+        },
+        {
+          "points": 30,
+          "why": "mutation score 58.33% on @tutors/tour, below 80%",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/actions/runs/37295568135",
+          "floor": true
+        },
+        {
+          "points": 30,
+          "why": "mutation score 0% on @tutors/tutors-create, below 80%",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/actions/runs/37295568135",
+          "floor": true
+        },
+        {
+          "points": 30,
+          "why": "mutation score 69.41% on @tutors/tutors-time-lib, below 80%",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/actions/runs/37295568135"
+        },
+        {
+          "points": 30,
+          "why": "mutation score 55.11% on @tutors/ui-navigators, below 80%",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/actions/runs/37295568135",
+          "floor": true
+        },
+        {
+          "points": 30,
+          "why": "mutation score 0% on @tutors/ui-primitives, below 80%",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/actions/runs/37295568135",
+          "floor": true
+        }
+      ],
+      "evidence": [
+        "https://github.com/tutors-sdk/tutors-mono-repo/actions/runs/37295568135"
+      ]
+    },
+    {
+      "id": "traceability",
+      "name": "Requirements traceability",
+      "weight": 10,
+      "status": "not measured",
+      "score": null,
+      "floorBreached": false,
+      "reason": "needs the changelog, the EARS files and the claims side by side: pass --traceability <json>; changes.json already reports 48 orphan changes between the tags (a changelog entry with no diff, or a diff with no entry), a floor breach once it is measured",
+      "deductions": [],
+      "evidence": []
+    },
+    {
+      "id": "change-risk",
+      "name": "Change risk",
+      "weight": 15,
+      "status": "measured",
+      "score": 0,
+      "floorBreached": true,
+      "deductions": [
+        {
+          "points": 0,
+          "why": "PR #276 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/276",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "PR #276 changed 4 production lines in apps/catalogue with 0 test lines (0.00); 4 production lines in apps/live with 0 test lines (0.00); 4 production lines in apps/reader with 0 test lines (0.00); 4 production lines in apps/time with 0 test lines (0.00): below 0.2",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/276/files#diff-f59256a303b4024e8a8528f50c846374d823ee3e46c478100acfb0cb61cc4baf"
+        },
+        {
+          "points": 10,
+          "why": "PR #276 changed Reader, Live, Catalogue, Time, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/276/files#diff-f59256a303b4024e8a8528f50c846374d823ee3e46c478100acfb0cb61cc4baf"
+        },
+        {
+          "points": 0,
+          "why": "PR #279 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/279",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "PR #279 changed Infrastructure, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/279/files#diff-dd2c0eb6ea5cfc6c4bd4eac30934e2d5746747af48fef6da689e85b752f39557"
+        },
+        {
+          "points": 0,
+          "why": "PR #278 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/278",
+          "floor": true
+        },
+        {
+          "points": 0,
+          "why": "PR #282 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/282",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "PR #282 changed Reader, Live, Catalogue, Time, Infrastructure, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/282/files#diff-dd2c0eb6ea5cfc6c4bd4eac30934e2d5746747af48fef6da689e85b752f39557"
+        },
+        {
+          "points": 0,
+          "why": "PR #283 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/283",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "PR #283 changed Reader, Live, Catalogue, Time, Infrastructure, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/283/files#diff-681a6274b9d04d85e52f7f862f2dc5bcff947154b547367bdf9eaf0e3ab2b849"
+        },
+        {
+          "points": 0,
+          "why": "PR #281 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/281",
+          "floor": true
+        },
+        {
+          "points": 0,
+          "why": "PR #280 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/280",
+          "floor": true
+        },
+        {
+          "points": 0,
+          "why": "PR #143 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/143",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "PR #143 changed Infrastructure but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/143/files#diff-a36c2b23480830b1d23bfca9ee3e98f172b1bee39d034c06780f9790dcd8c3f4"
+        },
+        {
+          "points": 0,
+          "why": "commit 96e9e4d \"Create images.yml\" reached main without a pull request, so nobody reviewed it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/commit/96e9e4d48acdf7a8a7021b97827c3378b80c21aa",
+          "floor": true
+        },
+        {
+          "points": 0,
+          "why": "PR #284 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/284",
+          "floor": true
+        },
+        {
+          "points": 0,
+          "why": "PR #286 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/286",
+          "floor": true
+        },
+        {
+          "points": 0,
+          "why": "PR #274 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/274",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "PR #274 changed Reader, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/274/files#diff-5b44a0cebddcc23889fa11539c0347cbe7ca055b9a0ae01ecd54a7d1bdca08a9"
+        },
+        {
+          "points": 0,
+          "why": "PR #275 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/275",
+          "floor": true
+        },
+        {
+          "points": 0,
+          "why": "PR #273 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/273",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "PR #273 changed Reader, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/273/files#diff-eca79b176cbd5fad57cf983fb03e1e0dcb6121c27f352150e40279cbfa04b27d"
+        },
+        {
+          "points": 0,
+          "why": "PR #270 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/270",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "PR #270 changed Shared Packages, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/270/files#diff-2d45131110476140afc4c1fb134780a946b614d93104ca2fed2bfb48cbce642b"
+        },
+        {
+          "points": 0,
+          "why": "PR #272 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/272",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "PR #272 changed Shared Packages, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/272/files#diff-e4e6c89d6e93479833f4913d10aa9f65c29f8570db8a0af50868037b8d656ebd"
+        },
+        {
+          "points": 0,
+          "why": "PR #269 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/269",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "PR #269 changed 8 production lines in apps/reader with 0 test lines (0.00); 12 production lines in packages/jsr/model with 0 test lines (0.00): below 0.2",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/269/files#diff-eb38d340e5f8cf75f24da0f7604a5cfc8c2ad77ed33e1672c354a63f9322fe2c"
+        },
+        {
+          "points": 0,
+          "why": "PR #271 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/271",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "PR #271 changed Shared Packages, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/271/files#diff-2d45131110476140afc4c1fb134780a946b614d93104ca2fed2bfb48cbce642b"
+        },
+        {
+          "points": 0,
+          "why": "PR #277 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/277",
+          "floor": true
+        },
+        {
+          "points": 0,
+          "why": "PR #293 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/293",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "PR #293 changed Reader, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/293/files#diff-5b44a0cebddcc23889fa11539c0347cbe7ca055b9a0ae01ecd54a7d1bdca08a9"
+        },
+        {
+          "points": 0,
+          "why": "PR #302 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/302",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "PR #302 changed Reader but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/302/files#diff-22d70ca7e354eea60e156d8536e28c645b1beef66a935ecd4e9770fa168f8364"
+        },
+        {
+          "points": 0,
+          "why": "PR #295 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/295",
+          "floor": true
+        },
+        {
+          "points": 0,
+          "why": "PR #303 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/303",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "PR #303 changed Infrastructure, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/303/files#diff-a36c2b23480830b1d23bfca9ee3e98f172b1bee39d034c06780f9790dcd8c3f4"
+        },
+        {
+          "points": 0,
+          "why": "PR #297 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/297",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "PR #297 changed Reader, Infrastructure, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/297/files#diff-d6d421ccc99e28b6214f7df730798547515a524700fe6758ff2aaa6b7cdd8856"
+        },
+        {
+          "points": 0,
+          "why": "PR #299 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/299",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "PR #299 changed Infrastructure, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/299/files#diff-5120444e4d184841565d20ffc18b895d7d4d3f1ef63c38671080d41fa47759d9"
+        },
+        {
+          "points": 0,
+          "why": "PR #287 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/287",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "PR #287 changed Shared Packages, Reader, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/287/files#diff-af1518e1bffb8dbf88329d41c82afdca678d13ad8fea29dca4e6593d51972c9e"
+        },
+        {
+          "points": 0,
+          "why": "PR #301 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/301",
+          "floor": true
+        },
+        {
+          "points": 0,
+          "why": "PR #306 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/306",
+          "floor": true
+        },
+        {
+          "points": 0,
+          "why": "PR #305 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/305",
+          "floor": true
+        },
+        {
+          "points": 0,
+          "why": "PR #298 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/298",
+          "floor": true
+        },
+        {
+          "points": 0,
+          "why": "PR #296 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/296",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "PR #296 changed Reader, Live, Catalogue, Time, Shared Packages, Infrastructure, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/296/files#diff-f59256a303b4024e8a8528f50c846374d823ee3e46c478100acfb0cb61cc4baf"
+        },
+        {
+          "points": 0,
+          "why": "PR #300 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/300",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "PR #300 changed Infrastructure, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/300/files#diff-ff0e2e3f4201f92768e9bdc38a009be8752ed8fd07ae8cddcd96c3cfbdea18c8"
+        },
+        {
+          "points": 0,
+          "why": "PR #307 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/307",
+          "floor": true
+        },
+        {
+          "points": 0,
+          "why": "PR #308 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/308",
+          "floor": true
+        },
+        {
+          "points": 0,
+          "why": "PR #309 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/309",
+          "floor": true
+        },
+        {
+          "points": 0,
+          "why": "PR #310 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/310",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "PR #310 changed Infrastructure, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/310/files#diff-28802fbf11c83a2eee09623fb192785e7ca92a3f40602a517c011b947a1822d3"
+        },
+        {
+          "points": 0,
+          "why": "PR #135 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/135",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "PR #135 changed Infrastructure, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/135/files#diff-c04a7d8d1a0926485b57aad087bd2ad9f6add9a5bdbb26a54faa4b504485f951"
+        },
+        {
+          "points": 0,
+          "why": "PR #312 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/312",
+          "floor": true
+        },
+        {
+          "points": 0,
+          "why": "PR #313 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/313",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "PR #313, a first contribution, touches hotspot packages/svelte/ui-primitives/src/components/LoContextTreeView.svelte (3 of the last 6 releases)",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/313/files#diff-3805a328d2572205ef2f52b7b2b8eb8164c3c1dc10b3c867d195122994548757"
+        },
+        {
+          "points": 5,
+          "why": "reader churn 3148 lines, above 2× its median of 98 over the last 6 releases; PR #313 is the largest part (2422 lines)",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/313/files#diff-6e0d83696317a7dd434a0f962ec82a7debb04a718f3885992316f95ec9b82733"
+        },
+        {
+          "points": 10,
+          "why": "PR #313 changed Reader, Live, Catalogue, Time, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/313/files#diff-da39d9014d5107a6720eb1d4637fe8dafad760cb8d03ebd5ab68c4f4ab5a2403"
+        },
+        {
+          "points": 0,
+          "why": "PR #316 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/316",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "PR #316 changed 167 production lines in packages/svelte/ui-components with 25 test lines (0.15): below 0.2",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/316/files#diff-df9fd1dd4556d3b501ea96a8bfc85aeae703e79866841d36fa27aab651c128d6"
+        },
+        {
+          "points": 10,
+          "why": "PR #316 changed Reader, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/316/files#diff-093013b49b9a1084dcf8f9e57b55bc5113d33414d3e4963e21b514cbdab622e9"
+        },
+        {
+          "points": 0,
+          "why": "PR #317 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/317",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "PR #317 changed Infrastructure, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/317/files#diff-fdf1bb8831df30246efcd2e6f6f6f6706e0abf56c5d221192cd5add0ba494cd0"
+        },
+        {
+          "points": 0,
+          "why": "PR #318 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/318",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "PR #318 changed Reader, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/318/files#diff-b40b17c22411e18933bba1b4e8179db964c687df979595ec583f832eab50c029"
+        },
+        {
+          "points": 0,
+          "why": "commit 8582ef2 \"Rationalised the connect, course home and course tools menus\" reached main without a pull request, so nobody reviewed it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/commit/8582ef2a6c4f45f5b16ca7cc7c1b90b6dfc1f3a8",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "commit 8582ef2 changed Reader, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/commit/8582ef2a6c4f45f5b16ca7cc7c1b90b6dfc1f3a8#diff-b95d0dd8a116dc2d59c3f7ea2a20342d216e5c2f820452535f486ba9fe5265ef"
+        },
+        {
+          "points": 0,
+          "why": "PR #330 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/330",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "PR #330, a first contribution, changed 100 production lines in packages/svelte/ui-navigators with 11 test lines (0.11): below 0.2",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/330/files#diff-d9959693589250e82da1747e0d059c0b1d7215ba4f64d1c3f3e9d73e3321ed90"
+        },
+        {
+          "points": 10,
+          "why": "PR #330 changed Reader, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/330/files#diff-181f84addbc1846dd93430d1c01cb22c960dddc72b025e02d57739da112b5db4"
+        },
+        {
+          "points": 0,
+          "why": "PR #333 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/333",
+          "floor": true
+        },
+        {
+          "points": 0,
+          "why": "PR #335 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/335",
+          "floor": true
+        },
+        {
+          "points": 0,
+          "why": "PR #334 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/334",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "PR #334 changed Infrastructure, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/334/files#diff-a36c2b23480830b1d23bfca9ee3e98f172b1bee39d034c06780f9790dcd8c3f4"
+        },
+        {
+          "points": 0,
+          "why": "PR #337 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/337",
+          "floor": true
+        },
+        {
+          "points": 0,
+          "why": "PR #336 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/336",
+          "floor": true
+        },
+        {
+          "points": 0,
+          "why": "PR #340 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/340",
+          "floor": true
+        },
+        {
+          "points": 0,
+          "why": "PR #349 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/349",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "PR #349 changed Infrastructure, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/349/files#diff-5120444e4d184841565d20ffc18b895d7d4d3f1ef63c38671080d41fa47759d9"
+        },
+        {
+          "points": 0,
+          "why": "PR #350 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/350",
+          "floor": true
+        },
+        {
+          "points": 0,
+          "why": "PR #351 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/351",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "PR #351 changed Infrastructure, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/351/files#diff-a36c2b23480830b1d23bfca9ee3e98f172b1bee39d034c06780f9790dcd8c3f4"
+        },
+        {
+          "points": 0,
+          "why": "PR #353 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/353",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "PR #353 changed Reader, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/353/files#diff-f3dde95052a1c50fbe55eb311e0bee9a099f77266952937d941eed57ffb4a1a4"
+        },
+        {
+          "points": 0,
+          "why": "PR #352 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/352",
+          "floor": true
+        },
+        {
+          "points": 0,
+          "why": "PR #354 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/354",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "PR #354 changed Reader, Live, Catalogue, Time, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/354/files#diff-f59256a303b4024e8a8528f50c846374d823ee3e46c478100acfb0cb61cc4baf"
+        },
+        {
+          "points": 0,
+          "why": "PR #355 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/355",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "PR #355 changed Infrastructure, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/355/files#diff-28802fbf11c83a2eee09623fb192785e7ca92a3f40602a517c011b947a1822d3"
+        },
+        {
+          "points": 0,
+          "why": "PR #363 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/363",
+          "floor": true
+        },
+        {
+          "points": 0,
+          "why": "PR #331 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/331",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "PR #331, a first contribution, changed 1678 production lines in apps/time with 319 test lines (0.19): below 0.2",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/331/files#diff-89be349f0f1b3e21c15df9cf0ed382f7aefd1707b11ba8e0ca717547553a53fb"
+        },
+        {
+          "points": 5,
+          "why": "catalogue churn 163 lines, above 2× its median of 3 over the last 6 releases; PR #331 is the largest part (72 lines)",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/331/files#diff-5ac631d07ba17484175dc6ba0ad0d55f257e801d4b1f2a88eb7941f90275f4a6"
+        },
+        {
+          "points": 5,
+          "why": "live churn 242 lines, above 2× its median of 2.5 over the last 6 releases; PR #331 is the largest part (164 lines)",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/331/files#diff-d4f3beaa5f469d6d50fb9ca5300f2bb3ca5041d9716f0df65022760488fc9199"
+        },
+        {
+          "points": 5,
+          "why": "time churn 2034 lines, above 2× its median of 9.5 over the last 6 releases; PR #331 is the largest part (1757 lines)",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/331/files#diff-89be349f0f1b3e21c15df9cf0ed382f7aefd1707b11ba8e0ca717547553a53fb"
+        },
+        {
+          "points": 10,
+          "why": "PR #331 changed Time, Reader, Live, Catalogue, Shared Packages, Infrastructure, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/331/files#diff-9c75df02d09573d64deea0a822ba5807d540ccad75393b98b2feeae95f98f449"
+        },
+        {
+          "points": 0,
+          "why": "PR #364 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/364",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "PR #364 changed Reader, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/364/files#diff-ab98a30ff73d23dec66e0306f4991c4b0b812421a29d2b0e1cc7f2c4ce80c69a"
+        },
+        {
+          "points": 0,
+          "why": "PR #366 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/366",
+          "floor": true
+        },
+        {
+          "points": 0,
+          "why": "PR #367 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/367",
+          "floor": true
+        },
+        {
+          "points": 0,
+          "why": "PR #365 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/365",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "PR #365 changed Infrastructure, Reader, Live, Time, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/365/files#diff-d4f3beaa5f469d6d50fb9ca5300f2bb3ca5041d9716f0df65022760488fc9199"
+        },
+        {
+          "points": 0,
+          "why": "PR #368 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/368",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "PR #368 changed Reader, Time, Shared Packages, Infrastructure, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/368/files#diff-a36c2b23480830b1d23bfca9ee3e98f172b1bee39d034c06780f9790dcd8c3f4"
+        },
+        {
+          "points": 5,
+          "why": "packages/svelte/ui-navigators/src/CourseNavigation.svelte had 3 authors this release (PR #313, commit 8582ef2, PR #330, PR #331, PR #365, PR #338, PR #373, PR #386, PR #390, PR #396): no one holds the whole picture",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/338/files#diff-c493f422dcf98712ea4f53146dd2a5a5751b1f1bc638ab23897c1904604ef3ff"
+        },
+        {
+          "points": 10,
+          "why": "PR #338 changed Reader, Catalogue, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/338/files#diff-58991fa090f14980cbda2ed2c7d1f909e76d68d63cfffa3d690e6ef5119862ef"
+        },
+        {
+          "points": 0,
+          "why": "PR #339 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/339",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "PR #266 changed Reader, Live, Catalogue, Time, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/266/files#diff-9c75df02d09573d64deea0a822ba5807d540ccad75393b98b2feeae95f98f449"
+        },
+        {
+          "points": 10,
+          "why": "PR #373 changed 405 production lines in packages/svelte/ui-navigators with 20 test lines (0.05): below 0.2",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/373/files#diff-e5cd767e23ce00ac6cdda49b14e8f9243d64c624138053b6c18d1c869d9e1047"
+        },
+        {
+          "points": 5,
+          "why": "packages/svelte/ui-navigators/src/MainNavigator.svelte had 3 authors this release (PR #313, PR #318, PR #330, PR #331, PR #365, PR #338, PR #373, PR #396): no one holds the whole picture (and 6 more files like it, not counted again)",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/373/files#diff-d9959693589250e82da1747e0d059c0b1d7215ba4f64d1c3f3e9d73e3321ed90"
+        },
+        {
+          "points": 10,
+          "why": "PR #373 changed Reader, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/373/files#diff-181f84addbc1846dd93430d1c01cb22c960dddc72b025e02d57739da112b5db4"
+        },
+        {
+          "points": 0,
+          "why": "PR #376 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/376",
+          "floor": true
+        },
+        {
+          "points": 0,
+          "why": "PR #382 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/382",
+          "floor": true
+        },
+        {
+          "points": 0,
+          "why": "PR #385 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/385",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "PR #386 changed Reader, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/386/files#diff-eb66371899236768313f2f7a3977cf3e24911c99a63196f0166e52603a1e7420"
+        },
+        {
+          "points": 0,
+          "why": "PR #388 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/388",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "PR #389 changed Reader, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/389/files#diff-b95d0dd8a116dc2d59c3f7ea2a20342d216e5c2f820452535f486ba9fe5265ef"
+        },
+        {
+          "points": 10,
+          "why": "PR #387 changed Reader, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/387/files#diff-6c733e6d08463c6cf99fa821635e7bfedd7e5bf8366c6e8910cafffdeb06bc12"
+        },
+        {
+          "points": 10,
+          "why": "PR #390 changed Reader, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/390/files#diff-b95d0dd8a116dc2d59c3f7ea2a20342d216e5c2f820452535f486ba9fe5265ef"
+        },
+        {
+          "points": 0,
+          "why": "PR #391 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/391",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "PR #391, a first contribution, changed 21 production lines in apps/reader with 0 test lines (0.00): below 0.2",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/391/files#diff-a39909f15b47b4a186ddd786e107944eff1c3856b75a4696456a81247a2fde5f"
+        },
+        {
+          "points": 10,
+          "why": "PR #391 changed Reader, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/391/files#diff-b40b17c22411e18933bba1b4e8179db964c687df979595ec583f832eab50c029"
+        },
+        {
+          "points": 10,
+          "why": "PR #393, a first contribution, changed 20 production lines in packages/svelte/connect with 0 test lines (0.00); 3 production lines in packages/svelte/ui-navigators with 0 test lines (0.00): below 0.2",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/393/files#diff-d4710bec8228731b73dbe92d01ce27bd9f9307b9e83207792a3c513c93eac00f"
+        },
+        {
+          "points": 5,
+          "why": "packages/svelte/ui-navigators/src/buttons/CourseSentimentButton.svelte had 3 authors this release (PR #313, commit 8582ef2, PR #393): no one holds the whole picture",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/393/files#diff-389a220a9c063f4af575f173151129f6da62b8fb2934f5705a559e20d9eefe2e"
+        },
+        {
+          "points": 10,
+          "why": "PR #393 changed Reader but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/393/files#diff-ab5233bd8376abf71bd2a266923a8aa4814253c9ac7b723ff77e516ddec43ffc"
+        },
+        {
+          "points": 10,
+          "why": "PR #395 changed Reader, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/395/files#diff-d5200a5aa732e1caa4ad64bf27219a0e12d0c7bfe62774cb4be8285158de8e69"
+        },
+        {
+          "points": 0,
+          "why": "PR #397 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/397",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "PR #397 changed Reader, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/397/files#diff-6e0d83696317a7dd434a0f962ec82a7debb04a718f3885992316f95ec9b82733"
+        },
+        {
+          "points": 0,
+          "why": "PR #396 was merged with no approving review",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/396",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "PR #396 changed Reader, Development but no changelog entry under va5796e9ca8745081f1006ef36d55546a9f04cf06 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/396/files#diff-3b5918b61402a5d8e4434c57f5209512329c5854280634c7aee3ae773f5886a1"
+        }
+      ],
+      "evidence": [
+        "changes.json"
+      ],
+      "gaps": [
+        "orphan entries (a changelog entry with no diff): CHANGELOG.md at a5796e9ca8745081f1006ef36d55546a9f04cf06 has no \"### va5796e9ca8745081f1006ef36d55546a9f04cf06\" entries under a product section"
+      ]
+    },
+    {
+      "id": "post-deploy",
+      "name": "Post-deploy history",
+      "weight": 5,
+      "status": "not measured",
+      "score": null,
+      "floorBreached": false,
+      "reason": "needs the last release's post-deploy record: pass --post-deploy <its run dir or report.json>",
+      "deductions": [],
+      "evidence": []
+    }
+  ],
+  "glance": [
+    {
+      "rank": 1,
+      "kind": "first-time-hotspot",
+      "key": "packages/svelte/ui-primitives/src/components/LoContextTreeView.svelte",
+      "finding": "PR #313, a first contribution, touches hotspot packages/svelte/ui-primitives/src/components/LoContextTreeView.svelte: \"feat(ui): rebuild Tutors with the Paper design system\"",
+      "links": {
+        "pr": "https://github.com/tutors-sdk/tutors-mono-repo/pull/313",
+        "diff": "https://github.com/tutors-sdk/tutors-mono-repo/pull/313/files#diff-3805a328d2572205ef2f52b7b2b8eb8164c3c1dc10b3c867d195122994548757"
+      },
+      "novelty": 1,
+      "exposure": 1,
+      "score": 1,
+      "basis": {
+        "novelty": "no history yet",
+        "exposure": "unmapped (packages/svelte/ui-primitives/src/components/LoContextTreeView.svelte is outside apps/, and a package's reach into the journeys is not mapped): counted as all 6 journeys, so what cannot be placed is not ranked below what can"
+      },
+      "mark": null
+    },
+    {
+      "rank": 2,
+      "kind": "fixed-on-b",
+      "key": "console catalogue:home",
+      "finding": "catalogue:home: 2 console errors fixed on b, undecided; but 2 new console errors on the same page: fixed, or only changed?",
+      "links": {
+        "hunk": "report.html#hunk-console:catalogue:home:140"
+      },
+      "hunks": [
+        "report.html#hunk-console:catalogue:home:140",
+        "report.html#hunk-console:catalogue:home:141"
+      ],
+      "detail": "error: {\"app\":\"tutors-catalogue\",\"environment\":\"production\",\"error\":\"Cannot read properti… | error: {\"app\":\"tutors-catalogue\",\"environment\":\"production\",\"error\":\"Cannot read properti…",
+      "novelty": 1,
+      "exposure": 0.17,
+      "score": 0.17,
+      "basis": {
+        "novelty": "no history yet",
+        "exposure": "1 of 6 journeys: catalogue-loads"
+      },
+      "mark": null
+    },
+    {
+      "rank": 3,
+      "kind": "fixed-on-b",
+      "key": "console reader-auth:course",
+      "finding": "reader-auth:course: 2 console errors fixed on b, undecided; a fix is a decision: claim it to say why, and this item switches off",
+      "links": {
+        "hunk": "report.html#hunk-console:reader-auth:course:142"
+      },
+      "hunks": [
+        "report.html#hunk-console:reader-auth:course:142",
+        "report.html#hunk-console:reader-auth:course:143"
+      ],
+      "detail": "error: {\"app\":\"tutors-reader\",\"environment\":\"production\",\"reason\":\"Cannot read properties… | error: Cannot read properties of undefined (reading 'increment')",
+      "novelty": 1,
+      "exposure": 0.17,
+      "score": 0.17,
+      "basis": {
+        "novelty": "no history yet",
+        "exposure": "1 of 6 journeys: student-signs-in"
+      },
+      "mark": null
+    },
+    {
+      "rank": 4,
+      "kind": "fixed-on-b",
+      "key": "console reader-auth:topic",
+      "finding": "reader-auth:topic: 2 console errors fixed on b, undecided; a fix is a decision: claim it to say why, and this item switches off",
+      "links": {
+        "hunk": "report.html#hunk-console:reader-auth:topic:145"
+      },
+      "hunks": [
+        "report.html#hunk-console:reader-auth:topic:145",
+        "report.html#hunk-console:reader-auth:topic:146"
+      ],
+      "detail": "error: {\"app\":\"tutors-reader\",\"environment\":\"production\",\"reason\":\"Cannot read properties… | error: Cannot read properties of undefined (reading 'increment')",
+      "novelty": 1,
+      "exposure": 0.17,
+      "score": 0.17,
+      "basis": {
+        "novelty": "no history yet",
+        "exposure": "1 of 6 journeys: student-signs-in"
+      },
+      "mark": null
+    },
+    {
+      "rank": 5,
+      "kind": "duration-moved",
+      "key": "catalogue-loads",
+      "finding": "catalogue-loads: median duration 2059 ms → 1377 ms (-33%), not judged by the timing engine (below its thresholds or runs)",
+      "links": {},
+      "detail": "duration a: 1434, 1769, 2059, 2088, 2897 ms · b: 1303, 1348, 1377, 1748, 2585 ms",
+      "novelty": 1,
+      "exposure": 0.17,
+      "score": 0.17,
+      "basis": {
+        "novelty": "no history yet",
+        "exposure": "1 of 6 journeys: catalogue-loads"
+      },
+      "mark": null
+    }
+  ],
+  "run": {
+    "candidate": "sha-a5796e9",
+    "baseline": "16.2.2",
+    "ranAt": "2026-10-06T09:21:18.548Z",
+    "reports": {
+      "release": "report.json",
+      "migration": "migration/report.json",
+      "upgrade": "upgrade/report.json"
+    },
+    "inputs": {
+      "testSignal": "quality.json",
+      "changeRisk": "changes.json"
+    },
+    "harness": {
+      "version": "1.28.4",
+      "contractVersion": "1.28.4"
+    }
+  },
+  "rcs": null,
+  "band": null,
+  "mean": null,
+  "note": "No RCS: Gate FAIL. The Gate wins: no number talks a FAIL back on. The dimensions are shown for the 5 Whys, not for a decision.",
+  "glanceBasis": {
+    "rule": "novelty × exposure, highest first, at most 7; ties in the plan's order (broad-claim, mask-added, near-miss, first-time-hotspot, new-persistence, fixed-on-b, major-bump, duration-moved). Novelty is (n − seen + 1) ÷ (n + 1) over the last 6 releases on the scoreboard that recorded the kind (1 with no history); exposure is the share of the journey set the finding touches (1 when it cannot be placed).",
+    "history": {
+      "releases": [],
+      "note": "no scoreboard yet at /home/runner/work/tutors-release-harness/tutors-release-harness/harness/.harness/scoreboard/releases.jsonl"
+    },
+    "journeys": {
+      "total": 6,
+      "names": [
+        "anonymous-student-reads-course",
+        "anonymous-student-searches",
+        "catalogue-loads",
+        "live-loads",
+        "reference-course-reads",
+        "student-signs-in"
+      ],
+      "source": "the journeys in the release run's a/ and b/ capture.json"
+    },
+    "checked": [
+      {
+        "kind": "broad-claim",
+        "candidates": 0
+      },
+      {
+        "kind": "near-miss",
+        "candidates": 0
+      },
+      {
+        "kind": "first-time-hotspot",
+        "candidates": 1
+      },
+      {
+        "kind": "new-persistence",
+        "candidates": 0
+      },
+      {
+        "kind": "fixed-on-b",
+        "candidates": 3
+      },
+      {
+        "kind": "major-bump",
+        "candidates": 0
+      },
+      {
+        "kind": "duration-moved",
+        "candidates": 1
+      }
+    ],
+    "notChecked": [
+      {
+        "kind": "mask-added",
+        "reason": "no earlier release on the scoreboard to compare the masks with (no scoreboard yet at /home/runner/work/tutors-release-harness/tutors-release-harness/harness/.harness/scoreboard/releases.jsonl)"
+      }
+    ],
+    "seen": [
+      "first-time-hotspot:packages/svelte/ui-primitives/src/components/LoContextTreeView.svelte",
+      "fixed-on-b:console catalogue:home",
+      "fixed-on-b:console reader-auth:course",
+      "fixed-on-b:console reader-auth:topic",
+      "duration-moved:catalogue-loads"
+    ]
+  }
+}
