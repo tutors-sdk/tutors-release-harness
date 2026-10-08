@@ -21,6 +21,8 @@ import { RequirementError, requirements } from "./not-collected.ts";
 import { previewResolve } from "./ci/main-preview.ts";
 import { UsageError, changesCommand, confidenceCommand, doctorCommand, glanceCommand, guardCommand, localCommand, noiseCommand, overrideCommand, pruneCommand, recordAppliedOverride, releaseCommand, reportsCommand, scoreboardCommand, scorecardCommand, vulnDbCommand, whyCommand, a3Command, readinessCommand } from "./local/cli.ts";
 import { defaultNoise } from "./local/noise-store.ts";
+import { courseCommand, CourseUsageError } from "./course/command.ts";
+import { harnessHome } from "./local/home.ts";
 
 const USAGE = `tutors-release-harness
 
@@ -258,6 +260,21 @@ const USAGE = `tutors-release-harness
       and its planted mutant; --noise-history (default noise/noise-history.json in --site) is the A/A record. Writes
       readiness.html and readiness.json into --site. Advisory: never an input to the Gate, a verdict or an exit code. Exit 0 when written, 2 for what it cannot
       read. Not stable.
+  harness course capture --course <https://tutors.dev/course/<id> | id> [--out dir] [--depth 1] [--concurrency 8]
+                         [--max-file-mb n] [--skip-ext mp4,zip] [--dry-run] [--force] [--strict] [--json]
+  harness course verify --dir <capture | course folder> [--json]
+  harness course serve --dir <capture | course folder> [--port 8080]
+      A live, public Tutors course onto disk, for runs and benchmarks that want a known working course as local files
+      (since 1.29.0; docs/course-capture.md). capture reads the course's tutors.json from its host (<id>.netlify.app, as
+      the reader does), every file it names on that host (images, PDFs, archives, the img/ and archives/ its markdown
+      names) and, to --depth (default 1; 0 is the course alone), the Tutors courses its web learning objects link to, a
+      portfolio's modules. Anonymous GETs only: a course that asks for a sign-in is recorded as not public. Each course
+      goes to <out>/<id>/ byte for byte with course-capture.json (every file's size and sha256), and <out>/courses.json
+      lists them; --out defaults to HARNESS_HOME/courses/<id>. --max-file-mb and --skip-ext record big or unwanted files
+      as skipped. --dry-run reads only tutors.json and writes nothing. verify says whether a capture is still what was
+      captured. serve hosts one course folder as fixtures/course-server does (the reader's course id is localhost:<port>).
+      Exit 0 done, 1 the course could not be read (--strict: or a file or linked course) or a capture drifted, 2 usage.
+      Not stable.
 `;
 
 function fail(message: string): never {
@@ -405,6 +422,13 @@ async function main(argv: string[]): Promise<number> {
       // Since 1.19.0: harness readiness reads the monorepo's release sizes (--releases) or asks GitHub for them (--fetch-releases).
       releases: { type: "string" },
       "fetch-releases": { type: "boolean", default: false },
+      // Since 1.29.0: harness course.
+      course: { type: "string" },
+      depth: { type: "string" },
+      concurrency: { type: "string" },
+      "max-file-mb": { type: "string" },
+      "skip-ext": { type: "string" },
+      port: { type: "string" },
       help: { type: "boolean", short: "h", default: false }
     },
     allowNegative: true
@@ -612,6 +636,8 @@ async function main(argv: string[]): Promise<number> {
       return a3Command(values);
     case "readiness":
       return readinessCommand(values);
+    case "course":
+      return courseCommand(positionals[0], values, { home: harnessHome(), harnessVersion: harnessInfo().version });
     case "journeys":
       for (const j of journeys) console.log(`${j.name.padEnd(34)} set=${j.set.padEnd(9)} ${j.anonymous ? "anonymous" : "signed-in"}`);
       return 0;
@@ -650,7 +676,7 @@ main(process.argv.slice(2)).then(
     }
     // A usage error of the local commands, or digests that are not digests: the message, not a stack.
     // A claims or rules file that cannot be used: which file, which claim, which field, what is wrong; no stack.
-    if (error instanceof UsageError || error instanceof DigestError || error instanceof InputFileError || error instanceof RequirementError) {
+    if (error instanceof UsageError || error instanceof DigestError || error instanceof InputFileError || error instanceof RequirementError || error instanceof CourseUsageError) {
       console.error(error.message);
       process.exit(2);
     }

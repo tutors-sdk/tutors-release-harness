@@ -250,9 +250,23 @@ harness release --candidate <tag> [--baseline <tag|prod>] [--monorepo dir] [--fa
 harness confidence --run <dir>          harness changes --a <tag> --b <tag> [--monorepo dir]
 harness glance mark|status --run <dir>  harness scoreboard append|trends|mutants
 harness why --run <dir> --finding <id>  harness why check <file|dir>   harness why register [--write]
+
+harness course capture --course https://tutors.dev/course/<id> [--depth 1] [--out dir]   # a live course onto disk
+harness course verify --dir <capture>   harness course serve --dir <capture> [--port 8080]
 ```
 
 The release commands are in `harness --help` and [chapter 7](docs/user-guide/07-reference.md) of the guide.
+
+### Course capture
+
+`harness course capture` (since 1.29.0) points at a live, public Tutors course, such as
+`https://tutors.dev/course/wit-hdip-comp-sci-2024`, and writes it to disk as the reader sees it:
+its `tutors.json`, every image, PDF and archive it names on the course host, and (to `--depth`,
+default 1) the courses it links to, each pinned by sha256 in `course-capture.json`. Only what
+answers an anonymous request is read. `harness course verify` checks a capture is unchanged and
+`harness course serve` hosts it for a reader (course id `localhost:<port>`), so a known working
+course can go into an A/B as local files for heavier benchmarks. See
+[docs/course-capture.md](docs/course-capture.md).
 
 Exit codes: 0 pass or warn, 1 fail (or `images ensure` could not obtain an
 image), 2 usage or harness error — which includes "an image may not be

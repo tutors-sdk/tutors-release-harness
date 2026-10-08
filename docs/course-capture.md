@@ -1,0 +1,127 @@
+# Course capture: a live course as local files
+
+`harness course` (since 1.29.0, not stable) copies a published Tutors course to disk as the
+reader sees it. The point is to have a **known working course** as local files: the fixture
+course is a scaffolder default with two topics, and a real course, such as a whole Higher
+Diploma, has hundreds of labs, talks, images and PDFs. Once a course is on disk and pinned by
+sha256, a run can serve it to both sides of an A/B and benchmark against it as hard as it likes,
+without touching Netlify or depending on the course not changing.
+
+```console
+$ pnpm harness course capture --course https://tutors.dev/course/wit-hdip-comp-sci-2024
+$ pnpm harness course verify --dir .harness/courses/wit-hdip-comp-sci-2024
+$ pnpm harness course serve --dir .harness/courses/wit-hdip-comp-sci-2024 --port 8080
+```
+
+The three commands are self-contained (`src/course/`: Node built-ins and `fetch`, nothing else
+from the harness), so they can be lifted into another tool unchanged.
+
+## What `capture` reads
+
+`--course` takes a reader URL (`https://tutors.dev/course/<id>`, any page under it), a reader
+path (`/course/<id>`), a course host (`https://<id>.netlify.app`, `http://localhost:8080`) or the
+bare id. It resolves it as the reader does (`determineCourseUrl` in the monorepo): a bare id is
+`https://<id>.netlify.app`, an id with a dot is its own host, and `localhost` or a private
+address is `http://`.
+
+1. **`tutors.json`** from the course host. That is the whole course tree, with every learning
+   object, lab step and note in it. It must be JSON with `type: "course"`; it is written exactly as
+   the host sent it, never re-serialised, so its sha256 is the published file's.
+2. **Every file it names on the course host.** The generator writes an address in three ways
+   and the capture follows all three (`src/course/assets.ts`):
+   - `https://{{COURSEURL}}/...`, in `img`, `pdf`, `excalidraw` or any other field;
+   - an archive: `route: /archive/{{COURSEURL}}/<folder>` plus `archiveFile`;
+   - markdown in a lab step, a note, a notebook cell or a summary naming `img/...`, `./img/...`,
+     `archives/...` or `archive/...`, relative to its learning object's folder (a lab step is
+     relative to its lab), as the reader's markdown `filter` resolves them.
+   Nothing on another host is fetched (YouTube, GitHub, Slack, other sites). A path that would
+   leave the course root (`../../..`) is dropped.
+3. **Linked courses, to `--depth`** (default 1; 0 is the course alone). A `web` learning object
+   whose route is a Tutors course (`/course/<id>`, `https://tutors.dev/course/<id>` or
+   `https://<id>.netlify.app`) is captured the same way. A portfolio such as
+   `wit-hdip-comp-sci-2024` is mostly links to its module courses, so depth 1 is what makes the
+   capture a course you can read. Each course is captured once, however many times it is linked.
+
+**Only what is public.** Every request is an anonymous `GET`. A host that answers 401 or 403 is
+recorded as `not-public` and nothing is guessed; 404 is `not-found`; an HTML page where JSON
+should be (a sign-in wall) is `not-a-course`. The capture never signs in and takes no
+credentials. A 5xx or 429 is retried twice with backoff; a 4xx is the answer.
+
+## What it writes
+
+`--out` defaults to `HARNESS_HOME/courses/<id>` (`.harness/` in the checkout, gitignored):
+
+```
+<out>/
+  courses.json                        the index: every course reached, its depth, status and counts
+  wit-hdip-comp-sci-2024/             the course as its host serves it
+    tutors.json
+    course.png
+    unit-1/web-2-mobile-app-dev/web.png
+    course-capture.json               what was captured, from where, and each file's sha256
+  setu-hdip-comp-sci-2024-mobile/     a linked course (depth 1), the same way
+    ...
+```
+
+`course-capture.json` (schema `tutors-course-capture/1`) records the course (`id`, `origin`, the
+reader URL, its title), `capturedAt`, the harness version, `tutorsJson` and `files` (path, bytes,
+sha256, content type), `missing` (named in `tutors.json` but not served, with the status),
+`skipped` (by `--skip-ext` or `--max-file-mb`), the learning objects per `types`, and the
+`links` it found. `courses.json` (schema `tutors-course-capture-index/1`) has one entry per course:
+`captured`, `not-public`, `not-found`, `unreachable` or `not-a-course`.
+
+A course folder is refused if it is already there and not empty, unless `--force`, which replaces
+that folder (only that folder).
+
+| Flag | Default | Meaning |
+| --- | --- | --- |
+| `--course` | (required) | the course, as above |
+| `--out` | `HARNESS_HOME/courses/<id>` | where the capture goes |
+| `--depth` | `1` | levels of linked courses to follow |
+| `--concurrency` | `8` | files fetched at once, per course |
+| `--max-file-mb` | none | a larger file is recorded as skipped, not written |
+| `--skip-ext` | none | extensions recorded as skipped, not fetched: `mp4,mov,zip` |
+| `--dry-run` | | read only `tutors.json` (of each course reached) and write nothing: what a capture would fetch |
+| `--force` | | replace a course folder that is already there |
+| `--strict` | | exit 1 when any file is missing or any linked course could not be captured |
+| `--json` | | print `courses.json` (with `out`) instead of the summary |
+
+Exit `0` when the course was captured (a missing file or an unreadable linked course is in the
+record, not an error, unless `--strict`); `1` when the course itself could not be read; `2` for
+usage.
+
+## `verify` and `serve`
+
+`harness course verify --dir <capture | course folder>` checks every file a
+`course-capture.json` lists for its size and sha256: exit `0` when the capture is what was
+captured, `1` when anything drifted (each file is named). It reads nothing from the network.
+Run it before a benchmark that relies on the capture being what it was.
+
+`harness course serve --dir <capture | course folder> [--port 8080]` serves one course folder
+(given a capture, its root course) with `fixtures/course-server/serve.mjs`, the server the
+harness's own fixture course runs on: any origin allowed, no `Date`, `ETag` or `Last-Modified`
+header, so the server is not a source of noise. The reader reads it as the course id
+`localhost:<port>`, because routes in `tutors.json` hold `{{COURSEURL}}` and the reader fills it
+in with whatever host it was given.
+
+## Into an A/B
+
+The route to a run is the one [fixtures/course-server/README.md](../fixtures/course-server/README.md)
+describes for adding a course to the corpus: copy a captured course folder under
+`fixtures/course-server/`, publish it on its own port in `compose.harness.yaml`, record where it
+came from (`course-capture.json` already holds the origin, the time and every sha256), and write
+journeys for it. That is a fixture change, so it bumps the harness version and goes through the
+mutants like any other. Nothing in the gate reads a capture today; this command only makes one.
+
+Two things a capture does not carry: the links of a portfolio still point at the live
+`tutors.dev/course/<id>` (the captured `tutors.json` is byte for byte what was published), so a
+journey that follows one leaves the stack; and what a course shows only to a signed-in student is
+not in `tutors.json` and so not captured.
+
+## Live check
+
+`.github/workflows/course-capture.yml` captures `wit-hdip-comp-sci-2024` on GitHub's runners
+(on demand, weekly, and on a pull request that changes `src/course/`), verifies it, and keeps
+`courses.json` and each `course-capture.json` as an artifact. It is what proves the command against a
+real course; the unit tests (`tests/course-capture.test.ts`) use a fake web and the committed
+fixture course over real HTTP.
