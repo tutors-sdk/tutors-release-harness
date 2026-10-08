@@ -38,6 +38,7 @@ It is not:
 | **A maintainer or operator**: you run the harness locally and schedule it | [02 Running locally](02-running-locally.md), [05 Noise and self-test](05-noise-and-self-test.md) | [01 Concepts](01-concepts.md), [08 Troubleshooting](08-troubleshooting.md) |
 | **A CI integrator** on the monorepo side | [06 CI integration](06-ci-integration.md), [07 Reference](07-reference.md) | [10 Running a release](10-running-a-release.md#how-ci-runs-the-same-thing) |
 | **A harness developer**: you add an artefact, mask, mutant or journey | [09 Extending](09-extending.md) | [01 Concepts](01-concepts.md), [05 Noise and self-test](05-noise-and-self-test.md) |
+| **Anyone who wants a real course to test against** | [11 Course capture](11-course-capture.md) | [docs/course-capture.md](../course-capture.md) |
 
 Read in this order the first time: 01, 10, 03, 04, then the rest as you need them. The roles are the monorepo's `release/SOP.md`; the Lean ideas behind them are in [docs/lean.md](../lean.md).
 
@@ -53,6 +54,7 @@ Read in this order the first time: 01, 10, 03, 04, then the rest as you need the
 | [08 Troubleshooting](08-troubleshooting.md) | Symptom, cause, fix |
 | [09 Extending](09-extending.md) | Adding an artefact, mask, mutant, journey or stub; the versioning rules; the unit suite |
 | [10 Running a release](10-running-a-release.md) | The release SOP step by step: prerequisites, `pnpm release:candidate`, `harness release` and its seven stages, the Gate, the score and the glance, go or no-go, deploy and the watch window, the 5 Whys, closing the release, `--fast`, how CI runs the same |
+| [11 Course capture](11-course-capture.md) | A live, public course onto disk: capture, verify, serve, check it loads in a reader, and the curated course corpus |
 | [Glossary](glossary.md) | The terms used in this guide |
 
 Older, narrower documents this guide builds on and links to: [the integration contract](../contract.md), [Lean in the harness](../lean.md), [where the images come from](../images.md), [modes](../modes.md), [running locally (parity matrix)](../local.md), [the noise burn-down playbook](../noise-burndown.md), [the kaizen register](../../kaizen/README.md), [claims](../../claims/README.md), [mutants](../../mutants/README.md) and [TESTING.md](../../TESTING.md). Where they and this guide disagree, the code and the contract win; please report the difference.
