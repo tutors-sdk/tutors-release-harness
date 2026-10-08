@@ -13,3 +13,21 @@ courses:
     why: The standard (Leigh, 2026-10-08). WIT/SETU Higher Diploma in Computer Science 2024, a portfolio of 23 module courses.
     skipExt: [mp4, mov]
     maxFileMb: 50
+  # Module courses (Leigh, 2026-10-08: "add more modules ... we want signal depth"). The portfolio above is mostly links,
+  # so these are where a student reads: labs with many steps, notes, talks, images and archives.
+  - course: https://tutors.dev/course/wit-hdip-comp-sci-2024-programming
+    why: Programming, the largest first-semester module (489 learning objects, 647 files). Many labs with long step sequences.
+    skipExt: [mp4, mov, zip]
+    maxFileMb: 20
+  - course: https://tutors.dev/course/wit-hdip-comp-sci-2024-full-stack-1
+    why: Full Stack 1, the largest module (529 learning objects, 619 files), heavy on images and talks.
+    skipExt: [mp4, mov, zip]
+    maxFileMb: 20
+  - course: https://tutors.dev/course/setu-hdip-comp-sci-2024-comp-sys
+    why: Computer Systems (315 learning objects, 504 files), a SETU course built by a different author, so a different shape of tree.
+    skipExt: [mp4, mov, zip]
+    maxFileMb: 20
+  - course: https://tutors.dev/course/databases-2024
+    why: Databases (381 learning objects, 436 files), notes and labs with SQL code blocks and many diagrams.
+    skipExt: [mp4, mov, zip]
+    maxFileMb: 20

@@ -15,6 +15,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { CourseCheck } from "../course/check.ts";
 import { CHECK_FILE } from "../course/check.ts";
+import { compareCourse, type CourseComparison } from "../course/compare.ts";
 
 export const COURSES_DIR = "courses";
 export const SIDES_FILE = "sides.json";
@@ -27,7 +28,7 @@ export interface CourseSide {
   failures: string[];
 }
 
-export type CourseState = "loads on both" | "breaks on main" | "fixed on main" | "fails on both" | "not checked on both";
+export type CourseState = "loads on both" | "worse on main" | "breaks on main" | "fixed on main" | "fails on both" | "not checked on both";
 
 export interface CourseRow {
   id: string;
@@ -37,6 +38,8 @@ export interface CourseRow {
   state: CourseState;
   /** Main's median time to the title less production's; null when either side has none. */
   medianDeltaMs: number | null;
+  /** Since 1.32.0: page by page and journey by journey, production against main (src/course/compare.ts). */
+  compare?: CourseComparison;
 }
 
 export interface CourseLoad {
@@ -49,6 +52,10 @@ export interface CourseLoad {
   loadOnProduction: number;
   loadOnMain: number;
   pagesOnMain: { ok: number; sampled: number };
+  /** Since 1.32.0: pages worse and better on main, over every course; journeys main clicks less far through. */
+  worsePages: number;
+  betterPages: number;
+  worseJourneys: number;
   rows: CourseRow[];
   summary: string;
 }
@@ -82,9 +89,9 @@ export function sideOf(c: CourseCheck | undefined): CourseSide | null {
   };
 }
 
-function stateOf(a: CourseSide | null, b: CourseSide | null): CourseState {
+function stateOf(a: CourseSide | null, b: CourseSide | null, c?: CourseComparison): CourseState {
   if (!a || !b) return "not checked on both";
-  if (a.loaded && b.loaded) return "loads on both";
+  if (a.loaded && b.loaded) return c && (c.worse.length || c.journeys.worse.length) ? "worse on main" : "loads on both";
   if (a.loaded) return "breaks on main";
   if (b.loaded) return "fixed on main";
   return "fails on both";
@@ -109,7 +116,8 @@ export function readCourseLoad(site: string): CourseLoad | undefined {
     const title = cb?.course?.title ?? ca?.course?.title;
     const ma = a?.pages?.medianMs ?? null;
     const mb = b?.pages?.medianMs ?? null;
-    return { id, ...(title ? { title } : {}), a, b, state: stateOf(a, b), medianDeltaMs: ma !== null && mb !== null ? mb - ma : null };
+    const compare = ca?.pages && cb?.pages ? compareCourse(ca, cb) : undefined;
+    return { id, ...(title ? { title } : {}), a, b, state: stateOf(a, b, compare), medianDeltaMs: ma !== null && mb !== null ? mb - ma : null, ...(compare ? { compare } : {}) };
   });
   const loadOnProduction = rows.filter((r) => r.a?.loaded).length;
   const loadOnMain = rows.filter((r) => r.b?.loaded).length;
@@ -117,11 +125,17 @@ export function readCourseLoad(site: string): CourseLoad | undefined {
   const production = sides.production ?? "production";
   const candidate = sides.candidate ?? "main";
   const breaks = rows.filter((r) => r.state === "breaks on main").map((r) => r.id);
+  const worsePages = rows.reduce((n, r) => n + (r.compare?.worse.length ?? 0), 0);
+  const betterPages = rows.reduce((n, r) => n + (r.compare?.better.length ?? 0), 0);
+  const worseJourneys = rows.reduce((n, r) => n + (r.compare?.journeys.worse.length ?? 0), 0);
+  const worseCourses = rows.filter((r) => r.state === "worse on main").map((r) => r.id);
   const summary = breaks.length
-    ? `${breaks.length} of ${rows.length} real courses load on production ${production} but not on main ${candidate}: ${breaks.join(", ")}. A student on those courses would be stopped by this release.`
-    : loadOnMain === rows.length
-      ? `Every real course in the corpus (${rows.length}) loads on main ${candidate}: ${pagesOnMain.ok} of ${pagesOnMain.sampled} sampled pages showed their title.`
-      : `${loadOnMain} of ${rows.length} real courses load on main ${candidate}, ${loadOnProduction} on production ${production}; none is broken by main alone.`;
+    ? `${breaks.length} of ${rows.length} real courses load on production ${production} but not on main ${candidate}: ${breaks.join(", ")}. Releasing main would stop a student on those courses.`
+    : worseCourses.length
+      ? `Releasing main ${candidate} would make ${worsePages} page(s)${worseJourneys ? ` and ${worseJourneys} journey(s)` : ""} worse for a student than production ${production}, on ${worseCourses.join(", ")}; ${betterPages} page(s) are better.`
+      : loadOnMain === rows.length
+        ? `Every real course in the corpus (${rows.length}) loads on main ${candidate} and no page a student uses is worse than on production ${production}: ${pagesOnMain.ok} of ${pagesOnMain.sampled} sampled pages showed their title${betterPages ? `; ${betterPages} page(s) are better` : ""}.`
+        : `${loadOnMain} of ${rows.length} real courses load on main ${candidate}, ${loadOnProduction} on production ${production}; none is broken by main alone.`;
   return {
     production,
     candidate,
@@ -132,6 +146,9 @@ export function readCourseLoad(site: string): CourseLoad | undefined {
     loadOnProduction,
     loadOnMain,
     pagesOnMain,
+    worsePages,
+    betterPages,
+    worseJourneys,
     rows,
     summary
   };

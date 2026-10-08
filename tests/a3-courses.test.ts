@@ -58,7 +58,7 @@ describe("readCourseLoad", () => {
     expect(c).toMatchObject({ production: "16.2.2", candidate: "sha-abc1234", total: 2, loadOnProduction: 2, loadOnMain: 1, pagesOnMain: { ok: 48, sampled: 50 } });
     expect(c.rows.map((r) => `${r.id}:${r.state}:${r.medianDeltaMs}`)).toEqual(["one:loads on both:200", "two:breaks on main:50"]);
     expect(c.rows[1]!.b!.failures).toEqual(['/lab/two/a: title "T0" not shown', '/lab/two/b: title "T1" not shown']);
-    expect(c.summary).toMatch(/^1 of 2 real courses load on production 16\.2\.2 but not on main sha-abc1234: two\./);
+    expect(c.summary).toMatch(/^1 of 2 real courses load on production 16\.2\.2 but not on main sha-abc1234: two\. Releasing main would stop a student/);
   });
 
   it("a file that differs is not a load; a side with no check is not checked on both; none kept is undefined", () => {
@@ -71,7 +71,7 @@ describe("readCourseLoad", () => {
 
   it("every course loading on main says so", () => {
     const dir = site(SIDES, { one: check("one", { ok: 3, sampled: 3, median: 1 }) }, { one: check("one", { ok: 3, sampled: 3, median: 1 }) });
-    expect(readCourseLoad(dir)!.summary).toBe("Every real course in the corpus (1) loads on main sha-abc1234: 3 of 3 sampled pages showed their title.");
+    expect(readCourseLoad(dir)!.summary).toBe("Every real course in the corpus (1) loads on main sha-abc1234 and no page a student uses is worse than on production 16.2.2: 3 of 3 sampled pages showed their title.");
   });
 });
 
@@ -84,7 +84,7 @@ describe("the A3 with real courses", () => {
     expect(a3.goal.find((g) => g.metric === "Real courses load on main (course corpus)")).toMatchObject({ now: "0 of 1 courses, 24 of 25 pages (production: 1 of 1)", met: false });
     const html = renderA3(a3);
     expect(html).toContain('id="courses"');
-    expect(html).toContain("Real courses on production and main");
+    expect(html).toContain("Real courses: what a student would notice if main were released");
     expect(html).toContain("breaks on main");
     expect(html).toContain("800 ms → 1.2 s (+400 ms)");
     expect(html).toContain('href="https://github.com/tutors-sdk/tutors-release-harness/actions/runs/1"');

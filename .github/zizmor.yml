@@ -6,9 +6,13 @@ rules:
       # workflow_run is dangerous when it checks out or downloads what the triggering run produced. Neither does:
       # main-preview.yml reads only the nightly's branch, repository and conclusion (and runs only for this
       # repository's main); pages.yml checks out main and reads the kept reports from this repository's own
-      # branches, never an artifact of the run that triggered it.
+      # branches, never an artifact of the run that triggered it; since 1.31.0 it also reads the course-corpus-check
+      # artifact of a course-capture.yml run on main that no pull request started (schedule, dispatch or workflow_run),
+      # and renders it escaped. course-capture.yml (since 1.32.0) runs after Main to RC on main and reads only that
+      # run's branch, repository and conclusion; it checks out main and downloads nothing the triggering run produced.
       - main-preview.yml
       - pages.yml
+      - course-capture.yml
   use-trusted-publishing:
     ignore:
       # A false positive: `--store publish` names a local directory (the checkout of the `noise` branch), and

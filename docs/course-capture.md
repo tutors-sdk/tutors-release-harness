@@ -118,6 +118,15 @@ in with whatever host it was given.
   `--sample 0` is every page) and each must show its title within 30 seconds. Failed requests to
   the course host, page errors and the time to the title are recorded per page.
 
+Since 1.32.0, two more layers, both with `--reader`:
+
+- **What a student meets.** Each page that loads is read again once its images have had a moment: the
+  visible text, the headings, course images that did not load, links to pages of the course that do not
+  exist, and serious or critical accessibility violations (axe).
+- **Journeys** (`--journeys`, default 2). The course page, the topic, a lab and its steps (at most 8), each
+  reached by clicking its link on the page before, as a student would. A page with no link to the next is
+  recorded as `no link` and opened by address so the journey can go on.
+
 It writes `course-check.json` beside the capture (`--out` moves it) and exits `1` when a file or a page
 failed. Any reader will do: side a of `harness stack up` is `http://localhost:3100`.
 

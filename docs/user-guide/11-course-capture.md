@@ -81,6 +81,10 @@ Two checks, both needed:
 Why a browser? The reader draws every page in the browser, so a plain HTTP request to a course page
 returns the same empty shell whether the course works or not. Only a browser shows a course loading.
 
+Since 1.32.0 each page is also read as a student meets it (text, headings, broken images, broken links,
+serious accessibility problems), and two student journeys are clicked through: course page, topic, lab,
+then each step (`--journeys 0` to skip them).
+
 The result is in `course-check.json` beside the capture: pages loaded, failed requests, page errors and
 the time to each title. Exit `1` means something did not load.
 

@@ -82,7 +82,8 @@ jobs:
           pnpm harness scoreboard trends --file src-scoreboard/scoreboard/releases.jsonl --mutants src-scoreboard/scoreboard/mutants.jsonl --noise-history src-noise/noise-history.json --site _site
           # Since 1.31.0: the newest corpus check course-capture.yml kept on main (a scheduled or dispatched run; a pull
           # request's is not main's), so the A3 can show real courses on production and main. None kept leaves that out.
-          for id in $(gh run list --repo "$GITHUB_REPOSITORY" --workflow course-capture.yml --branch main --status completed --limit 10 --json databaseId --jq '.[].databaseId'); do
+          # Only a run on this repository's main that no pull request started: a fork's pull request can name its branch main.
+          for id in $(gh run list --repo "$GITHUB_REPOSITORY" --workflow course-capture.yml --branch main --status completed --limit 20 --json databaseId,event --jq '.[] | select(.event != "pull_request" and .event != "pull_request_target") | .databaseId'); do
             if gh run download "$id" --repo "$GITHUB_REPOSITORY" --name course-corpus-check --dir _site/courses 2>/dev/null && [ -f _site/courses/sides.json ]; then
               echo "courses: course-corpus-check from run $id"; break
             fi
