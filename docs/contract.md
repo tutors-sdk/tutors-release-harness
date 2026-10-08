@@ -1960,6 +1960,9 @@ input, claims key or mask changes. See [Course capture](#course-capture) and
   through `--journeys` student journeys (`journeys`).
 - `harness course compare --a <checks> --b <checks>` exits `1` only when main (b) is worse than
   production (a), and writes `tutors-course-compare/1` to `--out`.
+- The journeys `anonymous-student-reads-course` and `student-signs-in` also find a topic's title on
+  the side menu's card (`complementary` "Course navigation", level-2 heading), where mono-repo
+  main sha-3b9e456 (#400) moved it; production's places still count.
 - The corpus gains four module courses: programming, full-stack-1, comp-sys and databases.
 - `a3.json`'s `courses` compares production and main page by page and journey by journey
   (`compare`, `worsePages`, `betterPages`, `worseJourneys`; state `worse on main`), with a goal
