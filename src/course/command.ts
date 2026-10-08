@@ -193,7 +193,7 @@ async function check(v: Values, deps: CourseDeps, log: (l: string) => void): Pro
   if (corpus) {
     const out = resolve(str(v, "dir") ?? corpusOut(v, deps));
     if (str(v, "out") !== undefined) throw new CourseUsageError("check --corpus writes course-check.json in each course folder: drop --out");
-    const port = whole(v, "port", 8090, 1);
+    const port = whole(v, "port", 8190, 1);
     let failed = 0;
     for (const [i, c] of corpus.courses.entries()) {
       const folder = join(out, dirFor(c.ref.id));
@@ -219,7 +219,7 @@ async function checkOne(v: Values, deps: CourseDeps, log: (l: string) => void): 
   if (reader !== undefined && !/^https?:\/\/[^/]+/.test(reader)) throw new CourseUsageError(`--reader takes the reader's address, e.g. http://localhost:3100, not "${reader}"`);
   const result = await checkCourse({
     dir: root,
-    port: whole(v, "port", 8090, 1),
+    port: whole(v, "port", 8190, 1),
     ...(reader ? { reader } : {}),
     sample: whole(v, "sample", 20, 0),
     timeoutMs: 30_000,

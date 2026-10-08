@@ -1438,7 +1438,7 @@ Nothing in a run, the gate or an exit code reads a capture.
   reached, status `captured`, `not-public` (401, 403), `not-found` (404), `unreachable` or
   `not-a-course`). `--out` defaults to `HARNESS_HOME/courses/<id>`.
 - **Does it load** (since 1.30.0). `harness course check --dir <capture | course folder> [--reader <url>]`
-  serves the course on `--port` (default 8090; course id `localhost:<port>`) and GETs every file
+  serves the course on `--port` (default 8190; course id `localhost:<port>`) and GETs every file
   `course-capture.json` lists, which must come back with its sha256. With `--reader` it opens a
   fixed sample of the course's pages (`--sample`, default 20; 0 is all: the course page, the first
   page of each type, then pages spread evenly) in Chromium, and each must show its title within
@@ -1913,7 +1913,7 @@ The release note is [releases/1.30.0.md](releases/1.30.0.md). A minor: a new sub
 file and three flags. No `report.json` field, verdict, claims key or mask changes. See
 [Course capture](#course-capture).
 
-- `harness course check`, `--dir <capture> [--reader <url>] [--sample 20] [--port 8090]`: every
+- `harness course check`, `--dir <capture> [--reader <url>] [--sample 20] [--port 8190]`: every
   captured file served as captured, then a sample of the course's pages opened in Chromium in that
   reader, each required to show its title. Writes `course-check.json`.
 - `fixtures/course-corpus/courses.yaml`: the curated courses, at most five, one the `standard`

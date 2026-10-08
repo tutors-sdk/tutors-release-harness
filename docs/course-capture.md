@@ -106,10 +106,10 @@ in with whatever host it was given.
 
 ## Does it load: `check`
 
-`harness course check --dir <capture | course folder> [--reader http://localhost:3100] [--sample 20] [--port 8090]`
+`harness course check --dir <capture | course folder> [--reader http://localhost:3100] [--sample 20] [--port 8190]`
 (since 1.30.0) shows a captured course loads, in two layers:
 
-- **Files (HTTP).** The course is served on `--port` by the fixture course server, as course id
+- **Files (HTTP).** The course is served on `--port` (8190, clear of the stack's ports) by the fixture course server, as course id
   `localhost:<port>`, and every file `course-capture.json` lists must come back with its sha256.
 - **Pages (a browser), with `--reader`.** Every reader page renders in the browser (`ssr = false`
   across the reader), so a GET of `/course/<id>` answers the same shell whether or not the course
