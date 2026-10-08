@@ -121,7 +121,8 @@ in with whatever host it was given.
 Since 1.32.0, two more layers, both with `--reader`:
 
 - **What a student meets.** Each page that loads is read again once its images have had a moment: the
-  visible text, the headings, course images that did not load, links to pages of the course that do not
+  visible text, the headings the author wrote (the reader's own, such as "Course Info", change with its design
+  and are left out), course images that did not load, links to pages of the course that do not
   exist, and serious or critical accessibility violations (axe).
 - **Journeys** (`--journeys`, default 2). The course page, the topic, a lab and its steps (at most 8), each
   reached by clicking its link on the page before, as a student would. A page with no link to the next is

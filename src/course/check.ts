@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { MANIFEST, type CourseManifest } from "./capture.ts";
-import { readerJourneys, readerRoutes, sampleRoutes, type ReaderRoute } from "./routes.ts";
+import { headingKey, readerJourneys, readerRoutes, sampleRoutes, type ReaderRoute } from "./routes.ts";
 
 /**
  * `harness course check`: does a captured course load? Two layers, each saying what it proves.
@@ -48,7 +48,7 @@ export interface PageResult {
 export interface PageExperience {
   /** Characters of visible text on the page. */
   textChars: number;
-  /** The h1 to h3 headings, in order (at most 40). */
+  /** The h1 to h3 headings the page shows that its author wrote in its markdown, in order (at most 40). */
   headings: string[];
   /** Images from the course host on the page, and those that did not load (path on the course host). */
   images: { total: number; broken: string[] };
@@ -97,6 +97,8 @@ export interface Probe {
   /** The course id the reader reads (localhost:<port>). */
   courseId: string;
   axe: boolean;
+  /** The headings the author wrote in this page's markdown; only those are read off the page. */
+  headings?: string[];
 }
 
 /** What the check needs of a browser; a fake in the unit tests, Playwright's Chromium for real. */
@@ -195,7 +197,7 @@ export async function checkCourse(o: CheckOptions): Promise<CourseCheck> {
     const journeys: JourneyResult[] = [];
     try {
       for (const r of sample) {
-        const res = await driver.open(`${reader}${r.path}`, r.title, server.origin, o.timeoutMs, probe);
+        const res = await driver.open(`${reader}${r.path}`, r.title, server.origin, o.timeoutMs, { ...probe, headings: r.headings ?? [] });
         results.push({ path: r.path, type: r.type, title: r.title, ...res });
         const e = res.experience;
         const notes = e ? [e.images.broken.length && `${e.images.broken.length} broken image(s)`, e.links.broken.length && `${e.links.broken.length} broken link(s)`, e.axe?.length && `a11y: ${e.axe.join(" ")}`].filter(Boolean).join(", ") : "";
@@ -307,12 +309,15 @@ async function readExperience(page: import("playwright").Page, courseOrigin: str
     const imgs = ([...document.images] as HTMLImageElement[]).filter((i) => i.currentSrc.startsWith(origin) || i.src.startsWith(origin));
     return {
       textChars: (document.body?.innerText ?? "").replace(/\s+/g, " ").trim().length,
-      headings: ([...document.querySelectorAll("h1, h2, h3")] as HTMLElement[]).map((h) => h.innerText.replace(/\s+/g, " ").trim()).filter(Boolean).slice(0, 40),
+      headings: ([...document.querySelectorAll("h1, h2, h3")] as HTMLElement[]).map((h) => h.innerText.replace(/\s+/g, " ").trim()).filter(Boolean).slice(0, 400),
       images: imgs.length,
       broken: imgs.filter((i) => i.complete && i.naturalWidth === 0).map((i) => (i.currentSrc || i.src).slice(origin.length)),
       paths: ([...document.querySelectorAll("a[href]")] as HTMLAnchorElement[]).map((a) => new URL(a.href, location.href)).filter((u) => u.origin === location.origin).map((u) => decodeURIComponent(u.pathname))
     };
   }, courseOrigin);
+  // The reader's own headings ("Course Info", a course tree) change with its design; the author's are the course.
+  const authored = new Set((probe.headings ?? []).map(headingKey));
+  const headings = seen.headings.filter((h) => authored.has(headingKey(h))).slice(0, 40);
   const id = probe.courseId;
   const inCourse = [...new Set(seen.paths.map((p) => p.replace(/\/+$/, "")))].filter((p) => p.split("/")[2] === id && /^\/(course|topic|lab|note|talk|tutorial|notebook)\//.test(p));
   const broken = inCourse.filter((p) => !probe.routes.has(p));
@@ -327,5 +332,5 @@ async function readExperience(page: import("playwright").Page, courseOrigin: str
     }
   }
   const cap = (xs: string[]) => [...new Set(xs)].sort().slice(0, 10);
-  return { textChars: seen.textChars, headings: seen.headings, images: { total: seen.images, broken: cap(seen.broken) }, links: { course: inCourse.length, broken: cap(broken) }, ...(axe ? { axe } : {}) };
+  return { textChars: seen.textChars, headings, images: { total: seen.images, broken: cap(seen.broken) }, links: { course: inCourse.length, broken: cap(broken) }, ...(axe ? { axe } : {}) };
 }

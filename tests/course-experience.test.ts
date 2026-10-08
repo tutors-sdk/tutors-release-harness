@@ -13,7 +13,7 @@ import { renderA3 } from "../src/a3/render.ts";
 import { CHECK_SCHEMA, type CourseCheck, type PageExperience, type PageResult } from "../src/course/check.ts";
 import { courseCommand, CourseUsageError } from "../src/course/command.ts";
 import { compareCourse, worseReasons } from "../src/course/compare.ts";
-import { readerJourneys } from "../src/course/routes.ts";
+import { headingKey, markdownHeadings, readerJourneys, readerRoutes } from "../src/course/routes.ts";
 
 const ROOT = resolve(import.meta.dirname, "..");
 const tree = JSON.parse(readFileSync(join(ROOT, "fixtures", "course-server", "course", "tutors.json"), "utf8"));
@@ -43,6 +43,17 @@ describe("readerJourneys", () => {
     expect(js[0]!.lab).toBe(js[0]!.steps[2]!.path);
     expect(readerJourneys(tree, "localhost:8190", 0)).toEqual([]);
     expect(readerJourneys({ type: "course", title: "x", los: [] }, "x")).toEqual([]);
+  });
+});
+
+describe("markdownHeadings", () => {
+  it("the author's h1 to h3, outside code, as plain text; each route carries its own", () => {
+    expect(markdownHeadings("# Lab *One*\n\ntext\n## [Setup](x.md)\n```\n# not a heading\n```\n#### too deep\n### `npm` install ##")).toEqual(["Lab One", "Setup", "npm install"]);
+    expect(markdownHeadings(undefined)).toEqual([]);
+    expect(headingKey("01: Node.js")).toBe(headingKey("01 node js"));
+    const routes = readerRoutes(tree, "localhost:8190");
+    expect(routes.every((r) => Array.isArray(r.headings))).toBe(true);
+    expect(routes.some((r) => r.type === "step" && r.headings!.length > 0)).toBe(true);
   });
 });
 

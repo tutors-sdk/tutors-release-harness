@@ -24,9 +24,9 @@ describe("readerRoutes and sampleRoutes", () => {
   const routes = readerRoutes(tree, "localhost:8090");
 
   it("the course page, then every page of the tree with its title; no unit, web link or archive", () => {
-    expect(routes[0]).toEqual({ path: "/course/localhost:8090", type: "course", title: "Runway Fixture Course" });
+    expect(routes[0]).toEqual({ path: "/course/localhost:8090", type: "course", title: "Runway Fixture Course", headings: ["Runway Fixture Course"] });
     expect(routes.map((r) => r.type).filter((t, i, a) => a.indexOf(t) === i)).toEqual(["course", "topic", "talk", "lab", "step", "note"]);
-    expect(routes).toContainEqual({ path: "/lab/localhost:8090/unit-1/topic-01/book-lab-01/Step-01", type: "step", title: "Step 1" });
+    expect(routes).toContainEqual(expect.objectContaining({ path: "/lab/localhost:8090/unit-1/topic-01/book-lab-01/Step-01", type: "step", title: "Step 1" }));
     expect(routes.some((r) => r.path.endsWith("/"))).toBe(false);
     expect(routes).toHaveLength(1 + 2 + 2 + 2 + 12 + 2);
   });

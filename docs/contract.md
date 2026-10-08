@@ -1474,7 +1474,8 @@ Nothing in a run, the gate or an exit code reads a capture.
   `files`, `reader`, `pages` with `routes`, `sampled`, `ok`, `failed`, `medianMs`, `maxMs` and
   `results`). Exit `1` when a file or a page failed.
 - **What a student meets** (since 1.32.0). With `--reader`, each loaded page also carries
-  `experience`: `textChars` (visible text), `headings` (h1 to h3, in order), `images` (course-host
+  `experience`: `textChars` (visible text), `headings` (the h1 to h3 headings shown that the
+  page's own markdown has, in order, so the reader's design is not compared), `images` (course-host
   images and those that did not load), `links` (links to pages of this course and those whose
   page is not in `tutors.json`) and `axe` (serious and critical WCAG 2.1 A/AA rule ids). And
   `--journeys` (default 2; 0 for none) student journeys are clicked through, recorded as
