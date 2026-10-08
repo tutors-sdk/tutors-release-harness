@@ -156,6 +156,9 @@ not in `tutors.json` and so not captured.
 `.github/workflows/course-capture.yml` captures `wit-hdip-comp-sci-2024` on GitHub's runners
 (on demand, weekly, and on a pull request that changes `src/course/` or the corpus), verifies it, and keeps
 `courses.json` and each `course-capture.json` as an artifact. Its `corpus` job (since 1.30.0) captures
-the corpus, boots the stack from one tag and checks every corpus course loads in side a's reader. It is what proves the command against a
+the corpus, boots the stack and checks every corpus course loads. Since 1.31.0 it runs nightly, boots production
+on side a and main on side b (as Main to RC resolves them), checks the corpus in both readers, and the
+[A3](https://tutors-sdk.github.io/tutors-release-harness/a3.html#courses) shows the two side by side as
+**Real courses**: a course that loads on production but breaks on main is named there. It is what proves the command against a
 real course; the unit tests (`tests/course-capture.test.ts`) use a fake web and the committed
 fixture course over real HTTP.

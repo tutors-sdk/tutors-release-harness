@@ -3,12 +3,15 @@
 # committed fixture course; this is the run that proves the command against tutors.dev itself.
 #
 # Two jobs. `capture` takes one course (on demand: any course, any depth) and verifies the capture. `corpus` (since
-# 1.30.0) captures the curated corpus (fixtures/course-corpus/courses.yaml, at most five courses), boots the stack from
-# one tag, and checks every corpus course loads in that reader: its files served as captured, and a sample of its pages
-# showing their titles in Chromium (harness course check).
+# 1.30.0) captures the curated corpus (fixtures/course-corpus/courses.yaml, at most five courses), boots the stack and
+# checks every corpus course loads: its files served as captured, and a sample of its pages showing their titles in
+# Chromium (harness course check). Since 1.31.0 it boots production on side a and main on side b, as Main to RC does
+# (harness preview resolve), checks the corpus in both readers, and the A3 shows the two side by side (pages.yml reads
+# the newest course-corpus-check artifact of main into the site's courses/).
 #
-# On demand, weekly, and on a pull request that changes src/course/ or the corpus. Advisory: no other workflow reads
-# its result, and a course that moved or went private fails only this run.
+# `capture` runs on demand, weekly, and on a pull request that changes src/course/ or the corpus; `corpus` the same and
+# nightly. Advisory: the A3 reads its result, never the Gate, and a course that moved or went private fails only this
+# run.
 name: Course capture
 
 on:
@@ -24,6 +27,8 @@ on:
         default: "1"
   schedule:
     - cron: "17 5 * * 3"
+    # Since 1.31.0: the corpus nightly, so the A3 reads production and main on real courses every morning.
+    - cron: "47 4 * * *"
   pull_request:
     paths:
       - "src/course/**"
@@ -40,6 +45,7 @@ concurrency:
 jobs:
   capture:
     name: Capture a live course
+    if: github.event_name != 'schedule' || github.event.schedule == '17 5 * * 3'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -85,13 +91,13 @@ jobs:
 
   corpus:
     name: The course corpus loads in the reader
+    if: github.event_name != 'schedule' || github.event.schedule == '47 4 * * *'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
       HARNESS_IMAGE_PREFIX: ${{ vars.HARNESS_IMAGE_PREFIX || 'quay.io/tutors-sdk/tutors-{app}' }}
       # Who must have signed a pulled image: the monorepo's image-build.yml workflow (docs/contract.md).
       HARNESS_COSIGN_IDENTITY: ${{ vars.HARNESS_COSIGN_IDENTITY || '^https://github.com/tutors-sdk/tutors-mono-repo/\.github/workflows/image-build\.yml@' }}
-      TAG: ${{ vars.HARNESS_PRODUCTION_TAG || 'main' }}
       HARNESS_COMPOSE_PROJECT: tutors-harness
       # What the apps load from Google Fonts, Iconify and jsDelivr, as every job that installs Chromium has it (ci.yml).
       HARNESS_THIRD_PARTY_CACHE_DIR: ${{ github.workspace }}/.harness/third-party-cache
@@ -118,21 +124,54 @@ jobs:
       - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
       - name: Capture the corpus
         run: pnpm harness course capture --corpus fixtures/course-corpus/courses.yaml --out "$RUNNER_TEMP/corpus"
+      # Since 1.31.0: production (the reader overlay's tag on the monorepo's main) and main's newest built images, as
+      # Main to RC resolves them. --force: this job checks the pair whether or not a forecast has judged it.
+      - name: Production and main's images
+        id: resolve
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: pnpm harness preview resolve --force
       - name: Pull and verify the images, and boot the stack
+        env:
+          PRODUCTION: ${{ steps.resolve.outputs.production }}
+          CANDIDATE: ${{ steps.resolve.outputs.candidate }}
         run: |
-          pnpm harness images ensure --a "$TAG" --b "$TAG"
-          pnpm harness stack up --a "$TAG" --b "$TAG"
-      # Side a's reader. Every page of the reader renders in the browser, so only a browser shows a course loading.
-      - name: Every corpus course loads
-        run: pnpm harness course check --corpus fixtures/course-corpus/courses.yaml --dir "$RUNNER_TEMP/corpus" --reader http://localhost:3100 --sample 25
+          pnpm harness images ensure --a "$PRODUCTION" --b "$CANDIDATE"
+          pnpm harness stack up --a "$PRODUCTION" --b "$CANDIDATE"
+      # Every page of the reader renders in the browser, so only a browser shows a course loading. Production's reader
+      # (side a, 3100) then main's (side b, 3200); each side's course-check.json goes under checks/<side>/<course>/.
+      - name: Every corpus course loads, in production's reader and main's
+        env:
+          PRODUCTION: ${{ steps.resolve.outputs.production }}
+          CANDIDATE: ${{ steps.resolve.outputs.candidate }}
+          SHA: ${{ steps.resolve.outputs.sha }}
+        run: |
+          status=0
+          for side in a b; do
+            port=3100; if [ "$side" = b ]; then port=3200; fi
+            pnpm harness course check --corpus fixtures/course-corpus/courses.yaml --dir "$RUNNER_TEMP/corpus" --reader "http://localhost:$port" --sample 25 || status=1
+            for f in "$RUNNER_TEMP"/corpus/*/course-check.json; do
+              [ -f "$f" ] || continue
+              course="$(basename "$(dirname "$f")")"
+              mkdir -p "$RUNNER_TEMP/checks/$side/$course" && mv "$f" "$RUNNER_TEMP/checks/$side/$course/"
+            done
+          done
+          jq -n --arg production "$PRODUCTION" --arg candidate "$CANDIDATE" --arg sha "$SHA" --arg at "$(date -u +%FT%TZ)" \
+            --arg url "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" \
+            '{production: $production, candidate: $candidate, sha: $sha, checkedAt: $at, runUrl: $url}' > "$RUNNER_TEMP/checks/sides.json"
+          exit "$status"
       - name: Summary
         if: always()
+        env:
+          PRODUCTION: ${{ steps.resolve.outputs.production }}
+          CANDIDATE: ${{ steps.resolve.outputs.candidate }}
         run: |
           {
-            echo "### Course corpus on $TAG"
+            echo "### Course corpus: production $PRODUCTION (a) and main $CANDIDATE (b)"
             echo '```'
-            for f in "$RUNNER_TEMP"/corpus/*/course-check.json; do
-              [ -f "$f" ] && jq -r '"\(.course.id): files \(.files.checked - (.files.problems|length))/\(.files.checked); pages \(.pages.ok // "-")/\(.pages.sampled // "-") (median \(.pages.medianMs // "-") ms, max \(.pages.maxMs // "-") ms)"' "$f"
+            for f in "$RUNNER_TEMP"/checks/*/*/course-check.json; do
+              side="$(basename "$(dirname "$(dirname "$f")")")"
+              [ -f "$f" ] && jq -r --arg side "$side" '"\($side) \(.course.id): files \(.files.checked - (.files.problems|length))/\(.files.checked); pages \(.pages.ok // "-")/\(.pages.sampled // "-") (median \(.pages.medianMs // "-") ms, max \(.pages.maxMs // "-") ms)"' "$f"
             done
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
@@ -143,7 +182,7 @@ jobs:
         if: always()
         run: |
           mkdir -p "$RUNNER_TEMP/checks"
-          cd "$RUNNER_TEMP/corpus" && find . \( -name courses.json -o -name course-capture.json -o -name course-check.json \) -exec cp --parents {} "$RUNNER_TEMP/checks/" \;
+          cd "$RUNNER_TEMP/corpus" && find . \( -name courses.json -o -name course-capture.json \) -exec cp --parents {} "$RUNNER_TEMP/checks/" \;
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
