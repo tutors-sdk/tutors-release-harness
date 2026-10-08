@@ -85,8 +85,12 @@ Since 1.32.0 each page is also read as a student meets it (text, headings, broke
 serious accessibility problems), and two student journeys are clicked through: course page, topic, lab,
 then each step (`--journeys 0` to skip them).
 
-The result is in `course-check.json` beside the capture: pages loaded, failed requests, page errors and
-the time to each title. Exit `1` means something did not load.
+Since 1.33.0 the course's `tutors.json` is also held to the schema the generator on main promises (the
+mono-repo's published `tutors-json.schema.json`), with or without a reader. It is reported, never a fail:
+courses written by older generators break the strict schema and still open in the reader.
+
+The result is in `course-check.json` beside the capture: pages loaded, failed requests, page errors,
+the time to each title and the schema reading. Exit `1` means something did not load.
 
 ## 5. Compare main with production
 

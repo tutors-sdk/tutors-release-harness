@@ -240,7 +240,8 @@ async function checkOne(v: Values, deps: CourseDeps, log: (l: string) => void): 
     for (const p of result.files.problems.slice(0, 20)) log(`  - ${p}`);
     const pages = result.pages ? `; pages ${result.pages.ok} of ${result.pages.sampled} loaded${result.pages.medianMs !== undefined ? ` (median ${result.pages.medianMs} ms, max ${result.pages.maxMs} ms)` : ""}` : "; pages not checked (no --reader)";
     const journeys = result.journeys?.length ? `; journeys ${result.journeys.filter((j) => j.ok).length} of ${result.journeys.length} clicked through` : "";
-    log(`${failed ? "FAILED" : "ok"}  ${result.course.id} as ${result.course.servedAs}: files ${result.files.checked - result.files.problems.length} of ${result.files.checked}${pages}${journeys}`);
+    const schema = result.tutorsJson ? `; tutors.json ${result.tutorsJson.conforms ? "conforms" : `${result.tutorsJson.problems} schema problem(s), reported only`}` : "";
+    log(`${failed ? "FAILED" : "ok"}  ${result.course.id} as ${result.course.servedAs}: files ${result.files.checked - result.files.problems.length} of ${result.files.checked}${pages}${journeys}${schema}`);
     log(`written: ${out}`);
   }
   return failed ? 1 : 0;

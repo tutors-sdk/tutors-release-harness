@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.32.0`
+Contract version: `1.33.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -1321,6 +1321,13 @@ The A3 lists each such page with its reasons, adds the goal row "Nothing a stude
 on main (real courses)" (target 0), and says in a fact line when the courses were checked on a
 different commit of main than the forecast judged.
 
+Since 1.33.0 each row also carries the course's `tutorsJson` (from main's check, else
+production's: both sides check the same capture), and `courses` carries `tutorsJson` (`checked`,
+`conforming`, `schema`). `a3.html` adds a "tutors.json schema" column with the first problems and
+a sentence under the table. It is never a state, a goal row or a fact: older generators wrote
+courses the reader still opens. Checks from before 1.33.0 have no reading, and the column is left
+out.
+
 What was not read is **not measured**, never a guess: a missing file, a stream with no kept
 run, or a GitHub call that failed (named in `github.json`'s `errors`). Exit `0` when the A3 is
 written, `2` for a usage error (no `--site`, a directory that does not exist, an unreadable
@@ -1482,6 +1489,11 @@ Nothing in a run, the gate or an exit code reads a capture.
   `journeys` (`name`, `lab`, `ok`, `steps` with `path`, `title`, `ok`, `via` of `start`, `click` or
   `no link`, `ms`): the course page, the topic, a lab and its steps (at most 8), each reached by
   clicking its link on the page before. Journeys do not change the exit code.
+- **The tutors.json schema** (since 1.33.0). With or without `--reader`, the course's `tutors.json`
+  is held to the mono-repo's published schema (`fixtures/tutors-json/tutors-json.schema.json`, copied
+  from `packages/jsr/types/tutors-json.schema.json` at the commit `fixtures/tutors-json/source.json`
+  names) and recorded as `tutorsJson` (`schema`: that commit, `conforms`, `problems`: the count,
+  `sample`: the first ten, each `<id path> <what is wrong>`). It never changes the exit code.
 - **Main against production** (since 1.32.0). `harness course compare --a <checks> --b <checks>
   [--out <file>] [--json]` reads the `course-check.json` files under each folder (one, or one per
   course) and compares them course by course, page by page and journey by journey
@@ -1947,6 +1959,23 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.33.0 (minor; real courses against the tutors.json schema)
+
+The release note is [releases/1.33.0.md](releases/1.33.0.md). A minor: a new `course-check.json`
+field and new `a3.json` fields. No `report.json` field, verdict, Gate input, exit code, claims key,
+mask, flag or workflow changes. See [Course capture](#course-capture) and
+[The A3 Aggregator](#the-a3-aggregator).
+
+- `harness course check` holds each course's `tutors.json` to the mono-repo's published schema and
+  records `tutorsJson` (`schema`, `conforms`, `problems`, `sample`), with or without `--reader`.
+  Reported only.
+- `fixtures/tutors-json/` holds the schema, copied from mono-repo #421, and `source.json` with the
+  commit it came from.
+- `a3.json`'s `courses` rows carry `tutorsJson`, and `courses` carries `tutorsJson` (`checked`,
+  `conforming`, `schema`); `a3.html` shows a "tutors.json schema" column. Never a state or a goal.
+- `ajv` moves from a dev dependency to a dependency, since `harness course check` now uses it.
+  No new permission.
 
 ### 1.32.0 (minor; what a student would notice on real courses)
 

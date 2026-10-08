@@ -122,8 +122,18 @@ export function coursesHtml(c: CourseLoad | undefined): string {
     const j = k.journeys.compared ? `<br><span class="src">journeys: ${k.journeys.worse.length} worse, ${k.journeys.better.length} better of ${k.journeys.compared}</span>` : "";
     return `${k.worse.length ? `<a href="#course-${esc(r.id)}-worse"><span class="no">${k.worse.length} worse</span></a>` : `<span class="ok">0 worse</span>`} · ${k.better.length} better<br><span class="src">of ${k.compared} pages compared</span>${j}`;
   };
+  // Since 1.33.0: the course's tutors.json against the published schema. Reported, never a fail: older generators wrote
+  // courses the reader still opens.
+  const schema = (r: CourseLoad["rows"][number]) => {
+    const t = r.tutorsJson;
+    if (!t) return "–";
+    if (t.conforms) return `<span class="ok">conforms</span>`;
+    const first = t.sample.slice(0, 3).map(esc).join("<br>");
+    return `${t.problems} problem${t.problems === 1 ? "" : "s"}${first ? `<br><span class="src">${first}${t.problems > 3 ? "<br>…" : ""}</span>` : ""}`;
+  };
+  const withSchema = c.rows.some((r) => r.tutorsJson);
   const rows = c.rows
-    .map((r) => `<tr id="course-${esc(r.id)}"><td>${esc(r.title ?? r.id)}<br><span class="src">${esc(r.id)}</span></td><td>${courseSideHtml(r.a)}</td><td>${courseSideHtml(r.b)}</td><td>${changes(r)}</td><td class="num">${msOf(r.a?.pages?.medianMs)} → ${msOf(r.b?.pages?.medianMs)}${esc(delta(r.medianDeltaMs))}</td><td><span class="status ${stateClass(r.state)}">${esc(r.state)}</span></td></tr>`)
+    .map((r) => `<tr id="course-${esc(r.id)}"><td>${esc(r.title ?? r.id)}<br><span class="src">${esc(r.id)}</span></td><td>${courseSideHtml(r.a)}</td><td>${courseSideHtml(r.b)}</td><td>${changes(r)}</td><td class="num">${msOf(r.a?.pages?.medianMs)} → ${msOf(r.b?.pages?.medianMs)}${esc(delta(r.medianDeltaMs))}</td>${withSchema ? `<td>${schema(r)}</td>` : ""}<td><span class="status ${stateClass(r.state)}">${esc(r.state)}</span></td></tr>`)
     .join("");
   const detail = c.rows
     .filter((r) => r.compare && (r.compare.worse.length || r.compare.better.length || r.compare.journeys.worse.length))
@@ -137,9 +147,9 @@ export function coursesHtml(c: CourseLoad | undefined): string {
   const run = safeHref(c.runUrl);
   return `<div class="courses" id="courses"><h3>Real courses: what a student would notice if main were released <span class="hint">the course corpus, each page read in production's reader and main's, then compared page by page</span></h3>
 <p>${esc(c.summary)}</p>
-<div class="scroll"><table><thead><tr><th>Course</th><th>Production ${esc(c.production)}</th><th>Main ${esc(c.candidate)}</th><th>Pages on main</th><th>Median time to title</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+<div class="scroll"><table><thead><tr><th>Course</th><th>Production ${esc(c.production)}</th><th>Main ${esc(c.candidate)}</th><th>Pages on main</th><th>Median time to title</th>${withSchema ? "<th>tutors.json schema</th>" : ""}<th></th></tr></thead><tbody>${rows}</tbody></table></div>
 ${detail}
-<p class="note">Checked ${c.checkedAt ? esc(when(c.checkedAt)) : "at an unknown time"}${run ? ` by <a href="${esc(run)}">course-capture.yml</a>` : ""}. Worse on main: a page that does not load, more broken course images, a course file failing, a new console error, a link to a page that does not exist, a lost heading, a quarter less text or a new serious accessibility violation; or a journey main clicks less far through. One check per side: times are a reading, not a benchmark, and nothing here is an input to the Gate.</p></div>`;
+<p class="note">Checked ${c.checkedAt ? esc(when(c.checkedAt)) : "at an unknown time"}${run ? ` by <a href="${esc(run)}">course-capture.yml</a>` : ""}. Worse on main: a page that does not load, more broken course images, a course file failing, a new console error, a link to a page that does not exist, a lost heading, a quarter less text or a new serious accessibility violation; or a journey main clicks less far through. One check per side: times are a reading, not a benchmark, and nothing here is an input to the Gate.${c.tutorsJson ? ` tutors.json schema: ${c.tutorsJson.conforming} of ${c.tutorsJson.checked} courses conform to the schema the generator on main promises (mono-repo ${esc(c.tutorsJson.schema)}); reported only, since the reader opens courses older generators wrote.` : ""}</p></div>`;
 }
 
 // ---- the quality strip (since 1.18.0) ---------------------------------------------------------------------

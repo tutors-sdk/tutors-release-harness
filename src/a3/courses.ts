@@ -9,13 +9,15 @@
  *
  * A course loads on a side when every captured file came back as captured and every sampled page showed its title. One
  * check per side is a reading, not a benchmark: the time to the title is shown beside the other side, never judged.
- * Advisory, as the whole A3 is.
+ * Since 1.33.0 each row also says whether the course's tutors.json conforms to the mono-repo's published schema: both
+ * sides check the same capture, so it is one reading per course, never a state or a goal. Advisory, as the whole A3 is.
  */
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { CourseCheck } from "../course/check.ts";
 import { CHECK_FILE } from "../course/check.ts";
 import { compareCourse, type CourseComparison } from "../course/compare.ts";
+import type { TutorsJsonConformance } from "../course/schema.ts";
 
 export const COURSES_DIR = "courses";
 export const SIDES_FILE = "sides.json";
@@ -40,6 +42,8 @@ export interface CourseRow {
   medianDeltaMs: number | null;
   /** Since 1.32.0: page by page and journey by journey, production against main (src/course/compare.ts). */
   compare?: CourseComparison;
+  /** Since 1.33.0: the course's tutors.json against the mono-repo's published schema; one capture, so one reading. */
+  tutorsJson?: TutorsJsonConformance;
 }
 
 export interface CourseLoad {
@@ -56,6 +60,8 @@ export interface CourseLoad {
   worsePages: number;
   betterPages: number;
   worseJourneys: number;
+  /** Since 1.33.0: courses whose tutors.json was held to the schema, and how many conform. Reported, never judged. */
+  tutorsJson?: { checked: number; conforming: number; schema: string };
   rows: CourseRow[];
   summary: string;
 }
@@ -117,7 +123,8 @@ export function readCourseLoad(site: string): CourseLoad | undefined {
     const ma = a?.pages?.medianMs ?? null;
     const mb = b?.pages?.medianMs ?? null;
     const compare = ca?.pages && cb?.pages ? compareCourse(ca, cb) : undefined;
-    return { id, ...(title ? { title } : {}), a, b, state: stateOf(a, b, compare), medianDeltaMs: ma !== null && mb !== null ? mb - ma : null, ...(compare ? { compare } : {}) };
+    const tutorsJson = cb?.tutorsJson ?? ca?.tutorsJson;
+    return { id, ...(title ? { title } : {}), a, b, state: stateOf(a, b, compare), medianDeltaMs: ma !== null && mb !== null ? mb - ma : null, ...(compare ? { compare } : {}), ...(tutorsJson ? { tutorsJson } : {}) };
   });
   const loadOnProduction = rows.filter((r) => r.a?.loaded).length;
   const loadOnMain = rows.filter((r) => r.b?.loaded).length;
@@ -129,6 +136,7 @@ export function readCourseLoad(site: string): CourseLoad | undefined {
   const betterPages = rows.reduce((n, r) => n + (r.compare?.better.length ?? 0), 0);
   const worseJourneys = rows.reduce((n, r) => n + (r.compare?.journeys.worse.length ?? 0), 0);
   const worseCourses = rows.filter((r) => r.state === "worse on main").map((r) => r.id);
+  const held = rows.filter((r) => r.tutorsJson);
   const summary = breaks.length
     ? `${breaks.length} of ${rows.length} real courses load on production ${production} but not on main ${candidate}: ${breaks.join(", ")}. Releasing main would stop a student on those courses.`
     : worseCourses.length
@@ -149,6 +157,7 @@ export function readCourseLoad(site: string): CourseLoad | undefined {
     worsePages,
     betterPages,
     worseJourneys,
+    ...(held.length ? { tutorsJson: { checked: held.length, conforming: held.filter((r) => r.tutorsJson!.conforms).length, schema: held[0]!.tutorsJson!.schema } } : {}),
     rows,
     summary
   };

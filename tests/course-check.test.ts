@@ -79,6 +79,8 @@ describe("checkCourse on a capture of the fixture course", () => {
     const result = await checkCourse({ dir: course, port: freePort(), sample: 5, timeoutMs: 1000, harnessVersion: "0.0.0-test", now: () => new Date("2026-10-08T09:00:00Z") });
     expect(result).toMatchObject({ schema: CHECK_SCHEMA, checkedAt: "2026-10-08T09:00:00.000Z", files: { checked: 1, problems: [] } });
     expect(result.pages).toBeUndefined();
+    // Since 1.33.0, with or without a reader: the tutors.json against the published schema.
+    expect(result.tutorsJson).toMatchObject({ conforms: true, problems: 0, sample: [] });
   });
 
   it("with --reader: opens the sample at <reader><path>, in order, and counts what loaded", async () => {
@@ -99,6 +101,9 @@ describe("checkCourse on a capture of the fixture course", () => {
     writeFileSync(join(tampered, "tutors.json"), "{}");
     const result = await checkCourse({ dir: tampered, port: freePort(), sample: 5, timeoutMs: 1000, harnessVersion: "0.0.0-test" });
     expect(result.files.problems).toEqual(["tutors.json: served bytes differ from the capture"]);
+    // A tutors.json the schema refuses is reported, never a file problem.
+    expect(result.tutorsJson).toMatchObject({ conforms: false });
+    expect(result.tutorsJson!.sample).toContain("/ must have required property 'type'");
   });
 
   it("the command: writes course-check.json, exit 0 when all loaded and 1 when a page or file failed", async () => {
@@ -106,7 +111,7 @@ describe("checkCourse on a capture of the fixture course", () => {
     const deps = (failing: string[] = []) => ({ harnessVersion: "0.0.0-test", log: (l: string) => lines.push(l), driver: fakeDriver(failing).driver });
     expect(await courseCommand("check", { dir: capture, reader: "http://localhost:3100", port: String(freePort()), sample: "4" }, deps())).toBe(0);
     expect(existsSync(join(course, CHECK_FILE))).toBe(true);
-    expect(lines.join("\n")).toMatch(/ok {2}localhost:\d+ as localhost:\d+: files 1 of 1; pages 4 of 4 loaded \(median \d+ ms, max \d+ ms\)/);
+    expect(lines.join("\n")).toMatch(/ok {2}localhost:\d+ as localhost:\d+: files 1 of 1; pages 4 of 4 loaded \(median \d+ ms, max \d+ ms\); tutors\.json conforms/);
     const out = join(capture, "elsewhere.json");
     expect(await courseCommand("check", { dir: course, reader: "http://localhost:3100", port: String(freePort()), sample: "1", out }, deps(["/course/"]))).toBe(1);
     expect(JSON.parse(readFileSync(out, "utf8")).pages.failed).toBe(1);
