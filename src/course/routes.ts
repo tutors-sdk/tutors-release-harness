@@ -9,17 +9,36 @@ export interface ReaderRoute {
   type: string;
   /** The title the page shows, trimmed (the generator keeps a leading space). */
   title: string;
+  /** Since 1.32.0: the h1 to h3 headings the author wrote in this page's markdown, outside code. */
+  headings?: string[];
 }
+
+/** The `#`, `##` and `###` headings of markdown, outside fenced code, as plain text. */
+export function markdownHeadings(md: unknown): string[] {
+  if (typeof md !== "string") return [];
+  const out: string[] = [];
+  let fenced = false;
+  for (const line of md.split(/\r?\n/)) {
+    if (/^\s{0,3}(```|~~~)/.test(line)) fenced = !fenced;
+    if (fenced) continue;
+    const m = /^\s{0,3}#{1,3}\s+(.+?)\s*#*\s*$/.exec(line);
+    if (m) out.push(m[1]!.replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1").replace(/[*_`]/g, "").replace(/\s+/g, " ").trim());
+  }
+  return out.filter(Boolean);
+}
+
+/** A heading as the page and the markdown both say it: letters and digits, lower case. */
+export const headingKey = (h: string) => h.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
 
 /** Learning objects the reader shows on a page of their own. A web link, an archive, a video or a GitHub link is not one. */
 export const PAGE_TYPES = new Set(["topic", "lab", "step", "note", "talk", "tutorial", "notebook"]);
 
-type Lo = { route?: unknown; type?: unknown; title?: unknown; los?: unknown };
+type Lo = { route?: unknown; type?: unknown; title?: unknown; contentMd?: unknown; los?: unknown };
 
 /** The course page first, then every page in the order of the tree. */
 export function readerRoutes(tree: unknown, courseId: string): ReaderRoute[] {
   const root = tree as Lo;
-  const routes: ReaderRoute[] = [{ path: `/course/${courseId}`, type: "course", title: String(root?.title ?? "").trim() }];
+  const routes: ReaderRoute[] = [{ path: `/course/${courseId}`, type: "course", title: String(root?.title ?? "").trim(), headings: markdownHeadings(root?.contentMd) }];
   const seen = new Set<string>(routes.map((r) => r.path));
   const visit = (lo: Lo) => {
     const type = typeof lo.type === "string" ? lo.type : "";
@@ -28,7 +47,7 @@ export function readerRoutes(tree: unknown, courseId: string): ReaderRoute[] {
       const path = route.replace("{{COURSEURL}}", courseId);
       if (!seen.has(path)) {
         seen.add(path);
-        routes.push({ path, type, title: String(lo.title ?? "").trim() });
+        routes.push({ path, type, title: String(lo.title ?? "").trim(), headings: markdownHeadings(lo.contentMd) });
       }
     }
     if (Array.isArray(lo.los)) for (const child of lo.los) if (child && typeof child === "object") visit(child as Lo);
@@ -51,4 +70,47 @@ export function sampleRoutes(routes: ReaderRoute[], n: number): ReaderRoute[] {
   const want = n - picked.size;
   for (let k = 0; k < want && rest.length; k++) picked.add(rest[Math.floor((k * rest.length) / want)]!);
   return [...picked].sort((a, b) => a - b).map((i) => routes[i]!);
+}
+
+/** A student path through a course, page by page, as a student would click it (since 1.32.0). */
+export interface Journey {
+  /** The topic and the lab, as a student reads them: "Topic 1 › Lab 1". */
+  name: string;
+  /** The lab's reader path. */
+  lab: string;
+  steps: ReaderRoute[];
+}
+
+/**
+ * Up to `n` student journeys: the course page, the topic that holds a lab, the lab, then its steps in order (at most
+ * `maxSteps`). The first lab of the course, then labs spread evenly over the rest, so the same course always gives the
+ * same journeys. A course with no lab gets none.
+ */
+export function readerJourneys(tree: unknown, courseId: string, n = 2, maxSteps = 8): Journey[] {
+  if (n <= 0) return [];
+  const root = tree as Lo;
+  const course: ReaderRoute = { path: `/course/${courseId}`, type: "course", title: String(root?.title ?? "").trim() };
+  const page = (lo: Lo): ReaderRoute | undefined => {
+    const type = typeof lo.type === "string" ? lo.type : "";
+    const route = typeof lo.route === "string" ? lo.route : "";
+    return PAGE_TYPES.has(type) && route.includes("{{COURSEURL}}") && !route.endsWith("/") ? { path: route.replace("{{COURSEURL}}", courseId), type, title: String(lo.title ?? "").trim() } : undefined;
+  };
+  const labs: { trail: ReaderRoute[]; lab: ReaderRoute; steps: ReaderRoute[] }[] = [];
+  const visit = (lo: Lo, trail: ReaderRoute[]) => {
+    const here = page(lo);
+    if (here?.type === "lab") {
+      const steps = (Array.isArray(lo.los) ? (lo.los as Lo[]) : []).map((s) => (s && typeof s === "object" ? page(s) : undefined)).filter((s): s is ReaderRoute => s?.type === "step");
+      if (steps.length) labs.push({ trail, lab: here, steps });
+      return;
+    }
+    const next = here?.type === "topic" ? [...trail, here] : trail;
+    if (Array.isArray(lo.los)) for (const child of lo.los) if (child && typeof child === "object") visit(child as Lo, next);
+  };
+  if (root && typeof root === "object") visit(root, []);
+  const picked = new Set<number>();
+  for (let k = 0; k < n && picked.size < labs.length; k++) picked.add(Math.floor((k * labs.length) / n));
+  return [...picked]
+    .sort((a, b) => a - b)
+    .map((i) => labs[i]!)
+    .map((l) => ({ name: [...l.trail.map((t) => t.title), l.lab.title || l.lab.path].filter(Boolean).join(" › "), lab: l.lab.path, steps: [course, ...l.trail, l.lab, ...l.steps.slice(0, maxSteps)] }));
 }

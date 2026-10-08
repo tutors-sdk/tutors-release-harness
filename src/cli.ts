@@ -264,7 +264,8 @@ const USAGE = `tutors-release-harness
                          [--max-file-mb n] [--skip-ext mp4,zip] [--dry-run] [--force] [--strict] [--json]
   harness course verify --dir <capture | course folder> [--json]
   harness course serve --dir <capture | course folder> [--port 8080]
-  harness course check --dir <capture | course folder> [--reader http://localhost:3100] [--sample 20] [--port 8190] [--out f] [--json]
+  harness course check --dir <capture | course folder> [--reader http://localhost:3100] [--sample 20] [--journeys 2] [--port 8190] [--out f] [--json]
+  harness course compare --a <production's checks> --b <main's checks> [--out f] [--json]
   harness course capture|check --corpus fixtures/course-corpus/courses.yaml [--out dir | --dir dir] [--reader URL] ...
       A live, public Tutors course onto disk, for runs and benchmarks that want a known working course as local files
       (since 1.29.0; docs/course-capture.md). capture reads the course's tutors.json from its host (<id>.netlify.app, as
@@ -278,7 +279,11 @@ const USAGE = `tutors-release-harness
       check (since 1.30.0) shows a captured course loads: it serves the course on --port (default 8190) and GETs every
       captured file (sha256 as captured), then, with --reader, opens a fixed sample of its pages (--sample, default 20; 0
       is all) in Chromium and requires each page's title to show, recording failed course requests, page errors and the
-      time to the title. The reader is client-rendered, so a page only loads in a browser. Writes course-check.json
+      time to the title. The reader is client-rendered, so a page only loads in a browser. Since 1.32.0 each page is also
+      read as a student meets it (visible text, headings, broken course images, links to pages that do not exist, serious
+      and critical axe violations) and --journeys (default 2; 0 for none) student journeys are clicked through: the
+      course page, a topic, a lab and its steps, each reached by clicking its link. compare (since 1.32.0) reads two
+      sets of checks (--a production's, --b main's) and exits 1 when anything a student uses is worse on b. Writes course-check.json
       (--out; default beside the capture). --corpus (since 1.30.0) reads the curated course list instead of --course: at
       most five courses, each captured alone (no linked courses) into HARNESS_HOME/courses/corpus/ (--out), and checked
       there (--dir) on --port, --port+1, ...; a corpus course that cannot be captured or does not load fails the command.
@@ -442,6 +447,8 @@ async function main(argv: string[]): Promise<number> {
       reader: { type: "string" },
       sample: { type: "string" },
       corpus: { type: "string" },
+      // Since 1.32.0: harness course check's student journeys.
+      journeys: { type: "string" },
       help: { type: "boolean", short: "h", default: false }
     },
     allowNegative: true

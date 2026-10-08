@@ -1,8 +1,9 @@
 import { spawn } from "node:child_process";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { CaptureError, captureCourse, dirFor, INDEX, MANIFEST, type CaptureIndex, type FetchLike } from "./capture.ts";
-import { CHECK_FILE, checkCourse, SERVER, type BrowserDriver } from "./check.ts";
+import { CHECK_FILE, checkCourse, SERVER, type BrowserDriver, type CourseCheck } from "./check.ts";
+import { compareCourse, type CourseComparison } from "./compare.ts";
 import { CorpusError, loadCorpus, type CourseCorpus } from "./corpus.ts";
 import { parseCourseRef, CourseRefError } from "./ref.ts";
 import { verifyCapture, VerifyInputError } from "./verify.ts";
@@ -51,8 +52,10 @@ export async function courseCommand(sub: string | undefined, v: Values, deps: Co
         return await serve(v, log);
       case "check":
         return await check(v, deps, log);
+      case "compare":
+        return compare(v, log);
       default:
-        throw new CourseUsageError(`course takes capture, verify, serve or check${sub ? `, not "${sub}"` : ""}: see harness help course`);
+        throw new CourseUsageError(`course takes capture, verify, serve, check or compare${sub ? `, not "${sub}"` : ""}: see harness help course`);
     }
   } catch (e) {
     if (e instanceof CourseRefError || e instanceof CaptureError || e instanceof VerifyInputError || e instanceof CorpusError) throw new CourseUsageError(e.message);
@@ -222,6 +225,7 @@ async function checkOne(v: Values, deps: CourseDeps, log: (l: string) => void): 
     port: whole(v, "port", 8190, 1),
     ...(reader ? { reader } : {}),
     sample: whole(v, "sample", 20, 0),
+    journeys: whole(v, "journeys", 2, 0),
     timeoutMs: 30_000,
     harnessVersion: deps.harnessVersion,
     ...(deps.driver ? { driver: deps.driver } : {}),
@@ -235,8 +239,71 @@ async function checkOne(v: Values, deps: CourseDeps, log: (l: string) => void): 
   else {
     for (const p of result.files.problems.slice(0, 20)) log(`  - ${p}`);
     const pages = result.pages ? `; pages ${result.pages.ok} of ${result.pages.sampled} loaded${result.pages.medianMs !== undefined ? ` (median ${result.pages.medianMs} ms, max ${result.pages.maxMs} ms)` : ""}` : "; pages not checked (no --reader)";
-    log(`${failed ? "FAILED" : "ok"}  ${result.course.id} as ${result.course.servedAs}: files ${result.files.checked - result.files.problems.length} of ${result.files.checked}${pages}`);
+    const journeys = result.journeys?.length ? `; journeys ${result.journeys.filter((j) => j.ok).length} of ${result.journeys.length} clicked through` : "";
+    log(`${failed ? "FAILED" : "ok"}  ${result.course.id} as ${result.course.servedAs}: files ${result.files.checked - result.files.problems.length} of ${result.files.checked}${pages}${journeys}`);
     log(`written: ${out}`);
   }
   return failed ? 1 : 0;
+}
+
+/** The course checks under a directory: <dir>/course-check.json, else <dir>/<course>/course-check.json, by course id. */
+function checksIn(dir: string): Map<string, CourseCheck> {
+  const out = new Map<string, CourseCheck>();
+  const read = (f: string) => {
+    const c = JSON.parse(readFileSync(f, "utf8")) as CourseCheck;
+    if (c?.course?.id) out.set(c.course.id, c);
+  };
+  if (existsSync(join(dir, CHECK_FILE))) read(join(dir, CHECK_FILE));
+  else if (existsSync(dir)) for (const d of readdirSync(dir, { withFileTypes: true })) if (d.isDirectory() && existsSync(join(dir, d.name, CHECK_FILE))) read(join(dir, d.name, CHECK_FILE));
+  return out;
+}
+
+/**
+ * `harness course compare --a <checks> --b <checks>` (since 1.32.0): production's checks (a) against main's (b), course by
+ * course and page by page, as a student would notice (src/course/compare.ts). Exit 1 when anything is worse on b: a
+ * course that loads on a and not on b, a page worse, or a journey b clicks less far through. What fails on both sides
+ * is not b's doing and does not fail the compare.
+ */
+function compare(v: Values, log: (l: string) => void): number {
+  const a = str(v, "a");
+  const b = str(v, "b");
+  if (!a || !b) throw new CourseUsageError("course compare needs --a <production's checks> and --b <main's checks>: folders holding course-check.json, or one per course");
+  const ca = checksIn(resolve(a));
+  const cb = checksIn(resolve(b));
+  if (!ca.size || !cb.size) throw new CourseUsageError(`course compare found no ${CHECK_FILE} under ${!ca.size ? a : b}`);
+  const courses: { id: string; comparison: CourseComparison | null; missing?: "a" | "b"; filesWorse?: string[] }[] = [];
+  let worse = 0;
+  for (const id of [...new Set([...ca.keys(), ...cb.keys()])].sort()) {
+    const x = ca.get(id);
+    const y = cb.get(id);
+    if (!x || !y) {
+      courses.push({ id, comparison: null, missing: !x ? "a" : "b" });
+      if (!y) worse++;
+      continue;
+    }
+    const c = compareCourse(x, y);
+    const files = (y.files?.problems?.length ?? 0) > (x.files?.problems?.length ?? 0);
+    courses.push({ id, comparison: c, ...(files ? { filesWorse: y.files.problems.slice(0, 3) } : {}) });
+    worse += c.worse.length + c.journeys.worse.length + (files ? 1 : 0);
+  }
+  const result = { schema: "tutors-course-compare/1", a, b, worse, courses };
+  const out = str(v, "out");
+  if (out) writeFileSync(resolve(out), JSON.stringify(result, null, 2) + "\n");
+  if (v.json) log(JSON.stringify(result, null, 2));
+  else {
+    for (const c of courses) {
+      if (!c.comparison) {
+        log(`${c.missing === "b" ? "WORSE " : "      "}  ${c.id}: not checked on ${c.missing}`);
+        continue;
+      }
+      const k = c.comparison;
+      const bad = k.worse.length + k.journeys.worse.length + (c.filesWorse ? 1 : 0);
+      log(`${bad ? "WORSE " : "ok    "}  ${c.id}: ${k.worse.length} of ${k.compared} pages worse on b, ${k.better.length} better; journeys ${k.journeys.worse.length} worse, ${k.journeys.better.length} better of ${k.journeys.compared}`);
+      if (c.filesWorse) log(`    - course files not as captured on b: ${c.filesWorse.join("; ")}`);
+      for (const p of k.worse.slice(0, 10)) log(`    - ${p.path}: ${p.reasons.join("; ")}`);
+      for (const j of k.journeys.worse) log(`    - journey ${j.name}: b clicks through ${j.b} of ${j.of}, a ${j.a}${j.stoppedAt ? `; b stops at ${j.stoppedAt}` : ""}`);
+    }
+    log(`${worse ? "WORSE" : "ok"}  ${worse} thing(s) worse on b than on a`);
+  }
+  return worse ? 1 : 0;
 }

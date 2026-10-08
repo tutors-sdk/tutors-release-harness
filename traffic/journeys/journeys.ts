@@ -61,13 +61,15 @@ function stepLink(heading: string) {
 
 /**
  * The heading that names the page being read: up to 16.2.x the banner's heading,
- * in the course shell the main content's level-1 heading (the banner names the course).
+ * in the course shell the main content's level-1 heading (the banner names the course),
+ * and since mono-repo #400 (sha-3b9e456) a topic's title on the side menu's card of the open learning object.
  */
 function pageHeading(page: Page, name: string) {
   return page
     .getByRole("banner")
     .getByRole("heading", { name })
     .or(page.getByRole("main").getByRole("heading", { level: 1, name }))
+    .or(page.getByRole("complementary", { name: "Course navigation" }).getByRole("heading", { level: 2, name }))
     .first();
 }
 

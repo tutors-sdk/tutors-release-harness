@@ -115,14 +115,31 @@ function courseSideHtml(c: CourseSide | null): string {
 export function coursesHtml(c: CourseLoad | undefined): string {
   if (!c) return "";
   const delta = (d: number | null) => (d === null ? "" : ` (${d > 0 ? "+" : d < 0 ? "−" : "±"}${msOf(Math.abs(d))})`);
+  const stateClass = (s: string) => (s === "loads on both" ? "closed" : s === "fixed on main" ? "met" : "overdue");
+  const changes = (r: CourseLoad["rows"][number]) => {
+    const k = r.compare;
+    if (!k) return "–";
+    const j = k.journeys.compared ? `<br><span class="src">journeys: ${k.journeys.worse.length} worse, ${k.journeys.better.length} better of ${k.journeys.compared}</span>` : "";
+    return `${k.worse.length ? `<a href="#course-${esc(r.id)}-worse"><span class="no">${k.worse.length} worse</span></a>` : `<span class="ok">0 worse</span>`} · ${k.better.length} better<br><span class="src">of ${k.compared} pages compared</span>${j}`;
+  };
   const rows = c.rows
-    .map((r) => `<tr id="course-${esc(r.id)}"><td>${esc(r.title ?? r.id)}<br><span class="src">${esc(r.id)}</span></td><td>${courseSideHtml(r.a)}</td><td>${courseSideHtml(r.b)}</td><td class="num">${msOf(r.a?.pages?.medianMs)} → ${msOf(r.b?.pages?.medianMs)}${esc(delta(r.medianDeltaMs))}</td><td><span class="status ${r.state === "loads on both" ? "closed" : r.state === "fixed on main" ? "met" : "overdue"}">${esc(r.state)}</span></td></tr>`)
+    .map((r) => `<tr id="course-${esc(r.id)}"><td>${esc(r.title ?? r.id)}<br><span class="src">${esc(r.id)}</span></td><td>${courseSideHtml(r.a)}</td><td>${courseSideHtml(r.b)}</td><td>${changes(r)}</td><td class="num">${msOf(r.a?.pages?.medianMs)} → ${msOf(r.b?.pages?.medianMs)}${esc(delta(r.medianDeltaMs))}</td><td><span class="status ${stateClass(r.state)}">${esc(r.state)}</span></td></tr>`)
+    .join("");
+  const detail = c.rows
+    .filter((r) => r.compare && (r.compare.worse.length || r.compare.better.length || r.compare.journeys.worse.length))
+    .map((r) => {
+      const k = r.compare!;
+      const page = (p: { path: string; type: string; title: string; reasons: string[] }) => `<li><strong>${esc(p.title || p.path)}</strong> <span class="src">${esc(p.type)} · ${esc(p.path)}</span><br>${p.reasons.map(esc).join("<br>")}</li>`;
+      const jw = k.journeys.worse.map((j) => `<li><strong>Journey: ${esc(j.name)}</strong><br>main clicks through ${j.b} of ${j.of} pages, production ${j.a}${j.stoppedAt ? `; main stops at <code>${esc(j.stoppedAt)}</code>` : ""}</li>`).join("");
+      return `<details id="course-${esc(r.id)}-worse"${k.worse.length || k.journeys.worse.length ? " open" : ""}><summary>${esc(r.title ?? r.id)}: ${k.worse.length + k.journeys.worse.length} worse on main, ${k.better.length} better</summary>${jw || k.worse.length ? `<h4>Worse on main</h4><ul>${jw}${k.worse.map(page).join("")}</ul>` : ""}${k.better.length ? `<h4>Better on main</h4><ul>${k.better.map(page).join("")}</ul>` : ""}</details>`;
+    })
     .join("");
   const run = safeHref(c.runUrl);
-  return `<div class="courses" id="courses"><h3>Real courses on production and main <span class="hint">the course corpus, each course's files served as captured and a sample of its pages opened in each side's reader</span></h3>
+  return `<div class="courses" id="courses"><h3>Real courses: what a student would notice if main were released <span class="hint">the course corpus, each page read in production's reader and main's, then compared page by page</span></h3>
 <p>${esc(c.summary)}</p>
-<div class="scroll"><table><thead><tr><th>Course</th><th>Production ${esc(c.production)}</th><th>Main ${esc(c.candidate)}</th><th>Median time to title</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
-<p class="note">Checked ${c.checkedAt ? esc(when(c.checkedAt)) : "at an unknown time"}${run ? ` by <a href="${esc(run)}">course-capture.yml</a>` : ""}. One check per side: the times are a reading beside each other, not a benchmark, and nothing here is an input to the Gate.</p></div>`;
+<div class="scroll"><table><thead><tr><th>Course</th><th>Production ${esc(c.production)}</th><th>Main ${esc(c.candidate)}</th><th>Pages on main</th><th>Median time to title</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+${detail}
+<p class="note">Checked ${c.checkedAt ? esc(when(c.checkedAt)) : "at an unknown time"}${run ? ` by <a href="${esc(run)}">course-capture.yml</a>` : ""}. Worse on main: a page that does not load, more broken course images, a course file failing, a new console error, a link to a page that does not exist, a lost heading, a quarter less text or a new serious accessibility violation; or a journey main clicks less far through. One check per side: times are a reading, not a benchmark, and nothing here is an input to the Gate.</p></div>`;
 }
 
 // ---- the quality strip (since 1.18.0) ---------------------------------------------------------------------
@@ -351,7 +368,7 @@ code{font:12.5px ui-monospace,Menlo,Consolas,monospace}
 .chip{display:inline-block;padding:0 7px;border-radius:4px;font-size:11.5px;font-weight:700;letter-spacing:.03em;white-space:nowrap}
 .chip.decided{background:var(--decide);color:var(--on-decide)} .chip.undecided{border:1px dashed var(--decide);color:var(--ink)} .chip.changed{border:1px solid var(--fail);color:var(--ink)}
 .decisions h3{font-size:13px;margin:14px 0 4px} .decisions h3 .hint{font-weight:400;font-size:12px;color:var(--ink2)}
-.courses{margin-top:16px} .courses h3{font-size:13px;margin:0 0 4px} .courses h3 .hint{font-weight:400;font-size:12px;color:var(--ink2)} .courses td .src{font-size:11px;color:var(--ink2)}
+.courses{margin-top:16px} .courses h3{font-size:13px;margin:0 0 4px} .courses h3 .hint{font-weight:400;font-size:12px;color:var(--ink2)} .courses td .src,.courses li .src{font-size:11px;color:var(--ink2)} .courses details{margin:8px 0;border:1px solid var(--rule);border-radius:6px;padding:6px 10px} .courses summary{cursor:pointer;font-weight:600} .courses h4{font-size:12px;margin:8px 0 2px} .courses ul{margin:0;padding-left:18px} .courses li{margin:4px 0;overflow-wrap:anywhere}
 .a3{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:14px;align-items:start;margin:14px 0}
 .wide{margin:14px 0}
 .whyrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:12px;align-items:start}

@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.31.0`
+Contract version: `1.32.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -1309,6 +1309,18 @@ goal row "Real courses load on main" (every corpus course). One check per side i
 not a benchmark: the times are shown beside each other and never judged. No site `courses/`
 leaves all of it out.
 
+Since 1.32.0 the two sides are compared page by page and journey by journey
+(`src/course/compare.ts`; `compare` on each row, `worsePages`, `betterPages` and `worseJourneys`
+on `courses`). A page is **worse on main** when it does not load where it did, has more broken
+course images, asks for a course file that fails where it did not, shows a new console error,
+links to a page of the course that does not exist, lost a heading, shows a quarter or more less
+text (on a page of 200 characters or more), or has a new serious or critical accessibility
+violation; a journey is worse when main clicks less far through it. **Better on main** is the
+same the other way round. A course that loads on both with anything worse is **worse on main**.
+The A3 lists each such page with its reasons, adds the goal row "Nothing a student uses is worse
+on main (real courses)" (target 0), and says in a fact line when the courses were checked on a
+different commit of main than the forecast judged.
+
 What was not read is **not measured**, never a guess: a missing file, a stream with no kept
 run, or a GitHub call that failed (named in `github.json`'s `errors`). Exit `0` when the A3 is
 written, `2` for a usage error (no `--site`, a directory that does not exist, an unreadable
@@ -1461,6 +1473,21 @@ Nothing in a run, the gate or an exit code reads a capture.
   Writes `course-check.json` (schema `tutors-course-check/1`: `course`, `checkedAt`, `harness`,
   `files`, `reader`, `pages` with `routes`, `sampled`, `ok`, `failed`, `medianMs`, `maxMs` and
   `results`). Exit `1` when a file or a page failed.
+- **What a student meets** (since 1.32.0). With `--reader`, each loaded page also carries
+  `experience`: `textChars` (visible text), `headings` (the h1 to h3 headings shown that the
+  page's own markdown has, in order, so the reader's design is not compared), `images` (course-host
+  images and those that did not load), `links` (links to pages of this course and those whose
+  page is not in `tutors.json`) and `axe` (serious and critical WCAG 2.1 A/AA rule ids). And
+  `--journeys` (default 2; 0 for none) student journeys are clicked through, recorded as
+  `journeys` (`name`, `lab`, `ok`, `steps` with `path`, `title`, `ok`, `via` of `start`, `click` or
+  `no link`, `ms`): the course page, the topic, a lab and its steps (at most 8), each reached by
+  clicking its link on the page before. Journeys do not change the exit code.
+- **Main against production** (since 1.32.0). `harness course compare --a <checks> --b <checks>
+  [--out <file>] [--json]` reads the `course-check.json` files under each folder (one, or one per
+  course) and compares them course by course, page by page and journey by journey
+  (`src/course/compare.ts`). It writes `tutors-course-compare/1` to `--out` and exits `1` when
+  anything is worse on b: a page, a journey, more course files not as captured, or a course not
+  checked on b. What fails on both sides does not fail the compare.
 - **The corpus** (since 1.30.0). `fixtures/course-corpus/courses.yaml` names at most five live
   courses (`course`, `why`, optional `skipExt` and `maxFileMb`) and the `standard`, which must be
   one of them. `capture --corpus <file>` captures each alone (no linked courses) into
@@ -1511,7 +1538,7 @@ confidence`), nor `harness guard scoreboard` (since 1.11.0; `guard all` runs it 
 1.12.0; it also takes `--run` and `--json`), nor `harness why` and the flags only it takes
 (`--finding`, `--write`; since 1.13.0; it also takes `--run`, `--out`, `--tag`, `--scoreboard`,
 `--dir` and `--json`), nor `harness course` and the flags only it takes (`--course`, `--depth`,
-`--concurrency`, `--max-file-mb`, `--skip-ext`, `--port`; since 1.29.0; `--reader`, `--sample`, `--corpus`; since 1.30.0; it also takes `--out`,
+`--concurrency`, `--max-file-mb`, `--skip-ext`, `--port`; since 1.29.0; `--reader`, `--sample`, `--corpus`; since 1.30.0; `--journeys`; since 1.32.0; it also takes `--out`,
 `--dir`, `--dry-run`, `--force`, `--strict` and `--json`; see [Course capture](#course-capture)).
 
 | Command | Stable flags |
@@ -1920,6 +1947,32 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.32.0 (minor; what a student would notice on real courses)
+
+The release note is [releases/1.32.0.md](releases/1.32.0.md). A minor: new `course-check.json`
+fields, a flag, new `a3.json` fields and a workflow trigger. No `report.json` field, verdict, Gate
+input, claims key or mask changes. See [Course capture](#course-capture) and
+[The A3 Aggregator](#the-a3-aggregator).
+
+- `harness course check` reads each page as a student meets it (`experience`: text, headings,
+  broken course images, links to pages that do not exist, serious axe violations) and clicks
+  through `--journeys` student journeys (`journeys`).
+- `harness course compare --a <checks> --b <checks>` exits `1` only when main (b) is worse than
+  production (a), and writes `tutors-course-compare/1` to `--out`.
+- The journeys `anonymous-student-reads-course` and `student-signs-in` also find a topic's title on
+  the side menu's card (`complementary` "Course navigation", level-2 heading), where mono-repo
+  main sha-3b9e456 (#400) moved it; production's places still count.
+- The corpus gains four module courses: programming, full-stack-1, comp-sys and databases.
+- `a3.json`'s `courses` compares production and main page by page and journey by journey
+  (`compare`, `worsePages`, `betterPages`, `worseJourneys`; state `worse on main`), with a goal
+  row and the pages listed on `a3.html`.
+- `course-capture.yml`'s `corpus` job runs after each Main to RC on main (`workflow_run`, only the
+  triggering run's branch, repository and conclusion read; `.github/zizmor.yml`) instead of on
+  its own nightly schedule, checks 40 pages and two student journeys per course, fails only when
+  `harness course compare` finds main worse than production, and allows 75 minutes.
+  `pages.yml` takes the newest corpus check only from a run that no pull request started. No
+  new permission.
 
 ### 1.31.0 (minor; real courses on the A3)
 

@@ -118,8 +118,32 @@ in with whatever host it was given.
   `--sample 0` is every page) and each must show its title within 30 seconds. Failed requests to
   the course host, page errors and the time to the title are recorded per page.
 
+Since 1.32.0, two more layers, both with `--reader`:
+
+- **What a student meets.** Each page that loads is read again once its images have had a moment: the
+  visible text, the headings the author wrote (the reader's own, such as "Course Info", change with its design
+  and are left out), course images that did not load, links to pages of the course that do not
+  exist, and serious or critical accessibility violations (axe).
+- **Journeys** (`--journeys`, default 2). The course page, the topic, a lab and its steps (at most 8), each
+  reached by clicking its link on the page before, as a student would. A page with no link to the next is
+  recorded as `no link` and opened by address so the journey can go on.
+
 It writes `course-check.json` beside the capture (`--out` moves it) and exits `1` when a file or a page
 failed. Any reader will do: side a of `harness stack up` is `http://localhost:3100`.
+
+## Main against production
+
+A live course fails some pages on production too, so "did every page load" is not a release question.
+"Would releasing main make anything worse for a student" is:
+
+```console
+pnpm harness course compare --a checks/a --b checks/b --out compare.json
+```
+
+`--a` and `--b` are folders holding `course-check.json` (one, or one per course): production's checks and
+main's. Each course is compared page by page and journey by journey, and every page worse on main is listed
+with why. Exit `1` means something is worse on main; what fails on both is reported by `check`, not here.
+The `corpus` job runs it after checking both sides, and it decides the job's colour.
 
 ## The corpus
 
