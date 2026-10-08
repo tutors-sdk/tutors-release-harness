@@ -295,7 +295,7 @@ describe("verify and the command", () => {
     expect(JSON.parse(json[0]!)).toMatchObject({ root: "portfolio", depth: 0 });
 
     for (const [sub, v, msg] of [
-      ["fetch", {}, /capture, verify or serve/],
+      ["fetch", {}, /capture, verify, serve or check/],
       ["capture", {}, /needs --course/],
       ["capture", { course: "x", depth: "-1" }, /--depth takes a whole number/],
       ["capture", { course: "x", "max-file-mb": "0" }, /--max-file-mb/],
@@ -320,7 +320,7 @@ describe("verify and the command", () => {
     for (const sub of ["capture", "verify", "serve"]) expect(help.stdout).toContain(`harness course ${sub}`);
     const bad = run(["course", "capture"]);
     expect(bad.status).toBe(2);
-    expect(bad.stderr.trim()).toBe("course capture needs --course <https://tutors.dev/course/<id> | id>");
+    expect(bad.stderr.trim()).toBe("course capture needs --course <https://tutors.dev/course/<id> | id> or --corpus <courses.yaml>");
   });
 });
 

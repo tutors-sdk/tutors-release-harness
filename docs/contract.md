@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.29.0`
+Contract version: `1.30.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -1437,6 +1437,22 @@ Nothing in a run, the gate or an exit code reads a capture.
   `links`); `<out>/courses.json` (schema `tutors-course-capture-index/1`: one entry per course
   reached, status `captured`, `not-public` (401, 403), `not-found` (404), `unreachable` or
   `not-a-course`). `--out` defaults to `HARNESS_HOME/courses/<id>`.
+- **Does it load** (since 1.30.0). `harness course check --dir <capture | course folder> [--reader <url>]`
+  serves the course on `--port` (default 8190; course id `localhost:<port>`) and GETs every file
+  `course-capture.json` lists, which must come back with its sha256. With `--reader` it opens a
+  fixed sample of the course's pages (`--sample`, default 20; 0 is all: the course page, the first
+  page of each type, then pages spread evenly) in Chromium, and each must show its title within
+  30 seconds; failed requests to the course host and page errors are recorded per page. The reader
+  renders every page in the browser (`ssr = false`), so an HTTP GET cannot show a course loading.
+  Writes `course-check.json` (schema `tutors-course-check/1`: `course`, `checkedAt`, `harness`,
+  `files`, `reader`, `pages` with `routes`, `sampled`, `ok`, `failed`, `medianMs`, `maxMs` and
+  `results`). Exit `1` when a file or a page failed.
+- **The corpus** (since 1.30.0). `fixtures/course-corpus/courses.yaml` names at most five live
+  courses (`course`, `why`, optional `skipExt` and `maxFileMb`) and the `standard`, which must be
+  one of them. `capture --corpus <file>` captures each alone (no linked courses) into
+  `HARNESS_HOME/courses/corpus/` (`--out`) with one `courses.json` whose `root` is the standard;
+  `check --corpus <file>` checks each there (`--dir`) on `--port`, `--port`+1, and so on. A corpus
+  course that cannot be captured or does not load is exit `1`.
 - **Exit codes.** `capture`: `0` when the course was captured, `1` when it could not be read (and,
   with `--strict`, when a file is missing or a linked course was not captured), `2` usage or a
   course folder already there without `--force`. `verify --dir`: `0` when every listed file has its
@@ -1481,7 +1497,7 @@ confidence`), nor `harness guard scoreboard` (since 1.11.0; `guard all` runs it 
 1.12.0; it also takes `--run` and `--json`), nor `harness why` and the flags only it takes
 (`--finding`, `--write`; since 1.13.0; it also takes `--run`, `--out`, `--tag`, `--scoreboard`,
 `--dir` and `--json`), nor `harness course` and the flags only it takes (`--course`, `--depth`,
-`--concurrency`, `--max-file-mb`, `--skip-ext`, `--port`; since 1.29.0; it also takes `--out`,
+`--concurrency`, `--max-file-mb`, `--skip-ext`, `--port`; since 1.29.0; `--reader`, `--sample`, `--corpus`; since 1.30.0; it also takes `--out`,
 `--dir`, `--dry-run`, `--force`, `--strict` and `--json`; see [Course capture](#course-capture)).
 
 | Command | Stable flags |
@@ -1890,6 +1906,22 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.30.0 (minor; course check and the course corpus)
+
+The release note is [releases/1.30.0.md](releases/1.30.0.md). A minor: a new subcommand, a corpus
+file and three flags. No `report.json` field, verdict, claims key or mask changes. See
+[Course capture](#course-capture).
+
+- `harness course check`, `--dir <capture> [--reader <url>] [--sample 20] [--port 8190]`: every
+  captured file served as captured, then a sample of the course's pages opened in Chromium in that
+  reader, each required to show its title. Writes `course-check.json`.
+- `fixtures/course-corpus/courses.yaml`: the curated courses, at most five, one the `standard`
+  (wit-hdip-comp-sci-2024). `--corpus` on `capture` and `check` reads it.
+- Flags `--reader`, `--sample`, `--corpus`.
+- `course-capture.yml` gains the `corpus` job: capture the corpus, boot the stack from one tag, and
+  check every corpus course loads in side a's reader; it keeps the checks as the
+  `course-corpus-check` artifact (14 days). No new permission: `contents: read` only.
 
 ### 1.29.0 (minor; course capture)
 

@@ -1,6 +1,6 @@
 {
   "$comment": "What the harness's workflows accept from outside and publish, machine-readable. tests/contract.test.ts fails when this and .github/workflows disagree.",
-  "contractVersion": "1.29.0",
+  "contractVersion": "1.30.0",
   "repositoryDispatch": {
     "release-candidate": {
       "workflow": "release.yml",
@@ -25,9 +25,9 @@
     }
   },
   "repositoryVariables": {
-    "HARNESS_IMAGE_PREFIX": { "default": "quay.io/tutors-sdk/tutors-{app}", "usedBy": ["ci.yml", "main-preview.yml", "nightly-noise.yml", "release.yml", "weekly-mutants.yml"] },
-    "HARNESS_COSIGN_IDENTITY": { "default": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@", "usedBy": ["ci.yml", "main-preview.yml", "nightly-noise.yml", "release.yml", "weekly-mutants.yml"] },
-    "HARNESS_PRODUCTION_TAG": { "default": "main", "usedBy": ["ci.yml", "nightly-noise.yml", "weekly-mutants.yml"] },
+    "HARNESS_IMAGE_PREFIX": { "default": "quay.io/tutors-sdk/tutors-{app}", "usedBy": ["ci.yml", "course-capture.yml", "main-preview.yml", "nightly-noise.yml", "release.yml", "weekly-mutants.yml"] },
+    "HARNESS_COSIGN_IDENTITY": { "default": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@", "usedBy": ["ci.yml", "course-capture.yml", "main-preview.yml", "nightly-noise.yml", "release.yml", "weekly-mutants.yml"] },
+    "HARNESS_PRODUCTION_TAG": { "default": "main", "usedBy": ["ci.yml", "course-capture.yml", "nightly-noise.yml", "weekly-mutants.yml"] },
     "HARNESS_PRODUCTION_URLS": {
       "default": "reader=https://tutors.dev,catalogue=https://catalogue.tutors.dev,live=https://live.tutors.dev",
       "usedBy": ["post-deploy.yml"]
@@ -35,6 +35,7 @@
   },
   "artifacts": {
     "course-capture": { "workflow": "course-capture.yml", "retentionDays": 14 },
+    "course-corpus-check": { "workflow": "course-capture.yml", "retentionDays": 14 },
     "release-report": { "workflow": "release.yml", "retentionDays": 30 },
     "migration-report": { "workflow": "release.yml", "retentionDays": 30 },
     "upgrade-report": { "workflow": "release.yml", "retentionDays": 30 },
@@ -51,7 +52,7 @@
   },
   "tools": {
     "$comment": "Installed by every job that runs `harness images ensure`. Verifying the monorepo's signatures needs cosign >= 3.",
-    "cosign": { "action": "sigstore/cosign-installer", "minimumMajor": 3, "usedBy": ["ci.yml", "main-preview.yml", "nightly-noise.yml", "release.yml", "weekly-mutants.yml"] },
+    "cosign": { "action": "sigstore/cosign-installer", "minimumMajor": 3, "usedBy": ["ci.yml", "course-capture.yml", "main-preview.yml", "nightly-noise.yml", "release.yml", "weekly-mutants.yml"] },
     "grype": {
       "$comment": "Since 1.4.0. Installed, at one pinned version, by the jobs that judge images: nightly noise job, release job, mutants job. Not ci.yml (a smoke run) or post-deploy.yml (no images), and not the release workflow's migration and upgrade jobs (the release job judges the images).",
       "action": "anchore/scan-action/download-grype",
@@ -75,7 +76,7 @@
     "env": "HARNESS_THIRD_PARTY_CACHE_DIR",
     "cacheKey": "third-party-v1-<hash of the recorded files>",
     "restoreKey": "third-party-v1-",
-    "usedBy": ["ci.yml:two-stacks", "main-preview.yml:preview", "main-preview.yml:upgrade", "nightly-noise.yml:noise", "post-deploy.yml:post-deploy", "release.yml:release", "release.yml:upgrade", "weekly-mutants.yml:mutants"]
+    "usedBy": ["ci.yml:two-stacks", "course-capture.yml:corpus", "main-preview.yml:preview", "main-preview.yml:upgrade", "nightly-noise.yml:noise", "post-deploy.yml:post-deploy", "release.yml:release", "release.yml:upgrade", "weekly-mutants.yml:mutants"]
   },
   "forbiddenPermissions": ["pull-requests", "checks", "statuses", "deployments"],
   "writePermissions": {
