@@ -1,6 +1,6 @@
 {
   "$comment": "What the harness's workflows accept from outside and publish, machine-readable. tests/contract.test.ts fails when this and .github/workflows disagree.",
-  "contractVersion": "1.30.0",
+  "contractVersion": "1.31.0",
   "repositoryDispatch": {
     "release-candidate": {
       "workflow": "release.yml",
@@ -27,7 +27,7 @@
   "repositoryVariables": {
     "HARNESS_IMAGE_PREFIX": { "default": "quay.io/tutors-sdk/tutors-{app}", "usedBy": ["ci.yml", "course-capture.yml", "main-preview.yml", "nightly-noise.yml", "release.yml", "weekly-mutants.yml"] },
     "HARNESS_COSIGN_IDENTITY": { "default": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@", "usedBy": ["ci.yml", "course-capture.yml", "main-preview.yml", "nightly-noise.yml", "release.yml", "weekly-mutants.yml"] },
-    "HARNESS_PRODUCTION_TAG": { "default": "main", "usedBy": ["ci.yml", "course-capture.yml", "nightly-noise.yml", "weekly-mutants.yml"] },
+    "HARNESS_PRODUCTION_TAG": { "default": "main", "usedBy": ["ci.yml", "nightly-noise.yml", "weekly-mutants.yml"] },
     "HARNESS_PRODUCTION_URLS": {
       "default": "reader=https://tutors.dev,catalogue=https://catalogue.tutors.dev,live=https://live.tutors.dev",
       "usedBy": ["post-deploy.yml"]

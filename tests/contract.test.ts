@@ -216,7 +216,7 @@ describe("report.json", () => {
     const cli = json("docs/contract/cli.json");
     for (const flag of cli.flags.filter((f: { since?: string }) => f.since === "1.2.0")) expect(changes, flag.name).toContain(`--${flag.name === "runtime" ? "no-runtime" : flag.name}`);
     for (const [name, v] of Object.entries(cli.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.2.0")) expect(changes, name).toContain(name);
-    expect(CONTRACT_VERSION).toBe("1.30.0");
+    expect(CONTRACT_VERSION).toBe("1.31.0");
     // The harness version is package.json's and moves at least as far as the contract's (docs/contract.md, Versioning):
     // a mask or engine PR bumps the patch of the harness alone, so do not pin a literal here.
     expect(json("package.json").version).toBe(HARNESS_VERSION);
@@ -286,6 +286,16 @@ describe("report.json", () => {
     for (const command of cliJson.commands.filter((c: { since?: string }) => c.since === "1.5.0")) expect(changes, command.name).toContain(command.name);
     for (const [name, v] of Object.entries(cliJson.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.5.0")) expect(changes, name).toContain(name);
     for (const workflow of ["main-preview.yml", "pages.yml"]) expect(changes, workflow).toContain(workflow);
+  });
+
+  it("1.31.0: its changelog and release note name real courses on the A3, both sides and where the site reads them", () => {
+    const changes = contractMd.slice(contractMd.indexOf("### 1.31.0"), contractMd.indexOf("### 1.30.0")).replace(/\s+/g, " ");
+    for (const item of ["releases/1.31.0.md", "minor", "`a3.json` gains `courses`", "`harness preview resolve --force`", "`course-corpus-check`", "`pages.yml`", "No new permission"]) expect(changes, item).toContain(item);
+    const note = readFileSync(resolve(ROOT, "docs/releases/1.31.0.md"), "utf8").replace(/\s+/g, " ");
+    for (const item of ["Real courses", "breaks on main", "The verdict never moves", "not a benchmark"]) expect(note, item).toContain(item);
+    const pages = readFileSync(resolve(ROOT, ".github/workflows/pages.yml"), "utf8");
+    expect(pages).toContain('"Course capture"');
+    expect(pages).toContain("--name course-corpus-check --dir _site/courses");
   });
 
   it("1.30.0: its changelog and release note name course check, the corpus, its limit and the workflow job", () => {

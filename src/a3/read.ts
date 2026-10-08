@@ -13,6 +13,7 @@ import { parseWhy } from "../why/format.ts";
 import { entryOf, whyFiles } from "../why/register.ts";
 import type { GithubSnapshot } from "./github.ts";
 import { readMutantsFile } from "../score/test-signal.ts";
+import { readCourseLoad } from "./courses.ts";
 import { QUALITY_FILE, parseQualityRecord } from "./quality.ts";
 import { STREAMS, type A3Inputs, type KaizenFile, type KeptRun, type NoiseNight, type Stream } from "./model.ts";
 
@@ -108,6 +109,7 @@ export function readInputs(o: { site: string; kaizen: string; noiseHistory?: str
   const releases = readScoreboardReleases(o.scoreboard);
   // The weekly mutants: --mutants, else the mutants.jsonl beside --scoreboard (as harness scoreboard trends reads it).
   const mutants = readWeeklyMutants(o.mutants ?? (o.scoreboard ? join(dirname(o.scoreboard), "mutants.jsonl") : undefined));
+  const courses = readCourseLoad(o.site);
   return {
     now: o.now,
     harness: o.harness,
@@ -116,6 +118,7 @@ export function readInputs(o: { site: string; kaizen: string; noiseHistory?: str
     kaizen: readKaizen(o.kaizen),
     ...(o.github ? { github: o.github } : {}),
     ...(releases !== undefined ? { scoreboardReleases: releases } : {}),
-    ...(mutants ? { mutants } : {})
+    ...(mutants ? { mutants } : {}),
+    ...(courses ? { courses } : {})
   };
 }

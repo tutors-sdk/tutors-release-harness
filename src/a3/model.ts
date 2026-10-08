@@ -22,6 +22,7 @@ import type { WhyFile } from "../why/format.ts";
 import { chainEnd, countermeasureOf } from "../why/format.ts";
 import type { RegisterEntry } from "../why/register.ts";
 import { runMs, type GithubSnapshot, type WorkflowRun } from "./github.ts";
+import type { CourseLoad } from "./courses.ts";
 import { qualityOf, type QualityRecord, type QualityStrip, type WeeklyMutants } from "./quality.ts";
 
 export const A3_SCHEMA_VERSION = 1 as const;
@@ -82,6 +83,8 @@ export interface A3Inputs {
   scoreboardReleases?: number;
   /** Since 1.18.0: the harness's weekly mutants self-tests (mutants.jsonl); undefined when not read. */
   mutants?: WeeklyMutants[];
+  /** Since 1.31.0: the course corpus checked in production's reader and main's (src/a3/courses.ts). */
+  courses?: CourseLoad;
 }
 
 export interface Link {
@@ -238,6 +241,8 @@ export interface A3 {
   decisions?: Decisions;
   /** Since 1.18.0: Speed, Metrics and Tests under the Gate (src/a3/quality.ts); absent without a subject run. */
   quality?: QualityStrip;
+  /** Since 1.31.0: real courses (the course corpus) loading on production and on main; absent when none was kept. */
+  courses?: CourseLoad;
   countermeasures: { kind: string; what: string; owner: string; due: string; status: FiveWhys["status"]; from: string; rca: string[] }[];
   plan: { what: string; who: string; when: string; status: string }[];
   followUp: { check: string; state: string; met: boolean }[];
@@ -731,6 +736,7 @@ export function buildA3(i: A3Inputs): A3 {
   if (score?.postDeploy) facts.push(`Post-deploy: ${score.postDeploy.red ? `red ${score.postDeploy.red} runs running` : "green"}${score.postDeploy.issue ? `, rollback issue #${score.postDeploy.issue.number} open` : ""}.`);
   if (score?.aa) facts.push(`A/A: ${score.aa.verdict} on ${score.aa.ranAt.slice(0, 10)}.`);
   if (quality) facts.push(`Quality: ${quality.lights.map((l) => `${l.name} ${l.state}`).join(", ")}.`);
+  if (i.courses) facts.push(`Real courses: ${i.courses.summary}`);
 
   const unclaimed = subject?.report?.compare.unclaimed.length;
   const glances = 0;
@@ -742,6 +748,7 @@ export function buildA3(i: A3Inputs): A3 {
   // Since 1.28.1: the known side beside the gaps, so the claims that already hold are as visible as the ones owed.
   const claimed = subject?.report?.compare.matches?.filter((m) => m?.claim).length;
   if (unclaimed !== undefined && claimed !== undefined) goal.push({ metric: "Claims: known and gaps", now: `${claimed} claimed, ${unclaimed} unclaimed (${coverageWords(claimed + unclaimed ? claimed / (claimed + unclaimed) : null)} covered)`, target: "every difference claimed or fixed", met: unclaimed === 0, source: "report.json" });
+  if (i.courses) goal.push({ metric: "Real courses load on main (course corpus)", now: `${i.courses.loadOnMain} of ${i.courses.total} courses, ${i.courses.pagesOnMain.ok} of ${i.courses.pagesOnMain.sampled} pages (production: ${i.courses.loadOnProduction} of ${i.courses.total})`, target: "every corpus course", met: i.courses.loadOnMain === i.courses.total, source: "course-capture.yml, course-check.json" });
   if (score) goal.push({ metric: "Release Confidence Score", now: score.rcs === null ? "none (Gate wins)" : `${score.rcs} ${score.band}`, target: "75 or more (Amber), on the way to 90 (Green)", met: (score.rcs ?? 0) >= 75, source: "docs/lean.md, bands" });
   if (score?.postDeploy) goal.push({ metric: "Post-deploy", now: score.postDeploy.red ? `red, ${score.postDeploy.red} runs` : "green", target: "green on a confirmed build", met: !score.postDeploy.red, source: "post-deploy.yml" });
   goal.push({ metric: "Releases scored (C0 evidence gate)", now: String(scored), target: "3", met: scored >= 3, source: "scoreboard branch" });
@@ -774,6 +781,7 @@ export function buildA3(i: A3Inputs): A3 {
     fiveWhys: whys,
     ...(decisions ? { decisions } : {}),
     ...(quality ? { quality } : {}),
+    ...(i.courses ? { courses: i.courses } : {}),
     countermeasures,
     plan,
     followUp,

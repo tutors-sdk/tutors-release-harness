@@ -17,6 +17,9 @@
 #                                             (harness readiness --site, from the forecasts and github.json; since 1.17.0),
 #                                             each forecast with the quality marks (since 1.18.0), led by the
 #                                             release-size control chart (since 1.19.0; releases.json, its history)
+#   <pages>/courses/sides.json, a/, b/        the course corpus checked in production's reader (a) and main's (b), from
+#                                             the newest course-corpus-check artifact of course-capture.yml on main; the
+#                                             A3 shows it as "Real courses" (since 1.31.0)
 #
 # Rebuilt after every workflow that keeps a report, when the page changes on
 # main, and by hand. Repository setting: Pages, source "GitHub Actions".
@@ -24,7 +27,7 @@ name: Report pages
 
 on:
   workflow_run:
-    workflows: ["Nightly noise (A/A)", "Release harness", "Main to RC"]
+    workflows: ["Nightly noise (A/A)", "Release harness", "Main to RC", "Course capture"]
     types: [completed]
   push:
     branches: [main]
@@ -77,6 +80,14 @@ jobs:
             echo "scoreboard: no branch yet"; mkdir -p src-scoreboard/scoreboard
           fi
           pnpm harness scoreboard trends --file src-scoreboard/scoreboard/releases.jsonl --mutants src-scoreboard/scoreboard/mutants.jsonl --noise-history src-noise/noise-history.json --site _site
+          # Since 1.31.0: the newest corpus check course-capture.yml kept on main (a scheduled or dispatched run; a pull
+          # request's is not main's), so the A3 can show real courses on production and main. None kept leaves that out.
+          for id in $(gh run list --repo "$GITHUB_REPOSITORY" --workflow course-capture.yml --branch main --status completed --limit 10 --json databaseId --jq '.[].databaseId'); do
+            if gh run download "$id" --repo "$GITHUB_REPOSITORY" --name course-corpus-check --dir _site/courses 2>/dev/null && [ -f _site/courses/sides.json ]; then
+              echo "courses: course-corpus-check from run $id"; break
+            fi
+            rm -rf _site/courses
+          done
           # The A3 Aggregator reads what is now in _site, the kaizen register of this checkout and the workflows' history.
           # It is advisory and never fails the site: a failure leaves a3.html out and the index says so.
           if [ -f src-noise/noise-history.json ]; then mkdir -p _site/noise && cp src-noise/noise-history.json _site/noise/noise-history.json; fi

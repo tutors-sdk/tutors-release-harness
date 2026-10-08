@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.30.0`
+Contract version: `1.31.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -1295,6 +1295,20 @@ commit the monorepo's record is for (the judged one, or the newest before it wit
 how long before the forecast it was generated. CI on the commit is not in the record and is not
 read. **The strip never changes the Gate, the score, a verdict or an exit code.**
 
+**Real courses** (since 1.31.0, `courses` in `a3.json`, `src/a3/courses.ts`): the course corpus
+(`fixtures/course-corpus/courses.yaml`, see [Course capture](#course-capture)) checked in
+production's reader (side a) and main's (side b) by `course-capture.yml`'s `corpus` job, read
+from the site's `courses/` (`sides.json` with the two tags, the commit, when and the run;
+`a/<course>/course-check.json` and `b/<course>/course-check.json`), which `pages.yml` fills from
+the newest `course-corpus-check` artifact of a run on `main`. A course **loads** on a side when
+every captured file came back as captured and every sampled page showed its title. Each course
+is one of: loads on both, breaks on main, fixed on main, fails on both, not checked on both. The
+A3 shows a table under the current condition (pages loaded per side, the first pages that did
+not load, the median time to the title on each side and the difference), a fact line, and a
+goal row "Real courses load on main" (every corpus course). One check per side is a reading,
+not a benchmark: the times are shown beside each other and never judged. No site `courses/`
+leaves all of it out.
+
 What was not read is **not measured**, never a guess: a missing file, a stream with no kept
 run, or a GitHub call that failed (named in `github.json`'s `errors`). Exit `0` when the A3 is
 written, `2` for a usage error (no `--site`, a directory that does not exist, an unreadable
@@ -1906,6 +1920,24 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.31.0 (minor; real courses on the A3)
+
+The release note is [releases/1.31.0.md](releases/1.31.0.md). A minor: a new `a3.json` field and
+a workflow change. No `report.json` field, verdict, Gate input, claims key or mask changes. See
+[The A3 Aggregator](#the-a3-aggregator).
+
+- `a3.json` gains `courses`: the course corpus loading on production and on main, per course
+  (pages loaded on each side, the median time to the title, the state). `a3.html` shows it under
+  the current condition, with a fact line and a goal row.
+- `course-capture.yml`'s `corpus` job boots production on side a and main on side b
+  (`harness preview resolve --force`, as `main-preview.yml` resolves them), checks the corpus in
+  both readers, and keeps `sides.json`, `a/` and `b/` in the `course-corpus-check` artifact. It
+  runs nightly (`47 4 * * *`) as well as weekly with the `capture` job, and no longer reads
+  `HARNESS_PRODUCTION_TAG`.
+- `pages.yml` also rebuilds after `Course capture`, and copies the newest `course-corpus-check`
+  of a run on `main` into the site's `courses/` with its existing `actions: read`. No new
+  permission.
 
 ### 1.30.0 (minor; course check and the course corpus)
 

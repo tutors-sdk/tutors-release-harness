@@ -9,6 +9,7 @@
  * table too, and every bar and box says its value on hover.
  */
 import { REPO, duration, type A3, type Decisions, type FiveWhys, type Pareto, type Rca, type Score, type ValueStream } from "./model.ts";
+import type { CourseLoad, CourseSide } from "./courses.ts";
 import type { LightState, QualityLight, QualityStrip } from "./quality.ts";
 
 const esc = (s: string) => s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
@@ -97,6 +98,31 @@ function andon(s: Score | null, a: A3): string {
   ${rcs}${dims}${a.quality ? qualityStripHtml(a.quality) : ""}${small}${decideStrip(a.decisions)}
 </section>
 <p class="note andon-note">${esc(s.note)}</p>`;
+}
+
+// ---- real courses (since 1.31.0) ---------------------------------------------------------------------------
+
+const msOf = (ms: number | null | undefined) => (ms === null || ms === undefined ? "–" : ms < 1000 ? `${ms} ms` : `${(ms / 1000).toFixed(1)} s`);
+
+function courseSideHtml(c: CourseSide | null): string {
+  if (!c) return `<span class="no">not checked</span>`;
+  const pages = c.pages ? `${c.pages.ok} of ${c.pages.sampled} pages` : "no pages checked";
+  const files = c.files.problems ? `, ${c.files.problems} of ${c.files.checked} files differ` : "";
+  const why = c.failures.length ? `<br><span class="src">${c.failures.map(esc).join("<br>")}</span>` : "";
+  return `${c.loaded ? `<span class="ok">loads</span>` : `<span class="no">fails</span>`} ${esc(pages + files)}${why}`;
+}
+
+export function coursesHtml(c: CourseLoad | undefined): string {
+  if (!c) return "";
+  const delta = (d: number | null) => (d === null ? "" : ` (${d > 0 ? "+" : d < 0 ? "−" : "±"}${msOf(Math.abs(d))})`);
+  const rows = c.rows
+    .map((r) => `<tr id="course-${esc(r.id)}"><td>${esc(r.title ?? r.id)}<br><span class="src">${esc(r.id)}</span></td><td>${courseSideHtml(r.a)}</td><td>${courseSideHtml(r.b)}</td><td class="num">${msOf(r.a?.pages?.medianMs)} → ${msOf(r.b?.pages?.medianMs)}${esc(delta(r.medianDeltaMs))}</td><td><span class="status ${r.state === "loads on both" ? "closed" : r.state === "fixed on main" ? "met" : "overdue"}">${esc(r.state)}</span></td></tr>`)
+    .join("");
+  const run = safeHref(c.runUrl);
+  return `<div class="courses" id="courses"><h3>Real courses on production and main <span class="hint">the course corpus, each course's files served as captured and a sample of its pages opened in each side's reader</span></h3>
+<p>${esc(c.summary)}</p>
+<div class="scroll"><table><thead><tr><th>Course</th><th>Production ${esc(c.production)}</th><th>Main ${esc(c.candidate)}</th><th>Median time to title</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+<p class="note">Checked ${c.checkedAt ? esc(when(c.checkedAt)) : "at an unknown time"}${run ? ` by <a href="${esc(run)}">course-capture.yml</a>` : ""}. One check per side: the times are a reading beside each other, not a benchmark, and nothing here is an input to the Gate.</p></div>`;
 }
 
 // ---- the quality strip (since 1.18.0) ---------------------------------------------------------------------
@@ -325,6 +351,7 @@ code{font:12.5px ui-monospace,Menlo,Consolas,monospace}
 .chip{display:inline-block;padding:0 7px;border-radius:4px;font-size:11.5px;font-weight:700;letter-spacing:.03em;white-space:nowrap}
 .chip.decided{background:var(--decide);color:var(--on-decide)} .chip.undecided{border:1px dashed var(--decide);color:var(--ink)} .chip.changed{border:1px solid var(--fail);color:var(--ink)}
 .decisions h3{font-size:13px;margin:14px 0 4px} .decisions h3 .hint{font-weight:400;font-size:12px;color:var(--ink2)}
+.courses{margin-top:16px} .courses h3{font-size:13px;margin:0 0 4px} .courses h3 .hint{font-weight:400;font-size:12px;color:var(--ink2)} .courses td .src{font-size:11px;color:var(--ink2)}
 .a3{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:14px;align-items:start;margin:14px 0}
 .wide{margin:14px 0}
 .whyrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:12px;align-items:start}
@@ -417,7 +444,7 @@ ${andon(s, a)}
 </div>
 <section class="blk wide"><h2><span class="n">2</span>Current condition <span class="hint">go and see: the value stream, and where the problems pile up</span></h2>
 ${vsmHtml(a.current.valueStream)}
-<div class="paretos">${a.current.paretos.map(paretoHtml).join("")}</div></section>
+<div class="paretos">${a.current.paretos.map(paretoHtml).join("")}</div>${coursesHtml(a.courses)}</section>
 <div class="a3">
 <section class="blk"><h2><span class="n">4</span>Root cause analysis <span class="hint">each question as deep as the evidence goes</span></h2>
 <ol class="rcas">${a.rca.map((q, i) => rcaHtml(q, i + 1, a.fiveWhys)).join("")}</ol>${decisionsHtml(a.decisions)}</section>
