@@ -295,7 +295,7 @@ describe("verify and the command", () => {
     expect(JSON.parse(json[0]!)).toMatchObject({ root: "portfolio", depth: 0 });
 
     for (const [sub, v, msg] of [
-      ["fetch", {}, /capture, verify, serve or check/],
+      ["fetch", {}, /capture, verify, serve, check or compare/],
       ["capture", {}, /needs --course/],
       ["capture", { course: "x", depth: "-1" }, /--depth takes a whole number/],
       ["capture", { course: "x", "max-file-mb": "0" }, /--max-file-mb/],

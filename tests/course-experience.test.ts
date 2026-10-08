@@ -11,6 +11,7 @@ import { buildA3 } from "../src/a3/model.ts";
 import { readInputs } from "../src/a3/read.ts";
 import { renderA3 } from "../src/a3/render.ts";
 import { CHECK_SCHEMA, type CourseCheck, type PageExperience, type PageResult } from "../src/course/check.ts";
+import { courseCommand, CourseUsageError } from "../src/course/command.ts";
 import { compareCourse, worseReasons } from "../src/course/compare.ts";
 import { readerJourneys } from "../src/course/routes.ts";
 
@@ -77,6 +78,31 @@ describe("worseReasons and compareCourse", () => {
     expect(c.worse.map((p) => p.path)).toEqual(["/1"]);
     expect(c.better).toEqual([{ path: "/2", type: "step", title: "/2", reasons: ["on production: 1 broken image(s) (main 0): /x.png"] }]);
     expect(c.journeys).toEqual({ compared: 1, worse: [{ name: "Lab 1", a: 5, b: 2, of: 5, stoppedAt: "/s2" }], better: [] });
+  });
+});
+
+describe("harness course compare", () => {
+  it("exit 1 when main is worse than production, 0 when production fails alone; --out keeps it", async () => {
+    const root = mkdtempSync(join(tmpdir(), "harness-compare-"));
+    const write = (side: string, c: CourseCheck) => {
+      mkdirSync(join(root, side, "c"), { recursive: true });
+      writeFileSync(join(root, side, "c", "course-check.json"), JSON.stringify(c));
+    };
+    const run = async (v: Record<string, string>) => {
+      const lines: string[] = [];
+      const code = await courseCommand("compare", { a: join(root, "a"), b: join(root, "b"), ...v }, { harnessVersion: "1.32.0", log: (l) => lines.push(l) });
+      return { code, text: lines.join("\n") };
+    };
+    write("a", check([page("/1", { ok: false }), page("/2")]));
+    write("b", check([page("/1", { ok: false }), page("/2")]));
+    expect(await run({})).toMatchObject({ code: 0 });
+    write("b", check([page("/1", { ok: false }), page("/2", { ok: false, error: "title not shown" })]));
+    const out = join(root, "compare.json");
+    const r = await run({ out });
+    expect(r.code).toBe(1);
+    expect(r.text).toContain("/2: does not load on main (title not shown)");
+    expect(JSON.parse(readFileSync(out, "utf8"))).toMatchObject({ schema: "tutors-course-compare/1", worse: 1 });
+    await expect(courseCommand("compare", { a: join(root, "a") }, { harnessVersion: "1.32.0" })).rejects.toBeInstanceOf(CourseUsageError);
   });
 });
 

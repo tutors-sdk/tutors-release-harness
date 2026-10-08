@@ -1481,6 +1481,12 @@ Nothing in a run, the gate or an exit code reads a capture.
   `journeys` (`name`, `lab`, `ok`, `steps` with `path`, `title`, `ok`, `via` of `start`, `click` or
   `no link`, `ms`): the course page, the topic, a lab and its steps (at most 8), each reached by
   clicking its link on the page before. Journeys do not change the exit code.
+- **Main against production** (since 1.32.0). `harness course compare --a <checks> --b <checks>
+  [--out <file>] [--json]` reads the `course-check.json` files under each folder (one, or one per
+  course) and compares them course by course, page by page and journey by journey
+  (`src/course/compare.ts`). It writes `tutors-course-compare/1` to `--out` and exits `1` when
+  anything is worse on b: a page, a journey, more course files not as captured, or a course not
+  checked on b. What fails on both sides does not fail the compare.
 - **The corpus** (since 1.30.0). `fixtures/course-corpus/courses.yaml` names at most five live
   courses (`course`, `why`, optional `skipExt` and `maxFileMb`) and the `standard`, which must be
   one of them. `capture --corpus <file>` captures each alone (no linked courses) into
@@ -1951,13 +1957,16 @@ input, claims key or mask changes. See [Course capture](#course-capture) and
 - `harness course check` reads each page as a student meets it (`experience`: text, headings,
   broken course images, links to pages that do not exist, serious axe violations) and clicks
   through `--journeys` student journeys (`journeys`).
+- `harness course compare --a <checks> --b <checks>` exits `1` only when main (b) is worse than
+  production (a), and writes `tutors-course-compare/1` to `--out`.
 - The corpus gains four module courses: programming, full-stack-1, comp-sys and databases.
 - `a3.json`'s `courses` compares production and main page by page and journey by journey
   (`compare`, `worsePages`, `betterPages`, `worseJourneys`; state `worse on main`), with a goal
   row and the pages listed on `a3.html`.
 - `course-capture.yml`'s `corpus` job runs after each Main to RC on main (`workflow_run`, only the
   triggering run's branch, repository and conclusion read; `.github/zizmor.yml`) instead of on
-  its own nightly schedule, checks 40 pages and two student journeys per course, and allows 75 minutes.
+  its own nightly schedule, checks 40 pages and two student journeys per course, fails only when
+  `harness course compare` finds main worse than production, and allows 75 minutes.
   `pages.yml` takes the newest corpus check only from a run that no pull request started. No
   new permission.
 

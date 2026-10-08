@@ -88,6 +88,17 @@ then each step (`--journeys 0` to skip them).
 The result is in `course-check.json` beside the capture: pages loaded, failed requests, page errors and
 the time to each title. Exit `1` means something did not load.
 
+## 5. Compare main with production
+
+Check the same course in production's reader and in main's, into two folders, then:
+
+```console
+pnpm harness course compare --a checks/a --b checks/b
+```
+
+It lists every page and journey that is worse on main, with why, and exits `1` only then. That is the
+release question: a live course fails some pages on production too.
+
 ## The course corpus
 
 [`fixtures/course-corpus/courses.yaml`](../../fixtures/course-corpus/courses.yaml) is the shared, curated
@@ -113,7 +124,7 @@ least a sentence. A sixth course must replace one: the file is refused with more
 
 [`course-capture.yml`](../../.github/workflows/course-capture.yml) does all of this on GitHub's runners:
 on demand (any course, any depth), every week, and on a pull request that touches `src/course/` or the
-corpus. Its `corpus` job boots the stack and checks every corpus course in a real reader. The manifests and
+corpus. Its `corpus` job, after each Main to RC on main, checks every corpus course in production's reader and main's and compares them. The manifests and
 checks are kept as the `course-capture` and `course-corpus-check` artifacts for 14 days.
 
 ## Good to know

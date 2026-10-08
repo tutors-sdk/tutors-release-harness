@@ -130,6 +130,20 @@ Since 1.32.0, two more layers, both with `--reader`:
 It writes `course-check.json` beside the capture (`--out` moves it) and exits `1` when a file or a page
 failed. Any reader will do: side a of `harness stack up` is `http://localhost:3100`.
 
+## Main against production
+
+A live course fails some pages on production too, so "did every page load" is not a release question.
+"Would releasing main make anything worse for a student" is:
+
+```console
+pnpm harness course compare --a checks/a --b checks/b --out compare.json
+```
+
+`--a` and `--b` are folders holding `course-check.json` (one, or one per course): production's checks and
+main's. Each course is compared page by page and journey by journey, and every page worse on main is listed
+with why. Exit `1` means something is worse on main; what fails on both is reported by `check`, not here.
+The `corpus` job runs it after checking both sides, and it decides the job's colour.
+
 ## The corpus
 
 `fixtures/course-corpus/courses.yaml` is the curated list: **at most five** live courses, each with the

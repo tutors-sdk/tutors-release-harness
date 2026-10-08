@@ -159,7 +159,7 @@ jobs:
           status=0
           for side in a b; do
             port=3100; if [ "$side" = b ]; then port=3200; fi
-            pnpm harness course check --corpus fixtures/course-corpus/courses.yaml --dir "$RUNNER_TEMP/corpus" --reader "http://localhost:$port" --sample 40 --journeys 2 || status=1
+            pnpm harness course check --corpus fixtures/course-corpus/courses.yaml --dir "$RUNNER_TEMP/corpus" --reader "http://localhost:$port" --sample 40 --journeys 2 || true
             for f in "$RUNNER_TEMP"/corpus/*/course-check.json; do
               [ -f "$f" ] || continue
               course="$(basename "$(dirname "$f")")"
@@ -169,6 +169,8 @@ jobs:
           jq -n --arg production "$PRODUCTION" --arg candidate "$CANDIDATE" --arg sha "$SHA" --arg at "$(date -u +%FT%TZ)" \
             --arg url "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" \
             '{production: $production, candidate: $candidate, sha: $sha, checkedAt: $at, runUrl: $url}' > "$RUNNER_TEMP/checks/sides.json"
+          # Production fails pages of its own; the release question is only whether main is worse than production.
+          pnpm harness course compare --a "$RUNNER_TEMP/checks/a" --b "$RUNNER_TEMP/checks/b" --out "$RUNNER_TEMP/checks/compare.json" | tee "$RUNNER_TEMP/compare.txt" || status=1
           exit "$status"
       - name: Summary
         if: always()
@@ -184,6 +186,12 @@ jobs:
               [ -f "$f" ] && jq -r --arg side "$side" '"\($side) \(.course.id): files \(.files.checked - (.files.problems|length))/\(.files.checked); pages \(.pages.ok // "-")/\(.pages.sampled // "-") (median \(.pages.medianMs // "-") ms, max \(.pages.maxMs // "-") ms); journeys \([.journeys[]? | select(.ok)] | length)/\(.journeys // [] | length)"' "$f"
             done
             echo '```'
+            if [ -f "$RUNNER_TEMP/compare.txt" ]; then
+              echo "#### Main against production"
+              echo '```'
+              cat "$RUNNER_TEMP/compare.txt"
+              echo '```'
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Stack logs on failure
         if: failure()
