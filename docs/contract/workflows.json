@@ -1,6 +1,6 @@
 {
   "$comment": "What the harness's workflows accept from outside and publish, machine-readable. tests/contract.test.ts fails when this and .github/workflows disagree.",
-  "contractVersion": "1.28.4",
+  "contractVersion": "1.29.0",
   "repositoryDispatch": {
     "release-candidate": {
       "workflow": "release.yml",
@@ -34,6 +34,7 @@
     }
   },
   "artifacts": {
+    "course-capture": { "workflow": "course-capture.yml", "retentionDays": 14 },
     "release-report": { "workflow": "release.yml", "retentionDays": 30 },
     "migration-report": { "workflow": "release.yml", "retentionDays": 30 },
     "upgrade-report": { "workflow": "release.yml", "retentionDays": 30 },

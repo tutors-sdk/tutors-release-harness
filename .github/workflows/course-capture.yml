@@ -1,0 +1,78 @@
+# Course capture against a real course (docs/course-capture.md): `harness course capture` reads a live, public Tutors
+# course the way the reader does and writes it to disk, pinned by sha256. The unit tests use a fake web and the
+# committed fixture course; this is the run that proves the command against tutors.dev itself.
+#
+# On demand (any course, any depth), weekly, and on a pull request that changes src/course/. Advisory: no other
+# workflow reads its result, and a course that moved or went private fails only this run.
+name: Course capture
+
+on:
+  workflow_dispatch:
+    inputs:
+      course:
+        description: "The course: https://tutors.dev/course/<id> or the id"
+        required: false
+        default: "https://tutors.dev/course/wit-hdip-comp-sci-2024"
+      depth:
+        description: "Levels of linked courses to follow (0 is the course alone)"
+        required: false
+        default: "1"
+  schedule:
+    - cron: "17 5 * * 3"
+  pull_request:
+    paths:
+      - "src/course/**"
+      - ".github/workflows/course-capture.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: course-capture-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  capture:
+    name: Capture a live course
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      COURSE: ${{ inputs.course || 'https://tutors.dev/course/wit-hdip-comp-sci-2024' }}
+      DEPTH: ${{ inputs.depth || '1' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Media can be large and the manifests are what is kept, so videos and files over 50 MB are recorded, not fetched.
+      - name: Capture
+        run: pnpm harness course capture --course "$COURSE" --depth "$DEPTH" --out "$RUNNER_TEMP/capture" --skip-ext mp4,mov --max-file-mb 50
+      - name: Verify
+        run: pnpm harness course verify --dir "$RUNNER_TEMP/capture"
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### Course capture: $COURSE (depth $DEPTH)"
+            echo '```'
+            jq -r '.courses[] | "\(.status)\t\(.id)\t\(.files // "-") files\t\(.bytes // "-") bytes\t\(.missing // "-") missing\t\(.skipped // "-") skipped"' "$RUNNER_TEMP/capture/courses.json" 2>/dev/null || echo "no courses.json"
+            echo '```'
+            echo "Total on disk: $(du -sh "$RUNNER_TEMP/capture" 2>/dev/null | cut -f1)"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Keep the manifests
+        if: always()
+        run: |
+          mkdir -p "$RUNNER_TEMP/manifests"
+          cd "$RUNNER_TEMP/capture" && find . \( -name courses.json -o -name course-capture.json \) -exec cp --parents {} "$RUNNER_TEMP/manifests/" \;
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: course-capture
+          path: ${{ runner.temp }}/manifests
+          if-no-files-found: warn
+          retention-days: 14

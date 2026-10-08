@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.28.4`
+Contract version: `1.29.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -1418,6 +1418,30 @@ exist, a `--github` that is not a snapshot, a `--releases` that is not a release
 or an exit code**. `pages.yml` runs it after the A3, which writes `github.json`; a failure is a
 warning and the site deploys without it.
 
+## Course capture
+
+Since 1.29.0, not stable. `harness course capture --course <https://tutors.dev/course/<id> | id>`
+writes a live, public Tutors course to disk as the reader sees it, for a run or a benchmark that
+wants a known working course as local files; [course-capture.md](course-capture.md) is the guide.
+Nothing in a run, the gate or an exit code reads a capture.
+
+- **What it reads.** `tutors.json` from the course host, resolved as the reader resolves a course
+  id (`<id>.netlify.app` for a bare id); every file it names on that host
+  (`https://{{COURSEURL}}/...` in any field, an archive's route and `archiveFile`, and `img/`,
+  `./img/`, `archives/`, `archive/` in markdown relative to its learning object's folder); and,
+  to `--depth` (default 1), the Tutors courses its `web` learning objects link to. Anonymous GETs
+  only; no other host.
+- **What it writes.** `<out>/<id>/` per course, each file byte for byte, and
+  `<out>/<id>/course-capture.json` (schema `tutors-course-capture/1`: `course`, `capturedAt`,
+  `harness`, `tutorsJson`, `files` with path, bytes and sha256, `missing`, `skipped`, `types`,
+  `links`); `<out>/courses.json` (schema `tutors-course-capture-index/1`: one entry per course
+  reached, status `captured`, `not-public` (401, 403), `not-found` (404), `unreachable` or
+  `not-a-course`). `--out` defaults to `HARNESS_HOME/courses/<id>`.
+- **Exit codes.** `capture`: `0` when the course was captured, `1` when it could not be read (and,
+  with `--strict`, when a file is missing or a linked course was not captured), `2` usage or a
+  course folder already there without `--force`. `verify --dir`: `0` when every listed file has its
+  size and sha256, `1` when one drifted. `serve --dir [--port 8080]` runs until stopped.
+
 ## CLI
 
 Full list: [`contract/cli.json`](contract/cli.json). Invoke as `pnpm harness
@@ -1456,7 +1480,9 @@ confidence`), nor `harness guard scoreboard` (since 1.11.0; `guard all` runs it 
 `harness glance` and the flags only it takes (`--item`, `--mark`, `--by`, `--note`; since
 1.12.0; it also takes `--run` and `--json`), nor `harness why` and the flags only it takes
 (`--finding`, `--write`; since 1.13.0; it also takes `--run`, `--out`, `--tag`, `--scoreboard`,
-`--dir` and `--json`).
+`--dir` and `--json`), nor `harness course` and the flags only it takes (`--course`, `--depth`,
+`--concurrency`, `--max-file-mb`, `--skip-ext`, `--port`; since 1.29.0; it also takes `--out`,
+`--dir`, `--dry-run`, `--force`, `--strict` and `--json`; see [Course capture](#course-capture)).
 
 | Command | Stable flags |
 | --- | --- |
@@ -1864,6 +1890,23 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.29.0 (minor; course capture)
+
+The release note is [releases/1.29.0.md](releases/1.29.0.md). A minor: a new command and its
+flags. No `report.json` field, verdict, exit code of an existing command, claims key or mask
+changes. See [Course capture](#course-capture).
+
+- `harness course capture --course <https://tutors.dev/course/<id> | id>`: a live, public course's
+  `tutors.json`, every file it names on its host and, to `--depth` (default 1), the courses it links
+  to, written to `<out>/<id>/` with `course-capture.json` and `<out>/courses.json`. Flags `--course`,
+  `--depth`, `--concurrency`, `--max-file-mb`, `--skip-ext`; also `--out`, `--dry-run`, `--force`,
+  `--strict`, `--json`.
+- `harness course verify --dir`: exit 1 when a captured file's size or sha256 changed.
+- `harness course serve --dir [--port 8080]`: one captured course on `fixtures/course-server/serve.mjs`.
+- `course-capture.yml`: captures `wit-hdip-comp-sci-2024` on GitHub's runners (on demand, weekly,
+  and on a pull request that changes `src/course/`) and keeps the manifests as the `course-capture`
+  artifact (14 days). No new permission: `contents: read` only.
 
 ### 1.28.4 (patch; the post-deploy claims)
 
