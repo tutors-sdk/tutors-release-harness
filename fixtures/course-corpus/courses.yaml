@@ -1,0 +1,15 @@
+# The course corpus: live, public Tutors courses the harness captures and checks (docs/course-capture.md).
+#
+#   pnpm harness course capture --corpus fixtures/course-corpus/courses.yaml
+#   pnpm harness course check --corpus fixtures/course-corpus/courses.yaml --reader http://localhost:3100
+#
+# At most five courses (Leigh, 2026-10-08), each captured alone: a portfolio's linked courses are not followed, so
+# the corpus is exactly what this file names. Add a course only with a reason; replace one before adding a sixth.
+# `standard` is the course a check or a benchmark uses when it is given none.
+standard: wit-hdip-comp-sci-2024
+
+courses:
+  - course: https://tutors.dev/course/wit-hdip-comp-sci-2024
+    why: The standard (Leigh, 2026-10-08). WIT/SETU Higher Diploma in Computer Science 2024, a portfolio of 23 module courses.
+    skipExt: [mp4, mov]
+    maxFileMb: 50

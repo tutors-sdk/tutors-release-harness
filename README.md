@@ -253,6 +253,7 @@ harness why --run <dir> --finding <id>  harness why check <file|dir>   harness w
 
 harness course capture --course https://tutors.dev/course/<id> [--depth 1] [--out dir]   # a live course onto disk
 harness course verify --dir <capture>   harness course serve --dir <capture> [--port 8080]
+harness course check --corpus fixtures/course-corpus/courses.yaml --reader http://localhost:3100   # the corpus loads
 ```
 
 The release commands are in `harness --help` and [chapter 7](docs/user-guide/07-reference.md) of the guide.
@@ -265,7 +266,9 @@ its `tutors.json`, every image, PDF and archive it names on the course host, and
 default 1) the courses it links to, each pinned by sha256 in `course-capture.json`. Only what
 answers an anonymous request is read. `harness course verify` checks a capture is unchanged and
 `harness course serve` hosts it for a reader (course id `localhost:<port>`), so a known working
-course can go into an A/B as local files for heavier benchmarks. See
+course can go into an A/B as local files for heavier benchmarks. `harness course check` shows a
+captured course loads in a reader (since 1.30.0), and `fixtures/course-corpus/courses.yaml` is the
+curated corpus, at most five courses. See
 [docs/course-capture.md](docs/course-capture.md).
 
 Exit codes: 0 pass or warn, 1 fail (or `images ensure` could not obtain an

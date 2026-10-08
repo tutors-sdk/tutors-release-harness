@@ -104,6 +104,39 @@ header, so the server is not a source of noise. The reader reads it as the cours
 `localhost:<port>`, because routes in `tutors.json` hold `{{COURSEURL}}` and the reader fills it
 in with whatever host it was given.
 
+## Does it load: `check`
+
+`harness course check --dir <capture | course folder> [--reader http://localhost:3100] [--sample 20] [--port 8090]`
+(since 1.30.0) shows a captured course loads, in two layers:
+
+- **Files (HTTP).** The course is served on `--port` by the fixture course server, as course id
+  `localhost:<port>`, and every file `course-capture.json` lists must come back with its sha256.
+- **Pages (a browser), with `--reader`.** Every reader page renders in the browser (`ssr = false`
+  across the reader), so a GET of `/course/<id>` answers the same shell whether or not the course
+  works; plain HTTP cannot show a course loading. The check opens a fixed sample of the course's
+  pages in Chromium (the course page, the first page of each type, then pages spread evenly;
+  `--sample 0` is every page) and each must show its title within 30 seconds. Failed requests to
+  the course host, page errors and the time to the title are recorded per page.
+
+It writes `course-check.json` beside the capture (`--out` moves it) and exits `1` when a file or a page
+failed. Any reader will do: side a of `harness stack up` is `http://localhost:3100`.
+
+## The corpus
+
+`fixtures/course-corpus/courses.yaml` is the curated list: **at most five** live courses, each with the
+reason it is there, and the `standard`, the course a check or a benchmark uses when it is given none
+(wit-hdip-comp-sci-2024 for now).
+
+```console
+$ pnpm harness course capture --corpus fixtures/course-corpus/courses.yaml
+$ pnpm harness course check --corpus fixtures/course-corpus/courses.yaml --reader http://localhost:3100
+```
+
+Each corpus course is captured alone (linked courses are not followed), so the corpus is exactly the
+courses the file names, into `HARNESS_HOME/courses/corpus/` (`--out`). A portfolio such as the standard is
+mostly links, so a module course belongs in the corpus as its own entry. Add a course with a reason;
+replace one before adding a sixth.
+
 ## Into an A/B
 
 The route to a run is the one [fixtures/course-server/README.md](../fixtures/course-server/README.md)
@@ -121,7 +154,8 @@ not in `tutors.json` and so not captured.
 ## Live check
 
 `.github/workflows/course-capture.yml` captures `wit-hdip-comp-sci-2024` on GitHub's runners
-(on demand, weekly, and on a pull request that changes `src/course/`), verifies it, and keeps
-`courses.json` and each `course-capture.json` as an artifact. It is what proves the command against a
+(on demand, weekly, and on a pull request that changes `src/course/` or the corpus), verifies it, and keeps
+`courses.json` and each `course-capture.json` as an artifact. Its `corpus` job (since 1.30.0) captures
+the corpus, boots the stack from one tag and checks every corpus course loads in side a's reader. It is what proves the command against a
 real course; the unit tests (`tests/course-capture.test.ts`) use a fake web and the committed
 fixture course over real HTTP.

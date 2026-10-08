@@ -264,6 +264,8 @@ const USAGE = `tutors-release-harness
                          [--max-file-mb n] [--skip-ext mp4,zip] [--dry-run] [--force] [--strict] [--json]
   harness course verify --dir <capture | course folder> [--json]
   harness course serve --dir <capture | course folder> [--port 8080]
+  harness course check --dir <capture | course folder> [--reader http://localhost:3100] [--sample 20] [--port 8090] [--out f] [--json]
+  harness course capture|check --corpus fixtures/course-corpus/courses.yaml [--out dir | --dir dir] [--reader URL] ...
       A live, public Tutors course onto disk, for runs and benchmarks that want a known working course as local files
       (since 1.29.0; docs/course-capture.md). capture reads the course's tutors.json from its host (<id>.netlify.app, as
       the reader does), every file it names on that host (images, PDFs, archives, the img/ and archives/ its markdown
@@ -273,8 +275,15 @@ const USAGE = `tutors-release-harness
       lists them; --out defaults to HARNESS_HOME/courses/<id>. --max-file-mb and --skip-ext record big or unwanted files
       as skipped. --dry-run reads only tutors.json and writes nothing. verify says whether a capture is still what was
       captured. serve hosts one course folder as fixtures/course-server does (the reader's course id is localhost:<port>).
-      Exit 0 done, 1 the course could not be read (--strict: or a file or linked course) or a capture drifted, 2 usage.
-      Not stable.
+      check (since 1.30.0) shows a captured course loads: it serves the course on --port (default 8090) and GETs every
+      captured file (sha256 as captured), then, with --reader, opens a fixed sample of its pages (--sample, default 20; 0
+      is all) in Chromium and requires each page's title to show, recording failed course requests, page errors and the
+      time to the title. The reader is client-rendered, so a page only loads in a browser. Writes course-check.json
+      (--out; default beside the capture). --corpus (since 1.30.0) reads the curated course list instead of --course: at
+      most five courses, each captured alone (no linked courses) into HARNESS_HOME/courses/corpus/ (--out), and checked
+      there (--dir) on --port, --port+1, ...; a corpus course that cannot be captured or does not load fails the command.
+      Exit 0 done, 1 the course could not be read (--strict: or a file or linked course), a capture drifted or a check
+      failed, 2 usage. Not stable.
 `;
 
 function fail(message: string): never {
@@ -429,6 +438,10 @@ async function main(argv: string[]): Promise<number> {
       "max-file-mb": { type: "string" },
       "skip-ext": { type: "string" },
       port: { type: "string" },
+      // Since 1.30.0: harness course check.
+      reader: { type: "string" },
+      sample: { type: "string" },
+      corpus: { type: "string" },
       help: { type: "boolean", short: "h", default: false }
     },
     allowNegative: true

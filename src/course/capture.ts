@@ -24,6 +24,8 @@ export type FetchLike = (url: string, init?: { signal?: AbortSignal; headers?: R
 
 export interface CaptureOptions {
   course: CourseRef;
+  /** Write <out>/courses.json (default true); the corpus writes one index for all its courses instead. */
+  writeIndex?: boolean;
   /** The folder the capture is written to: one sub-folder per course and courses.json. */
   out: string;
   /** How many levels of linked courses to follow: 0 is the course alone. */
@@ -275,6 +277,6 @@ export async function captureCourse(o: CaptureOptions): Promise<CaptureIndex> {
     frontier = next;
   }
   const index: CaptureIndex = { schema: INDEX_SCHEMA, root: o.course.id, capturedAt, harness: { version: o.harnessVersion }, depth: o.depth, dryRun: o.dryRun, courses };
-  if (!o.dryRun) writeFileSync(join(o.out, INDEX), JSON.stringify(index, null, 2) + "\n");
+  if (!o.dryRun && o.writeIndex !== false) writeFileSync(join(o.out, INDEX), JSON.stringify(index, null, 2) + "\n");
   return index;
 }

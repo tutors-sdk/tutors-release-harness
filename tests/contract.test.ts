@@ -216,7 +216,7 @@ describe("report.json", () => {
     const cli = json("docs/contract/cli.json");
     for (const flag of cli.flags.filter((f: { since?: string }) => f.since === "1.2.0")) expect(changes, flag.name).toContain(`--${flag.name === "runtime" ? "no-runtime" : flag.name}`);
     for (const [name, v] of Object.entries(cli.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.2.0")) expect(changes, name).toContain(name);
-    expect(CONTRACT_VERSION).toBe("1.29.0");
+    expect(CONTRACT_VERSION).toBe("1.30.0");
     // The harness version is package.json's and moves at least as far as the contract's (docs/contract.md, Versioning):
     // a mask or engine PR bumps the patch of the harness alone, so do not pin a literal here.
     expect(json("package.json").version).toBe(HARNESS_VERSION);
@@ -288,13 +288,29 @@ describe("report.json", () => {
     for (const workflow of ["main-preview.yml", "pages.yml"]) expect(changes, workflow).toContain(workflow);
   });
 
+  it("1.30.0: its changelog and release note name course check, the corpus, its limit and the workflow job", () => {
+    const changes = contractMd.slice(contractMd.indexOf("### 1.30.0"), contractMd.indexOf("### 1.29.0")).replace(/\s+/g, " ");
+    for (const item of ["releases/1.30.0.md", "minor", "`harness course check`", "`course-check.json`", "`fixtures/course-corpus/courses.yaml`", "at most five", "`--corpus`", "`--reader`", "`--sample`", "`course-corpus-check`", "No new permission"]) expect(changes, item).toContain(item);
+    const cliJson = json("docs/contract/cli.json");
+    expect(cliJson.commands.find((c: { name: string }) => c.name === "course")!.subcommands).toContain("check");
+    for (const flag of cliJson.flags.filter((f: { since?: string }) => f.since === "1.30.0")) {
+      expect(flag.stable, flag.name).toBe(false);
+      expect(contractMd.slice(contractMd.indexOf("## CLI")), flag.name).toContain(`\`--${flag.name}\``);
+    }
+    const note = readFileSync(resolve(ROOT, "docs/releases/1.30.0.md"), "utf8").replace(/\s+/g, " ");
+    for (const item of ["harness course check", "ssr = false", "courses.yaml", "The verdict never moves"]) expect(note, item).toContain(item);
+  });
+
   it("1.29.0: its changelog and release note name the course command, its subcommands, every flag, the files it writes and the workflow", () => {
     const changes = contractMd.slice(contractMd.indexOf("### 1.29.0"), contractMd.indexOf("### 1.28.4")).replace(/\s+/g, " ");
     for (const item of ["releases/1.29.0.md", "minor", "`course-capture.json`", "`<out>/courses.json`", "`course-capture.yml`", "`course-capture`", "No new permission"]) expect(changes, item).toContain(item);
     const cliJson = json("docs/contract/cli.json");
     const course = cliJson.commands.find((c: { name: string }) => c.name === "course")!;
-    expect(course).toMatchObject({ stable: false, since: "1.29.0", subcommands: ["capture", "verify", "serve"] });
-    for (const sub of course.subcommands) expect(changes, sub).toContain(`harness course ${sub}`);
+    expect(course).toMatchObject({ stable: false, since: "1.29.0" });
+    for (const sub of ["capture", "verify", "serve"]) {
+      expect(course.subcommands, sub).toContain(sub);
+      expect(changes, sub).toContain(`harness course ${sub}`);
+    }
     for (const flag of cliJson.flags.filter((f: { since?: string }) => f.since === "1.29.0")) {
       expect(flag.stable, flag.name).toBe(false);
       expect(contractMd.slice(contractMd.indexOf("## CLI")), flag.name).toContain(`\`--${flag.name}\``);
