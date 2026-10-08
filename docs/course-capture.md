@@ -128,6 +128,16 @@ Since 1.32.0, two more layers, both with `--reader`:
   reached by clicking its link on the page before, as a student would. A page with no link to the next is
   recorded as `no link` and opened by address so the journey can go on.
 
+Since 1.33.0, with or without `--reader`:
+
+- **The schema.** The course's `tutors.json` is held to the mono-repo's published schema
+  (`TUTORS_JSON_SCHEMA` in `@tutors/tutors-types`, copied to `fixtures/tutors-json/` with the commit it came
+  from; refresh it as that folder's README says). `tutorsJson` in `course-check.json` says whether it
+  conforms, how many problems it has and the first ten, each named by the ids on its path
+  (`/los/[topic-01]/los/[note-01] has a field the schema does not allow: pdf`). Reported only: courses
+  written by older generators (before gen-lib 4.2.20, for one) break the strict schema and still open
+  in the reader, so it never changes the exit code.
+
 It writes `course-check.json` beside the capture (`--out` moves it) and exits `1` when a file or a page
 failed. Any reader will do: side a of `harness stack up` is `http://localhost:3100`.
 

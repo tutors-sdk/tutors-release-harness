@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { MANIFEST, type CourseManifest } from "./capture.ts";
 import { headingKey, readerJourneys, readerRoutes, sampleRoutes, type ReaderRoute } from "./routes.ts";
+import { tutorsJsonConformance, type TutorsJsonConformance } from "./schema.ts";
 
 /**
  * `harness course check`: does a captured course load? Two layers, each saying what it proves.
@@ -20,6 +21,9 @@ import { headingKey, readerJourneys, readerRoutes, sampleRoutes, type ReaderRout
  * course images that did not load, the links to other pages of the course that lead nowhere, and the serious or
  * critical accessibility violations. And a few student journeys (`journeys`) are clicked through: the course page, a
  * topic, a lab and its steps, each reached by clicking its link on the page before, as a student would.
+ *
+ * Since 1.33.0 the course's tutors.json is also held to the mono-repo's published schema (`tutorsJson`, src/course/
+ * schema.ts). A report only: it never fails a check, because the reader opens courses older generators wrote.
  *
  * The course is served as course id localhost:<port>, the way the reader reads the fixture course.
  */
@@ -84,6 +88,8 @@ export interface CourseCheck {
   checkedAt: string;
   harness: { version: string };
   files: { checked: number; problems: string[] };
+  /** Since 1.33.0: the course's tutors.json against the mono-repo's published schema. Never fails the check. */
+  tutorsJson?: TutorsJsonConformance;
   reader?: string;
   pages?: { routes: number; sampled: number; ok: number; failed: number; medianMs?: number; maxMs?: number; results: PageResult[] };
   /** Since 1.32.0, with a reader: the student journeys clicked through. */
@@ -178,12 +184,15 @@ export async function checkCourse(o: CheckOptions): Promise<CourseCheck> {
   try {
     const files = await checkFiles(server.origin, manifest);
     log(`files: ${files.checked - files.problems.length} of ${files.checked} served as captured`);
+    const tutorsJson = tutorsJsonConformance(tree);
+    log(`tutors.json: ${tutorsJson.conforms ? "conforms to" : `${tutorsJson.problems} problem(s) against`} the schema of mono-repo ${tutorsJson.schema}${tutorsJson.sample[0] ? ` (first: ${tutorsJson.sample[0]})` : ""}`);
     const check: CourseCheck = {
       schema: CHECK_SCHEMA,
       course: { id: manifest.course.id, servedAs, ...(manifest.course.title ? { title: manifest.course.title } : {}) },
       checkedAt: (o.now?.() ?? new Date()).toISOString(),
       harness: { version: o.harnessVersion },
-      files
+      files,
+      tutorsJson
     };
     if (!o.reader) return check;
 

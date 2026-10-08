@@ -11,6 +11,7 @@ import { buildA3 } from "../src/a3/model.ts";
 import { readInputs } from "../src/a3/read.ts";
 import { renderA3 } from "../src/a3/render.ts";
 import { CHECK_SCHEMA, type CourseCheck } from "../src/course/check.ts";
+import type { TutorsJsonConformance } from "../src/course/schema.ts";
 
 const ROOT = resolve(import.meta.dirname, "..");
 const NOW = new Date("2026-10-08T10:00:00Z");
@@ -72,6 +73,33 @@ describe("readCourseLoad", () => {
   it("every course loading on main says so", () => {
     const dir = site(SIDES, { one: check("one", { ok: 3, sampled: 3, median: 1 }) }, { one: check("one", { ok: 3, sampled: 3, median: 1 }) });
     expect(readCourseLoad(dir)!.summary).toBe("Every real course in the corpus (1) loads on main sha-abc1234 and no page a student uses is worse than on production 16.2.2: 3 of 3 sampled pages showed their title.");
+  });
+});
+
+describe("tutors.json against the schema on the A3 (since 1.33.0)", () => {
+  const conforms: TutorsJsonConformance = { schema: "55f3aff", conforms: true, problems: 0, sample: [] };
+  const refused: TutorsJsonConformance = { schema: "55f3aff", conforms: false, problems: 4, sample: ["/los/[t]/hide must be boolean", "/los/[t]/los/[n] has a field the schema does not allow: pdf", "/x a", "/y b"] };
+  const withSchema = (c: CourseCheck, t: TutorsJsonConformance): CourseCheck => ({ ...c, tutorsJson: t });
+
+  it("one reading per course from the capture both sides checked, counted, and never a state", () => {
+    const one = check("one", { ok: 3, sampled: 3, median: 1 });
+    const two = check("two", { ok: 3, sampled: 3, median: 1 });
+    const dir = site(SIDES, { one: withSchema(one, conforms), two: withSchema(two, refused) }, { one: withSchema(one, conforms), two: withSchema(two, refused) });
+    const c = readCourseLoad(dir)!;
+    expect(c.tutorsJson).toEqual({ checked: 2, conforming: 1, schema: "55f3aff" });
+    expect(c.rows.map((r) => `${r.id}:${r.state}:${r.tutorsJson?.conforms}`)).toEqual(["one:loads on both:true", "two:loads on both:false"]);
+    const html = renderA3(buildA3(readInputs({ site: dir, kaizen: join(ROOT, "kaizen"), now: NOW, harness: "1.33.0" })));
+    expect(html).toContain("<th>tutors.json schema</th>");
+    expect(html).toContain('<span class="ok">conforms</span>');
+    expect(html).toContain("4 problems<br><span class=\"src\">/los/[t]/hide must be boolean<br>");
+    expect(html).toContain("1 of 2 courses conform to the schema the generator on main promises (mono-repo 55f3aff); reported only");
+  });
+
+  it("checks from before 1.33.0 carry no reading: no column, no count", () => {
+    const dir = site(SIDES, { one: check("one", { ok: 1, sampled: 1, median: 1 }) }, { one: check("one", { ok: 1, sampled: 1, median: 1 }) });
+    const c = readCourseLoad(dir)!;
+    expect(c.tutorsJson).toBeUndefined();
+    expect(renderA3(buildA3(readInputs({ site: dir, kaizen: join(ROOT, "kaizen"), now: NOW, harness: "1.33.0" })))).not.toContain("tutors.json schema");
   });
 });
 
