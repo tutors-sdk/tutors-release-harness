@@ -2,6 +2,115 @@
   "schemaVersion": 1,
   "runs": [
     {
+      "id": "2026-10-09T09-26-46Z-release",
+      "mode": "release",
+      "ranAt": "2026-10-09T09:26:46.356Z",
+      "verdict": "warn",
+      "reasons": [
+        "advisory only: the last A/A run (2026-10-09T09:12:52.291Z) was degraded and does not count: journey \"reference-course-reads\" failed on both sides, so this run saw nothing of its pages",
+        "202 unclaimed diff(s)",
+        "1 claim(s) matched nothing and should be removed from the changelog"
+      ],
+      "sides": {
+        "a": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:16.2.2",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:16.2.2",
+          "live": "quay.io/tutors-sdk/tutors-live:16.2.2",
+          "time": "quay.io/tutors-sdk/tutors-time:16.2.2"
+        },
+        "b": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:sha-ff4fe9c",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:sha-ff4fe9c",
+          "live": "quay.io/tutors-sdk/tutors-live:sha-ff4fe9c",
+          "time": "quay.io/tutors-sdk/tutors-time:sha-ff4fe9c"
+        }
+      },
+      "harnessVersion": "1.33.0",
+      "runUrl": "https://github.com/tutors-sdk/tutors-release-harness/actions/runs/37909880459",
+      "score": {
+        "score": 22,
+        "grade": "D",
+        "normalness": "degraded",
+        "manual": 5
+      },
+      "confidence": {
+        "gate": "FAIL",
+        "rcs": null,
+        "band": null,
+        "note": "No RCS: Gate FAIL. The Gate wins: no number talks a FAIL back on. The dimensions are shown for the 5 Whys, not for a decision.",
+        "glance": 7,
+        "scoredBy": "1.33.0"
+      },
+      "changes": {
+        "score": 0,
+        "prs": 96,
+        "risky": 88,
+        "floorBreached": true,
+        "range": "v16.2.2..ff4fe9c5bba52ea1863ee8c7ffc5b964d4a4b4a3"
+      },
+      "delta": {
+        "baseline": "16.2.2",
+        "against": {
+          "id": "2026-10-08T09-19-47Z-release",
+          "ranAt": "2026-10-08T09:19:47.687Z",
+          "candidate": "sha-7c5f248",
+          "harnessVersion": "1.30.0"
+        },
+        "new": 11,
+        "gone": 25,
+        "byArtefact": {
+          "console": {
+            "new": 4,
+            "gone": 0
+          },
+          "dom": {
+            "new": 1,
+            "gone": 3
+          },
+          "focus": {
+            "new": 0,
+            "gone": 1
+          },
+          "headers": {
+            "new": 4,
+            "gone": 5
+          },
+          "network": {
+            "new": 0,
+            "gone": 15
+          },
+          "persistence": {
+            "new": 1,
+            "gone": 0
+          },
+          "screenshot": {
+            "new": 0,
+            "gone": 1
+          },
+          "timing": {
+            "new": 1,
+            "gone": 0
+          }
+        }
+      },
+      "files": [
+        "2026-10-09T09-26-46Z-release/migration/report.json",
+        "2026-10-09T09-26-46Z-release/migration/report.md",
+        "2026-10-09T09-26-46Z-release/migration/report.html",
+        "2026-10-09T09-26-46Z-release/upgrade/report.json",
+        "2026-10-09T09-26-46Z-release/upgrade/report.md",
+        "2026-10-09T09-26-46Z-release/upgrade/report.html",
+        "2026-10-09T09-26-46Z-release/report.json",
+        "2026-10-09T09-26-46Z-release/report.md",
+        "2026-10-09T09-26-46Z-release/report.html",
+        "2026-10-09T09-26-46Z-release/confidence.json",
+        "2026-10-09T09-26-46Z-release/changes.json",
+        "2026-10-09T09-26-46Z-release/quality.json",
+        "2026-10-09T09-26-46Z-release/scorecard.json",
+        "2026-10-09T09-26-46Z-release/scorecard.md"
+      ]
+    },
+    {
       "id": "2026-10-08T09-19-47Z-release",
       "mode": "release",
       "ranAt": "2026-10-08T09:19:47.687Z",
