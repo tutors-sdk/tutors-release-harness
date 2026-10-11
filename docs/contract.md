@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.34.0`
+Contract version: `1.35.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -1504,6 +1504,28 @@ exist, a `--github` that is not a snapshot, a `--releases` that is not a release
 or an exit code**. `pages.yml` runs it after the A3, which writes `github.json`; a failure is a
 warning and the site deploys without it.
 
+### The harness's own service levels
+
+Since 1.35.0 (tutors-sdk/tutors-mono-repo#170) the readiness page states what the harness owes the people
+who read it, and is **opinionated** about it: a forecast nobody can trust is stale or rare, not merely red.
+The monorepo's SLOs say what the college aims for; these are the harness's. `serviceLevels` in
+`readiness.json` and a **service levels** panel (`#service-levels`) list each with its target, its value
+now and whether it holds (`null`, "not judged", when what it reads was not read: never guessed).
+
+| Level | Kind | Target (`SERVICE_LEVEL_TARGETS`) |
+| --- | --- | --- |
+| `forecast-fresh` | freshness | the newest Main to RC forecast at most **26 hours** old |
+| `aa-fresh` | freshness | the newest nightly A/A at most **26 hours** old |
+| `mutants-fresh` | freshness | the newest mutants self-test at most **8 days** old |
+| `nights-judged` | rate | at least **90%** of the last 14 finished nights judged or unchanged |
+| `aa-clean` | rate | at least **90%** of the last 14 finished nights with a clean, verified A/A |
+| `mutants-caught` | rate | **100%** of planted mutants caught by the newest self-test |
+
+Tonight and a night still running are left out of the rates. The targets are a ratchet:
+`tests/service-levels.test.ts` pins them, they are raised by PR, never lowered to turn the panel green.
+Advisory, like the rest of the page: never an input to the Gate, a verdict, an engine level or an exit
+code.
+
 ## Course capture
 
 Since 1.29.0, not stable. `harness course capture --course <https://tutors.dev/course/<id> | id>`
@@ -2012,6 +2034,18 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.35.0 (minor; the harness's own service levels)
+
+The release note is [releases/1.35.0.md](releases/1.35.0.md). A minor: a new optional
+`readiness.json` field, `serviceLevels`. No `report.json` field, verdict, Gate input, exit code,
+claims key, mask, flag or workflow changes. See
+[The harness's own service levels](#the-harnesss-own-service-levels).
+
+- `serviceLevels` (`src/readiness/service-levels.ts`): freshness of the newest forecast, A/A and
+  mutants self-test, and rates of nights judged, clean A/As and mutants caught, each with its target
+  (`SERVICE_LEVEL_TARGETS`, a pinned ratchet) and whether it holds. `readiness.schema.json` gains it;
+  `readiness.html` gains a **service levels** panel under the soak.
 
 ### 1.34.0 (minor; service level objectives, informing)
 

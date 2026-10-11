@@ -27,6 +27,7 @@ import type { ClaimsView } from "./claims.ts";
 import { buildControl, type Control } from "./control.ts";
 import type { ReleaseHistory } from "./releases.ts";
 import { SOAK_FROM, buildSoak, type AaNight, type Soak, type SoakForecast } from "./soak.ts";
+import { buildServiceLevels, type ServiceLevels } from "./service-levels.ts";
 
 export const READINESS_SCHEMA_VERSION = 1 as const;
 /** Calendar nights on the page, tonight included. */
@@ -162,6 +163,8 @@ export interface Readiness {
   control: Control;
   /** Since 1.25.0: the soak toward 2.0: clean nights in a row, and each check's quiet nights and planted mutant (src/readiness/soak.ts). */
   soak: Soak;
+  /** Since 1.35.0: the harness's own service levels, freshness and rates (src/readiness/service-levels.ts). */
+  serviceLevels: ServiceLevels;
   /** `aa` since 1.25.0: what noise-history.json said about itself. */
   sources: { forecasts: number; github: string; aa: string };
 }
@@ -303,6 +306,7 @@ export function buildReadiness(i: ReadinessInputs): Readiness {
       })
     }),
     soak,
+    serviceLevels: buildServiceLevels({ now: i.now, nights: all, forecasts: i.forecasts, ...(i.aa ? { aa: i.aa } : {}), ...(i.mutants ? { mutants: i.mutants } : {}) }),
     sources: { forecasts: forecasts.filter((f) => inWindow.has(nightOf(f.ranAt))).length, github: i.github, aa: i.aaSource ?? "not read" }
   };
 }

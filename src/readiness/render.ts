@@ -14,6 +14,7 @@ import { claimsSentence, coverageWords, type ClaimFindingKind } from "./claims.t
 import { CONTROL_CSS, controlHtml } from "./control-render.ts";
 import { NIGHTS, deltaWords, type Forecast, type Night, type Readiness } from "./model.ts";
 import type { Soak } from "./soak.ts";
+import type { ServiceLevels } from "./service-levels.ts";
 
 const esc = (s: string) => s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
 const when = (iso: string) => `${iso.slice(0, 10)} ${iso.slice(11, 16)} UTC`;
@@ -101,6 +102,27 @@ function rowsHtml(r: Readiness): string {
 
 const SOAK_TONE: Record<string, string> = { clean: "pass", paused: "none", broken: "fail", "not yet": "none" };
 const MUTANT_WORDS: Record<string, string> = { caught: "caught", escaped: "escaped", "not run yet": "not run yet", none: "none planted" };
+
+/** Since 1.35.0: the harness's own service levels: is what this page says fresh, and does the harness run as often as it should? */
+function serviceLevelsHtml(s: ServiceLevels | undefined): string {
+  if (!s) return "";
+  const tone = (h: boolean | null) => (h === null ? "none grey" : h ? "pass" : "fail");
+  const word = (h: boolean | null) => (h === null ? "not judged" : h ? "holds" : "missed");
+  return `<section class="soak service-levels" id="service-levels" aria-labelledby="service-levels-title">
+<h2 id="service-levels-title">The harness's own service levels: ${s.holding} of ${s.judged} hold</h2>
+<p class="note">${esc(s.headline)} Freshness is how old the newest of each thing is; rates are counted over the last ${s.nights} finished nights. Opinionated on purpose: the targets are a ratchet, raised by PR and never lowered to turn this green. Advisory, like the rest of this page.</p>
+<table class="strip"><thead><tr><th>Level</th><th>Target</th><th>Now</th><th>Holds</th></tr></thead><tbody>
+${s.levels
+  .map(
+    (l) => `<tr><td data-k="Level"><span class="v"><code>${esc(l.id)}</code> <small>${esc(l.kind)}</small></span></td>
+<td data-k="Target"><span class="v">${esc(l.target)}</span></td>
+<td data-k="Now"><span class="v">${esc(l.value)}</span></td>
+<td data-k="Holds"><span class="v"><span class="verdict ${tone(l.holds)}">${word(l.holds)}</span></span></td></tr>`
+  )
+  .join("\n")}
+</tbody></table>
+</section>`;
+}
 
 /** Since 1.25.0: the soak toward 2.0, the count the go-live release waits on, then each check that may become blocking. */
 function soakHtml(s: Soak): string {
@@ -336,11 +358,12 @@ export function renderReadiness(r: Readiness): string {
 <body>
 <main class="page">
 <header class="title"><h1>Overnight readiness <span>· main against production, the last ${NIGHTS} nights</span></h1>
-<p class="meta">Built ${esc(when(r.builtAt))} by harness <code>${esc(r.harness)}</code> · <a href="./">home</a> · <a href="a3.html">A3</a> · <a href="scoreboard.html">scoreboard</a> · <a href="#claims">claims</a> · <a href="#control">control chart</a> · <a href="#soak">soak toward 2.0</a> · <a href="readiness.json">readiness.json</a></p></header>
+<p class="meta">Built ${esc(when(r.builtAt))} by harness <code>${esc(r.harness)}</code> · <a href="./">home</a> · <a href="a3.html">A3</a> · <a href="scoreboard.html">scoreboard</a> · <a href="#claims">claims</a> · <a href="#control">control chart</a> · <a href="#soak">soak toward 2.0</a> · <a href="#service-levels">service levels</a> · <a href="readiness.json">readiness.json</a></p></header>
 <p class="note">One row per night (UTC), newest on top, from the Main to RC forecasts kept on the <code>main-preview</code> branch. To pick a night, read two rows: what the later one added, and whether its Gate moved. The quality marks (Speed, Metrics, Tests) are a reading aid and never change the Gate. A night that kept nothing says why in words. The band is left off the rows while the review floor caps the score; the Gate is what decides. A forecast, never a gate.</p>
 ${claimsHtml(r)}
 ${controlHtml(r.control)}
 ${soakHtml(r.soak)}
+${serviceLevelsHtml(r.serviceLevels)}
 ${lastNight(r)}
 <h2 class="strip-title">Night by night</h2>
 <table class="strip"><thead><tr><th>Night</th><th>Main</th><th>Gate</th><th>Unclaimed</th><th>Claimed</th><th>Coverage</th><th>New / gone</th><th>Quality</th><th>Evidence</th></tr></thead>
