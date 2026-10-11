@@ -428,13 +428,18 @@ Its planted mutant is `slow-ssr-mild` (150 ms on every HTML response).
 ### Service level objectives
 
 Since 1.34.0 (tutors-sdk/tutors-mono-repo#170) the `slo` engine (`src/compare/slo.ts`) judges side b
-against **absolute** targets: the service level objectives the monorepo keeps in `release/slo.yaml`,
-beside `claims.yaml`, the same targets its burn-rate alerts are written against in production. Every
-other timing check is relative ("b is slower than a"): a candidate as slow as a slow production passes
-them. It does not pass this one. `--slo <file>` takes the file (`harness release` reads
+against **absolute** targets, and is **stricter than the monorepo**. The monorepo's
+`release/slo.yaml`, beside `claims.yaml`, is indicative: what the college aims for and what its
+production alerts burn against. The harness keeps its own floors in `slo/floors.yaml` (99.9% of
+requests not 5xx and 99% under 1s, for every app). Each objective is judged at the stricter of the
+two targets for the same app, kind and threshold, and the floors are judged alone when the monorepo
+keeps no file. The floors are a ratchet, like the coverage floor: `tests/slo.test.ts` pins them, they
+are raised by PR when the soak shows headroom, and never lowered to make a run pass. Every other timing
+check is relative ("b is slower than a"), so a candidate as slow as a slow production passes them. It
+does not pass this one. `--slo <file>` takes the monorepo's file (`harness release` reads
 `release/slo.yaml` in the monorepo checkout when it is omitted; `release.yml` and `main-preview.yml`
-fetch `slo.yaml` beside the claims, and a 404 judges none). Without one nothing is judged and no hunk
-is written. A file the harness cannot use is exit 2 before any stack starts.
+fetch `slo.yaml` beside the claims, and a 404 judges the floors alone). A file the harness cannot use
+is exit 2 before any stack starts.
 
 ```yaml
 version: 1          # optional
@@ -456,14 +461,17 @@ objectives:
 
 | Artefact | Scopes | A finding when | Reads |
 | --- | --- | --- | --- |
-| `slo` | `<id>` (the app's /metrics), `<id>/load` (the k6 leg, reader only); `<id>/not-evaluated`, `<id>/load/not-evaluated` (info) | b's share of good requests is under the objective's `target` | `sli` in each app's metrics snapshot, before and after the journeys: `http_requests_total` (5xx by `status_code`) and `http_request_duration_seconds_bucket` by `le`; and the k6 leg's 5xx count and request durations (subsampled to 2000) |
+| `slo` | `<id>` (the app's /metrics), `<id>/load` (the k6 leg, reader only); `<scope>/regression`; `<scope>/not-evaluated` (info) | b's share of good requests is under the target; or (**regression**) b's share of bad requests is significantly worse than a's (one-sided two-proportion test at `SLO_REGRESSION_ALPHA`, 0.05), whether or not the target is met | `sli` in each app's metrics snapshot, before and after the journeys: `http_requests_total` (5xx by `status_code`) and `http_request_duration_seconds_bucket` by `le`; and the k6 leg's 5xx count and request durations (subsampled to 2000) |
 
 Like [the policy family](#the-policy-family), only b is judged, and a finding ends "(production too)"
-when side a misses the same objective, or "(new on b)"; with too little on a it ends at "missed". An
+when side a misses the same objective, or "(new on b)"; with too little on a it ends at "missed". A
+finding names where its target came from: "(harness floor)", or "(harness floor; monorepo 99.50%)" when
+the floor is the stricter. The harness goes harder on a candidate that is getting worse, not only on one
+that is already bad: a regression is a finding on its own scope, ending "regressed (new on b)". An
 objective b meets is an info `<id>` hunk ending "holds", and one that cannot be judged an info
 `.../not-evaluated` (no SLI exported, or fewer than `SLO_MIN_REQUESTS`, 20, requests), so a quiet
-check reads differently from one that did not run. External sides (post-deploy) carry neither source
-and are not judged. The check is **informing**, with no date ([Engine levels](#engine-levels)): every
+check reads differently from one that did not run. External sides (post-deploy), and a side b whose
+capture carries no SLI at all (recorded before 1.34.0), are not judged and write nothing. The check is **informing**, with no date ([Engine levels](#engine-levels)): every
 finding is reported and none gates, and the readiness page's soak watches it. It has no planted mutant
 yet, so it is not eligible to block.
 
@@ -2012,13 +2020,15 @@ artefact name, `slo`, a new stable flag, `--slo`, and a new optional `report.jso
 The check ships **informing**, so no verdict, Gate or exit code moves. See
 [Service level objectives](#service-level-objectives).
 
-- `slo` (`src/compare/slo.ts`) judges b against `release/slo.yaml`: per objective, the app's own
-  /metrics SLI across the journeys (`<id>`) and, for the reader, the k6 leg (`<id>/load`). A finding
-  ends "(production too)" or "(new on b)". `ENGINE_LEVELS` lists it as informing with no
+- `slo` (`src/compare/slo.ts`) judges b against the stricter of `release/slo.yaml` (indicative) and
+  the harness's own floors, `slo/floors.yaml` (a pinned ratchet, judged alone without a monorepo
+  file): per objective, the app's own /metrics SLI across the journeys (`<id>`) and, for the reader,
+  the k6 leg (`<id>/load`). A miss ends "(production too)" or "(new on b)"; a significant worsening
+  against a is a `regression` finding even with the target met. `ENGINE_LEVELS` lists it as informing with no
   `blockingFrom`; `SOAK_CHECKS` watches it.
 - `--slo <file>` on `harness run`, `harness compare` and `harness local gate`; `harness release` reads
   `release/slo.yaml` in the monorepo checkout when it is omitted. `release.yml` and `main-preview.yml`
-  fetch `slo.yaml` beside the claims; none (a 404) judges none.
+  fetch `slo.yaml` beside the claims; none (a 404) judges the floors alone.
 - A claim may name it (twenty-six artefact names). `report.schema.json`'s artefact enum gains it,
   and `load` gains `p99`.
 - The capture's metrics snapshot keeps `sli` per app (`http_requests_total` 5xx and

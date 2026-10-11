@@ -1,8 +1,10 @@
 import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { parse, YAMLParseError } from "yaml";
 import { z } from "zod";
 import { InputFileError, inputProblems, unreadable, type Problem } from "../claims/input-error.ts";
 import { APPS } from "../image-ref.ts";
+import { ROOT } from "../stack.ts";
 
 /**
  * Since 1.34.0: the release's service level objectives, `release/slo.yaml` beside `claims.yaml` in the monorepo
@@ -86,4 +88,40 @@ export function loadSlo(path: string): SloFile {
     throw unreadable("the SLO file", path, e);
   }
   return parseSlo(text, path);
+}
+
+/**
+ * The harness's own floors (`slo/floors.yaml`): stricter than the monorepo's indicative targets, judged with or without
+ * them. A ratchet: raised by PR, never lowered to make a run pass.
+ */
+export const HARNESS_FLOORS_FILE = resolve(ROOT, "slo", "floors.yaml");
+
+let floors: SloFile | undefined;
+export function harnessFloors(): SloFile {
+  floors ??= loadSlo(HARNESS_FLOORS_FILE);
+  return floors;
+}
+
+/** An objective as the engine judges it: the stricter target, and both sides of where it came from. */
+export interface JudgedObjective extends Objective {
+  /** The harness floor's target for the same app, kind and threshold, when it has one. */
+  floor?: number;
+  /** The monorepo's target, when its file has one. */
+  monorepo?: number;
+}
+
+const objectiveKey = (o: Objective) => `${o.app}/${o.kind}/${o.threshold ?? ""}`;
+
+/**
+ * The objectives to judge: the harness floors and the monorepo's, matched by app, kind and threshold. Where both have
+ * one, the target is the stricter and the monorepo's id is kept; each side's own target is kept beside it.
+ */
+export function judgedObjectives(floorFile: SloFile, monorepo: SloFile | undefined): JudgedObjective[] {
+  const out = new Map<string, JudgedObjective>();
+  for (const o of floorFile.objectives) out.set(objectiveKey(o), { ...o, floor: o.target });
+  for (const o of monorepo?.objectives ?? []) {
+    const f = out.get(objectiveKey(o));
+    out.set(objectiveKey(o), { ...o, target: Math.max(o.target, f?.target ?? 0), monorepo: o.target, ...(f ? { floor: f.target } : {}) });
+  }
+  return [...out.values()];
 }

@@ -150,7 +150,7 @@ touches:
 
 | Paths | |
 | --- | --- |
-| `src/compare/**`, `src/gate.ts`, `src/not-collected.ts`, `src/claims/**`, `src/slo/**` | engines, the gate, the "NOT COLLECTED" convention, the matcher that decides what is claimed, and the SLO file the slo engine judges against (since 1.34.0) |
+| `src/compare/**`, `src/gate.ts`, `src/not-collected.ts`, `src/claims/**`, `src/slo/**`, `slo/**` | engines, the gate, the "NOT COLLECTED" convention, the matcher that decides what is claimed, and the SLO file and the harness floors the slo engine judges against (since 1.34.0) |
 | `normalise/**`, `src/normalise/**` | masks and how they are applied |
 | `post-deploy/**` | the claims post-deploy mode applies (post-deploy.yml, `harness local watch`): what the monitor excuses (since 1.28.4) |
 | `src/collectors/**`, `src/runtime/**`, `src/image-static/**`, `src/persistence/**`, `src/migration/**`, `src/bus/**`, `src/clock-probe.ts` | what is captured: a report can change with no engine touched |

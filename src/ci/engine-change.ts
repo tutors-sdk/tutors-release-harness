@@ -35,6 +35,8 @@ export const ENGINE_PATHS = [
   "src/claims/**",
   // Since 1.34.0: the SLO file the slo engine judges against.
   "src/slo/**",
+  // Since 1.34.0: the harness's own SLO floors, stricter than the monorepo's.
+  "slo/**",
   "src/normalise/**",
   "normalise/**",
   // The claims post-deploy mode applies (post-deploy.yml, `harness local watch`): what the monitor excuses.

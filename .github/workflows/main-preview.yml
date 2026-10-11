@@ -197,9 +197,9 @@ jobs:
       # Since 1.23.0: main's OpenVEX file beside them, handed to the scanner (--vex); none (a 404) scans without one.
       - name: Fetch main's OpenVEX file
         run: curl -fsSL "${CLAIMS_URL%claims.yaml}openvex.json" -o openvex.json || { rm -f openvex.json; echo "no openvex.json beside main's claims, scanning without one"; }
-      # Since 1.34.0: main's SLOs beside them, judged by the slo engine (--slo, informing); none (a 404) judges none.
+      # Since 1.34.0: main's SLOs beside them, judged by the slo engine (--slo, informing); none (a 404) judges the harness floors alone.
       - name: Fetch main's SLOs
-        run: curl -fsSL "${CLAIMS_URL%claims.yaml}slo.yaml" -o slo.yaml || { rm -f slo.yaml; echo "no slo.yaml beside main's claims, judging no SLOs"; }
+        run: curl -fsSL "${CLAIMS_URL%claims.yaml}slo.yaml" -o slo.yaml || { rm -f slo.yaml; echo "no slo.yaml beside main's claims, judging the harness floors alone"; }
       - name: Check out the monorepo at that commit, for its Rules
         if: env.SHA != ''
         continue-on-error: true

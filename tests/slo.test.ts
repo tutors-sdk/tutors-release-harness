@@ -11,10 +11,10 @@ import { parseMetrics } from "../src/collectors/metrics.ts";
 import { InputFileError } from "../src/claims/input-error.ts";
 import { compareCaptures } from "../src/compare/index.ts";
 import { ENGINE_LEVELS } from "../src/compare/levels.ts";
-import { SLO_MIN_REQUESTS, slo } from "../src/compare/slo.ts";
+import { SLO_MIN_REQUESTS, slo as judgeSlo, worseP } from "../src/compare/slo.ts";
 import { DEFAULT_MASKS_FILE, loadMasks, normalise } from "../src/normalise/masks.ts";
 import { compareFromCaptures } from "../src/run.ts";
-import { loadSlo, parseSlo, type SloFile } from "../src/slo/schema.ts";
+import { HARNESS_FLOORS_FILE, harnessFloors, judgedObjectives, loadSlo, parseSlo, type SloFile } from "../src/slo/schema.ts";
 import type { LoadSummary, RequestSli, SideCapture } from "../src/types.ts";
 import { capture } from "./support/captures.ts";
 
@@ -44,7 +44,10 @@ function side(name: "a" | "b", reader: RequestSli, catalogue: RequestSli = sli(2
 }
 
 const k6 = (samples: number[], serverErrors = 0): LoadSummary => ({ requests: samples.length, failed: serverErrors, serverErrors, samples, p50: 0, p95: 0, p99: 0, rate: 20, duration: "30s" });
-const fails = (hunks: ReturnType<typeof slo>) => hunks.filter((h) => h.severity === "fail");
+const fails = (hunks: ReturnType<typeof judgeSlo>) => hunks.filter((h) => h.severity === "fail");
+const NO_FLOORS: SloFile = { source: "none", window: "28d", objectives: [] };
+/** The monorepo's file alone, so each test reads one set of objectives; the floors have their own tests. */
+const slo = (a: SideCapture, b: SideCapture, file: SloFile | undefined) => judgeSlo(a, b, file, NO_FLOORS);
 
 describe("the SLO file", () => {
   it("reads the objectives the monorepo keeps", () => {
@@ -90,6 +93,34 @@ describe("the request SLIs a capture keeps", () => {
   });
 });
 
+describe("the harness floors: stricter than the monorepo's indicative targets", () => {
+  it("are pinned: a ratchet, raised by PR, never lowered to make a run pass", () => {
+    const floors = loadSlo(HARNESS_FLOORS_FILE);
+    expect(floors.objectives.map((o) => [o.id, o.target, o.threshold ?? null])).toEqual([
+      ["reader-availability", 0.999, null],
+      ["reader-latency", 0.99, 1],
+      ["catalogue-availability", 0.999, null],
+      ["catalogue-latency", 0.99, 1],
+      ["live-availability", 0.999, null],
+      ["live-latency", 0.99, 1],
+      ["time-availability", 0.999, null],
+      ["time-latency", 0.99, 1]
+    ]);
+  });
+
+  it("the stricter target wins, and a finding says where it came from", () => {
+    const judged = judgedObjectives(harnessFloors(), FILE);
+    expect(judged.find((o) => o.id === "reader-availability")).toMatchObject({ target: 0.999, floor: 0.999, monorepo: 0.995 });
+    expect(judged).toHaveLength(8);
+    const looser = parseSlo("window: 28d\nobjectives:\n  - { id: reader-fast, app: reader, kind: latency, threshold: 0.5, target: 0.9 }", "slo.yaml");
+    expect(judgedObjectives(harnessFloors(), looser)).toHaveLength(9);
+    const strict = parseSlo("window: 28d\nobjectives:\n  - { id: reader-availability, app: reader, kind: availability, target: 0.9995 }", "slo.yaml");
+    expect(judgedObjectives(harnessFloors(), strict).find((o) => o.id === "reader-availability")).toMatchObject({ target: 0.9995, floor: 0.999, monorepo: 0.9995 });
+    const [miss] = fails(judgeSlo(side("a", sli(2000)), side("b", sli(2000, 4)), FILE));
+    expect(miss!.summary).toContain("objective 99.90% (harness floor; monorepo 99.50%)");
+  });
+});
+
 describe("the slo engine", () => {
   it("ships informing with no date", () => {
     expect(ENGINE_LEVELS.slo).toEqual({ level: "informing" });
@@ -114,15 +145,25 @@ describe("the slo engine", () => {
     expect(h!.summary).toMatch(/77\.5% of 400 reader requests under 1s on b .*objective 95\.0%; production 75\.0%: missed \(production too\)$/);
   });
 
-  it("must not flag: b slower than a, still inside the objective (timing's question, not this one's)", () => {
-    expect(fails(slo(side("a", sli(400, 0, 400)), side("b", sli(400, 0, 385)), FILE))).toEqual([]);
+  it("must not flag: b a little slower than a, inside the objective and not significantly worse", () => {
+    expect(fails(slo(side("a", sli(400, 0, 400)), side("b", sli(400, 0, 398)), FILE))).toEqual([]);
+  });
+
+  it("harder on regression: significantly worse than a is a finding even with the objective met", () => {
+    const hunks = slo(side("a", sli(400, 0, 400)), side("b", sli(400, 0, 385)), FILE);
+    expect(hunks.find((h) => h.scope === "reader-latency")!.summary).toMatch(/96\.3% .*: holds$/);
+    const [r] = fails(hunks);
+    expect(r).toMatchObject({ scope: "reader-latency/regression", severity: "fail" });
+    expect(r!.summary).toMatch(/^reader-latency: reader requests under 1s fell from 100\.0% of 400 on a to 96\.3% of 400 on b \(its \/metrics across the journeys; p=[0-9.e-]+\): regressed \(new on b\)$/);
+    expect(worseP({ good: 400, total: 400 }, { good: 398, total: 400 })).toBeGreaterThan(0.05);
+    expect(worseP({ good: 400, total: 400 }, { good: 400, total: 400 })).toBe(1);
   });
 
   it("the k6 leg is judged on its own, for the reader", () => {
     const fast = Array.from({ length: 200 }, () => 120);
     const slow = Array.from({ length: 200 }, (_, i) => (i < 30 ? 1400 : 120));
     const hunks = slo(side("a", sli(400), sli(200), k6(fast)), side("b", sli(400), sli(200), k6(slow)), FILE);
-    expect(fails(hunks).map((h) => h.scope)).toEqual(["reader-latency/load"]);
+    expect(fails(hunks).map((h) => h.scope)).toEqual(["reader-latency/load", "reader-latency/load/regression"]);
     expect(fails(hunks)[0]!.summary).toContain("85.0% of 200 reader requests under 1s on b (the k6 load leg)");
     expect(hunks.map((h) => h.scope)).toContain("reader-availability/load");
     expect(hunks.map((h) => h.scope)).not.toContain("catalogue-latency/load");
@@ -137,16 +178,17 @@ describe("the slo engine", () => {
     expect(slo(side("a", sli(400)), b, FILE).find((h) => h.scope === "catalogue-latency/not-evaluated")!.summary).toBe("catalogue-latency: not evaluated on b: its /metrics across the journeys carries no latency SLI for catalogue");
   });
 
-  it("without an SLO file, or against an external side, it writes nothing", () => {
-    expect(slo(side("a", sli(400)), side("b", sli(400, 100)), undefined)).toEqual([]);
-    expect(slo(side("a", sli(400)), { ...side("b", sli(400, 100)), external: true }, FILE)).toEqual([]);
+  it("against an external side, or a capture with no SLI at all (before 1.34.0), it writes nothing", () => {
+    expect(judgeSlo(side("a", sli(400)), { ...side("b", sli(400, 100)), external: true }, FILE)).toEqual([]);
+    expect(judgeSlo(capture("a"), capture("b"), FILE)).toEqual([]);
   });
 
   it("through a run: the miss is reported as informing and the verdict does not move", () => {
     const masks = loadMasks(DEFAULT_MASKS_FILE);
     const a = side("a", sli(400));
     const b = side("b", sli(400, 40));
-    expect(compareCaptures(normalise(a, masks).capture, normalise(b, masks).capture, masks).filter((h) => h.artefact === "slo")).toEqual([]);
+    // With no monorepo file the harness floors still judge.
+    expect(compareCaptures(normalise(a, masks).capture, normalise(b, masks).capture, masks).find((h) => h.scope === "reader-availability")!.summary).toContain("objective 99.90% (harness floor)");
     const dir = mkdtempSync(join(tmpdir(), "slo-run-"));
     const run = (file?: SloFile) => compareFromCaptures({ mode: "release", substrate: "compose", captureDir: dir, a, b, claims: [], ...(file ? { slo: file } : {}), masksFile: DEFAULT_MASKS_FILE, noise: "skip", noiseMaxAgeDays: 7, now: "2026-10-11T00:00:00.000Z", runs: 1, log: () => {} });
     const without = run();

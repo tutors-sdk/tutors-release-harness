@@ -292,9 +292,9 @@ describe("report.json", () => {
     const changes = contractMd.slice(contractMd.indexOf("### 1.34.0"), contractMd.indexOf("### 1.33.0")).replace(/\s+/g, " ");
     for (const item of ["releases/1.34.0.md", "minor", "`slo`", "`--slo`", "**informing**", "`release/slo.yaml`", "`p99`", "twenty-six", "`SOAK_CHECKS`"]) expect(changes, item).toContain(item);
     const section = contractMd.slice(contractMd.indexOf("### Service level objectives"), contractMd.indexOf("## Verdicts and exit codes")).replace(/\s+/g, " ");
-    for (const item of ["**absolute**", "`<id>/load`", "(production too)", "`SLO_MIN_REQUESTS`", "**informing**", "bucket bound"]) expect(section, item).toContain(item);
+    for (const item of ["**absolute**", "**stricter than the monorepo**", "`slo/floors.yaml`", "`<id>/load`", "(production too)", "regressed (new on b)", "`SLO_REGRESSION_ALPHA`", "`SLO_MIN_REQUESTS`", "**informing**", "bucket bound"]) expect(section, item).toContain(item);
     const note = readFileSync(resolve(ROOT, "docs/releases/1.34.0.md"), "utf8").replace(/\s+/g, " ");
-    for (const item of ["The verdict never moves", "Informing, with no date", "tutors-sdk/tutors-mono-repo#170", "nothing is judged and no report changes"]) expect(note, item).toContain(item);
+    for (const item of ["The verdict never moves", "Informing, with no date", "tutors-sdk/tutors-mono-repo#170", "Stricter than the monorepo", "Harder on regression", "never lowered"]) expect(note, item).toContain(item);
   });
 
   it("1.33.0: its changelog and release note name the schema reading, where the schema comes from, and that it never fails", () => {

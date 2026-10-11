@@ -174,10 +174,10 @@ jobs:
         run: curl -fsSL "${CLAIMS_URL%claims.yaml}openvex.json" -o openvex.json || { rm -f openvex.json; echo "no openvex.json beside the claims, scanning without one"; }
 
       # Since 1.34.0: the release's service level objectives, slo.yaml beside claims.yaml, judged by the slo engine
-      # (--slo, informing). A release that keeps none (a 404) judges none; one the harness cannot use is exit 2 at the run.
+      # (--slo, informing). A release that keeps none (a 404) judges the harness floors alone; one the harness cannot use is exit 2 at the run.
       - name: Fetch the release's SLOs
         if: endsWith(env.CLAIMS_URL, '/claims.yaml')
-        run: curl -fsSL "${CLAIMS_URL%claims.yaml}slo.yaml" -o slo.yaml || { rm -f slo.yaml; echo "no slo.yaml beside the claims, judging no SLOs"; }
+        run: curl -fsSL "${CLAIMS_URL%claims.yaml}slo.yaml" -o slo.yaml || { rm -f slo.yaml; echo "no slo.yaml beside the claims, judging the harness floors alone"; }
 
       # The latest status the nightly published to the `noise` branch: the newest night, clean or not, never an older
       # clean one that a dirty night has since superseded. A missing or unusable file is dropped with a warning and the

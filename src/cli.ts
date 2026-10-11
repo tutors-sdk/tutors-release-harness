@@ -53,7 +53,8 @@ const USAGE = `tutors-release-harness
                     scanner on both sides (grype or trivy, --vex), so an advisory it says does not affect the release
                     is left out of vulns and the vulnerability ceiling. Checked first: an invalid one is exit 2
       --slo         the release's service level objectives (release/slo.yaml beside claims.yaml): the slo engine
-                    judges b against them, from each app's /metrics and the k6 leg. Informing: never changes the
+                    judges b against the stricter of them and the harness floors (slo/floors.yaml), from each app's
+                    /metrics and the k6 leg, and flags a regression against a. Informing: never changes the
                     verdict. Checked first: an invalid one is exit 2
       --a2          release mode, compose: also start side a2, a second copy of side a's apps (four containers),
                     capture it once for dom, network, console, headers, axe and focus, and report a against a2 beside
