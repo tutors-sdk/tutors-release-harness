@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/tutors-sdk/tutors-release-harness/blob/main/docs/contract/readiness.schema.json",
   "title": "readiness.json: the overnight readiness page (contract 1.25.0, not stable)",
-  "description": "Since 1.17.0 (each forecast's `quality` since 1.18.0; `control` since 1.19.0; `soak` since 1.25.0; each forecast's `claimed`, `coverage` and `claims` since 1.28.1). Written by `harness readiness --site <dir>` beside readiness.html on the reports site: one row per calendar night (UTC) for the last ten nights, newest first, from the Main to RC forecasts kept on the `main-preview` branch and Main to RC's workflow runs (github.json). Derived from Readiness in src/readiness/model.ts. The band is deliberately absent: while the review floor caps the score the row carries the Gate only. Advisory: never read by a verdict, the Gate or an exit code. Not stable: it may change in a minor release.",
+  "description": "Since 1.17.0 (each forecast's `quality` since 1.18.0; `control` since 1.19.0; `soak` since 1.25.0; each forecast's `claimed`, `coverage` and `claims` since 1.28.1; `serviceLevels` since 1.35.0). Written by `harness readiness --site <dir>` beside readiness.html on the reports site: one row per calendar night (UTC) for the last ten nights, newest first, from the Main to RC forecasts kept on the `main-preview` branch and Main to RC's workflow runs (github.json). Derived from Readiness in src/readiness/model.ts. The band is deliberately absent: while the review floor caps the score the row carries the Gate only. Advisory: never read by a verdict, the Gate or an exit code. Not stable: it may change in a minor release.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schemaVersion", "builtAt", "harness", "nights", "sources"],
@@ -12,6 +12,33 @@
     "harness": { "type": "string", "description": "The harness version that built the page." },
     "nights": { "type": "array", "maxItems": 10, "items": { "$ref": "#/definitions/night" } },
     "control": { "allOf": [{ "$ref": "release-control.schema.json" }], "description": "Since 1.19.0: the release-size control chart (XmR) and the WIP limit on the PRs waiting on main. Absent from a readiness.json written before 1.19.0." },
+    "serviceLevels": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Since 1.35.0: the harness's own service levels (src/readiness/service-levels.ts): freshness of the newest forecast, nightly A/A and mutants self-test, and rates over the last 14 finished nights (nights judged or unchanged, clean verified A/As) and of the newest self-test (mutants caught). The targets are a ratchet. Advisory: never an input to the Gate, a verdict, an engine level or an exit code. Absent on a page built before 1.35.0.",
+      "required": ["nights", "levels", "holding", "judged", "headline"],
+      "properties": {
+        "nights": { "type": "integer", "minimum": 1 },
+        "levels": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "kind", "target", "value", "holds"],
+            "properties": {
+              "id": { "enum": ["forecast-fresh", "aa-fresh", "mutants-fresh", "nights-judged", "aa-clean", "mutants-caught"] },
+              "kind": { "enum": ["freshness", "rate"] },
+              "target": { "type": "string", "description": "For people." },
+              "value": { "type": "string", "description": "For people." },
+              "holds": { "type": ["boolean", "null"], "description": "null when what it reads was not read: never guessed." }
+            }
+          }
+        },
+        "holding": { "type": "integer", "minimum": 0 },
+        "judged": { "type": "integer", "minimum": 0 },
+        "headline": { "type": "string" }
+      }
+    },
     "soak": {
       "type": "object",
       "additionalProperties": false,
