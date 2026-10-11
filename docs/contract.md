@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.33.0`
+Contract version: `1.34.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -136,7 +136,7 @@ written). Source of truth: `RunReport` in `src/types.ts`.
 | `masksApplied` | `{ [maskId]: integer }` | how often each mask in `normalise/masks.yaml` changed something, both sides summed; `0` is a silent mask |
 | `migration` | optional | migration mode only: `{ a, b, rolledBack }`; `a`/`b` are `{ ref, files[], catalog }`, a catalog is `{ tables: { [table]: { [column]: { type, nullable, default } } }, indexes[], functions[], policies[] }` |
 | `upgrade` | optional | upgrade mode only: `{ substrate, requests, failed, serverErrors, byUpstream: { [side]: { requests, failed, serverErrors, p95 } }, switchedAt, durationMs }`; times in ms |
-| `load` | optional | when `--load` ran on both sides: `{ a, b }`, each `{ requests, failed, serverErrors, p50, p95, rate, duration }` |
+| `load` | optional | when `--load` ran on both sides: `{ a, b }`, each `{ requests, failed, serverErrors, p50, p95, p99?, rate, duration }` (`p99` since 1.34.0) |
 | `claimHygiene` | optional — since 1.2.0 | present when the claims file had claims; see [Claim hygiene](#claim-hygiene). Informational: never changes the verdict |
 | `override` | optional — since 1.2.0 | present only when an override of a FAIL was requested; see [Overriding a FAIL](#overriding-a-fail) |
 | `deployment` | optional — since 1.3.0 | post-deploy mode, when the deploy reported what it deployed: `{ production?, status, digests, recorded?, record?, problems[] }`, the deployed digests against the release record; see [Checking a deployment](#checking-a-deployment). Advisory: a `status` other than `match` turns a `pass` into a `warn` and never touches a `fail` |
@@ -149,10 +149,10 @@ written). Source of truth: `RunReport` in `src/types.ts`.
 `artefact` is one of `dom`, `screenshot`, `network`, `console`, `headers`,
 `axe`, `focus`, `metrics`, `logs`, `timing`, `persistence`, `bus`, `migration`,
 `upgrade`, `image-manifest`, `sbom`, `vulns`, `runtime`, `startup`, `image-hardening`,
-`build-provenance`, `vuln-ceiling`, `timing-tolerance`, `asset-graph`, `replay`. `bus` and `image-manifest` to `startup` are since 1.2.0;
+`build-provenance`, `vuln-ceiling`, `timing-tolerance`, `asset-graph`, `replay`, `slo`. `bus` and `image-manifest` to `startup` are since 1.2.0;
 `image-hardening` to `vuln-ceiling`, the policy family, since 1.22.0 (see [The policy family](#the-policy-family));
 `timing-tolerance` since 1.26.0 (see [The timing tolerance](#the-timing-tolerance)); `asset-graph` since
-1.27.0 (see [Asset-graph folding](#asset-graph-folding)); `replay` since 1.28.0 (see [The replay set](#the-replay-set)) (see [Static image artefacts](#static-image-artefacts)
+1.27.0 (see [Asset-graph folding](#asset-graph-folding)); `replay` since 1.28.0 (see [The replay set](#the-replay-set)); `slo` since 1.34.0 (see [Service level objectives](#service-level-objectives)) (see [Static image artefacts](#static-image-artefacts)
 and [Container runtime artefacts](#container-runtime-artefacts)); a consumer
 must tolerate an artefact name it does not know. `severity` is `fail` (gates unless claimed) or `info` (reported,
 never gates). `scope` and `path` are what a claim's glob is matched against.
@@ -357,7 +357,7 @@ Every diff engine is **blocking**, so a run decides exactly what it decided befo
 new engine or check ships informing, with the date it starts to block when there is one, and is
 watched on the readiness page before it may stop a release: since 1.22.0 the three checks of
 [the policy family](#the-policy-family) are informing, with no date set, since 1.26.0
-[the timing tolerance](#the-timing-tolerance), since 1.27.0 [asset-graph folding](#asset-graph-folding), and since 1.28.0 [the replay set](#the-replay-set). An engine missing from
+[the timing tolerance](#the-timing-tolerance), since 1.27.0 [asset-graph folding](#asset-graph-folding), since 1.28.0 [the replay set](#the-replay-set), and since 1.34.0 [service level objectives](#service-level-objectives). An engine missing from
 the table is blocking: no check escapes the Gate by being left out.
 
 ### The policy family
@@ -424,6 +424,59 @@ is **informing**, with no date ([Engine levels](#engine-levels)): every finding 
 none gates, and the readiness page's soak watches it beside the policy family. At 2.0 it becomes
 blocking: a significant slowdown of 10% or more then fails a release, where today it takes 20%.
 Its planted mutant is `slow-ssr-mild` (150 ms on every HTML response).
+
+### Service level objectives
+
+Since 1.34.0 (tutors-sdk/tutors-mono-repo#170) the `slo` engine (`src/compare/slo.ts`) judges side b
+against **absolute** targets, and is **stricter than the monorepo**. The monorepo's
+`release/slo.yaml`, beside `claims.yaml`, is indicative: what the college aims for and what its
+production alerts burn against. The harness keeps its own floors in `slo/floors.yaml` (99.9% of
+requests not 5xx and 99% under 1s, for every app). Each objective is judged at the stricter of the
+two targets for the same app, kind and threshold, and the floors are judged alone when the monorepo
+keeps no file. The floors are a ratchet, like the coverage floor: `tests/slo.test.ts` pins them, they
+are raised by PR when the soak shows headroom, and never lowered to make a run pass. Every other timing
+check is relative ("b is slower than a"), so a candidate as slow as a slow production passes them. It
+does not pass this one. `--slo <file>` takes the monorepo's file (`harness release` reads
+`release/slo.yaml` in the monorepo checkout when it is omitted; `release.yml` and `main-preview.yml`
+fetch `slo.yaml` beside the claims, and a 404 judges the floors alone). A file the harness cannot use
+is exit 2 before any stack starts.
+
+```yaml
+version: 1          # optional
+window: 28d         # the monorepo's error-budget window; reported, not used to judge one run
+objectives:
+  - id: reader-availability
+    app: reader      # reader | catalogue | live | time
+    kind: availability   # share of responses that are not 5xx
+    target: 0.995
+  - id: reader-latency
+    app: reader
+    kind: latency    # share of requests at or under threshold
+    threshold: 1     # seconds: a bucket bound of http_request_duration_seconds
+    target: 0.95
+```
+
+`threshold` must be a bound the monorepo pins for `http_request_duration_seconds` (0.01, 0.05, 0.1,
+0.25, 0.5, 1, 2.5, 5, 10), or the SLI could not be computed exactly from the histogram.
+
+| Artefact | Scopes | A finding when | Reads |
+| --- | --- | --- | --- |
+| `slo` | `<id>` (the app's /metrics), `<id>/load` (the k6 leg, reader only); `<scope>/regression`; `<scope>/not-evaluated` (info) | b's share of good requests is under the target; or (**regression**) b's share of bad requests is significantly worse than a's (one-sided two-proportion test at `SLO_REGRESSION_ALPHA`, 0.05), whether or not the target is met | `sli` in each app's metrics snapshot, before and after the journeys: `http_requests_total` (5xx by `status_code`) and `http_request_duration_seconds_bucket` by `le`; and the k6 leg's 5xx count and request durations (subsampled to 2000) |
+
+Like [the policy family](#the-policy-family), only b is judged, and a finding ends "(production too)"
+when side a misses the same objective, or "(new on b)"; with too little on a it ends at "missed". A
+finding names where its target came from: "(harness floor)", or "(harness floor; monorepo 99.50%)" when
+the floor is the stricter. The harness goes harder on a candidate that is getting worse, not only on one
+that is already bad: a regression is a finding on its own scope, ending "regressed (new on b)". An
+objective b meets is an info `<id>` hunk ending "holds", and one that cannot be judged an info
+`.../not-evaluated` (no SLI exported, or fewer than `SLO_MIN_REQUESTS`, 20, requests), so a quiet
+check reads differently from one that did not run. External sides (post-deploy), and a side b whose
+capture carries no SLI at all (recorded before 1.34.0), are not judged and write nothing. The check is **informing**, with no date ([Engine levels](#engine-levels)): every
+finding is reported and none gates, and the readiness page's soak watches it. It has no planted mutant
+yet, so it is not eligible to block.
+
+The capture's per-app metrics snapshot gains `sli` (`{ requests, serverErrors, buckets }`), and
+`load` gains `p99`. Neither changes what `metrics` or `load` compare.
 
 ### Asset-graph folding
 
@@ -805,7 +858,7 @@ claims:
     digests: { reader: "sha256:…" }                     # since 1.25.1, optional: the images it was written against, by app
 ```
 
-- `artefact`: one of the twenty-five artefact names above, or `*`.
+- `artefact`: one of the twenty-six artefact names above, or `*`.
 - `scope`: matched with picomatch (`dot: true`, case-insensitive) against the
   hunk's `scope` **or** its `path`.
 - `reason`: at least 8 characters, and must not start with `see pr`,
@@ -1555,8 +1608,8 @@ confidence`), nor `harness guard scoreboard` (since 1.11.0; `guard all` runs it 
 
 | Command | Stable flags |
 | --- | --- |
-| `harness run` | `--mode` (required), `--a`, `--b` (required except in post-deploy), `--claims <file>`, `--rules <path\|url>` (since 1.3.0: the Rules a claim may name, see [The rules file](#the-rules-file)), `--vex <file>` (since 1.23.0: the release's OpenVEX file, handed to the scanner, see [OpenVEX](#openvex-exceptions-the-scanner-reads)), `--a2` (since 1.24.0, not stable: side a2, see [In-run noise](#in-run-noise-side-a2)), `--noise <file\|dir\|skip\|none>` (omitted: the latest status in the local store, see [`noise-status.json`](#noise-statusjson-and-the-7-day-rule)), `--runs <n>`, `--set <fixture,auth,reference,replay>` (`replay` since 1.28.0), `--journey <name>` (repeatable), `--load <rate>x<duration>`, `--out <dir>`, `--image-prefix <prefix or {app} template>`, `--allow-unsigned`, `--require-verified` (noise mode: write the status `degraded` unless every image on both sides was pulled and verified in this run), `--override-reason <text>` and `--override-by <who>` (see [Overriding a FAIL](#overriding-a-fail)), `--a-digests <digests>` and `--b-digests <digests>` (since 1.3.0: pin a side's images, see [Image digests](#image-digests-and-the-release-record)); post-deploy: `--recorded <release run dir>`, `--production reader=URL,catalogue=URL,live=URL[,time=URL]`, and since 1.3.0 `--deployed <tag>`, `--deployed-digests <digests>` and `--release-record <file\|dir>` (see [Checking a deployment](#checking-a-deployment)) |
-| `harness compare` | `--dir <run dir>` (required), `--mode` (required), `--claims`, `--rules`, `--noise` |
+| `harness run` | `--mode` (required), `--a`, `--b` (required except in post-deploy), `--claims <file>`, `--rules <path\|url>` (since 1.3.0: the Rules a claim may name, see [The rules file](#the-rules-file)), `--vex <file>` (since 1.23.0: the release's OpenVEX file, handed to the scanner, see [OpenVEX](#openvex-exceptions-the-scanner-reads)), `--slo <file>` (since 1.34.0: the release's service level objectives, see [Service level objectives](#service-level-objectives)), `--a2` (since 1.24.0, not stable: side a2, see [In-run noise](#in-run-noise-side-a2)), `--noise <file\|dir\|skip\|none>` (omitted: the latest status in the local store, see [`noise-status.json`](#noise-statusjson-and-the-7-day-rule)), `--runs <n>`, `--set <fixture,auth,reference,replay>` (`replay` since 1.28.0), `--journey <name>` (repeatable), `--load <rate>x<duration>`, `--out <dir>`, `--image-prefix <prefix or {app} template>`, `--allow-unsigned`, `--require-verified` (noise mode: write the status `degraded` unless every image on both sides was pulled and verified in this run), `--override-reason <text>` and `--override-by <who>` (see [Overriding a FAIL](#overriding-a-fail)), `--a-digests <digests>` and `--b-digests <digests>` (since 1.3.0: pin a side's images, see [Image digests](#image-digests-and-the-release-record)); post-deploy: `--recorded <release run dir>`, `--production reader=URL,catalogue=URL,live=URL[,time=URL]`, and since 1.3.0 `--deployed <tag>`, `--deployed-digests <digests>` and `--release-record <file\|dir>` (see [Checking a deployment](#checking-a-deployment)) |
+| `harness compare` | `--dir <run dir>` (required), `--mode` (required), `--claims`, `--rules`, `--slo` (since 1.34.0), `--noise` |
 | `harness images ensure` | `--a`, `--b` (required), `--a-digests`, `--b-digests` (since 1.3.0: pull by digest, verify on it, refuse a tag that has moved; a pinned image is never built), `--ref-a`, `--ref-b` (monorepo git refs to build from when the pull fails), `--image-prefix`, `--allow-unsigned`, `--image-cache <dir>` (since 1.2.0: refreshed from images pulled and verified in this run; used, as provenance `cached`, only when the registry cannot be reached, and never for a tag the registry says does not exist). With `GITHUB_OUTPUT` set it writes `image_cache=none\|used\|refreshed` |
 | `harness mutants` | `--base <tag or reader image>` (required), `--out`, `--image-prefix`, `--allow-unsigned` |
 | `harness version` | `--json` |
@@ -1608,7 +1661,7 @@ Environment variables in the contract, all since 1.1.0 unless the row says other
 | `HARNESS_VULN_DB_MAX_AGE_DAYS` | `5` | since 1.4.0. Days since the vulnerability database was built beyond which `harness doctor` warns; also passed to grype as its own limit (`GRYPE_DB_MAX_ALLOWED_BUILT_AGE`), so a scan and the doctor agree. 5 days is grype's own default |
 | `HARNESS_ROLLBACK_ISSUE` | unset | since 1.4.0. Post-deploy wording only: `1`, `true` or `yes` says a CI step opens a rollback issue on a FAIL (the reason says `open a rollback issue`); `0`, `false` or `no` says none does (`decide whether to roll back`). Unset: GitHub Actions has the step, anything else does not |
 | `HARNESS_REQUIRE_ARTEFACTS` | unset | since 1.4.0. A comma separated list of artefacts (`image-manifest`, `sbom`, `vulns`, `runtime`, `startup`, `bus`), or `static` (the first three), or `all`, whose "not collected" gap is a failing hunk instead of an informational one. It only adds to what is already required (`runtime` and `startup`); a name it does not know is an error (exit 2), so a typo cannot loosen a gate. See [Not collected](#not-collected-one-convention) |
-| `HARNESS_MONOREPO_DIR` | unset | since 1.8.0. The monorepo checkout `harness release` reads `release/deployed.json` (the baseline, when `--baseline` is `prod` or omitted) and `release/claims.yaml` (when `--claims` is omitted) from, and since 1.23.0 `release/openvex.json` (when `--vex` is omitted); `--monorepo` overrides |
+| `HARNESS_MONOREPO_DIR` | unset | since 1.8.0. The monorepo checkout `harness release` reads `release/deployed.json` (the baseline, when `--baseline` is `prod` or omitted) and `release/claims.yaml` (when `--claims` is omitted) from, and since 1.23.0 `release/openvex.json` (when `--vex` is omitted), and since 1.34.0 `release/slo.yaml` (when `--slo` is omitted); `--monorepo` overrides |
 | `HARNESS_REQUIRE_STATIC` | unset | `1`, `true` or `yes`, since 1.2.0: the same as `HARNESS_REQUIRE_ARTEFACTS=static`, kept as an alias; the two add up |
 
 Stdout is for people, except `harness version --json`. The last lines of
@@ -1959,6 +2012,27 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.34.0 (minor; service level objectives, informing)
+
+The release note is [releases/1.34.0.md](releases/1.34.0.md). Tutors-mono-repo#170. A minor: a new
+artefact name, `slo`, a new stable flag, `--slo`, and a new optional `report.json` field, `load.*.p99`.
+The check ships **informing**, so no verdict, Gate or exit code moves. See
+[Service level objectives](#service-level-objectives).
+
+- `slo` (`src/compare/slo.ts`) judges b against the stricter of `release/slo.yaml` (indicative) and
+  the harness's own floors, `slo/floors.yaml` (a pinned ratchet, judged alone without a monorepo
+  file): per objective, the app's own /metrics SLI across the journeys (`<id>`) and, for the reader,
+  the k6 leg (`<id>/load`). A miss ends "(production too)" or "(new on b)"; a significant worsening
+  against a is a `regression` finding even with the target met. `ENGINE_LEVELS` lists it as informing with no
+  `blockingFrom`; `SOAK_CHECKS` watches it.
+- `--slo <file>` on `harness run`, `harness compare` and `harness local gate`; `harness release` reads
+  `release/slo.yaml` in the monorepo checkout when it is omitted. `release.yml` and `main-preview.yml`
+  fetch `slo.yaml` beside the claims; none (a 404) judges the floors alone.
+- A claim may name it (twenty-six artefact names). `report.schema.json`'s artefact enum gains it,
+  and `load` gains `p99`.
+- The capture's metrics snapshot keeps `sli` per app (`http_requests_total` 5xx and
+  `http_request_duration_seconds_bucket` by `le`).
 
 ### 1.33.0 (minor; real courses against the tutors.json schema)
 

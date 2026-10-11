@@ -1,0 +1,21 @@
+# The harness's own service level floors (since 1.34.0; tutors-sdk/tutors-mono-repo#170).
+#
+# The monorepo's release/slo.yaml is indicative: what the college aims for and what its production alerts burn
+# against. The harness is stricter. The `slo` engine (src/compare/slo.ts) judges side b against the stricter of the
+# monorepo's target and the floor here for the same app, kind and threshold, and judges these floors alone when the
+# monorepo keeps no file. Under the harness's own synthetic traffic, on stacks nobody else uses, a 5xx is a fault.
+#
+# A ratchet, like the coverage floor (TESTING.md): raise a floor by PR when the soak shows nights of headroom; never
+# lower one to make a run pass. tests/slo.test.ts pins every value, so a lowered floor fails until the test says why.
+# Same format as release/slo.yaml (docs/contract.md, "Service level objectives").
+version: 1
+window: 28d
+objectives:
+  - { id: reader-availability, app: reader, kind: availability, target: 0.999 }
+  - { id: reader-latency, app: reader, kind: latency, threshold: 1, target: 0.99 }
+  - { id: catalogue-availability, app: catalogue, kind: availability, target: 0.999 }
+  - { id: catalogue-latency, app: catalogue, kind: latency, threshold: 1, target: 0.99 }
+  - { id: live-availability, app: live, kind: availability, target: 0.999 }
+  - { id: live-latency, app: live, kind: latency, threshold: 1, target: 0.99 }
+  - { id: time-availability, app: time, kind: availability, target: 0.999 }
+  - { id: time-latency, app: time, kind: latency, threshold: 1, target: 0.99 }

@@ -77,5 +77,5 @@ export function summariseK6(lines: string, rate: number, duration: string, maxSa
   const sorted = [...durations].sort((x, y) => x - y);
   const pct = (p: number) => (sorted.length ? Number(sorted[Math.min(sorted.length - 1, Math.floor(p * sorted.length))]!.toFixed(2)) : 0);
   const step = Math.max(1, Math.ceil(durations.length / maxSamples));
-  return { requests, failed, serverErrors, samples: durations.filter((_, i) => i % step === 0), p50: pct(0.5), p95: pct(0.95), rate, duration };
+  return { requests, failed, serverErrors, samples: durations.filter((_, i) => i % step === 0), p50: pct(0.5), p95: pct(0.95), p99: pct(0.99), rate, duration };
 }
