@@ -11,7 +11,7 @@ import type { Digests } from "./digests.ts";
 export type SideName = "a" | "b";
 
 /** Every kind of thing the harness captures or rehearses. Claims and masks name these. */
-export const ARTEFACTS = ["dom", "screenshot", "network", "console", "headers", "axe", "focus", "metrics", "logs", "timing", "persistence", "bus", "migration", "upgrade", /* R5 static image artefacts */ "image-manifest", "sbom", "vulns", /* R5 runtime artefacts */ "runtime", "startup", /* 1.22.0: the policy family, on the candidate alone */ "image-hardening", "build-provenance", "vuln-ceiling", /* 1.26.0: the timing tolerance */ "timing-tolerance", /* 1.27.0: asset-graph folding */ "asset-graph", /* 1.28.0: the replay set */ "replay"] as const;
+export const ARTEFACTS = ["dom", "screenshot", "network", "console", "headers", "axe", "focus", "metrics", "logs", "timing", "persistence", "bus", "migration", "upgrade", /* R5 static image artefacts */ "image-manifest", "sbom", "vulns", /* R5 runtime artefacts */ "runtime", "startup", /* 1.22.0: the policy family, on the candidate alone */ "image-hardening", "build-provenance", "vuln-ceiling", /* 1.26.0: the timing tolerance */ "timing-tolerance", /* 1.27.0: asset-graph folding */ "asset-graph", /* 1.28.0: the replay set */ "replay", /* 1.34.0: service level objectives */ "slo"] as const;
 export type Artefact = (typeof ARTEFACTS)[number];
 
 export const MODES = ["noise", "release", "any-two", "upgrade", "migration", "post-deploy"] as const;
@@ -198,6 +198,20 @@ export interface JourneyCapture {
 export interface MetricsSnapshot {
   /** Series name -> summed value over all label sets. */
   series: Record<string, number>;
+  /**
+   * Since 1.34.0: the request SLIs the monorepo's SLOs are written against, from the labelled series `series` sums away:
+   * `http_requests_total` (all, and those whose `status_code` is 5xx) and `http_request_duration_seconds_bucket` by `le`,
+   * every other label summed. Absent when the app exports neither, and in a capture recorded before 1.34.0.
+   */
+  sli?: RequestSli;
+}
+
+/** Since 1.34.0: counters an SLI is a ratio of (src/compare/slo.ts). */
+export interface RequestSli {
+  requests: number;
+  serverErrors: number;
+  /** `le` bound as exposed ("1", "2.5", "+Inf") -> requests at or under it. */
+  buckets: Record<string, number>;
 }
 
 export interface LogSummary {
@@ -220,6 +234,8 @@ export interface LoadSummary {
   samples: number[];
   p50: number;
   p95: number;
+  /** Since 1.34.0; absent in a capture recorded before it. */
+  p99?: number;
   rate: number;
   duration: string;
 }

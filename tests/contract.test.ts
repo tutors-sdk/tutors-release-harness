@@ -90,7 +90,7 @@ const sideProvenance = { summary: "pulled+verified", allowedUnsigned: true as co
 const artefactStatus = { collected: true, source: "cosign attestation (signature verified)", reason: "no SBOM attestation", summary: "312 distinct package(s)" };
 const appArtefacts = { manifest: artefactStatus, sbom: artefactStatus, vulns: artefactStatus };
 const sideArtefacts = { reader: appArtefacts, catalogue: appArtefacts, live: appArtefacts, time: appArtefacts };
-const load = { requests: 600, failed: 0, serverErrors: 0, p50: 12, p95: 40, rate: 20, duration: "30s" };
+const load = { requests: 600, failed: 0, serverErrors: 0, p50: 12, p95: 40, p99: 55, rate: 20, duration: "30s" };
 
 /**
  * Every field RunReport can carry, optional ones included. DeepRequired makes
@@ -204,9 +204,9 @@ describe("report.json", () => {
   });
 
   it("the contract counts the artefacts truthfully and its 1.2.0 changelog lists every addition", () => {
-    const words = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty", "twenty-one", "twenty-two", "twenty-three", "twenty-four", "twenty-five"];
+    const words = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty", "twenty-one", "twenty-two", "twenty-three", "twenty-four", "twenty-five", "twenty-six"];
     expect(contractMd).toContain(`one of the ${words[ARTEFACTS.length]} artefact names above`);
-    for (const stale of words.slice(1, 25).filter((w) => w !== words[ARTEFACTS.length])) expect(contractMd, stale).not.toContain(`one of the ${stale} artefact names`);
+    for (const stale of words.slice(1, 27).filter((w) => w !== words[ARTEFACTS.length])) expect(contractMd, stale).not.toContain(`one of the ${stale} artefact names`);
     const changes = contractMd.slice(contractMd.indexOf("### 1.2.0"));
     expect(changes).not.toContain("### 1.3.0");
     const since = new Set(["bus", "image-manifest", "sbom", "vulns", "runtime", "startup"]);
@@ -216,7 +216,7 @@ describe("report.json", () => {
     const cli = json("docs/contract/cli.json");
     for (const flag of cli.flags.filter((f: { since?: string }) => f.since === "1.2.0")) expect(changes, flag.name).toContain(`--${flag.name === "runtime" ? "no-runtime" : flag.name}`);
     for (const [name, v] of Object.entries(cli.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.2.0")) expect(changes, name).toContain(name);
-    expect(CONTRACT_VERSION).toBe("1.33.0");
+    expect(CONTRACT_VERSION).toBe("1.34.0");
     // The harness version is package.json's and moves at least as far as the contract's (docs/contract.md, Versioning):
     // a mask or engine PR bumps the patch of the harness alone, so do not pin a literal here.
     expect(json("package.json").version).toBe(HARNESS_VERSION);
@@ -286,6 +286,15 @@ describe("report.json", () => {
     for (const command of cliJson.commands.filter((c: { since?: string }) => c.since === "1.5.0")) expect(changes, command.name).toContain(command.name);
     for (const [name, v] of Object.entries(cliJson.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.5.0")) expect(changes, name).toContain(name);
     for (const workflow of ["main-preview.yml", "pages.yml"]) expect(changes, workflow).toContain(workflow);
+  });
+
+  it("1.34.0: its changelog and release note name the slo engine, its file, its scopes and its level", () => {
+    const changes = contractMd.slice(contractMd.indexOf("### 1.34.0"), contractMd.indexOf("### 1.33.0")).replace(/\s+/g, " ");
+    for (const item of ["releases/1.34.0.md", "minor", "`slo`", "`--slo`", "**informing**", "`release/slo.yaml`", "`p99`", "twenty-six", "`SOAK_CHECKS`"]) expect(changes, item).toContain(item);
+    const section = contractMd.slice(contractMd.indexOf("### Service level objectives"), contractMd.indexOf("## Verdicts and exit codes")).replace(/\s+/g, " ");
+    for (const item of ["**absolute**", "`<id>/load`", "(production too)", "`SLO_MIN_REQUESTS`", "**informing**", "bucket bound"]) expect(section, item).toContain(item);
+    const note = readFileSync(resolve(ROOT, "docs/releases/1.34.0.md"), "utf8").replace(/\s+/g, " ");
+    for (const item of ["The verdict never moves", "Informing, with no date", "tutors-sdk/tutors-mono-repo#170", "nothing is judged and no report changes"]) expect(note, item).toContain(item);
   });
 
   it("1.33.0: its changelog and release note name the schema reading, where the schema comes from, and that it never fails", () => {

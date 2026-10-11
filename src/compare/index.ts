@@ -9,9 +9,11 @@ import { RUNTIME_ENGINES } from "./runtime.ts";
 import { assetGraph } from "./asset-graph.ts";
 import { replay, withoutReplay } from "./replay.ts";
 import { timingTolerance } from "./tolerance.ts";
+import { slo } from "./slo.ts";
+import type { SloFile } from "../slo/schema.ts";
 
 /** Run every diff engine over two normalised captures. Deterministic: same inputs, same hunks in the same order. */
-export function compareCaptures(sideA: SideCapture, sideB: SideCapture, config: EngineConfig, captureDir?: string): Hunk[] {
+export function compareCaptures(sideA: SideCapture, sideB: SideCapture, config: EngineConfig, captureDir?: string, sloFile?: SloFile): Hunk[] {
   resetHunkIds();
   // Since 1.28.0: the replay set's pages are compared by `replay` alone (status, headers, network), never by the others.
   const a = withoutReplay(sideA);
@@ -31,6 +33,8 @@ export function compareCaptures(sideA: SideCapture, sideB: SideCapture, config: 
   hunks.push(...assetGraph(a, b, hunks));
   // Since 1.28.0: the replay set (informing until 2.0).
   hunks.push(...replay(sideA, sideB));
+  // Since 1.34.0: service level objectives, with --slo (informing until 2.0).
+  hunks.push(...slo(a, b, sloFile));
   return hunks;
 }
 

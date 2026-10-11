@@ -209,7 +209,8 @@ export function normalise(capture: SideCapture, file: MasksFile, mode?: Mode, op
           if (mask) hit(hits, mask.id);
           else series[name] = value;
         }
-        return [app, { series }];
+        // Since 1.34.0 the request SLIs pass through untouched: no mask names them, and the slo engine reads them.
+        return [app, snap.sli ? { series, sli: snap.sli } : { series }];
       })
     );
 

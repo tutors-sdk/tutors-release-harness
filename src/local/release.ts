@@ -170,6 +170,8 @@ export interface ReleaseOptions {
   rules?: string;
   /** Since 1.23.0: the release's OpenVEX file, --vex or release/openvex.json in the monorepo checkout. */
   vex?: string;
+  /** Since 1.34.0: the release's service level objectives, --slo or release/slo.yaml in the monorepo checkout. */
+  slo?: string;
   fast: boolean;
   /** Given with --out: every run step writes there too. */
   out?: string;
@@ -216,6 +218,7 @@ export function planRelease(o: ReleaseOptions, noise: NoiseDecision): PlannedSta
     ...(o.claims ? { claims: o.claims } : {}),
     ...(o.rules ? { rules: o.rules } : {}),
     ...(o.vex ? { vex: o.vex } : {}),
+    ...(o.slo ? { slo: o.slo } : {}),
     ...(o.baseline.digests ? { productionDigests: o.baseline.digests } : {}),
     ...(o.fast ? { only: "release" as const } : {})
   });

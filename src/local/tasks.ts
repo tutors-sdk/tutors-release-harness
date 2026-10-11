@@ -100,6 +100,8 @@ export interface GateOptions {
   rules?: string;
   /** Since 1.23.0: the release's OpenVEX file (`--vex`), absolute. */
   vex?: string;
+  /** Since 1.34.0: the release's SLO file (`--slo`), absolute. */
+  slo?: string;
   /** Since 1.24.0: also start side a2 and report the in-run noise (`--a2`). */
   a2?: boolean;
   runs?: number;
@@ -127,7 +129,7 @@ export function planGate(o: GateOptions): Plan {
     steps.push({
       id: "release",
       title: "release mode: A/B, claims, k6",
-      argv: ["run", "--mode", "release", "--a", o.production, "--b", o.candidate, "--runs", String(o.runs ?? WORKFLOW_DEFAULTS.runs), ...(o.load === false ? [] : ["--load", o.load ?? WORKFLOW_DEFAULTS.load]), ...pins, ...(o.claims ? ["--claims", o.claims] : []), ...(o.rules ? ["--rules", o.rules] : []), ...(o.vex ? ["--vex", o.vex] : []), ...(o.a2 ? ["--a2"] : []), ...override],
+      argv: ["run", "--mode", "release", "--a", o.production, "--b", o.candidate, "--runs", String(o.runs ?? WORKFLOW_DEFAULTS.runs), ...(o.load === false ? [] : ["--load", o.load ?? WORKFLOW_DEFAULTS.load]), ...pins, ...(o.claims ? ["--claims", o.claims] : []), ...(o.rules ? ["--rules", o.rules] : []), ...(o.vex ? ["--vex", o.vex] : []), ...(o.slo ? ["--slo", o.slo] : []), ...(o.a2 ? ["--a2"] : []), ...override],
       stream: "release",
       gatesStream: false
     });

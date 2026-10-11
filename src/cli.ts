@@ -2,6 +2,7 @@ import { parseArgs } from "node:util";
 import { resolve } from "node:path";
 import { journeys, type JourneySet } from "../traffic/journeys/journeys.ts";
 import { loadClaims } from "./claims/schema.ts";
+import { loadSlo } from "./slo/schema.ts";
 import { isUrl, loadRules } from "./claims/rules.ts";
 import { InputFileError } from "./claims/input-error.ts";
 import { appendFileSync } from "node:fs";
@@ -51,6 +52,9 @@ const USAGE = `tutors-release-harness
       --vex         the release's OpenVEX file (release/openvex.json beside claims.yaml): handed to the vulnerability
                     scanner on both sides (grype or trivy, --vex), so an advisory it says does not affect the release
                     is left out of vulns and the vulnerability ceiling. Checked first: an invalid one is exit 2
+      --slo         the release's service level objectives (release/slo.yaml beside claims.yaml): the slo engine
+                    judges b against them, from each app's /metrics and the k6 leg. Informing: never changes the
+                    verdict. Checked first: an invalid one is exit 2
       --a2          release mode, compose: also start side a2, a second copy of side a's apps (four containers),
                     capture it once for dom, network, console, headers, axe and focus, and report a against a2 beside
                     the nightly A/A (in-run noise). Never changes the verdict
@@ -79,7 +83,7 @@ const USAGE = `tutors-release-harness
       migration:    --snapshot <pg_dump file>
       upgrade:      --upgrade-seconds 45 --upgrade-rate 20
 
-  harness compare --dir <run dir> --mode <mode> [--claims f] [--rules f] [--noise f] [--masks f]
+  harness compare --dir <run dir> --mode <mode> [--claims f] [--rules f] [--slo f] [--noise f] [--masks f]
       Re-run normalise/compare/claim/gate on captures already on disk.
 
   harness images ensure --a <ref> --b <ref> [--a-digests d] [--b-digests d] [--ref-a git-ref] [--ref-b git-ref] [--allow-unsigned] [--image-cache dir]
@@ -360,6 +364,7 @@ async function main(argv: string[]): Promise<number> {
       "claim-max-hunks": { type: "string" },
       rules: { type: "string" },
       vex: { type: "string" },
+      slo: { type: "string" },
       a2: { type: "boolean" },
       "a-digests": { type: "string" },
       "b-digests": { type: "string" },
@@ -532,6 +537,7 @@ async function main(argv: string[]): Promise<number> {
         ...(values.claims ? { claimsFile: resolve(values.claims) } : {}),
         ...(values.rules ? { rules: rulesWhere(values.rules) } : {}),
         ...(values.vex ? { vexFile: resolve(values.vex) } : {}),
+        ...(values.slo ? { sloFile: resolve(values.slo) } : {}),
         ...(values.a2 ? { a2: true } : {}),
         ...(noise(m) ? { noise: noise(m)! } : {})
       });
@@ -551,6 +557,7 @@ async function main(argv: string[]): Promise<number> {
         b: loadCapture(dir, "b"),
         ...(a2Capture ? { a2: a2Capture } : {}),
         claims: values.claims ? loadClaims(resolve(values.claims), values.rules ? await loadRules(rulesWhere(values.rules)) : undefined) : [],
+        ...(values.slo ? { slo: loadSlo(resolve(values.slo)) } : {}),
         masksFile: common.masksFile,
         noiseMaxAgeDays: common.noiseMaxAgeDays,
         claimMaxHunks: common.claimMaxHunks,

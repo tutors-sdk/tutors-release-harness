@@ -173,6 +173,12 @@ jobs:
         if: endsWith(env.CLAIMS_URL, '/claims.yaml')
         run: curl -fsSL "${CLAIMS_URL%claims.yaml}openvex.json" -o openvex.json || { rm -f openvex.json; echo "no openvex.json beside the claims, scanning without one"; }
 
+      # Since 1.34.0: the release's service level objectives, slo.yaml beside claims.yaml, judged by the slo engine
+      # (--slo, informing). A release that keeps none (a 404) judges none; one the harness cannot use is exit 2 at the run.
+      - name: Fetch the release's SLOs
+        if: endsWith(env.CLAIMS_URL, '/claims.yaml')
+        run: curl -fsSL "${CLAIMS_URL%claims.yaml}slo.yaml" -o slo.yaml || { rm -f slo.yaml; echo "no slo.yaml beside the claims, judging no SLOs"; }
+
       # The latest status the nightly published to the `noise` branch: the newest night, clean or not, never an older
       # clean one that a dirty night has since superseded. A missing or unusable file is dropped with a warning and the
       # run degrades to WARN; whether a present one is fresh, clean and verified enough to FAIL is decided by the gate.
@@ -190,9 +196,10 @@ jobs:
           NOISE_FILE: ${{ steps.noise.outputs.noise_file }}
         run: |
           vex=""; if [ -s openvex.json ]; then vex=openvex.json; fi
+          slo=""; if [ -s slo.yaml ]; then slo=slo.yaml; fi
           pnpm harness run --mode release --a "$PRODUCTION" --b "$CANDIDATE" --runs "$RUNS" --load 20x30s \
             ${PRODUCTION_DIGESTS:+--a-digests "$PRODUCTION_DIGESTS"} ${CANDIDATE_DIGESTS:+--b-digests "$CANDIDATE_DIGESTS"} \
-            ${CLAIMS_URL:+--claims claims.yaml} ${RULES_URL:+--rules "$RULES_URL"} ${vex:+--vex "$vex"} ${NOISE_FILE:+--noise "$NOISE_FILE"} \
+            ${CLAIMS_URL:+--claims claims.yaml} ${RULES_URL:+--rules "$RULES_URL"} ${vex:+--vex "$vex"} ${slo:+--slo "$slo"} ${NOISE_FILE:+--noise "$NOISE_FILE"} \
             ${OVERRIDE_REASON:+--override-reason "$OVERRIDE_REASON" --override-by "$OVERRIDE_BY"}
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
