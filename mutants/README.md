@@ -98,9 +98,42 @@ journey opens a note except the replay set (`traffic/replay/urls.ts`), and the s
 the reference set out. So no blocking engine sees the fault, the run passes, and only the `replay`
 finding catches it. That shows the replay set adds breadth the other journeys do not have.
 
+## Which test kills which mutant
+
+Every mutant is killed by the same test: the self-test itself, `harness mutants` (`src/mutants.ts`),
+which runs release mode against it and passes only when the report has a FAIL (or, for an informing
+check, a finding new on b) attributed to the artefact `mutants.yaml` names in `expect`. A unit test
+cannot stand in for that, because the fault only shows in a real browser or image. The weekly run's
+`mutants.json`, and its line in `scoreboard/mutants.jsonl` on the `scoreboard` branch, record each
+mutant by name as caught or escaped.
+
+What the unit tests do hold, per mutant (`tests/mutant-build.test.ts` unless named):
+
+| Mutant | Must be attributed to | Unit tests |
+| --- | --- | --- |
+| `dropped-header` | `headers` | listed with its artefact; has a `wrap.mjs` case |
+| `route-500` | `network`, `dom` | listed with its artefact; has a `wrap.mjs` case; its image name (`tests/image-ref.test.ts`, `tests/stack.test.ts`) |
+| `console-error` | `console` | listed with its artefact; has a `wrap.mjs` case |
+| `dom-note` | `dom` | listed with its artefact; has a `wrap.mjs` case |
+| `missing-alt` | `axe` | listed with its artefact; has a `wrap.mjs` case |
+| `slow-ssr` | `timing` | listed with its artefact; has a `wrap.mjs` case; five runs (`tests/contract.test.ts`) |
+| `anon-write` | `persistence` | listed with its artefact; has a `wrap.mjs` case |
+| `focus-order` | `focus` | listed with its artefact; has a `wrap.mjs` case |
+| `base-swap` | `image-manifest` | how it is built, and that a swap that changed nothing is refused; the compare engine attributes it to `image-manifest` |
+| `added-package` | `sbom` | how it is built; the compare engine attributes it to `sbom` and nothing else that fails |
+| `secret-env` | `image-hardening` | built from its Dockerfile (`tests/soak.test.ts`) |
+| `vulnerable-package` | `vuln-ceiling` | built from its Dockerfile (`tests/soak.test.ts`) |
+| `unsigned-build` | `build-provenance` | a docker tag of the base, byte for byte (`tests/soak.test.ts`) |
+| `slow-ssr-mild` | `timing-tolerance` | listed with its artefact; has a `wrap.mjs` case (`tests/contract.test.ts`) |
+| `extra-chunk` | `asset-graph` | listed with its artefact; has a `wrap.mjs` case (`tests/contract.test.ts`) |
+| `replay-header` | `replay` | listed with its artefact; has a `wrap.mjs` case (`tests/contract.test.ts`) |
+
+`tests/mutant-build.test.ts` fails when a mutant in `mutants.yaml` is missing from this table, or
+its artefacts here differ.
+
 ## Adding one
 
 1. Add a `case` to `wrap.mjs` (or a new header/route rule), or a new `kind` in
    `src/mutant-build.ts` for one that changes the image itself.
-2. Add it to `mutants.yaml` with the artefact(s) it must be attributed to.
+2. Add it to `mutants.yaml` with the artefact(s) it must be attributed to, and a row to the table above.
 3. Run `pnpm harness mutants` and confirm it is caught before merging.

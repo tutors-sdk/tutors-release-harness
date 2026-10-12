@@ -1176,7 +1176,8 @@ Source of truth: `ScoreboardLine` in `src/scoreboard/line.ts`, the views and run
 `src/scoreboard/trends.ts`. Visual management over time: one line per release run.
 
 **Where it lives.** `scoreboard/releases.jsonl` (one JSON object per line) and, beside it,
-`scoreboard/mutants.jsonl` (one line per weekly mutants self-test):
+`scoreboard/mutants.jsonl` (one line per weekly mutants self-test). In CI both are on the
+`scoreboard` branch, not `main`:
 
 | Where | Written by |
 | --- | --- |
@@ -2662,7 +2663,7 @@ against 1.10.0: no `report.json` field, verdict, or exit code of an existing com
 
 - `scoreboard/releases.jsonl` ([`scoreboard-line.schema.json`](contract/scoreboard-line.schema.json),
   not stable): one line per release run, append-only; a re-run is the same tag with the next run
-  number ([the scoreboard](#the-scoreboard)). `scoreboard/mutants.jsonl` beside it: one line per
+  number ([the scoreboard](#the-scoreboard)). `scoreboard/mutants.jsonl` beside it (on the `scoreboard` branch): one line per
   weekly mutants self-test.
 - `harness scoreboard append --run <harness release dir | confidence.json> [--file f] [--mutants f]
   [--tag T] [--run-url u] [--json]`, `harness scoreboard trends [--file f] [--mutants f]

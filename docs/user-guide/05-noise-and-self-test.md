@@ -150,7 +150,7 @@ One class of noise is known and has a fix in flight (a deterministic settle of t
 
 ## The mutant self-test
 
-A harness that cannot catch its own planted faults has no business gating a release. `harness mutants --base <tag>` builds **thirteen mutants** from the base reader image (so a mutant is production plus exactly one fault), runs an A/A on the base, then runs release mode against each mutant. It passes only when every mutant produces a FAIL whose unclaimed hunks include an artefact the mutant was expected to trip.
+A harness that cannot catch its own planted faults has no business gating a release. `harness mutants --base <tag>` builds **sixteen mutants** from the base reader image (so a mutant is production plus exactly one fault), runs an A/A on the base, then runs release mode against each mutant. It passes only when every mutant produces a FAIL whose unclaimed hunks include an artefact the mutant was expected to trip.
 
 ```console
 pnpm harness local mutants           # pull and verify the base images, then the self-test
@@ -188,7 +188,7 @@ dropped-header   yes     yes         headers
 16 of 16 mutants caught and attributed.
 ```
 
-When the A/A on the base is not clean, the log now lists the hunks that made it so, one line each (severity, artefact, scope and summary of every non-info hunk, at most 40, then a count of the info hunks), after the reasons; a CI log therefore says *what* failed, not only `N diff(s)`. Anything that escaped is listed with its report, and the run ends `N of 13 mutants escaped; the harness must not gate releases until this is 0 of 13.` Exit `0` only when all thirteen are caught and attributed, else `1`.
+When the A/A on the base is not clean, the log now lists the hunks that made it so, one line each (severity, artefact, scope and summary of every non-info hunk, at most 40, then a count of the info hunks), after the reasons; a CI log therefore says *what* failed, not only `N diff(s)`. Anything that escaped is listed with its report, and the run ends `N of 16 mutants escaped; the harness must not gate releases until this is 0 of 16.` Exit `0` only when all sixteen are caught and attributed, else `1`.
 
 **Practicalities.**
 
@@ -217,7 +217,7 @@ The base is `--base <ref>`, else `HARNESS_BASE_REF`, else `origin/main`, else `m
 
 A change that **adds or loosens** anything in `normalise/masks.yaml` (a new mask, a changed mask, a changed engine threshold) may change nothing else, apart from the mask's notes, its tests and the version bump. The point is that the reviewer of a change should never also review the blind spot that hides it. Removing a mask only tightens the harness, so it may travel with anything.
 
-What such a PR may also touch: `normalise/masks.yaml`, `docs/noise-burndown.md`, `docs/masks.md`, `tests/normalise.test.ts`, `tests/masks*.test.ts`, `tests/fixtures/masks/**`, and `package.json` if only the version changed.
+What such a PR may also touch: `normalise/masks.yaml`, `docs/noise-burndown.md`, `tests/normalise.test.ts`, `tests/masks*.test.ts`, `tests/fixtures/masks/**`, and `package.json` if only the version changed.
 
 A pass:
 
@@ -286,7 +286,7 @@ A harness that is quietly decaying should show up in the same picture as the pro
 
 | Measure | From | What a bad trend means |
 | --- | --- | --- |
-| mutants caught per week | `scoreboard/mutants.jsonl`: `weekly-mutants.yml`'s `record` job appends each week's `mutants.json` (`harness scoreboard mutants`) | the harness is losing its ability to fail |
+| mutants caught per week | `scoreboard/mutants.jsonl` on the `scoreboard` branch: `weekly-mutants.yml`'s `record` job appends each week's `mutants.json` (`harness scoreboard mutants`) | the harness is losing its ability to fail |
 | clean A/A nights, of the last 30 | the noise history (`noise-history.json`, the local store's by default, or `--noise-history`) | noise is growing, and the right to fail is at risk |
 | days since the last A/A failure | the same history | |
 

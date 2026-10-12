@@ -154,7 +154,7 @@ touches:
 | `normalise/**`, `src/normalise/**` | masks and how they are applied |
 | `post-deploy/**` | the claims post-deploy mode applies (post-deploy.yml, `harness local watch`): what the monitor excuses (since 1.28.4) |
 | `src/collectors/**`, `src/runtime/**`, `src/image-static/**`, `src/persistence/**`, `src/migration/**`, `src/bus/**`, `src/clock-probe.ts` | what is captured: a report can change with no engine touched |
-| `src/run.ts`, `src/modes/**`, `src/noise.ts`, `src/stack.ts`, `src/substrate/**` | how a run, a mode and a stack are put together, and the noise rule the gate consults |
+| `src/run.ts`, `src/modes/**`, `src/noise.ts`, `src/stack.ts`, `src/root.ts`, `src/substrate/**` | how a run, a mode and a stack are put together, the checkout root every engine resolves its files against, and the noise rule the gate consults |
 | `src/images.ts`, `src/image-ref.ts`, `src/image-cache.ts`, `src/digests.ts`, `src/release-record.ts` | which images are judged (pinned by digest, or not), whether they are trusted, and what a deployment is compared with |
 | `compose.harness.yaml`, `deploy/**`, `fixtures/**`, `scripts/**` | what the two stacks are made of |
 | `traffic/**` | journeys, and the k6 load |

@@ -71,6 +71,14 @@ describe("mutants.yaml", () => {
     const planted = JSON.parse(readFileSync(resolve(ROOT, "mutants", "planted-package", "harness-planted-package", "package.json"), "utf8"));
     expect(planted).toMatchObject({ name: "harness-planted-package", version: "9.9.9" });
   });
+
+  it("mutants/README.md says, for every mutant, what it must be attributed to and which unit tests hold it", () => {
+    const readme = readFileSync(resolve(ROOT, "mutants", "README.md"), "utf8");
+    const section = readme.slice(readme.indexOf("## Which test kills which mutant"), readme.indexOf("## Adding one"));
+    const rows = new Map([...section.matchAll(/^\| `([a-z0-9-]+)` \| ([^|]+) \|/gm)].map((m) => [m[1]!, [...m[2]!.matchAll(/`([a-z-]+)`/g)].map((a) => a[1])]));
+    for (const m of loadMutants()) expect(rows.get(m.name), m.name).toEqual(m.expect);
+    expect(rows.size).toBe(loadMutants().length);
+  });
 });
 
 describe("building a mutant", () => {

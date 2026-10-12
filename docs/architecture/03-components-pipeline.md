@@ -6,8 +6,9 @@ report (3.3), image acquisition (3.4), and the local ops layer (3.5). Each
 element names the file that implements it. Legend:
 [README](README.md#legend).
 
-Everything drawn is built on `origin/main` (harness 1.4.1) except the red
-dashed "planned" elements.
+Everything drawn is built on `origin/main` as of harness 1.4.1 except the red
+dashed "planned" elements. That is a snapshot: later releases added engines and
+checks not drawn here (see [the README](README.md) and `docs/releases/`).
 
 ## 3.1 The run pipeline
 

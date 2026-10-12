@@ -12,7 +12,16 @@ other than the default branch, the diagram says so with a style, never as fact
 
 **State drawn:** the harness at `origin/main` `5da3a39` (harness 1.4.1, contract
 1.4.0), and the monorepo at `origin/main` `5d7283e`. File and line pointers were
-re-checked against that code.
+re-checked against that code. This is a snapshot, not the current version: the
+harness has moved on since (`package.json` has the current version, and
+[`docs/releases/`](../releases/) says what each release added). Later releases
+updated only the counts that went stale, such as the sixteen mutants (1.25.0 to
+1.28.0); the boxes and arrows are still those of 1.4.1.
+
+A path is in this repository unless it says otherwise. A path marked "monorepo",
+or listed under [Built on the monorepo side](#built-on-the-monorepo-side), is in
+`tutors-sdk/tutors-mono-repo` (for example `scripts/promote-image.ts`,
+`deploy/k8s/`, `tests/bdd/features`).
 
 ## What the harness is, in one paragraph
 

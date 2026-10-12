@@ -1,11 +1,11 @@
 import { spawnSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
-import { dirname, resolve } from "node:path";
+import { resolve } from "node:path";
 import { dockerRef, type App } from "./image-ref.ts";
 import { composeProject, orExit } from "./project.ts";
+import { ROOT } from "./root.ts";
 import type { SideName, SideSpec, StackUrls } from "./types.ts";
 
-export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+export { ROOT };
 export const COMPOSE_FILE = resolve(ROOT, "compose.harness.yaml");
 /**
  * This checkout's compose project (src/project.ts): `tutors-harness-<8 hex of the checkout's path>`, so two checkouts or
