@@ -8,7 +8,7 @@ import { InputFileError, didYouMean, inputProblems, nearest, unreadable, type Pr
 import { APPS } from "../image-ref.ts";
 import { DIGEST, UNTIL_DATE, UNTIL_RELEASE } from "./lifetime.ts";
 import { RULE_ID, ruleReason, type Rules } from "./rules.ts";
-import { ROOT } from "../stack.ts";
+import { ROOT } from "../root.ts";
 
 /**
  * Since 1.28.4: the claims post-deploy mode applies in post-deploy.yml and `harness local watch`. They excuse a known

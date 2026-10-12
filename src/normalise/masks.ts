@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { parse } from "yaml";
 import { z } from "zod";
-import { ROOT } from "../stack.ts";
+import { ROOT } from "../root.ts";
 import { ARTEFACTS, MODES, type Mode, type NetworkEntry, type PageCapture, type SideCapture } from "../types.ts";
 import { canonicalHeaderValue } from "./canonical.ts";
 import { rewriteOrigins } from "./origins.ts";

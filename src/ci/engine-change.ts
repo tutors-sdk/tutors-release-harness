@@ -54,6 +54,8 @@ export const ENGINE_PATHS = [
   "src/modes/**",
   "src/noise.ts",
   "src/stack.ts",
+  // The checkout root every engine resolves its files against (re-exported by src/stack.ts).
+  "src/root.ts",
   "src/substrate/**",
   "src/images.ts",
   "src/image-ref.ts",

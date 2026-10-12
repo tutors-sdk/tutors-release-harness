@@ -28,7 +28,7 @@ import { DEFAULT_MAX_MASKS } from "./noise-history.ts";
 export const MASKS_FILE = "normalise/masks.yaml";
 
 /** What a PR that adds or loosens a mask may also touch. */
-export const MASK_PR_ALLOWED = [MASKS_FILE, "docs/noise-burndown.md", "docs/masks.md", "tests/normalise.test.ts", "tests/masks*.test.ts", "tests/fixtures/masks/**", "package.json"] as const;
+export const MASK_PR_ALLOWED = [MASKS_FILE, "docs/noise-burndown.md", "tests/normalise.test.ts", "tests/masks*.test.ts", "tests/fixtures/masks/**", "package.json"] as const;
 
 interface MaskFile {
   masks?: { id: string }[];

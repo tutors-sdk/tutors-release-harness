@@ -4,7 +4,7 @@ import { parse, YAMLParseError } from "yaml";
 import { z } from "zod";
 import { InputFileError, inputProblems, unreadable, type Problem } from "../claims/input-error.ts";
 import { APPS } from "../image-ref.ts";
-import { ROOT } from "../stack.ts";
+import { ROOT } from "../root.ts";
 
 /**
  * Since 1.34.0: the release's service level objectives, `release/slo.yaml` beside `claims.yaml` in the monorepo
