@@ -8,7 +8,8 @@ import { reference } from "../../traffic/journeys/reference.ts";
 import { redactSecrets } from "../normalise/redact.ts";
 import { IDENTITY_URL } from "../stack.ts";
 import { routeThirdParty } from "./third-party-cache.ts";
-import type { AxeFinding, ConsoleEntry, JourneyCapture, NetworkEntry, PageCapture, SideSpec, Timing } from "../types.ts";
+import { emptyRealtime, isBroadcast, isDataFrame, isRealtimeSocket } from "./realtime.ts";
+import type { AxeFinding, ConsoleEntry, JourneyCapture, NetworkEntry, PageCapture, RealtimeCost, SideSpec, Timing } from "../types.ts";
 
 export interface BrowserCaptureOptions {
   /** Absolute directory the side's screenshots are written under. */
@@ -267,6 +268,11 @@ export async function captureJourney(browser: Browser, spec: SideSpec, journey: 
   let pendingNetwork: Promise<NetworkEntry>[] = [];
   let pendingConsole: ConsoleEntry[] = [];
   let documentResponse: Response | undefined;
+  // Since 1.36.0: the page's Realtime cost (src/collectors/realtime.ts), counted from the browser's own events and kept
+  // outside `network`, whose persistence-stub-requests mask drops /realtime/v1/. Counted when a request starts, so a
+  // broadcast still in flight when the page is captured is the page's. A frame belongs to the page open when it is sent,
+  // whichever page opened the socket.
+  let pendingRealtime: RealtimeCost = emptyRealtime();
 
   page.on("response", (response) => {
     pendingNetwork.push(entryFor(response, spec));
@@ -283,7 +289,17 @@ export async function captureJourney(browser: Browser, spec: SideSpec, journey: 
   // screenshotted the page with an icon missing on one side only. They are served from the third-party cache now,
   // so they arrive at once, but still after the page asked for them.
   let inFlight = 0;
-  page.on("request", () => inFlight++);
+  page.on("request", (request) => {
+    inFlight++;
+    if (isBroadcast(request.method(), request.url())) pendingRealtime.broadcasts++;
+  });
+  page.on("websocket", (socket) => {
+    if (!isRealtimeSocket(socket.url())) return;
+    pendingRealtime.sockets++;
+    socket.on("framesent", (frame) => {
+      if (isDataFrame(frame.payload)) pendingRealtime.framesSent++;
+    });
+  });
   page.on("requestfinished", () => inFlight--);
   page.on("requestfailed", () => inFlight--);
 
@@ -302,6 +318,8 @@ export async function captureJourney(browser: Browser, spec: SideSpec, journey: 
       pendingNetwork = [];
       const consoleEntries = pendingConsole.sort((x, y) => `${x.level} ${x.text}`.localeCompare(`${y.level} ${y.text}`));
       pendingConsole = [];
+      const realtime = pendingRealtime;
+      pendingRealtime = emptyRealtime();
 
       // Headers and timing belong to the document request only. After a
       // client-side route change the last document response is a different
@@ -316,7 +334,8 @@ export async function captureJourney(browser: Browser, spec: SideSpec, journey: 
         console: consoleEntries,
         axe: opts.axe ? await axeOn(page) : [],
         focus: [],
-        timing: isDocument ? timingOf(documentResponse) : timingOf(undefined)
+        timing: isDocument ? timingOf(documentResponse) : timingOf(undefined),
+        realtime
       };
       if (opts.screenshots) {
         // The course shell loads its typeface from Google Fonts with display=swap, so until the font

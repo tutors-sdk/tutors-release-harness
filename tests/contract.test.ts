@@ -204,9 +204,9 @@ describe("report.json", () => {
   });
 
   it("the contract counts the artefacts truthfully and its 1.2.0 changelog lists every addition", () => {
-    const words = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty", "twenty-one", "twenty-two", "twenty-three", "twenty-four", "twenty-five", "twenty-six"];
+    const words = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty", "twenty-one", "twenty-two", "twenty-three", "twenty-four", "twenty-five", "twenty-six", "twenty-seven"];
     expect(contractMd).toContain(`one of the ${words[ARTEFACTS.length]} artefact names above`);
-    for (const stale of words.slice(1, 27).filter((w) => w !== words[ARTEFACTS.length])) expect(contractMd, stale).not.toContain(`one of the ${stale} artefact names`);
+    for (const stale of words.slice(1, 28).filter((w) => w !== words[ARTEFACTS.length])) expect(contractMd, stale).not.toContain(`one of the ${stale} artefact names`);
     const changes = contractMd.slice(contractMd.indexOf("### 1.2.0"));
     expect(changes).not.toContain("### 1.3.0");
     const since = new Set(["bus", "image-manifest", "sbom", "vulns", "runtime", "startup"]);
@@ -216,7 +216,7 @@ describe("report.json", () => {
     const cli = json("docs/contract/cli.json");
     for (const flag of cli.flags.filter((f: { since?: string }) => f.since === "1.2.0")) expect(changes, flag.name).toContain(`--${flag.name === "runtime" ? "no-runtime" : flag.name}`);
     for (const [name, v] of Object.entries(cli.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.2.0")) expect(changes, name).toContain(name);
-    expect(CONTRACT_VERSION).toBe("1.35.0");
+    expect(CONTRACT_VERSION).toBe("1.36.0");
     // The harness version is package.json's and moves at least as far as the contract's (docs/contract.md, Versioning):
     // a mask or engine PR bumps the patch of the harness alone, so do not pin a literal here.
     expect(json("package.json").version).toBe(HARNESS_VERSION);
@@ -286,6 +286,15 @@ describe("report.json", () => {
     for (const command of cliJson.commands.filter((c: { since?: string }) => c.since === "1.5.0")) expect(changes, command.name).toContain(command.name);
     for (const [name, v] of Object.entries(cliJson.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.5.0")) expect(changes, name).toContain(name);
     for (const workflow of ["main-preview.yml", "pages.yml"]) expect(changes, workflow).toContain(workflow);
+  });
+
+  it("1.36.0: its changelog, section and release note name the realtime engine, its two rules, its scopes and its level", () => {
+    const changes = contractMd.slice(contractMd.indexOf("### 1.36.0"), contractMd.indexOf("### 1.35.0")).replace(/\s+/g, " ");
+    for (const item of ["releases/1.36.0.md", "minor", "`realtime`", "**informing**", "`<page key>/websocket`", "`<app>/messages`", "twenty-seven", "`SOAK_CHECKS`", "`persistence-stub-requests`"]) expect(changes, item).toContain(item);
+    const section = contractMd.slice(contractMd.indexOf("### Realtime cost"), contractMd.indexOf("## Verdicts and exit codes")).replace(/\s+/g, " ");
+    for (const item of ["**publish-only**", "**absolute**", "**regression**", "(production too)", "a N / b M per reader page", "`phx_join`", "no threshold", "**informing**", "tutors-sdk/tutors-mono-repo#474"]) expect(section, item).toContain(item);
+    const note = readFileSync(resolve(ROOT, "docs/releases/1.36.0.md"), "utf8").replace(/\s+/g, " ");
+    for (const item of ["The verdict never moves", "Informing, with no date", "tutors-sdk/tutors-mono-repo#474", "`scripts/checks/release-claims.ts`"]) expect(note, item).toContain(item);
   });
 
   it("1.35.0: its changelog and release note name the harness's own service levels, their targets and that nothing gates", () => {

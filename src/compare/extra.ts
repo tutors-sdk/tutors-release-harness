@@ -5,6 +5,7 @@ import { notCollectedHunk, requirements } from "../not-collected.ts";
 import { detectableNote, mannWhitney, smallestAttainableP } from "./stats.ts";
 import { ledgerHunks } from "./ledger.ts";
 import { hunkId, pagePairs } from "./pages.ts";
+import { realtime } from "./realtime.ts";
 
 type Engine = (a: SideCapture, b: SideCapture, ctx: { config: EngineConfig }) => Hunk[];
 
@@ -112,4 +113,5 @@ export const load: Engine = (a, b, ctx) => {
   return hunks;
 };
 
-export const EXTRA_ENGINES: Record<string, Engine> = { focus, persistence, bus, load };
+// Since 1.36.0: the reader's Realtime cost per page view (src/compare/realtime.ts), informing.
+export const EXTRA_ENGINES: Record<string, Engine> = { focus, persistence, bus, load, realtime };
