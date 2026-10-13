@@ -160,6 +160,7 @@ docs/monorepo/                workflows to drop into the monorepo (publish image
 | `/metrics` before and after the journeys | series presence + counter deltas | Missing or new series; a counter that moved differently |
 | Structured logs: JSON-ness, level counts, field set, request-id propagation | aggregate | Log shape or volume changed |
 | Persistence: every write the side attempted, by table and method, per journey | multiset + the anonymous rule | Data written differently — and *any* write during an anonymous journey |
+| Realtime cost (`realtime`, since 1.36.0, informing): on reader pages, broadcasts posted to Supabase Realtime, Realtime websockets opened and the data frames sent on them | an absolute rule + messages per reader page view, a against b | A reader page that opens a Realtime websocket on b (readers are publish-only); more Realtime messages per reader page view on b |
 | Bus (`bus`, only when a bus is configured; docs/bus.md): every topic the side published to, per journey | multiset + the anonymous rule | Messages published differently — and *any* publish during an anonymous journey |
 | Image manifest (`image-manifest`): base, platform, USER, ports, entrypoint, cmd, layers, size, OCI labels, read from the image | exact per field, size with a tolerance | A different base, a root user, a port or command change |
 | SBOM (`sbom`): the SPDX SBOM of each image (cosign attestation, or generated locally) | set diff on `name@version` | A package added, removed or bumped |

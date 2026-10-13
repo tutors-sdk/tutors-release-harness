@@ -74,7 +74,7 @@ Journeys are deliberately few. The harness's power comes from how much it captur
 
 ## Artefacts
 
-An **artefact** is one kind of thing the harness captures and compares. Each has its own diff engine and its own scope format. There are twenty-five: nineteen diff engines, since 1.22.0 the three checks of the policy family (`image-hardening`, `build-provenance`, `vuln-ceiling`), which judge the candidate alone, since 1.26.0 the timing tolerance (`timing-tolerance`), since 1.27.0 asset-graph folding (`asset-graph`), and since 1.28.0 the replay set (`replay`). A **hunk** is one difference an engine found; it has an artefact, a **scope** (what a claim's glob is matched against), a summary and a severity.
+An **artefact** is one kind of thing the harness captures and compares. Each has its own diff engine and its own scope format. There are twenty-seven: nineteen diff engines, since 1.22.0 the three checks of the policy family (`image-hardening`, `build-provenance`, `vuln-ceiling`), which judge the candidate alone, since 1.26.0 the timing tolerance (`timing-tolerance`), since 1.27.0 asset-graph folding (`asset-graph`), since 1.28.0 the replay set (`replay`), since 1.34.0 service level objectives (`slo`), and since 1.36.0 the reader's Realtime cost (`realtime`). A **hunk** is one difference an engine found; it has an artefact, a **scope** (what a claim's glob is matched against), a summary and a severity.
 
 Severity is `fail` (gates unless claimed) or `info` (reported, never gates, needs no claim).
 
@@ -91,6 +91,7 @@ Severity is `fail` (gates unless claimed) or `info` (reported, never gates, need
 | `axe` | WCAG 2.1 A and AA violations by rule and node | the page key | A new violation fails; a fixed one is information. |
 | `focus` | what each successive Tab focuses, up to 12 stops | the page key | A focus stop was lost or reordered. |
 | `timing` | document TTFB per page and journey duration, over `--runs` runs, by Mann-Whitney U; with `--load`, every k6 request's duration and the failure rate | the page key (TTFB), the journey name (duration), `load/http_req_duration`, `load/errors` | Slower on b beyond noise. Needs at least four runs per side to reach significance. |
+| `realtime` (since 1.36.0, informing) | on reader pages (`reader:`, `reader-auth:`, `reference:`): HTTP posts to Supabase Realtime's broadcast endpoint, Realtime websockets opened, and the data frames sent on them (not joins or heartbeats) | `<page key>/websocket`, `<app>/messages` | A reader page opened a Realtime websocket on b (readers must be publish-only), or b sends more Realtime messages per reader page view than a, reported as "a N / b M per reader page". |
 | `timing-tolerance` (since 1.26.0, informing) | the same samples as `timing` | the same scopes as `timing` | A significant slowdown of 10% or more: "slower and it matters". Under timing's 20% floor only this check reports it. It never gates until 2.0. |
 
 ### Captured per side, around the journeys
