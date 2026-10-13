@@ -11,7 +11,7 @@ import type { Digests } from "./digests.ts";
 export type SideName = "a" | "b";
 
 /** Every kind of thing the harness captures or rehearses. Claims and masks name these. */
-export const ARTEFACTS = ["dom", "screenshot", "network", "console", "headers", "axe", "focus", "metrics", "logs", "timing", "persistence", "bus", "migration", "upgrade", /* R5 static image artefacts */ "image-manifest", "sbom", "vulns", /* R5 runtime artefacts */ "runtime", "startup", /* 1.22.0: the policy family, on the candidate alone */ "image-hardening", "build-provenance", "vuln-ceiling", /* 1.26.0: the timing tolerance */ "timing-tolerance", /* 1.27.0: asset-graph folding */ "asset-graph", /* 1.28.0: the replay set */ "replay", /* 1.34.0: service level objectives */ "slo"] as const;
+export const ARTEFACTS = ["dom", "screenshot", "network", "console", "headers", "axe", "focus", "metrics", "logs", "timing", "persistence", "bus", "migration", "upgrade", /* R5 static image artefacts */ "image-manifest", "sbom", "vulns", /* R5 runtime artefacts */ "runtime", "startup", /* 1.22.0: the policy family, on the candidate alone */ "image-hardening", "build-provenance", "vuln-ceiling", /* 1.26.0: the timing tolerance */ "timing-tolerance", /* 1.27.0: asset-graph folding */ "asset-graph", /* 1.28.0: the replay set */ "replay", /* 1.34.0: service level objectives */ "slo", /* 1.36.0: the reader's Realtime cost per page view */ "realtime"] as const;
 export type Artefact = (typeof ARTEFACTS)[number];
 
 export const MODES = ["noise", "release", "any-two", "upgrade", "migration", "post-deploy"] as const;
@@ -140,6 +140,20 @@ export interface Timing {
   responseEndMs: number;
 }
 
+/**
+ * Since 1.36.0: what a page cost in Supabase Realtime while it was the open page (src/collectors/realtime.ts). Kept
+ * outside `network` on purpose: the `persistence-stub-requests` mask drops every `/realtime/v1/` request from network,
+ * and that must not erase these counts. Judged by the `realtime` engine (src/compare/realtime.ts).
+ */
+export interface RealtimeCost {
+  /** POSTs to a path containing `/realtime/v1/api/broadcast` (the publish-only HTTP path). */
+  broadcasts: number;
+  /** WebSockets opened to a URL containing `/realtime/v1/websocket`. */
+  sockets: number;
+  /** Data frames sent on those sockets: every frame except Phoenix control frames (`phx_join`, `phx_leave`, `heartbeat`, `access_token`). */
+  framesSent: number;
+}
+
 export interface PageCapture {
   pageKey: string;
   /** Path of the page within the side (origin stripped). */
@@ -156,6 +170,8 @@ export interface PageCapture {
   /** Keyboard order: what receives focus on each successive Tab from the top of the page. */
   focus: string[];
   timing: Timing;
+  /** Since 1.36.0: the page's Supabase Realtime cost. Absent in a capture recorded before 1.36.0. */
+  realtime?: RealtimeCost;
 }
 
 /**

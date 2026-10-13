@@ -47,7 +47,7 @@ The format is part of [the contract](../docs/contract.md#claims-file).
 
 | field | meaning |
 | --- | --- |
-| `artefact` | `dom`, `screenshot`, `network`, `console`, `headers`, `axe`, `focus`, `metrics`, `logs`, `timing`, `persistence`, `bus`, `migration`, `upgrade`, `image-manifest`, `sbom`, `vulns`, `runtime`, `startup`, `image-hardening`, `build-provenance`, `vuln-ceiling`, `timing-tolerance` (since 1.26.0), `asset-graph` (since 1.27.0), `replay` (since 1.28.0), or `*` |
+| `artefact` | `dom`, `screenshot`, `network`, `console`, `headers`, `axe`, `focus`, `metrics`, `logs`, `timing`, `persistence`, `bus`, `migration`, `upgrade`, `image-manifest`, `sbom`, `vulns`, `runtime`, `startup`, `image-hardening`, `build-provenance`, `vuln-ceiling`, `timing-tolerance` (since 1.26.0), `asset-graph` (since 1.27.0), `replay` (since 1.28.0), `slo` (since 1.34.0), `realtime` (since 1.36.0), or `*` |
 | `scope` | a glob matched against the hunk's scope **or** its route (see below) |
 | `reason` | the Rule id or changelog entry. "see PR" and "approved" are rejected by the schema. Required, unless the claim has a `rule` (then it is optional free text) |
 | `rule` | since 1.3.0: a Rule's four digits, quoted (`"0031"`), which must be in the rules file given with `--rules`. The report shows its title |
@@ -76,6 +76,7 @@ At 2.0 they block: an expired claim covers nothing and is stale. A claim without
 | image-manifest | `<app>/<field>`: `base`, `platform`, `user`, `ports/<port>`, `entrypoint`, `cmd`, `layers`, `size`, `label/<key>` | — |
 | sbom | `<app>/<package name>`, one hunk per package added, removed or bumped | — |
 | vulns | `<app>/<advisory id>`, e.g. `reader/CVE-2026-1234` | — |
+| realtime (since 1.36.0, informing) | `<page key>/websocket` (a reader page opened a Realtime websocket on b), `<app>/messages` (b's Realtime messages per reader page view), `collection` | the page's route, for `<page key>/websocket` |
 
 The image artefacts (contract 1.2.0) are compared from the images, not the
 running apps. Claim them as precisely as anything else:

@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.35.0`
+Contract version: `1.36.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -149,10 +149,10 @@ written). Source of truth: `RunReport` in `src/types.ts`.
 `artefact` is one of `dom`, `screenshot`, `network`, `console`, `headers`,
 `axe`, `focus`, `metrics`, `logs`, `timing`, `persistence`, `bus`, `migration`,
 `upgrade`, `image-manifest`, `sbom`, `vulns`, `runtime`, `startup`, `image-hardening`,
-`build-provenance`, `vuln-ceiling`, `timing-tolerance`, `asset-graph`, `replay`, `slo`. `bus` and `image-manifest` to `startup` are since 1.2.0;
+`build-provenance`, `vuln-ceiling`, `timing-tolerance`, `asset-graph`, `replay`, `slo`, `realtime`. `bus` and `image-manifest` to `startup` are since 1.2.0;
 `image-hardening` to `vuln-ceiling`, the policy family, since 1.22.0 (see [The policy family](#the-policy-family));
 `timing-tolerance` since 1.26.0 (see [The timing tolerance](#the-timing-tolerance)); `asset-graph` since
-1.27.0 (see [Asset-graph folding](#asset-graph-folding)); `replay` since 1.28.0 (see [The replay set](#the-replay-set)); `slo` since 1.34.0 (see [Service level objectives](#service-level-objectives)) (see [Static image artefacts](#static-image-artefacts)
+1.27.0 (see [Asset-graph folding](#asset-graph-folding)); `replay` since 1.28.0 (see [The replay set](#the-replay-set)); `slo` since 1.34.0 (see [Service level objectives](#service-level-objectives)); `realtime` since 1.36.0 (see [Realtime cost](#realtime-cost)) (see [Static image artefacts](#static-image-artefacts)
 and [Container runtime artefacts](#container-runtime-artefacts)); a consumer
 must tolerate an artefact name it does not know. `severity` is `fail` (gates unless claimed) or `info` (reported,
 never gates). `scope` and `path` are what a claim's glob is matched against.
@@ -357,7 +357,7 @@ Every diff engine is **blocking**, so a run decides exactly what it decided befo
 new engine or check ships informing, with the date it starts to block when there is one, and is
 watched on the readiness page before it may stop a release: since 1.22.0 the three checks of
 [the policy family](#the-policy-family) are informing, with no date set, since 1.26.0
-[the timing tolerance](#the-timing-tolerance), since 1.27.0 [asset-graph folding](#asset-graph-folding), since 1.28.0 [the replay set](#the-replay-set), and since 1.34.0 [service level objectives](#service-level-objectives). An engine missing from
+[the timing tolerance](#the-timing-tolerance), since 1.27.0 [asset-graph folding](#asset-graph-folding), since 1.28.0 [the replay set](#the-replay-set), since 1.34.0 [service level objectives](#service-level-objectives), and since 1.36.0 [the Realtime cost](#realtime-cost). An engine missing from
 the table is blocking: no check escapes the Gate by being left out.
 
 ### The policy family
@@ -526,6 +526,40 @@ failing on both sides does not degrade an A/A. The check is **informing**, with 
 ([Engine levels](#engine-levels)). The runway puts G after 2.0, so it is the last to be promoted.
 Its planted mutant is `replay-header`: `X-Content-Type-Options` dropped on `/note/` pages, which
 only the replay set opens on the fixture course.
+
+### Realtime cost
+
+Since 1.36.0 the `realtime` engine (`src/compare/realtime.ts`) measures what a reader page view costs
+in Supabase Realtime on each side. On 13 Oct 2026 the reader joined a Realtime channel per course and
+broadcast every page view to every classmate, so the message count grew with the square of a class and
+overran the project's Realtime quota. Since tutors-sdk/tutors-mono-repo#474 readers are
+**publish-only**: a page view is an HTTP POST to `/realtime/v1/api/broadcast`, and only Tutors Live
+dashboards and shared whiteboards open a websocket.
+
+The browser collector (`src/collectors/realtime.ts`) counts, per page, `realtime: { broadcasts,
+sockets, framesSent }`: POSTs to a path containing `/realtime/v1/api/broadcast`, websockets opened to
+a URL containing `/realtime/v1/websocket`, and the **data frames** sent on them. Phoenix control frames
+(`phx_join`, `phx_leave`, `heartbeat`, `access_token`) are not counted: they are the socket's upkeep,
+on timers or once per channel, and the join is what `sockets` already reports. Binary frames and every
+other text frame are data. The counts are kept outside `network` on purpose: the
+`persistence-stub-requests` mask drops `/realtime/v1/` requests from `network`, and must not erase them.
+
+| Scope | A finding when |
+| --- | --- |
+| `<page key>/websocket` | **absolute**: a reader page opened a Realtime websocket on b. Ends "(production too)" when a's same page opened one as well, or "(new on b)" |
+| `<app>/messages` | **regression**: b's Realtime messages per reader page view (broadcasts plus data frames) are more than a's, reported as "a N / b M per reader page". Fewer is an info hunk ("fell") |
+| `collection` (info) | the counts were collected on one side only (a capture recorded before 1.36.0 has none) |
+
+Reader pages are those whose page key starts `reader:`, `reader-auth:` or `reference:`; `live:` and
+`catalogue:` pages are never judged. Messages are summed over the pages both sides reached, every run,
+so a message that lands in the next page's window still counts once. There is no threshold (and so no
+mask): one more message across a run is the regression this exists to see. The persistence stub never
+fans out, so what a subscribed reader would be delivered is seen as the socket it opened. Like the
+policy family, the socket rule judges b alone, so an A/A of an image that opens one reports it
+"(production too)". The check is
+**informing**, with no date ([Engine levels](#engine-levels)): every finding is reported and none
+gates, and the readiness page's soak watches it. It has no planted mutant yet, so it is not eligible to
+block.
 
 ## Verdicts and exit codes
 
@@ -858,7 +892,7 @@ claims:
     digests: { reader: "sha256:…" }                     # since 1.25.1, optional: the images it was written against, by app
 ```
 
-- `artefact`: one of the twenty-six artefact names above, or `*`.
+- `artefact`: one of the twenty-seven artefact names above, or `*`.
 - `scope`: matched with picomatch (`dot: true`, case-insensitive) against the
   hunk's `scope` **or** its `path`.
 - `reason`: at least 8 characters, and must not start with `see pr`,
@@ -2035,6 +2069,21 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.36.0 (minor; the reader's Realtime cost, informing)
+
+The release note is [releases/1.36.0.md](releases/1.36.0.md). A minor: a new artefact name,
+`realtime`. No `report.json` field, flag, claims key, mask or workflow changes, and the check ships
+**informing**, so no verdict, Gate or exit code moves. See [Realtime cost](#realtime-cost).
+
+- `realtime` (`src/compare/realtime.ts`): a reader page that opened a Realtime websocket on b
+  (`<page key>/websocket`, ending "(production too)" or "(new on b)"), and b's Realtime messages per
+  reader page view above a's (`<app>/messages`, "a N / b M per reader page"). `ENGINE_LEVELS` lists it
+  as informing with no `blockingFrom`; `SOAK_CHECKS` watches it.
+- The browser collector counts each page's `realtime: { broadcasts, sockets, framesSent }`
+  (`src/collectors/realtime.ts`), outside `network`, so the `persistence-stub-requests` mask does not
+  erase it. Phoenix control frames are not counted.
+- A claim may name it (twenty-seven artefact names). `report.schema.json`'s artefact enum gains it.
 
 ### 1.35.0 (minor; the harness's own service levels)
 
