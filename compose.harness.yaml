@@ -81,6 +81,9 @@ x-auth-env: &auth-env
   PRIVATE_AUTH_GITHUB_SECRET: harness-client-secret
   PUBLIC_SUPABASE_ANON_KEY: harness-anon-key
   NODE_EXTRA_CA_CERTS: /harness/ca.pem
+  # Kit 3 images have no runtime ORIGIN and take the protocol from the edge in front of them
+  # (reader-auth-edge-*, fixtures/edge/forwarded.mjs). Kit 2 images read ORIGIN and ignore this.
+  PROTOCOL_HEADER: x-forwarded-proto
 
 x-auth-hosts: &auth-hosts
   - "github.com:172.29.0.10"
@@ -195,8 +198,6 @@ services:
   reader-auth-a:
     <<: *app
     image: ${READER_IMAGE_A:-tutors/reader:local}
-    ports:
-      - "${READER_AUTH_PORT_A:-3103}:3000"
     extra_hosts: *auth-hosts
     volumes:
       - ./fixtures/identity/certs/ca.pem:/harness/ca.pem:ro
@@ -210,6 +211,22 @@ services:
       identity:
         condition: service_started
       persistence-a:
+        condition: service_healthy
+
+  # The browser reaches the signed-in reader through the edge production puts in front of it, so a
+  # Kit 3 image sees the http origin the browser used (fixtures/edge/forwarded.mjs).
+  reader-auth-edge-a:
+    <<: *stub
+    command: ["node", "/fixture/forwarded.mjs"]
+    environment:
+      PORT: "3000"
+      UPSTREAM: http://reader-auth-a:3000
+    volumes:
+      - ./fixtures/edge/forwarded.mjs:/fixture/forwarded.mjs:ro
+    ports:
+      - "${READER_AUTH_PORT_A:-3103}:3000"
+    depends_on:
+      reader-auth-a:
         condition: service_healthy
 
   # ---- side b -------------------------------------------------------------
@@ -267,8 +284,6 @@ services:
   reader-auth-b:
     <<: *app
     image: ${READER_IMAGE_B:-tutors/reader:local}
-    ports:
-      - "${READER_AUTH_PORT_B:-3203}:3000"
     extra_hosts: *auth-hosts
     volumes:
       - ./fixtures/identity/certs/ca.pem:/harness/ca.pem:ro
@@ -282,6 +297,22 @@ services:
       identity:
         condition: service_started
       persistence-b:
+        condition: service_healthy
+
+  # The browser reaches the signed-in reader through the edge production puts in front of it, so a
+  # Kit 3 image sees the http origin the browser used (fixtures/edge/forwarded.mjs).
+  reader-auth-edge-b:
+    <<: *stub
+    command: ["node", "/fixture/forwarded.mjs"]
+    environment:
+      PORT: "3000"
+      UPSTREAM: http://reader-auth-b:3000
+    volumes:
+      - ./fixtures/edge/forwarded.mjs:/fixture/forwarded.mjs:ro
+    ports:
+      - "${READER_AUTH_PORT_B:-3203}:3000"
+    depends_on:
+      reader-auth-b:
         condition: service_healthy
 
   # ---- side a2 (since 1.24.0, profile a2) ------------------------------------
