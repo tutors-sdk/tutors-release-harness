@@ -218,7 +218,7 @@ export const studentSignsIn: Journey = {
     // this rejects with nobody listening, which would crash the run instead of failing the journey.
     reconnected.catch(() => undefined);
     await button.click();
-    // Auth.js -> identity stub -> callback -> session -> the course.
+    // GitHub sign-in (identity stub) -> callback -> session -> the course.
     await page.waitForURL(new RegExp(`/course/${urls.courseId}`), { timeout: 30_000 });
     await page.getByRole("banner").getByRole("heading", { name: fixture.title }).waitFor(VISIBLE);
     await reconnected;
