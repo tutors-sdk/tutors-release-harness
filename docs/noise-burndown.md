@@ -358,6 +358,16 @@ since 1.28.2, on media files under `{{course}}`; any other status still shows) a
 `chromium-compute-pressure-policy` (that exact console message, dropped). Mask count 25 → 27, of
 the review limit of 40.
 
+### OAuth state on the sign-in callback
+
+*Shows as* a `network` pair on `reader-auth:course`: `request no longer made on b: GET
+/api/auth/callback/github?code=code-student&state=<a>` and `new request on b: …&state=<b>`.
+
+Better Auth, the reader's sign-in on SvelteKit 3 images, generates a random OAuth `state` per
+sign-in and the identity stub echoes it, as GitHub does. It is a CSRF nonce, so it must differ.
+Masked in 1.35.2, in its own PR: `oauth-callback-state` rewrites only the state value on the
+GitHub callback. Mask count 27 → 28, of the review limit of 40.
+
 ### Also on the list
 
 - **Build strings** (git sha, build date) in the DOM: **M20** moves them to one
