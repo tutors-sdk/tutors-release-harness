@@ -44,8 +44,19 @@ describe("compose.harness.yaml", () => {
   const apps = [...APPS, "reader-auth"];
 
   it("has both sides for every app, a persistence stub per side, and the shared fixtures", () => {
-    const expected = [...apps.flatMap((app) => [`${app}-a`, `${app}-b`]), ...["reader", "catalogue", "live", "time"].map((app) => `${app}-a2`), "persistence-a", "persistence-b", "course", "identity", "edge"].sort();
+    const expected = [...apps.flatMap((app) => [`${app}-a`, `${app}-b`]), ...["reader", "catalogue", "live", "time"].map((app) => `${app}-a2`), "persistence-a", "persistence-b", "reader-auth-edge-a", "reader-auth-edge-b", "course", "identity", "edge"].sort();
     expect(Object.keys(compose.services).sort()).toEqual(expected);
+  });
+
+  it("the browser reaches the signed-in reader through an edge that says it used http (Kit 3 has no runtime ORIGIN)", () => {
+    for (const side of ["a", "b"]) {
+      const reader = compose.services[`reader-auth-${side}`]!;
+      const edge = compose.services[`reader-auth-edge-${side}`]!;
+      expect(reader.ports, side).toBeUndefined();
+      expect((reader.environment as Record<string, unknown>).PROTOCOL_HEADER).toBe("x-forwarded-proto");
+      expect((edge.environment as Record<string, unknown>).UPSTREAM).toBe(`http://reader-auth-${side}:3000`);
+      expect(edge.ports).toEqual([`\${READER_AUTH_PORT_${side.toUpperCase()}:-${side === "a" ? 3103 : 3203}}:3000`]);
+    }
   });
 
   it("the two sides differ only in image, ports and the URLs that name the side", () => {
