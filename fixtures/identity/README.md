@@ -6,7 +6,7 @@ with identical sessions. See `stub.mjs` for the endpoints.
 
 ## How the apps end up talking to it
 
-The reader's Auth.js GitHub provider has `github.com` and `api.github.com`
+The reader's GitHub provider (Auth.js in older images, Better Auth in Kit 3 ones) has `github.com` and `api.github.com`
 hard-coded, and the harness must not change the image. So:
 
 - **In the containers**, `compose.harness.yaml` gives `reader-auth-a` and
@@ -18,8 +18,14 @@ hard-coded, and the harness must not change the image. So:
   the authorise redirect lands here and bounces straight back to the reader's
   callback with a code.
 
-Nothing else differs from a real sign-in: Auth.js exchanges the code for a
-token, fetches the profile, mints its own session cookie. The reader in this
+Nothing else differs from a real sign-in: the reader exchanges the code for a
+token, fetches the profile, mints its own session cookie.
+
+The browser reaches the signed-in reader through `reader-auth-edge-a`/`-b`
+(`fixtures/edge/forwarded.mjs`), which adds `X-Forwarded-Proto: http` the way a
+production edge does. A SvelteKit 3 image has no runtime `ORIGIN` and assumes
+https without that header, so Better Auth would refuse the browser's http origin
+and the sign-in would stop at the button. The reader in this
 configuration also has `PUBLIC_SUPABASE_URL` pointed at the persistence stub,
 so what a signed-in user's journey *writes* is captured (see
 `fixtures/persistence`).
