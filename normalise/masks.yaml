@@ -113,6 +113,21 @@ masks:
       are dropped by persistence-stub-requests). Blind spot: a regression that makes the reader emit this
       warning where it did not before is invisible on the console artefact.
 
+  - id: oauth-callback-state
+    artefact: network
+    pattern: '^(\{\{origin\}\}/api/auth/callback/github\?code=code-[a-z]+&state=)[A-Za-z0-9_-]{16,}$'
+    replace: "$1{{state}}"
+    reason: >-
+      Better Auth (the reader's sign-in since SvelteKit 3, mono-repo main on 2026-10-13) puts a fresh random OAuth
+      `state` on every sign-in, and GitHub (the identity stub) echoes it on the callback, so the same image requests
+      "GET /api/auth/callback/github?code=code-student&state=V36Oi14EqPxFminiVbL9qCkM7usONpMh" on side a and
+      "...&state=rv2ShZ0B6FZivLOQ3xAndga_a1NOD-kY" on side b. Seen as one "request no longer made" and one "new
+      request" on reader-auth:course in the mutants A/A of PR #109 (run 38395493155), its only fails. The state is
+      the CSRF nonce, random by design: a constant one would be the bug. Only the state value is rewritten, only on
+      the GitHub callback with the stub's code shape, so a callback that disappears, a second callback, another
+      provider, an error callback or a changed path still shows. Blind spot: a release that stops sending a random
+      state (a fixed or empty one of 16+ characters) is invisible on the network artefact.
+
   - id: media-range-status
     artefact: network
     pattern: '^\{\{course\}\}/[^?#]+\.(?:mov|mp4|m4v|webm|ogv|mp3|m4a|oga|ogg|wav)$'
