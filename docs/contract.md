@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.37.0`
+Contract version: `1.38.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -2087,6 +2087,14 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.38.0 (minor; timing is advice, the Gate says why)
+
+The release note is [releases/1.38.0.md](releases/1.38.0.md). A minor: a new optional hunk field in
+`report.json`, `advice` (strings, what to check next; timing slowdowns carry it), and a new optional `a3.json`
+field, `score.why`. `ENGINE_LEVELS` lists `timing` as informing with no `blockingFrom` and `blockingScopes:
+["load/errors"]`, so a slowdown never moves a verdict, Gate or exit code, and failed requests under load still
+do. A write's JSON body is waited for 300 ms (3 s before). No flag, claims key, mask or workflow changes.
 
 ### 1.37.0 (minor; the gap, explained)
 

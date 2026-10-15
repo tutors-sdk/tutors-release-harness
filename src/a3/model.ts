@@ -200,6 +200,8 @@ export interface Score {
   report?: string;
   runUrl?: string;
   gate: string;
+  /** Since 1.38.0: why the Gate says what it says, in one sentence a reader can act on. */
+  why?: string;
   rcs: number | null;
   band: string | null;
   note: string;
@@ -358,6 +360,19 @@ export function stopCauses(run: Pick<KeptRun, "verdict" | "reasons">): string[] 
   return [...out];
 }
 
+/**
+ * Why the Gate says what it says (since 1.38.0), as the sheet's first sentence: a FAIL names each difference nothing
+ * explains and what turns it round; a WARN or PASS gives the run's own first reason.
+ */
+export function gateWhy(run: Pick<KeptRun, "verdict" | "reasons" | "report">): string | undefined {
+  const unclaimed = (run.report?.compare?.unclaimed ?? []).filter((h) => h.severity === "fail");
+  const advisory = run.reasons.find((r) => /^advisory only/.test(r));
+  const names = (hs: Hunk[]) => hs.slice(0, 3).map((h) => `${h.summary} (${h.artefact})`).join("; ") + (hs.length > 3 ? `; and ${hs.length - 3} more` : "");
+  if (run.verdict === "fail" && unclaimed.length) return `FAIL because ${unclaimed.length === 1 ? "1 difference has" : `${unclaimed.length} differences have`} no claim and no fix: ${names(unclaimed)}. A Rule that claims it, or a fix on main, turns this to PASS; the gap below says where each came from.`;
+  if (run.verdict === "warn" && unclaimed.length) return `WARN, not FAIL, because ${advisory ? advisory.replace(/^advisory only: /, "") : run.reasons[0] ?? "the A/A could not be trusted"}. Unclaimed: ${names(unclaimed)}.`;
+  return run.reasons[0];
+}
+
 /** Why a post-deploy run went red, from the step it stopped at. */
 export function postDeployCause(step: string | null): string {
   if (step === null) return "the workflow could not start";
@@ -382,6 +397,7 @@ function scoreOf(i: A3Inputs, subject: KeptRun | undefined, postDeploy: Score["p
   const open = i.kaizen.filter((k) => k.entry.open).length;
   const dims = (c?.dimensions ?? []).map((d) => ({ id: d.id, name: d.name, weight: d.weight, score: d.score, status: d.status, lost: d.score === null ? null : Math.round((d.weight * (100 - d.score)) / 10) / 10, ...(d.reason ? { reason: d.reason } : {}) }));
   const file = (name: string) => `${subject.dir}/${name}`;
+  const why = gateWhy(subject);
   return {
     subject: STREAM_NAMES[subject.stream],
     candidate: c?.run.candidate ?? tagOf(subject.sides?.b?.reader),
@@ -390,6 +406,7 @@ function scoreOf(i: A3Inputs, subject: KeptRun | undefined, postDeploy: Score["p
     report: file("report.html"),
     ...(subject.runUrl ? { runUrl: subject.runUrl } : {}),
     gate: c?.gate ?? subject.verdict.toUpperCase(),
+    ...(why ? { why } : {}),
     rcs: c?.rcs ?? null,
     band: c?.band ?? null,
     note: c ? (c.rcs !== null ? `${c.band}: ${c.meaning ?? ""}${c.note ? ` ${c.note}` : ""}` : (c.note ?? "No RCS.")) : `Judged by harness ${subject.harnessVersion} before the confidence score existed: no RCS.`,

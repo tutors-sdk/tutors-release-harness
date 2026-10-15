@@ -25,6 +25,8 @@ export interface EngineLevel {
   level: Level;
   /** Informing only: the UTC date (YYYY-MM-DD) from which the engine is blocking. Absent: informing until changed here. */
   blockingFrom?: string;
+  /** Informing only: scopes of this engine that still block, because they are failures and not a measurement (timing's `load/errors`). */
+  blockingScopes?: readonly string[];
 }
 
 export type EngineLevels = Readonly<Record<string, EngineLevel>>;
@@ -36,6 +38,9 @@ export type EngineLevels = Readonly<Record<string, EngineLevel>>;
  */
 export const ENGINE_LEVELS: Readonly<Record<Artefact, EngineLevel>> = Object.freeze({
   ...(Object.fromEntries(ARTEFACTS.map((a) => [a, { level: "blocking" }])) as Record<Artefact, EngineLevel>),
+  // Since 1.38.0: timing is advice, not a verdict. A slowdown is reported with what to check (src/compare/timing-advice.ts) and
+  // never fails a release; failed or 5xx requests under load are failures, not timing, and still block.
+  timing: { level: "informing", blockingScopes: ["load/errors"] },
   "image-hardening": { level: "informing" },
   "build-provenance": { level: "informing" },
   "vuln-ceiling": { level: "informing" },
@@ -78,6 +83,7 @@ export function levelsOn(at: Date, table: EngineLevels = ENGINE_LEVELS): Record<
 export function applyLevels(hunks: Hunk[], at: Date, table: EngineLevels = ENGINE_LEVELS): Hunk[] {
   return hunks.map((h) => {
     if (h.severity !== "fail") return h;
+    if (table[h.artefact]?.blockingScopes?.includes(h.scope)) return h;
     const level = levelOn(h.artefact, at, table);
     if (level.level === "blocking") return h;
     return { ...h, severity: "info", level: "informing", ...(level.blockingFrom ? { blockingFrom: level.blockingFrom } : {}) };
@@ -93,5 +99,5 @@ export function levelsLine(levels: Record<string, EngineLevel> | undefined): str
   const informing = Object.entries(levels).filter(([, l]) => l.level === "informing");
   const total = Object.keys(levels).length;
   if (!informing.length) return `Every engine is blocking (${total} of ${total}).`;
-  return `${total - informing.length} of ${total} engines are blocking; informing (reported, never gates): ${informing.map(([e, l]) => `${e}${l.blockingFrom ? ` (blocking from ${l.blockingFrom})` : " (no date set to block)"}`).join(", ")}.`;
+  return `${total - informing.length} of ${total} engines are blocking; informing (reported, never gates): ${informing.map(([e, l]) => `${e}${l.blockingFrom ? ` (blocking from ${l.blockingFrom}` : " (no date set to block"}${ENGINE_LEVELS[e as Artefact]?.blockingScopes?.length ? `; ${ENGINE_LEVELS[e as Artefact]!.blockingScopes!.join(", ")} still blocks` : ""})`).join(", ")}.`;
 }

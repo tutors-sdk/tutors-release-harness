@@ -90,7 +90,11 @@ describe("the three lights", () => {
     const slower = hunk("timing:catalogue-loads:7", "timing", "catalogue-loads", "journey catalogue-loads slower on b: median 1422ms → 1971ms (+39%, p=0.008, n=5/5)");
     const q = qualityOf({ report: report({ hunks: [slower, hunk("timing:x:8", "timing", "x", "not significant", "info")], b: { failed: 2, serverErrors: 1 } }), dir: DIR });
     expect(light(q, "speed").state).toBe("look");
-    expect(check(q, "slower").reading).toContain("1 failing timing or startup hunk: journey catalogue-loads slower on b");
+    expect(check(q, "slower").reading).toContain("1 slowdown (advice, not a failure): journey catalogue-loads slower on b");
+    // Since 1.38.0 a slowdown arrives informing, with what to check, and still says look.
+    const advised = qualityOf({ report: report({ hunks: [{ ...slower, severity: "info", level: "informing", advice: ["Requests b makes here that a does not: POST /api/live/activity."] }] }), dir: DIR });
+    expect(light(advised, "speed").state).toBe("look");
+    expect(check(advised, "slower").reading).toContain("What to check: Requests b makes here that a does not: POST /api/live/activity.");
     expect(check(q, "slower").evidence[0]!.href).toBe(`${DIR}/report.html#hunk-timing:catalogue-loads:7`);
     expect(check(q, "load")).toMatchObject({ state: "look", reading: "p95 2.19 ms on production, 2.06 ms on main; 3 of 600 requests failed" });
     const startup = qualityOf({ report: report({ hunks: [hunk("startup:reader:1", "startup", "startup/reader", "reader starts slower on b")] }), dir: DIR });

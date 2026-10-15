@@ -13,7 +13,7 @@ import { policyHtml } from "./policy.ts";
 const esc = (s: string) => s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
 
 function hunkRow(h: Hunk, claimedBy?: string): string {
-  const detail = h.detail ? `<details><summary>detail</summary><pre>${esc(h.detail)}</pre></details>` : "";
+  const detail = (h.advice?.length ? `<details open><summary>what to check</summary><ol>${h.advice.map((a) => `<li>${esc(a)}</li>`).join("")}</ol></details>` : "") + (h.detail ? `<details><summary>detail</summary><pre>${esc(h.detail)}</pre></details>` : "");
   return `<tr id="hunk-${esc(h.id)}" class="${h.severity}"><td><code>${h.artefact}</code></td><td><code>${esc(h.scope)}</code>${h.path ? `<br><small>${esc(h.path)}</small>` : ""}</td><td>${esc(h.summary)}${detail}</td><td>${claimedBy ? esc(claimedBy) : h.level === "informing" ? `<em>informing</em> <a href="#informing">(reported, never gates)</a>` : h.severity === "info" ? "<em>informational</em>" : "<strong>unclaimed</strong>"}</td></tr>`;
 }
 

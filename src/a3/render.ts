@@ -95,7 +95,7 @@ function andon(s: Score | null, a: A3): string {
     `<div class="tile small"><span class="k">Countermeasures open</span><span class="big">${s.openCountermeasures}</span><span class="sub">${a.fiveWhys.filter((w) => w.status === "overdue").length} overdue · <a href="${REPO}/blob/main/kaizen/README.md">register</a></span></div>`
   ].join("");
   return `<section class="andon" aria-label="Final scoring">
-  <div class="tile gate ${t}"><span class="k">Gate · ${esc(s.subject)}</span><span class="huge">${esc(s.gate)}</span><span class="sub">${esc(s.candidate ?? "")} beside ${esc(s.baseline ?? "")} · ${esc(s.ranAt ? when(s.ranAt) : "")}<br>${link("full report", s.report)}${s.runUrl ? ` · ${link("the run", s.runUrl)}` : ""}${s.scorecard ? ` · scorecard ${s.scorecard.score} (${esc(s.scorecard.grade)})` : ""}${s.glance ? ` · ${s.glance} glance items` : ""}</span></div>
+  <div class="tile gate ${t}"><span class="k">Gate · ${esc(s.subject)}</span><span class="huge">${esc(s.gate)}</span><span class="sub">${esc(s.candidate ?? "")} beside ${esc(s.baseline ?? "")} · ${esc(s.ranAt ? when(s.ranAt) : "")}<br>${link("full report", s.report)}${s.runUrl ? ` · ${link("the run", s.runUrl)}` : ""}${s.scorecard ? ` · scorecard ${s.scorecard.score} (${esc(s.scorecard.grade)})` : ""}${s.glance ? ` · ${s.glance} glance items` : ""}</span>${s.why ? `<span class="why">${esc(s.why)}</span>` : ""}</div>
   ${rcs}${dims}${a.quality ? qualityStripHtml(a.quality) : ""}${small}${decideStrip(a.decisions)}
 </section>
 <p class="note andon-note">${esc(s.note)}</p>`;
@@ -301,18 +301,19 @@ function vsmHtml(v: ValueStream): string {
 }
 
 const ARTEFACT_NAMES: Record<string, string> = { axe: "Accessibility", console: "Console errors" };
+const FIX_NAMES: Record<string, string> = { axe: "accessibility violations", console: "console errors" };
 
 /** Decisions are orange, beside the traffic lights and never on them: a fix on b is a choice, not a pass or a fail. */
 function decideStrip(d: Decisions | undefined): string {
   if (!d || !d.fixes) return "";
   const share = d.decided / d.fixes;
-  return `<div class="decide-strip" role="group" aria-label="Decisions on b"><span class="k">Decisions on b · not failures</span><span class="meter" title="${d.decided} of ${d.fixes} fixes decided"><span class="fill d" style="width:${Math.max(2, Math.round(share * 100))}%"></span></span><span class="pct">${Math.round(share * 100)}% decided</span><span class="sub">${d.byArtefact.map((x) => `<strong>${esc(ARTEFACT_NAMES[x.artefact] ?? x.artefact)}</strong> ${x.decided} of ${x.fixes} decided (${Math.round((x.decided / x.fixes) * 100)}%)`).join(" · ")}. A claim says why and switches the glance item off; the rest wait for a decision · <a href="#decisions">the decisions</a></span></div>`;
+  return `<div class="decide-strip" role="group" aria-label="Decisions on b"><span class="k">Fixed on main · never failures</span><span class="meter" title="${d.decided} of ${d.fixes} fixes explained by a claim"><span class="fill d" style="width:${Math.max(2, Math.round(share * 100))}%"></span></span><span class="pct">${Math.round(share * 100)}% explained</span><span class="sub">${d.byArtefact.map((x) => `<strong>${x.fixes} ${esc(FIX_NAMES[x.artefact] ?? x.artefact)}</strong> production shows and main does not, ${x.decided ? `${x.decided} explained by a claim` : "none explained by a claim yet"}`).join(" · ")}. These count for main, not against it: a claim only records whether the fix was meant · <a href="#decisions">which ones</a></span></div>`;
 }
 
 function decisionsHtml(d: Decisions | undefined): string {
   if (!d || !d.rows.length) return "";
   const chip = (st: Decisions["rows"][number]["state"]) => `<span class="chip ${st === "decided" ? "decided" : st === "undecided" ? "undecided" : "changed"}">${esc(st)}</span>`;
-  return `<div class="decisions" id="decisions"><h3>Decisions on b <span class="hint">fixes are choices, not failures: the claim is the why</span></h3><div class="scroll"><table><thead><tr><th>Page</th><th>Fixed on b</th><th>State</th><th>Why (the claim)</th></tr></thead><tbody>${d.rows
+  return `<div class="decisions" id="decisions"><h3>Fixed on main <span class="hint">present on production, gone on main: never a failure; a claim records whether it was meant</span></h3><div class="scroll"><table><thead><tr><th>Page</th><th>Fixed on b</th><th>State</th><th>Why (the claim)</th></tr></thead><tbody>${d.rows
     .map((r) => `<tr><td><a href="${esc(safeHref(r.hunk) ?? "#")}"><code>${esc(r.artefact)} ${esc(r.scope)}</code></a></td><td>${esc(r.what.join(", "))}</td><td>${chip(r.state)}</td><td>${r.why ? esc(r.why) : `<span class="muted">none yet: claim it to record the decision</span>`}</td></tr>`)
     .join("")}</tbody></table></div></div>`;
 }
@@ -363,6 +364,7 @@ code{font:12.5px ui-monospace,Menlo,Consolas,monospace}
 .tile .big{font-size:2rem;font-weight:700;line-height:1.1} .tile .mid{font-size:1.25rem;font-weight:700}
 .tile .sub{font-size:12px;color:var(--ink2)} .muted{color:var(--muted)}
 .tile.gate{grid-column:span 4;color:#fff;border:0} .tile.gate .k,.tile.gate .sub{color:#ffffffd9} .tile.gate a{color:#fff}
+.tile.gate .why{display:block;margin-top:8px;font-size:14px;line-height:1.4;color:#fff}
 .tile.gate.fail{background:var(--fail)} .tile.gate.warn{background:var(--warn)} .tile.gate.pass{background:var(--pass)}
 .tile.dims{grid-column:span 5} .tile.rcs{grid-column:span 3} .tile.small{grid-column:span 3} .dims ul{list-style:none;margin:4px 0 0;padding:0;display:grid;gap:3px}
 .dims li{display:grid;grid-template-columns:minmax(0,11rem) minmax(30px,1fr) 2.2rem;gap:8px;align-items:center;font-size:12px}

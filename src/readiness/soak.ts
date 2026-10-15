@@ -31,7 +31,8 @@ import type { Night } from "./model.ts";
  * The checks the soak watches: every engine that ships informing (src/compare/levels.ts), the ones 2.0 may promote.
  * The policy family since 1.25.0, the timing tolerance since 1.26.0. A check made blocking leaves the list.
  */
-export const SOAK_CHECKS: readonly string[] = Object.entries(ENGINE_LEVELS).filter(([, l]) => l.level === "informing").map(([e]) => e);
+// Timing is advice by choice since 1.38.0, not a check soaking toward blocking, so the soak does not count it.
+export const SOAK_CHECKS: readonly string[] = Object.entries(ENGINE_LEVELS).filter(([e, l]) => l.level === "informing" && e !== "timing").map(([e]) => e);
 
 /** The first night the soak counts: the night after the a2 stack was switched on for every Main to RC run (1.25.0). */
 export const SOAK_FROM = "2026-10-02";

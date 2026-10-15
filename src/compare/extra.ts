@@ -106,7 +106,14 @@ export const load: Engine = (a, b, ctx) => {
     }
     const { p } = mannWhitney(a.load.samples, b.load.samples);
     const summary = `${shift}, p=${p.toExponential(1)}; ${detectableNote(a.load.samples, b.load.samples, alpha, "samples")}`;
-    hunks.push({ id: hunkId("timing", scope), artefact: "timing", scope, severity: p < alpha ? "fail" : "info", summary });
+    hunks.push({
+      id: hunkId("timing", scope),
+      artefact: "timing",
+      scope,
+      severity: p < alpha ? "fail" : "info",
+      summary,
+      ...(p < alpha ? { advice: ["Compare each upstream's p95 in the load section: one slower upstream points at its app; all of them slower points at the stack (resources, a new middleware, a cold cache).", "Rerun with a longer --load to confirm, then check the PRs named beside it that touch the server."] } : {})
+    });
   } else if (a.load.p95 > 0 && effect <= -minEffect) {
     hunks.push({ id: hunkId("timing", scope), artefact: "timing", scope, severity: "info", summary: `under load, p95 improved ${a.load.p95}ms → ${b.load.p95}ms` });
   }

@@ -150,3 +150,11 @@ describe("settlesOnResponse: a request that is not a read is settled once its st
     expect(settlesOnResponse("head")).toBe(false);
   });
 });
+
+describe("bodyReadMs: a write's body is read straight after its status, or not at all", () => {
+  it("waits 300ms for a write's JSON body and 3s for a read's", async () => {
+    const { bodyReadMs } = await import("../src/collectors/browser.ts");
+    expect(bodyReadMs("POST")).toBe(300);
+    expect(bodyReadMs("GET")).toBe(3_000);
+  });
+});

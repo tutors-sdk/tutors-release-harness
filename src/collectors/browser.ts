@@ -110,6 +110,15 @@ export function settlesOnResponse(method: string): boolean {
 /** How long to wait for a JSON response body before recording it as unread. */
 const BODY_READ_MS = 3_000;
 
+/**
+ * Since 1.38.0: how long a write's JSON body is waited for. A write's body is read straight after its status, or not at
+ * all: headless Chromium never hands over the body of a `keepalive` fetch (the reader's POST /api/live/activity, 202),
+ * and the full 3s wait for it added about 2.4s to every reader page on main. An unread body is not compared (SCHEMA_UNREAD).
+ */
+export function bodyReadMs(method: string): number {
+  return settlesOnResponse(method) ? 300 : BODY_READ_MS;
+}
+
 /** `NetworkEntry.schemaHash` of a JSON response whose body could not be read; never equal to a real hash. */
 export const SCHEMA_UNREAD = "unread";
 
@@ -140,7 +149,7 @@ async function entryFor(response: Response, spec: SideSpec): Promise<NetworkEntr
       // Bounded: the browser only finishes a body that someone reads. A page that fires a request and never reads its
       // response (the anon-write mutant's fetch, or a beacon) can leave `text()` pending until the context closes, and an
       // unbounded await here stalled the whole run for as long as anyone was willing to wait.
-      const text = await Promise.race([response.text(), new Promise<never>((_, reject) => (timer = setTimeout(() => reject(new Error("body not read")), BODY_READ_MS)))]);
+      const text = await Promise.race([response.text(), new Promise<never>((_, reject) => (timer = setTimeout(() => reject(new Error("body not read")), bodyReadMs(request.method()))))]);
       if (text.length <= MAX_HASHED_BODY) hash = schemaHash(JSON.parse(text));
     } catch {
       // The browser dropped the body (the page navigated away while an invalidation request was in flight) or it was not

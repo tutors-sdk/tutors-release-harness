@@ -9,7 +9,7 @@ import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { FetchLike } from "../src/changes/github.ts";
 import { fetchGithub, type GithubSnapshot, type WorkflowRun } from "../src/a3/github.ts";
-import { VITAL_SHARE, buildA3, causeOf, duration, pareto, postDeployCause, stopCauses, subjectOf, type A3Inputs } from "../src/a3/model.ts";
+import { VITAL_SHARE, buildA3, causeOf, duration, gateWhy, pareto, postDeployCause, stopCauses, subjectOf, type A3Inputs } from "../src/a3/model.ts";
 import { readInputs } from "../src/a3/read.ts";
 import { inlineMd, renderA3, safeHref } from "../src/a3/render.ts";
 import { a3Command, UsageError } from "../src/local/cli.ts";
@@ -211,8 +211,16 @@ describe("the A3", () => {
     expect(a.decisions!.rows).toEqual([{ artefact: "axe", scope: "reader-auth:sign-in", what: ["document-title"], hunk: "main-preview/reports/2026-09-28T08-59-53Z-release/report.html#hunk-axe:1", state: "decided", why: "Rule 0216" }]);
     const html = renderA3(a);
     expect(html).toContain('class="decide-strip"');
-    expect(html).toContain("100% decided");
+    expect(html).toContain("100% explained");
+    expect(html).toContain("1 accessibility violations</strong> production shows and main does not, 1 explained by a claim");
     expect(html).toContain('<span class="chip decided">decided</span>');
+  });
+
+  it("says why the Gate says FAIL: each difference nothing explains, and what turns it round", () => {
+    const why = gateWhy({ verdict: "fail", reasons: ["1 unclaimed diff(s)"], report: { compare: { unclaimed: [{ id: "t", artefact: "headers", scope: "reader:home", summary: "header dropped", severity: "fail" }] } } as never });
+    expect(why).toBe("FAIL because 1 difference has no claim and no fix: header dropped (headers). A Rule that claims it, or a fix on main, turns this to PASS; the gap below says where each came from.");
+    expect(gateWhy({ verdict: "pass", reasons: ["every difference is claimed"] })).toBe("every difference is claimed");
+    expect(renderA3(buildA3(inputs(github)))).toContain('<span class="why">FAIL because');
   });
 
   it("carries only 5 Whys the register's own check accepts", () => {
