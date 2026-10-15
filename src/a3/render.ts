@@ -8,6 +8,7 @@
  * Pages and printed on an A3 sheet alike. Light and dark follow the reader's setting. Every chart has its numbers in a
  * table too, and every bar and box says its value on hover.
  */
+import { prWords, unexplainedWords, type Explanation } from "../changes/explain.ts";
 import { REPO, duration, type A3, type Decisions, type FiveWhys, type Pareto, type Rca, type Score, type ValueStream } from "./model.ts";
 import type { CourseLoad, CourseSide } from "./courses.ts";
 import type { LightState, QualityLight, QualityStrip } from "./quality.ts";
@@ -440,9 +441,48 @@ footer{font-size:12px;color:var(--ink2);border-top:1px solid var(--rule);margin-
 .empty{color:var(--ink2)}
 @media (max-width:980px){.a3{grid-template-columns:minmax(0,1fr)} .andon{grid-template-columns:repeat(2,minmax(0,1fr))} .tile.gate,.tile.dims{grid-column:1/-1} .tile.rcs,.tile.small{grid-column:span 1}}
 @media (max-width:520px){.phead,.bars li{grid-template-columns:minmax(0,9rem) minmax(30px,1fr) 2.6rem 2.4rem}}
+.comparing{font-size:1.05rem;margin:.2rem 0 .8rem}
+.gap .ledger{font-size:1.05rem;margin:.2rem 0 .5rem}
+.gap tr.grp th{text-align:left}
+.gap tr.grp.ok th{color:var(--pass)} .gap tr.grp.no th{color:var(--fail)}
 ${QUALITY_CSS}
 @media print{@page{size:A3 landscape;margin:10mm} body{background:#fff;font-size:10.5px} .sheet{max-width:none;padding:0} details{display:none} .blk{break-inside:avoid}}
 `;
+
+/** Rows of the gap table shown before "and N more". */
+export const GAP_ROWS = 12;
+
+/** Since 1.37.0: every failing difference of the subject run in one row: claimed, contributed by a PR, or unexplained. */
+function gapHtml(a: A3): string {
+  const g = a.gap;
+  if (!g) return "";
+  const e: Explanation = g.explanation;
+  const share = (n: number) => (e.total ? `${Math.round((n / e.total) * 100)}%` : "");
+  const causes = (cs: { key: string; hunks: number }[]) => cs.slice(0, 3).map((c) => `${esc(c.key)} (${c.hunks})`).join("<br>") + (cs.length > 3 ? `<br><span class="src">and ${cs.length - 3} more kinds</span>` : "");
+  const prLinks = (prs: Explanation["contributed"]["rows"][number]["prs"]) => {
+    const words = esc(prWords(prs));
+    const name = (p: (typeof prs)[number]) => link(`${p.pr !== null ? `#${p.pr}` : p.sha.slice(0, 7)} ${p.title}`, p.url);
+    const ledBy = prs.length > 1 && prs[0]!.files > (prs[1]?.files ?? 0);
+    const listed = ledBy ? `${name(prs[0]!)}<br>also merged those nights: ${prs.slice(1, 6).map((p) => link(p.pr !== null ? `#${p.pr}` : p.sha.slice(0, 7), p.url)).join(", ")}${prs.length > 6 ? ` and ${prs.length - 6} more` : ""}` : `${prs.slice(0, 3).map(name).join("<br>")}${prs.length > 3 ? `<br>and ${prs.length - 3} more` : ""}`;
+    return `<strong>${words}</strong><br><span class="src">${listed}</span>`;
+  };
+  const head = (label: string, n: number, cls: string) => `<tr class="grp ${cls}"><th scope="row">${esc(label)}</th><td class="num">${n}</td><td class="num">${share(n)}</td><td></td><td></td></tr>`;
+  const more = (rows: { hunks: number }[], what: string) => (rows.length > GAP_ROWS ? `<tr><td>${rows.length - GAP_ROWS} more ${what}</td><td class="num">${rows.slice(GAP_ROWS).reduce((n, r) => n + r.hunks, 0)}</td><td></td><td></td><td></td></tr>` : "");
+  const rows = [
+    head("Claimed: a Rule or CHANGELOG entry says so", e.claimed.hunks, "ok"),
+    ...e.claimed.rows.slice(0, GAP_ROWS).map((r) => `<tr><td>${esc(r.label)}</td><td class="num">${r.hunks}</td><td class="num">${share(r.hunks)}</td><td></td><td></td></tr>`),
+    more(e.claimed.rows, "claims"),
+    head("Contributed by a PR: first seen the night it merged", e.contributed.hunks, "lead"),
+    ...e.contributed.rows.slice(0, GAP_ROWS).map((r) => `<tr><td>${prLinks(r.prs)}</td><td class="num">${r.hunks}</td><td class="num">${share(r.hunks)}</td><td>${causes(r.causes)}</td><td class="num">${r.firstSeen.map((f) => esc(day(f.ranAt))).join(", ")}</td></tr>`),
+    more(e.contributed.rows, "PR groups"),
+    head("Unexplained: the record cannot say who", e.unexplained.hunks, "no"),
+    ...e.unexplained.rows.map((r) => `<tr><td>${esc(unexplainedWords(r))}${r.suspects?.length ? `<br><span class="src">files point at ${esc(r.suspects.map((p) => (p.pr !== null ? `#${p.pr}` : p.sha.slice(0, 7))).join(", "))}</span>` : ""}</td><td class="num">${r.hunks}</td><td class="num">${share(r.hunks)}</td><td>${causes(r.causes)}</td><td></td></tr>`)
+  ].join("");
+  return `<section class="blk wide gap" id="gap"><h2>The gap, explained <span class="hint">every difference ${esc(g.comparing)} found, in one row each</span></h2>
+<p class="ledger"><strong>${esc(g.sentence)}</strong></p>${g.verdictNote ? `<p class="src">${esc(g.verdictNote)}</p>` : ""}
+<div class="scroll"><table><thead><tr><th>Explained by</th><th>Differences</th><th>Share</th><th>What changed (kinds)</th><th>First seen</th></tr></thead><tbody>${rows}</tbody></table></div>
+<p class="src">A PR is named when the difference first appeared in the forecast after it merged and its files touch what changed; several PRs merged the same night stay one row ("one of"), never split by guesswork. Read from ${e.history.runs} earlier forecasts beside the same production${e.history.first ? `, ${esc(day(e.history.first))} to ${esc(day(e.history.last ?? ""))}` : ""}.</p></section>`;
+}
 
 export function renderA3(a: A3): string {
   const s = a.score;
@@ -464,7 +504,9 @@ export function renderA3(a: A3): string {
 <body>
 <main class="sheet">
 <header class="title"><h1>A3 Aggregator <span>· Tutors release confidence</span></h1><span class="meta">Built ${esc(when(a.builtAt))} by harness <code>${esc(a.harness)}</code> from ${a.sources.runs} kept runs and the kaizen register · <a href="./">home</a> · <a href="readiness.html">overnight readiness</a> · <a href="scoreboard.html">scoreboard</a> · <a href="a3.json">a3.json</a></span></header>
+${a.gap ? `<p class="comparing">This sheet compares <strong>${esc(a.gap.comparing)}</strong>.</p>` : ""}
 ${andon(s, a)}
+${gapHtml(a)}
 <div class="a3">
 <section class="blk"><h2><span class="n">1</span>Background <span class="hint">why this matters</span></h2>${a.background.map((p) => `<p>${esc(p)}</p>`).join("")}<ul class="facts">${a.current.facts.map((f) => `<li>${esc(f)}</li>`).join("")}</ul></section>
 <section class="blk"><h2><span class="n">3</span>Goal <span class="hint">the target condition</span></h2>${goal}</section>

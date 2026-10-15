@@ -243,6 +243,19 @@ describe("the page", () => {
     expect(html).toContain("prefers-color-scheme:dark");
   });
 
+  // Since 1.37.0 (Leigh, 15 Oct 2026: "the A3 doesn't state the comparison"; "if the gap is X differences I want to know
+  // that A, B and C contributed towards it and it leaves Y as the unexplained gap").
+  it("says what it compares before the scoring, and explains the gap in rows that add up to every difference", () => {
+    const a = buildA3(inputs(github));
+    expect(a.gap).toBeDefined();
+    const e = a.gap!.explanation;
+    expect(e.claimed.hunks + e.contributed.hunks + e.unexplained.hunks).toBe(e.total);
+    expect(a.current.facts[0]).toMatch(/^Comparing (main at|release candidate) .+ against production .+, run \d{4}-\d\d-\d\d \d\d:\d\d UTC\. \d+ differences?: /);
+    expect(html.indexOf('class="comparing"')).toBeGreaterThan(0);
+    expect(html.indexOf('class="comparing"')).toBeLessThan(html.indexOf('aria-label="Final scoring"'));
+    expect(html).toContain('id="gap"');
+  });
+
   it("links only to https or inside the site, and escapes what a 5 Whys says", () => {
     expect(safeHref("https://github.com/x")).toBe("https://github.com/x");
     expect(safeHref("main-preview/reports/x/report.html#hunk-a")).toBe("main-preview/reports/x/report.html#hunk-a");

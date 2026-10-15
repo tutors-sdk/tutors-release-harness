@@ -1,4 +1,4 @@
-// Persistence stub: a Supabase-REST-shaped server that answers every query
+# Harness 1.37.2 (contract 1.37.0)
 // with nothing and records every write, so the harness can see exactly what
 // each side tried to persist during a journey.
 //
@@ -95,7 +95,7 @@ const server = createServer(async (req, res) => {
   // presence broadcasts over REST on a timer. Answering 404 made the browser log a "Failed to load
   // resource ... 404" whose count per page depended on the timer, an A/A console diff. Accept them
   // as Supabase does; they are presence, not writes, so the persistence artefact does not record them.
-  // Since 1.36.6 also the per-topic path supabase-js 2.7x's channel.httpSend() posts to: answering it 404 put
+  // Since 1.37.2 also the per-topic path supabase-js 2.7x's channel.httpSend() posts to: answering it 404 put
   // "httpSend() requires Realtime server v2.97.0 or newer" in the reader's console on both sides, 8 errors a run.
   if (BROADCAST.test(url.pathname) && req.method === "POST") {
     await readBody(req);
