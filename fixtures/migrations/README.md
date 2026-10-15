@@ -6,7 +6,9 @@ database migrations against the production schema on a throwaway Postgres:
 1. Fetch `supabase/migrations/*.sql` from the monorepo at ref **a** (the
    deployed version) and ref **b** (the candidate) — `scripts/fetch-migrations.sh`,
    a sparse checkout, nothing else from the repo.
-2. Start `postgres:16-alpine`, apply a's migrations in filename order, and read
+2. Start `postgres:16-alpine`, apply `supabase-baseline.sql` and
+   `supabase-legacy-tables.sql` (production's tables that predate
+   `supabase/migrations`), then a's migrations in filename order, and read
    the schema catalogue (tables, columns, types, nullability, defaults,
    indexes, functions, policies).
 3. `pg_dump` that state — the snapshot.
