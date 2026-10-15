@@ -59,7 +59,8 @@ function catalog(pg: Pg, db = DB): SchemaCatalog {
 /**
  * First implementation of the seam: a throwaway `postgres:16-alpine` in
  * Docker, with fixtures/migrations/supabase-baseline.sql standing in for what
- * Supabase provisions. Needs Docker; nothing in the unit tests uses it.
+ * Supabase provisions and supabase-legacy-tables.sql for the tables production
+ * had before supabase/migrations existed. Needs Docker; nothing in the unit tests uses it.
  */
 export const supabasePostgres: SchemaBackend = {
   name: "supabase-postgres",
@@ -71,6 +72,9 @@ export const supabasePostgres: SchemaBackend = {
       if (opts.snapshot) {
         opts.log(`restoring snapshot ${opts.snapshot}`);
         pg.psql(readFileSync(opts.snapshot, "utf8"));
+      } else {
+        // Production's tables that predate supabase/migrations; a snapshot brings the real ones.
+        pg.psql(readFileSync(resolve(ROOT, "fixtures", "migrations", "supabase-legacy-tables.sql"), "utf8"));
       }
     } catch (e) {
       pg.stop();
