@@ -92,6 +92,18 @@ describe("rehearsal modes need no A/A", () => {
     expect(gate({ ...base, mode: "upgrade", compare: matchClaims([], []) }).verdict).toBe("pass");
     expect(gate({ ...base, mode: "upgrade", compare: matchClaims([{ ...fail("rollout"), artefact: "upgrade" }], []) }).verdict).toBe("fail");
   });
+
+  // 17.0.0-rc.1 (15 Oct 2026): 983 unclaimed differences between 16.2.2 and 17.0.0 failed the rehearsal though the
+  // rollout itself was not what failed. Release mode judges those against the claims; the rehearsal judges the rollout.
+  it("upgrade judges only the rollout: other differences between a and b inform", () => {
+    const others = [{ ...fail("dom/course"), artefact: "dom" as const }, { ...fail("sbom/reader"), artefact: "sbom" as const }];
+    const pass = gate({ ...base, mode: "upgrade", compare: matchClaims(others, []) });
+    expect(pass.verdict).toBe("pass");
+    expect(pass.reasons).toContain("2 difference(s) between a and b outside the rollout, judged by release mode");
+    const failed = gate({ ...base, mode: "upgrade", compare: matchClaims([...others, { ...fail("rollout"), artefact: "upgrade" }], []) });
+    expect(failed.verdict).toBe("fail");
+    expect(failed.reasons[0]).toBe("1 finding(s) during the rollout");
+  });
 });
 
 describe("post-deploy mode", () => {

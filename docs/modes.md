@@ -111,7 +111,9 @@ the whole window; a third of the way in the edge switches new requests to b
 (in-flight requests finish on a), two thirds in `reader-a` is stopped. Every
 response carries `x-harness-upstream`, so a failure is attributed to a side.
 Zero failed or 5xx requests, and at least one request served by b, or the
-rehearsal fails.
+rehearsal fails. Only the rollout is judged: the captures of a and b differ wherever
+the release changed something, and those differences are listed as
+informing, because release mode judges them against the claims.
 
 On kind, the same rehearsal is a real `RollingUpdate`:
 `pnpm harness kind rollout --a 16.2.0 --b 16.3.0-rc.1` (see `deploy/kind/README.md`).
