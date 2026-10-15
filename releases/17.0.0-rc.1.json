@@ -3,15 +3,15 @@
   "candidate": "17.0.0-rc.1",
   "release": "17.0.0",
   "production": "16.2.2",
-  "recordedAt": "2026-10-15T09:18:24.252Z",
+  "recordedAt": "2026-10-15T12:02:15.226Z",
   "harness": {
-    "version": "1.36.1",
-    "gitSha": "f49f4b5e6bf8a61ab6c7ba9051e79ba3c76a3e74",
+    "version": "1.36.4",
+    "gitSha": "e9a9db1083640110874db8a6df5e6435315938df",
     "contractVersion": "1.36.0"
   },
   "verdict": "warn",
   "overridden": false,
-  "pinned": true,
+  "pinned": false,
   "verified": true,
   "digests": {
     "reader": "sha256:15e3aa22476d608db97e05917b1990ade0a7871e7ec6e113da5fec741b427233",

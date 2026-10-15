@@ -2,6 +2,63 @@
   "schemaVersion": 1,
   "runs": [
     {
+      "id": "2026-10-15T12-02-12Z-release",
+      "mode": "release",
+      "ranAt": "2026-10-15T12:02:12.207Z",
+      "verdict": "warn",
+      "reasons": [
+        "advisory only: the last A/A run (2026-10-15T07:38:30.465Z) was degraded and does not count: journey \"reference-course-reads\" failed on both sides, so this run saw nothing of its pages",
+        "382 unclaimed diff(s)",
+        "28 claim(s) matched nothing and should be removed from the changelog"
+      ],
+      "sides": {
+        "a": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:16.2.2",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:16.2.2",
+          "live": "quay.io/tutors-sdk/tutors-live:16.2.2",
+          "time": "quay.io/tutors-sdk/tutors-time:16.2.2"
+        },
+        "b": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:17.0.0-rc.1",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:17.0.0-rc.1",
+          "live": "quay.io/tutors-sdk/tutors-live:17.0.0-rc.1",
+          "time": "quay.io/tutors-sdk/tutors-time:17.0.0-rc.1"
+        }
+      },
+      "harnessVersion": "1.36.4",
+      "runUrl": "https://github.com/tutors-sdk/tutors-release-harness/actions/runs/38730102741",
+      "score": {
+        "score": 9,
+        "grade": "D",
+        "normalness": "degraded",
+        "manual": 5
+      },
+      "delta": {
+        "baseline": "16.2.2",
+        "against": {
+          "id": "2026-10-15T09-18-21Z-release",
+          "ranAt": "2026-10-15T09:18:21.299Z",
+          "candidate": "17.0.0-rc.1",
+          "harnessVersion": "1.36.1"
+        },
+        "new": 1,
+        "gone": 1,
+        "byArtefact": {
+          "network": {
+            "new": 1,
+            "gone": 1
+          }
+        }
+      },
+      "files": [
+        "2026-10-15T12-02-12Z-release/report.json",
+        "2026-10-15T12-02-12Z-release/report.md",
+        "2026-10-15T12-02-12Z-release/report.html",
+        "2026-10-15T12-02-12Z-release/scorecard.json",
+        "2026-10-15T12-02-12Z-release/scorecard.md"
+      ]
+    },
+    {
       "id": "2026-10-15T09-18-21Z-release",
       "mode": "release",
       "ranAt": "2026-10-15T09:18:21.299Z",
