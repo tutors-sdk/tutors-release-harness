@@ -10,6 +10,7 @@
  */
 import { prWords, unexplainedWords, type Explanation } from "../changes/explain.ts";
 import { REPO, duration, type A3, type Decisions, type FiveWhys, type Pareto, type Rca, type Score, type ValueStream } from "./model.ts";
+import type { TimingJourney } from "./timing.ts";
 import type { CourseLoad, CourseSide } from "./courses.ts";
 import type { LightState, QualityLight, QualityStrip } from "./quality.ts";
 
@@ -363,6 +364,7 @@ code{font:12.5px ui-monospace,Menlo,Consolas,monospace}
 .tile .big{font-size:2rem;font-weight:700;line-height:1.1} .tile .mid{font-size:1.25rem;font-weight:700}
 .tile .sub{font-size:12px;color:var(--ink2)} .muted{color:var(--muted)}
 .tile.gate{grid-column:span 4;color:#fff;border:0} .tile.gate .k,.tile.gate .sub{color:#ffffffd9} .tile.gate a{color:#fff}
+svg.xmr .band{fill:var(--pass);opacity:.12} svg.xmr line.ucl{stroke:var(--pass);stroke-dasharray:3 3} svg.xmr line.cl{stroke:var(--ink);opacity:.4} svg.xmr .prod{fill:none;stroke:var(--ink);opacity:.35} svg.xmr circle.in{fill:var(--ink)} svg.xmr circle.out{fill:var(--fail)}
 .tile.gate .why{display:block;margin-top:8px;font-size:14px;line-height:1.4;color:#fff}
 .tile.gate.fail{background:var(--fail)} .tile.gate.warn{background:var(--warn)} .tile.gate.pass{background:var(--pass)}
 .tile.dims{grid-column:span 5} .tile.rcs{grid-column:span 3} .tile.small{grid-column:span 3} .dims ul{list-style:none;margin:4px 0 0;padding:0;display:grid;gap:3px}
@@ -485,6 +487,34 @@ function gapHtml(a: A3): string {
 <p class="src">A PR is named when the difference first appeared in the forecast after it merged and its files touch what changed; several PRs merged the same night stay one row ("one of"), never split by guesswork. Read from ${e.history.runs} earlier forecasts beside the same production${e.history.first ? `, ${esc(day(e.history.first))} to ${esc(day(e.history.last ?? ""))}` : ""}.</p></section>`;
 }
 
+/** Since 1.39.0: one small XmR chart per journey: production's limits as a band, main's nightly median as points. */
+function timingChart(j: TimingJourney): string {
+  const W = 260;
+  const H = 70;
+  const values = [...j.nights.flatMap((n) => [n.main, n.production]), j.limits.ucl, j.limits.lcl];
+  const lo = Math.min(...values) * 0.95;
+  const hi = Math.max(...values) * 1.05;
+  const y = (v: number) => Math.round(H - ((v - lo) / (hi - lo || 1)) * H);
+  const x = (i: number) => Math.round(j.nights.length === 1 ? W / 2 : 8 + (i * (W - 16)) / (j.nights.length - 1));
+  const line = (v: number, cls: string) => `<line class="${cls}" x1="0" x2="${W}" y1="${y(v)}" y2="${y(v)}"/>`;
+  const dots = j.nights.map((n, i) => `<circle class="${n.main > j.limits.ucl || n.main < j.limits.lcl ? "out" : "in"}" cx="${x(i)}" cy="${y(n.main)}" r="3.5"><title>${esc(day(n.ranAt))}: main ${n.main}ms, production ${n.production}ms</title></circle>`).join("");
+  const prod = j.nights.map((n, i) => `${x(i)},${y(n.production)}`).join(" ");
+  return `<svg class="xmr" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${esc(j.journey)}: ${esc(j.words)}"><rect class="band" x="0" width="${W}" y="${y(j.limits.ucl)}" height="${Math.max(1, y(j.limits.lcl) - y(j.limits.ucl))}"/>${line(j.limits.ucl, "ucl")}${line(j.limits.centre, "cl")}${line(j.limits.lcl, "ucl")}${j.nights.length > 1 ? `<polyline class="prod" points="${prod}"/>` : ""}${dots}</svg>`;
+}
+
+function timingHtml(a: A3): string {
+  const t = a.timing;
+  if (!t) return "";
+  const out = t.journeys.filter((j) => j.state !== "inside").length;
+  const rows = t.journeys
+    .map((j) => `<tr><th scope="row">${esc(j.journey)}</th><td>${timingChart(j)}</td><td><span class="chip ${j.state === "inside" ? "decided" : "changed"}">${j.state === "inside" ? "common cause" : `special cause: ${esc(j.state)}`}</span><br>${esc(j.words)}</td></tr>`)
+    .join("");
+  return `<section class="blk wide timing" id="timing"><h2>Timing on control charts <span class="hint">advice, never a failure: an outlier against production's own variation is something to investigate</span></h2>
+<p class="ledger"><strong>${out ? `${out} of ${t.journeys.length} journeys outside production's limits: investigate ${out === 1 ? "it" : "them"}, starting with "what to check" in the report.` : `Every journey inside production's limits (${t.journeys.length}): common-cause variation, nothing to investigate.`}</strong></p>
+<div class="scroll"><table><thead><tr><th>Journey</th><th>Main's median night by night (dots), production's limits (band)</th><th>Reading</th></tr></thead><tbody>${rows}</tbody></table></div>
+<p class="src">XmR limits: centre ± 2.66 × the mean moving range of production's nightly medians beside the same production, or of its runs in the newest forecast until there are two nights; under 10 points they are provisional. A red dot is outside them.</p></section>`;
+}
+
 export function renderA3(a: A3): string {
   const s = a.score;
   const goal = `<div class="scroll"><table><thead><tr><th>Measure</th><th>Now</th><th>Target</th><th></th></tr></thead><tbody>${a.goal.map((g) => `<tr><td>${esc(g.metric)}<br><span class="src">${esc(g.source)}</span></td><td>${esc(g.now)}</td><td>${esc(g.target)}</td><td>${g.met ? `<span class="ok">met</span>` : `<span class="no">gap</span>`}</td></tr>`).join("")}</tbody></table></div>`;
@@ -508,6 +538,7 @@ export function renderA3(a: A3): string {
 ${a.gap ? `<p class="comparing">This sheet compares <strong>${esc(a.gap.comparing)}</strong>.</p>` : ""}
 ${andon(s, a)}
 ${gapHtml(a)}
+${timingHtml(a)}
 <div class="a3">
 <section class="blk"><h2><span class="n">1</span>Background <span class="hint">why this matters</span></h2>${a.background.map((p) => `<p>${esc(p)}</p>`).join("")}<ul class="facts">${a.current.facts.map((f) => `<li>${esc(f)}</li>`).join("")}</ul></section>
 <section class="blk"><h2><span class="n">3</span>Goal <span class="hint">the target condition</span></h2>${goal}</section>

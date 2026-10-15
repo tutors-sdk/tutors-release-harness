@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.38.0`
+Contract version: `1.39.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -2087,6 +2087,14 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.39.0 (minor; timing on control charts)
+
+The release note is [releases/1.39.0.md](releases/1.39.0.md). A minor: a new optional `report.json` field,
+`timingControl` (each journey's run durations on a and b, the XmR limits of a's runs, and how many of b's runs fall
+above the UCL or below the LCL), and a new optional `a3.json` field, `timing` (per journey, night by night beside
+the same production: production's and main's medians, the limits, and main's newest median against them). A timing
+hunk's `advice` opens with the control-chart reading. Advice only: no verdict, Gate or exit code moves.
 
 ### 1.38.0 (minor; timing is advice, the Gate says why)
 

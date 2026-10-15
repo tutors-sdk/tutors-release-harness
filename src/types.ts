@@ -3,6 +3,7 @@
  * claimed and reported is one of these shapes.
  */
 
+import type { TimingControl } from "./compare/timing-control.ts";
 import type { Causes } from "./report/causes.ts";
 import type { AppImages } from "./image-ref.ts";
 import type { ImageArtefactKind, ImageArtefactStatus, SideImageArtefacts, SideImageStatic } from "./image-static/types.ts";
@@ -461,6 +462,8 @@ export interface RunReport {
    * covers. Informing until 2.0: an expired claim still covers. src/claims/lifetime.ts.
    */
   claimLifetimes?: { level: "blocking" | "informing"; claims: import("./claims/lifetime.ts").ClaimLifetime[] };
+  /** Since 1.39.0: each journey's run durations on a and b, and b against a's XmR limits (src/compare/timing-control.ts). */
+  timingControl?: TimingControl;
 }
 
 /** Since 1.24.0: a against a2 (src/compare/in-run-noise.ts). */

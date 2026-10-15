@@ -103,6 +103,35 @@
         "alsoOnB": { "type": "array", "items": { "type": "string" } }
       }
     },
+    "timingControl": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["journeys"],
+      "description": "Since 1.39.0: each journey's run durations on a and b, and b's runs against the XmR limits of a's (src/compare/timing-control.ts). Advice: never read by the Gate.",
+      "properties": {
+        "journeys": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["journey", "a", "b", "above", "below"],
+            "properties": {
+              "journey": { "type": "string" },
+              "a": { "type": "array", "items": { "type": "number" } },
+              "b": { "type": "array", "items": { "type": "number" } },
+              "limits": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["n", "centre", "mrBar", "ucl", "lcl", "provisional"],
+                "properties": { "n": { "type": "integer" }, "centre": { "type": "number" }, "mrBar": { "type": "number" }, "ucl": { "type": "number" }, "lcl": { "type": "number" }, "provisional": { "type": "boolean" } }
+              },
+              "above": { "type": "integer" },
+              "below": { "type": "integer" }
+            }
+          }
+        }
+      }
+    },
     "claimLifetimes": {
       "type": "object",
       "description": "Since 1.25.1: every claim of the run that carries a lifetime (`until`, `digests`), live or expired, and the failing differences each covers. level is the lifetime's level: informing (an expired claim still covers; what it covers would be unclaimed once lifetimes block, at 2.0) or blocking (an expired claim is left out before matching). Never read by the verdict while informing (src/claims/lifetime.ts).",
