@@ -16,6 +16,9 @@
  *               `:main` tag is pushed before it is signed, and a run that picks it up in that window cannot verify it)
  *
  * and skips a pair it has already judged with this harness version, so a quiet day costs one API call, not a run.
+ * Since 1.36.2 it also warns when the monorepo has tagged a release newer than that production pin: the pin moves only
+ * when the `pnpm deploy:pin` pull request merges (release/SOP.md, step 10), and until then every forecast is judged
+ * against the release before (17.0.0 was tagged on 15 October 2026 while main still pinned 16.2.2).
  * Writes production, candidate, sha, claims_url, skip and reason to $GITHUB_OUTPUT. Exit 2 when it cannot decide.
  */
 import { appendFileSync } from "node:fs";
@@ -69,6 +72,27 @@ export function judgedBefore(index: ReportIndex, o: { production: string; candid
   return index.runs.find((r) => r.mode === "release" && r.harnessVersion === o.harnessVersion && tagOf(r.sides.a.reader) === o.production && tagOf(r.sides.b.reader) === o.candidate);
 }
 
+/** X.Y.Z of a release tag (v17.0.0, 17.0.0); undefined for a release candidate or anything else. */
+export function releaseVersion(tag: string): [number, number, number] | undefined {
+  const m = /^v?(\d+)\.(\d+)\.(\d+)$/.exec(tag);
+  return m ? [Number(m[1]), Number(m[2]), Number(m[3])] : undefined;
+}
+
+const newer = (a: [number, number, number], b: [number, number, number]) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
+
+/** The newest release tag (no -rc) newer than production's own release, if the monorepo has one: production's pin is behind. */
+export function newerRelease(tags: string[], production: string): string | undefined {
+  const base = /^v?(\d+)\.(\d+)\.(\d+)/.exec(production);
+  if (!base) return undefined;
+  const pinned: [number, number, number] = [Number(base[1]), Number(base[2]), Number(base[3])];
+  let best: { tag: string; v: [number, number, number] } | undefined;
+  for (const tag of tags) {
+    const v = releaseVersion(tag);
+    if (v && newer(v, pinned) > 0 && (!best || newer(v, best.v) > 0)) best = { tag: tag.replace(/^v/, ""), v };
+  }
+  return best?.tag;
+}
+
 export interface Decision {
   production: string;
   candidate: string;
@@ -76,6 +100,8 @@ export interface Decision {
   claimsUrl: string;
   skip: boolean;
   reason: string;
+  /** Set when production came from the overlay and the monorepo has tagged a newer release than it pins. */
+  stalePin?: string;
 }
 
 export interface Sources {
@@ -85,6 +111,8 @@ export interface Sources {
   imageRuns(): Promise<WorkflowRun[]>;
   /** `reports/index.json` on the main-preview branch; undefined before the first run. */
   index(): Promise<string | undefined>;
+  /** The monorepo's tag names, newest first. Optional: without it there is no stale-pin warning. */
+  tags?(): Promise<string[]>;
 }
 
 export async function decide(src: Sources, o: { production?: string | undefined; candidate?: string | undefined; force?: boolean; harnessVersion?: string } = {}): Promise<Decision> {
@@ -102,10 +130,14 @@ export async function decide(src: Sources, o: { production?: string | undefined;
   for (const [side, tag] of [["production", production], ["candidate", candidate]] as const) if (!TAG.test(tag)) throw new Error(`${side} "${tag}" is not a registry tag`);
   // Main's claims are the next release's claims so far. A candidate given by hand names no commit: its claims are main's.
   const claimsUrl = `https://raw.githubusercontent.com/${MONOREPO}/${sha || "main"}/release/claims.yaml`;
+  // Only when production is the overlay's: a production given by hand is what the person meant. A failed lookup is no warning.
+  const released = o.production || !src.tags ? undefined : newerRelease(await src.tags().catch(() => []), production);
+  const stalePin = released && `the monorepo has tagged ${released}, but ${READER_OVERLAY} on main still pins ${production}: production is judged as ${production} until the \`pnpm deploy:pin ${released}\` pull request merges (release/SOP.md, step 10)`;
+  const extra = stalePin ? { stalePin } : {};
   const harnessVersion = o.harnessVersion ?? harnessInfo().version;
   const seen = o.force ? undefined : judgedBefore(parseIndex(await src.index()), { production, candidate, harnessVersion });
-  if (seen) return { production, candidate, sha, claimsUrl, skip: true, reason: `${candidate} against ${production} was already judged by harness ${harnessVersion}: ${seen.verdict.toUpperCase()} at ${seen.ranAt}${seen.runUrl ? ` (${seen.runUrl})` : ""}. Nothing new on main since.` };
-  return { production, candidate, sha, claimsUrl, skip: false, reason: `judging main ${candidate}${built} against production ${production}` };
+  if (seen) return { production, candidate, sha, claimsUrl, skip: true, ...extra, reason: `${candidate} against ${production} was already judged by harness ${harnessVersion}: ${seen.verdict.toUpperCase()} at ${seen.ranAt}${seen.runUrl ? ` (${seen.runUrl})` : ""}. Nothing new on main since.` };
+  return { production, candidate, sha, claimsUrl, skip: false, ...extra, reason: `judging main ${candidate}${built} against production ${production}` };
 }
 
 /** The real sources: GitHub's REST API with the workflow's token (the monorepo is public; the token only lifts the rate limit). */
@@ -121,7 +153,8 @@ export function githubSources(env: NodeJS.ProcessEnv = process.env): Sources {
   return {
     overlay: async () => (await get(`repos/${MONOREPO}/contents/${READER_OVERLAY}?ref=main`, true))!,
     imageRuns: async () => (JSON.parse((await get(`repos/${MONOREPO}/actions/workflows/${IMAGE_WORKFLOW}/runs?branch=main&event=push&status=success&per_page=20`))!) as { workflow_runs: WorkflowRun[] }).workflow_runs,
-    index: () => get(`repos/${repo}/contents/reports/index.json?ref=${PREVIEW_BRANCH}`, true, true)
+    index: () => get(`repos/${repo}/contents/reports/index.json?ref=${PREVIEW_BRANCH}`, true, true),
+    tags: async () => (JSON.parse((await get(`repos/${MONOREPO}/tags?per_page=100`))!) as { name: string }[]).map((t) => t.name)
   };
 }
 
@@ -136,7 +169,8 @@ export async function previewResolve(v: { a?: unknown; b?: unknown; force?: unkn
     return 2;
   }
   console.log(d.reason);
+  if (d.stalePin) console.log(`::warning title=Production pin is behind a release::${d.stalePin}`);
   if (env.GITHUB_OUTPUT) appendFileSync(env.GITHUB_OUTPUT, `production=${d.production}\ncandidate=${d.candidate}\nsha=${d.sha}\nclaims_url=${d.claimsUrl}\nskip=${d.skip}\n`);
-  if (env.GITHUB_STEP_SUMMARY) appendFileSync(env.GITHUB_STEP_SUMMARY, `### Main to RC\n\n${d.reason}\n`);
+  if (env.GITHUB_STEP_SUMMARY) appendFileSync(env.GITHUB_STEP_SUMMARY, `### Main to RC\n\n${d.reason}\n${d.stalePin ? `\n**Production pin is behind a release:** ${d.stalePin}.\n` : ""}`);
   return 0;
 }
