@@ -19,6 +19,7 @@ import { claimLabel } from "../claims/rules.ts";
 import { hunkAnchor, type Confidence } from "../score/confidence.ts";
 import { DIMENSIONS } from "../score/weights.ts";
 import type { Hunk, RunReport } from "../types.ts";
+import { timingCharts, type TimingCharts } from "./timing.ts";
 import type { WhyFile } from "../why/format.ts";
 import { chainEnd, countermeasureOf } from "../why/format.ts";
 import type { RegisterEntry } from "../why/register.ts";
@@ -262,6 +263,8 @@ export interface A3 {
   courses?: CourseLoad;
   /** Since 1.37.0: what is compared, and the gap explained; absent without a subject run that kept its report. */
   gap?: Gap;
+  /** Since 1.39.0: each journey's timing against production's control limits (src/a3/timing.ts); absent before a forecast recorded it. */
+  timing?: TimingCharts;
   countermeasures: { kind: string; what: string; owner: string; due: string; status: FiveWhys["status"]; from: string; rca: string[] }[];
   plan: { what: string; who: string; when: string; status: string }[];
   followUp: { check: string; state: string; met: boolean }[];
@@ -780,6 +783,8 @@ export function buildA3(i: A3Inputs): A3 {
   ];
 
   const gap = gapOf(i.runs, subject, score?.gate);
+  // Beside the same production only: a new release moves production's own limits.
+  const timing = subject?.report?.timingControl ? timingCharts(i.runs.filter((r) => r.stream === subject.stream && r.sides?.a?.reader === subject.sides?.a?.reader && Date.parse(r.ranAt) <= Date.parse(subject.ranAt))) : undefined;
   const facts: string[] = [];
   if (gap) facts.push(`Comparing ${gap.comparing}. ${gap.sentence}`);
   if (score) facts.push(`Gate ${score.gate} on the ${score.subject} ${cand} beside ${prod}${score.rcs !== null ? `, RCS ${score.rcs} ${score.band}` : ", so no RCS"}.`);
@@ -837,6 +842,7 @@ export function buildA3(i: A3Inputs): A3 {
     ...(quality ? { quality } : {}),
     ...(i.courses ? { courses: i.courses } : {}),
     ...(gap ? { gap } : {}),
+    ...(timing ? { timing } : {}),
     countermeasures,
     plan,
     followUp,

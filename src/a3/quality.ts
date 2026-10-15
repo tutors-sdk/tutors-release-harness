@@ -17,6 +17,7 @@
  * check under it was read and in reason. Pure, and advisory: nothing here is an input to the Gate, the score, a verdict
  * or an exit code. It reads kept files only (src/a3/read.ts and src/readiness/read.ts read them).
  */
+import { controlLine } from "../compare/timing-control.ts";
 import { hunkAnchor } from "../score/confidence.ts";
 import { weeklyFor, type WeeklyMutants } from "../score/test-signal.ts";
 import { RULES } from "../score/weights.ts";
@@ -93,7 +94,7 @@ export interface QualityStrip {
 
 export interface QualityInputs {
   /** The forecast's report.json, as kept. Absent: nothing to read, every light is not measured. */
-  report?: Partial<Pick<RunReport, "ranAt" | "compare" | "load" | "noise" | "provenance">>;
+  report?: Partial<Pick<RunReport, "ranAt" | "compare" | "load" | "noise" | "provenance" | "timingControl">>;
   /** The kept quality.json, parsed; undefined when none was kept, null when one was kept and could not be read. */
   record?: QualityRecord | null;
   /** The weekly mutants self-tests (mutants.jsonl); undefined when the record was not read. */
@@ -164,12 +165,15 @@ function speed(i: QualityInputs, hunkLink: (h: Hunk, label?: string) => Link, at
     return steps.length ? `. What to check: ${steps.join(" ")}` : "";
   };
   const named = (hs: Hunk[]) => hs.slice(0, 3).map((h) => `${h.summary}${claimed.has(h.id) ? " (claimed)" : ""}`).join("; ") + (hs.length > 3 ? `; and ${hs.length - 3} more` : "");
+  // Since 1.39.0: b's runs against production's control limits; a run outside them is a "look" even when no test says slower.
+  const outside = (r.timingControl?.journeys ?? []).filter((j) => j.above + j.below > 0);
+  const control = r.timingControl ? `; control chart: ${outside.length ? outside.map(controlLine).join("; ") : `every journey's runs on main inside production's limits (${r.timingControl.journeys.length})`}` : "";
   const checks: QualityCheck[] = [
     {
       id: "slower",
-      label: "No journey or startup significantly slower",
-      state: slower.length ? "look" : "within reason",
-      reading: slower.length ? `${plural(slower.length, "slowdown")} (advice, not a failure): ${named(slower)}${advised(slower)}` : "no journey significantly slower",
+      label: "No journey or startup significantly slower, or outside production's control limits",
+      state: slower.length || outside.length ? "look" : "within reason",
+      reading: `${slower.length ? `${plural(slower.length, "slowdown")} (advice, not a failure): ${named(slower)}` : "no journey significantly slower"}${control}${advised(slower)}`,
       evidence: slower.length ? slower.slice(0, 3).map((h) => hunkLink(h)) : [at("differences", "the differences")]
     }
   ];
@@ -187,7 +191,7 @@ function speed(i: QualityInputs, hunkLink: (h: Hunk, label?: string) => Link, at
     });
   }
   const loadCheck = checks.find((c) => c.id === "load")!;
-  const reading = [loadCheck.state === "not measured" ? "no k6 leg" : loadCheck.reading, checks[0]!.state === "look" ? `${plural(slower.length, "slowdown")} to look at, advice only: ${named(slower)}` : "no journey significantly slower"].join("; ");
+  const reading = [loadCheck.state === "not measured" ? "no k6 leg" : loadCheck.reading, checks[0]!.state === "look" ? (slower.length ? `${plural(slower.length, "slowdown")} to look at, advice only: ${named(slower)}` : `${plural(outside.length, "journey")} outside production's control limits, advice only`) : "no journey significantly slower"].join("; ");
   return { id: "speed", name: "Speed", state: combine(checks.map((c) => c.state)), reading, rule, checks, evidence: checks.flatMap((c) => c.evidence).slice(0, 4) };
 }
 

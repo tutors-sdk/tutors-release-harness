@@ -1,4 +1,5 @@
 import type { SideCapture } from "../types.ts";
+import { controlLine, timingControl } from "./timing-control.ts";
 
 /**
  * What to check when a journey or page is slower on b (since 1.38.0). Timing is informing: it never fails a release,
@@ -9,6 +10,9 @@ import type { SideCapture } from "../types.ts";
  */
 export function timingAdvice(a: SideCapture, b: SideCapture, scope: string, kind: "journey" | "page"): string[] {
   const out: string[] = [];
+  // Since 1.39.0: first, whether b's runs are outliers against production's own variation, or within it.
+  const control = kind === "journey" ? timingControl(a, b)?.journeys.find((j) => j.journey === scope) : undefined;
+  if (control) out.push(`Control chart: ${controlLine(control)}.`);
   const pagesOf = (c: SideCapture) => c.journeys.filter((j) => !j.error).flatMap((j) => (kind === "journey" ? (j.journey === scope ? j.pages : []) : j.pages.filter((p) => p.pageKey === scope)));
   const pa = pagesOf(a);
   const pb = pagesOf(b);

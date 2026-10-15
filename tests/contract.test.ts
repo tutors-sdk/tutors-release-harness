@@ -157,7 +157,8 @@ const full: DeepRequired<RunReport> = {
   },
   levels: { dom: { level: "blocking", blockingFrom: "2026-11-01" }, headers: { level: "informing", blockingFrom: "2026-11-01" } },
   inRunNoise: { stack: "a2", runs: 1, artefacts: ["dom", "network"], journeys: ["anon-browse"], hunks: [{ artefact: "dom", scope: "reader:course", summary: "reader:course: DOM differs" }], alsoOnB: ["dom:reader:course:1"] },
-  claimLifetimes: { level: "informing", claims: [{ artefact: "network", scope: "GET /gone", until: "16.3.0", digests: { reader: `sha256:${"a".repeat(64)}` }, state: "expired", why: "until 16.3.0, and the candidate is 16.3.1", covers: 2 }] }
+  claimLifetimes: { level: "informing", claims: [{ artefact: "network", scope: "GET /gone", until: "16.3.0", digests: { reader: `sha256:${"a".repeat(64)}` }, state: "expired", why: "until 16.3.0, and the candidate is 16.3.1", covers: 2 }] },
+  timingControl: { journeys: [{ journey: "student-signs-in", a: [3400, 3500], b: [8400, 8500], limits: { n: 2, centre: 3450, mrBar: 100, ucl: 3716, lcl: 3184, provisional: true }, above: 2, below: 0 }] }
 };
 
 function runFixture(mode: Mode, opts: { mutate?: boolean; claims?: string; noise?: string } = {}) {
@@ -216,7 +217,7 @@ describe("report.json", () => {
     const cli = json("docs/contract/cli.json");
     for (const flag of cli.flags.filter((f: { since?: string }) => f.since === "1.2.0")) expect(changes, flag.name).toContain(`--${flag.name === "runtime" ? "no-runtime" : flag.name}`);
     for (const [name, v] of Object.entries(cli.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.2.0")) expect(changes, name).toContain(name);
-    expect(CONTRACT_VERSION).toBe("1.38.0");
+    expect(CONTRACT_VERSION).toBe("1.39.0");
     // The harness version is package.json's and moves at least as far as the contract's (docs/contract.md, Versioning):
     // a mask or engine PR bumps the patch of the harness alone, so do not pin a literal here.
     expect(json("package.json").version).toBe(HARNESS_VERSION);

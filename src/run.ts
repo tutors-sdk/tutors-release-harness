@@ -11,6 +11,7 @@ import { captureSide } from "./collectors/index.ts";
 import { foldAssetChurn } from "./compare/asset-graph.ts";
 import { isReplayJourney } from "./compare/replay.ts";
 import { compareCaptures } from "./compare/index.ts";
+import { timingControl } from "./compare/timing-control.ts";
 import { ENGINE_LEVELS, applyLevels, levelsOn, type EngineLevels } from "./compare/levels.ts";
 import { gate, rollbackIssueConfigured } from "./gate.ts";
 import { runMigration } from "./modes/migration.ts";
@@ -214,6 +215,7 @@ export function compareFromCaptures(input: CompareInput): RunOutcome {
     return rest;
   };
   const imageArtefacts = imageArtefactsSection(input.a, input.b); // R5
+  const control = timingControl(na.capture, nb.capture);
   const report: RunReport = {
     schemaVersion: SCHEMA_VERSION,
     harness: harnessInfo(),
@@ -239,7 +241,8 @@ export function compareFromCaptures(input: CompareInput): RunOutcome {
     ...(input.productionBuild ? { productionBuild: input.productionBuild } : {}),
     levels: levelsOn(ranAt, levelTable),
     ...(input.a2 && aToA2 ? { inRunNoise: inRunNoise(input.a2, aToA2, compare.hunks) } : {}),
-    ...(lifetimes.length ? { claimLifetimes: { level: CLAIM_LIFETIME_LEVEL, claims: lifetimes } } : {})
+    ...(lifetimes.length ? { claimLifetimes: { level: CLAIM_LIFETIME_LEVEL, claims: lifetimes } } : {}),
+    ...(control ? { timingControl: control } : {})
   };
 
   const files = writeReports(input.captureDir, report);
