@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "mode": "release",
+  "ranAt": "2026-10-15T19:51:41.408Z",
+  "verdict": "fail",
+  "score": 85,
+  "grade": "B",
+  "deductions": [
+    {
+      "points": 15,
+      "why": "1 diff(s) no claim covers"
+    }
+  ],
+  "normalness": {
+    "state": "normal",
+    "source": "noise-status",
+    "hunks": 0,
+    "ranAt": "2026-10-15T19:39:16.959Z"
+  },
+  "rules": [
+    {
+      "rule": null,
+      "hunks": 1,
+      "artefacts": [
+        "timing"
+      ],
+      "scopes": [
+        "student-signs-in"
+      ],
+      "prs": [],
+      "status": "unclaimed"
+    },
+    {
+      "rule": "0330",
+      "title": "When a student opens a learning object, the reader shall send the learning event to the reader's server without publishing it over Realtime from the browser.",
+      "hunks": 4,
+      "artefacts": [
+        "network"
+      ],
+      "scopes": [
+        "/course/localhost:8080",
+        "/topic/localhost:8080/unit-1/topic-01",
+        "/course/reference-course",
+        "/note/reference-course/topic-07-reference/note-1"
+      ],
+      "prs": [],
+      "status": "covered"
+    },
+    {
+      "rule": "0331",
+      "title": "When the reader's server receives a learning event, the reader shall publish it only to the activity feeds a live dashboard has watched in the last 90 seconds.",
+      "hunks": 1,
+      "artefacts": [
+        "persistence"
+      ],
+      "scopes": [
+        "student-signs-in/realtime_claim_live_publish"
+      ],
+      "prs": [],
+      "status": "covered"
+    }
+  ],
+  "manual": [
+    {
+      "scope": "student-signs-in",
+      "artefacts": [
+        "timing"
+      ],
+      "hunks": 1,
+      "why": "moved and no claim covers it"
+    }
+  ]
+}
