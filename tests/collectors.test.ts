@@ -140,3 +140,13 @@ describe("quiet: wait for the requests a page starts late", () => {
     expect(Date.now() - t0).toBeLessThan(600);
   });
 });
+
+describe("settlesOnResponse: a request that is not a read is settled once its status is in", () => {
+  it("lets a fire-and-forget POST settle on its response, and keeps reads waiting for their body", async () => {
+    const { settlesOnResponse } = await import("../src/collectors/browser.ts");
+    expect(settlesOnResponse("POST")).toBe(true);
+    expect(settlesOnResponse("put")).toBe(true);
+    expect(settlesOnResponse("GET")).toBe(false);
+    expect(settlesOnResponse("head")).toBe(false);
+  });
+});
