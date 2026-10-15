@@ -2,6 +2,85 @@
   "schemaVersion": 1,
   "runs": [
     {
+      "id": "2026-10-15T21-21-41Z-release",
+      "mode": "release",
+      "ranAt": "2026-10-15T21:21:41.791Z",
+      "verdict": "pass",
+      "reasons": [
+        "every difference is claimed"
+      ],
+      "sides": {
+        "a": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:17.0.0",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:17.0.0",
+          "live": "quay.io/tutors-sdk/tutors-live:17.0.0",
+          "time": "quay.io/tutors-sdk/tutors-time:17.0.0"
+        },
+        "b": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:sha-c867ee8",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:sha-c867ee8",
+          "live": "quay.io/tutors-sdk/tutors-live:sha-c867ee8",
+          "time": "quay.io/tutors-sdk/tutors-time:sha-c867ee8"
+        }
+      },
+      "harnessVersion": "1.39.0",
+      "runUrl": "https://github.com/tutors-sdk/tutors-release-harness/actions/runs/38807722681",
+      "score": {
+        "score": 100,
+        "grade": "A",
+        "normalness": "normal",
+        "manual": 0
+      },
+      "confidence": {
+        "gate": "PASS",
+        "rcs": 80,
+        "band": "Amber",
+        "meaning": "ship only after the reviewer's glance is recorded verified",
+        "glance": 1,
+        "scoredBy": "1.39.0"
+      },
+      "changes": {
+        "score": 27,
+        "prs": 9,
+        "risky": 7,
+        "floorBreached": false,
+        "range": "v17.0.0..c867ee87107a603c3d1ea34be9ff70beab119ee2"
+      },
+      "delta": {
+        "baseline": "17.0.0",
+        "against": {
+          "id": "2026-10-15T19-51-41Z-release",
+          "ranAt": "2026-10-15T19:51:41.408Z",
+          "candidate": "sha-c867ee8",
+          "harnessVersion": "1.37.4"
+        },
+        "new": 0,
+        "gone": 1,
+        "byArtefact": {
+          "timing": {
+            "new": 0,
+            "gone": 1
+          }
+        }
+      },
+      "files": [
+        "2026-10-15T21-21-41Z-release/migration/report.json",
+        "2026-10-15T21-21-41Z-release/migration/report.md",
+        "2026-10-15T21-21-41Z-release/migration/report.html",
+        "2026-10-15T21-21-41Z-release/upgrade/report.json",
+        "2026-10-15T21-21-41Z-release/upgrade/report.md",
+        "2026-10-15T21-21-41Z-release/upgrade/report.html",
+        "2026-10-15T21-21-41Z-release/report.json",
+        "2026-10-15T21-21-41Z-release/report.md",
+        "2026-10-15T21-21-41Z-release/report.html",
+        "2026-10-15T21-21-41Z-release/confidence.json",
+        "2026-10-15T21-21-41Z-release/changes.json",
+        "2026-10-15T21-21-41Z-release/quality.json",
+        "2026-10-15T21-21-41Z-release/scorecard.json",
+        "2026-10-15T21-21-41Z-release/scorecard.md"
+      ]
+    },
+    {
       "id": "2026-10-15T19-51-41Z-release",
       "mode": "release",
       "ranAt": "2026-10-15T19:51:41.408Z",
