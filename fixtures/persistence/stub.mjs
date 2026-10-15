@@ -1,4 +1,4 @@
-# Harness 1.37.2 (contract 1.37.0)
+// Persistence stub: a Supabase-REST-shaped server that answers every query
 // with nothing and records every write, so the harness can see exactly what
 // each side tried to persist during a journey.
 //
