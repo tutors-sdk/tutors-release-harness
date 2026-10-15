@@ -7,6 +7,7 @@ import type { EngineConfig } from "../normalise/masks.ts";
 import type { Hunk, SideCapture } from "../types.ts";
 import { hunkId, journeyPairs, pagePairs } from "./pages.ts";
 import { detectableNote, mannWhitney, smallestAttainableP } from "./stats.ts";
+import { timingAdvice } from "./timing-advice.ts";
 
 export { mannWhitney } from "./stats.ts";
 
@@ -340,7 +341,7 @@ export const timing: Engine = (a, b, ctx) => {
     // Reported, never judged (since 1.20.3): the smallest slowdown these runs could have told from noise, after the p the scores read.
     // A journey has one duration per run; a page one TTFB per visit, which can be more than one a run.
     const detectable = detectableNote(xs, ys, alpha, path ? "samples" : "runs");
-    if (p < alpha) hunks.push({ id: hunkId("timing", scope), artefact: "timing", scope, ...(path ? { path } : {}), severity: "fail", summary: `${label} slower on b: median ${ma}ms → ${mb}ms (+${pct(effect)}, p=${p.toFixed(3)}, n=${xs.length}/${ys.length}; ${detectable})` });
+    if (p < alpha) hunks.push({ id: hunkId("timing", scope), artefact: "timing", scope, ...(path ? { path } : {}), severity: "fail", summary: `${label} slower on b: median ${ma}ms → ${mb}ms (+${pct(effect)}, p=${p.toFixed(3)}, n=${xs.length}/${ys.length}; ${detectable})`, advice: timingAdvice(a, b, scope, path ? "page" : "journey") });
     else hunks.push({ id: hunkId("timing", scope), artefact: "timing", scope, ...(path ? { path } : {}), severity: "info", summary: `${label} median ${ma}ms → ${mb}ms but not significant (p=${p.toFixed(3)}, +${pct(effect)}, n=${xs.length}/${ys.length}; ${detectable})` });
   };
 

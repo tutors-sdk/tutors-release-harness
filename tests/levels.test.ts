@@ -21,8 +21,8 @@ import { ARTEFACTS, type Hunk, type NoiseStatus } from "../src/types.ts";
 import { capture, clone } from "./support/captures.ts";
 
 const AT = new Date("2026-10-01T09:00:00Z");
-// The checks that ship informing: the policy family (1.22.0), the timing tolerance (1.26.0), asset-graph folding (1.27.0) and the replay set (1.28.0), SLOs (1.34.0) and the Realtime cost (1.36.0).
-const INFORMING: readonly string[] = [...POLICY_FAMILY, "timing-tolerance", "asset-graph", "replay", "slo", "realtime"];
+// The checks that ship informing: timing (1.38.0, except load/errors), the policy family (1.22.0), the timing tolerance (1.26.0), asset-graph folding (1.27.0) and the replay set (1.28.0), SLOs (1.34.0) and the Realtime cost (1.36.0).
+const INFORMING: readonly string[] = ["timing", ...POLICY_FAMILY, "timing-tolerance", "asset-graph", "replay", "slo", "realtime"];
 const DIFF = ARTEFACTS.filter((a) => !INFORMING.includes(a));
 const clean: NoiseStatus = { ranAt: "2026-10-01T02:00:00.000Z", clean: true, hunks: 0 };
 const hunk = (artefact: Hunk["artefact"], severity: Hunk["severity"] = "fail", scope = "reader:home/x-frame-options"): Hunk => ({ id: `${artefact}:${scope}`, artefact, scope, summary: `${artefact} moved`, severity });
@@ -33,7 +33,7 @@ describe("the levels", () => {
     expect(Object.keys(ENGINE_LEVELS).sort()).toEqual([...ARTEFACTS].sort());
     for (const a of DIFF) expect(levelOn(a, AT), a).toEqual({ level: "blocking" });
     for (const a of INFORMING) expect(levelOn(a, AT), a).toEqual({ level: "informing" });
-    expect(levelsLine(levelsOn(AT))).toBe(`${DIFF.length} of ${ARTEFACTS.length} engines are blocking; informing (reported, never gates): image-hardening (no date set to block), build-provenance (no date set to block), vuln-ceiling (no date set to block), timing-tolerance (no date set to block), asset-graph (no date set to block), replay (no date set to block), slo (no date set to block), realtime (no date set to block).`);
+    expect(levelsLine(levelsOn(AT))).toBe(`${DIFF.length} of ${ARTEFACTS.length} engines are blocking; informing (reported, never gates): timing (no date set to block; load/errors still blocks), image-hardening (no date set to block), build-provenance (no date set to block), vuln-ceiling (no date set to block), timing-tolerance (no date set to block), asset-graph (no date set to block), replay (no date set to block), slo (no date set to block), realtime (no date set to block).`);
     const blocking = Object.fromEntries(ARTEFACTS.map((a) => [a, { level: "blocking" as const }]));
     expect(levelsLine(levelsOn(AT, blocking))).toBe(`Every engine is blocking (${ARTEFACTS.length} of ${ARTEFACTS.length}).`);
   });
@@ -71,6 +71,13 @@ describe("the levels", () => {
     const out = applyLevels([info, dom], AT, informing());
     expect(out[0]).toBe(info);
     expect(out[1]).toBe(dom);
+  });
+
+  it("timing is advice since 1.38.0: a slowdown is informing with what to check, and failed requests under load still block", () => {
+    const [slow, errors] = applyLevels([hunk("timing", "fail", "student-signs-in"), hunk("timing", "fail", "load/errors")], AT);
+    expect(slow).toMatchObject({ severity: "info", level: "informing" });
+    expect(errors).toMatchObject({ severity: "fail" });
+    expect(errors).not.toHaveProperty("level");
   });
 
   it("blockingFrom: informing before the date, blocking on and after it; a date that is not one is refused", () => {

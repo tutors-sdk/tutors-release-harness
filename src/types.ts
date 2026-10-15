@@ -350,6 +350,8 @@ export interface Hunk {
   level?: "informing";
   /** Since 1.21.0, with `level`: the UTC date (YYYY-MM-DD) from which its engine is blocking, when one is set. */
   blockingFrom?: string;
+  /** Since 1.38.0: what a reader should check or try next, one step per line (timing slowdowns carry it). */
+  advice?: string[];
 }
 
 export interface Claim {

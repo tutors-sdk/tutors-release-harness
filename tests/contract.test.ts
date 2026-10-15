@@ -113,9 +113,9 @@ const full: DeepRequired<RunReport> = {
   reasons: ["1 unclaimed diff(s)"],
   noise: { schemaVersion: SCHEMA_VERSION, ranAt: "2026-09-16T02:00:00.000Z", clean: true, hunks: 0, degraded: ["side a did not run pulled+verified images (cached)"] },
   compare: {
-    hunks: [{ id: "1", artefact: "dom", scope: "reader:lab-step", path: "/lab/x", summary: "semantic DOM differs", detail: "+ x", severity: "info", level: "informing", blockingFrom: "2026-11-01" }],
-    matches: [{ hunk: { id: "1", artefact: "dom", scope: "reader:lab-step", path: "/lab/x", summary: "semantic DOM differs", detail: "+ x", severity: "info", level: "informing", blockingFrom: "2026-11-01" }, claim: { artefact: "*", scope: "**", reason: "Rule 0031: Lab steps show estimated reading time", approvedBy: "a-maintainer", rule: "0031", ruleTitle: "Lab steps show estimated reading time", until: "16.3.0", digests: { reader: `sha256:${"a".repeat(64)}` } } }],
-    unclaimed: [{ id: "2", artefact: "headers", scope: "reader:home/x-frame-options", path: "/", summary: "header dropped", detail: "-", severity: "fail", level: "informing", blockingFrom: "2026-11-01" }],
+    hunks: [{ id: "1", artefact: "dom", scope: "reader:lab-step", path: "/lab/x", summary: "semantic DOM differs", detail: "+ x", severity: "info", level: "informing", blockingFrom: "2026-11-01", advice: ["check the new request"] }],
+    matches: [{ hunk: { id: "1", artefact: "dom", scope: "reader:lab-step", path: "/lab/x", summary: "semantic DOM differs", detail: "+ x", severity: "info", level: "informing", blockingFrom: "2026-11-01", advice: ["check the new request"] }, claim: { artefact: "*", scope: "**", reason: "Rule 0031: Lab steps show estimated reading time", approvedBy: "a-maintainer", rule: "0031", ruleTitle: "Lab steps show estimated reading time", until: "16.3.0", digests: { reader: `sha256:${"a".repeat(64)}` } } }],
+    unclaimed: [{ id: "2", artefact: "headers", scope: "reader:home/x-frame-options", path: "/", summary: "header dropped", detail: "-", severity: "fail", level: "informing", blockingFrom: "2026-11-01", advice: ["check the new request"] }],
     staleClaims: [{ artefact: "network", scope: "GET /gone", reason: "Rule 0002: Nothing here is cached", approvedBy: "a-maintainer", rule: "0002", ruleTitle: "Nothing here is cached", until: "16.3.0", digests: { reader: `sha256:${"a".repeat(64)}` } }],
     broadUnapproved: [{ artefact: "*", scope: "**", reason: "everything changed in this one", approvedBy: "", rule: "0003", ruleTitle: "Everything may change", until: "16.3.0", digests: { reader: `sha256:${"a".repeat(64)}` } }]
   },
@@ -216,7 +216,7 @@ describe("report.json", () => {
     const cli = json("docs/contract/cli.json");
     for (const flag of cli.flags.filter((f: { since?: string }) => f.since === "1.2.0")) expect(changes, flag.name).toContain(`--${flag.name === "runtime" ? "no-runtime" : flag.name}`);
     for (const [name, v] of Object.entries(cli.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.2.0")) expect(changes, name).toContain(name);
-    expect(CONTRACT_VERSION).toBe("1.37.0");
+    expect(CONTRACT_VERSION).toBe("1.38.0");
     // The harness version is package.json's and moves at least as far as the contract's (docs/contract.md, Versioning):
     // a mask or engine PR bumps the patch of the harness alone, so do not pin a literal here.
     expect(json("package.json").version).toBe(HARNESS_VERSION);

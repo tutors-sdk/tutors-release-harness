@@ -151,20 +151,25 @@ const JOURNEY = /^journey "([^"]+)" (completed on a but failed on b|failed on a 
 // ---- the three lights ------------------------------------------------------------------------------------
 
 function speed(i: QualityInputs, hunkLink: (h: Hunk, label?: string) => Link, at: (anchor: string, label: string) => Link): QualityLight {
-  const rule = "No failing timing, load or startup hunk; k6 failure rate 0 on main";
+  const rule = "No journey, page or startup significantly slower (advice: timing never fails the Gate); k6 failure rate 0 on main";
   const r = i.report;
   if (!r?.compare) return { id: "speed", name: "Speed", state: "not measured", reading: "no report.json kept", rule, checks: [], evidence: [] };
   const claimed = new Set((r.compare.matches ?? []).filter((m) => m.claim).map((m) => m.hunk.id));
-  const failing = (r.compare.hunks ?? []).filter((h) => h.severity === "fail" && (h.artefact === "timing" || h.artefact === "startup"));
+  // Since 1.38.0 timing is informing: a slowdown arrives as an informing hunk with advice, and is still a "look".
+  const failing = (r.compare.hunks ?? []).filter((h) => (h.severity === "fail" || h.level === "informing") && (h.artefact === "timing" || h.artefact === "startup"));
   const slower = failing.filter((h) => !h.scope.startsWith("load/"));
   const loadFails = failing.filter((h) => h.scope.startsWith("load/"));
+  const advised = (hs: Hunk[]) => {
+    const steps = hs.find((h) => h.advice?.length)?.advice ?? [];
+    return steps.length ? `. What to check: ${steps.join(" ")}` : "";
+  };
   const named = (hs: Hunk[]) => hs.slice(0, 3).map((h) => `${h.summary}${claimed.has(h.id) ? " (claimed)" : ""}`).join("; ") + (hs.length > 3 ? `; and ${hs.length - 3} more` : "");
   const checks: QualityCheck[] = [
     {
       id: "slower",
       label: "No journey or startup significantly slower",
       state: slower.length ? "look" : "within reason",
-      reading: slower.length ? `${plural(slower.length, "failing timing or startup hunk")}: ${named(slower)}` : "no journey significantly slower",
+      reading: slower.length ? `${plural(slower.length, "slowdown")} (advice, not a failure): ${named(slower)}${advised(slower)}` : "no journey significantly slower",
       evidence: slower.length ? slower.slice(0, 3).map((h) => hunkLink(h)) : [at("differences", "the differences")]
     }
   ];
@@ -182,7 +187,7 @@ function speed(i: QualityInputs, hunkLink: (h: Hunk, label?: string) => Link, at
     });
   }
   const loadCheck = checks.find((c) => c.id === "load")!;
-  const reading = [loadCheck.state === "not measured" ? "no k6 leg" : loadCheck.reading, checks[0]!.state === "look" ? checks[0]!.reading : "no journey significantly slower"].join("; ");
+  const reading = [loadCheck.state === "not measured" ? "no k6 leg" : loadCheck.reading, checks[0]!.state === "look" ? `${plural(slower.length, "slowdown")} to look at, advice only: ${named(slower)}` : "no journey significantly slower"].join("; ");
   return { id: "speed", name: "Speed", state: combine(checks.map((c) => c.state)), reading, rule, checks, evidence: checks.flatMap((c) => c.evidence).slice(0, 4) };
 }
 

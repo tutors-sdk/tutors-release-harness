@@ -190,7 +190,7 @@ describe("the soak count", () => {
     ).toEqual({ "image-hardening": { findings: 2, productionToo: 1 }, "build-provenance": { findings: 0, productionToo: 0 }, "vuln-ceiling": { findings: 1, productionToo: 0 }, "timing-tolerance": { findings: 1, productionToo: 0 }, "asset-graph": { findings: 0, productionToo: 0 }, replay: { findings: 0, productionToo: 0 }, slo: { findings: 0, productionToo: 0 }, realtime: { findings: 0, productionToo: 0 } });
   });
 
-  it("watches every check that ships informing: the policy family, the timing tolerance (since 1.26.0), asset-graph folding (since 1.27.0), the replay set (since 1.28.0), SLOs (since 1.34.0), the Realtime cost (since 1.36.0)", () => {
+  it("watches every check that ships informing but timing, which is advice by choice (1.38.0): the policy family, the timing tolerance (since 1.26.0), asset-graph folding (since 1.27.0), the replay set (since 1.28.0), SLOs (since 1.34.0), the Realtime cost (since 1.36.0)", () => {
     expect(SOAK_CHECKS).toEqual(["image-hardening", "build-provenance", "vuln-ceiling", "timing-tolerance", "asset-graph", "replay", "slo", "realtime"]);
   });
 });
