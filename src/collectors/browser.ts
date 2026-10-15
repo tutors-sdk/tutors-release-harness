@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { AxeBuilder } from "@axe-core/playwright";
-import { chromium, type Browser, type BrowserContext, type Page, type Response } from "playwright";
+import { chromium, type Browser, type BrowserContext, type Page, type Request, type Response } from "playwright";
 import type { Journey } from "../../traffic/journeys/journeys.ts";
 import { reference } from "../../traffic/journeys/reference.ts";
 import { redactSecrets } from "../normalise/redact.ts";
@@ -96,6 +96,15 @@ export function stripOrigins(text: string, spec: SideSpec): string {
   const courseHosts = [...new Set([spec.urls.courseId, reference.host, reference.courseId])].sort((x, y) => y.length - x.length);
   for (const host of courseHosts) for (const scheme of ["http://", "https://"]) out = out.split(`${scheme}${host}`).join("{{course}}");
   return redactSecrets(out);
+}
+
+/**
+ * Whether a request counts as settled once its response status arrives, before Chromium reports it finished.
+ * Reads (GET, HEAD) still wait for their body: a capture must not screenshot an image or stylesheet half loaded.
+ */
+export function settlesOnResponse(method: string): boolean {
+  const m = method.toUpperCase();
+  return m !== "GET" && m !== "HEAD";
 }
 
 /** How long to wait for a JSON response body before recording it as unread. */
@@ -288,9 +297,9 @@ export async function captureJourney(browser: Browser, spec: SideSpec, journey: 
   // (Iconify, requested from its API on first use) arrive after the heading, and a capture taken before them
   // screenshotted the page with an icon missing on one side only. They are served from the third-party cache now,
   // so they arrive at once, but still after the page asked for them.
-  let inFlight = 0;
+  const inFlight = new Set<Request>();
   page.on("request", (request) => {
-    inFlight++;
+    inFlight.add(request);
     if (isBroadcast(request.method(), request.url())) pendingRealtime.broadcasts++;
   });
   page.on("websocket", (socket) => {
@@ -300,8 +309,15 @@ export async function captureJourney(browser: Browser, spec: SideSpec, journey: 
       if (isDataFrame(frame.payload)) pendingRealtime.framesSent++;
     });
   });
-  page.on("requestfinished", () => inFlight--);
-  page.on("requestfailed", () => inFlight--);
+  page.on("requestfinished", (request) => inFlight.delete(request));
+  page.on("requestfailed", (request) => inFlight.delete(request));
+  // Since 1.37.4: a request that is not a read is settled once its status is in. The reader's learning events
+  // (POST /api/live/activity, mono-repo #481) are fire-and-forget `keepalive` fetches, and headless Chromium never
+  // reports them finished: each held the page "in flight" until both waits below timed out, about 10 s a page, so
+  // student-signs-in read about 23 s on main against 4 s on 17.0.0 while the student saw no difference.
+  page.on("response", (response) => {
+    if (settlesOnResponse(response.request().method())) inFlight.delete(response.request());
+  });
 
   const shotDir = join(opts.outDir, `${journey.name}-${run}`);
   if (opts.screenshots) mkdirSync(shotDir, { recursive: true });
@@ -312,8 +328,9 @@ export async function captureJourney(browser: Browser, spec: SideSpec, journey: 
   try {
     await withDeadline(journey.run(page, spec.urls, async (pageKey) => {
       // Let in-flight requests settle so the network set is the page's, not the race's.
-      await page.waitForLoadState("networkidle", { timeout: 5_000 }).catch(() => undefined);
-      await quiet(() => inFlight, 500, 5_000);
+      // Since 1.37.4 the harness's own count alone: Playwright's networkidle also waits on the keepalive requests
+      // above, and the count sees every request the page made, so it waits for everything networkidle did.
+      await quiet(() => inFlight.size, 500, 5_000);
       const network = (await Promise.all(pendingNetwork)).sort((x, y) => `${x.method} ${x.url}`.localeCompare(`${y.method} ${y.url}`));
       pendingNetwork = [];
       const consoleEntries = pendingConsole.sort((x, y) => `${x.level} ${x.text}`.localeCompare(`${y.level} ${y.text}`));
