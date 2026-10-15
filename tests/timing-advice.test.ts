@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { timingAdvice } from "../src/compare/timing-advice.ts";
-import { controlLine, timingControl } from "../src/compare/timing-control.ts";
+import { controlLine, controlState, timingControl } from "../src/compare/timing-control.ts";
 import { capture, journey, page } from "./support/captures.ts";
 
 describe("timingAdvice: what to check when a journey is slower on b, read from the two captures", () => {
@@ -32,10 +32,18 @@ describe("timingControl: b's runs against the XmR limits of production's", () =>
     const a = runs("a", [3400, 3500, 3450, 3380, 3435]);
     const inside = timingControl(a, runs("b", [3420, 3460, 3500, 3410, 3440]))!.journeys[0]!;
     expect(inside).toMatchObject({ above: 0, below: 0, limits: { n: 5, centre: 3433, provisional: true } });
-    expect(controlLine(inside)).toMatch(/^student-signs-in: every run on b inside production's limits \d+–\d+ms \(centre 3433ms, provisional: 5 runs\): common cause$/);
+    expect(controlLine(inside)).toMatch(/^student-signs-in: main's median 3440ms inside production's limits \d+–\d+ms \(centre 3433ms, provisional: 5 runs\): common cause$/);
     const slow = timingControl(a, runs("b", [8400, 8500, 3450, 8470, 8479]))!.journeys[0]!;
     expect(slow).toMatchObject({ above: 4, below: 0 });
-    expect(controlLine(slow)).toMatch(/4 of 5 runs on b outside .*, 4 above: special cause, investigate$/);
+    expect(controlState(slow)).toBe("above UCL");
+    expect(controlLine(slow)).toMatch(/^student-signs-in: main's median 8470ms above production's limits .*; 4 of 5 single runs outside, 4 above: special cause, investigate$/);
+  });
+
+  it("does not flag a journey for one cold run over the UCL when its median is inside (15 Oct 2026)", () => {
+    const j = timingControl(runs("a", [6480, 3987, 4023, 4122, 4016]), runs("b", [6610, 4056, 3916, 3723, 3934]))!.journeys[0]!;
+    expect(j.above).toBe(1);
+    expect(controlState(j)).toBe("inside");
+    expect(controlLine(j)).toMatch(/^student-signs-in: main's median 3934ms inside production's limits 2707–6344ms .*; 1 of 5 single runs outside, 1 above: common cause$/);
   });
 
   it("says nothing for a live deployment, whose clock is not the stack's", () => {

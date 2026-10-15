@@ -17,7 +17,7 @@
  * check under it was read and in reason. Pure, and advisory: nothing here is an input to the Gate, the score, a verdict
  * or an exit code. It reads kept files only (src/a3/read.ts and src/readiness/read.ts read them).
  */
-import { controlLine } from "../compare/timing-control.ts";
+import { controlLine, controlState } from "../compare/timing-control.ts";
 import { hunkAnchor } from "../score/confidence.ts";
 import { weeklyFor, type WeeklyMutants } from "../score/test-signal.ts";
 import { RULES } from "../score/weights.ts";
@@ -166,8 +166,8 @@ function speed(i: QualityInputs, hunkLink: (h: Hunk, label?: string) => Link, at
   };
   const named = (hs: Hunk[]) => hs.slice(0, 3).map((h) => `${h.summary}${claimed.has(h.id) ? " (claimed)" : ""}`).join("; ") + (hs.length > 3 ? `; and ${hs.length - 3} more` : "");
   // Since 1.39.0: b's runs against production's control limits; a run outside them is a "look" even when no test says slower.
-  const outside = (r.timingControl?.journeys ?? []).filter((j) => j.above + j.below > 0);
-  const control = r.timingControl ? `; control chart: ${outside.length ? outside.map(controlLine).join("; ") : `every journey's runs on main inside production's limits (${r.timingControl.journeys.length})`}` : "";
+  const outside = (r.timingControl?.journeys ?? []).filter((j) => controlState(j) === "above UCL" || controlState(j) === "below LCL");
+  const control = r.timingControl ? `; control chart: ${outside.length ? outside.map(controlLine).join("; ") : `every journey's median on main inside production's limits (${r.timingControl.journeys.length})`}` : "";
   const checks: QualityCheck[] = [
     {
       id: "slower",

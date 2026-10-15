@@ -42,12 +42,32 @@ export function timingControl(a: SideCapture, b: SideCapture): TimingControl | u
   return journeys.length ? { journeys: journeys.sort((x, y) => x.journey.localeCompare(y.journey)) } : undefined;
 }
 
-/** One line for a journey: where b's runs sit against production's limits, in words. */
+/**
+ * Since 1.39.1: whether b's median is outside production's limits, the reading that flags a journey. A single run
+ * outside is reported but does not flag it: the first run of every journey is a cold start on both sides (15 Oct 2026:
+ * production 6480ms then about 4000ms; main 6610ms then about 3900ms), so one cold run just over the UCL is the same
+ * special cause production has, not a change in main.
+ */
+export function controlState(j: JourneyControl): "inside" | "above UCL" | "below LCL" | "no limits" {
+  if (!j.limits || !j.b.length) return "no limits";
+  const m = median(j.b);
+  return m > j.limits.ucl ? "above UCL" : m < j.limits.lcl ? "below LCL" : "inside";
+}
+
+/** One line for a journey: where b's median, and any single run, sits against production's limits, in words. */
 export function controlLine(j: JourneyControl): string {
   if (!j.limits) return `${j.journey}: production has fewer than two runs, so no limits`;
   const l = j.limits;
   const where = `production's limits ${Math.round(l.lcl)}–${Math.round(l.ucl)}ms (centre ${Math.round(l.centre)}ms${l.provisional ? `, provisional: ${l.n} runs` : ""})`;
+  const state = controlState(j);
   const out = j.above + j.below;
-  if (!out) return `${j.journey}: every run on b inside ${where}: common cause`;
-  return `${j.journey}: ${out} of ${j.b.length} runs on b outside ${where}${j.above ? `, ${j.above} above` : ""}${j.below ? `, ${j.below} below` : ""}: special cause, investigate`;
+  const runs = out ? `; ${out} of ${j.b.length} single runs outside${j.above ? `, ${j.above} above` : ""}${j.below ? `, ${j.below} below` : ""}` : "";
+  if (state === "inside") return `${j.journey}: main's median ${Math.round(median(j.b))}ms inside ${where}${runs}: common cause`;
+  return `${j.journey}: main's median ${Math.round(median(j.b))}ms ${state === "above UCL" ? "above" : "below"} ${where}${runs}: special cause, investigate`;
+}
+
+function median(xs: number[]): number {
+  const s = [...xs].sort((p, q) => p - q);
+  const mid = Math.floor(s.length / 2);
+  return s.length % 2 ? s[mid]! : (s[mid - 1]! + s[mid]!) / 2;
 }
