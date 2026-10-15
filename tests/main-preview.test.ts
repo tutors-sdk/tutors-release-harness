@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parse } from "yaml";
-import { decide, judgedBefore, newestBuiltMain, overlayTag, type Sources, type WorkflowRun } from "../src/ci/main-preview.ts";
+import { decide, judgedBefore, newerRelease, newestBuiltMain, overlayTag, releaseVersion, type Sources, type WorkflowRun } from "../src/ci/main-preview.ts";
 import type { ReportIndex } from "../src/ci/report-archive.ts";
 
 const ROOT = resolve(import.meta.dirname, "..");
@@ -32,10 +32,11 @@ const entry = (a: string, b: string, harnessVersion = "1.4.9") => ({
 });
 const index = (...runs: ReturnType<typeof entry>[]): ReportIndex => ({ schemaVersion: 1, runs });
 
-const sources = (o: { overlay?: string; runs?: WorkflowRun[]; index?: ReportIndex } = {}): Sources => ({
+const sources = (o: { overlay?: string; runs?: WorkflowRun[]; index?: ReportIndex; tags?: string[] | Error } = {}): Sources => ({
   overlay: async () => o.overlay ?? OVERLAY,
   imageRuns: async () => o.runs ?? [run()],
-  index: async () => (o.index ? JSON.stringify(o.index) : undefined)
+  index: async () => (o.index ? JSON.stringify(o.index) : undefined),
+  ...(o.tags ? { tags: async () => { if (o.tags instanceof Error) throw o.tags; return o.tags as string[]; } } : {})
 });
 
 describe("overlayTag: production, read as release-dispatch.yml reads it", () => {
@@ -252,5 +253,42 @@ describe("main-preview.yml: the forecast is scored as a candidate is (since 1.13
       expect(push, mode).toContain(find);
       expect(push, mode).toContain(`keep_flags+=(--${mode} "../$(dirname "$${mode}")")`);
     }
+  });
+});
+
+describe("the stale production pin: a release tagged that main does not pin yet", () => {
+  it("reads release tags only, never a release candidate", () => {
+    expect(releaseVersion("v17.0.0")).toEqual([17, 0, 0]);
+    expect(releaseVersion("16.2.3")).toEqual([16, 2, 3]);
+    expect(releaseVersion("v17.0.0-rc.1")).toBeUndefined();
+    expect(releaseVersion("sha-3f1c2a9")).toBeUndefined();
+  });
+
+  it("names the newest release newer than production, and nothing when production is current", () => {
+    expect(newerRelease(["v17.0.0", "v17.0.0-rc.1", "v16.2.2", "v16.2.1"], "16.2.2")).toBe("17.0.0");
+    expect(newerRelease(["v16.3.0", "v17.0.0", "v16.2.10"], "16.2.2")).toBe("17.0.0");
+    expect(newerRelease(["v17.0.0-rc.1", "v16.2.2"], "16.2.2")).toBeUndefined();
+    expect(newerRelease(["v17.0.0", "v16.2.2"], "17.0.0")).toBeUndefined();
+    expect(newerRelease(["v17.0.0"], "17.0.0-rc.1")).toBeUndefined();
+  });
+
+  it("warns when the overlay pins 16.2.2 and v17.0.0 is tagged (15 October 2026), and still judges", async () => {
+    const d = await decide(sources({ tags: ["v17.0.0", "v17.0.0-rc.1", "v16.2.2"] }), { harnessVersion: "1.4.9" });
+    expect(d).toMatchObject({ production: "16.2.2", skip: false });
+    expect(d.stalePin).toContain("tagged 17.0.0");
+    expect(d.stalePin).toContain("pnpm deploy:pin 17.0.0");
+  });
+
+  it("warns on a skipped night too", async () => {
+    const d = await decide(sources({ tags: ["v17.0.0"], index: index(entry("16.2.2", "sha-3f1c2a9")) }), { harnessVersion: "1.4.9" });
+    expect(d.skip).toBe(true);
+    expect(d.stalePin).toContain("17.0.0");
+  });
+
+  it("does not warn for a production given by hand, a current pin, no tag source, or a tag lookup that failed", async () => {
+    expect((await decide(sources({ tags: ["v17.0.0"] }), { production: "16.2.2", harnessVersion: "1.4.9" })).stalePin).toBeUndefined();
+    expect((await decide(sources({ tags: ["v16.2.2", "v17.0.0-rc.1"] }), { harnessVersion: "1.4.9" })).stalePin).toBeUndefined();
+    expect((await decide(sources(), { harnessVersion: "1.4.9" })).stalePin).toBeUndefined();
+    expect((await decide(sources({ tags: new Error("HTTP 502") }), { harnessVersion: "1.4.9" })).stalePin).toBeUndefined();
   });
 });
