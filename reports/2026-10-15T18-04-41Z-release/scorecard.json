@@ -1,0 +1,416 @@
+{
+  "schemaVersion": 1,
+  "mode": "release",
+  "ranAt": "2026-10-15T18:04:41.578Z",
+  "verdict": "fail",
+  "score": 25,
+  "grade": "D",
+  "deductions": [
+    {
+      "points": 60,
+      "why": "6 diff(s) no claim covers"
+    },
+    {
+      "points": 15,
+      "why": "43 claim(s) that matched nothing: the changelog promises what the release does not show"
+    }
+  ],
+  "normalness": {
+    "state": "normal",
+    "source": "noise-status",
+    "hunks": 0,
+    "ranAt": "2026-10-15T17:50:33.391Z"
+  },
+  "rules": [
+    {
+      "rule": null,
+      "hunks": 6,
+      "artefacts": [
+        "network",
+        "timing",
+        "persistence"
+      ],
+      "scopes": [
+        "/course/localhost:8080",
+        "/topic/localhost:8080/unit-1/topic-01",
+        "/course/reference-course",
+        "/note/reference-course/topic-07-reference/note-1",
+        "student-signs-in",
+        "student-signs-in/realtime_claim_live_publish"
+      ],
+      "prs": [],
+      "status": "unclaimed"
+    },
+    {
+      "rule": null,
+      "title": "CHANGELOG 17.0.0 Infrastructure: stable log and metrics shape, and variable data kept out of log messages (#283, #297)",
+      "hunks": 0,
+      "artefacts": [
+        "logs"
+      ],
+      "scopes": [
+        "reader:*"
+      ],
+      "prs": [],
+      "status": "stale"
+    },
+    {
+      "rule": null,
+      "title": "CHANGELOG 17.0.0 Infrastructure: stable log and metrics shape (#283)",
+      "hunks": 0,
+      "artefacts": [
+        "logs"
+      ],
+      "scopes": [
+        "live:*"
+      ],
+      "prs": [],
+      "status": "stale"
+    },
+    {
+      "rule": null,
+      "title": "CHANGELOG 17.0.0 Infrastructure: stable log and metrics shape (#283)",
+      "hunks": 0,
+      "artefacts": [
+        "logs"
+      ],
+      "scopes": [
+        "catalogue:*"
+      ],
+      "prs": [],
+      "status": "stale"
+    },
+    {
+      "rule": null,
+      "title": "CHANGELOG 17.0.0 Infrastructure: stable log and metrics shape (#283)",
+      "hunks": 0,
+      "artefacts": [
+        "logs"
+      ],
+      "scopes": [
+        "time:*"
+      ],
+      "prs": [],
+      "status": "stale"
+    },
+    {
+      "rule": null,
+      "title": "CHANGELOG 17.0.0 Infrastructure: stable metrics shape for release-harness A/A runs (#283)",
+      "hunks": 0,
+      "artefacts": [
+        "metrics"
+      ],
+      "scopes": [
+        "reader:*"
+      ],
+      "prs": [],
+      "status": "stale"
+    },
+    {
+      "rule": null,
+      "title": "CHANGELOG 17.0.0 Infrastructure: stable metrics shape for release-harness A/A runs (#283)",
+      "hunks": 0,
+      "artefacts": [
+        "metrics"
+      ],
+      "scopes": [
+        "live:*"
+      ],
+      "prs": [],
+      "status": "stale"
+    },
+    {
+      "rule": null,
+      "title": "CHANGELOG 17.0.0 Infrastructure: stable metrics shape for release-harness A/A runs (#283)",
+      "hunks": 0,
+      "artefacts": [
+        "metrics"
+      ],
+      "scopes": [
+        "catalogue:*"
+      ],
+      "prs": [],
+      "status": "stale"
+    },
+    {
+      "rule": null,
+      "title": "CHANGELOG 17.0.0 Infrastructure: stable metrics shape for release-harness A/A runs (#283)",
+      "hunks": 0,
+      "artefacts": [
+        "metrics"
+      ],
+      "scopes": [
+        "time:*"
+      ],
+      "prs": [],
+      "status": "stale"
+    },
+    {
+      "rule": null,
+      "title": "CHANGELOG 17.0.0 Reader: the reader runs on SvelteKit 3 (#466)",
+      "hunks": 0,
+      "artefacts": [
+        "asset-graph"
+      ],
+      "scopes": [
+        "reader:*"
+      ],
+      "prs": [],
+      "status": "stale"
+    },
+    {
+      "rule": null,
+      "title": "CHANGELOG 17.0.0 Live: Live runs on SvelteKit 3 (#466)",
+      "hunks": 0,
+      "artefacts": [
+        "asset-graph"
+      ],
+      "scopes": [
+        "live:*"
+      ],
+      "prs": [],
+      "status": "stale"
+    },
+    {
+      "rule": null,
+      "title": "CHANGELOG 17.0.0 Catalogue: the catalogue runs on SvelteKit 3 (#466)",
+      "hunks": 0,
+      "artefacts": [
+        "asset-graph"
+      ],
+      "scopes": [
+        "catalogue:*"
+      ],
+      "prs": [],
+      "status": "stale"
+    },
+    {
+      "rule": null,
+      "title": "CHANGELOG 17.0.0 Time: Time runs on SvelteKit 3 (#466)",
+      "hunks": 0,
+      "artefacts": [
+        "asset-graph"
+      ],
+      "scopes": [
+        "time:*"
+      ],
+      "prs": [],
+      "status": "stale"
+    },
+    {
+      "rule": "0019",
+      "title": "The reader shall lay out every page without horizontal scrolling at viewport widths from 320 to 1440 pixels.",
+      "hunks": 0,
+      "artefacts": [
+        "dom"
+      ],
+      "scopes": [
+        "reader:*"
+      ],
+      "prs": [],
+      "status": "stale"
+    },
+    {
+      "rule": "0036",
+      "title": "The reader shall show a note's table of contents collapsed under \"On this page\" and give each code block a \"Copy code\" button.",
+      "hunks": 0,
+      "artefacts": [
+        "axe"
+      ],
+      "scopes": [
+        "reference:note"
+      ],
+      "prs": [],
+      "status": "stale"
+    },
+    {
+      "rule": "0051",
+      "title": "The reader shall show course pages with no critical or serious WCAG 2.1 AA violations in either appearance.",
+      "hunks": 0,
+      "artefacts": [
+        "axe"
+      ],
+      "scopes": [
+        "reference:course"
+      ],
+      "prs": [],
+      "status": "stale"
+    },
+    {
+      "rule": "0173",
+      "title": "The catalogue shall give each link in its header an accessible name that no other link in the header has.",
+      "hunks": 0,
+      "artefacts": [
+        "axe"
+      ],
+      "scopes": [
+        "catalogue:*"
+      ],
+      "prs": [],
+      "status": "stale"
+    },
+    {
+      "rule": "0216",
+      "title": "The reader shall show the sign-in page with no critical or serious WCAG 2.1 AA violations.",
+      "hunks": 0,
+      "artefacts": [
+        "axe"
+      ],
+      "scopes": [
+        "reader-auth:sign-in"
+      ],
+      "prs": [],
+      "status": "stale"
+    },
+    {
+      "rule": "0220",
+      "title": "Tutors shall ship its runtime images with no package manager, removing npm, npx, corepack and yarn in the runtime stage.",
+      "hunks": 0,
+      "artefacts": [
+        "sbom"
+      ],
+      "scopes": [
+        "*/{@isaacs/cliui,@isaacs/fs-minipass,@isaacs/string-locale-compare,@npmcli/agent,@npmcli/arborist,@npmcli/config,@npmcli/fs,@npmcli/git,@npmcli/installed-package-contents,@npmcli/map-workspaces,@npmcli/metavuln-calculator,@npmcli/name-from-folder,@npmcli/node-gyp,@npmcli/package-json,@npmcli/promise-spawn,@npmcli/query,@npmcli/redact,@npmcli/run-script,@pkgjs/parseargs,@sigstore/bundle,@sigstore/core,@sigstore/protobuf-specs,@sigstore/sign,@sigstore/tuf,@sigstore/verify,@tufjs/canonical-json,@tufjs/models,abbrev,agent-base,ansi-regex,ansi-styles,aproba,archy,balanced-match,bin-links,binary-extensions,brace-expansion,cacache,chalk,chownr,ci-info,cidr-regex,cli-columns,cmd-shim,color-convert,color-name,common-ancestor-path,corepack,cross-spawn,cssesc,debug,diff,eastasianwidth,emoji-regex,encoding,env-paths,err-code,exponential-backoff,fastest-levenshtein,fdir,foreground-child,fs-minipass,glob,graceful-fs,hosted-git-info,http-cache-semantics,http-proxy-agent,https-proxy-agent,iconv-lite,ignore-walk,imurmurhash,ini,init-package-json,ip-address,ip-regex,is-cidr,is-fullwidth-code-point,isexe,jackspeak,json-parse-even-better-errors,json-stringify-nice,jsonparse,just-diff,just-diff-apply,libnpmaccess,libnpmdiff,libnpmexec,libnpmfund,libnpmhook,libnpmorg,libnpmpack,libnpmpublish,libnpmsearch,libnpmteam,libnpmversion,lru-cache,make-fetch-happen,minimatch,minipass,minipass-collect,minipass-fetch,minipass-flush,minipass-pipeline,minipass-sized,minizlib,ms,mute-stream,negotiator,node-gyp,nopt,normalize-package-data,npm,npm-audit-report,npm-bundled,npm-install-checks,npm-normalize-package-bin,npm-package-arg,npm-packlist,npm-pick-manifest,npm-profile,npm-registry-fetch,npm-user-validate,p-map,package-json-from-dist,pacote,parse-conflict-json,path-key,path-scurry,picomatch,postcss-selector-parser,proc-log,proggy,promise-all-reject-late,promise-call-limit,promise-retry,promzard,qrcode-terminal,read,read-cmd-shim,read-package-json-fast,retry,safer-buffer,semver,shebang-command,shebang-regex,signal-exit,sigstore,smart-buffer,socks,socks-proxy-agent,spdx-correct,spdx-exceptions,spdx-expression-parse,spdx-license-ids,ssri,string-width,strip-ansi,supports-color,text-table,tiny-relative-date,tinyglobby,treeverse,tuf-js,unique-filename,unique-slug,util-deprecate,validate-npm-package-license,validate-npm-package-name,walk-up-path,which,wrap-ansi,write-file-atomic,yallist,yarn}"
+      ],
+      "prs": [],
+      "status": "stale"
+    },
+    {
+      "rule": "0250",
+      "title": "When a visitor starts GitHub sign-in, the reader shall send the visitor to GitHub's authorization page for the reader's OAuth app with the scopes \"read:user\" and \"user:email\".",
+      "hunks": 0,
+      "artefacts": [
+        "network"
+      ],
+      "scopes": [
+        "*/api/auth/*"
+      ],
+      "prs": [],
+      "status": "stale"
+    },
+    {
+      "rule": "0259",
+      "title": "When the reader starts a session, the reader shall set the session cookie as HttpOnly, Secure and SameSite=Lax.",
+      "hunks": 0,
+      "artefacts": [
+        "headers"
+      ],
+      "scopes": [
+        "reader:*"
+      ],
+      "prs": [],
+      "status": "stale"
+    },
+    {
+      "rule": "0271",
+      "title": "If a learning event is published for a course the student is not reading, then the reader shall not receive it.",
+      "hunks": 0,
+      "artefacts": [
+        "bus"
+      ],
+      "scopes": [
+        "reader:*"
+      ],
+      "prs": [],
+      "status": "stale"
+    },
+    {
+      "rule": "0272",
+      "title": "When a student opens a learning object, the reader shall report one learning event for it.",
+      "hunks": 0,
+      "artefacts": [
+        "bus"
+      ],
+      "scopes": [
+        "live:*"
+      ],
+      "prs": [],
+      "status": "stale"
+    },
+    {
+      "rule": "0303",
+      "title": "When a student opens a learning object, the reader shall record the page view against the learning object and the day's calendar in one database request.",
+      "hunks": 0,
+      "artefacts": [
+        "persistence"
+      ],
+      "scopes": [
+        "*/record_page_view"
+      ],
+      "prs": [],
+      "status": "stale"
+    },
+    {
+      "rule": "0304",
+      "title": "While a course page is visible, the reader shall record each 30 seconds of activity in one database request.",
+      "hunks": 0,
+      "artefacts": [
+        "persistence"
+      ],
+      "scopes": [
+        "*/record_heartbeat"
+      ],
+      "prs": [],
+      "status": "stale"
+    },
+    {
+      "rule": "0317",
+      "title": "When a sharing student enters a course, the reader shall load the course online list from stored activity without joining a course Realtime channel.",
+      "hunks": 0,
+      "artefacts": [
+        "network"
+      ],
+      "scopes": [
+        "reader:*"
+      ],
+      "prs": [],
+      "status": "stale"
+    }
+  ],
+  "manual": [
+    {
+      "scope": "/course/localhost:8080",
+      "path": "/course/localhost:8080",
+      "artefacts": [
+        "network"
+      ],
+      "hunks": 1,
+      "why": "moved and no claim covers it"
+    },
+    {
+      "scope": "/course/reference-course",
+      "path": "/course/reference-course",
+      "artefacts": [
+        "network"
+      ],
+      "hunks": 1,
+      "why": "moved and no claim covers it"
+    },
+    {
+      "scope": "/note/reference-course/topic-07-reference/note-1",
+      "path": "/note/reference-course/topic-07-reference/note-1",
+      "artefacts": [
+        "network"
+      ],
+      "hunks": 1,
+      "why": "moved and no claim covers it"
+    },
+    {
+      "scope": "/topic/localhost:8080/unit-1/topic-01",
+      "path": "/topic/localhost:8080/unit-1/topic-01",
+      "artefacts": [
+        "network"
+      ],
+      "hunks": 1,
+      "why": "moved and no claim covers it"
+    },
+    {
+      "scope": "student-signs-in",
+      "artefacts": [
+        "timing"
+      ],
+      "hunks": 1,
+      "why": "moved and no claim covers it"
+    }
+  ]
+}
