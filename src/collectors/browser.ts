@@ -330,9 +330,13 @@ export async function captureJourney(browser: Browser, spec: SideSpec, journey: 
       // Let in-flight requests settle so the network set is the page's, not the race's.
       // Since 1.37.4 the harness's own count alone: Playwright's networkidle also waits on the keepalive requests
       // above, and the count sees every request the page made, so it waits for everything networkidle did.
+      const d0 = Date.now();
       await quiet(() => inFlight.size, 500, 5_000);
+      const d1 = Date.now();
+      console.error(`DIAG ${spec.name} ${journey.name}#${run} ${pageKey} quiet ${d1 - d0}ms pending: ${[...inFlight].map((r) => `${r.method()} ${r.url()}`).join(" | ") || "none"}`);
       const network = (await Promise.all(pendingNetwork)).sort((x, y) => `${x.method} ${x.url}`.localeCompare(`${y.method} ${y.url}`));
       pendingNetwork = [];
+      console.error(`DIAG ${spec.name} ${journey.name}#${run} ${pageKey} network entries ${Date.now() - d1}ms`);
       const consoleEntries = pendingConsole.sort((x, y) => `${x.level} ${x.text}`.localeCompare(`${y.level} ${y.text}`));
       pendingConsole = [];
       const realtime = pendingRealtime;
@@ -368,8 +372,10 @@ export async function captureJourney(browser: Browser, spec: SideSpec, journey: 
         await page.screenshot({ path: file, animations: "disabled", caret: "hide", fullPage: false });
         capture.screenshot = file.slice(opts.outDir.length + 1).replaceAll("\\", "/");
       }
+      const d2 = Date.now();
       // Last, because it moves focus.
       if (opts.focusStops > 0) capture.focus = await focusWalk(page, opts.focusStops);
+      console.error(`DIAG ${spec.name} ${journey.name}#${run} ${pageKey} capture ${d2 - d1}ms focus ${Date.now() - d2}ms total ${Date.now() - d0}ms`);
       pages.push(capture);
     }), timeoutMs, () => new Error(`journey timed out after ${Math.round(timeoutMs / 1000)}s`), crashed);
   } catch (e) {
