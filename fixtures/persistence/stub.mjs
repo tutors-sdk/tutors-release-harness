@@ -11,6 +11,7 @@
 //   POST   /rest/v1/rpc/<fn>       -> 200 []        recorded as an rpc call
 //   *      /auth/v1/*              -> 200 {}        (no sessions here; identity is fixtures/identity)
 //   POST   /realtime/v1/api/broadcast -> 202        accepted, not recorded (presence runs on timers)
+//   POST   /realtime/v1/api/broadcast/<topic>/events/<event> -> 202  the same, as supabase-js's httpSend() posts it
 //   WS     /realtime/v1/websocket  -> a Phoenix socket that replies ok to every push (joins, heartbeats,
 //                                     presence) and never broadcasts; not recorded
 //   GET    /_harness/writes        -> the log, oldest first
@@ -22,6 +23,7 @@ import { createHash } from "node:crypto";
 import { createServer } from "node:http";
 
 const port = Number(process.argv[2] ?? process.env.PORT ?? 8090);
+const BROADCAST = /^\/realtime\/v1\/api\/broadcast(\/[^/]+\/events\/[^/]+)?$/;
 let writes = [];
 let seq = 0;
 
@@ -93,7 +95,9 @@ const server = createServer(async (req, res) => {
   // presence broadcasts over REST on a timer. Answering 404 made the browser log a "Failed to load
   // resource ... 404" whose count per page depended on the timer, an A/A console diff. Accept them
   // as Supabase does; they are presence, not writes, so the persistence artefact does not record them.
-  if (url.pathname === "/realtime/v1/api/broadcast" && req.method === "POST") {
+  // Since 1.36.6 also the per-topic path supabase-js 2.7x's channel.httpSend() posts to: answering it 404 put
+  // "httpSend() requires Realtime server v2.97.0 or newer" in the reader's console on both sides, 8 errors a run.
+  if (BROADCAST.test(url.pathname) && req.method === "POST") {
     await readBody(req);
     return send(202);
   }
