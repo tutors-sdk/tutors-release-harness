@@ -73,6 +73,16 @@ describe("persistence stub", () => {
     expect(await (await fetch(`${base}/_harness/writes`)).json()).toEqual([]);
   });
 
+  it("accepts supabase-js httpSend broadcasts on the per-topic path, also without recording them", async () => {
+    await fetch(`${base}/_harness/reset`, { method: "POST" });
+    for (const topic of ["localhost%3A8080", "tutors-all-course-access"]) {
+      const sent = await fetch(`${base}/realtime/v1/api/broadcast/${topic}/events/lo-event`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ payload: {} }) });
+      expect(sent.status).toBe(202);
+    }
+    expect((await fetch(`${base}/realtime/v1/api/broadcast/x/events`, { method: "POST" })).status).toBe(404);
+    expect(await (await fetch(`${base}/_harness/writes`)).json()).toEqual([]);
+  });
+
   it("speaks just enough Phoenix on the realtime socket that the client connects once and never retries", async () => {
     const ws = new WebSocket(`${base.replace("http", "ws")}/realtime/v1/websocket?apikey=k&vsn=2.0.0`);
     const replies: unknown[] = [];
