@@ -12,6 +12,7 @@
  * Pure: src/a3/read.ts reads the files, src/a3/github.ts asks GitHub, src/a3/render.ts draws the page.
  */
 import { coverageWords } from "../readiness/claims.ts";
+import { explainGap, ledgerSentence, type Explanation, type LedgerRun } from "../changes/explain.ts";
 import type { Changes } from "../changes/signals.ts";
 import { decidingClaims, decisionsOf } from "../claims/decisions.ts";
 import { claimLabel } from "../claims/rules.ts";
@@ -226,6 +227,20 @@ export interface Decisions {
   rows: { artefact: string; scope: string; what: string[]; hunk: string; state: "decided" | "undecided" | "fixed, or only changed?"; why?: string; rule?: string }[];
 }
 
+/**
+ * Since 1.37.0: what the sheet compares, in one sentence, and the gap explained (src/changes/explain.ts): every failing
+ * difference of the subject run in one row, claimed, contributed by a PR, or unexplained.
+ */
+export interface Gap {
+  /** "main at sha-51e5dcb (Main to RC forecast) against production 16.2.2, run 2026-10-15 07:53 UTC". */
+  comparing: string;
+  /** When the kept verdict and the Gate differ: why. */
+  verdictNote?: string;
+  /** The ledger in one sentence. */
+  sentence: string;
+  explanation: Explanation;
+}
+
 export interface A3 {
   schemaVersion: typeof A3_SCHEMA_VERSION;
   builtAt: string;
@@ -243,6 +258,8 @@ export interface A3 {
   quality?: QualityStrip;
   /** Since 1.31.0: real courses (the course corpus) loading on production and on main; absent when none was kept. */
   courses?: CourseLoad;
+  /** Since 1.37.0: what is compared, and the gap explained; absent without a subject run that kept its report. */
+  gap?: Gap;
   countermeasures: { kind: string; what: string; owner: string; due: string; status: FiveWhys["status"]; from: string; rca: string[] }[];
   plan: { what: string; who: string; when: string; status: string }[];
   followUp: { check: string; state: string; met: boolean }[];
@@ -702,6 +719,21 @@ function rcaOf(i: A3Inputs, subject: KeptRun | undefined, paretos: Map<string, P
   return out;
 }
 
+const ledgerRun = (r: KeptRun): LedgerRun => ({ id: r.id, ranAt: r.ranAt, report: r.report!, ...(r.changes ? { changes: r.changes } : {}) });
+
+/** What the subject run compares, and its gap explained against the kept forecasts beside the same baseline. */
+export function gapOf(runs: KeptRun[], subject: KeptRun | undefined, gate?: string): Gap | undefined {
+  if (!subject?.report?.compare) return undefined;
+  const cand = tagOf(subject.sides?.b?.reader) || "the candidate";
+  const prod = tagOf(subject.sides?.a?.reader) || "production";
+  const at = `${subject.ranAt.slice(0, 10)} ${subject.ranAt.slice(11, 16)} UTC`;
+  const comparing = subject.stream === "main-preview" ? `main at ${cand} (Main to RC forecast) against production ${prod}, run ${at}` : `release candidate ${cand} against production ${prod}, run ${at}`;
+  const explanation = explainGap(ledgerRun(subject), runs.filter((r) => r.stream === "main-preview" && r.report?.compare).map(ledgerRun));
+  const kept = subject.verdict.toUpperCase();
+  const verdictNote = gate && kept && gate !== kept ? `The Gate says ${gate} on what was found; the run was kept as ${kept}: ${subject.reasons[0] ?? "see the report"}.` : undefined;
+  return { comparing, ...(verdictNote ? { verdictNote } : {}), sentence: ledgerSentence(explanation), explanation };
+}
+
 export function buildA3(i: A3Inputs): A3 {
   const subject = subjectRun(i.runs);
   const whys = i.kaizen.map((k) => fiveWhysOf(k, i.now));
@@ -730,7 +762,9 @@ export function buildA3(i: A3Inputs): A3 {
     `Why it matters: production is ${prod}; main (${cand}) is what the next release would ship. Every unclaimed difference is a claim or a fix that release will need, and every red check after a deploy is a question about what students are running.`
   ];
 
+  const gap = gapOf(i.runs, subject, score?.gate);
   const facts: string[] = [];
+  if (gap) facts.push(`Comparing ${gap.comparing}. ${gap.sentence}`);
   if (score) facts.push(`Gate ${score.gate} on the ${score.subject} ${cand} beside ${prod}${score.rcs !== null ? `, RCS ${score.rcs} ${score.band}` : ", so no RCS"}.`);
   if (score?.lastRelease) facts.push(`Last release candidate kept: ${score.lastRelease.candidate} beside ${score.lastRelease.baseline}, ${score.lastRelease.verdict} on ${score.lastRelease.ranAt.slice(0, 10)}.`);
   if (score?.postDeploy) facts.push(`Post-deploy: ${score.postDeploy.red ? `red ${score.postDeploy.red} runs running` : "green"}${score.postDeploy.issue ? `, rollback issue #${score.postDeploy.issue.number} open` : ""}.`);
@@ -785,6 +819,7 @@ export function buildA3(i: A3Inputs): A3 {
     ...(decisions ? { decisions } : {}),
     ...(quality ? { quality } : {}),
     ...(i.courses ? { courses: i.courses } : {}),
+    ...(gap ? { gap } : {}),
     countermeasures,
     plan,
     followUp,

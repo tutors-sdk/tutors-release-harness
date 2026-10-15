@@ -216,7 +216,7 @@ describe("report.json", () => {
     const cli = json("docs/contract/cli.json");
     for (const flag of cli.flags.filter((f: { since?: string }) => f.since === "1.2.0")) expect(changes, flag.name).toContain(`--${flag.name === "runtime" ? "no-runtime" : flag.name}`);
     for (const [name, v] of Object.entries(cli.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.2.0")) expect(changes, name).toContain(name);
-    expect(CONTRACT_VERSION).toBe("1.36.0");
+    expect(CONTRACT_VERSION).toBe("1.37.0");
     // The harness version is package.json's and moves at least as far as the contract's (docs/contract.md, Versioning):
     // a mask or engine PR bumps the patch of the harness alone, so do not pin a literal here.
     expect(json("package.json").version).toBe(HARNESS_VERSION);
@@ -286,6 +286,15 @@ describe("report.json", () => {
     for (const command of cliJson.commands.filter((c: { since?: string }) => c.since === "1.5.0")) expect(changes, command.name).toContain(command.name);
     for (const [name, v] of Object.entries(cliJson.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.5.0")) expect(changes, name).toContain(name);
     for (const workflow of ["main-preview.yml", "pages.yml"]) expect(changes, workflow).toContain(workflow);
+  });
+
+  it("1.37.0: its changelog, section and release note name the gap, its rows and that it never judges", () => {
+    const changes = contractMd.slice(contractMd.indexOf("### 1.37.0"), contractMd.indexOf("### 1.36.0")).replace(/\s+/g, " ");
+    for (const item of ["releases/1.37.0.md", "minor", "`gap`", "`comparing`", "`sentence`", "`explanation`"]) expect(changes, item).toContain(item);
+    const section = contractMd.slice(contractMd.indexOf("**The gap, explained**"), contractMd.indexOf("Since 1.32.0 the two sides")).replace(/\s+/g, " ");
+    for (const item of ["**claimed**", "**contributed by a PR**", "**unexplained**", "never changes the Gate"]) expect(section, item).toContain(item);
+    const note = readFileSync(resolve(ROOT, "docs/releases/1.37.0.md"), "utf8").replace(/\s+/g, " ");
+    for (const item of ["src/changes/explain.ts", "most likely", "one of", "never changes the Gate"]) expect(note, item).toContain(item);
   });
 
   it("1.36.0: its changelog, section and release note name the realtime engine, its two rules, its scopes and its level", () => {

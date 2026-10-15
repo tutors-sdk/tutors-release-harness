@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.36.0`
+Contract version: `1.37.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -1397,6 +1397,24 @@ goal row "Real courses load on main" (every corpus course). One check per side i
 not a benchmark: the times are shown beside each other and never judged. No site `courses/`
 leaves all of it out.
 
+**The gap, explained** (since 1.37.0, `gap` in `a3.json`, `src/changes/explain.ts`): the sheet
+says first, in one sentence, what it compares (`gap.comparing`: main at the forecast's build, or the
+release candidate, against which production, and when it ran), then puts every failing difference
+of that run in one row of a ledger (`gap.explanation`) whose rows add up to the total:
+**claimed** (one row per claim, as the reports name it), **contributed by a PR** (the difference
+first appeared in the forecast after the PR merged, and its files touch what changed; the kept
+forecasts beside the same production are the history; the oldest one's window is its whole range,
+so the first forecast beside a new release names the PRs since it; a PR that matched more files
+than the others merged that night leads its row, "most likely", otherwise the night's PRs are one
+row, "one of"), or **unexplained** (no PR merged between the two forecasts it appeared between; or
+more than eight PRs could have made it, with the best file matches named as suspects and never
+counted as theirs). `gap.sentence` is the ledger in one line ("1110 differences: claims explain 698;
+#466 most likely contributed 195; …; 148 unexplained"), and the first fact line carries both. When the
+Gate and the kept verdict differ (a FAIL kept as WARN because the A/A did not count),
+`gap.verdictNote` says why. Differences are matched across runs by artefact, scope and kind with
+numbers and hashes folded. It is a lead to read: **it never changes the Gate, the score, a verdict
+or an exit code.**
+
 Since 1.32.0 the two sides are compared page by page and journey by journey
 (`src/course/compare.ts`; `compare` on each row, `worsePages`, `betterPages` and `worseJourneys`
 on `courses`). A page is **worse on main** when it does not load where it did, has more broken
@@ -2069,6 +2087,13 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.37.0 (minor; the gap, explained)
+
+The release note is [releases/1.37.0.md](releases/1.37.0.md). A minor: a new `a3.json` field, `gap`
+(`comparing`, `verdictNote`, `sentence`, `explanation`), and the A3 page's comparing line and "The gap,
+explained" table. No `report.json` field, verdict, Gate input, exit code, claims key, flag, mask or
+workflow changes. See [The gap, explained](#a3-aggregator).
 
 ### 1.36.0 (minor; the reader's Realtime cost, informing)
 
