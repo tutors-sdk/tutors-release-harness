@@ -300,7 +300,6 @@ function vsmHtml(v: ValueStream): string {
   <details><summary>Numbers</summary><div class="scroll"><table><thead><tr><th>Stage</th><th>Where</th><th>Process time</th><th>First pass</th><th>Note</th></tr></thead><tbody>${v.stages.map((s) => `<tr><td>${esc(s.name)}</td><td>${esc(s.where)}</td><td class="num">${esc(duration(s.processMs))}${s.n ? ` (n ${s.n})` : ""}</td><td class="num">${s.firstPass ? `${s.firstPass.green}/${s.firstPass.runs}` : "–"}</td><td>${esc(s.note)}${s.andon ? ` <strong>Andon: ${esc(s.andon)}</strong>` : ""}</td></tr>`).join("")}${v.waits.map((w) => `<tr><td colspan="2">Wait: ${esc(w.label)}</td><td class="num">${esc(duration(w.ms))}</td><td></td><td></td></tr>`).join("")}</tbody></table></div></details></figure>`;
 }
 
-const ARTEFACT_NAMES: Record<string, string> = { axe: "Accessibility", console: "Console errors" };
 const FIX_NAMES: Record<string, string> = { axe: "accessibility violations", console: "console errors" };
 
 /** Decisions are orange, beside the traffic lights and never on them: a fix on b is a choice, not a pass or a fail. */
