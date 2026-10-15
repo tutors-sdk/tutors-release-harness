@@ -85,8 +85,13 @@ export function gate(input: GateInput): GateOutput {
       return { verdict: "fail", reasons: [`${failing} expand/contract or rollback violation(s)`, ...reasons] };
     }
     case "upgrade": {
-      if (failing === 0) return { verdict: "pass", reasons: ["the candidate rolled in under load with no failed request", ...reasons] };
-      return { verdict: "fail", reasons: [`${failing} finding(s) during the rollout`, ...reasons] };
+      // The rehearsal judges the rollout (docs/modes.md, "upgrade"). The captures of a and b around it differ
+      // wherever the release changed something; release mode judges those against the claims, so here they inform.
+      const rollout = compare.unclaimed.filter((h) => h.artefact === "upgrade").length;
+      const elsewhere = failing - rollout;
+      if (elsewhere) reasons.push(`${elsewhere} difference(s) between a and b outside the rollout, judged by release mode`);
+      if (rollout === 0) return { verdict: "pass", reasons: ["the candidate rolled in under load with no failed request", ...reasons] };
+      return { verdict: "fail", reasons: [`${rollout} finding(s) during the rollout`, ...reasons] };
     }
   }
 }
