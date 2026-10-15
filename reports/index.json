@@ -2,6 +2,103 @@
   "schemaVersion": 1,
   "runs": [
     {
+      "id": "2026-10-15T09-18-21Z-release",
+      "mode": "release",
+      "ranAt": "2026-10-15T09:18:21.299Z",
+      "verdict": "warn",
+      "reasons": [
+        "advisory only: the last A/A run (2026-10-15T07:38:30.465Z) was degraded and does not count: journey \"reference-course-reads\" failed on both sides, so this run saw nothing of its pages",
+        "382 unclaimed diff(s)",
+        "28 claim(s) matched nothing and should be removed from the changelog"
+      ],
+      "sides": {
+        "a": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:16.2.2@sha256:7567d5927767bd39b7991a586d594f6c310387471109a456d2cff49fa12488cb",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:16.2.2@sha256:f6cdb7f6adaba1d227e2cf62260ec2fe7064c58114666774331da3530bf52187",
+          "live": "quay.io/tutors-sdk/tutors-live:16.2.2@sha256:12ed5642e5cbec601790771a8f9fc85221f8202679a312a0e707622bb6e84e9a",
+          "time": "quay.io/tutors-sdk/tutors-time:16.2.2@sha256:ddf3ad22b79bbba96199791a49367677bf9ad0ebdd7542f3246d56e7879d5e4e"
+        },
+        "b": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:17.0.0-rc.1@sha256:15e3aa22476d608db97e05917b1990ade0a7871e7ec6e113da5fec741b427233",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:17.0.0-rc.1@sha256:e9f2764654cb074d7dd4412ca163bf4c2666870444d5520361d5425bda4cec0b",
+          "live": "quay.io/tutors-sdk/tutors-live:17.0.0-rc.1@sha256:52740e55cfa7e7db3b2944137caada4e876990b937f1034c0c5e79796054f8a0",
+          "time": "quay.io/tutors-sdk/tutors-time:17.0.0-rc.1@sha256:d0a9f4a2f4624038ecea3629d1a536567756d458410bee43b45e060d738d195d"
+        }
+      },
+      "harnessVersion": "1.36.1",
+      "runUrl": "https://github.com/tutors-sdk/tutors-release-harness/actions/runs/38710492057",
+      "score": {
+        "score": 9,
+        "grade": "D",
+        "normalness": "degraded",
+        "manual": 5
+      },
+      "delta": {
+        "baseline": "16.2.2",
+        "against": {
+          "id": "2026-09-27T16-11-58Z-release",
+          "ranAt": "2026-09-27T16:11:58.711Z",
+          "candidate": "16.2.2",
+          "harnessVersion": "1.4.14"
+        },
+        "new": 382,
+        "gone": 0,
+        "byArtefact": {
+          "console": {
+            "new": 10,
+            "gone": 0
+          },
+          "dom": {
+            "new": 12,
+            "gone": 0
+          },
+          "focus": {
+            "new": 14,
+            "gone": 0
+          },
+          "headers": {
+            "new": 6,
+            "gone": 0
+          },
+          "image-manifest": {
+            "new": 16,
+            "gone": 0
+          },
+          "logs": {
+            "new": 16,
+            "gone": 0
+          },
+          "network": {
+            "new": 87,
+            "gone": 0
+          },
+          "persistence": {
+            "new": 2,
+            "gone": 0
+          },
+          "sbom": {
+            "new": 212,
+            "gone": 0
+          },
+          "screenshot": {
+            "new": 6,
+            "gone": 0
+          },
+          "timing": {
+            "new": 1,
+            "gone": 0
+          }
+        }
+      },
+      "files": [
+        "2026-10-15T09-18-21Z-release/report.json",
+        "2026-10-15T09-18-21Z-release/report.md",
+        "2026-10-15T09-18-21Z-release/report.html",
+        "2026-10-15T09-18-21Z-release/scorecard.json",
+        "2026-10-15T09-18-21Z-release/scorecard.md"
+      ]
+    },
+    {
       "id": "2026-09-27T16-11-58Z-release",
       "mode": "release",
       "ranAt": "2026-09-27T16:11:58.711Z",

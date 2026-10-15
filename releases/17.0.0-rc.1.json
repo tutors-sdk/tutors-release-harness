@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "candidate": "17.0.0-rc.1",
+  "release": "17.0.0",
+  "production": "16.2.2",
+  "recordedAt": "2026-10-15T09:18:24.252Z",
+  "harness": {
+    "version": "1.36.1",
+    "gitSha": "f49f4b5e6bf8a61ab6c7ba9051e79ba3c76a3e74",
+    "contractVersion": "1.36.0"
+  },
+  "verdict": "warn",
+  "overridden": false,
+  "pinned": true,
+  "verified": true,
+  "digests": {
+    "reader": "sha256:15e3aa22476d608db97e05917b1990ade0a7871e7ec6e113da5fec741b427233",
+    "catalogue": "sha256:e9f2764654cb074d7dd4412ca163bf4c2666870444d5520361d5425bda4cec0b",
+    "live": "sha256:52740e55cfa7e7db3b2944137caada4e876990b937f1034c0c5e79796054f8a0",
+    "time": "sha256:d0a9f4a2f4624038ecea3629d1a536567756d458410bee43b45e060d738d195d"
+  }
+}
