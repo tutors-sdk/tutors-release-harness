@@ -252,12 +252,14 @@ export const referenceCourseReads: Journey = {
 
     await page.getByRole("main").locator(`a[href*="/lab/${course}/${reference.labPath}"]`).first().click();
     await page.waitForURL(new RegExp(`/lab/${course}/${reference.labPath}`));
-    await page.getByRole("article").getByRole("heading", { level: 1 }).first().waitFor(VISIBLE);
+    await page.getByRole("main").getByRole("article").getByRole("heading", { level: 1 }).first().waitFor(VISIBLE);
     await labSteps(page).waitFor(VISIBLE);
     await onPage("reference:lab");
 
     await page.goto(`${urls.reader}/note/${course}/${reference.notePath}`);
-    await page.getByRole("article").waitFor(VISIBLE);
+    // The note itself, in main: since mono-repo #400 (8 Oct 2026) the navigation beside it holds an article too (the open
+    // learning object's card), and an unscoped getByRole("article") matched both on every run.
+    await page.getByRole("main").getByRole("article").first().waitFor(VISIBLE);
     await onPage("reference:note");
   }
 };
