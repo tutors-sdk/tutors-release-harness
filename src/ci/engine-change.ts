@@ -106,6 +106,7 @@ export const NON_ENGINE_PATHS: Readonly<Record<string, string>> = {
   "examples": "real runs' reports and scorecards, checked in to read; not read by the harness (tests/examples.test.ts recomputes each scorecard)",
   "site": "the GitHub Pages index of the kept reports (pages.yml); it reads them in the browser and is never read by the harness",
   "scoreboard": "the scoreboard data (releases.jsonl, mutants.jsonl), append-only and held to that by `harness guard scoreboard`; never read by a run",
+  "course": "a short Tutors course that explains the harness (slides, a lab), for people; pages.yml publishes it with tutors-lite, and it is never read by a run",
   "kaizen": "the kaizen register (README.md) and the filled 5 Whys, documents people write and `harness why check` lints; never read by a run",
   "bin": "the executable shim that starts src/cli.ts",
   "package.json": "a version bump is the required change itself; dependencies are covered through pnpm-lock.yaml",

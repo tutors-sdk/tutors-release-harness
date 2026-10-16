@@ -99,7 +99,7 @@ Every run writes `out/<timestamp>-<mode>/` with `a/` and `b/` captures
 (`capture.json`, screenshots, k6 output), `report.json`, `report.html`,
 `report.md` (the PR comment) and, in noise mode, `noise-status.json`.
 
-**New here? Start with the [user guide](docs/user-guide/README.md)** (the Captain, the Reviewer, Contributors, operators, CI integrators and harness developers, with a ten-minute quickstart).
+**New here? Take the short course, [How the release harness works](https://tutors-sdk.github.io/tutors-release-harness/course/index.html)** (five slide decks and a lab on reading the A3; source in [`course/`](course/)), **or start with the [user guide](docs/user-guide/README.md)** (the Captain, the Reviewer, Contributors, operators, CI integrators and harness developers, with a ten-minute quickstart).
 
 Docs: **[how to run a release](docs/user-guide/10-running-a-release.md)** ·
 **[reading a report](docs/user-guide/03-reading-a-report.md)** ·
