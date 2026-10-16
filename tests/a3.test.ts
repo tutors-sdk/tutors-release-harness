@@ -9,6 +9,7 @@ import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { FetchLike } from "../src/changes/github.ts";
 import { fetchGithub, type GithubSnapshot, type WorkflowRun } from "../src/a3/github.ts";
+import { timingCharts } from "../src/a3/timing.ts";
 import { VITAL_SHARE, buildA3, causeOf, duration, gateWhy, pareto, postDeployCause, stopCauses, subjectOf, type A3Inputs } from "../src/a3/model.ts";
 import { readInputs } from "../src/a3/read.ts";
 import { inlineMd, renderA3, safeHref } from "../src/a3/render.ts";
@@ -177,7 +178,7 @@ describe("the A3", () => {
     // The branch-only commit of 1 August is not a merge to main: the lead time starts at PR #1's merge.
     expect(v.leadMs).toBe(NOW.getTime() - Date.parse("2026-09-19T02:00:00Z"));
     expect(v.flowEfficiency).toBeGreaterThan(0);
-    expect(v.inventory.map((i) => i.count)).toEqual([2, 14, 3]);
+    expect(v.inventory.map((i) => i.count)).toEqual([2, 14, 2]);
   });
 
   it("says what it could not measure without GitHub, and makes nothing up", () => {
@@ -211,9 +212,53 @@ describe("the A3", () => {
     expect(a.decisions!.rows).toEqual([{ artefact: "axe", scope: "reader-auth:sign-in", what: ["document-title"], hunk: "main-preview/reports/2026-09-28T08-59-53Z-release/report.html#hunk-axe:1", state: "decided", why: "Rule 0216" }]);
     const html = renderA3(a);
     expect(html).toContain('class="decide-strip"');
-    expect(html).toContain("100% explained");
-    expect(html).toContain("1 accessibility violations</strong> production shows and main does not, 1 explained by a claim");
-    expect(html).toContain('<span class="chip decided">decided</span>');
+    expect(html).toContain("Fixed on main · good news, never a failure");
+    expect(html).toContain("100% with a note");
+    expect(html).toContain("1 accessibility violations</strong> production shows and main does not, 1 with a claim saying why");
+    expect(html).toContain('<span class="chip decided">fixed, explained</span>');
+  });
+
+  it("reads post-deploy over the current release only: from the newest deploy on, with an older rollback issue named as earlier (since 1.40.0)", () => {
+    const g: GithubSnapshot = {
+      ...github,
+      workflows: {
+        ...github.workflows,
+        "post-deploy.yml": [
+          run({ id: 13, conclusion: "failure", createdAt: "2026-10-16T05:00:00Z", url: "https://github.com/x/y/actions/runs/13" }),
+          run({ id: 12, conclusion: "failure", createdAt: "2026-10-15T19:10:00Z" }),
+          run({ id: 11, conclusion: "success", createdAt: "2026-10-15T15:00:00Z" }),
+          run({ id: 10, event: "repository_dispatch", conclusion: "success", createdAt: "2026-10-15T09:07:00Z" }),
+          run({ id: 5, conclusion: "failure", createdAt: "2026-09-27T14:00:00Z" })
+        ]
+      },
+      postDeploySteps: [{ id: 13, step: "Post-deploy mode" }, { id: 12, step: "Post-deploy mode" }, { id: 5, step: null }]
+    };
+    const a = buildA3(inputs(g));
+    expect(a.score!.postDeploy).toMatchObject({ red: 2, runs: 4, since: "2026-10-15T19:10:00Z", deployedAt: "2026-10-15T09:07:00Z", latest: "https://github.com/x/y/actions/runs/13", earlierIssue: { number: 38 } });
+    expect(a.score!.postDeploy!.issue).toBeUndefined();
+    const q = a.rca.find((r) => r.id === "post-deploy")!;
+    expect(q.answer).toContain("2 runs red in a row from 2026-10-15 19:10 UTC, of 4 since");
+    expect(q.answer).toContain("2 production differs from the recorded release.");
+    expect(q.answer).not.toContain("could not start");
+    expect(q.answer).toContain("Rollback issue #38 (opened 2026-09-27) is from an earlier release");
+    const stops = a.current.paretos.find((p) => p.id === "line-stops")!;
+    expect(stops.bars.find((b) => b.label === "Post-deploy: the workflow could not start")).toBeUndefined();
+    const html = renderA3(a);
+    expect(html).toContain("4 runs since");
+    expect(html).toContain("is from an earlier release");
+    expect(html).toContain('href="#rca-post-deploy"');
+  });
+
+  it("puts its figures on each control chart and works the UCL out in words (since 1.40.0)", () => {
+    const a = buildA3(inputs());
+    a.timing = timingCharts([{ ranAt: "2026-10-16T07:11:00Z", report: { timingControl: { journeys: [{ journey: "student-signs-in", a: [6480, 4000, 3990, 4010, 4020], b: [6610, 3900, 3950, 3920, 3940], limits: { n: 5, centre: 4500, mrBar: 640, ucl: 6202.4, lcl: 2797.6, provisional: true }, above: 1, below: 0 }] } } }])!;
+    const html = renderA3(a);
+    expect(html).toContain(">UCL 6,202ms</text>");
+    expect(html).toContain(">centre 4,500ms</text>");
+    expect(html).toContain(">LCL 2,798ms</text>");
+    expect(html).toContain(">main 3,940ms</text>");
+    expect(html).toContain("UCL = 4,500ms + 2.66 × 640ms = 6,202ms; LCL = 4,500ms − 2.66 × 640ms = 2,798ms");
+    expect(html).toContain("The UCL (upper control limit) is the top of that band");
   });
 
   it("says why the Gate says FAIL: each difference nothing explains, and what turns it round", () => {

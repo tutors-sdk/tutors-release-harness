@@ -28,6 +28,8 @@ export interface RegisterEntry {
   countermeasure: string;
   /** Kind mutant: the path under mutants/, which the register links. */
   mutant: string | null;
+  /** Since 1.40.0: where it was built; "" until it is. An open countermeasure in place is never overdue: it waits on a release. */
+  inPlace: string;
   owner: string;
   due: string;
   /** The release it was verified closed in; "" while open. */
@@ -66,6 +68,7 @@ export function entryOf(file: string, text: string): RegisterEntry {
     kind: cm.kind,
     countermeasure: cm.what,
     mutant: cm.mutant,
+    inPlace: cm.inPlace,
     owner: cm.owner,
     due: cm.due,
     verifiedBy: cm.verifiedBy,
@@ -85,7 +88,7 @@ export function registerSummary(entries: RegisterEntry[], today: Date): Register
     total: entries.length,
     open: open.length,
     closed: entries.length - open.length,
-    overdue: open.filter((e) => /^\d{4}-\d{2}-\d{2}$/.test(e.due) && e.due < day).length,
+    overdue: open.filter((e) => !e.inPlace && /^\d{4}-\d{2}-\d{2}$/.test(e.due) && e.due < day).length,
     unassigned: open.filter((e) => !e.owner || !e.due).length
   };
 }
@@ -98,7 +101,7 @@ export function renderRegisterBlock(entries: RegisterEntry[]): string {
   const rows = entries.map((e) => {
     const kind = e.kind ? (e.kind === "mutant" && e.mutant ? `mutant: [${e.mutant}](../${e.mutant})` : e.kind) : "—";
     const what = e.countermeasure ? `${kind}: ${short(e.countermeasure)}` : kind;
-    const status = e.verifiedBy ? `closed in ${e.verifiedBy}` : e.problems ? `open (${e.problems} to fill: \`harness why check\`)` : "open";
+    const status = e.verifiedBy ? `closed in ${e.verifiedBy}` : e.problems ? `open (${e.problems} to fill: \`harness why check\`)` : e.inPlace ? "in place, waiting on a release to show it works" : "open";
     return `| [${cell(e.title || e.file)}](${e.file}) | ${cell(e.trigger)} | ${cell(e.release)} | ${cell(what)} | ${cell(e.owner)} | ${cell(e.due)} | ${status} |`;
   });
   const open = entries.filter((e) => e.open).length;

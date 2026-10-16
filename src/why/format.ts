@@ -13,6 +13,8 @@
  *   ## Why 2 … ## Why 5                            are prompts and do not count)
  *   - **Chain ends at:** Why 3                     where the chain ends, and in what: a process or a tool
  *   - **Kind:** mutant                             the countermeasure: kind, what, the mutant's path, owner, due,
+ *   - **In place:** <PR or file>                  since 1.40.0: where the countermeasure was built (empty until it is)
+ *   - **Check:** <what a release must show>        since 1.40.0: the reading in a release that proves it works
  *   - **Verified by:** 16.4.0                      and the release it was verified closed in (empty while open)
  *
  * Pure: src/why/register.ts and src/why/command.ts read the files.
@@ -48,7 +50,7 @@ export const TRIGGER_WORDS = Object.values(TRIGGERS) as string[];
 /** The header fields, in the order the stub writes them. */
 export const HEADER_FIELDS = ["Trigger", "Finding", "Release", "Run", "Opened"] as const;
 /** The fields after the chain. */
-export const END_FIELDS = ["Chain ends at", "Ends in", "Kind", "Countermeasure", "Mutant", "Owner", "Due", "Verified by"] as const;
+export const END_FIELDS = ["Chain ends at", "Ends in", "Kind", "Countermeasure", "Mutant", "In place", "Check", "Owner", "Due", "Verified by"] as const;
 export const ENDS_IN = ["process", "tool"] as const;
 export const WHYS = 5;
 export const MUTANTS_DIR = "mutants/";
@@ -173,6 +175,10 @@ export interface Countermeasure {
   kind: CountermeasureKind | null;
   what: string;
   mutant: string | null;
+  /** Since 1.40.0: where it was built (a PR, a commit or a file); empty until it is. */
+  inPlace: string;
+  /** Since 1.40.0: what a release must show for it to close, and what the last release showed. */
+  check: string;
   owner: string;
   due: string;
   verifiedBy: string;
@@ -187,7 +193,7 @@ const isDate = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Dat
 export function countermeasureOf(f: WhyFile): Countermeasure {
   const v = (name: string) => (f.fields[name] ?? "").trim();
   const mutant = v("Mutant").replace(/^`|`$/g, "");
-  return { kind: kindOf(v("Kind")) ?? null, what: v("Countermeasure"), mutant: mutant || null, owner: v("Owner"), due: v("Due"), verifiedBy: v("Verified by") };
+  return { kind: kindOf(v("Kind")) ?? null, what: v("Countermeasure"), mutant: mutant || null, inPlace: v("In place"), check: v("Check"), owner: v("Owner"), due: v("Due"), verifiedBy: v("Verified by") };
 }
 
 /** Where the chain ends: "Why 3", "3", "why 3 (a process)". */
@@ -234,6 +240,7 @@ export function checkWhy(f: WhyFile): CheckProblem[] {
   if (!cm.owner) out.push({ at: "Owner", why: "every 5 Whys has an owner (SOP step 12): the person who sees the countermeasure through, not the person who caused the finding" });
   if (!cm.due) out.push({ at: "Due", why: "every 5 Whys has a due date (SOP step 12), as YYYY-MM-DD" });
   else if (!isDate(cm.due)) out.push({ at: "Due", why: `"${cm.due}" is not a date: YYYY-MM-DD` });
+  if (cm.verifiedBy && !cm.check) out.push({ at: "Check", why: "a release closes a countermeasure only by showing it works: say what that release showed (Check), so the closing can be checked" });
   if (cm.verifiedBy && !isRelease(cm.verifiedBy)) out.push({ at: "Verified by", why: `"${cm.verifiedBy}" is not a release tag: the release in which the countermeasure was verified closed (e.g. 16.4.0), or empty while open` });
   return out;
 }

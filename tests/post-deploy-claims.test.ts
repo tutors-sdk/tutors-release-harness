@@ -1,12 +1,12 @@
 /**
  * Since 1.28.4: post-deploy/claims.yaml, the claims post-deploy mode applies (docs/contract.md, "The post-deploy claims").
- * Every claim is narrow and has an `until` and an issue; the five differences of tutors-release-harness#38 are claimed
- * and nothing next to them is; and post-deploy.yml and `harness local watch` both pass the file.
+ * Every claim is narrow and has an `until` and an issue; and post-deploy.yml and `harness local watch` both pass the
+ * file. The five claims of tutors-release-harness#38 expired with 17.0.0, which replaced the build they explained, and
+ * were removed in 1.40.0: the file is back to its normal state, empty.
  */
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { claimLifetimes, lifetimeContext } from "../src/claims/lifetime.ts";
 import { matchClaims } from "../src/claims/matcher.ts";
 import { POST_DEPLOY_CLAIMS_FILE, isBroad, loadClaims } from "../src/claims/schema.ts";
 import { gate } from "../src/gate.ts";
@@ -26,14 +26,11 @@ const issue38 = [
   hunk("focus", "reference:course")
 ];
 
-const recorded = { images: { reader: "quay.io/tutors-sdk/tutors-reader:16.2.2" } };
-const production = { images: { reader: "external:https://tutors.dev" } };
 const ranAt = new Date("2026-10-04T13:41:00.000Z");
 const clean: NoiseStatus = { ranAt: "2026-10-04T02:00:00.000Z", clean: true, hunks: 0 };
 
 describe("post-deploy/claims.yaml", () => {
   it("parses, and every claim is narrow, has an until and names the issue it explains", () => {
-    expect(claims.length).toBeGreaterThan(0);
     for (const c of claims) {
       expect(isBroad(c), c.scope).toBe(false);
       expect(c.artefact, c.scope).not.toBe("*");
@@ -42,11 +39,11 @@ describe("post-deploy/claims.yaml", () => {
     }
   });
 
-  it("claims exactly the five differences of issue #38, and a clean A/A then passes", () => {
+  it("no longer claims the five differences of issue #38: 17.0.0 replaced that build, so a return of any is news (since 1.40.0)", () => {
+    expect(claims).toEqual([]);
     const compare = matchClaims(issue38, claims);
-    expect(compare.unclaimed).toEqual([]);
-    expect(compare.staleClaims).toEqual([]);
-    expect(gate({ mode: "post-deploy", compare, noise: clean, noiseWaived: false, noiseMaxAgeDays: 7, ranAt }).verdict).toBe("pass");
+    expect(compare.unclaimed.map((h) => h.id)).toEqual(issue38.map((h) => h.id));
+    expect(gate({ mode: "post-deploy", compare, noise: clean, noiseWaived: false, noiseMaxAgeDays: 7, ranAt }).verdict).toBe("fail");
   });
 
   it("does not claim what sits next to them", () => {
@@ -62,16 +59,6 @@ describe("post-deploy/claims.yaml", () => {
     ];
     const compare = matchClaims(near, claims);
     expect(compare.unclaimed.map((h) => h.id)).toEqual(near.map((h) => h.id));
-  });
-
-  it("is live against the 16.2.2 recording and expires once the recording is any later release", () => {
-    const states = (reader: string) => {
-      const ctx = lifetimeContext(ranAt, { images: { reader } }, production);
-      return new Set(claimLifetimes(claims, matchClaims(issue38, claims).matches, ctx).map((l) => l.state));
-    };
-    expect(states(recorded.images.reader)).toEqual(new Set(["live"]));
-    expect(states("quay.io/tutors-sdk/tutors-reader:16.2.3")).toEqual(new Set(["expired"]));
-    expect(states("quay.io/tutors-sdk/tutors-reader:16.3.0")).toEqual(new Set(["expired"]));
   });
 
   it("is what post-deploy.yml and `harness local watch` pass to post-deploy mode", () => {
