@@ -181,7 +181,11 @@ export interface FiveWhys {
   owner: string;
   due: string;
   verifiedBy: string;
-  status: "open" | "overdue" | "closed";
+  /** Since 1.40.0: where it was built, and what a release must show (and last showed). */
+  inPlace: string;
+  check: string;
+  /** Since 1.40.0, "in place": built, waiting on a release to show it works; never overdue. */
+  status: "open" | "in place" | "overdue" | "closed";
   answers: string[];
 }
 
@@ -211,7 +215,23 @@ export interface Score {
   glance: number;
   lastRelease?: { candidate: string; baseline: string; verdict: string; ranAt: string; report?: string };
   aa?: { verdict: string; ranAt: string; report?: string };
-  postDeploy?: { red: number; runs: number; since: string; lastConclusion: string | null; issue?: { number: number; url: string; openedAt: string } };
+  /**
+   * Since 1.40.0, the release timeline: only post-deploy runs from the newest deploy production announced (the
+   * `deployed` dispatch) on, so a red from an earlier release never reads as this release's. `since` is when the
+   * current red streak began; `deployedAt` when the window opened (absent when no deploy was ever announced: then every
+   * run is read). A rollback issue opened before the deploy is `earlierIssue`, from a previous release.
+   */
+  postDeploy?: {
+    red: number;
+    runs: number;
+    since: string;
+    lastConclusion: string | null;
+    deployedAt?: string;
+    release?: string;
+    latest?: string;
+    issue?: { number: number; url: string; openedAt: string };
+    earlierIssue?: { number: number; url: string; openedAt: string };
+  };
   openCountermeasures: number;
 }
 
@@ -265,7 +285,7 @@ export interface A3 {
   gap?: Gap;
   /** Since 1.39.0: each journey's timing against production's control limits (src/a3/timing.ts); absent before a forecast recorded it. */
   timing?: TimingCharts;
-  countermeasures: { kind: string; what: string; owner: string; due: string; status: FiveWhys["status"]; from: string; rca: string[] }[];
+  countermeasures: { kind: string; what: string; owner: string; due: string; status: FiveWhys["status"]; from: string; rca: string[]; inPlace: string; check: string; verifiedBy: string }[];
   plan: { what: string; who: string; when: string; status: string }[];
   followUp: { check: string; state: string; met: boolean }[];
   sources: { runs: number; streams: Partial<Record<Stream, number>>; first: string | null; last: string | null; github: string; kaizen: number };
@@ -423,17 +443,45 @@ function scoreOf(i: A3Inputs, subject: KeptRun | undefined, postDeploy: Score["p
   };
 }
 
-function postDeployState(g: GithubSnapshot | undefined): Score["postDeploy"] | undefined {
-  const runs = g?.workflows["post-deploy.yml"];
-  if (!runs?.length) return undefined;
+/** Since 1.40.0: the post-deploy runs of the release production serves now, from the newest announced deploy on, newest first. */
+export function releaseWindow(g: GithubSnapshot | undefined): { runs: WorkflowRun[]; deployedAt?: string } {
+  const all = g?.workflows["post-deploy.yml"] ?? [];
+  const deploy = all.find((r) => r.event === "repository_dispatch");
+  if (!deploy) return { runs: all };
+  const from = Date.parse(deploy.createdAt);
+  return { runs: all.filter((r) => Date.parse(r.createdAt) >= from), deployedAt: deploy.createdAt };
+}
+
+/** The failed post-deploy steps of the current release's runs only (since 1.40.0). */
+function windowSteps(g: GithubSnapshot | undefined): { id: number; step: string | null }[] {
+  const ids = new Set(releaseWindow(g).runs.map((r) => r.id));
+  return (g?.postDeploySteps ?? []).filter((s) => ids.has(s.id));
+}
+
+function postDeployState(g: GithubSnapshot | undefined, release?: string): Score["postDeploy"] | undefined {
+  if (!g?.workflows["post-deploy.yml"]?.length) return undefined;
+  const { runs, deployedAt } = releaseWindow(g);
   const done = runs.filter((r) => r.conclusion !== null);
   let red = 0;
   for (const r of done) {
     if (r.conclusion !== "failure") break;
     red++;
   }
-  const issue = g?.rollbackIssues?.[0];
-  return { red, runs: done.length, since: done.at(-1)?.createdAt ?? "", lastConclusion: done[0]?.conclusion ?? null, ...(issue ? { issue: { number: issue.number, url: issue.url, openedAt: issue.createdAt } } : {}) };
+  const from = deployedAt ? Date.parse(deployedAt) : -Infinity;
+  const issues = (g.rollbackIssues ?? []).map((i) => ({ number: i.number, url: i.url, openedAt: i.createdAt }));
+  const issue = issues.find((i) => Date.parse(i.openedAt) >= from);
+  const earlierIssue = issues.find((i) => Date.parse(i.openedAt) < from);
+  return {
+    red,
+    runs: done.length,
+    since: red ? done[red - 1]!.createdAt : (done.at(-1)?.createdAt ?? ""),
+    lastConclusion: done[0]?.conclusion ?? null,
+    ...(deployedAt ? { deployedAt } : {}),
+    ...(release ? { release } : {}),
+    ...(done[0]?.url ? { latest: done[0].url } : {}),
+    ...(issue ? { issue } : {}),
+    ...(earlierIssue ? { earlierIssue } : {})
+  };
 }
 
 function unclaimedPareto(subject: KeptRun | undefined): Pareto | undefined {
@@ -463,16 +511,18 @@ function lineStopPareto(i: A3Inputs): Pareto {
   const counts = new Map<string, { value: number }>();
   const add = (k: string) => counts.set(k, { value: (counts.get(k)?.value ?? 0) + 1 });
   for (const r of i.runs) for (const c of stopCauses(r)) add(`${STREAM_NAMES[r.stream]}: ${c}`);
-  for (const s of i.github?.postDeploySteps ?? []) add(`Post-deploy: ${postDeployCause(s.step)}`);
+  const steps = windowSteps(i.github);
+  for (const s of steps) add(`Post-deploy: ${postDeployCause(s.step)}`);
   const source: Link[] = [{ label: `${i.runs.length} kept runs (index.json of each stream)` }];
-  if (i.github?.postDeploySteps) source.push({ label: `${i.github.postDeploySteps.length} failed post-deploy runs (GitHub Actions)`, href: `${REPO}/actions/workflows/post-deploy.yml` });
+  const deployedAt = releaseWindow(i.github).deployedAt;
+  if (i.github?.postDeploySteps) source.push({ label: `${steps.length} failed post-deploy runs${deployedAt ? ` since the deploy of ${deployedAt.slice(0, 10)}` : ""} (GitHub Actions)`, href: `${REPO}/actions/workflows/post-deploy.yml` });
   return pareto({
     id: "line-stops",
     title: "Why the line stops, every red run",
     unit: "stops",
     counts,
     source,
-    caption: (p) => (p.total ? `${p.total} stops over the kept runs and the post-deploy history. ${plural(p.vitalFew, "cause")} carry ${pct(p.vitalShare)}: ${p.bars.slice(0, p.vitalFew).map((b) => b.label).join("; ")}.` : "No red run kept.")
+    caption: (p) => (p.total ? `${p.total} stops over the kept runs and ${deployedAt ? "the post-deploy runs since the current release was deployed" : "the post-deploy history"}. ${plural(p.vitalFew, "cause")} carry ${pct(p.vitalShare)}: ${p.bars.slice(0, p.vitalFew).map((b) => b.label).join("; ")}.` : "No red run kept.")
   });
 }
 
@@ -530,7 +580,7 @@ function valueStream(i: A3Inputs, subject: KeptRun | undefined): ValueStream {
   };
   const prod = subject?.report?.provenance?.a?.images?.reader;
   const cand = subject?.report?.provenance?.b?.images?.reader;
-  const pd = postDeployState(g);
+  const pd = postDeployState(g, tagOf(subject?.sides?.a?.reader) || undefined);
   const dispatched = (wf("post-deploy.yml") ?? []).filter((r) => r.event === "repository_dispatch").length;
   const stages: Stage[] = [
     { id: "merge", name: "Merge to main", where: "monorepo pull requests", processMs: null, n: 0, note: "review and merge: people's time, not measured here" },
@@ -596,7 +646,9 @@ function fiveWhysOf(k: KaizenFile, now: Date): FiveWhys {
     owner: cm.owner,
     due: cm.due,
     verifiedBy: cm.verifiedBy,
-    status: cm.verifiedBy ? "closed" : cm.due && cm.due < today ? "overdue" : "open",
+    inPlace: cm.inPlace,
+    check: cm.check,
+    status: cm.verifiedBy ? "closed" : cm.inPlace ? "in place" : cm.due && cm.due < today ? "overdue" : "open",
     answers: k.why.whys.filter((w) => w.answer).map((w) => w.answer)
   };
 }
@@ -643,19 +695,25 @@ function rcaOf(i: A3Inputs, subject: KeptRun | undefined, paretos: Map<string, P
       pareto: "unclaimed"
     });
   }
-  const pd = postDeployState(i.github);
+  const pd = postDeployState(i.github, tagOf(subject?.sides?.a?.reader) || undefined);
   if (pd) {
-    const steps = i.github?.postDeploySteps ?? [];
+    const steps = windowSteps(i.github);
     const by = new Map<string, number>();
     for (const s of steps) by.set(postDeployCause(s.step), (by.get(postDeployCause(s.step)) ?? 0) + 1);
     const w = whyFor(whys, i.kaizen, (t) => t === "rollback");
+    const release = pd.deployedAt ? `since ${pd.release ?? "the current release"} was deployed (${pd.deployedAt.slice(0, 16).replace("T", " ")} UTC)` : "over every run (no deploy was ever announced)";
     out.push({
       id: "post-deploy",
       question: "Why is post-deploy red?",
       answer: pd.red
-        ? `The last ${plural(pd.red, "run")} of post-deploy ${pd.red === 1 ? "is" : "are"} red${pd.red === pd.runs ? ", every run it has made" : ""}${pd.since ? ` since ${pd.since.slice(0, 10)}` : ""}: ${[...by].sort((a, b) => b[1] - a[1]).map(([k, n]) => `${n} ${k}`).join(", ")}.${pd.issue ? ` Rollback issue #${pd.issue.number} has been open since ${pd.issue.openedAt.slice(0, 10)}.` : ""}`
-        : `Post-deploy is green on its latest run (${pd.runs} runs read).`,
-      evidence: [{ label: "post-deploy runs", href: `${REPO}/actions/workflows/post-deploy.yml` }, ...(pd.issue ? [{ label: `issue #${pd.issue.number}`, href: pd.issue.url }] : [])],
+        ? `${plural(pd.red, "run")} red in a row from ${pd.since.slice(0, 16).replace("T", " ")} UTC, of ${pd.runs} ${release}: ${[...by].sort((a, b) => b[1] - a[1]).map(([k, n]) => `${n} ${k}`).join(", ")}. Post-deploy compares production with the release's recorded capture; the newest red run's report names each difference.${pd.issue ? ` Rollback issue #${pd.issue.number} opened ${pd.issue.openedAt.slice(0, 10)}.` : ""}${pd.earlierIssue ? ` Rollback issue #${pd.earlierIssue.number} (opened ${pd.earlierIssue.openedAt.slice(0, 10)}) is from an earlier release and still open: close it, or it collects this release's comments.` : ""}`
+        : `Post-deploy is green on its latest run (${pd.runs} runs ${release}).${pd.earlierIssue ? ` Rollback issue #${pd.earlierIssue.number} is from an earlier release and still open.` : ""}`,
+      evidence: [
+        ...(pd.latest ? [{ label: "newest post-deploy run", href: pd.latest }] : []),
+        { label: "post-deploy runs", href: `${REPO}/actions/workflows/post-deploy.yml` },
+        ...(pd.issue ? [{ label: `issue #${pd.issue.number}`, href: pd.issue.url }] : []),
+        ...(pd.earlierIssue ? [{ label: `earlier issue #${pd.earlierIssue.number}`, href: pd.earlierIssue.url }] : [])
+      ],
       depth: depth(w, pd.red ? "no 5 Whys in the register answers this yet: the rollback issue carries the stub" : "nothing to ask: green")
     });
   }
@@ -670,7 +728,7 @@ function rcaOf(i: A3Inputs, subject: KeptRun | undefined, paretos: Map<string, P
       out.push({
         id: "decisions",
         question: "Which differences were decisions, not failures, and why were they made?",
-        answer: `${plural(fixes, "fix", "fixes")} on b across ${plural(ds.length, "page")} (${[...new Set(ds.map((d) => d.artefact))].join(", ")}). A fix never gates: it is a decision, and a claim is where its why is written. ${decided.length ? `Decided: ${decided.map((d) => `${d.scope} (${d.what.join(", ")}) by ${d.claim!.rule ? `Rule ${d.claim!.rule}` : "a changelog entry"}`).join("; ")}.` : "None is decided yet."}${open.length ? ` Undecided: ${open.map((d) => `${d.scope} (${d.what.join(", ")})`).join("; ")}; a claim records the why and switches the glance item off.` : " Every one is decided, so the glance asks about none of them."}`,
+        answer: `${plural(fixes, "fix", "fixes")} on b across ${plural(ds.length, "page")} (${[...new Set(ds.map((d) => d.artefact))].join(", ")}). A fix never gates: it is a decision, and a claim is where its why is written. ${decided.length ? `Decided: ${decided.map((d) => `${d.scope} (${d.what.join(", ")}) by ${d.claim!.rule ? `Rule ${d.claim!.rule}` : "a changelog entry"}`).join("; ")}.` : "None has a claim saying why yet."}${open.length ? ` Fixed with no note yet: ${open.map((d) => `${d.scope} (${d.what.join(", ")})`).join("; ")}. That is good news; a claim is an optional note that the fix was meant, and it switches the glance item off.` : " Every one is decided, so the glance asks about none of them."}`,
         evidence: [{ label: "report.html, differences", href: `${subject!.dir}/report.html#differences` }, { label: "src/claims/decisions.ts", href: `${REPO}/blob/main/src/claims/decisions.ts` }],
         depth: depth(w, "no 5 Whys in the register answers this yet")
       });
@@ -767,7 +825,7 @@ export function buildA3(i: A3Inputs): A3 {
     return n < 0 ? rca.length : n;
   };
   whys.sort((x, y) => order(x) - order(y));
-  const score = scoreOf(i, subject, postDeployState(i.github));
+  const score = scoreOf(i, subject, postDeployState(i.github, tagOf(subject?.sides?.a?.reader) || undefined));
   const decisions = decisionsFor(subject);
   const quality = subject ? qualityOf({ ...(subject.report ? { report: subject.report } : {}), ...(subject.quality !== undefined ? { record: subject.quality } : {}), ...(i.mutants ? { mutants: i.mutants } : {}), dir: subject.dir }) : undefined;
   const times = i.runs.map((r) => r.ranAt).sort();
@@ -789,7 +847,7 @@ export function buildA3(i: A3Inputs): A3 {
   if (gap) facts.push(`Comparing ${gap.comparing}. ${gap.sentence}`);
   if (score) facts.push(`Gate ${score.gate} on the ${score.subject} ${cand} beside ${prod}${score.rcs !== null ? `, RCS ${score.rcs} ${score.band}` : ", so no RCS"}.`);
   if (score?.lastRelease) facts.push(`Last release candidate kept: ${score.lastRelease.candidate} beside ${score.lastRelease.baseline}, ${score.lastRelease.verdict} on ${score.lastRelease.ranAt.slice(0, 10)}.`);
-  if (score?.postDeploy) facts.push(`Post-deploy: ${score.postDeploy.red ? `red ${score.postDeploy.red} runs running` : "green"}${score.postDeploy.issue ? `, rollback issue #${score.postDeploy.issue.number} open` : ""}.`);
+  if (score?.postDeploy) facts.push(`Post-deploy${score.postDeploy.deployedAt ? ` since ${score.postDeploy.release ?? "the current release"} was deployed` : ""}: ${score.postDeploy.red ? `red ${score.postDeploy.red} runs running` : "green"}${score.postDeploy.issue ? `, rollback issue #${score.postDeploy.issue.number} open` : ""}.`);
   if (score?.aa) facts.push(`A/A: ${score.aa.verdict} on ${score.aa.ranAt.slice(0, 10)}.`);
   if (quality) facts.push(`Quality: ${quality.lights.map((l) => `${l.name} ${l.state}`).join(", ")}.`);
   if (i.courses) facts.push(`Real courses: ${i.courses.summary}`);
@@ -814,7 +872,7 @@ export function buildA3(i: A3Inputs): A3 {
   goal.push({ metric: "Countermeasures verified closed (C4 evidence gate)", now: `${closed} of ${whys.length}`, target: "every one, in a release", met: whys.length > 0 && closed === whys.length, source: "kaizen/README.md" });
 
   const rcaOfWhy = (w: FiveWhys) => rca.filter((q) => q.depth.kind === "5 whys" && q.depth.file === w.file).map((q) => q.id);
-  const countermeasures = whys.map((w) => ({ kind: w.kind ?? "(not one of the seven)", what: w.countermeasure, owner: w.owner, due: w.due, status: w.status, from: w.file, rca: rcaOfWhy(w) }));
+  const countermeasures = whys.map((w) => ({ kind: w.kind ?? "(not one of the seven)", what: w.countermeasure, owner: w.owner, due: w.due, status: w.status, from: w.file, rca: rcaOfWhy(w), inPlace: w.inPlace, check: w.check, verifiedBy: w.verifiedBy }));
   const plan = [
     ...whys.filter((w) => w.status !== "closed").map((w) => ({ what: w.countermeasure, who: w.owner || "no owner", when: w.due || "no due date", status: w.status })),
     { what: "Score 3 real releases so the weights can be judged against the team's view (C0)", who: "the release captain", when: "the next three releases", status: scored >= 3 ? "met" : `${scored} of 3` },

@@ -512,6 +512,8 @@ export function renderStub(c: WhyContext, f: Finding, o: { now: Date; outDir: st
     "- **Kind:** ",
     "- **Countermeasure:** <!-- what changes in the system, in one sentence -->",
     "- **Mutant:** <!-- kind mutant only: the path under mutants/ that plants this escape -->",
+    "- **In place:** <!-- where it was built: the PR, commit or file; empty until it is -->",
+    "- **Check:** <!-- what a release must show for this to close, readable in its report (e.g. no broad sbom claim flagged); then what the last release showed -->",
     "- **Owner:** <!-- who sees the countermeasure through (SOP step 12) -->",
     "- **Due:** <!-- YYYY-MM-DD -->",
     "- **Verified by:** <!-- the release in which it was verified closed, e.g. 16.4.0; empty while open -->",

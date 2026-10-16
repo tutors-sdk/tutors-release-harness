@@ -25,6 +25,9 @@ export function safeHref(h: string | undefined): string | undefined {
   if (/^[A-Za-z0-9_-][A-Za-z0-9._/-]*(#[^\s"<>]*)?$/.test(h) && !h.split("/").includes("..")) return h;
   return undefined;
 }
+const statusClass = (s: string) => s.replace(/\s+/g, "-");
+/** A field that may be a URL (linked), a repo path (linked on GitHub), or words. */
+const inline = (v: string) => (/^https:\/\//.test(v) ? link(v.replace(/^https:\/\/github\.com\/[^/]+\/[^/]+\/(pull|issues)\//, "#"), v) : /^[\w.-]+\/[\w./-]+$/.test(v) ? link(v, `${REPO}/blob/main/${v}`) : esc(v));
 const link = (label: string, href?: string) => {
   const h = safeHref(href);
   return h ? `<a href="${esc(h)}">${esc(label)}</a>` : esc(label);
@@ -91,9 +94,9 @@ function andon(s: Score | null, a: A3): string {
     : "";
   const small = [
     s.lastRelease ? `<div class="tile small"><span class="k">Last release gate</span><span class="mid"><span class="verdict ${tone(s.lastRelease.verdict)}">${esc(s.lastRelease.verdict)}</span></span><span class="sub">${esc(s.lastRelease.candidate)} beside ${esc(s.lastRelease.baseline)}, ${esc(day(s.lastRelease.ranAt))} · ${link("report", s.lastRelease.report)}</span></div>` : "",
-    s.postDeploy ? `<div class="tile small"><span class="k">Post-deploy</span><span class="mid"><span class="verdict ${s.postDeploy.red ? "fail" : "pass"}">${s.postDeploy.red ? `red × ${s.postDeploy.red}` : "green"}</span></span><span class="sub">${s.postDeploy.red === s.postDeploy.runs && s.postDeploy.red ? "every run since " + esc(day(s.postDeploy.since)) : `${s.postDeploy.runs} runs read`}${s.postDeploy.issue ? ` · ${link(`rollback #${s.postDeploy.issue.number}`, s.postDeploy.issue.url)}` : ""}</span></div>` : "",
+    s.postDeploy ? postDeployTile(s.postDeploy) : "",
     s.aa ? `<div class="tile small"><span class="k">Nightly A/A</span><span class="mid"><span class="verdict ${tone(s.aa.verdict)}">${esc(s.aa.verdict)}</span></span><span class="sub">${esc(day(s.aa.ranAt))} · ${link("report", s.aa.report)}</span></div>` : "",
-    `<div class="tile small"><span class="k">Countermeasures open</span><span class="big">${s.openCountermeasures}</span><span class="sub">${a.fiveWhys.filter((w) => w.status === "overdue").length} overdue · <a href="${REPO}/blob/main/kaizen/README.md">register</a></span></div>`
+    countermeasureTile(a)
   ].join("");
   return `<section class="andon" aria-label="Final scoring">
   <div class="tile gate ${t}"><span class="k">Gate · ${esc(s.subject)}</span><span class="huge">${esc(s.gate)}</span><span class="sub">${esc(s.candidate ?? "")} beside ${esc(s.baseline ?? "")} · ${esc(s.ranAt ? when(s.ranAt) : "")}<br>${link("full report", s.report)}${s.runUrl ? ` · ${link("the run", s.runUrl)}` : ""}${s.scorecard ? ` · scorecard ${s.scorecard.score} (${esc(s.scorecard.grade)})` : ""}${s.glance ? ` · ${s.glance} glance items` : ""}</span>${s.why ? `<span class="why">${esc(s.why)}</span>` : ""}</div>
@@ -307,14 +310,16 @@ const FIX_NAMES: Record<string, string> = { axe: "accessibility violations", con
 function decideStrip(d: Decisions | undefined): string {
   if (!d || !d.fixes) return "";
   const share = d.decided / d.fixes;
-  return `<div class="decide-strip" role="group" aria-label="Decisions on b"><span class="k">Fixed on main · never failures</span><span class="meter" title="${d.decided} of ${d.fixes} fixes explained by a claim"><span class="fill d" style="width:${Math.max(2, Math.round(share * 100))}%"></span></span><span class="pct">${Math.round(share * 100)}% explained</span><span class="sub">${d.byArtefact.map((x) => `<strong>${x.fixes} ${esc(FIX_NAMES[x.artefact] ?? x.artefact)}</strong> production shows and main does not, ${x.decided ? `${x.decided} explained by a claim` : "none explained by a claim yet"}`).join(" · ")}. These count for main, not against it: a claim only records whether the fix was meant · <a href="#decisions">which ones</a></span></div>`;
+  return `<div class="decide-strip" role="group" aria-label="Decisions on b"><span class="k">Fixed on main · good news, never a failure</span><span class="meter" title="${d.decided} of ${d.fixes} fixes explained by a claim"><span class="fill d" style="width:${Math.max(2, Math.round(share * 100))}%"></span></span><span class="pct">${Math.round(share * 100)}% with a note</span><span class="sub">${d.byArtefact.map((x) => `<strong>${x.fixes} ${esc(FIX_NAMES[x.artefact] ?? x.artefact)}</strong> production shows and main does not, ${x.decided ? `${x.decided} with a claim saying why` : "none with a claim saying why yet"}`).join(" · ")}. These count for main, not against it. A claim is an optional note that the fix was meant; nothing waits on it · <a href="#decisions">which ones</a></span></div>`;
 }
 
 function decisionsHtml(d: Decisions | undefined): string {
   if (!d || !d.rows.length) return "";
-  const chip = (st: Decisions["rows"][number]["state"]) => `<span class="chip ${st === "decided" ? "decided" : st === "undecided" ? "undecided" : "changed"}">${esc(st)}</span>`;
+  // Since 1.40.0 the words lead with the fix: "undecided" read as something wrong (16 Oct 2026), and a fix is good news.
+  const words = { decided: "fixed, explained", undecided: "fixed", "fixed, or only changed?": "fixed, or only changed?" } as const;
+  const chip = (st: Decisions["rows"][number]["state"]) => `<span class="chip ${st === "decided" ? "decided" : st === "undecided" ? "undecided" : "changed"}">${esc(words[st])}</span>`;
   return `<div class="decisions" id="decisions"><h3>Fixed on main <span class="hint">present on production, gone on main: never a failure; a claim records whether it was meant</span></h3><div class="scroll"><table><thead><tr><th>Page</th><th>Fixed on b</th><th>State</th><th>Why (the claim)</th></tr></thead><tbody>${d.rows
-    .map((r) => `<tr><td><a href="${esc(safeHref(r.hunk) ?? "#")}"><code>${esc(r.artefact)} ${esc(r.scope)}</code></a></td><td>${esc(r.what.join(", "))}</td><td>${chip(r.state)}</td><td>${r.why ? esc(r.why) : `<span class="muted">none yet: claim it to record the decision</span>`}</td></tr>`)
+    .map((r) => `<tr><td><a href="${esc(safeHref(r.hunk) ?? "#")}"><code>${esc(r.artefact)} ${esc(r.scope)}</code></a></td><td>${esc(r.what.join(", "))}</td><td>${chip(r.state)}</td><td>${r.why ? esc(r.why) : `<span class="muted">no note yet (optional: a claim records that the fix was meant)</span>`}</td></tr>`)
     .join("")}</tbody></table></div></div>`;
 }
 
@@ -337,7 +342,7 @@ function answerHtml(answer: string): string {
 function whysHtml(w: FiveWhys): string {
   return `<article class="whys" id="why-${esc(w.file)}"><header><strong>${esc(w.title)}</strong><span class="src">Trigger: ${esc(w.trigger)} · <a href="${REPO}/blob/main/kaizen/${encodeURIComponent(w.file)}">kaizen/${esc(w.file)}</a></span></header>
   <ol class="chain">${w.whys.map((y) => `<li class="${y.n === w.chainEndsAt ? "root" : ""}"><span class="wn">Why ${y.n}</span><div><p class="q">${esc(y.question || "Why?")}</p>${answerHtml(y.answer)}${y.n === w.chainEndsAt ? `<p class="rootcause">Root cause, in a ${esc(w.endsIn)}.</p>` : ""}</div></li>`).join("")}</ol>
-  <p class="cm"><span class="kind">${esc(w.kind ?? "no kind")}</span> ${esc(w.countermeasure)}</p><p class="src">Owner ${esc(w.owner || "none")} · due ${esc(w.due || "none")} · <span class="status ${w.status}">${w.status}</span></p></article>`;
+  <p class="cm"><span class="kind">${esc(w.kind ?? "no kind")}</span> ${esc(w.countermeasure)}</p><p class="src">Owner ${esc(w.owner || "none")} · due ${esc(w.due || "none")} · <span class="status ${statusClass(w.status)}">${w.status}</span></p>${w.inPlace || w.check ? `<p class="src">${w.inPlace ? `Built: ${inline(w.inPlace)}` : "Not built yet"}${w.check ? ` · Check: ${esc(w.check)}` : ""}</p>` : ""}</article>`;
 }
 
 // ---- the page -------------------------------------------------------------------------------------------
@@ -364,7 +369,7 @@ code{font:12.5px ui-monospace,Menlo,Consolas,monospace}
 .tile .big{font-size:2rem;font-weight:700;line-height:1.1} .tile .mid{font-size:1.25rem;font-weight:700}
 .tile .sub{font-size:12px;color:var(--ink2)} .muted{color:var(--muted)}
 .tile.gate{grid-column:span 4;color:#fff;border:0} .tile.gate .k,.tile.gate .sub{color:#ffffffd9} .tile.gate a{color:#fff}
-svg.xmr .band{fill:var(--pass);opacity:.12} svg.xmr line.ucl{stroke:var(--pass);stroke-dasharray:3 3} svg.xmr line.cl{stroke:var(--ink);opacity:.4} svg.xmr .prod{fill:none;stroke:var(--ink);opacity:.35} svg.xmr circle.in{fill:var(--ink)} svg.xmr circle.out{fill:var(--fail)}
+svg.xmr .band{fill:var(--pass);opacity:.12} svg.xmr line.ucl{stroke:var(--pass);stroke-dasharray:3 3} svg.xmr line.cl{stroke:var(--ink);opacity:.4} svg.xmr .prod{fill:none;stroke:var(--ink);opacity:.35} svg.xmr circle.in{fill:var(--ink)} svg.xmr circle.out{fill:var(--fail)} svg.xmr text{font-size:11px;fill:var(--ink2)} svg.xmr text.pt{fill:var(--ink);font-weight:600}
 .tile.gate .why{display:block;margin-top:8px;font-size:14px;line-height:1.4;color:#fff}
 .tile.gate.fail{background:var(--fail)} .tile.gate.warn{background:var(--warn)} .tile.gate.pass{background:var(--pass)}
 .tile.dims{grid-column:span 5} .tile.rcs{grid-column:span 3} .tile.small{grid-column:span 3} .dims ul{list-style:none;margin:4px 0 0;padding:0;display:grid;gap:3px}
@@ -438,7 +443,7 @@ ol.chain>li.root{border-left-color:var(--fail)}
 ol.chain ul{margin:2px 0;padding-left:1.1rem;font-size:12.5px} ol.chain p{font-size:13px}
 .rootcause{color:var(--fail);font-weight:700;font-size:12px!important}
 .cm{margin:8px 0 0;font-size:13px} .kind{display:inline-block;background:var(--ink);color:var(--sheet);border-radius:4px;padding:0 7px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-right:4px}
-.status{font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.05em} .status.open{color:var(--warn)} .status.overdue{color:var(--fail)} .status.closed,.status.met{color:var(--pass)}
+.status{font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.05em} .status.open{color:var(--warn)} .status.overdue{color:var(--fail)} .status.closed,.status.met{color:var(--pass)} .status.in-place{color:var(--accent)}
 .ok{color:var(--pass);font-weight:700} .no{color:var(--fail);font-weight:700}
 footer{font-size:12px;color:var(--ink2);border-top:1px solid var(--rule);margin-top:18px;padding-top:10px}
 .empty{color:var(--ink2)}
@@ -487,19 +492,70 @@ function gapHtml(a: A3): string {
 <p class="src">A PR is named when the difference first appeared in the forecast after it merged and its files touch what changed; several PRs merged the same night stay one row ("one of"), never split by guesswork. Read from ${e.history.runs} earlier forecasts beside the same production${e.history.first ? `, ${esc(day(e.history.first))} to ${esc(day(e.history.last ?? ""))}` : ""}.</p></section>`;
 }
 
-/** Since 1.39.0: one small XmR chart per journey: production's limits as a band, main's nightly median as points. */
+/**
+ * Since 1.39.0: one small XmR chart per journey: production's limits as a band, main's nightly median as points. Since
+ * 1.40.0 each line carries its figure (UCL, centre, LCL in ms) and the newest point its value, so the chart reads without
+ * hovering.
+ */
 function timingChart(j: TimingJourney): string {
-  const W = 260;
-  const H = 70;
+  const W = 360;
+  const H = 110;
+  const L = 6;
+  const R = 92;
   const values = [...j.nights.flatMap((n) => [n.main, n.production]), j.limits.ucl, j.limits.lcl];
   const lo = Math.min(...values) * 0.95;
   const hi = Math.max(...values) * 1.05;
-  const y = (v: number) => Math.round(H - ((v - lo) / (hi - lo || 1)) * H);
-  const x = (i: number) => Math.round(j.nights.length === 1 ? W / 2 : 8 + (i * (W - 16)) / (j.nights.length - 1));
-  const line = (v: number, cls: string) => `<line class="${cls}" x1="0" x2="${W}" y1="${y(v)}" y2="${y(v)}"/>`;
+  const y = (v: number) => Math.round(8 + (H - 16) - ((v - lo) / (hi - lo || 1)) * (H - 16));
+  const plotW = W - L - R;
+  const x = (i: number) => Math.round(L + (j.nights.length === 1 ? plotW / 2 : 8 + (i * (plotW - 16)) / (j.nights.length - 1)));
+  const line = (v: number, cls: string) => `<line class="${cls}" x1="${L}" x2="${L + plotW}" y1="${y(v)}" y2="${y(v)}"/>`;
+  // Labels sit right of the plot; when two would overlap they are pushed apart, never dropped.
+  const labels = [
+    { v: j.limits.ucl, t: `UCL ${ms(j.limits.ucl)}` },
+    { v: j.limits.centre, t: `centre ${ms(j.limits.centre)}` },
+    { v: j.limits.lcl, t: `LCL ${ms(j.limits.lcl)}` }
+  ].map((l) => ({ ...l, at: y(l.v) + 4 }));
+  for (let k = 1; k < labels.length; k++) labels[k]!.at = Math.max(labels[k]!.at, labels[k - 1]!.at + 12);
+  const text = labels.map((l) => `<text class="lim" x="${L + plotW + 6}" y="${l.at}">${esc(l.t)}</text>`).join("");
   const dots = j.nights.map((n, i) => `<circle class="${n.main > j.limits.ucl || n.main < j.limits.lcl ? "out" : "in"}" cx="${x(i)}" cy="${y(n.main)}" r="3.5"><title>${esc(day(n.ranAt))}: main ${n.main}ms, production ${n.production}ms</title></circle>`).join("");
+  const last = j.nights.at(-1)!;
+  const lastLabel = `<text class="pt" x="${x(j.nights.length - 1)}" y="${y(last.main) - 7}" text-anchor="${j.nights.length === 1 ? "middle" : "end"}">main ${esc(ms(last.main))}</text>`;
   const prod = j.nights.map((n, i) => `${x(i)},${y(n.production)}`).join(" ");
-  return `<svg class="xmr" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${esc(j.journey)}: ${esc(j.words)}"><rect class="band" x="0" width="${W}" y="${y(j.limits.ucl)}" height="${Math.max(1, y(j.limits.lcl) - y(j.limits.ucl))}"/>${line(j.limits.ucl, "ucl")}${line(j.limits.centre, "cl")}${line(j.limits.lcl, "ucl")}${j.nights.length > 1 ? `<polyline class="prod" points="${prod}"/>` : ""}${dots}</svg>`;
+  return `<svg class="xmr" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${esc(j.journey)}: ${esc(j.words)}"><rect class="band" x="${L}" width="${plotW}" y="${y(j.limits.ucl)}" height="${Math.max(1, y(j.limits.lcl) - y(j.limits.ucl))}"/>${line(j.limits.ucl, "ucl")}${line(j.limits.centre, "cl")}${line(j.limits.lcl, "ucl")}${j.nights.length > 1 ? `<polyline class="prod" points="${prod}"/>` : ""}${dots}${lastLabel}${text}</svg>`;
+}
+
+const ms = (v: number) => `${Math.round(v).toLocaleString("en-GB")}ms`;
+
+/**
+ * Since 1.40.0: what "countermeasures" means, on the tile itself, and where each one stands. A countermeasure is a fix
+ * to the system that a 5 Whys asked for; it closes only when a release shows it working (its Check, then Verified by),
+ * so a countermeasure already built is "waiting on a release", not unfinished work.
+ */
+function countermeasureTile(a: A3): string {
+  const w = a.fiveWhys;
+  const n = (st: FiveWhys["status"]) => w.filter((x) => x.status === st).length;
+  const parts = [n("in place") ? `${n("in place")} built, waiting on a release to show ${n("in place") === 1 ? "it works" : "they work"}` : "", n("open") ? `${n("open")} not built yet` : "", n("overdue") ? `${n("overdue")} not built and overdue` : "", n("closed") ? `${n("closed")} verified` : ""].filter(Boolean);
+  return `<div class="tile small"><span class="k">Countermeasures open</span><span class="big">${w.length - n("closed")}</span><span class="sub" title="Fixes to the system that a 5 Whys asked for. Each closes when a release shows it working.">fixes a 5 Whys asked for${parts.length ? `: ${parts.join(" · ")}` : ""} · <a href="#countermeasures">each one</a></span></div>`;
+}
+
+/** Since 1.40.0: the post-deploy tile reads the current release's runs only, and says so. */
+function postDeployTile(p: NonNullable<Score["postDeploy"]>): string {
+  const window = p.deployedAt ? `${p.runs} runs since ${p.release ? esc(p.release) : "this release"} was deployed ${esc(day(p.deployedAt))}` : `${p.runs} runs read (no deploy announced)`;
+  const red = p.red ? `red since ${esc(when(p.since))} · ` : "";
+  const links = [
+    p.latest ? link("newest run", p.latest) : "",
+    `<a href="#rca-post-deploy">why</a>`,
+    p.issue ? link(`rollback #${p.issue.number}`, p.issue.url) : "",
+    p.earlierIssue ? `${link(`#${p.earlierIssue.number}`, p.earlierIssue.url)} is from an earlier release` : ""
+  ].filter(Boolean);
+  return `<div class="tile small"><span class="k">Post-deploy${p.release ? ` · ${esc(p.release)}` : ""}</span><span class="mid"><span class="verdict ${p.red ? "fail" : "pass"}">${p.red ? `red × ${p.red}` : "green"}</span></span><span class="sub">${red}${window} · ${links.join(" · ")}</span></div>`;
+}
+
+/** Since 1.40.0: how a journey's UCL and LCL were worked out, with its own figures. */
+function limitsWords(j: TimingJourney): string {
+  const l = j.limits;
+  const from = j.from === "nights" ? `production's median on each of the last ${l.n} nights` : `production's ${l.n} runs of this journey in the newest forecast`;
+  return `Limits from ${from}: centre ${ms(l.centre)} is their mean; the average jump from one to the next (mR̄) is ${ms(l.mrBar)}; UCL = ${ms(l.centre)} + 2.66 × ${ms(l.mrBar)} = ${ms(l.ucl)}; LCL = ${ms(l.centre)} − 2.66 × ${ms(l.mrBar)} = ${ms(l.lcl)}.${l.provisional ? ` Provisional: under 10 points, so they will move as more are added.` : ""}`;
 }
 
 function timingHtml(a: A3): string {
@@ -507,21 +563,21 @@ function timingHtml(a: A3): string {
   if (!t) return "";
   const out = t.journeys.filter((j) => j.state !== "inside").length;
   const rows = t.journeys
-    .map((j) => `<tr><th scope="row">${esc(j.journey)}</th><td>${timingChart(j)}</td><td><span class="chip ${j.state === "inside" ? "decided" : "changed"}">${j.state === "inside" ? "common cause" : `special cause: ${esc(j.state)}`}</span><br>${esc(j.words)}</td></tr>`)
+    .map((j) => `<tr><th scope="row">${esc(j.journey)}</th><td>${timingChart(j)}</td><td><span class="chip ${j.state === "inside" ? "decided" : "changed"}">${j.state === "inside" ? "common cause" : `special cause: ${esc(j.state)}`}</span><br>${esc(j.words)}<br><span class="src">${esc(limitsWords(j))}</span></td></tr>`)
     .join("");
   return `<section class="blk wide timing" id="timing"><h2>Timing on control charts <span class="hint">advice, never a failure: an outlier against production's own variation is something to investigate</span></h2>
 <p class="ledger"><strong>${out ? `${out} of ${t.journeys.length} journeys outside production's limits: investigate ${out === 1 ? "it" : "them"}, starting with "what to check" in the report.` : `Every journey inside production's limits (${t.journeys.length}): common-cause variation, nothing to investigate.`}</strong></p>
 <div class="scroll"><table><thead><tr><th>Journey</th><th>Main's median night by night (dots), production's limits (band)</th><th>Reading</th></tr></thead><tbody>${rows}</tbody></table></div>
-<p class="src">XmR limits: centre ± 2.66 × the mean moving range of production's nightly medians beside the same production, or of its runs in the newest forecast until there are two nights; under 10 points they are provisional. A red dot is outside them.</p></section>`;
+<p class="src">How to read it: the band is how much production's own time for the journey varies when nothing has changed. The UCL (upper control limit) is the top of that band and the LCL (lower control limit) the bottom, each the centre ± 2.66 times the average jump between consecutive points (an XmR chart; 2.66 puts the limits about three standard deviations out, so a point beyond one happens by chance well under 1 time in 100). A dot inside the band is ordinary variation; a red dot outside it is a special cause, something changed, worth investigating. Limits come from production's nightly medians beside the same production, or from its runs in the newest forecast until there are two nights.</p></section>`;
 }
 
 export function renderA3(a: A3): string {
   const s = a.score;
   const goal = `<div class="scroll"><table><thead><tr><th>Measure</th><th>Now</th><th>Target</th><th></th></tr></thead><tbody>${a.goal.map((g) => `<tr><td>${esc(g.metric)}<br><span class="src">${esc(g.source)}</span></td><td>${esc(g.now)}</td><td>${esc(g.target)}</td><td>${g.met ? `<span class="ok">met</span>` : `<span class="no">gap</span>`}</td></tr>`).join("")}</tbody></table></div>`;
   const cms = a.countermeasures.length
-    ? `<div class="scroll"><table><thead><tr><th>Kind</th><th>Countermeasure</th><th>Answers</th><th>Status</th></tr></thead><tbody>${a.countermeasures.map((c) => `<tr><td><span class="kind">${esc(c.kind)}</span></td><td>${esc(c.what)}<br><span class="src"><a href="#why-${esc(c.from)}">from its 5 Whys</a></span></td><td>${c.rca.map((r) => `<a href="#rca-${esc(r)}">${esc(r)}</a>`).join(", ") || "–"}</td><td><span class="status ${c.status}">${c.status}</span></td></tr>`).join("")}</tbody></table></div>`
+    ? `<p class="note">A countermeasure is a fix to the system that a 5 Whys asked for. It moves from <em>open</em> (not built) to <em>in place</em> (built, with a link) to <em>closed</em>, and it closes only when a release shows it working: its check is read in that release's report and the release goes in <code>Verified by</code>.</p><div class="scroll"><table><thead><tr><th>Countermeasure</th><th>Built</th><th>How a release shows it works</th><th>Status</th></tr></thead><tbody>${a.countermeasures.map((c) => `<tr><td><span class="kind">${esc(c.kind)}</span> ${esc(c.what)}<br><span class="src"><a href="#why-${esc(c.from)}">its 5 Whys</a>${c.rca.length ? ` · answers ${c.rca.map((r) => `<a href="#rca-${esc(r)}">${esc(r)}</a>`).join(", ")}` : ""} · <a href="${REPO}/blob/main/kaizen/${encodeURIComponent(c.from)}">kaizen/${esc(c.from)}</a></span></td><td>${c.inPlace ? inline(c.inPlace) : `<span class="muted">not yet</span>`}</td><td>${c.check ? esc(c.check) : `<span class="muted">no check written: say what a release must show</span>`}</td><td><span class="status ${statusClass(c.status)}">${c.status === "closed" ? `verified in ${esc(c.verifiedBy)}` : c.status === "in place" ? "waiting on a release" : esc(c.status)}</span></td></tr>`).join("")}</tbody></table></div>`
     : `<p class="empty">The register is empty: no 5 Whys has a countermeasure yet.</p>`;
-  const plan = `<div class="scroll"><table><thead><tr><th>What</th><th>Who</th><th>When</th><th>Status</th></tr></thead><tbody>${a.plan.map((p) => `<tr><td>${esc(p.what)}</td><td>${esc(p.who)}</td><td class="num">${esc(p.when)}</td><td><span class="status ${/^(open|overdue|closed|met)$/.test(p.status) ? p.status : "open"}">${esc(p.status)}</span></td></tr>`).join("")}</tbody></table></div>`;
+  const plan = `<div class="scroll"><table><thead><tr><th>What</th><th>Who</th><th>When</th><th>Status</th></tr></thead><tbody>${a.plan.map((p) => `<tr><td>${esc(p.what)}</td><td>${esc(p.who)}</td><td class="num">${esc(p.when)}</td><td><span class="status ${/^(open|in place|overdue|closed|met)$/.test(p.status) ? statusClass(p.status) : "open"}">${esc(p.status)}</span></td></tr>`).join("")}</tbody></table></div>`;
   const follow = `<div class="scroll"><table><thead><tr><th>Check</th><th>Now</th><th></th></tr></thead><tbody>${a.followUp.map((f) => `<tr><td>${esc(f.check)}</td><td>${esc(f.state)}</td><td>${f.met ? `<span class="ok">yes</span>` : `<span class="no">not yet</span>`}</td></tr>`).join("")}</tbody></table></div>`;
   return `<!doctype html>
 <html lang="en">
@@ -550,7 +606,7 @@ ${vsmHtml(a.current.valueStream)}
 <section class="blk"><h2><span class="n">4</span>Root cause analysis <span class="hint">each question as deep as the evidence goes</span></h2>
 <ol class="rcas">${a.rca.map((q, i) => rcaHtml(q, i + 1, a.fiveWhys)).join("")}</ol>${decisionsHtml(a.decisions)}</section>
 <div class="col">
-<section class="blk"><h2><span class="n">5</span>Countermeasures <span class="hint">to the system, never to a person</span></h2>${cms}</section>
+<section class="blk" id="countermeasures"><h2><span class="n">5</span>Countermeasures <span class="hint">to the system, never to a person</span></h2>${cms}</section>
 <section class="blk"><h2><span class="n">6</span>Plan <span class="hint">who, what, when</span></h2>${plan}</section>
 <section class="blk"><h2><span class="n">7</span>Follow-up <span class="hint">how we will know it worked</span></h2>${follow}
 <p class="note">This sheet is rebuilt with the site after every kept run. A countermeasure closes only when a release names it in <code>Verified by</code>; until then it stays on the plan.</p></section>

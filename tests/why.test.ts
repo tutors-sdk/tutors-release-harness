@@ -94,7 +94,7 @@ function releaseDir(o: { verdict?: "pass" | "fail"; hollow?: boolean; changes?: 
 }
 
 /** A filled 5 Whys, from a real stub: the answers, the end of the chain and the countermeasure. */
-function filled(o: { answers?: string[]; end?: string; endsIn?: string; kind?: string; what?: string; mutant?: string; owner?: string; due?: string; verifiedBy?: string } = {}): string {
+function filled(o: { answers?: string[]; end?: string; endsIn?: string; kind?: string; what?: string; mutant?: string; owner?: string; due?: string; verifiedBy?: string; check?: string } = {}): string {
   const dir = releaseDir();
   const c = loadContext(dir, { now: NOW });
   let text = renderStub(c, resolveFinding(c, unclaimed.id), { now: NOW, outDir: join(dir, "kaizen") }).text;
@@ -111,6 +111,7 @@ function filled(o: { answers?: string[]; end?: string; endsIn?: string; kind?: s
   set("Kind", o.kind ?? "claim guidance");
   set("Countermeasure", o.what ?? "claims/README.md gains a check that a claim's scope matches a page a journey reaches (harness claims lint).");
   set("Mutant", o.mutant ?? "");
+  set("Check", o.check ?? "the release's claims name no route the journeys do not reach: claims lint reports none.");
   set("Owner", o.owner ?? "the release captain rota");
   set("Due", o.due ?? "2026-10-15");
   set("Verified by", o.verifiedBy ?? "");
@@ -301,6 +302,8 @@ describe("harness why check: kaizen, not blame", () => {
     expect(at({ due: "2026-02-30" })).toEqual(["Due"]);
     expect(at({ verifiedBy: "yes" })).toEqual(["Verified by"]);
     expect(at({ verifiedBy: "16.4.0" })).toEqual([]);
+    // Since 1.40.0 a release closes a countermeasure only by showing its check.
+    expect(at({ verifiedBy: "16.4.0", check: "" })).toEqual(["Check"]);
     expect(checkWhy(parseWhy(filled({ kind: "mutant" })))[0]!.why).toBe(REASONS.mutant);
     expect(checkWhy(parseWhy(filled({ kind: "vibes" })))[0]!.why).toContain(COUNTERMEASURE_KINDS.join(" · "));
   });
