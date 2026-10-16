@@ -19,8 +19,13 @@
 name: Nightly noise (A/A)
 
 on:
+  # Since 1.39.2: two backup starts. GitHub starts a schedule late, or not at all, when it is busy (15 Oct 2026 it
+  # started at 07:22; 16 Oct it never did), and the A3 is wanted by 07:00 Irish time (06:00 UTC in summer time). The
+  # `guard` job makes a backup a no-op on a night that already has an A/A, so only one A/A runs a night.
   schedule:
     - cron: "17 2 * * *"
+    - cron: "47 3 * * *"
+    - cron: "47 4 * * *"
   workflow_dispatch:
     inputs:
       tag:
@@ -35,7 +40,33 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # A backup start (any schedule) is skipped when another A/A started today (UTC) and succeeded or is still running.
+  guard:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      actions: read
+    outputs:
+      skip: ${{ steps.check.outputs.skip }}
+    steps:
+      - id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          skip=false
+          if [ "$EVENT" = "schedule" ]; then
+            today="$(date -u +%Y-%m-%d)"
+            others="$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/nightly-noise.yml/runs?created=${today}&per_page=20" \
+              --jq "[.workflow_runs[] | select(.id != ${RUN_ID}) | select(.status != \"completed\" or .conclusion == \"success\")] | length")"
+            if [ "${others:-0}" -gt 0 ]; then skip=true; echo "An A/A already started today (${today}): this start is a backup and has nothing to do."; fi
+          fi
+          echo "skip=${skip}" >> "$GITHUB_OUTPUT"
+
   noise:
+    needs: guard
+    if: needs.guard.outputs.skip != 'true'
     # Pinned, not ubuntu-latest: the A/A measures the noise floor of THIS runner image (fonts, anti-aliasing,
     # timing), and the jobs that run journeys (release.yml, post-deploy.yml, main-preview.yml, ci.yml's
     # two-stacks, weekly-mutants.yml's mutants) run on the same one. Move them all together, in one PR, and
