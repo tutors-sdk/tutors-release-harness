@@ -20,6 +20,8 @@
 #   <pages>/courses/sides.json, a/, b/        the course corpus checked in production's reader (a) and main's (b), from
 #                                             the newest course-corpus-check artifact of course-capture.yml on main; the
 #                                             A3 shows it as "Real courses" (since 1.31.0)
+#   <pages>/course/                           "How the release harness works": the Tutors course in course/, as static
+#                                             HTML (tutors-lite); slides as PDFs, a lab on reading the A3
 #
 # Rebuilt after every workflow that keeps a report, when the page changes on
 # main, and by hand. Repository setting: Pages, source "GitHub Actions".
@@ -31,7 +33,7 @@ on:
     types: [completed]
   push:
     branches: [main]
-    paths: ["site/**", ".github/workflows/pages.yml"]
+    paths: ["site/**", "course/**", ".github/workflows/pages.yml"]
   workflow_dispatch:
 
 permissions:
@@ -105,6 +107,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: pnpm harness readiness --site _site --mutants src-scoreboard/scoreboard/mutants.jsonl --fetch-releases || echo "::warning title=Overnight readiness::harness readiness did not write the page"
+      # The course in course/, as static HTML beside the reports (tutors-lite from JSR, pinned). Never fails the site.
+      - name: The harness course
+        working-directory: course
+        run: |
+          if npx --yes deno@2.9.6 run --allow-all --node-modules-dir=none jsr:@tutors/tutors-lite@5.3.0; then
+            cp -R html ../_site/course
+          else
+            echo "::warning title=Harness course::tutors-lite did not build the course"
+          fi
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: _site

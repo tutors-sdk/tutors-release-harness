@@ -6,3 +6,5 @@ out/
 Thumbs.db
 .harness/
 coverage/
+course/json/
+course/html/

@@ -107,6 +107,30 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: pnpm harness guard scoreboard --base "$BASE_SHA"
 
+  # The Tutors course in course/ (How the release harness works): every talk has its slides as a PDF, and the Tutors
+  # generators pages.yml uses read it. Not engine code; it never touches a run.
+  course:
+    name: The harness course builds with Tutors
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+      - name: Every talk has its PDF, and tutors and tutors-lite build the course
+        working-directory: course
+        run: |
+          for talk in topic-*/talk-*; do
+            compgen -G "$talk/*.pdf" > /dev/null || { echo "::error title=Harness course::$talk has no PDF: run course/slides/build.sh"; exit 1; }
+          done
+          npx --yes deno@2.9.6 run --allow-all --node-modules-dir=none jsr:@tutors/tutors@5.3.0
+          test -s json/tutors.json
+          npx --yes deno@2.9.6 run --allow-all --node-modules-dir=none jsr:@tutors/tutors-lite@5.3.0
+          test -s html/index.html
+
   # Phase H0 exit criterion, kept running: any two tags boot side by side and
   # one journey runs against both. Images are pulled from Quay and their
   # signatures verified when the registry has the tag; otherwise they are built
