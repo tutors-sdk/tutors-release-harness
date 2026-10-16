@@ -1,0 +1,1587 @@
+{
+  "schemaVersion": 1,
+  "harness": {
+    "version": "1.39.1",
+    "gitSha": "f484596ba717294aa2e6fb64b755b5789251a696",
+    "contractVersion": "1.39.0"
+  },
+  "harnessVersion": "1.39.1",
+  "mode": "release",
+  "substrate": "compose",
+  "ranAt": "2026-10-16T07:11:14.011Z",
+  "now": "2026-09-16T09:05:00.000Z",
+  "runs": 5,
+  "sides": {
+    "a": {
+      "reader": "quay.io/tutors-sdk/tutors-reader:17.0.0",
+      "catalogue": "quay.io/tutors-sdk/tutors-catalogue:17.0.0",
+      "live": "quay.io/tutors-sdk/tutors-live:17.0.0",
+      "time": "quay.io/tutors-sdk/tutors-time:17.0.0"
+    },
+    "b": {
+      "reader": "quay.io/tutors-sdk/tutors-reader:sha-c867ee8",
+      "catalogue": "quay.io/tutors-sdk/tutors-catalogue:sha-c867ee8",
+      "live": "quay.io/tutors-sdk/tutors-live:sha-c867ee8",
+      "time": "quay.io/tutors-sdk/tutors-time:sha-c867ee8"
+    }
+  },
+  "provenance": {
+    "a": {
+      "summary": "pulled+verified",
+      "images": {
+        "reader": {
+          "ref": "quay.io/tutors-sdk/tutors-reader:17.0.0",
+          "id": "sha256:abdbbf48bdaa8867cf970bf780df734196bdbb25c3f1ce6e358b1a0c5b4d36a7",
+          "digest": "sha256:15e3aa22476d608db97e05917b1990ade0a7871e7ec6e113da5fec741b427233",
+          "revision": "432d46864626ce14e07eb7715e0408c643ca906a",
+          "version": "17.0.0-rc.1",
+          "created": "2026-10-14T11:22:23.868Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "catalogue": {
+          "ref": "quay.io/tutors-sdk/tutors-catalogue:17.0.0",
+          "id": "sha256:b3e0c40b6430ecd6ac154972584252a179abb99412e1b1deeaa0a6c2e64966e3",
+          "digest": "sha256:e9f2764654cb074d7dd4412ca163bf4c2666870444d5520361d5425bda4cec0b",
+          "revision": "432d46864626ce14e07eb7715e0408c643ca906a",
+          "version": "17.0.0-rc.1",
+          "created": "2026-10-14T11:22:20.481Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "live": {
+          "ref": "quay.io/tutors-sdk/tutors-live:17.0.0",
+          "id": "sha256:a5ac0ab5beba43906f3b94f74531fa8588d82c8efa38eb07070969981181bf80",
+          "digest": "sha256:52740e55cfa7e7db3b2944137caada4e876990b937f1034c0c5e79796054f8a0",
+          "revision": "432d46864626ce14e07eb7715e0408c643ca906a",
+          "version": "17.0.0-rc.1",
+          "created": "2026-10-14T11:22:19.078Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "time": {
+          "ref": "quay.io/tutors-sdk/tutors-time:17.0.0",
+          "id": "sha256:abd5fc2e4e4a8b7e35bd54c9fe8ec9fbc3e07fc797e6fe27c67b7a66108f4708",
+          "digest": "sha256:d0a9f4a2f4624038ecea3629d1a536567756d458410bee43b45e060d738d195d",
+          "revision": "432d46864626ce14e07eb7715e0408c643ca906a",
+          "version": "17.0.0-rc.1",
+          "created": "2026-10-14T11:22:24.942Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        }
+      }
+    },
+    "b": {
+      "summary": "pulled+verified",
+      "images": {
+        "reader": {
+          "ref": "quay.io/tutors-sdk/tutors-reader:sha-c867ee8",
+          "id": "sha256:be673b49220b7a1aa115b39f744eda4307f1ed75908f2fb5d9000a716e0c9319",
+          "digest": "sha256:d72750b7cc2f11aa0cb60226f8fbcd434cbb07da9a867715a98c897426b757e0",
+          "revision": "c867ee87107a603c3d1ea34be9ff70beab119ee2",
+          "version": "sha-c867ee8",
+          "created": "2026-10-15T18:34:37.622Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "catalogue": {
+          "ref": "quay.io/tutors-sdk/tutors-catalogue:sha-c867ee8",
+          "id": "sha256:f1d28c0514584f800803bc63218578b6c40d6c956f42340a0cad75bfc1437375",
+          "digest": "sha256:21ce90483d4de95247f85c1e2593ac7caedd87adb65215367805bc9e638eae3d",
+          "revision": "c867ee87107a603c3d1ea34be9ff70beab119ee2",
+          "version": "sha-c867ee8",
+          "created": "2026-10-15T18:34:44.840Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "live": {
+          "ref": "quay.io/tutors-sdk/tutors-live:sha-c867ee8",
+          "id": "sha256:6b4be9be9d2f24f03dedda79e3c57136a2149df025f361943fa4178dc3942192",
+          "digest": "sha256:5aee8b0d07dc699002d64e28f2cf42c28045c64d3d9e638ff32bc432021cc51a",
+          "revision": "c867ee87107a603c3d1ea34be9ff70beab119ee2",
+          "version": "sha-c867ee8",
+          "created": "2026-10-15T18:34:44.976Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "time": {
+          "ref": "quay.io/tutors-sdk/tutors-time:sha-c867ee8",
+          "id": "sha256:ff56e666b2a6beb441c8d4408bb189fadac58c2878d2f827d554be84c0b4a983",
+          "digest": "sha256:13b46ba247e41534e91796cfde73f929d086e62f633501cc6b22c4475eb919f3",
+          "revision": "c867ee87107a603c3d1ea34be9ff70beab119ee2",
+          "version": "sha-c867ee8",
+          "created": "2026-10-15T18:34:52.082Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        }
+      }
+    }
+  },
+  "verdict": "pass",
+  "reasons": [
+    "every difference is claimed"
+  ],
+  "noise": {
+    "schemaVersion": 1,
+    "ranAt": "2026-10-16T06:57:52.875Z",
+    "clean": true,
+    "hunks": 0
+  },
+  "compare": {
+    "hunks": [
+      {
+        "id": "network:POST_/api/live/activity:1",
+        "artefact": "network",
+        "scope": "POST /api/live/activity",
+        "path": "/course/localhost:8080",
+        "severity": "fail",
+        "summary": "reader-auth:course: new request on b: POST /api/live/activity"
+      },
+      {
+        "id": "network:POST_/api/live/activity:2",
+        "artefact": "network",
+        "scope": "POST /api/live/activity",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader-auth:topic: new request on b: POST /api/live/activity"
+      },
+      {
+        "id": "network:GET_/_app/immutable/chunks/__hash__.js:3",
+        "artefact": "network",
+        "scope": "GET /_app/immutable/chunks/{{hash}}.js",
+        "path": "/course/reference-course",
+        "severity": "fail",
+        "summary": "reference:course: GET /_app/immutable/chunks/{{hash}}.js requested 43× on a, 44× on b"
+      },
+      {
+        "id": "network:GET_/_app/immutable/chunks/__hash__.js:4",
+        "artefact": "network",
+        "scope": "GET /_app/immutable/chunks/{{hash}}.js",
+        "path": "/note/reference-course/topic-07-reference/note-1",
+        "severity": "fail",
+        "summary": "reference:note: GET /_app/immutable/chunks/{{hash}}.js requested 39× on a, 40× on b"
+      },
+      {
+        "id": "console:catalogue:home:5",
+        "artefact": "console",
+        "scope": "catalogue:home",
+        "path": "/",
+        "severity": "info",
+        "summary": "catalogue:home: console message gone on b",
+        "detail": "error: {\"app\":\"tutors-catalogue\",\"environment\":\"production\",\"error\":\"Cannot read properties of undefined (reading 'from')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'from')\\n    at Object.getCatalogue ({{origin}}/_app/immutable/chunks/2lYorbfj.js:69:102918)\\n    at V ({{origin}}/_app/immutable/nodes/2.NAkx_ofm.js:1:484)\\n    at Wn ({{origin}}/_app/immutable/chunks/XgCIYxIE.js:2:24206)\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Error fetching courses:\"}"
+      },
+      {
+        "id": "console:catalogue:home:6",
+        "artefact": "console",
+        "scope": "catalogue:home",
+        "path": "/",
+        "severity": "info",
+        "summary": "catalogue:home: console message gone on b",
+        "detail": "error: {\"app\":\"tutors-catalogue\",\"environment\":\"production\",\"error\":\"Cannot read properties of undefined (reading 'from')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'from')\\n    at Object.getStudentCount ({{origin}}/_app/immutable/chunks/2lYorbfj.js:69:103346)\\n    at {{origin}}/_app/immutable/nodes/2.NAkx_ofm.js:1:5193\\n    at Cr ({{origin}}/_app/immutable/chunks/Cv2zGAZD.js:1:23871)\\n    at {{origin}}/_app/immutable/chunks/Cv2zGAZD.js:2:2704\\n    at mr ({{origin}}/_app/immutable/chunks/Cv2zGAZD.js:1:21611)\\n    at vr ({{origin}}/_app/immutable/chunks/Cv2zGAZD.js:1:22749)\\n    at Xt ({{origin}}/_app/immutable/chunks/Cv2zGAZD.js:1:12091)\\n    at #_ ({{origin}}/_app/immutable/chunks/Cv2zGAZD.js:1:9277)\\n    at e.flush ({{origin}}/_app/immutable/chunks/Cv2zGAZD.js:1:10794)\\n    at Array.<anonymous> ({{origin}}/_app/immutable/chunks/Cv2zGAZD.js:1:11554)\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Error fetching course count:\"}"
+      },
+      {
+        "id": "persistence:student-signs-in/realtime_claim_live_publish:7",
+        "artefact": "persistence",
+        "scope": "student-signs-in/realtime_claim_live_publish",
+        "severity": "fail",
+        "summary": "student-signs-in: RPC realtime_claim_live_publish — 0 row(s) on a, 2 on b"
+      },
+      {
+        "id": "realtime:reader-auth/messages:8",
+        "artefact": "realtime",
+        "scope": "reader-auth/messages",
+        "severity": "info",
+        "summary": "reader-auth: Realtime messages per reader page view fell: a 1.33 / b 0 per reader page (broadcasts a 4 / b 0, socket data frames a 0 / b 0, over 3 page view(s))"
+      },
+      {
+        "id": "runtime:runtime/summary:9",
+        "artefact": "runtime",
+        "scope": "runtime/summary",
+        "severity": "info",
+        "summary": "container posture collected for catalogue, live, reader, reader-auth, time on both sides (compose)",
+        "detail": "catalogue: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n           b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nlive: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n        b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader-auth: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n             b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\ntime: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter"
+      },
+      {
+        "id": "startup:startup/summary:10",
+        "artefact": "startup",
+        "scope": "startup/summary",
+        "severity": "info",
+        "summary": "startup time collected on both sides (compose, 5 restart(s) per app)",
+        "detail": "catalogue: first healthy / 529 → 493 ms, ready 2410 → 2367 ms (median, a → b, n=5/5)\nlive: first healthy / 519 → 500 ms, ready 2383 → 2426 ms (median, a → b, n=5/5)\nreader: first healthy / 670 → 638 ms, ready 2382 → 2424 ms (median, a → b, n=5/5)\ntime: first healthy / 525 → 520 ms, ready 2425 → 2406 ms (median, a → b, n=5/5)"
+      },
+      {
+        "id": "image-hardening:reader/healthcheck:11",
+        "artefact": "image-hardening",
+        "scope": "reader/healthcheck",
+        "severity": "info",
+        "summary": "reader: declares no HEALTHCHECK (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "image-hardening:catalogue/healthcheck:12",
+        "artefact": "image-hardening",
+        "scope": "catalogue/healthcheck",
+        "severity": "info",
+        "summary": "catalogue: declares no HEALTHCHECK (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "image-hardening:live/healthcheck:13",
+        "artefact": "image-hardening",
+        "scope": "live/healthcheck",
+        "severity": "info",
+        "summary": "live: declares no HEALTHCHECK (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "image-hardening:time/healthcheck:14",
+        "artefact": "image-hardening",
+        "scope": "time/healthcheck",
+        "severity": "info",
+        "summary": "time: declares no HEALTHCHECK (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "build-provenance:reader/slsa:15",
+        "artefact": "build-provenance",
+        "scope": "reader/slsa",
+        "severity": "info",
+        "summary": "reader: carries no SLSA provenance verified under the publishing identity on d72750b7cc2f (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "build-provenance:catalogue/slsa:16",
+        "artefact": "build-provenance",
+        "scope": "catalogue/slsa",
+        "severity": "info",
+        "summary": "catalogue: carries no SLSA provenance verified under the publishing identity on 21ce90483d4d (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "build-provenance:live/slsa:17",
+        "artefact": "build-provenance",
+        "scope": "live/slsa",
+        "severity": "info",
+        "summary": "live: carries no SLSA provenance verified under the publishing identity on 5aee8b0d07dc (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "build-provenance:time/slsa:18",
+        "artefact": "build-provenance",
+        "scope": "time/slsa",
+        "severity": "info",
+        "summary": "time: carries no SLSA provenance verified under the publishing identity on 13b46ba247e4 (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "vuln-ceiling:reader/summary:19",
+        "artefact": "vuln-ceiling",
+        "scope": "reader/summary",
+        "severity": "info",
+        "summary": "reader: vuln-ceiling holds on b: 94 advisories scanned, 20 critical or high, none with a fix available"
+      },
+      {
+        "id": "vuln-ceiling:catalogue/summary:20",
+        "artefact": "vuln-ceiling",
+        "scope": "catalogue/summary",
+        "severity": "info",
+        "summary": "catalogue: vuln-ceiling holds on b: 94 advisories scanned, 20 critical or high, none with a fix available"
+      },
+      {
+        "id": "vuln-ceiling:live/summary:21",
+        "artefact": "vuln-ceiling",
+        "scope": "live/summary",
+        "severity": "info",
+        "summary": "live: vuln-ceiling holds on b: 94 advisories scanned, 20 critical or high, none with a fix available"
+      },
+      {
+        "id": "vuln-ceiling:time/summary:22",
+        "artefact": "vuln-ceiling",
+        "scope": "time/summary",
+        "severity": "info",
+        "summary": "time: vuln-ceiling holds on b: 94 advisories scanned, 20 critical or high, none with a fix available"
+      },
+      {
+        "id": "asset-graph:reader:23",
+        "artefact": "asset-graph",
+        "scope": "reader",
+        "severity": "info",
+        "summary": "reader: the asset graph changed: 173 → 173 immutable requests (JS 142 → 142, CSS 31 → 31), 1.6 MB → 1.6 MB; 0 network and 0 headers difference(s) are this churn",
+        "level": "informing"
+      },
+      {
+        "id": "asset-graph:catalogue:24",
+        "artefact": "asset-graph",
+        "scope": "catalogue",
+        "severity": "info",
+        "summary": "catalogue: the asset graph changed: 19 → 19 immutable requests (JS 15 → 15, CSS 4 → 4), 529 KB → 530 KB; 0 network and 0 headers difference(s) are this churn",
+        "level": "informing"
+      },
+      {
+        "id": "asset-graph:live:25",
+        "artefact": "asset-graph",
+        "scope": "live",
+        "severity": "info",
+        "summary": "live: the asset graph changed: 24 → 24 immutable requests (JS 19 → 19, CSS 5 → 5), 540 KB → 542 KB; 0 network and 0 headers difference(s) are this churn",
+        "level": "informing"
+      },
+      {
+        "id": "asset-graph:reader-auth:26",
+        "artefact": "asset-graph",
+        "scope": "reader-auth",
+        "severity": "info",
+        "summary": "reader-auth: the asset graph changed: 96 → 96 immutable requests (JS 83 → 83, CSS 13 → 13), 1.0 MB → 1.0 MB; 0 network and 0 headers difference(s) are this churn",
+        "level": "informing"
+      },
+      {
+        "id": "asset-graph:reference:27",
+        "artefact": "asset-graph",
+        "scope": "reference",
+        "severity": "info",
+        "summary": "reference: the asset graph changed: 121 → 123 immutable requests (JS 99 → 101, CSS 22 → 22), 1.2 MB → 1.2 MB; 2 network and 0 headers difference(s) are this churn",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET_/_app/immutable/chunks/__hash__.js:28",
+        "artefact": "replay",
+        "scope": "replay:talk-01 GET /_app/immutable/chunks/{{hash}}.js",
+        "path": "/talk/localhost:8080/unit-1/topic-01/talk-01",
+        "severity": "info",
+        "summary": "replay:talk-01: GET /_app/immutable/chunks/{{hash}}.js requested 40× on a, 37× on b",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET_/_app/immutable/chunks/__hash__.js:29",
+        "artefact": "replay",
+        "scope": "replay:note-01 GET /_app/immutable/chunks/{{hash}}.js",
+        "path": "/note/localhost:8080/unit-1/topic-01/note-01",
+        "severity": "info",
+        "summary": "replay:note-01: GET /_app/immutable/chunks/{{hash}}.js requested 37× on a, 40× on b",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET___course__/tutors.json:30",
+        "artefact": "replay",
+        "scope": "replay:note-01 GET {{course}}/tutors.json",
+        "path": "/note/localhost:8080/unit-1/topic-01/note-01",
+        "severity": "info",
+        "summary": "replay:note-01: new request on b: GET {{course}}/tutors.json",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET_/_app/immutable/assets/1.__hash__.css:31",
+        "artefact": "replay",
+        "scope": "replay:note-01 GET /_app/immutable/assets/1.{{hash}}.css",
+        "path": "/note/localhost:8080/unit-1/topic-01/note-01",
+        "severity": "info",
+        "summary": "replay:note-01: new request on b: GET /_app/immutable/assets/1.{{hash}}.css",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET_/_app/immutable/nodes/1.__hash__.js:32",
+        "artefact": "replay",
+        "scope": "replay:note-01 GET /_app/immutable/nodes/1.{{hash}}.js",
+        "path": "/note/localhost:8080/unit-1/topic-01/note-01",
+        "severity": "info",
+        "summary": "replay:note-01: new request on b: GET /_app/immutable/nodes/1.{{hash}}.js",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET_/note/localhost:8080/unit-1/topic-01/note-01/__data.json_x-sveltekit-invalidated_100:33",
+        "artefact": "replay",
+        "scope": "replay:note-01 GET /note/localhost:8080/unit-1/topic-01/note-01/__data.json?x-sveltekit-invalidated=100",
+        "path": "/note/localhost:8080/unit-1/topic-01/note-01",
+        "severity": "info",
+        "summary": "replay:note-01: new request on b: GET /note/localhost:8080/unit-1/topic-01/note-01/__data.json?x-sveltekit-invalidated=100",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET___course__/tutors.json:34",
+        "artefact": "replay",
+        "scope": "replay:note-02 GET {{course}}/tutors.json",
+        "path": "/note/localhost:8080/unit-1/topic-02/note-02",
+        "severity": "info",
+        "summary": "replay:note-02: GET {{course}}/tutors.json requested 2× on a, 1× on b",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET_/_app/immutable/assets/1.__hash__.css:35",
+        "artefact": "replay",
+        "scope": "replay:note-02 GET /_app/immutable/assets/1.{{hash}}.css",
+        "path": "/note/localhost:8080/unit-1/topic-02/note-02",
+        "severity": "info",
+        "summary": "replay:note-02: GET /_app/immutable/assets/1.{{hash}}.css requested 2× on a, 1× on b",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET_/_app/immutable/chunks/__hash__.js:36",
+        "artefact": "replay",
+        "scope": "replay:note-02 GET /_app/immutable/chunks/{{hash}}.js",
+        "path": "/note/localhost:8080/unit-1/topic-02/note-02",
+        "severity": "info",
+        "summary": "replay:note-02: GET /_app/immutable/chunks/{{hash}}.js requested 39× on a, 38× on b",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET_/_app/immutable/nodes/1.__hash__.js:37",
+        "artefact": "replay",
+        "scope": "replay:note-02 GET /_app/immutable/nodes/1.{{hash}}.js",
+        "path": "/note/localhost:8080/unit-1/topic-02/note-02",
+        "severity": "info",
+        "summary": "replay:note-02: GET /_app/immutable/nodes/1.{{hash}}.js requested 2× on a, 1× on b",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET_/note/localhost:8080/unit-1/topic-01/note-01/__data.json_x-sveltekit-invalidated_100:38",
+        "artefact": "replay",
+        "scope": "replay:note-02 GET /note/localhost:8080/unit-1/topic-01/note-01/__data.json?x-sveltekit-invalidated=100",
+        "path": "/note/localhost:8080/unit-1/topic-02/note-02",
+        "severity": "info",
+        "summary": "replay:note-02: request no longer made on b: GET /note/localhost:8080/unit-1/topic-01/note-01/__data.json?x-sveltekit-invalidated=100",
+        "level": "informing"
+      },
+      {
+        "id": "slo:reader-availability:39",
+        "artefact": "slo",
+        "scope": "reader-availability",
+        "severity": "info",
+        "summary": "reader-availability: 100.0% of 62 reader requests not 5xx on b (its /metrics across the journeys), objective 99.90% (harness floor; monorepo 99.50%): holds"
+      },
+      {
+        "id": "slo:reader-availability/load:40",
+        "artefact": "slo",
+        "scope": "reader-availability/load",
+        "severity": "info",
+        "summary": "reader-availability: 100.0% of 601 reader requests not 5xx on b (the k6 load leg), objective 99.90% (harness floor; monorepo 99.50%): holds"
+      },
+      {
+        "id": "slo:reader-latency:41",
+        "artefact": "slo",
+        "scope": "reader-latency",
+        "severity": "info",
+        "summary": "reader-latency: 100.0% of 62 reader requests under 1s on b (its /metrics across the journeys), objective 99.0% (harness floor; monorepo 95.0%): holds"
+      },
+      {
+        "id": "slo:reader-latency/load:42",
+        "artefact": "slo",
+        "scope": "reader-latency/load",
+        "severity": "info",
+        "summary": "reader-latency: 100.0% of 601 reader requests under 1s on b (the k6 load leg), objective 99.0% (harness floor; monorepo 95.0%): holds"
+      },
+      {
+        "id": "slo:catalogue-availability/not-evaluated:43",
+        "artefact": "slo",
+        "scope": "catalogue-availability/not-evaluated",
+        "severity": "info",
+        "summary": "catalogue-availability: not evaluated on b: 5 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "slo:catalogue-latency/not-evaluated:44",
+        "artefact": "slo",
+        "scope": "catalogue-latency/not-evaluated",
+        "severity": "info",
+        "summary": "catalogue-latency: not evaluated on b: 5 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "slo:live-availability/not-evaluated:45",
+        "artefact": "slo",
+        "scope": "live-availability/not-evaluated",
+        "severity": "info",
+        "summary": "live-availability: not evaluated on b: 5 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "slo:live-latency/not-evaluated:46",
+        "artefact": "slo",
+        "scope": "live-latency/not-evaluated",
+        "severity": "info",
+        "summary": "live-latency: not evaluated on b: 5 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "slo:time-availability/not-evaluated:47",
+        "artefact": "slo",
+        "scope": "time-availability/not-evaluated",
+        "severity": "info",
+        "summary": "time-availability: not evaluated on b: its /metrics across the journeys carries no availability SLI for time"
+      },
+      {
+        "id": "slo:time-latency/not-evaluated:48",
+        "artefact": "slo",
+        "scope": "time-latency/not-evaluated",
+        "severity": "info",
+        "summary": "time-latency: not evaluated on b: its /metrics across the journeys carries no latency SLI for time"
+      },
+      {
+        "id": "slo:reader-latency-tail:49",
+        "artefact": "slo",
+        "scope": "reader-latency-tail",
+        "severity": "info",
+        "summary": "reader-latency-tail: 100.0% of 62 reader requests under 2.5s on b (its /metrics across the journeys), objective 99.0%: holds"
+      },
+      {
+        "id": "slo:reader-latency-tail/load:50",
+        "artefact": "slo",
+        "scope": "reader-latency-tail/load",
+        "severity": "info",
+        "summary": "reader-latency-tail: 100.0% of 601 reader requests under 2.5s on b (the k6 load leg), objective 99.0%: holds"
+      }
+    ],
+    "matches": [
+      {
+        "hunk": {
+          "id": "network:POST_/api/live/activity:1",
+          "artefact": "network",
+          "scope": "POST /api/live/activity",
+          "path": "/course/localhost:8080",
+          "severity": "fail",
+          "summary": "reader-auth:course: new request on b: POST /api/live/activity"
+        },
+        "claim": {
+          "artefact": "network",
+          "scope": "POST /api/live/activity",
+          "reason": "Rule 0330: the reader sends each learning event to its own server (POST /api/live/activity) instead of broadcasting it from the browser (#481)",
+          "rule": "0330",
+          "ruleTitle": "When a student opens a learning object, the reader shall send the learning event to the reader's server without publishing it over Realtime from the browser."
+        }
+      },
+      {
+        "hunk": {
+          "id": "network:POST_/api/live/activity:2",
+          "artefact": "network",
+          "scope": "POST /api/live/activity",
+          "path": "/topic/localhost:8080/unit-1/topic-01",
+          "severity": "fail",
+          "summary": "reader-auth:topic: new request on b: POST /api/live/activity"
+        },
+        "claim": {
+          "artefact": "network",
+          "scope": "POST /api/live/activity",
+          "reason": "Rule 0330: the reader sends each learning event to its own server (POST /api/live/activity) instead of broadcasting it from the browser (#481)",
+          "rule": "0330",
+          "ruleTitle": "When a student opens a learning object, the reader shall send the learning event to the reader's server without publishing it over Realtime from the browser."
+        }
+      },
+      {
+        "hunk": {
+          "id": "network:GET_/_app/immutable/chunks/__hash__.js:3",
+          "artefact": "network",
+          "scope": "GET /_app/immutable/chunks/{{hash}}.js",
+          "path": "/course/reference-course",
+          "severity": "fail",
+          "summary": "reference:course: GET /_app/immutable/chunks/{{hash}}.js requested 43× on a, 44× on b"
+        },
+        "claim": {
+          "artefact": "network",
+          "scope": "GET /_app/immutable/chunks/\\{\\{hash\\}\\}.js",
+          "reason": "Rule 0330: moving learning events from browser Realtime to the reader's server adds one immutable chunk on reference:course and reference:note (#478, #481)",
+          "rule": "0330",
+          "ruleTitle": "When a student opens a learning object, the reader shall send the learning event to the reader's server without publishing it over Realtime from the browser."
+        }
+      },
+      {
+        "hunk": {
+          "id": "network:GET_/_app/immutable/chunks/__hash__.js:4",
+          "artefact": "network",
+          "scope": "GET /_app/immutable/chunks/{{hash}}.js",
+          "path": "/note/reference-course/topic-07-reference/note-1",
+          "severity": "fail",
+          "summary": "reference:note: GET /_app/immutable/chunks/{{hash}}.js requested 39× on a, 40× on b"
+        },
+        "claim": {
+          "artefact": "network",
+          "scope": "GET /_app/immutable/chunks/\\{\\{hash\\}\\}.js",
+          "reason": "Rule 0330: moving learning events from browser Realtime to the reader's server adds one immutable chunk on reference:course and reference:note (#478, #481)",
+          "rule": "0330",
+          "ruleTitle": "When a student opens a learning object, the reader shall send the learning event to the reader's server without publishing it over Realtime from the browser."
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:catalogue:home:5",
+          "artefact": "console",
+          "scope": "catalogue:home",
+          "path": "/",
+          "severity": "info",
+          "summary": "catalogue:home: console message gone on b",
+          "detail": "error: {\"app\":\"tutors-catalogue\",\"environment\":\"production\",\"error\":\"Cannot read properties of undefined (reading 'from')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'from')\\n    at Object.getCatalogue ({{origin}}/_app/immutable/chunks/2lYorbfj.js:69:102918)\\n    at V ({{origin}}/_app/immutable/nodes/2.NAkx_ofm.js:1:484)\\n    at Wn ({{origin}}/_app/immutable/chunks/XgCIYxIE.js:2:24206)\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Error fetching courses:\"}"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:catalogue:home:6",
+          "artefact": "console",
+          "scope": "catalogue:home",
+          "path": "/",
+          "severity": "info",
+          "summary": "catalogue:home: console message gone on b",
+          "detail": "error: {\"app\":\"tutors-catalogue\",\"environment\":\"production\",\"error\":\"Cannot read properties of undefined (reading 'from')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'from')\\n    at Object.getStudentCount ({{origin}}/_app/immutable/chunks/2lYorbfj.js:69:103346)\\n    at {{origin}}/_app/immutable/nodes/2.NAkx_ofm.js:1:5193\\n    at Cr ({{origin}}/_app/immutable/chunks/Cv2zGAZD.js:1:23871)\\n    at {{origin}}/_app/immutable/chunks/Cv2zGAZD.js:2:2704\\n    at mr ({{origin}}/_app/immutable/chunks/Cv2zGAZD.js:1:21611)\\n    at vr ({{origin}}/_app/immutable/chunks/Cv2zGAZD.js:1:22749)\\n    at Xt ({{origin}}/_app/immutable/chunks/Cv2zGAZD.js:1:12091)\\n    at #_ ({{origin}}/_app/immutable/chunks/Cv2zGAZD.js:1:9277)\\n    at e.flush ({{origin}}/_app/immutable/chunks/Cv2zGAZD.js:1:10794)\\n    at Array.<anonymous> ({{origin}}/_app/immutable/chunks/Cv2zGAZD.js:1:11554)\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Error fetching course count:\"}"
+        }
+      },
+      {
+        "hunk": {
+          "id": "persistence:student-signs-in/realtime_claim_live_publish:7",
+          "artefact": "persistence",
+          "scope": "student-signs-in/realtime_claim_live_publish",
+          "severity": "fail",
+          "summary": "student-signs-in: RPC realtime_claim_live_publish — 0 row(s) on a, 2 on b"
+        },
+        "claim": {
+          "artefact": "persistence",
+          "scope": "student-signs-in/realtime_claim_live_publish",
+          "reason": "Rule 0331: the reader's server claims the topics to publish to, and charges the day's Live budget, through realtime_claim_live_publish (#481)",
+          "rule": "0331",
+          "ruleTitle": "When the reader's server receives a learning event, the reader shall publish it only to the activity feeds a live dashboard has watched in the last 90 seconds."
+        }
+      },
+      {
+        "hunk": {
+          "id": "realtime:reader-auth/messages:8",
+          "artefact": "realtime",
+          "scope": "reader-auth/messages",
+          "severity": "info",
+          "summary": "reader-auth: Realtime messages per reader page view fell: a 1.33 / b 0 per reader page (broadcasts a 4 / b 0, socket data frames a 0 / b 0, over 3 page view(s))"
+        }
+      },
+      {
+        "hunk": {
+          "id": "runtime:runtime/summary:9",
+          "artefact": "runtime",
+          "scope": "runtime/summary",
+          "severity": "info",
+          "summary": "container posture collected for catalogue, live, reader, reader-auth, time on both sides (compose)",
+          "detail": "catalogue: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n           b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nlive: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n        b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader-auth: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n             b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\ntime: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter"
+        }
+      },
+      {
+        "hunk": {
+          "id": "startup:startup/summary:10",
+          "artefact": "startup",
+          "scope": "startup/summary",
+          "severity": "info",
+          "summary": "startup time collected on both sides (compose, 5 restart(s) per app)",
+          "detail": "catalogue: first healthy / 529 → 493 ms, ready 2410 → 2367 ms (median, a → b, n=5/5)\nlive: first healthy / 519 → 500 ms, ready 2383 → 2426 ms (median, a → b, n=5/5)\nreader: first healthy / 670 → 638 ms, ready 2382 → 2424 ms (median, a → b, n=5/5)\ntime: first healthy / 525 → 520 ms, ready 2425 → 2406 ms (median, a → b, n=5/5)"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-hardening:reader/healthcheck:11",
+          "artefact": "image-hardening",
+          "scope": "reader/healthcheck",
+          "severity": "info",
+          "summary": "reader: declares no HEALTHCHECK (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-hardening:catalogue/healthcheck:12",
+          "artefact": "image-hardening",
+          "scope": "catalogue/healthcheck",
+          "severity": "info",
+          "summary": "catalogue: declares no HEALTHCHECK (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-hardening:live/healthcheck:13",
+          "artefact": "image-hardening",
+          "scope": "live/healthcheck",
+          "severity": "info",
+          "summary": "live: declares no HEALTHCHECK (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-hardening:time/healthcheck:14",
+          "artefact": "image-hardening",
+          "scope": "time/healthcheck",
+          "severity": "info",
+          "summary": "time: declares no HEALTHCHECK (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "build-provenance:reader/slsa:15",
+          "artefact": "build-provenance",
+          "scope": "reader/slsa",
+          "severity": "info",
+          "summary": "reader: carries no SLSA provenance verified under the publishing identity on d72750b7cc2f (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "build-provenance:catalogue/slsa:16",
+          "artefact": "build-provenance",
+          "scope": "catalogue/slsa",
+          "severity": "info",
+          "summary": "catalogue: carries no SLSA provenance verified under the publishing identity on 21ce90483d4d (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "build-provenance:live/slsa:17",
+          "artefact": "build-provenance",
+          "scope": "live/slsa",
+          "severity": "info",
+          "summary": "live: carries no SLSA provenance verified under the publishing identity on 5aee8b0d07dc (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "build-provenance:time/slsa:18",
+          "artefact": "build-provenance",
+          "scope": "time/slsa",
+          "severity": "info",
+          "summary": "time: carries no SLSA provenance verified under the publishing identity on 13b46ba247e4 (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vuln-ceiling:reader/summary:19",
+          "artefact": "vuln-ceiling",
+          "scope": "reader/summary",
+          "severity": "info",
+          "summary": "reader: vuln-ceiling holds on b: 94 advisories scanned, 20 critical or high, none with a fix available"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vuln-ceiling:catalogue/summary:20",
+          "artefact": "vuln-ceiling",
+          "scope": "catalogue/summary",
+          "severity": "info",
+          "summary": "catalogue: vuln-ceiling holds on b: 94 advisories scanned, 20 critical or high, none with a fix available"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vuln-ceiling:live/summary:21",
+          "artefact": "vuln-ceiling",
+          "scope": "live/summary",
+          "severity": "info",
+          "summary": "live: vuln-ceiling holds on b: 94 advisories scanned, 20 critical or high, none with a fix available"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vuln-ceiling:time/summary:22",
+          "artefact": "vuln-ceiling",
+          "scope": "time/summary",
+          "severity": "info",
+          "summary": "time: vuln-ceiling holds on b: 94 advisories scanned, 20 critical or high, none with a fix available"
+        }
+      },
+      {
+        "hunk": {
+          "id": "asset-graph:reader:23",
+          "artefact": "asset-graph",
+          "scope": "reader",
+          "severity": "info",
+          "summary": "reader: the asset graph changed: 173 → 173 immutable requests (JS 142 → 142, CSS 31 → 31), 1.6 MB → 1.6 MB; 0 network and 0 headers difference(s) are this churn",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "asset-graph:catalogue:24",
+          "artefact": "asset-graph",
+          "scope": "catalogue",
+          "severity": "info",
+          "summary": "catalogue: the asset graph changed: 19 → 19 immutable requests (JS 15 → 15, CSS 4 → 4), 529 KB → 530 KB; 0 network and 0 headers difference(s) are this churn",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "asset-graph:live:25",
+          "artefact": "asset-graph",
+          "scope": "live",
+          "severity": "info",
+          "summary": "live: the asset graph changed: 24 → 24 immutable requests (JS 19 → 19, CSS 5 → 5), 540 KB → 542 KB; 0 network and 0 headers difference(s) are this churn",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "asset-graph:reader-auth:26",
+          "artefact": "asset-graph",
+          "scope": "reader-auth",
+          "severity": "info",
+          "summary": "reader-auth: the asset graph changed: 96 → 96 immutable requests (JS 83 → 83, CSS 13 → 13), 1.0 MB → 1.0 MB; 0 network and 0 headers difference(s) are this churn",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "asset-graph:reference:27",
+          "artefact": "asset-graph",
+          "scope": "reference",
+          "severity": "info",
+          "summary": "reference: the asset graph changed: 121 → 123 immutable requests (JS 99 → 101, CSS 22 → 22), 1.2 MB → 1.2 MB; 2 network and 0 headers difference(s) are this churn",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET_/_app/immutable/chunks/__hash__.js:28",
+          "artefact": "replay",
+          "scope": "replay:talk-01 GET /_app/immutable/chunks/{{hash}}.js",
+          "path": "/talk/localhost:8080/unit-1/topic-01/talk-01",
+          "severity": "info",
+          "summary": "replay:talk-01: GET /_app/immutable/chunks/{{hash}}.js requested 40× on a, 37× on b",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET_/_app/immutable/chunks/__hash__.js:29",
+          "artefact": "replay",
+          "scope": "replay:note-01 GET /_app/immutable/chunks/{{hash}}.js",
+          "path": "/note/localhost:8080/unit-1/topic-01/note-01",
+          "severity": "info",
+          "summary": "replay:note-01: GET /_app/immutable/chunks/{{hash}}.js requested 37× on a, 40× on b",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET___course__/tutors.json:30",
+          "artefact": "replay",
+          "scope": "replay:note-01 GET {{course}}/tutors.json",
+          "path": "/note/localhost:8080/unit-1/topic-01/note-01",
+          "severity": "info",
+          "summary": "replay:note-01: new request on b: GET {{course}}/tutors.json",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET_/_app/immutable/assets/1.__hash__.css:31",
+          "artefact": "replay",
+          "scope": "replay:note-01 GET /_app/immutable/assets/1.{{hash}}.css",
+          "path": "/note/localhost:8080/unit-1/topic-01/note-01",
+          "severity": "info",
+          "summary": "replay:note-01: new request on b: GET /_app/immutable/assets/1.{{hash}}.css",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET_/_app/immutable/nodes/1.__hash__.js:32",
+          "artefact": "replay",
+          "scope": "replay:note-01 GET /_app/immutable/nodes/1.{{hash}}.js",
+          "path": "/note/localhost:8080/unit-1/topic-01/note-01",
+          "severity": "info",
+          "summary": "replay:note-01: new request on b: GET /_app/immutable/nodes/1.{{hash}}.js",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET_/note/localhost:8080/unit-1/topic-01/note-01/__data.json_x-sveltekit-invalidated_100:33",
+          "artefact": "replay",
+          "scope": "replay:note-01 GET /note/localhost:8080/unit-1/topic-01/note-01/__data.json?x-sveltekit-invalidated=100",
+          "path": "/note/localhost:8080/unit-1/topic-01/note-01",
+          "severity": "info",
+          "summary": "replay:note-01: new request on b: GET /note/localhost:8080/unit-1/topic-01/note-01/__data.json?x-sveltekit-invalidated=100",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET___course__/tutors.json:34",
+          "artefact": "replay",
+          "scope": "replay:note-02 GET {{course}}/tutors.json",
+          "path": "/note/localhost:8080/unit-1/topic-02/note-02",
+          "severity": "info",
+          "summary": "replay:note-02: GET {{course}}/tutors.json requested 2× on a, 1× on b",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET_/_app/immutable/assets/1.__hash__.css:35",
+          "artefact": "replay",
+          "scope": "replay:note-02 GET /_app/immutable/assets/1.{{hash}}.css",
+          "path": "/note/localhost:8080/unit-1/topic-02/note-02",
+          "severity": "info",
+          "summary": "replay:note-02: GET /_app/immutable/assets/1.{{hash}}.css requested 2× on a, 1× on b",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET_/_app/immutable/chunks/__hash__.js:36",
+          "artefact": "replay",
+          "scope": "replay:note-02 GET /_app/immutable/chunks/{{hash}}.js",
+          "path": "/note/localhost:8080/unit-1/topic-02/note-02",
+          "severity": "info",
+          "summary": "replay:note-02: GET /_app/immutable/chunks/{{hash}}.js requested 39× on a, 38× on b",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET_/_app/immutable/nodes/1.__hash__.js:37",
+          "artefact": "replay",
+          "scope": "replay:note-02 GET /_app/immutable/nodes/1.{{hash}}.js",
+          "path": "/note/localhost:8080/unit-1/topic-02/note-02",
+          "severity": "info",
+          "summary": "replay:note-02: GET /_app/immutable/nodes/1.{{hash}}.js requested 2× on a, 1× on b",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET_/note/localhost:8080/unit-1/topic-01/note-01/__data.json_x-sveltekit-invalidated_100:38",
+          "artefact": "replay",
+          "scope": "replay:note-02 GET /note/localhost:8080/unit-1/topic-01/note-01/__data.json?x-sveltekit-invalidated=100",
+          "path": "/note/localhost:8080/unit-1/topic-02/note-02",
+          "severity": "info",
+          "summary": "replay:note-02: request no longer made on b: GET /note/localhost:8080/unit-1/topic-01/note-01/__data.json?x-sveltekit-invalidated=100",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:reader-availability:39",
+          "artefact": "slo",
+          "scope": "reader-availability",
+          "severity": "info",
+          "summary": "reader-availability: 100.0% of 62 reader requests not 5xx on b (its /metrics across the journeys), objective 99.90% (harness floor; monorepo 99.50%): holds"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:reader-availability/load:40",
+          "artefact": "slo",
+          "scope": "reader-availability/load",
+          "severity": "info",
+          "summary": "reader-availability: 100.0% of 601 reader requests not 5xx on b (the k6 load leg), objective 99.90% (harness floor; monorepo 99.50%): holds"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:reader-latency:41",
+          "artefact": "slo",
+          "scope": "reader-latency",
+          "severity": "info",
+          "summary": "reader-latency: 100.0% of 62 reader requests under 1s on b (its /metrics across the journeys), objective 99.0% (harness floor; monorepo 95.0%): holds"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:reader-latency/load:42",
+          "artefact": "slo",
+          "scope": "reader-latency/load",
+          "severity": "info",
+          "summary": "reader-latency: 100.0% of 601 reader requests under 1s on b (the k6 load leg), objective 99.0% (harness floor; monorepo 95.0%): holds"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:catalogue-availability/not-evaluated:43",
+          "artefact": "slo",
+          "scope": "catalogue-availability/not-evaluated",
+          "severity": "info",
+          "summary": "catalogue-availability: not evaluated on b: 5 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:catalogue-latency/not-evaluated:44",
+          "artefact": "slo",
+          "scope": "catalogue-latency/not-evaluated",
+          "severity": "info",
+          "summary": "catalogue-latency: not evaluated on b: 5 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:live-availability/not-evaluated:45",
+          "artefact": "slo",
+          "scope": "live-availability/not-evaluated",
+          "severity": "info",
+          "summary": "live-availability: not evaluated on b: 5 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:live-latency/not-evaluated:46",
+          "artefact": "slo",
+          "scope": "live-latency/not-evaluated",
+          "severity": "info",
+          "summary": "live-latency: not evaluated on b: 5 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:time-availability/not-evaluated:47",
+          "artefact": "slo",
+          "scope": "time-availability/not-evaluated",
+          "severity": "info",
+          "summary": "time-availability: not evaluated on b: its /metrics across the journeys carries no availability SLI for time"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:time-latency/not-evaluated:48",
+          "artefact": "slo",
+          "scope": "time-latency/not-evaluated",
+          "severity": "info",
+          "summary": "time-latency: not evaluated on b: its /metrics across the journeys carries no latency SLI for time"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:reader-latency-tail:49",
+          "artefact": "slo",
+          "scope": "reader-latency-tail",
+          "severity": "info",
+          "summary": "reader-latency-tail: 100.0% of 62 reader requests under 2.5s on b (its /metrics across the journeys), objective 99.0%: holds"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:reader-latency-tail/load:50",
+          "artefact": "slo",
+          "scope": "reader-latency-tail/load",
+          "severity": "info",
+          "summary": "reader-latency-tail: 100.0% of 601 reader requests under 2.5s on b (the k6 load leg), objective 99.0%: holds"
+        }
+      }
+    ],
+    "unclaimed": [],
+    "staleClaims": [],
+    "broadUnapproved": []
+  },
+  "masksApplied": {
+    "response-date": 92,
+    "request-id": 92,
+    "etag": 92,
+    "metrics-process": 599,
+    "metrics-timing-histograms": 12,
+    "third-party-requests": 1511,
+    "persistence-stub-requests": 140,
+    "realtime-rest-fallback-warning": 0,
+    "oauth-callback-state": 10,
+    "media-range-status": 43,
+    "chromium-compute-pressure-policy": 0,
+    "hashed-assets": 5013,
+    "footer-tutors-version": 338,
+    "transport-length": 92,
+    "transport-connection": 92,
+    "transport-encoding": 0,
+    "transport-transfer": 0,
+    "transport-keepalive": 92
+  },
+  "load": {
+    "a": {
+      "requests": 601,
+      "failed": 0,
+      "serverErrors": 0,
+      "p50": 1.49,
+      "p95": 2.71,
+      "p99": 4.36,
+      "rate": 20,
+      "duration": "30s"
+    },
+    "b": {
+      "requests": 601,
+      "failed": 0,
+      "serverErrors": 0,
+      "p50": 1.5,
+      "p95": 2.5,
+      "p99": 3.77,
+      "rate": 20,
+      "duration": "30s"
+    }
+  },
+  "claimHygiene": {
+    "claims": 3,
+    "claimedHunks": 5,
+    "hunksPerClaim": 1.67,
+    "maxHunksPerClaim": 2,
+    "threshold": 10,
+    "flagged": []
+  },
+  "imageArtefacts": {
+    "a": {
+      "reader": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 309.2 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "134 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "94 advisories, db built 2026-10-15T06:30:36Z schema v6.1.10, OpenVEX openvex.json (0 statement(s)): none set aside"
+        }
+      },
+      "catalogue": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 274.2 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "134 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "94 advisories, db built 2026-10-15T06:30:36Z schema v6.1.10, OpenVEX openvex.json (0 statement(s)): none set aside"
+        }
+      },
+      "live": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 274.5 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "134 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "94 advisories, db built 2026-10-15T06:30:36Z schema v6.1.10, OpenVEX openvex.json (0 statement(s)): none set aside"
+        }
+      },
+      "time": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 285.2 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "143 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "94 advisories, db built 2026-10-15T06:30:36Z schema v6.1.10, OpenVEX openvex.json (0 statement(s)): none set aside"
+        }
+      }
+    },
+    "b": {
+      "reader": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 308.9 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "134 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "94 advisories, db built 2026-10-15T06:30:36Z schema v6.1.10, OpenVEX openvex.json (0 statement(s)): none set aside"
+        }
+      },
+      "catalogue": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 274.2 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "134 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "94 advisories, db built 2026-10-15T06:30:36Z schema v6.1.10, OpenVEX openvex.json (0 statement(s)): none set aside"
+        }
+      },
+      "live": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 274.5 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "134 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "94 advisories, db built 2026-10-15T06:30:36Z schema v6.1.10, OpenVEX openvex.json (0 statement(s)): none set aside"
+        }
+      },
+      "time": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 285.2 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "143 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "94 advisories, db built 2026-10-15T06:30:36Z schema v6.1.10, OpenVEX openvex.json (0 statement(s)): none set aside"
+        }
+      }
+    }
+  },
+  "levels": {
+    "dom": {
+      "level": "blocking"
+    },
+    "screenshot": {
+      "level": "blocking"
+    },
+    "network": {
+      "level": "blocking"
+    },
+    "console": {
+      "level": "blocking"
+    },
+    "headers": {
+      "level": "blocking"
+    },
+    "axe": {
+      "level": "blocking"
+    },
+    "focus": {
+      "level": "blocking"
+    },
+    "metrics": {
+      "level": "blocking"
+    },
+    "logs": {
+      "level": "blocking"
+    },
+    "timing": {
+      "level": "informing"
+    },
+    "persistence": {
+      "level": "blocking"
+    },
+    "bus": {
+      "level": "blocking"
+    },
+    "migration": {
+      "level": "blocking"
+    },
+    "upgrade": {
+      "level": "blocking"
+    },
+    "image-manifest": {
+      "level": "blocking"
+    },
+    "sbom": {
+      "level": "blocking"
+    },
+    "vulns": {
+      "level": "blocking"
+    },
+    "runtime": {
+      "level": "blocking"
+    },
+    "startup": {
+      "level": "blocking"
+    },
+    "image-hardening": {
+      "level": "informing"
+    },
+    "build-provenance": {
+      "level": "informing"
+    },
+    "vuln-ceiling": {
+      "level": "informing"
+    },
+    "timing-tolerance": {
+      "level": "informing"
+    },
+    "asset-graph": {
+      "level": "informing"
+    },
+    "replay": {
+      "level": "informing"
+    },
+    "slo": {
+      "level": "informing"
+    },
+    "realtime": {
+      "level": "informing"
+    }
+  },
+  "inRunNoise": {
+    "stack": "a2",
+    "runs": 1,
+    "artefacts": [
+      "dom",
+      "network",
+      "console",
+      "headers",
+      "axe",
+      "focus"
+    ],
+    "journeys": [
+      "anonymous-student-reads-course",
+      "anonymous-student-searches",
+      "catalogue-loads",
+      "live-loads",
+      "reference-course-reads",
+      "replay-course-urls"
+    ],
+    "hunks": [
+      {
+        "artefact": "dom",
+        "scope": "replay:topic-02",
+        "summary": "replay:topic-02: semantic DOM differs (+75 −0 lines at line 1)"
+      },
+      {
+        "artefact": "dom",
+        "scope": "replay:note-01",
+        "summary": "replay:note-01: semantic DOM differs (+62 −0 lines at line 1)"
+      },
+      {
+        "artefact": "network",
+        "scope": "GET /_app/immutable/chunks/{{hash}}.js",
+        "summary": "replay:topic-02: GET /_app/immutable/chunks/{{hash}}.js requested 41× on a, 42× on a2"
+      },
+      {
+        "artefact": "network",
+        "scope": "GET {{course}}/tutors.json",
+        "summary": "replay:topic-02: new request on a2: GET {{course}}/tutors.json"
+      },
+      {
+        "artefact": "network",
+        "scope": "GET /_app/immutable/assets/1.{{hash}}.css",
+        "summary": "replay:topic-02: new request on a2: GET /_app/immutable/assets/1.{{hash}}.css"
+      },
+      {
+        "artefact": "network",
+        "scope": "GET /_app/immutable/nodes/1.{{hash}}.js",
+        "summary": "replay:topic-02: new request on a2: GET /_app/immutable/nodes/1.{{hash}}.js"
+      },
+      {
+        "artefact": "network",
+        "scope": "GET /topic/localhost:8080/unit-1/topic-02/__data.json?x-sveltekit-invalidated=100",
+        "summary": "replay:topic-02: new request on a2: GET /topic/localhost:8080/unit-1/topic-02/__data.json?x-sveltekit-invalidated=100"
+      },
+      {
+        "artefact": "network",
+        "scope": "GET /note/localhost:8080/unit-1/topic-01/note-01/__data.json?x-sveltekit-invalidated=100",
+        "summary": "replay:note-01: new request on a2: GET /note/localhost:8080/unit-1/topic-01/note-01/__data.json?x-sveltekit-invalidated=100"
+      }
+    ],
+    "alsoOnB": [
+      "network:GET_/_app/immutable/chunks/__hash__.js:3",
+      "network:GET_/_app/immutable/chunks/__hash__.js:4"
+    ]
+  },
+  "timingControl": {
+    "journeys": [
+      {
+        "journey": "anonymous-student-reads-course",
+        "a": [
+          10593,
+          5101,
+          4736,
+          5182,
+          4919
+        ],
+        "b": [
+          9926,
+          5173,
+          5108,
+          5133,
+          4890
+        ],
+        "limits": {
+          "n": 5,
+          "centre": 6106.2,
+          "mrBar": 1641.5,
+          "ucl": 10472.59,
+          "lcl": 1739.81,
+          "provisional": true
+        },
+        "above": 0,
+        "below": 0
+      },
+      {
+        "journey": "anonymous-student-searches",
+        "a": [
+          5160,
+          3329,
+          2999,
+          2653,
+          2736
+        ],
+        "b": [
+          5327,
+          2843,
+          2929,
+          2798,
+          2760
+        ],
+        "limits": {
+          "n": 5,
+          "centre": 3375.4,
+          "mrBar": 647.5,
+          "ucl": 5097.75,
+          "lcl": 1653.05,
+          "provisional": true
+        },
+        "above": 1,
+        "below": 0
+      },
+      {
+        "journey": "catalogue-loads",
+        "a": [
+          2385,
+          1680,
+          1526,
+          1483,
+          1434
+        ],
+        "b": [
+          2511,
+          1433,
+          1355,
+          1666,
+          1626
+        ],
+        "limits": {
+          "n": 5,
+          "centre": 1701.6,
+          "mrBar": 237.75,
+          "ucl": 2334.02,
+          "lcl": 1069.19,
+          "provisional": true
+        },
+        "above": 1,
+        "below": 0
+      },
+      {
+        "journey": "live-loads",
+        "a": [
+          3028,
+          1350,
+          1592,
+          1392,
+          1397
+        ],
+        "b": [
+          2453,
+          1608,
+          1541,
+          1661,
+          1585
+        ],
+        "limits": {
+          "n": 5,
+          "centre": 1751.8,
+          "mrBar": 531.25,
+          "ucl": 3164.93,
+          "lcl": 338.67,
+          "provisional": true
+        },
+        "above": 0,
+        "below": 0
+      },
+      {
+        "journey": "reference-course-reads",
+        "a": [
+          14386,
+          8102,
+          7361,
+          7805,
+          7828
+        ],
+        "b": [
+          13460,
+          7789,
+          7404,
+          7817,
+          7700
+        ],
+        "limits": {
+          "n": 5,
+          "centre": 9096.4,
+          "mrBar": 1873,
+          "ucl": 14078.58,
+          "lcl": 4114.22,
+          "provisional": true
+        },
+        "above": 0,
+        "below": 0
+      },
+      {
+        "journey": "replay-course-urls",
+        "a": [
+          19943
+        ],
+        "b": [
+          23220
+        ],
+        "above": 0,
+        "below": 0
+      },
+      {
+        "journey": "student-signs-in",
+        "a": [
+          7093,
+          4342,
+          3981,
+          4133,
+          4173
+        ],
+        "b": [
+          6997,
+          4290,
+          4424,
+          3905,
+          4241
+        ],
+        "limits": {
+          "n": 5,
+          "centre": 4744.4,
+          "mrBar": 826,
+          "ucl": 6941.56,
+          "lcl": 2547.24,
+          "provisional": true
+        },
+        "above": 1,
+        "below": 0
+      }
+    ]
+  },
+  "causes": {
+    "unclaimed": 0,
+    "causes": [],
+    "together": []
+  }
+}

@@ -1,0 +1,283 @@
+{
+  "schemaVersion": 1,
+  "gate": "PASS",
+  "weightsUsed": {
+    "claim-coverage": 28.57,
+    "noise-health": 21.43,
+    "statistical-margin": 14.29,
+    "rehearsals": 14.29,
+    "change-risk": 21.43
+  },
+  "weightsVersion": "5943f7bc2e73",
+  "dimensions": [
+    {
+      "id": "claim-coverage",
+      "name": "Claim coverage",
+      "weight": 20,
+      "status": "measured",
+      "score": 100,
+      "floorBreached": false,
+      "deductions": [],
+      "evidence": [
+        "report.html#differences"
+      ]
+    },
+    {
+      "id": "noise-health",
+      "name": "Noise health",
+      "weight": 15,
+      "status": "measured",
+      "score": 80,
+      "floorBreached": false,
+      "deductions": [
+        {
+          "points": 5,
+          "why": "mask realtime-rest-fallback-warning fired nothing in this run (a mask that never fires is a mask to delete)",
+          "evidence": "report.html#masks"
+        },
+        {
+          "points": 5,
+          "why": "mask chromium-compute-pressure-policy fired nothing in this run (a mask that never fires is a mask to delete)",
+          "evidence": "report.html#masks"
+        },
+        {
+          "points": 5,
+          "why": "mask transport-encoding fired nothing in this run (a mask that never fires is a mask to delete)",
+          "evidence": "report.html#masks"
+        },
+        {
+          "points": 5,
+          "why": "mask transport-transfer fired nothing in this run (a mask that never fires is a mask to delete)",
+          "evidence": "report.html#masks"
+        }
+      ],
+      "evidence": [
+        "report.html#noise",
+        "report.html#masks"
+      ],
+      "gaps": [
+        "masks added this release (needs the diff of normalise/masks.yaml between the two tags: C1)"
+      ]
+    },
+    {
+      "id": "statistical-margin",
+      "name": "Statistical margin",
+      "weight": 10,
+      "status": "measured",
+      "score": 100,
+      "floorBreached": false,
+      "deductions": [],
+      "evidence": [
+        "report.html#differences",
+        "report.html#load"
+      ]
+    },
+    {
+      "id": "rehearsals",
+      "name": "Rehearsals",
+      "weight": 10,
+      "status": "measured",
+      "score": 100,
+      "floorBreached": false,
+      "deductions": [],
+      "evidence": [
+        "migration/report.html#migration",
+        "upgrade/report.html#upgrade"
+      ]
+    },
+    {
+      "id": "test-signal",
+      "name": "Test signal",
+      "weight": 15,
+      "status": "not measured",
+      "score": null,
+      "floorBreached": false,
+      "reason": "quality.json has no mutation scores for 7c4028a (the monorepo's Nightly wrote no Stryker report) and no harness mutants",
+      "deductions": [],
+      "evidence": []
+    },
+    {
+      "id": "traceability",
+      "name": "Requirements traceability",
+      "weight": 10,
+      "status": "not measured",
+      "score": null,
+      "floorBreached": false,
+      "reason": "needs the changelog, the EARS files and the claims side by side: pass --traceability <json>; changes.json already reports 7 orphan changes between the tags (a changelog entry with no diff, or a diff with no entry), a floor breach once it is measured",
+      "deductions": [],
+      "evidence": []
+    },
+    {
+      "id": "change-risk",
+      "name": "Change risk",
+      "weight": 15,
+      "status": "measured",
+      "score": 27,
+      "floorBreached": false,
+      "deductions": [
+        {
+          "points": 10,
+          "why": "PR #476 changed Reader, Development but no changelog entry under vc867ee87107a603c3d1ea34be9ff70beab119ee2 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/476/files#diff-f9cfd30e49727585d340eb245e9e85897abbbba627faf3c588167b9ed13bf276"
+        },
+        {
+          "points": 3,
+          "why": "PR #478 touches hotspot packages/svelte/connect/src/services/connect.svelte.ts (3 of the last 6 releases)",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/478/files#diff-fd4035ac7c862123cdae65175cc120073c7245aa50e8aab37b76da2aaefd542b"
+        },
+        {
+          "points": 10,
+          "why": "PR #478 changed Reader, Shared Packages, Infrastructure, Development but no changelog entry under vc867ee87107a603c3d1ea34be9ff70beab119ee2 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/478/files#diff-f9cfd30e49727585d340eb245e9e85897abbbba627faf3c588167b9ed13bf276"
+        },
+        {
+          "points": 10,
+          "why": "PR #480 changed Shared Packages, Infrastructure, Development but no changelog entry under vc867ee87107a603c3d1ea34be9ff70beab119ee2 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/480/files#diff-058494e42758c8229a1aa355997e6c7f3996785e11ea8dffba79c3870e22bce2"
+        },
+        {
+          "points": 10,
+          "why": "PR #481 changed Reader, Infrastructure, Development but no changelog entry under vc867ee87107a603c3d1ea34be9ff70beab119ee2 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/481/files#diff-e4fcc76d91071866c7d54b16b300e500d67b42190747baa90741fe8de58a8179"
+        },
+        {
+          "points": 10,
+          "why": "PR #483 changed Infrastructure, Reader, Live, Catalogue, Time, Development but no changelog entry under vc867ee87107a603c3d1ea34be9ff70beab119ee2 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/483/files#diff-c19c016987c6b7d3f8a014d7e4df17402c3557f0741538318a2b573727ddfff4"
+        },
+        {
+          "points": 10,
+          "why": "PR #484 changed Infrastructure, Development but no changelog entry under vc867ee87107a603c3d1ea34be9ff70beab119ee2 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/484/files#diff-a36c2b23480830b1d23bfca9ee3e98f172b1bee39d034c06780f9790dcd8c3f4"
+        },
+        {
+          "points": 10,
+          "why": "PR #487 changed Reader, Development but no changelog entry under vc867ee87107a603c3d1ea34be9ff70beab119ee2 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/487/files#diff-13d8ab5e67e09ca92971e77ee1fcbb71b39dd5a018144bf33a3bbabd5b3da020"
+        }
+      ],
+      "evidence": [
+        "changes.json"
+      ],
+      "gaps": [
+        "orphan entries (a changelog entry with no diff): CHANGELOG.md at c867ee87107a603c3d1ea34be9ff70beab119ee2 has no \"### vc867ee87107a603c3d1ea34be9ff70beab119ee2\" entries under a product section"
+      ]
+    },
+    {
+      "id": "post-deploy",
+      "name": "Post-deploy history",
+      "weight": 5,
+      "status": "not measured",
+      "score": null,
+      "floorBreached": false,
+      "reason": "needs the last release's post-deploy record: pass --post-deploy <its run dir or report.json>",
+      "deductions": [],
+      "evidence": []
+    }
+  ],
+  "glance": [
+    {
+      "rank": 1,
+      "kind": "fixed-on-b",
+      "key": "console catalogue:home",
+      "finding": "catalogue:home: 2 console errors fixed on b, undecided; a fix is a decision: claim it to say why, and this item switches off",
+      "links": {
+        "hunk": "report.html#hunk-console:catalogue:home:5"
+      },
+      "hunks": [
+        "report.html#hunk-console:catalogue:home:5",
+        "report.html#hunk-console:catalogue:home:6"
+      ],
+      "detail": "error: {\"app\":\"tutors-catalogue\",\"environment\":\"production\",\"error\":\"Cannot read properti… | error: {\"app\":\"tutors-catalogue\",\"environment\":\"production\",\"error\":\"Cannot read properti…",
+      "novelty": 0.5,
+      "exposure": 0.17,
+      "score": 0.09,
+      "basis": {
+        "novelty": "seen in 1 of the last 1 release that recorded it (17.0.0-rc.1)",
+        "exposure": "1 of 6 journeys: catalogue-loads"
+      },
+      "mark": null
+    }
+  ],
+  "run": {
+    "candidate": "sha-c867ee8",
+    "baseline": "17.0.0",
+    "ranAt": "2026-10-16T07:11:14.011Z",
+    "reports": {
+      "release": "report.json",
+      "migration": "migration/report.json",
+      "upgrade": "upgrade/report.json"
+    },
+    "inputs": {
+      "testSignal": "quality.json",
+      "changeRisk": "changes.json"
+    },
+    "harness": {
+      "version": "1.39.1",
+      "contractVersion": "1.39.0"
+    }
+  },
+  "rcs": 80,
+  "band": "Amber",
+  "meaning": "ship only after the reviewer's glance is recorded verified",
+  "mean": 80.07,
+  "glanceBasis": {
+    "rule": "novelty × exposure, highest first, at most 7; ties in the plan's order (broad-claim, mask-added, near-miss, first-time-hotspot, new-persistence, fixed-on-b, major-bump, duration-moved). Novelty is (n − seen + 1) ÷ (n + 1) over the last 6 releases on the scoreboard that recorded the kind (1 with no history); exposure is the share of the journey set the finding touches (1 when it cannot be placed).",
+    "history": {
+      "releases": [
+        "17.0.0-rc.1"
+      ],
+      "source": "/home/runner/work/tutors-release-harness/tutors-release-harness/scoreboard.jsonl"
+    },
+    "journeys": {
+      "total": 6,
+      "names": [
+        "anonymous-student-reads-course",
+        "anonymous-student-searches",
+        "catalogue-loads",
+        "live-loads",
+        "reference-course-reads",
+        "student-signs-in"
+      ],
+      "source": "the journeys in the release run's a/ and b/ capture.json"
+    },
+    "checked": [
+      {
+        "kind": "broad-claim",
+        "candidates": 0
+      },
+      {
+        "kind": "mask-added",
+        "candidates": 0
+      },
+      {
+        "kind": "near-miss",
+        "candidates": 0
+      },
+      {
+        "kind": "first-time-hotspot",
+        "candidates": 0
+      },
+      {
+        "kind": "new-persistence",
+        "candidates": 0
+      },
+      {
+        "kind": "fixed-on-b",
+        "candidates": 1
+      },
+      {
+        "kind": "major-bump",
+        "candidates": 0
+      },
+      {
+        "kind": "duration-moved",
+        "candidates": 0
+      }
+    ],
+    "notChecked": [],
+    "seen": [
+      "fixed-on-b:console catalogue:home"
+    ]
+  }
+}
