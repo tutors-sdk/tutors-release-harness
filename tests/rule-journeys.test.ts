@@ -10,7 +10,7 @@ import { describe, expect, it } from "vitest";
 import { parseFeature } from "../traffic/journeys/gherkin.ts";
 import { exercisedBy, expandRuleIds, loadRuleJourneys, ruleJourneys } from "../traffic/journeys/rules.ts";
 import { appOf, bind, pageKeyOf, steps } from "../traffic/journeys/steps.ts";
-import { SIGN_IN_LIMIT, paceSignIn } from "../traffic/journeys/ui.ts";
+import { SIGN_IN_LIMIT, paceSignIn, refusedOnce, signedIn } from "../traffic/journeys/ui.ts";
 import { foldCauses, causesMarkdown } from "../src/report/causes.ts";
 import { ruleOfHunk, ruleTouchedWords, rulesTouched } from "../src/report/rules-touched.ts";
 import type { Hunk } from "../src/types.ts";
@@ -63,6 +63,7 @@ describe("Rule ids", () => {
     expect(expandRuleIds("0011, 0250-0252")).toEqual(["0011", "0250", "0251", "0252"]);
     expect(exercisedBy("A student reads a lab (exercises Rules 0011, 0303)")).toEqual(["0011", "0303"]);
     expect(exercisedBy("No list")).toEqual([]);
+    expect(exercisedBy('Turned away (exercises Rules 0011, 0267; whitelist-management.feature "Non-whitelisted student denied access")')).toEqual(["0011", "0267"]);
     expect(() => expandRuleIds("0252-0250")).toThrow(/not a range/);
     expect(() => expandRuleIds("11")).toThrow(/not a Rule id/);
   });
@@ -98,6 +99,11 @@ describe("the Rule journeys", () => {
     expect(() => loadRuleJourneys(dir)).toThrow(/@role-dean is not one of/);
     writeFileSync(join(dir, "x.feature"), FEATURE.replace("@journey-demo", "@journey-demo @role-lecturer"));
     expect(loadRuleJourneys(dir)[0]).toMatchObject({ name: "rule-0599-demo", role: "lecturer", rules: ["0599", "0011", "0250", "0251", "0252"] });
+    expect(loadRuleJourneys(dir)[0]!.course).toBeUndefined();
+    writeFileSync(join(dir, "x.feature"), FEATURE.replace("@journey-demo", "@journey-demo @course-rules"));
+    expect(loadRuleJourneys(dir)[0]).toMatchObject({ course: "rules" });
+    writeFileSync(join(dir, "x.feature"), FEATURE.replace("@journey-demo", "@journey-demo @course-moodle"));
+    expect(() => loadRuleJourneys(dir)).toThrow(/@course-moodle is not one of the harness's courses/);
   });
 
   it("bind each step's quoted words as its arguments", () => {
@@ -112,6 +118,21 @@ describe("the Rule journeys", () => {
     expect(appOf("http://localhost:3003/", urls)).toBe("live");
     expect(appOf("http://elsewhere/", urls)).toBe("page");
     expect(pageKeyOf("reader-auth", "0582", "lab-step")).toBe("reader-auth:rule-0582-lab-step");
+  });
+
+  it("read the Rule journeys' course where they say so, as a whitelisted role unless they prove the turning away", () => {
+    const enrollment = readFileSync(resolve(ROOT, "fixtures/course-server/rules-course/enrollment.yaml"), "utf8");
+    expect(enrollment).toMatch(/whitelist:\n\s+- harness-enrolled\n/);
+    const tutors = JSON.parse(readFileSync(resolve(ROOT, "fixtures/course-server/rules-course/tutors.json"), "utf8"));
+    expect(tutors).toMatchObject({ title: "Harness Rules Course", properties: { auth: 1, private: 1, llm: 2 }, enrollment: { whitelist: ["harness-enrolled"] } });
+    const onRules = ruleJourneys.filter((j) => j.course === "rules");
+    expect(onRules.map((j) => j.rules![0])).toEqual(["0584", "0585", "0586", "0587"]);
+    for (const j of onRules) expect(j.role ?? "student", j.name).toBe(j.name === "rule-0586-private-course" ? "student" : "enrolled");
+  });
+
+  it("run a step against a side that serves no Rule journeys' course as a failure that says so", async () => {
+    const j = ruleJourneys.find((x) => x.course === "rules")!;
+    await expect(j.run({} as never, { reader: "http://r", catalogue: "http://c", live: "http://l", courseId: "c" }, async () => {})).rejects.toThrow(/serves no rules course/);
   });
 
   it("the guide lists every step, as its doc line says it", () => {
@@ -138,6 +159,20 @@ describe("pacing sign-ins under the reader's limiter", () => {
     expect(await paceSignIn(origin, c.now, c.sleep)).toBe(2_000 + gap - 3_000);
     expect(c.waits).toEqual([2_000 + gap - 3_000]);
     expect(await paceSignIn(`${origin}-other`, c.now, c.sleep)).toBe(0);
+  });
+
+  it("runs the gap from when a sign-in landed, and after a refusal waits the whole gap", async () => {
+    const c = clock(0);
+    const origin = `http://pace-${Math.random()}`;
+    await paceSignIn(origin, c.now, c.sleep);
+    signedIn(origin, () => 4_000);
+    c.at(4_000 + gap);
+    await paceSignIn(origin, c.now, c.sleep);
+    c.at(4_000 + gap + 1);
+    expect(await paceSignIn(origin, c.now, c.sleep)).toBe(gap - 1);
+    refusedOnce(origin, () => 50_000);
+    c.at(50_000);
+    expect(await paceSignIn(origin, c.now, c.sleep)).toBe(gap);
   });
 
   it("starts the count again after a quiet gap", async () => {

@@ -1,0 +1,19 @@
+title: Harness Rules Course Calendar
+year: 2026
+weeks:
+  - date: 2026-09-07
+    week: 1
+    topic: Week 1
+  - date: 2026-09-14
+    week: 2
+    topic: Week 2
+  - date: 2026-09-21
+    week: 3
+    topic: Week 3
+    assessment:
+      name: Assignment 1
+      due: 2026-09-25
+      percentage: 100
+      submission: GitHub
+  - date: 2026-09-28
+    topic: Reading Week

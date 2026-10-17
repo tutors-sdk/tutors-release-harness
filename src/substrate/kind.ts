@@ -173,8 +173,10 @@ let courseServer: ChildProcess | undefined;
 function startCourseServer(log: (m: string) => void) {
   if (courseServer) return;
   const port = Number(process.env.COURSE_PORT ?? 8080);
-  courseServer = spawn(process.execPath, [resolve(ROOT, "fixtures", "course-server", "serve.mjs"), resolve(ROOT, "fixtures", "course-server", "course"), String(port)], { stdio: "ignore" });
-  log(`  fixture course server on the host, port ${port} (pid ${courseServer.pid})`);
+  const rulesPort = Number(process.env.RULES_COURSE_PORT ?? 8081);
+  const dir = (name: string) => resolve(ROOT, "fixtures", "course-server", name);
+  courseServer = spawn(process.execPath, [dir("serve.mjs"), dir("course"), String(port), dir("rules-course"), String(rulesPort)], { stdio: "ignore" });
+  log(`  fixture course server on the host, ports ${port} and ${rulesPort} (pid ${courseServer.pid})`);
 }
 
 function stopCourseServer() {
