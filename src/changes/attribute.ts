@@ -21,6 +21,7 @@
  */
 import picomatch from "picomatch";
 import type { Cause } from "../report/causes.ts";
+import type { Declaration } from "./declares.ts";
 import type { Changes, PrRisk } from "./signals.ts";
 
 /** A PR named against a cause. */
@@ -33,6 +34,8 @@ export interface AttributedPr {
   files: number;
   /** Of those, how many matched the primary paths (the app's own source, a Dockerfile); it ranks by these first. */
   direct: number;
+  /** Since 1.41.0: what its CHANGELOG line says it moves (src/changes/declares.ts). */
+  declares?: Declaration;
 }
 
 export type AttributionHow = "new" | "path";
@@ -47,6 +50,11 @@ export interface CauseAttribution {
   how: AttributionHow;
   /** Most files matched first; empty when nothing matched. */
   prs: AttributedPr[];
+  /**
+   * Since 1.41.0: on a cause new since the last forecast, the first of `prs` whose CHANGELOG line names the cause's
+   * artefact: declared, not owed. Never by path: a PR that touched the packages weeks ago declares nothing about tonight.
+   */
+  declaredBy?: AttributedPr;
 }
 
 /** For the lead: the previous forecast compared with, and what was merged since. */
@@ -58,6 +66,8 @@ export interface Attribution {
   causes: CauseAttribution[];
   /** Causes with at least one PR named. */
   attributed: number;
+  /** Since 1.41.0: causes a named PR declared. */
+  declared: number;
 }
 
 const IMAGE = new Set(["sbom", "image-manifest", "vulns", "runtime", "startup"]);
@@ -76,7 +86,13 @@ export function pathsOf(c: Pick<Cause, "artefact" | "apps">): { primary: string[
   return { primary: apps.map((a) => `apps/${a}/**`), secondary: ["packages/**"] };
 }
 
-const named = (p: PrRisk, files = 0, direct = 0): AttributedPr => ({ pr: p.pr, sha: p.sha, title: p.title, ...(p.url ? { url: p.url } : {}), files, direct });
+export const named = (p: PrRisk, files = 0, direct = 0): AttributedPr => ({ pr: p.pr, sha: p.sha, title: p.title, ...(p.url ? { url: p.url } : {}), files, direct, ...(p.declares ? { declares: p.declares } : {}) });
+
+/** The first PR whose CHANGELOG line names `artefact`. */
+export const declarer = (prs: AttributedPr[], artefact: string): AttributedPr | undefined => prs.find((p) => p.declares?.artefacts.includes(artefact));
+
+/** The PRs that wrote a CHANGELOG line naming artefacts, none of them `artefact`: the line missed what moved. */
+export const missedBy = (prs: AttributedPr[], artefact: string): AttributedPr[] => prs.filter((p) => p.declares && !p.declares.artefacts.includes(artefact));
 
 /** The PRs whose files match the cause's paths: most primary files first, then most secondary, then in merge order. */
 export function byPath(c: Pick<Cause, "artefact" | "apps">, prs: PrRisk[]): AttributedPr[] {
@@ -110,10 +126,14 @@ export function mergedSince(now: Changes, before: Changes): PrRisk[] {
 export function attribute(causes: Cause[], changes: Changes, previous?: { id: string; candidate: string; keys: Set<string>; changes?: Changes }): Attribution {
   const since = previous?.changes ? mergedSince(changes, previous.changes) : undefined;
   const prs = changes.prs.filter((p) => !p.release);
+  const withDeclarer = (a: CauseAttribution, artefact: string): CauseAttribution => {
+    const by = declarer(a.prs, artefact);
+    return by ? { ...a, declaredBy: by } : a;
+  };
   const out = causes.map((c): CauseAttribution => {
     if (previous && !previous.keys.has(c.key) && since?.length) {
       const matched = byPath(c, since);
-      return { cause: c.id, key: c.key, hunks: c.hunks, how: "new", prs: matched.length ? matched : since.map((p) => named(p)) };
+      return withDeclarer({ cause: c.id, key: c.key, hunks: c.hunks, how: "new", prs: matched.length ? matched : since.map((p) => named(p)) }, c.artefact);
     }
     return { cause: c.id, key: c.key, hunks: c.hunks, how: "path", prs: byPath(c, prs) };
   });
@@ -121,6 +141,7 @@ export function attribute(causes: Cause[], changes: Changes, previous?: { id: st
     ...(previous ? { against: { id: previous.id, candidate: previous.candidate } } : {}),
     ...(since ? { mergedSince: since.map((p) => named(p)) } : {}),
     causes: out,
-    attributed: out.filter((c) => c.prs.length).length
+    attributed: out.filter((c) => c.prs.length).length,
+    declared: out.filter((c) => c.declaredBy).length
   };
 }

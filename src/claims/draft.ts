@@ -36,6 +36,8 @@ export interface ClaimDraft {
   covers: number;
   /** Unclaimed differences of other causes the scope would also take, by the first-match rule of the claims file. */
   alsoCovers: number;
+  /** Since 1.41.0: the PR whose CHANGELOG line declared it, and that line: its reason, with no Rule to name. */
+  declaredBy?: { pr: string; entry: string };
 }
 
 /** Escape what picomatch reads as a glob: a scope is matched as a glob, and `{{hash}}` or a comma must stay literal. */
@@ -79,7 +81,7 @@ export function scopeCandidates(scopes: string[]): string[] {
 }
 
 /** Draft one claim per cause. `unclaimed` is the run's unclaimed set the causes were folded from; `prs` names PRs per cause id. */
-export function draftClaims(causes: Cause[], unclaimed: Hunk[], prs: Record<string, string[]> = {}): ClaimDraft[] {
+export function draftClaims(causes: Cause[], unclaimed: Hunk[], prs: Record<string, string[]> = {}, declared: Record<string, { pr: string; entry: string }> = {}): ClaimDraft[] {
   const byKey = new Map<string, Hunk[]>();
   for (const h of unclaimed) {
     const k = causeKey(h);
@@ -99,6 +101,8 @@ export function draftClaims(causes: Cause[], unclaimed: Hunk[], prs: Record<stri
     const chosen = best ?? { scope: braces([...new Set(own.map((h) => globEscape(h.scope)))].sort()), also: 0 };
     const where = [c.apps.length ? c.apps.join(", ") : "", c.pages.length ? `${c.pages.length} page${c.pages.length === 1 ? "" : "s"}` : "", c.items.length ? `${c.items.length} ${c.artefact === "sbom" ? "package" : "name"}${c.items.length === 1 ? "" : "s"}` : ""].filter(Boolean).join("; ");
     const named = prs[c.id]?.length ? `; likely ${prs[c.id]!.join(", ")}` : "";
+    const by = declared[c.id];
+    if (by) return { cause: c.id, key: c.key, artefact: c.artefact, scope: chosen.scope, reason: `CHANGELOG: ${by.entry} (${by.pr})`, covers: own.length, alsoCovers: chosen.also, declaredBy: by };
     return { cause: c.id, key: c.key, artefact: c.artefact, scope: chosen.scope, reason: `${c.kind}: ${c.hunks} difference${c.hunks === 1 ? "" : "s"}${where ? ` (${where})` : ""}${named}`, covers: own.length, alsoCovers: chosen.also };
   });
 }
@@ -107,8 +111,9 @@ export function draftClaims(causes: Cause[], unclaimed: Hunk[], prs: Record<stri
 export function draftsYaml(drafts: ClaimDraft[]): string {
   return drafts
     .map((d) => {
-      const item = stringify([{ artefact: d.artefact, scope: d.scope, rule: DRAFT_RULE, reason: d.reason }], { lineWidth: 0, defaultStringType: "QUOTE_DOUBLE", defaultKeyType: "PLAIN" }).trimEnd();
-      const note = `  # ${d.key}: covers its ${d.covers} difference${d.covers === 1 ? "" : "s"}${d.alsoCovers ? `, and ${d.alsoCovers} of another cause` : ""}. Name the Rule that intends it, or fix it.`;
+      const item = stringify([d.declaredBy ? { artefact: d.artefact, scope: d.scope, reason: d.reason } : { artefact: d.artefact, scope: d.scope, rule: DRAFT_RULE, reason: d.reason }], { lineWidth: 0, defaultStringType: "QUOTE_DOUBLE", defaultKeyType: "PLAIN" }).trimEnd();
+      const todo = d.declaredBy ? `Declared by ${d.declaredBy.pr} in its CHANGELOG line: ready to paste when the release is cut.` : "Name the Rule that intends it, or fix it.";
+      const note = `  # ${d.key}: covers its ${d.covers} difference${d.covers === 1 ? "" : "s"}${d.alsoCovers ? `, and ${d.alsoCovers} of another cause` : ""}. ${todo}`;
       return `${note}\n${item.replace(/^/gm, "  ")}`;
     })
     .join("\n");

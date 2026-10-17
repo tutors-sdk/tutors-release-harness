@@ -21,7 +21,8 @@ import type { Changes } from "../changes/signals.ts";
 import { renderGlanceHtml, renderGlanceMarkdown } from "../glance/render.ts";
 import { hunkAnchor, type Confidence } from "../score/confidence.ts";
 import type { DeltaLead } from "./delta.ts";
-import type { Attribution, AttributedPr } from "../changes/attribute.ts";
+import { missedBy, type Attribution, type AttributedPr, type CauseAttribution } from "../changes/attribute.ts";
+import { declaredWords } from "../changes/declares.ts";
 import { DRAFT_RULE, draftsYaml, type ClaimDraft } from "../claims/draft.ts";
 import { renderScoreHtml, renderScoreMarkdown } from "../score/render.ts";
 import { NARROW_CSS } from "./narrow.ts";
@@ -123,12 +124,21 @@ export const ATTRIBUTION_LISTED = 3;
 const prName = (p: AttributedPr) => (p.pr !== null ? `#${p.pr}` : p.sha.slice(0, 7));
 const prWhy = (p: AttributedPr) => (!p.files ? "" : ` (${p.files} file${p.files === 1 ? "" : "s"}${p.direct === p.files ? "" : `, ${p.direct} direct`})`);
 
+/** Since 1.41.0: what the cause's PRs said in their CHANGELOG lines: declared, or a line that missed what moved. */
+function declaredNote(c: CauseAttribution): string {
+  if (c.declaredBy) return `declared by ${prName(c.declaredBy)} ${declaredWords(c.declaredBy.declares!)}`;
+  const artefact = c.key.split(":")[0]!;
+  const missed = c.how === "new" ? missedBy(c.prs, artefact) : [];
+  return missed.length ? `not declared: ${missed.map((p) => `${prName(p)}'s CHANGELOG line says ${declaredWords(p.declares!)}`).join("; ")}` : "";
+}
+
 /** The sentence over the table: how many causes, which are new and what was merged since, how the rest were matched. */
 function attributionSentence(a: Attribution, f: { code: (s: string) => string; pr: (p: AttributedPr) => string }): string {
   const fresh = a.causes.filter((c) => c.how === "new").length;
   const total = a.causes.length;
   const since = a.mergedSince;
-  const head = `${total} cause${total === 1 ? "" : "s"}, ${a.attributed} with a PR named.`;
+  const declared = a.declared ?? 0;
+  const head = `${total} cause${total === 1 ? "" : "s"}, ${a.attributed} with a PR named${declared ? `, ${declared} declared in that PR's CHANGELOG line (claimed from it when the release is cut, nothing owed on main)` : ""}.`;
   const delta = a.against
     ? since?.length
       ? ` Merged since the forecast of ${f.code(a.against.candidate)}: ${since.map(f.pr).join(", ")}. ${fresh ? `${fresh} cause${fresh === 1 ? " is" : "s are"} new since then, and only these PRs can have made ${fresh === 1 ? "it" : "them"}.` : "No cause is new since then."}`
@@ -144,7 +154,8 @@ export function attributionLeadMarkdown(a: Attribution): string {
   for (const c of [...a.causes].sort((x, y) => Number(y.how === "new") - Number(x.how === "new"))) {
     const named = c.prs.slice(0, ATTRIBUTION_LISTED).map((p) => `${pr(p)}${prWhy(p)}`).join(", ");
     const more = c.prs.length > ATTRIBUTION_LISTED ? ` and ${c.prs.length - ATTRIBUTION_LISTED} more` : "";
-    lines.push(`| ${c.how === "new" ? "**new** " : ""}${mdCell(c.key)} | ${c.hunks} | ${named ? `${named}${more}` : "none matched"} |`);
+    const note = declaredNote(c);
+    lines.push(`| ${c.how === "new" ? "**new** " : ""}${mdCell(c.key)} | ${c.hunks} | ${named ? `${named}${more}` : "none matched"}${note ? `; ${mdCell(note)}` : ""} |`);
   }
   return lines.join("\n");
 }
@@ -157,7 +168,8 @@ export function attributionLeadHtml(a: Attribution): string {
     .map((c) => {
       const named = c.prs.slice(0, ATTRIBUTION_LISTED).map((p) => `${pr(p)}${esc(prWhy(p))}`).join(", ");
       const more = c.prs.length > ATTRIBUTION_LISTED ? ` and ${c.prs.length - ATTRIBUTION_LISTED} more` : "";
-      return `<tr><td>${c.how === "new" ? "<strong>new</strong> " : ""}<a href="#cause-${esc(c.cause)}">${esc(c.key)}</a></td><td>${c.hunks}</td><td>${named ? `${named}${more}` : "none matched"}</td></tr>`;
+      const note = declaredNote(c);
+      return `<tr><td>${c.how === "new" ? "<strong>new</strong> " : ""}<a href="#cause-${esc(c.cause)}">${esc(c.key)}</a></td><td>${c.hunks}</td><td>${named ? `${named}${more}` : "none matched"}${note ? `<br>${esc(note)}` : ""}</td></tr>`;
     });
   return [`<section class="attribution">`, `<h2 id="attribution">Causes and the PRs behind them</h2>`, `<p>${attributionSentence(a, { code: (s) => `<code>${esc(s)}</code>`, pr })}</p>`, "<table><thead><tr><th>cause</th><th>differences</th><th>PRs</th></tr></thead><tbody>", ...rows, "</tbody></table>", "</section>"].join("\n");
 }
@@ -168,19 +180,29 @@ export function attributionLeadHtml(a: Attribution): string {
 function owedSentence(drafts: ClaimDraft[], code: (s: string) => string): string {
   const covered = drafts.reduce((a, d) => a + d.covers, 0);
   const overlap = drafts.filter((d) => d.alsoCovers).length;
-  return `One draft claim per cause, its scope narrowed and checked against this forecast's unclaimed differences: together they cover all ${covered}${overlap ? `, and ${overlap} would also take differences of another cause` : ", and none takes another cause's"}. Paste them under ${code("claims:")} in ${code("release/claims.yaml")} and name the Rule that intends each (${code(`rule: "${DRAFT_RULE}"`)} is refused until you do), or drop ${code("rule")} and give the CHANGELOG entry as the reason, or fix the difference and drop its draft. On a forecast this takes the glance's place; the glance stays for release candidates.`;
+  const declared = drafts.filter((d) => d.declaredBy);
+  const owed = drafts.length - declared.length;
+  const n = declared.length;
+  const ofDeclared = n ? `${n} of the ${drafts.length} drafts ${n === 1 ? "is" : "are"} declared in a PR's CHANGELOG line (${[...new Set(declared.map((d) => d.declaredBy!.pr))].join(", ")}) and ${n === 1 ? "carries" : "carry"} that line as the reason: nothing is owed on main, and the release author pastes ${n === 1 ? "it" : "them"} when the release is cut.${owed ? ` ${owed} ${owed === 1 ? "is" : "are"} owed.` : ""}` : "";
+  return `${ofDeclared ? `${ofDeclared} ` : ""}One draft claim per cause, its scope narrowed and checked against this forecast's unclaimed differences: together they cover all ${covered}${overlap ? `, and ${overlap} would also take differences of another cause` : ", and none takes another cause's"}. Paste them under ${code("claims:")} in ${code("release/claims.yaml")} and name the Rule that intends each (${code(`rule: "${DRAFT_RULE}"`)} is refused until you do), or drop ${code("rule")} and give the CHANGELOG entry as the reason, or fix the difference and drop its draft. On a forecast this takes the glance's place; the glance stays for release candidates.`;
 }
+
+/** `2`, or since 1.41.0 `1, and 1 declared`. */
+const owedTitle = (drafts: ClaimDraft[]) => {
+  const declared = drafts.filter((d) => d.declaredBy).length;
+  return declared ? `${drafts.length - declared}, and ${declared} declared` : `${drafts.length}`;
+};
 
 /** report.md of a kept forecast, under the RCS: the drafts as YAML. */
 export function claimsOwedMarkdown(drafts: ClaimDraft[]): string {
   if (!drafts.length) return "#### Claims owed\n\nNone: no unclaimed difference.";
   const yaml = draftsYaml(drafts);
   const fence = "`".repeat(Math.max(3, ...[...yaml.matchAll(/`+/g)].map((m) => m[0].length + 1)));
-  return [`#### Claims owed (${drafts.length})`, "", owedSentence(drafts, (s) => `\`${s}\``), "", `${fence}yaml`, yaml, fence].join("\n");
+  return [`#### Claims owed (${owedTitle(drafts)})`, "", owedSentence(drafts, (s) => `\`${s}\``), "", `${fence}yaml`, yaml, fence].join("\n");
 }
 
 /** report.html of a kept forecast, under the RCS: the same, in one block to copy. */
 export function claimsOwedHtml(drafts: ClaimDraft[]): string {
   if (!drafts.length) return `<section class="owed"><h2 id="claims-owed">Claims owed</h2><p>None: no unclaimed difference.</p></section>`;
-  return [`<section class="owed">`, `<h2 id="claims-owed">Claims owed (${drafts.length})</h2>`, `<p>${owedSentence(drafts, (s) => `<code>${esc(s)}</code>`)}</p>`, `<pre><code>${esc(draftsYaml(drafts))}</code></pre>`, "</section>"].join("\n");
+  return [`<section class="owed">`, `<h2 id="claims-owed">Claims owed (${owedTitle(drafts)})</h2>`, `<p>${owedSentence(drafts, (s) => `<code>${esc(s)}</code>`)}</p>`, `<pre><code>${esc(draftsYaml(drafts))}</code></pre>`, "</section>"].join("\n");
 }

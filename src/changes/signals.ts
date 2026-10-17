@@ -23,6 +23,7 @@
  */
 import { createHash } from "node:crypto";
 import { RULES } from "../score/weights.ts";
+import { declarationOf, type Declaration } from "./declares.ts";
 import { PRODUCT_SECTIONS, parseChangelog, sectionOf, type ChangelogEntry, type ToolingChangelog } from "./changelog.ts";
 import type { ChangeFacts, FileChange, Person, Unit } from "./facts.ts";
 import type { Reviews } from "./github.ts";
@@ -88,6 +89,8 @@ export interface PrRisk {
   reviewed: boolean | null;
   points: number;
   deductions: ChangeDeduction[];
+  /** Since 1.41.0: the artefacts its title or its body's CHANGELOG line names (src/changes/declares.ts); absent when neither does. */
+  declares?: Declaration;
 }
 
 export type Measured<T> = ({ status: "measured" } & T) | { status: "not measured"; reason: string };
@@ -212,6 +215,8 @@ export interface ComputeOptions {
   /** `pnpm release:changelog --json`, parsed, or why it was not used. */
   tooling?: ToolingChangelog;
   harness?: { version: string; contractVersion: string };
+  /** Since 1.41.0: each PR's body, for its CHANGELOG line; a PR missing here is read from its title alone. */
+  bodies?: Map<number, string>;
 }
 
 export function computeChanges(f: ChangeFacts, o: ComputeOptions): Changes {
@@ -426,6 +431,7 @@ export function computeChanges(f: ChangeFacts, o: ComputeOptions): Changes {
   const prs: PrRisk[] = f.units.map((u) => {
     const ds = byUnit.get(u)!.sort((x, y) => order(x) - order(y));
     const url = prUrl(repo, u);
+    const declares = declarationOf(u.title, u.pr !== null ? o.bodies?.get(u.pr) : undefined);
     return {
       pr: u.pr,
       sha: u.sha,
@@ -441,7 +447,8 @@ export function computeChanges(f: ChangeFacts, o: ComputeOptions): Changes {
       testDelta: deltas.get(u)!,
       reviewed: reviewed(u),
       points: sum(ds.map((d) => d.points)),
-      deductions: ds
+      deductions: ds,
+      ...(declares ? { declares } : {})
     };
   });
   const all = [...prs.flatMap((p) => p.deductions), ...loose];

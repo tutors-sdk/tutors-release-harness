@@ -8,7 +8,8 @@
  * Pages and printed on an A3 sheet alike. Light and dark follow the reader's setting. Every chart has its numbers in a
  * table too, and every bar and box says its value on hover.
  */
-import { prWords, unexplainedWords, type Explanation } from "../changes/explain.ts";
+import { missedWords, prWords, unexplainedWords, type Explanation } from "../changes/explain.ts";
+import { declaredWords } from "../changes/declares.ts";
 import { REPO, duration, type A3, type Decisions, type FiveWhys, type Pareto, type Rca, type Score, type ValueStream } from "./model.ts";
 import type { TimingJourney } from "./timing.ts";
 import type { CourseLoad, CourseSide } from "./courses.ts";
@@ -480,8 +481,15 @@ function gapHtml(a: A3): string {
     head("Claimed: a Rule or CHANGELOG entry says so", e.claimed.hunks, "ok"),
     ...e.claimed.rows.slice(0, GAP_ROWS).map((r) => `<tr><td>${esc(r.label)}</td><td class="num">${r.hunks}</td><td class="num">${share(r.hunks)}</td><td></td><td></td></tr>`),
     more(e.claimed.rows, "claims"),
+    ...(e.declared?.rows.length
+      ? [
+          head("Declared by its PR: the CHANGELOG line names it, claimed when the release is cut", e.declared.hunks, "ok"),
+          ...e.declared.rows.slice(0, GAP_ROWS).map((r) => `<tr><td>${prLinks([r.pr])}<br><span class="src">${esc(declaredWords(r.pr.declares!))}${r.pr.declares!.entry ? `: ${esc(r.pr.declares!.entry)}` : ""}</span></td><td class="num">${r.hunks}</td><td class="num">${share(r.hunks)}</td><td>${causes(r.causes)}</td><td class="num">${r.firstSeen.map((f) => esc(day(f.ranAt))).join(", ")}</td></tr>`),
+          more(e.declared.rows, "PRs")
+        ]
+      : []),
     head("Contributed by a PR: first seen the night it merged", e.contributed.hunks, "lead"),
-    ...e.contributed.rows.slice(0, GAP_ROWS).map((r) => `<tr><td>${prLinks(r.prs)}</td><td class="num">${r.hunks}</td><td class="num">${share(r.hunks)}</td><td>${causes(r.causes)}</td><td class="num">${r.firstSeen.map((f) => esc(day(f.ranAt))).join(", ")}</td></tr>`),
+    ...e.contributed.rows.slice(0, GAP_ROWS).map((r) => `<tr><td>${prLinks(r.prs)}${r.missed?.length ? `<br><span class="src">${esc(missedWords(r))}: fix the line, or claim it</span>` : ""}</td><td class="num">${r.hunks}</td><td class="num">${share(r.hunks)}</td><td>${causes(r.causes)}</td><td class="num">${r.firstSeen.map((f) => esc(day(f.ranAt))).join(", ")}</td></tr>`),
     more(e.contributed.rows, "PR groups"),
     head("Unexplained: the record cannot say who", e.unexplained.hunks, "no"),
     ...e.unexplained.rows.map((r) => `<tr><td>${esc(unexplainedWords(r))}${r.suspects?.length ? `<br><span class="src">files point at ${esc(r.suspects.map((p) => (p.pr !== null ? `#${p.pr}` : p.sha.slice(0, 7))).join(", "))}</span>` : ""}</td><td class="num">${r.hunks}</td><td class="num">${share(r.hunks)}</td><td>${causes(r.causes)}</td><td></td></tr>`)
@@ -489,7 +497,7 @@ function gapHtml(a: A3): string {
   return `<section class="blk wide gap" id="gap"><h2>The gap, explained <span class="hint">every difference ${esc(g.comparing)} found, in one row each</span></h2>
 <p class="ledger"><strong>${esc(g.sentence)}</strong></p>${g.verdictNote ? `<p class="src">${esc(g.verdictNote)}</p>` : ""}
 <div class="scroll"><table><thead><tr><th>Explained by</th><th>Differences</th><th>Share</th><th>What changed (kinds)</th><th>First seen</th></tr></thead><tbody>${rows}</tbody></table></div>
-<p class="src">A PR is named when the difference first appeared in the forecast after it merged and its files touch what changed; several PRs merged the same night stay one row ("one of"), never split by guesswork. Read from ${e.history.runs} earlier forecasts beside the same production${e.history.first ? `, ${esc(day(e.history.first))} to ${esc(day(e.history.last ?? ""))}` : ""}.</p></section>`;
+<p class="src">A PR is named when the difference first appeared in the forecast after it merged and its files touch what changed; several PRs merged the same night stay one row ("one of"), never split by guesswork. A PR whose CHANGELOG line names the artefact that moved, as CONTRIBUTING.md asks (<code>(axe, dom)</code>), declared it: nothing is owed on main, and the release author claims it from that line. Read from ${e.history.runs} earlier forecasts beside the same production${e.history.first ? `, ${esc(day(e.history.first))} to ${esc(day(e.history.last ?? ""))}` : ""}.</p></section>`;
 }
 
 /**

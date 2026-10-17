@@ -312,8 +312,11 @@ export function claimsOwed(report: RunReport, attribution?: Attribution): ClaimD
   const causes = causesOf(report);
   const unclaimed = unclaimedOf(report);
   if (!causes || !unclaimed) return undefined;
-  const prs = Object.fromEntries((attribution?.causes ?? []).map((c) => [c.cause, c.prs.slice(0, 3).map((p) => (p.pr !== null ? `#${p.pr}` : p.sha.slice(0, 7)))]));
-  return draftClaims(causes, unclaimed, prs);
+  const id = (p: { pr: number | null; sha: string }) => (p.pr !== null ? `#${p.pr}` : p.sha.slice(0, 7));
+  const prs = Object.fromEntries((attribution?.causes ?? []).map((c) => [c.cause, c.prs.slice(0, 3).map(id)]));
+  // Since 1.41.0: a cause its PR declared drafts with that PR's CHANGELOG line as its reason.
+  const declared = Object.fromEntries((attribution?.causes ?? []).flatMap((c) => (c.declaredBy?.declares?.entry ? [[c.cause, { pr: id(c.declaredBy), entry: c.declaredBy.declares.entry }]] : [])));
+  return draftClaims(causes, unclaimed, prs, declared);
 }
 
 // ---- the rehearsals kept beside it (since 1.16.0) ------------------------------------------------------

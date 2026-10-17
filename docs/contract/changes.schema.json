@@ -81,7 +81,18 @@
           },
           "reviewed": { "type": ["boolean", "null"], "description": "null: not measured (no token), or GitHub could not say." },
           "points": { "type": "number", "minimum": 0 },
-          "deductions": { "type": "array", "items": { "$ref": "#/definitions/deduction" } }
+          "deductions": { "type": "array", "items": { "$ref": "#/definitions/deduction" } },
+          "declares": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["artefacts", "entry", "source"],
+            "description": "Since 1.41.0: the artefacts the PR's title, else its body's CHANGELOG line, names in a trailing parenthesis, e.g. (axe, dom). Absent when neither does.",
+            "properties": {
+              "artefacts": { "type": "array", "items": { "type": "string" } },
+              "entry": { "type": "string" },
+              "source": { "enum": ["title", "body"] }
+            }
+          }
         }
       }
     },
