@@ -51,20 +51,46 @@ export function escapeRegExp(text: string): string {
  * load preload assets" warning when the journey clicked on during that route). The online status read is the
  * reconnect's last await, so it is waited for.
  */
-export async function signInFromAuthPage(page: Page, courseId: string, courseTitle: string, atButton?: () => Promise<void>): Promise<void> {
+export async function signInFromAuthPage(page: Page, courseId: string, courseTitle: string, atButton?: () => Promise<void>, lands: "course" | "turned-away" = "course"): Promise<void> {
+  const origin = new URL(page.url()).origin;
   const button = page.getByRole("button", { name: /Sign in with GitHub/i });
   await button.waitFor(VISIBLE);
   if (atButton) await atButton();
-  await paceSignIn(new URL(page.url()).origin);
-  const reconnected = page.waitForResponse((r) => /\/rest\/v1\/tutors-connect-users\?select=online_status\b/.test(r.url()), { timeout: 30_000 });
-  // Awaited below. If a step before that fails (a mutant that breaks the course), the page closes and
-  // this rejects with nobody listening, which would crash the run instead of failing the journey.
-  reconnected.catch(() => undefined);
-  await button.click();
-  // GitHub sign-in (identity stub) -> callback -> session -> the course.
-  await page.waitForURL(new RegExp(`/course/${escapeRegExp(courseId)}`), { timeout: 30_000 });
-  await page.getByRole("banner").getByRole("heading", { name: courseTitle }).waitFor(VISIBLE);
-  await reconnected;
+  for (let attempt = 1; ; attempt++) {
+    await paceSignIn(origin);
+    const reconnected = page.waitForResponse((r) => /\/rest\/v1\/tutors-connect-users\?select=online_status\b/.test(r.url()), { timeout: 30_000 });
+    // Awaited below. If a step before that fails (a mutant that breaks the course), the page closes and
+    // this rejects with nobody listening, which would crash the run instead of failing the journey.
+    reconnected.catch(() => undefined);
+    await button.click();
+    // GitHub sign-in (identity stub) -> callback -> session -> the course, or My courses for a course that turns them away.
+    const landed = lands === "turned-away" ? page.waitForURL((u) => u.pathname === "/", { timeout: 30_000 }) : page.waitForURL(new RegExp(`/course/${escapeRegExp(courseId)}`), { timeout: 30_000 });
+    landed.catch(() => undefined);
+    const refused = page.getByRole("alert").filter({ hasText: /Unable to load/ }).waitFor({ state: "visible", timeout: 30_000 }).then(() => "refused" as const);
+    refused.catch(() => undefined);
+    if ((await Promise.race([landed.then(() => "landed" as const), refused])) === "refused") {
+      // Since 1.44.0: the limiter refused it (429). Its count is per client, and a sign-in makes more than one request on
+      // its paths, so pacing by sign-ins can still meet it. Wait out the quiet gap once and sign in again; a second
+      // refusal is the reader's, and fails the journey.
+      if (attempt > 1) throw new Error(`the reader refused the sign-in twice ("Unable to load", its limiter), the second time after a ${SIGN_IN_LIMIT.windowMs + SIGN_IN_LIMIT.marginMs} ms quiet gap`);
+      refusedOnce(origin);
+      continue;
+    }
+    signedIn(origin);
+    if (lands === "turned-away") return turnedAway(page);
+    await page.getByRole("banner").getByRole("heading", { name: courseTitle }).waitFor(VISIBLE);
+    await reconnected;
+    return;
+  }
+}
+
+/**
+ * Since 1.44.0: a private course sends a signed-in person it does not list (enrollment.yaml) to My courses, the reader's
+ * root, with nothing said; wait for that page.
+ */
+export async function turnedAway(page: Page): Promise<void> {
+  await page.waitForURL((u) => u.pathname === "/", { timeout: 30_000 });
+  await page.getByRole("main").getByRole("heading", { name: "Welcome to Tutors" }).waitFor(VISIBLE);
 }
 
 /**
@@ -90,4 +116,15 @@ export async function paceSignIn(origin: string, now: () => number = Date.now, s
   }
   signIns.set(origin, { count: state.count + 1, last: now() });
   return waited;
+}
+
+/** Since 1.44.0: a sign-in's last request is its callback, after it lands: the quiet gap runs from there. */
+export function signedIn(origin: string, now: () => number = Date.now): void {
+  const state = signIns.get(origin);
+  if (state) state.last = now();
+}
+
+/** Since 1.44.0: a refused sign-in: the next one waits out the whole gap from now. */
+export function refusedOnce(origin: string, now: () => number = Date.now): void {
+  signIns.set(origin, { count: SIGN_IN_LIMIT.max, last: now() });
 }

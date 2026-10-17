@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Journey } from "./journeys.ts";
 import { parseFeature, type GherkinFeature, type GherkinRule } from "./gherkin.ts";
+import { fixture } from "./fixture.ts";
 import { bind, type World } from "./steps.ts";
 
 /**
@@ -14,11 +15,16 @@ import { bind, type World } from "./steps.ts";
  * `@rule-NNNN` id from the block the project reserved (0582 to 0599). Tags on the Rule:
  *   @journey-<slug>   the journey's name is `rule-<id>-<slug>` (required)
  *   @role-<role>      who the identity stub signs in as: student (default), enrolled, lecturer, owner, admin
+ *   @course-rules     since 1.44.0: read the Rule journeys' course (fixtures/course-server/rules-course: signed in, private,
+ *                     a quiz, a notebook, a calendar), not the fixture course
  * The scenario's name ends "(exercises Rules 0011, 0250-0258, ...)": the monorepo Rules the scenario drives, each id or
- * range as the monorepo numbers them. Every step must match a sentence in traffic/journeys/steps.ts.
+ * range as the monorepo numbers them, then optionally `; <a note>` (since 1.44.0). Every step must match a sentence in traffic/journeys/steps.ts.
  */
 export const FEATURES_DIR = join(import.meta.dirname, "features");
 const ROLES = ["student", "enrolled", "lecturer", "owner", "admin"];
+const COURSES = ["fixture", "rules"];
+/** The Rule journeys' course's title (fixtures/course-server/rules-course-build/build.ts). */
+export const RULES_COURSE_TITLE = "Harness Rules Course";
 
 /** `0011, 0250-0258` -> 0011, 0250, 0251, ..., 0258. */
 export function expandRuleIds(text: string): string[] {
@@ -35,9 +41,12 @@ export function expandRuleIds(text: string): string[] {
   return out;
 }
 
-/** The monorepo Rules a scenario exercises, from its name's trailing "(exercises Rules ...)". */
+/**
+ * The monorepo Rules a scenario exercises, from its name's trailing "(exercises Rules ...)". Since 1.44.0 a `;` ends the
+ * ids and starts a note for people, such as a monorepo scenario that has no Rule yet.
+ */
 export function exercisedBy(scenarioName: string): string[] {
-  const m = /\(exercises Rules? ([^)]+)\)\s*$/.exec(scenarioName);
+  const m = /\(exercises Rules? ([^);]+)(?:;[^)]*)?\)\s*$/.exec(scenarioName);
   return m ? expandRuleIds(m[1]!) : [];
 }
 
@@ -48,6 +57,8 @@ export function journeyOf(feature: GherkinFeature, rule: GherkinRule): Journey {
   if (!slug || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) throw new Error(`${where}: Rule ${rule.id} needs a @journey-<slug> tag (lower case, hyphens)`);
   const role = rule.tags.find((t) => t.startsWith("role-"))?.slice("role-".length) ?? "student";
   if (!ROLES.includes(role)) throw new Error(`${where}: Rule ${rule.id}: @role-${role} is not one of the identity stub's roles (${ROLES.join(", ")})`);
+  const course = rule.tags.find((t) => t.startsWith("course-"))?.slice("course-".length) ?? "fixture";
+  if (!COURSES.includes(course)) throw new Error(`${where}: Rule ${rule.id}: @course-${course} is not one of the harness's courses (${COURSES.join(", ")})`);
   const bound = rule.scenario.steps.map((s) => {
     const b = bind(s.text);
     if (!b) throw new Error(`${feature.file}:${s.line}: no step matches "${s.text}" (traffic/journeys/steps.ts lists the sentences)`);
@@ -60,9 +71,12 @@ export function journeyOf(feature: GherkinFeature, rule: GherkinRule): Journey {
     anonymous: false,
     target: "readerAuth",
     ...(role !== "student" ? { role } : {}),
+    ...(course !== "fixture" ? { course } : {}),
     rules: [rule.id, ...exercisedBy(rule.scenario.name).filter((r) => r !== rule.id)],
     async run(page, urls, onPage) {
-      const world: World = { page, urls, onPage, rule: rule.id };
+      const id = course === "rules" ? urls.rulesCourseId : urls.courseId;
+      if (!id) throw new Error(`this side serves no ${course} course (external side?)`);
+      const world: World = { page, urls, onPage, rule: rule.id, course: { id, title: course === "rules" ? RULES_COURSE_TITLE : fixture.title } };
       for (const s of bound) {
         try {
           await s.def.run(world, ...s.args);

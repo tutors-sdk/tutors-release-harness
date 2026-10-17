@@ -93,7 +93,7 @@ export function stripOrigins(text: string, spec: SideSpec): string {
     const socket = origin.replace(/^http/, "ws");
     if (socket !== origin) out = out.split(socket).join("{{origin}}");
   }
-  const courseHosts = [...new Set([spec.urls.courseId, reference.host, reference.courseId])].sort((x, y) => y.length - x.length);
+  const courseHosts = [...new Set([spec.urls.courseId, ...(spec.urls.rulesCourseId ? [spec.urls.rulesCourseId] : []), reference.host, reference.courseId])].sort((x, y) => y.length - x.length);
   for (const host of courseHosts) for (const scheme of ["http://", "https://"]) out = out.split(`${scheme}${host}`).join("{{course}}");
   return redactSecrets(out);
 }
