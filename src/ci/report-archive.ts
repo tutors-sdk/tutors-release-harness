@@ -60,6 +60,7 @@ import type { Confidence } from "../score/confidence.ts";
 import { CONFIDENCE_FILE } from "../score/read.ts";
 import { LEAD_CSS, attributionLeadHtml, attributionLeadMarkdown, claimsOwedHtml, claimsOwedMarkdown, deltaLeadHtml, deltaLeadMarkdown, gateLineHtml, scoreLeadHtml, scoreLeadMarkdown } from "../report/lead.ts";
 import { attribute, type Attribution } from "../changes/attribute.ts";
+import { declaredPass, explainGap } from "../changes/explain.ts";
 import { foldCauses } from "../report/causes.ts";
 import { draftClaims, type ClaimDraft } from "../claims/draft.ts";
 import { deltaCounts, unclaimedDelta, type DeltaLead, type ReportDelta } from "../report/delta.ts";
@@ -200,7 +201,8 @@ export function keepReport(opts: KeepOptions): { entry: ReportEntry; dropped: st
   const before = parseIndex(existsSync(indexFile) ? readFileSync(indexFile, "utf8") : undefined);
   const delta = deltaLead(report, id, before, root);
   const beside = scoredBeside(runDir, report);
-  const scored = beside && moved.length ? { ...beside, confidence: relink(beside.confidence, moved) } : beside;
+  const relinkedScore = beside && moved.length ? { ...beside, confidence: relink(beside.confidence, moved) } : beside;
+  const scored = relinkedScore ? passExplained(relinkedScore, report, id, before, root) : relinkedScore;
   const attribution = scored?.changes ? attributionLead(report, scored.changes, delta, root, before, id) : undefined;
   for (const name of KEPT_FILES) {
     const from = join(runDir, name);
@@ -316,6 +318,27 @@ function otherBuild(report: RunReport, id: string, index: ReportIndex, root: str
   return r ? { id: r.id, candidate: tagOf(r.sides?.b?.reader) } : undefined;
 }
 
+// ---- PASS, explained (since 1.42.0) ------------------------------------------------------------------------
+
+/**
+ * The score of a forecast whose every unclaimed difference its PR declared, with the Gate turned to PASS and the note
+ * saying why (src/changes/explain.ts `declaredPass`), read against the kept forecasts beside the same baseline. The
+ * run's own report.json is kept as it was, FAIL and all: the Gate is the reading of it. Anything else is unchanged.
+ */
+export function passExplained(s: Scored, report: RunReport, id: string, index: ReportIndex, root: string): Scored {
+  if (!s.confidence.gate.startsWith("FAIL") || !report.compare) return s;
+  const history = index.runs
+    .filter((r) => r.id !== id && r.mode === "release")
+    .flatMap((r) => {
+      const rep = readJson<RunReport>(join(root, r.id, "report.json"));
+      if (!rep?.compare) return [];
+      const ch = readJson<Changes>(join(root, r.id, CHANGES_FILE));
+      return [{ id: r.id, ranAt: r.ranAt, report: rep, ...(ch && Array.isArray(ch.prs) ? { changes: ch } : {}) }];
+    });
+  const passed = declaredPass(report, explainGap({ id, ranAt: report.ranAt, report, ...(s.changes ? { changes: s.changes } : {}) }, history));
+  return passed ? { ...s, confidence: { ...s.confidence, gate: "PASS", note: passed } } : s;
+}
+
 // ---- claims owed, in place of the glance on a forecast (since 1.20.2) -------------------------------------
 
 /** A forecast judges a build of main, `sha-<short>` on side b (Main to RC); a release candidate carries a version tag. */
@@ -424,7 +447,8 @@ const tagOf = (ref: string | undefined) => ref?.split("@")[0]?.split(":").pop() 
  */
 export function withLead(name: string, text: string, report: RunReport, s: Scored, dir: string, delta?: DeltaLead, attribution?: Attribution): string | undefined {
   const overridden = report.override?.applied === true;
-  const code = report.verdict === "fail" && !overridden ? 1 : 0;
+  // Since 1.42.0 a forecast whose every difference its PR declared passes on the Gate (passExplained), its FAIL kept beneath.
+  const code = report.verdict === "fail" && !overridden && s.confidence.gate !== "PASS" ? 1 : 0;
   // Since 1.20.2 a forecast shows the claims it owes where the glance would be; a release candidate keeps its glance.
   const owed = isForecast(report) ? claimsOwed(report, attribution) : undefined;
   if (name === "report.md") {

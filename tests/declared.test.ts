@@ -143,3 +143,43 @@ describe("the forecast's causes on a rerun (since 1.41.1)", () => {
     expect(a.declared).toBe(1);
   });
 });
+
+describe("PASS, explained (since 1.42.0)", () => {
+  const before = run(16, report([], "sha-c867ee8"), changes());
+  const fixed = pr(505, a11y.files, BODY_505.replace("(axe, dom)", "(dom, focus)"));
+  const failing = (r: RunReport) => ({ ...r, verdict: "fail", reasons: [`${r.compare.unclaimed.length} unclaimed diff(s)`] }) as RunReport;
+
+  it("passes a forecast whose every unclaimed difference its PR declared, and says why", async () => {
+    const { declaredPass } = await import("../src/changes/explain.ts");
+    const now = { ...run(17, failing(report(today)), changes(nightly, fixed)) };
+    expect(declaredPass(now.report, explainGap(now, [before]))).toBe(
+      "PASS, explained: all 6 differences no claim covers yet are declared in the CHANGELOG line of the PR that made them (#505: 6). Nothing is owed on main; the release author pastes the claims from those lines when the release is cut."
+    );
+  });
+
+  it("keeps the FAIL when one difference is not declared, on a release candidate, or for any other reason", async () => {
+    const { declaredPass } = await import("../src/changes/explain.ts");
+    const partly = run(17, failing(report(today)), changes(nightly, a11y));
+    expect(declaredPass(partly.report, explainGap(partly, [before]))).toBeUndefined();
+    const rc = run(17, failing(report(today, "17.1.0-rc.1")), changes(nightly, fixed));
+    expect(declaredPass(rc.report, explainGap(rc, [before]))).toBeUndefined();
+    const other = run(17, { ...failing(report(today)), reasons: ["6 unclaimed diff(s)", "migration rehearsal failed"] } as RunReport, changes(nightly, fixed));
+    expect(declaredPass(other.report, explainGap(other, [before]))).toBeUndefined();
+  });
+
+  it("turns the kept score's Gate to PASS with the explanation as its note, and leaves a FAIL it cannot explain", async () => {
+    const { mkdtempSync, mkdirSync, writeFileSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const { join } = await import("node:path");
+    const { passExplained } = await import("../src/ci/report-archive.ts");
+    const root = mkdtempSync(join(tmpdir(), "pass-"));
+    mkdirSync(join(root, "d16"));
+    writeFileSync(join(root, "d16", "report.json"), JSON.stringify({ ...before.report, ranAt: before.ranAt }));
+    writeFileSync(join(root, "d16", "changes.json"), JSON.stringify(changes()));
+    const index = { runs: [{ id: "d16", mode: "release", ranAt: before.ranAt, sides: before.report.sides }] } as never;
+    const scored = (c: Changes) => ({ confidence: { gate: "FAIL", note: "No RCS" }, changes: c }) as never;
+    const r = { ...failing(report(today)), ranAt: "2026-10-17T09:40:00Z" } as RunReport;
+    expect(passExplained(scored(changes(nightly, fixed)), r, "d17", index, root).confidence).toMatchObject({ gate: "PASS", note: expect.stringMatching(/^PASS, explained/) });
+    expect(passExplained(scored(changes(nightly, a11y)), r, "d17", index, root).confidence.gate).toBe("FAIL");
+  });
+});
