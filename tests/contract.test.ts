@@ -153,7 +153,8 @@ const full: DeepRequired<RunReport> = {
   causes: {
     unclaimed: 1,
     causes: [{ id: "0a1b2c3d", key: "headers: header dropped", artefact: "headers", kind: "header dropped", hunks: 1, apps: ["reader"], pages: ["reader:home"], items: ["x-frame-options"], example: { id: "2", scope: "reader:home/x-frame-options", summary: "header dropped" } }],
-    together: [{ artefacts: ["dom", "screenshot"], pages: ["reader:home"], hunks: 2 }]
+    together: [{ artefacts: ["dom", "screenshot"], pages: ["reader:home"], hunks: 2 }],
+    rules: [{ rule: "0582", journey: "rule-0582-signed-in-lab", exercises: ["0011", "0303"], hunks: 2, artefacts: ["dom", "persistence"] }]
   },
   levels: { dom: { level: "blocking", blockingFrom: "2026-11-01" }, headers: { level: "informing", blockingFrom: "2026-11-01" } },
   inRunNoise: { stack: "a2", runs: 1, artefacts: ["dom", "network"], journeys: ["anon-browse"], hunks: [{ artefact: "dom", scope: "reader:course", summary: "reader:course: DOM differs" }], alsoOnB: ["dom:reader:course:1"] },
@@ -217,7 +218,7 @@ describe("report.json", () => {
     const cli = json("docs/contract/cli.json");
     for (const flag of cli.flags.filter((f: { since?: string }) => f.since === "1.2.0")) expect(changes, flag.name).toContain(`--${flag.name === "runtime" ? "no-runtime" : flag.name}`);
     for (const [name, v] of Object.entries(cli.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.2.0")) expect(changes, name).toContain(name);
-    expect(CONTRACT_VERSION).toBe("1.42.0");
+    expect(CONTRACT_VERSION).toBe("1.43.0");
     // The harness version is package.json's and moves at least as far as the contract's (docs/contract.md, Versioning):
     // a mask or engine PR bumps the patch of the harness alone, so do not pin a literal here.
     expect(json("package.json").version).toBe(HARNESS_VERSION);

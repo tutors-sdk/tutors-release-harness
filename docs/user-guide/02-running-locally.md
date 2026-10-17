@@ -208,7 +208,7 @@ The flags shared by the capturing modes:
 | Flag | Meaning |
 | --- | --- |
 | `--runs n` | journey repetitions per side. Default 1 for a direct `run`; the workflows and the `local` wrappers use 5. Timing needs at least four to be judgeable |
-| `--set fixture,auth,reference,replay` | journey sets (default all four; `replay` since 1.28.0) |
+| `--set fixture,auth,reference,replay,rules` | journey sets (default all five; `replay` since 1.28.0, `rules` since 1.43.0) |
 | `--journey name` | one journey; repeatable |
 | `--load 20x30s` | k6 after the journeys on each side, `<rate>x<duration>` |
 | `--out dir` | output root (default `./out`) |

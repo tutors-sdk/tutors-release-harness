@@ -237,9 +237,12 @@ async function newContext(browser: Browser, now: string): Promise<BrowserContext
  * redirects to https://github.com/login/oauth/authorize; the stub answers on
  * the host's published port and redirects straight back to the callback.
  */
-async function routeIdentity(context: BrowserContext) {
+async function routeIdentity(context: BrowserContext, role?: string) {
   await context.route(/^https:\/\/(api\.)?github\.com\//, async (route) => {
     const original = new URL(route.request().url());
+    // Since 1.43.0: a journey that signs in as someone other than the stub's default (a lecturer) says so with GitHub's
+    // own `login_hint`, which the stub reads on the authorise hop (fixtures/identity).
+    if (role && original.pathname === "/login/oauth/authorize") original.searchParams.set("login_hint", role);
     const target = `${IDENTITY_URL}${original.pathname}${original.search}`;
     try {
       const response = await route.fetch({ url: target, maxRedirects: 0 });
@@ -273,7 +276,7 @@ export async function quiet(count: () => number, quietMs: number, maxMs: number,
 export async function captureJourney(browser: Browser, spec: SideSpec, journey: Journey, run: number, opts: BrowserCaptureOptions): Promise<JourneyCapture> {
   const context = await newContext(browser, opts.now);
   context.setDefaultTimeout(ACTION_TIMEOUT_MS);
-  if (journey.target === "readerAuth") await routeIdentity(context);
+  if (journey.target === "readerAuth") await routeIdentity(context, journey.role);
   // Google Fonts, Iconify and jsDelivr are answered from one recorded copy, the same bytes on both sides, at once
   // (src/collectors/third-party-cache.ts): an icon or the typeface can no longer arrive on one side only before a shot.
   await routeThirdParty(context);

@@ -3,6 +3,8 @@ import type { StackUrls } from "../../src/types.ts";
 import { fixture } from "./fixture.ts";
 import { reference } from "./reference.ts";
 import { REPLAY_URLS } from "../replay/urls.ts";
+import { VISIBLE, labSteps, pageHeading, signInFromAuthPage, stepLink } from "./ui.ts";
+import { ruleJourneys } from "./rules.ts";
 
 /**
  * The named journeys, ported from the monorepo's tier G suite and
@@ -14,13 +16,14 @@ import { REPLAY_URLS } from "../replay/urls.ts";
  * something by role, that is an accessibility finding, not a reason to reach
  * for CSS.
  *
- * Seven journeys in four sets (fixture 4, auth 1, reference 1, replay 1), not a hundred: the harness's power is breadth of capture
+ * Nine journeys in five sets (fixture 4, auth 1, reference 1, replay 1, rules 2 since 1.43.0), not a hundred: the harness's power is breadth of capture
  * per page, not the number of pages. Add one only when a real regression
  * escaped that a journey would have caught.
  */
 export type OnPage = (pageKey: string) => Promise<void>;
 
-export type JourneySet = "fixture" | "auth" | "reference" | "replay";
+export const JOURNEY_SETS = ["fixture", "auth", "reference", "replay", "rules"] as const;
+export type JourneySet = (typeof JOURNEY_SETS)[number];
 
 export interface Journey {
   name: string;
@@ -35,46 +38,17 @@ export interface Journey {
    * only status, headers and network are compared for its pages (src/compare/replay.ts).
    */
   replay?: true;
+  /**
+   * Since 1.43.0: who the identity stub signs in as (fixtures/identity: student, enrolled, lecturer, owner, admin), sent
+   * as GitHub's `login_hint` on the authorise hop. Absent: the stub's default, student.
+   */
+  role?: string;
+  /**
+   * Since 1.43.0, the Rule journeys (traffic/journeys/features): the journey's own Rule id first, then the monorepo
+   * Rules its scenario exercises. A difference on one of its pages is about these Rules (src/report/causes.ts).
+   */
+  rules?: string[];
   run: (page: Page, urls: StackUrls, onPage: OnPage) => Promise<void>;
-}
-
-const VISIBLE = { state: "visible" as const, timeout: 15_000 };
-
-/**
- * The lab step navigation that is visible at this viewport. Up to 16.2.x it is the
- * navigation "Lab steps" (sidebar on desktop, bottom bar on mobile); the course
- * shell that replaced it (2026-09) lists the steps as the list "Steps" in the
- * "Course navigation" sidebar.
- */
-function labSteps(page: Page) {
-  return page
-    .getByRole("navigation", { name: "Lab steps" })
-    .or(page.getByRole("complementary", { name: "Course navigation" }).getByRole("list", { name: "Steps" }))
-    .filter({ visible: true })
-    .first();
-}
-
-/** A lab step's link in the step navigation: "Step 1" up to 16.2.x, "02 Step 1" (numbered) in the course shell. */
-function stepLink(heading: string) {
-  return new RegExp(`^(?:\\d+\\s+)?${escapeRegExp(heading)}$`);
-}
-
-/**
- * The heading that names the page being read: up to 16.2.x the banner's heading,
- * in the course shell the main content's level-1 heading (the banner names the course),
- * and since mono-repo #400 (sha-3b9e456) a topic's title on the side menu's card of the open learning object.
- */
-function pageHeading(page: Page, name: string) {
-  return page
-    .getByRole("banner")
-    .getByRole("heading", { name })
-    .or(page.getByRole("main").getByRole("heading", { level: 1, name }))
-    .or(page.getByRole("complementary", { name: "Course navigation" }).getByRole("heading", { level: 2, name }))
-    .first();
-}
-
-function escapeRegExp(text: string): string {
-  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 // ---- fixture course, anonymous ------------------------------------------------------
@@ -202,26 +176,7 @@ export const studentSignsIn: Journey = {
     const base = urls.readerAuth;
     if (!base) throw new Error("this side has no signed-in reader (external side?)");
     await page.goto(`${base}/auth/${urls.courseId}`);
-    const button = page.getByRole("button", { name: /Sign in with GitHub/i });
-    await button.waitFor(VISIBLE);
-    await onPage("reader-auth:sign-in");
-
-    // Once the course has rendered, the reader reconnects the student in the background: it reads
-    // their sentiment, then their online status, and only then sets whether they share presence
-    // (which shows or hides the course shell's "Activity" group) and routes back to the course.
-    // The heading is visible before that, so a capture taken on the heading alone sometimes saw
-    // the page before the reconnect and sometimes after (an A/A diff on the sidebar, and a
-    // "Couldn't load preload assets" warning when the journey clicked on during that route).
-    // The online status read is the reconnect's last await, so wait for it before capturing.
-    const reconnected = page.waitForResponse((r) => /\/rest\/v1\/tutors-connect-users\?select=online_status\b/.test(r.url()), { timeout: 30_000 });
-    // Awaited below. If a step before that fails (a mutant that breaks the course), the page closes and
-    // this rejects with nobody listening, which would crash the run instead of failing the journey.
-    reconnected.catch(() => undefined);
-    await button.click();
-    // GitHub sign-in (identity stub) -> callback -> session -> the course.
-    await page.waitForURL(new RegExp(`/course/${urls.courseId}`), { timeout: 30_000 });
-    await page.getByRole("banner").getByRole("heading", { name: fixture.title }).waitFor(VISIBLE);
-    await reconnected;
+    await signInFromAuthPage(page, urls.courseId, fixture.title, () => onPage("reader-auth:sign-in"));
     await onPage("reader-auth:course");
 
     await page.getByRole("link", { name: new RegExp(`^${fixture.topicTitle}\\b`) }).click();
@@ -285,7 +240,7 @@ export const replayCourseUrls: Journey = {
 };
 
 /** Every journey, in the order they run. */
-export const journeys: Journey[] = [anonymousStudentReadsCourse, anonymousStudentSearches, catalogueLoads, liveLoads, studentSignsIn, referenceCourseReads, replayCourseUrls];
+export const journeys: Journey[] = [anonymousStudentReadsCourse, anonymousStudentSearches, catalogueLoads, liveLoads, studentSignsIn, referenceCourseReads, replayCourseUrls, ...ruleJourneys];
 
 export function journeyByName(name: string): Journey {
   const journey = journeys.find((j) => j.name === name);

@@ -31,6 +31,8 @@ import { claimLabel } from "../claims/rules.ts";
 import { causeKey, foldCauses, kindOf } from "../report/causes.ts";
 import { byPath, declarer, mergedSince, missedBy, named, type AttributedPr } from "./attribute.ts";
 import { declaredWords } from "./declares.ts";
+import { rulesTouched } from "../report/rules-touched.ts";
+import type { RuleTouched } from "../report/rules-touched.ts";
 import type { Changes } from "./signals.ts";
 
 /** A run the ledger reads: the report it judged and the range of PRs it was built from. */
@@ -97,6 +99,8 @@ export interface Explanation {
   /** Since 1.41.0; absent in an explanation kept before it. */
   declared?: { hunks: number; rows: DeclaredRow[] };
   unexplained: { hunks: number; rows: UnexplainedRow[] };
+  /** Since 1.43.0: the Rule journeys among the run's unclaimed differences (src/report/rules-touched.ts); absent when none. */
+  rules?: RuleTouched[];
   /** The forecasts read for history, oldest first; the run itself is not among them. */
   history: { runs: number; first: string | null; last: string | null };
 }
@@ -225,12 +229,14 @@ export function explainGap(run: LedgerRun, history: LedgerRun[]): Explanation {
     })
     .sort((x, y) => y.hunks - x.hunks);
   const sum = (rows: { hunks: number }[]) => rows.reduce((n, r) => n + r.hunks, 0);
+  const rules = rulesTouched(unclaimed);
   return {
     total: claimedHunks + unclaimed.length,
     claimed: { hunks: claimedHunks, rows: [...claims.values()].sort((x, y) => y.hunks - x.hunks || x.label.localeCompare(y.label)) },
     contributed: { hunks: sum(prRows), rows: prRows },
     declared: { hunks: sum(declaredRows), rows: declaredRows },
     unexplained: { hunks: sum(unexplainedRows), rows: unexplainedRows },
+    ...(rules.length ? { rules } : {}),
     history: { runs: past.length, first: past[0]?.ranAt ?? null, last: past.at(-1)?.ranAt ?? null }
   };
 }

@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.42.0`
+Contract version: `1.43.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -335,6 +335,12 @@ artefacts (`dom`, `focus`, `network`, `screenshot` on 16 pages): likely one chan
 claimed together. `report.md` and `report.html` lead their differences with the cause table
 ("899 unclaimed differences, 19 causes") and these groups. The wording of `kind` follows the
 engines' summaries and may change in a patch; `key` is stable within a harness version.
+
+Since 1.43.0 `rules` lists the Rule journeys (`traffic/journeys/features`, the set `rules`) whose pages or ledgers are
+among the unclaimed differences: each with its `rule` id, its `journey`, the monorepo Rules its scenario `exercises`, its
+`hunks` and the `artefacts` that moved, most differences first. A hunk belongs to a Rule journey when its page key is
+`<app>:rule-<id>-<name>` or its ledger scope `rule-<id>-<slug>/<table>`. Absent when no Rule journey moved; like the rest
+of `causes`, nothing that judges reads it.
 
 ### Engine levels
 
@@ -1695,7 +1701,7 @@ confidence`), nor `harness guard scoreboard` (since 1.11.0; `guard all` runs it 
 
 | Command | Stable flags |
 | --- | --- |
-| `harness run` | `--mode` (required), `--a`, `--b` (required except in post-deploy), `--claims <file>`, `--rules <path\|url>` (since 1.3.0: the Rules a claim may name, see [The rules file](#the-rules-file)), `--vex <file>` (since 1.23.0: the release's OpenVEX file, handed to the scanner, see [OpenVEX](#openvex-exceptions-the-scanner-reads)), `--slo <file>` (since 1.34.0: the release's service level objectives, see [Service level objectives](#service-level-objectives)), `--a2` (since 1.24.0, not stable: side a2, see [In-run noise](#in-run-noise-side-a2)), `--noise <file\|dir\|skip\|none>` (omitted: the latest status in the local store, see [`noise-status.json`](#noise-statusjson-and-the-7-day-rule)), `--runs <n>`, `--set <fixture,auth,reference,replay>` (`replay` since 1.28.0), `--journey <name>` (repeatable), `--load <rate>x<duration>`, `--out <dir>`, `--image-prefix <prefix or {app} template>`, `--allow-unsigned`, `--require-verified` (noise mode: write the status `degraded` unless every image on both sides was pulled and verified in this run), `--override-reason <text>` and `--override-by <who>` (see [Overriding a FAIL](#overriding-a-fail)), `--a-digests <digests>` and `--b-digests <digests>` (since 1.3.0: pin a side's images, see [Image digests](#image-digests-and-the-release-record)); post-deploy: `--recorded <release run dir>`, `--production reader=URL,catalogue=URL,live=URL[,time=URL]`, and since 1.3.0 `--deployed <tag>`, `--deployed-digests <digests>` and `--release-record <file\|dir>` (see [Checking a deployment](#checking-a-deployment)) |
+| `harness run` | `--mode` (required), `--a`, `--b` (required except in post-deploy), `--claims <file>`, `--rules <path\|url>` (since 1.3.0: the Rules a claim may name, see [The rules file](#the-rules-file)), `--vex <file>` (since 1.23.0: the release's OpenVEX file, handed to the scanner, see [OpenVEX](#openvex-exceptions-the-scanner-reads)), `--slo <file>` (since 1.34.0: the release's service level objectives, see [Service level objectives](#service-level-objectives)), `--a2` (since 1.24.0, not stable: side a2, see [In-run noise](#in-run-noise-side-a2)), `--noise <file\|dir\|skip\|none>` (omitted: the latest status in the local store, see [`noise-status.json`](#noise-statusjson-and-the-7-day-rule)), `--runs <n>`, `--set <fixture,auth,reference,replay,rules>` (`replay` since 1.28.0, `rules` since 1.43.0), `--journey <name>` (repeatable), `--load <rate>x<duration>`, `--out <dir>`, `--image-prefix <prefix or {app} template>`, `--allow-unsigned`, `--require-verified` (noise mode: write the status `degraded` unless every image on both sides was pulled and verified in this run), `--override-reason <text>` and `--override-by <who>` (see [Overriding a FAIL](#overriding-a-fail)), `--a-digests <digests>` and `--b-digests <digests>` (since 1.3.0: pin a side's images, see [Image digests](#image-digests-and-the-release-record)); post-deploy: `--recorded <release run dir>`, `--production reader=URL,catalogue=URL,live=URL[,time=URL]`, and since 1.3.0 `--deployed <tag>`, `--deployed-digests <digests>` and `--release-record <file\|dir>` (see [Checking a deployment](#checking-a-deployment)) |
 | `harness compare` | `--dir <run dir>` (required), `--mode` (required), `--claims`, `--rules`, `--slo` (since 1.34.0), `--noise` |
 | `harness images ensure` | `--a`, `--b` (required), `--a-digests`, `--b-digests` (since 1.3.0: pull by digest, verify on it, refuse a tag that has moved; a pinned image is never built), `--ref-a`, `--ref-b` (monorepo git refs to build from when the pull fails), `--image-prefix`, `--allow-unsigned`, `--image-cache <dir>` (since 1.2.0: refreshed from images pulled and verified in this run; used, as provenance `cached`, only when the registry cannot be reached, and never for a tag the registry says does not exist). With `GITHUB_OUTPUT` set it writes `image_cache=none\|used\|refreshed` |
 | `harness mutants` | `--base <tag or reader image>` (required), `--out`, `--image-prefix`, `--allow-unsigned` |
@@ -2099,6 +2105,16 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.43.0 (minor; Rule journeys)
+
+The release note is [releases/1.43.0.md](releases/1.43.0.md). A minor. A fifth journey set, `rules`: one journey per
+EARS Rule written in Gherkin in `traffic/journeys/features/` (Rules 0582 and 0583 today, from the block 0582 to 0599),
+in the default sets, so `--set` takes `rules` and the default is every set. `report.json` `causes` gains the optional
+`rules` (the Rule journeys among the unclaimed differences), and the A3 gap section prints them. Their pages are new
+page keys (`<app>:rule-<id>-<name>`), so a report has more pages; no verdict, Gate, score or exit code reads `causes.rules`.
+The local edge sends `X-Forwarded-For`, so the signed-in reader logs no client-IP warning; sign-ins are paced under the
+reader's Better Auth limiter.
 
 ### 1.42.0 (minor; PASS, explained)
 

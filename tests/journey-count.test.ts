@@ -12,15 +12,16 @@ const WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "e
 const read = (f: string) => readFileSync(resolve(ROOT, f), "utf8");
 
 describe("journey counts written in prose", () => {
-  it("there are seven journeys in four sets (the replay set since 1.28.0)", () => {
-    expect(journeys).toHaveLength(7);
-    expect(new Set(journeys.map((j) => j.set)).size).toBe(4);
+  it("there are nine journeys in five sets (the replay set since 1.28.0, the rules set since 1.43.0)", () => {
+    expect(journeys).toHaveLength(9);
+    expect(new Set(journeys.map((j) => j.set)).size).toBe(5);
   });
 
   it.each(["README.md", "TESTING.md", "traffic/journeys/journeys.ts", "docs/contract.md", "docs/modes.md", "src/types.ts", "compose.harness.yaml"])(
     "%s states no other number of journeys or sets",
     (file) => {
-      for (const m of read(file).matchAll(/\b(zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|\d+) (journeys|sets)\b/gi)) {
+      // A changelog entry states the count of its own release (contract.md "## Changes"): history, not a claim about now.
+      for (const m of read(file).split(/^## Changes$/m)[0]!.matchAll(/\b(zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|\d+) (journeys|sets)\b/gi)) {
         const n = WORDS.indexOf(m[1]!.toLowerCase());
         const said = n >= 0 ? n : Number(m[1]);
         const truth = m[2] === "journeys" ? journeys.length : new Set(journeys.map((j) => j.set)).size;
