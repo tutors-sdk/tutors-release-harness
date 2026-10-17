@@ -1,0 +1,1124 @@
+{
+  "schemaVersion": 1,
+  "harness": {
+    "version": "1.41.1",
+    "gitSha": "e5cbd181ce3992129789e01d58a601336d7b555f",
+    "contractVersion": "1.41.0"
+  },
+  "harnessVersion": "1.41.1",
+  "mode": "migration",
+  "substrate": "compose",
+  "ranAt": "2026-10-17T09:14:32.586Z",
+  "now": "2026-09-16T09:05:00.000Z",
+  "runs": 1,
+  "sides": {
+    "a": {
+      "reader": "migrations:v17.0.0",
+      "catalogue": "-",
+      "live": "-",
+      "time": "-"
+    },
+    "b": {
+      "reader": "migrations:83d4ccf7f5ca2440bbc94224e40c5bfef3e410d9",
+      "catalogue": "-",
+      "live": "-",
+      "time": "-"
+    }
+  },
+  "verdict": "pass",
+  "reasons": [
+    "the candidate's migrations respect expand/contract and roll back cleanly"
+  ],
+  "compare": {
+    "hunks": [
+      {
+        "id": "migration:realtime_budget:1",
+        "artefact": "migration",
+        "scope": "realtime_budget",
+        "severity": "info",
+        "summary": "new table realtime_budget"
+      },
+      {
+        "id": "migration:realtime_settings:2",
+        "artefact": "migration",
+        "scope": "realtime_settings",
+        "severity": "info",
+        "summary": "new table realtime_settings"
+      },
+      {
+        "id": "migration:realtime_watchers:3",
+        "artefact": "migration",
+        "scope": "realtime_watchers",
+        "severity": "info",
+        "summary": "new table realtime_watchers"
+      },
+      {
+        "id": "migration:idx_calendar_course_day:4",
+        "artefact": "migration",
+        "scope": "idx_calendar_course_day",
+        "severity": "info",
+        "summary": "new index idx_calendar_course_day"
+      },
+      {
+        "id": "migration:realtime_budget_pkey:5",
+        "artefact": "migration",
+        "scope": "realtime_budget_pkey",
+        "severity": "info",
+        "summary": "new index realtime_budget_pkey"
+      },
+      {
+        "id": "migration:realtime_settings_pkey:6",
+        "artefact": "migration",
+        "scope": "realtime_settings_pkey",
+        "severity": "info",
+        "summary": "new index realtime_settings_pkey"
+      },
+      {
+        "id": "migration:realtime_watchers_pkey:7",
+        "artefact": "migration",
+        "scope": "realtime_watchers_pkey",
+        "severity": "info",
+        "summary": "new index realtime_watchers_pkey"
+      },
+      {
+        "id": "migration:live_budget_tier/1:8",
+        "artefact": "migration",
+        "scope": "live_budget_tier/1",
+        "severity": "info",
+        "summary": "new function live_budget_tier/1"
+      },
+      {
+        "id": "migration:realtime_claim_live_publish/1:9",
+        "artefact": "migration",
+        "scope": "realtime_claim_live_publish/1",
+        "severity": "info",
+        "summary": "new function realtime_claim_live_publish/1"
+      },
+      {
+        "id": "migration:realtime_watch/2:10",
+        "artefact": "migration",
+        "scope": "realtime_watch/2",
+        "severity": "info",
+        "summary": "new function realtime_watch/2"
+      },
+      {
+        "id": "migration:rollback:11",
+        "artefact": "migration",
+        "scope": "rollback",
+        "severity": "info",
+        "summary": "rollback restores version a's schema exactly"
+      }
+    ],
+    "matches": [
+      {
+        "hunk": {
+          "id": "migration:realtime_budget:1",
+          "artefact": "migration",
+          "scope": "realtime_budget",
+          "severity": "info",
+          "summary": "new table realtime_budget"
+        }
+      },
+      {
+        "hunk": {
+          "id": "migration:realtime_settings:2",
+          "artefact": "migration",
+          "scope": "realtime_settings",
+          "severity": "info",
+          "summary": "new table realtime_settings"
+        }
+      },
+      {
+        "hunk": {
+          "id": "migration:realtime_watchers:3",
+          "artefact": "migration",
+          "scope": "realtime_watchers",
+          "severity": "info",
+          "summary": "new table realtime_watchers"
+        }
+      },
+      {
+        "hunk": {
+          "id": "migration:idx_calendar_course_day:4",
+          "artefact": "migration",
+          "scope": "idx_calendar_course_day",
+          "severity": "info",
+          "summary": "new index idx_calendar_course_day"
+        }
+      },
+      {
+        "hunk": {
+          "id": "migration:realtime_budget_pkey:5",
+          "artefact": "migration",
+          "scope": "realtime_budget_pkey",
+          "severity": "info",
+          "summary": "new index realtime_budget_pkey"
+        }
+      },
+      {
+        "hunk": {
+          "id": "migration:realtime_settings_pkey:6",
+          "artefact": "migration",
+          "scope": "realtime_settings_pkey",
+          "severity": "info",
+          "summary": "new index realtime_settings_pkey"
+        }
+      },
+      {
+        "hunk": {
+          "id": "migration:realtime_watchers_pkey:7",
+          "artefact": "migration",
+          "scope": "realtime_watchers_pkey",
+          "severity": "info",
+          "summary": "new index realtime_watchers_pkey"
+        }
+      },
+      {
+        "hunk": {
+          "id": "migration:live_budget_tier/1:8",
+          "artefact": "migration",
+          "scope": "live_budget_tier/1",
+          "severity": "info",
+          "summary": "new function live_budget_tier/1"
+        }
+      },
+      {
+        "hunk": {
+          "id": "migration:realtime_claim_live_publish/1:9",
+          "artefact": "migration",
+          "scope": "realtime_claim_live_publish/1",
+          "severity": "info",
+          "summary": "new function realtime_claim_live_publish/1"
+        }
+      },
+      {
+        "hunk": {
+          "id": "migration:realtime_watch/2:10",
+          "artefact": "migration",
+          "scope": "realtime_watch/2",
+          "severity": "info",
+          "summary": "new function realtime_watch/2"
+        }
+      },
+      {
+        "hunk": {
+          "id": "migration:rollback:11",
+          "artefact": "migration",
+          "scope": "rollback",
+          "severity": "info",
+          "summary": "rollback restores version a's schema exactly"
+        }
+      }
+    ],
+    "unclaimed": [],
+    "staleClaims": [],
+    "broadUnapproved": []
+  },
+  "masksApplied": {
+    "response-date": 0,
+    "request-id": 0,
+    "etag": 0,
+    "metrics-process": 0,
+    "metrics-timing-histograms": 0,
+    "third-party-requests": 0,
+    "persistence-stub-requests": 0,
+    "realtime-rest-fallback-warning": 0,
+    "oauth-callback-state": 0,
+    "media-range-status": 0,
+    "chromium-compute-pressure-policy": 0,
+    "hashed-assets": 0,
+    "footer-tutors-version": 0,
+    "transport-length": 0,
+    "transport-connection": 0,
+    "transport-encoding": 0,
+    "transport-transfer": 0,
+    "transport-keepalive": 0
+  },
+  "migration": {
+    "a": {
+      "ref": "v17.0.0",
+      "files": [
+        "20260822_create_app_errors.sql",
+        "20260924_enable_rls_public_tables.sql",
+        "20261013_tutors_connect_latest_recent_index.sql",
+        "20261014_record_page_view_and_heartbeat.sql"
+      ],
+      "catalog": {
+        "tables": {
+          "app_errors": {
+            "id": {
+              "type": "uuid",
+              "nullable": false,
+              "default": "gen_random_uuid()"
+            },
+            "created_at": {
+              "type": "timestamp with time zone",
+              "nullable": false,
+              "default": "now()"
+            },
+            "app": {
+              "type": "text",
+              "nullable": false,
+              "default": null
+            },
+            "level": {
+              "type": "text",
+              "nullable": false,
+              "default": null
+            },
+            "message": {
+              "type": "text",
+              "nullable": false,
+              "default": null
+            },
+            "context": {
+              "type": "jsonb",
+              "nullable": true,
+              "default": "'{}'::jsonb"
+            },
+            "url": {
+              "type": "text",
+              "nullable": true,
+              "default": null
+            },
+            "user_agent": {
+              "type": "text",
+              "nullable": true,
+              "default": null
+            },
+            "course_id": {
+              "type": "text",
+              "nullable": true,
+              "default": null
+            },
+            "student_id": {
+              "type": "text",
+              "nullable": true,
+              "default": null
+            }
+          },
+          "calendar": {
+            "id": {
+              "type": "date",
+              "nullable": false,
+              "default": null
+            },
+            "studentid": {
+              "type": "text",
+              "nullable": false,
+              "default": null
+            },
+            "courseid": {
+              "type": "text",
+              "nullable": false,
+              "default": null
+            },
+            "timeactive": {
+              "type": "bigint",
+              "nullable": true,
+              "default": null
+            },
+            "pageloads": {
+              "type": "bigint",
+              "nullable": true,
+              "default": null
+            }
+          },
+          "learning_records": {
+            "course_id": {
+              "type": "text",
+              "nullable": false,
+              "default": null
+            },
+            "student_id": {
+              "type": "text",
+              "nullable": false,
+              "default": null
+            },
+            "lo_id": {
+              "type": "text",
+              "nullable": true,
+              "default": null
+            },
+            "duration": {
+              "type": "bigint",
+              "nullable": true,
+              "default": null
+            },
+            "count": {
+              "type": "bigint",
+              "nullable": true,
+              "default": null
+            },
+            "date_last_accessed": {
+              "type": "timestamp with time zone",
+              "nullable": true,
+              "default": null
+            },
+            "type": {
+              "type": "text",
+              "nullable": true,
+              "default": null
+            }
+          },
+          "tutors-connect-courses": {
+            "course_id": {
+              "type": "text",
+              "nullable": false,
+              "default": null
+            },
+            "visited_at": {
+              "type": "timestamp with time zone",
+              "nullable": false,
+              "default": "now()"
+            },
+            "visit_count": {
+              "type": "bigint",
+              "nullable": true,
+              "default": null
+            },
+            "course_record": {
+              "type": "json",
+              "nullable": true,
+              "default": null
+            }
+          },
+          "tutors-connect-latest": {
+            "course_id": {
+              "type": "text",
+              "nullable": false,
+              "default": null
+            },
+            "student_id": {
+              "type": "text",
+              "nullable": false,
+              "default": null
+            },
+            "payload": {
+              "type": "jsonb",
+              "nullable": true,
+              "default": null
+            },
+            "received_at": {
+              "type": "timestamp with time zone",
+              "nullable": true,
+              "default": null
+            }
+          },
+          "tutors-connect-users": {
+            "github_id": {
+              "type": "text",
+              "nullable": false,
+              "default": null
+            },
+            "email": {
+              "type": "text",
+              "nullable": true,
+              "default": null
+            },
+            "full_name": {
+              "type": "text",
+              "nullable": true,
+              "default": null
+            },
+            "avatar_url": {
+              "type": "text",
+              "nullable": true,
+              "default": null
+            },
+            "online_status": {
+              "type": "text",
+              "nullable": true,
+              "default": null
+            },
+            "date_last_accessed": {
+              "type": "timestamp with time zone",
+              "nullable": true,
+              "default": null
+            },
+            "sentiment": {
+              "type": "text",
+              "nullable": true,
+              "default": null
+            }
+          }
+        },
+        "indexes": [
+          "app_errors_pkey",
+          "calendar_id_studentid_courseid_key",
+          "idx_app_errors_app_created",
+          "idx_app_errors_course",
+          "idx_app_errors_level",
+          "idx_tutors_connect_latest_course_recent",
+          "learning_records_student_id_course_id_lo_id_key",
+          "tutors-connect-courses_pkey",
+          "tutors-connect-latest_course_id_student_id_key",
+          "tutors-connect-users_pkey"
+        ],
+        "functions": [
+          "get_error_counts/1",
+          "record_heartbeat/4",
+          "record_page_view/5"
+        ],
+        "policies": [
+          "app_errors:anon_insert_app_errors",
+          "app_errors:anon_select_app_errors",
+          "calendar:anon_insert",
+          "calendar:anon_select",
+          "calendar:anon_update",
+          "learning_records:anon_insert",
+          "learning_records:anon_select",
+          "learning_records:anon_update",
+          "tutors-connect-courses:anon_delete",
+          "tutors-connect-courses:anon_insert",
+          "tutors-connect-courses:anon_select",
+          "tutors-connect-courses:anon_update",
+          "tutors-connect-latest:anon_insert",
+          "tutors-connect-latest:anon_select",
+          "tutors-connect-latest:anon_update",
+          "tutors-connect-users:anon_insert",
+          "tutors-connect-users:anon_select",
+          "tutors-connect-users:anon_update"
+        ]
+      }
+    },
+    "b": {
+      "ref": "83d4ccf7f5ca2440bbc94224e40c5bfef3e410d9",
+      "files": [
+        "20260822_create_app_errors.sql",
+        "20260924_enable_rls_public_tables.sql",
+        "20261013_tutors_connect_latest_recent_index.sql",
+        "20261014_record_page_view_and_heartbeat.sql",
+        "20261015_calendar_course_day_index.sql",
+        "20261016_realtime_live_budget.sql"
+      ],
+      "catalog": {
+        "tables": {
+          "app_errors": {
+            "id": {
+              "type": "uuid",
+              "nullable": false,
+              "default": "gen_random_uuid()"
+            },
+            "created_at": {
+              "type": "timestamp with time zone",
+              "nullable": false,
+              "default": "now()"
+            },
+            "app": {
+              "type": "text",
+              "nullable": false,
+              "default": null
+            },
+            "level": {
+              "type": "text",
+              "nullable": false,
+              "default": null
+            },
+            "message": {
+              "type": "text",
+              "nullable": false,
+              "default": null
+            },
+            "context": {
+              "type": "jsonb",
+              "nullable": true,
+              "default": "'{}'::jsonb"
+            },
+            "url": {
+              "type": "text",
+              "nullable": true,
+              "default": null
+            },
+            "user_agent": {
+              "type": "text",
+              "nullable": true,
+              "default": null
+            },
+            "course_id": {
+              "type": "text",
+              "nullable": true,
+              "default": null
+            },
+            "student_id": {
+              "type": "text",
+              "nullable": true,
+              "default": null
+            }
+          },
+          "calendar": {
+            "id": {
+              "type": "date",
+              "nullable": false,
+              "default": null
+            },
+            "studentid": {
+              "type": "text",
+              "nullable": false,
+              "default": null
+            },
+            "courseid": {
+              "type": "text",
+              "nullable": false,
+              "default": null
+            },
+            "timeactive": {
+              "type": "bigint",
+              "nullable": true,
+              "default": null
+            },
+            "pageloads": {
+              "type": "bigint",
+              "nullable": true,
+              "default": null
+            }
+          },
+          "learning_records": {
+            "course_id": {
+              "type": "text",
+              "nullable": false,
+              "default": null
+            },
+            "student_id": {
+              "type": "text",
+              "nullable": false,
+              "default": null
+            },
+            "lo_id": {
+              "type": "text",
+              "nullable": true,
+              "default": null
+            },
+            "duration": {
+              "type": "bigint",
+              "nullable": true,
+              "default": null
+            },
+            "count": {
+              "type": "bigint",
+              "nullable": true,
+              "default": null
+            },
+            "date_last_accessed": {
+              "type": "timestamp with time zone",
+              "nullable": true,
+              "default": null
+            },
+            "type": {
+              "type": "text",
+              "nullable": true,
+              "default": null
+            }
+          },
+          "realtime_budget": {
+            "day": {
+              "type": "date",
+              "nullable": false,
+              "default": null
+            },
+            "sent": {
+              "type": "bigint",
+              "nullable": false,
+              "default": "0"
+            }
+          },
+          "realtime_settings": {
+            "id": {
+              "type": "boolean",
+              "nullable": false,
+              "default": "true"
+            },
+            "live_daily_budget": {
+              "type": "bigint",
+              "nullable": false,
+              "default": "120000"
+            },
+            "slow_at": {
+              "type": "numeric",
+              "nullable": false,
+              "default": "0.7"
+            },
+            "pause_at": {
+              "type": "numeric",
+              "nullable": false,
+              "default": "0.9"
+            },
+            "watcher_ttl_seconds": {
+              "type": "integer",
+              "nullable": false,
+              "default": "90"
+            }
+          },
+          "realtime_watchers": {
+            "topic": {
+              "type": "text",
+              "nullable": false,
+              "default": null
+            },
+            "watcher": {
+              "type": "text",
+              "nullable": false,
+              "default": null
+            },
+            "seen_at": {
+              "type": "timestamp with time zone",
+              "nullable": false,
+              "default": "now()"
+            }
+          },
+          "tutors-connect-courses": {
+            "course_id": {
+              "type": "text",
+              "nullable": false,
+              "default": null
+            },
+            "visited_at": {
+              "type": "timestamp with time zone",
+              "nullable": false,
+              "default": "now()"
+            },
+            "visit_count": {
+              "type": "bigint",
+              "nullable": true,
+              "default": null
+            },
+            "course_record": {
+              "type": "json",
+              "nullable": true,
+              "default": null
+            }
+          },
+          "tutors-connect-latest": {
+            "course_id": {
+              "type": "text",
+              "nullable": false,
+              "default": null
+            },
+            "student_id": {
+              "type": "text",
+              "nullable": false,
+              "default": null
+            },
+            "payload": {
+              "type": "jsonb",
+              "nullable": true,
+              "default": null
+            },
+            "received_at": {
+              "type": "timestamp with time zone",
+              "nullable": true,
+              "default": null
+            }
+          },
+          "tutors-connect-users": {
+            "github_id": {
+              "type": "text",
+              "nullable": false,
+              "default": null
+            },
+            "email": {
+              "type": "text",
+              "nullable": true,
+              "default": null
+            },
+            "full_name": {
+              "type": "text",
+              "nullable": true,
+              "default": null
+            },
+            "avatar_url": {
+              "type": "text",
+              "nullable": true,
+              "default": null
+            },
+            "online_status": {
+              "type": "text",
+              "nullable": true,
+              "default": null
+            },
+            "date_last_accessed": {
+              "type": "timestamp with time zone",
+              "nullable": true,
+              "default": null
+            },
+            "sentiment": {
+              "type": "text",
+              "nullable": true,
+              "default": null
+            }
+          }
+        },
+        "indexes": [
+          "app_errors_pkey",
+          "calendar_id_studentid_courseid_key",
+          "idx_app_errors_app_created",
+          "idx_app_errors_course",
+          "idx_app_errors_level",
+          "idx_calendar_course_day",
+          "idx_tutors_connect_latest_course_recent",
+          "learning_records_student_id_course_id_lo_id_key",
+          "realtime_budget_pkey",
+          "realtime_settings_pkey",
+          "realtime_watchers_pkey",
+          "tutors-connect-courses_pkey",
+          "tutors-connect-latest_course_id_student_id_key",
+          "tutors-connect-users_pkey"
+        ],
+        "functions": [
+          "get_error_counts/1",
+          "live_budget_tier/1",
+          "realtime_claim_live_publish/1",
+          "realtime_watch/2",
+          "record_heartbeat/4",
+          "record_page_view/5"
+        ],
+        "policies": [
+          "app_errors:anon_insert_app_errors",
+          "app_errors:anon_select_app_errors",
+          "calendar:anon_insert",
+          "calendar:anon_select",
+          "calendar:anon_update",
+          "learning_records:anon_insert",
+          "learning_records:anon_select",
+          "learning_records:anon_update",
+          "tutors-connect-courses:anon_delete",
+          "tutors-connect-courses:anon_insert",
+          "tutors-connect-courses:anon_select",
+          "tutors-connect-courses:anon_update",
+          "tutors-connect-latest:anon_insert",
+          "tutors-connect-latest:anon_select",
+          "tutors-connect-latest:anon_update",
+          "tutors-connect-users:anon_insert",
+          "tutors-connect-users:anon_select",
+          "tutors-connect-users:anon_update"
+        ]
+      }
+    },
+    "rolledBack": {
+      "tables": {
+        "app_errors": {
+          "id": {
+            "type": "uuid",
+            "nullable": false,
+            "default": "gen_random_uuid()"
+          },
+          "created_at": {
+            "type": "timestamp with time zone",
+            "nullable": false,
+            "default": "now()"
+          },
+          "app": {
+            "type": "text",
+            "nullable": false,
+            "default": null
+          },
+          "level": {
+            "type": "text",
+            "nullable": false,
+            "default": null
+          },
+          "message": {
+            "type": "text",
+            "nullable": false,
+            "default": null
+          },
+          "context": {
+            "type": "jsonb",
+            "nullable": true,
+            "default": "'{}'::jsonb"
+          },
+          "url": {
+            "type": "text",
+            "nullable": true,
+            "default": null
+          },
+          "user_agent": {
+            "type": "text",
+            "nullable": true,
+            "default": null
+          },
+          "course_id": {
+            "type": "text",
+            "nullable": true,
+            "default": null
+          },
+          "student_id": {
+            "type": "text",
+            "nullable": true,
+            "default": null
+          }
+        },
+        "calendar": {
+          "id": {
+            "type": "date",
+            "nullable": false,
+            "default": null
+          },
+          "studentid": {
+            "type": "text",
+            "nullable": false,
+            "default": null
+          },
+          "courseid": {
+            "type": "text",
+            "nullable": false,
+            "default": null
+          },
+          "timeactive": {
+            "type": "bigint",
+            "nullable": true,
+            "default": null
+          },
+          "pageloads": {
+            "type": "bigint",
+            "nullable": true,
+            "default": null
+          }
+        },
+        "learning_records": {
+          "course_id": {
+            "type": "text",
+            "nullable": false,
+            "default": null
+          },
+          "student_id": {
+            "type": "text",
+            "nullable": false,
+            "default": null
+          },
+          "lo_id": {
+            "type": "text",
+            "nullable": true,
+            "default": null
+          },
+          "duration": {
+            "type": "bigint",
+            "nullable": true,
+            "default": null
+          },
+          "count": {
+            "type": "bigint",
+            "nullable": true,
+            "default": null
+          },
+          "date_last_accessed": {
+            "type": "timestamp with time zone",
+            "nullable": true,
+            "default": null
+          },
+          "type": {
+            "type": "text",
+            "nullable": true,
+            "default": null
+          }
+        },
+        "tutors-connect-courses": {
+          "course_id": {
+            "type": "text",
+            "nullable": false,
+            "default": null
+          },
+          "visited_at": {
+            "type": "timestamp with time zone",
+            "nullable": false,
+            "default": "now()"
+          },
+          "visit_count": {
+            "type": "bigint",
+            "nullable": true,
+            "default": null
+          },
+          "course_record": {
+            "type": "json",
+            "nullable": true,
+            "default": null
+          }
+        },
+        "tutors-connect-latest": {
+          "course_id": {
+            "type": "text",
+            "nullable": false,
+            "default": null
+          },
+          "student_id": {
+            "type": "text",
+            "nullable": false,
+            "default": null
+          },
+          "payload": {
+            "type": "jsonb",
+            "nullable": true,
+            "default": null
+          },
+          "received_at": {
+            "type": "timestamp with time zone",
+            "nullable": true,
+            "default": null
+          }
+        },
+        "tutors-connect-users": {
+          "github_id": {
+            "type": "text",
+            "nullable": false,
+            "default": null
+          },
+          "email": {
+            "type": "text",
+            "nullable": true,
+            "default": null
+          },
+          "full_name": {
+            "type": "text",
+            "nullable": true,
+            "default": null
+          },
+          "avatar_url": {
+            "type": "text",
+            "nullable": true,
+            "default": null
+          },
+          "online_status": {
+            "type": "text",
+            "nullable": true,
+            "default": null
+          },
+          "date_last_accessed": {
+            "type": "timestamp with time zone",
+            "nullable": true,
+            "default": null
+          },
+          "sentiment": {
+            "type": "text",
+            "nullable": true,
+            "default": null
+          }
+        }
+      },
+      "indexes": [
+        "app_errors_pkey",
+        "calendar_id_studentid_courseid_key",
+        "idx_app_errors_app_created",
+        "idx_app_errors_course",
+        "idx_app_errors_level",
+        "idx_tutors_connect_latest_course_recent",
+        "learning_records_student_id_course_id_lo_id_key",
+        "tutors-connect-courses_pkey",
+        "tutors-connect-latest_course_id_student_id_key",
+        "tutors-connect-users_pkey"
+      ],
+      "functions": [
+        "get_error_counts/1",
+        "record_heartbeat/4",
+        "record_page_view/5"
+      ],
+      "policies": [
+        "app_errors:anon_insert_app_errors",
+        "app_errors:anon_select_app_errors",
+        "calendar:anon_insert",
+        "calendar:anon_select",
+        "calendar:anon_update",
+        "learning_records:anon_insert",
+        "learning_records:anon_select",
+        "learning_records:anon_update",
+        "tutors-connect-courses:anon_delete",
+        "tutors-connect-courses:anon_insert",
+        "tutors-connect-courses:anon_select",
+        "tutors-connect-courses:anon_update",
+        "tutors-connect-latest:anon_insert",
+        "tutors-connect-latest:anon_select",
+        "tutors-connect-latest:anon_update",
+        "tutors-connect-users:anon_insert",
+        "tutors-connect-users:anon_select",
+        "tutors-connect-users:anon_update"
+      ]
+    }
+  },
+  "levels": {
+    "dom": {
+      "level": "blocking"
+    },
+    "screenshot": {
+      "level": "blocking"
+    },
+    "network": {
+      "level": "blocking"
+    },
+    "console": {
+      "level": "blocking"
+    },
+    "headers": {
+      "level": "blocking"
+    },
+    "axe": {
+      "level": "blocking"
+    },
+    "focus": {
+      "level": "blocking"
+    },
+    "metrics": {
+      "level": "blocking"
+    },
+    "logs": {
+      "level": "blocking"
+    },
+    "timing": {
+      "level": "informing"
+    },
+    "persistence": {
+      "level": "blocking"
+    },
+    "bus": {
+      "level": "blocking"
+    },
+    "migration": {
+      "level": "blocking"
+    },
+    "upgrade": {
+      "level": "blocking"
+    },
+    "image-manifest": {
+      "level": "blocking"
+    },
+    "sbom": {
+      "level": "blocking"
+    },
+    "vulns": {
+      "level": "blocking"
+    },
+    "runtime": {
+      "level": "blocking"
+    },
+    "startup": {
+      "level": "blocking"
+    },
+    "image-hardening": {
+      "level": "informing"
+    },
+    "build-provenance": {
+      "level": "informing"
+    },
+    "vuln-ceiling": {
+      "level": "informing"
+    },
+    "timing-tolerance": {
+      "level": "informing"
+    },
+    "asset-graph": {
+      "level": "informing"
+    },
+    "replay": {
+      "level": "informing"
+    },
+    "slo": {
+      "level": "informing"
+    },
+    "realtime": {
+      "level": "informing"
+    }
+  },
+  "causes": {
+    "unclaimed": 0,
+    "causes": [],
+    "together": []
+  }
+}

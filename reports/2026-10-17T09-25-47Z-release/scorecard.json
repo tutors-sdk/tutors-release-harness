@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "mode": "release",
+  "ranAt": "2026-10-17T09:25:47.556Z",
+  "verdict": "fail",
+  "score": 40,
+  "grade": "D",
+  "deductions": [
+    {
+      "points": 60,
+      "why": "18 diff(s) no claim covers"
+    }
+  ],
+  "normalness": {
+    "state": "normal",
+    "source": "noise-status",
+    "hunks": 0,
+    "ranAt": "2026-10-17T07:00:11.159Z"
+  },
+  "rules": [
+    {
+      "rule": null,
+      "hunks": 18,
+      "artefacts": [
+        "dom",
+        "focus"
+      ],
+      "scopes": [
+        "/",
+        "/course/localhost:8080",
+        "/topic/localhost:8080/unit-1/topic-01",
+        "/lab/localhost:8080/unit-1/topic-01/book-lab-01",
+        "/lab/localhost:8080/unit-1/topic-01/book-lab-01/Step-01",
+        "/search/localhost:8080",
+        "/search/localhost:8080?q=reference+material",
+        "/course/reference-course",
+        "/topic/reference-course/topic-07-reference",
+        "/lab/reference-course/topic-07-reference/book-a",
+        "/note/reference-course/topic-07-reference/note-1"
+      ],
+      "prs": [],
+      "status": "unclaimed"
+    },
+    {
+      "rule": "0330",
+      "title": "When a student opens a learning object, the reader shall send the learning event to the reader's server without publishing it over Realtime from the browser.",
+      "hunks": 4,
+      "artefacts": [
+        "network"
+      ],
+      "scopes": [
+        "/course/localhost:8080",
+        "/topic/localhost:8080/unit-1/topic-01",
+        "/course/reference-course",
+        "/note/reference-course/topic-07-reference/note-1"
+      ],
+      "prs": [],
+      "status": "covered"
+    },
+    {
+      "rule": "0331",
+      "title": "When the reader's server receives a learning event, the reader shall publish it only to the activity feeds a live dashboard has watched in the last 90 seconds.",
+      "hunks": 1,
+      "artefacts": [
+        "persistence"
+      ],
+      "scopes": [
+        "student-signs-in/realtime_claim_live_publish"
+      ],
+      "prs": [],
+      "status": "covered"
+    }
+  ],
+  "manual": [
+    {
+      "scope": "/",
+      "path": "/",
+      "artefacts": [
+        "dom",
+        "focus"
+      ],
+      "hunks": 5,
+      "why": "moved and no claim covers it"
+    },
+    {
+      "scope": "/course/localhost:8080",
+      "path": "/course/localhost:8080",
+      "artefacts": [
+        "dom"
+      ],
+      "hunks": 2,
+      "why": "moved and no claim covers it"
+    },
+    {
+      "scope": "/course/reference-course",
+      "path": "/course/reference-course",
+      "artefacts": [
+        "dom",
+        "focus"
+      ],
+      "hunks": 2,
+      "why": "moved and no claim covers it"
+    },
+    {
+      "scope": "/topic/localhost:8080/unit-1/topic-01",
+      "path": "/topic/localhost:8080/unit-1/topic-01",
+      "artefacts": [
+        "dom"
+      ],
+      "hunks": 2,
+      "why": "moved and no claim covers it"
+    },
+    {
+      "scope": "/lab/localhost:8080/unit-1/topic-01/book-lab-01",
+      "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01",
+      "artefacts": [
+        "dom"
+      ],
+      "hunks": 1,
+      "why": "moved and no claim covers it"
+    }
+  ]
+}
