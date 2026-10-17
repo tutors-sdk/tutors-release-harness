@@ -116,6 +116,18 @@ step(/^the student presses the (button|link) starting "([^"]+)"$/, 'the student 
   await w.page.getByRole(role, { name: new RegExp(`^${escapeRegExp(start)}`) }).filter({ visible: true }).first().click();
 });
 
+// 17.0.0 names the Preferences menu's button "Open Theme Menu"; mono-repo #505 (after 17.0.0) renamed it "Preferences".
+const PREFERENCES_BUTTON = /^(Preferences|Open Theme Menu)$/;
+
+step(/^the student opens the Preferences menu$/, 'the student opens the Preferences menu: its header button (named "Preferences", or "Open Theme Menu" up to 17.0.0), then the dialog "Preferences"', async (w) => {
+  await w.page.getByRole("button", { name: PREFERENCES_BUTTON }).filter({ visible: true }).first().click();
+  await w.page.getByRole("dialog", { name: "Preferences", exact: true }).waitFor(VISIBLE);
+});
+
+step(/^the page shows the Preferences button$/, 'the page shows the Preferences button: named "Preferences", or "Open Theme Menu" up to 17.0.0', async (w) => {
+  await w.page.getByRole("button", { name: PREFERENCES_BUTTON }).filter({ visible: true }).first().waitFor(VISIBLE);
+});
+
 step(/^the student chooses "([^"]+)" in the group "([^"]+)"$/, 'the student chooses "const" in the group "1. Which keyword declares a constant?": a radio button by its label', async (w, option, group) => {
   await w.page.getByRole("group", { name: group, exact: true }).getByRole("radio", { name: option, exact: true }).check();
 });

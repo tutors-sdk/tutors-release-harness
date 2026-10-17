@@ -95,6 +95,7 @@ Rule: When the harness runs the presence journey, it shall ...
 - the student moves to the step "Step 1": its link in the lab's step navigation
 - the student presses the button "Profile menu" (also link, tab, menuitem): exact accessible name
 - the student presses the button starting "View Online": a name that ends in a count or a state
+- the student opens the Preferences menu: its header button (named "Preferences", or "Open Theme Menu" up to 17.0.0), then the dialog "Preferences"
 - the student chooses "const" in the group "1. Which keyword declares a constant?": a radio button by its label
 - the student selects "Assessments" in the combobox "Show": an option of a select by its label
 - the student closes the dialog "View Online": Escape, then it is gone
@@ -102,6 +103,7 @@ Rule: When the harness runs the presence journey, it shall ...
 - the page shows the heading "Lab 1" (a status or alert by its text, present even when visually hidden; also button, link, dialog, tab, checkbox, menuitem, region, navigation, article, status, alert, group, radio, combobox, table, row, progressbar): exact accessible name, visible
 - the page shows no heading "Harness Rules Course": nothing visible by that role and exact name
 - the page shows the button starting "Share Presence" (also link, row)
+- the page shows the Preferences button: named "Preferences", or "Open Theme Menu" up to 17.0.0
 - the page shows the text "2 of 4": words on the page that no role names
 - the combobox "Theme" shows "Dyslexia": its selected option
 - the table "Calendar" has 2 rows: its header row included

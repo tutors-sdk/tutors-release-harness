@@ -75,17 +75,16 @@ Feature: Student journeys the harness drives on both sides
 
     Scenario: A student's appearance and theme survive a reload (exercises Rules 0037, 0038, 0039)
       Given the student signs in from the course
-      When the student presses the button "Preferences"
-      Then the page shows the dialog "Preferences"
-      And the button "Light" is pressed
+      When the student opens the Preferences menu
+      Then the button "Light" is pressed
       When the student presses the button "Dark"
       And the student selects "Dyslexia" in the combobox "Theme"
       Then the button "Dark" is pressed
       When the student closes every dialog
       And the student reloads the page
-      Then the page shows the button "Preferences"
+      Then the page shows the Preferences button
       And the page is captured as "course-dark"
-      When the student presses the button "Preferences"
+      When the student opens the Preferences menu
       Then the button "Dark" is pressed
       And the combobox "Theme" shows "Dyslexia"
       And the page is captured as "preferences-after-reload"
