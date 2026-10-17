@@ -2,6 +2,80 @@
   "schemaVersion": 1,
   "runs": [
     {
+      "id": "2026-10-17T10-09-15Z-release",
+      "mode": "release",
+      "ranAt": "2026-10-17T10:09:15.863Z",
+      "verdict": "fail",
+      "reasons": [
+        "18 unclaimed diff(s)"
+      ],
+      "sides": {
+        "a": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:17.0.0",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:17.0.0",
+          "live": "quay.io/tutors-sdk/tutors-live:17.0.0",
+          "time": "quay.io/tutors-sdk/tutors-time:17.0.0"
+        },
+        "b": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:sha-83d4ccf",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:sha-83d4ccf",
+          "live": "quay.io/tutors-sdk/tutors-live:sha-83d4ccf",
+          "time": "quay.io/tutors-sdk/tutors-time:sha-83d4ccf"
+        }
+      },
+      "harnessVersion": "1.42.0",
+      "runUrl": "https://github.com/tutors-sdk/tutors-release-harness/actions/runs/39023052616",
+      "score": {
+        "score": 40,
+        "grade": "D",
+        "normalness": "normal",
+        "manual": 5
+      },
+      "confidence": {
+        "gate": "PASS",
+        "rcs": null,
+        "band": null,
+        "note": "PASS, explained: all 18 differences no claim covers yet are declared in the CHANGELOG line of the PR that made them (#505: 18). Nothing is owed on main; the release author pastes the claims from those lines when the release is cut.",
+        "glance": 1,
+        "scoredBy": "1.42.0"
+      },
+      "changes": {
+        "score": 0,
+        "prs": 11,
+        "risky": 9,
+        "floorBreached": false,
+        "range": "v17.0.0..83d4ccf7f5ca2440bbc94224e40c5bfef3e410d9"
+      },
+      "delta": {
+        "baseline": "17.0.0",
+        "against": {
+          "id": "2026-10-17T09-47-54Z-release",
+          "ranAt": "2026-10-17T09:47:54.314Z",
+          "candidate": "sha-83d4ccf",
+          "harnessVersion": "1.41.1"
+        },
+        "new": 0,
+        "gone": 0,
+        "byArtefact": {}
+      },
+      "files": [
+        "2026-10-17T10-09-15Z-release/migration/report.json",
+        "2026-10-17T10-09-15Z-release/migration/report.md",
+        "2026-10-17T10-09-15Z-release/migration/report.html",
+        "2026-10-17T10-09-15Z-release/upgrade/report.json",
+        "2026-10-17T10-09-15Z-release/upgrade/report.md",
+        "2026-10-17T10-09-15Z-release/upgrade/report.html",
+        "2026-10-17T10-09-15Z-release/report.json",
+        "2026-10-17T10-09-15Z-release/report.md",
+        "2026-10-17T10-09-15Z-release/report.html",
+        "2026-10-17T10-09-15Z-release/confidence.json",
+        "2026-10-17T10-09-15Z-release/changes.json",
+        "2026-10-17T10-09-15Z-release/quality.json",
+        "2026-10-17T10-09-15Z-release/scorecard.json",
+        "2026-10-17T10-09-15Z-release/scorecard.md"
+      ]
+    },
+    {
       "id": "2026-10-17T09-47-54Z-release",
       "mode": "release",
       "ranAt": "2026-10-17T09:47:54.314Z",
