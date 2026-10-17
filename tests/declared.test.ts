@@ -51,8 +51,8 @@ const pr = (n: number, files: string[], body?: string): PrRisk => {
 const changes = (...prs: PrRisk[]): Changes => ({ prs }) as unknown as Changes;
 const dom = (page: string): Hunk => ({ id: `dom:${page}`, artefact: "dom", scope: page, severity: "fail", summary: `${page}: semantic DOM differs (+1 −1 lines at line 9)` });
 const focus = (page: string): Hunk => ({ id: `focus:${page}`, artefact: "focus", scope: page, severity: "fail", summary: `${page}: keyboard order changed (12 stops on a, 12 on b)` });
-const report = (unclaimed: Hunk[]): RunReport =>
-  ({ sides: { a: { reader: "quay.io/t/reader:17.0.0" }, b: { reader: "quay.io/t/reader:sha-83d4ccf" } }, compare: { unclaimed, hunks: unclaimed, matches: unclaimed.map((hunk) => ({ hunk })) } }) as unknown as RunReport;
+const report = (unclaimed: Hunk[], candidate = "sha-83d4ccf"): RunReport =>
+  ({ sides: { a: { reader: "quay.io/t/reader:17.0.0" }, b: { reader: `quay.io/t/reader:${candidate}` } }, compare: { unclaimed, hunks: unclaimed, matches: unclaimed.map((hunk) => ({ hunk })) } }) as unknown as RunReport;
 const run = (day: number, r: RunReport, c: Changes): LedgerRun => ({ id: `d${day}`, ranAt: `2026-10-${day}T07:12:00Z`, report: r, changes: c });
 
 const nightly = pr(504, ["patches/stryker.patch"]);
@@ -61,7 +61,7 @@ const pages = ["catalogue:home", "live:home", "reader:search", "reference:course
 const today = [...pages.map(dom), focus("catalogue:home"), focus("reference:course")];
 
 describe("a difference its PR declared", () => {
-  const before = run(16, report([]), changes());
+  const before = run(16, report([], "sha-c867ee8"), changes());
   const now = run(17, report(today), changes(nightly, a11y));
 
   it("counts dom as declared by #505 and leaves focus to #505, saying its line missed it", () => {
@@ -104,5 +104,42 @@ describe("a difference its PR declared", () => {
     const causes = foldCauses(today).causes;
     const a = attribute(causes, changes(a11y));
     expect(a.declared).toBe(0);
+  });
+});
+
+describe("a forecast judged again on the same build (since 1.41.1)", () => {
+  // 17 Oct 2026: the 09:04 rerun of sha-83d4ccf beside its own 07:12 forecast read "#505 contributed 12; 6 unexplained".
+  const first = run(16, report([], "sha-c867ee8"), changes(nightly));
+  const stale = pr(505, a11y.files);
+  const earlier = { ...run(17, report([dom("catalogue:home"), focus("catalogue:home")]), changes(nightly, stale)), id: "d17a" };
+  const rerun = { ...run(17, report(today), changes(nightly, a11y)), id: "d17b", ranAt: "2026-10-17T09:04:00Z" };
+
+  it("walks back past the earlier forecast of the same build, and reads each PR's declaration from the newest range", () => {
+    const e = explainGap(rerun, [first, earlier]);
+    expect(e.unexplained.hunks).toBe(0);
+    expect(e.declared).toMatchObject({ hunks: 4, rows: [{ pr: { pr: 505 } }] });
+    expect(e.contributed.rows).toMatchObject([{ prs: [{ pr: 505 }], hunks: 2 }]);
+  });
+});
+
+describe("the forecast's causes on a rerun (since 1.41.1)", () => {
+  it("are attributed against the last forecast of another build, so the PRs merged before the build are still the leads", async () => {
+    const { mkdtempSync, mkdirSync, writeFileSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const { join } = await import("node:path");
+    const { attributionLead } = await import("../src/ci/report-archive.ts");
+    const root = mkdtempSync(join(tmpdir(), "declared-"));
+    const keep = (id: string, ranAt: string, candidate: string, unclaimed: Hunk[], c: Changes) => {
+      mkdirSync(join(root, id));
+      const r = { ...report(unclaimed), mode: "release", ranAt, sides: { a: { reader: "quay.io/t/reader:17.0.0" }, b: { reader: `quay.io/t/reader:${candidate}` } } };
+      writeFileSync(join(root, id, "report.json"), JSON.stringify(r));
+      writeFileSync(join(root, id, "changes.json"), JSON.stringify(c));
+      return { id, mode: "release", ranAt, sides: r.sides };
+    };
+    const index = { runs: [keep("d16", "2026-10-16T07:11:00Z", "sha-c867ee8", [], changes(nightly)), keep("d17a", "2026-10-17T07:12:00Z", "sha-83d4ccf", today, changes(nightly, a11y))] };
+    const now = { ...report(today), mode: "release", ranAt: "2026-10-17T09:04:00Z" } as unknown as RunReport;
+    const a = attributionLead(now, changes(nightly, a11y), { delta: { baseline: "17.0.0", against: { id: "d17a", ranAt: "2026-10-17T07:12:00Z", candidate: "sha-83d4ccf" } } } as never, root, index as never, "d17b")!;
+    expect(a.against).toEqual({ id: "d16", candidate: "sha-c867ee8" });
+    expect(a.declared).toBe(1);
   });
 });

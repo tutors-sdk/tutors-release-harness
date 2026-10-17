@@ -104,6 +104,7 @@ export interface Explanation {
 /** The identity of a difference across runs: artefact, scope and kind, numbers and hashes folded. */
 export const differenceKey = (h: Pick<Hunk, "artefact" | "scope" | "summary">) => `${h.artefact}|${h.scope.replace(/\d+/g, "#")}|${kindOf(h).kind}`;
 
+const candidateOf = (r: LedgerRun) => r.report.sides?.b?.reader;
 const keysOf = (r: RunReport) => new Set(r.compare.unclaimed.map(differenceKey));
 const prId = (p: Pick<AttributedPr, "pr" | "sha">) => (p.pr !== null ? `#${p.pr}` : p.sha.slice(0, 7));
 
@@ -124,6 +125,15 @@ export function explainGap(run: LedgerRun, history: LedgerRun[]): Explanation {
     .sort((x, y) => Date.parse(x.ranAt) - Date.parse(y.ranAt));
   const chain = [...past, run];
   const keys = chain.map((r) => keysOf(r.report));
+  const causesIn = chain.map((r) => new Set(r.report.compare.unclaimed.map(causeKey)));
+
+  // Since 1.41.1: what a PR declares is read from the run's own range, the newest reading of its body: a forecast kept
+  // before the PR's CHANGELOG line was written, or corrected, carries the old one or none.
+  const live = new Map((run.changes?.prs ?? []).filter((p) => p.declares).map((p) => [prId(p), p.declares!]));
+  const declaredNow = (p: AttributedPr): AttributedPr => {
+    const d = live.get(prId(p));
+    return d ? { ...p, declares: d } : p;
+  };
 
   // Claimed: one row per claim.
   const claims = new Map<string, ClaimRow>();
@@ -158,6 +168,10 @@ export function explainGap(run: LedgerRun, history: LedgerRun[]): Explanation {
     const k = differenceKey(h);
     let first = chain.length - 1;
     while (first > 0 && keys[first - 1]!.has(k)) first -= 1;
+    // Since 1.41.1: the same change seen on more pages. An earlier forecast of the same build that already had this
+    // kind of difference judged the same code, so no merge lies between them and the window is the one before it. A new
+    // kind of difference on the same build stays where it is: the stack moved, not the code.
+    while (first > 0 && candidateOf(chain[first - 1]!) === candidateOf(chain[first]!) && causesIn[first - 1]!.has(causeKey(h))) first -= 1;
     const at = chain[first]!;
     const before = first > 0 ? chain[first - 1] : undefined;
     // The oldest kept forecast's window is its whole range, every PR since the baseline; when it kept no range, the
@@ -171,7 +185,7 @@ export function explainGap(run: LedgerRun, history: LedgerRun[]): Explanation {
     const cause = foldCauses([h]).causes[0];
     // A range kept by an older harness may carry PRs without their files: they match no path.
     const matched = cause ? byPath(cause, window.map((p) => ({ ...p, files: p.files ?? [] }))) : [];
-    const prs = matched.length ? matched : window.map((p) => named(p));
+    const prs = (matched.length ? matched : window.map((p) => named(p))).map(declaredNow);
     if (prs.length > MAX_GROUP) {
       if (before) unexplain("too-many", h, prs);
       else unexplain("before-record", h, prs, at.ranAt);
