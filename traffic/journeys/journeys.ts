@@ -16,7 +16,7 @@ import { ruleJourneys } from "./rules.ts";
  * something by role, that is an accessibility finding, not a reason to reach
  * for CSS.
  *
- * Nine journeys in five sets (fixture 4, auth 1, reference 1, replay 1, rules 2 since 1.43.0), not a hundred: the harness's power is breadth of capture
+ * 13 journeys in five sets (fixture 4, auth 1, reference 1, replay 1, rules 6 since 1.43.0), not a hundred: the harness's power is breadth of capture
  * per page, not the number of pages. Add one only when a real regression
  * escaped that a journey would have caught.
  */
@@ -48,6 +48,8 @@ export interface Journey {
    * Rules its scenario exercises. A difference on one of its pages is about these Rules (src/report/causes.ts).
    */
   rules?: string[];
+  /** Since 1.44.0: a Rule journey that reads the Rule journeys' course (`@course-rules`), not the fixture course. */
+  course?: string;
   run: (page: Page, urls: StackUrls, onPage: OnPage) => Promise<void>;
 }
 

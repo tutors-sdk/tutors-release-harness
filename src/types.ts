@@ -38,6 +38,8 @@ export interface StackUrls {
   persistence?: string;
   /** A course id the reader resolves to http(s)://<id>/tutors.json. */
   courseId: string;
+  /** Since 1.44.0: the Rule journeys' course on this side's stack (a `@course-rules` journey); absent for an external side. */
+  rulesCourseId?: string;
 }
 
 /**

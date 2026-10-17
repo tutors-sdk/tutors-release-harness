@@ -147,7 +147,8 @@ describe("compose.harness.yaml", () => {
       time: "http://localhost:3104",
       readerAuth: "http://localhost:3103",
       persistence: "http://persistence-a.harness.test:8090",
-      courseId: "localhost:8080"
+      courseId: "localhost:8080",
+      rulesCourseId: "localhost:8081"
     });
     expect(urlsFor("b").reader).toBe("http://localhost:3200");
     expect(urlsFor("b").time).toBe("http://localhost:3204");

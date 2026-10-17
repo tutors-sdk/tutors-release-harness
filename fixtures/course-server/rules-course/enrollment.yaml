@@ -1,0 +1,7 @@
+educators:
+  - harness-lecturer
+whitelist:
+  - harness-enrolled
+students:
+  - name: Harness Enrolled Student
+    id: harness-enrolled

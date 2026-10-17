@@ -1,6 +1,9 @@
 // Static server for the pinned fixture course, shared by both sides.
 //
-//   node fixtures/course-server/serve.mjs [root] [port]
+//   node fixtures/course-server/serve.mjs [root] [port] [root port]...
+//
+// Since 1.44.0 it takes more than one root and port pair, one server each: the
+// fixture course on 8080 and the Rule journeys' course (rules-course) on 8081.
 //
 // The reader fetches `http://<courseid>/tutors.json` from the browser, so every
 // response allows any origin, as Netlify does for published courses. Responses
@@ -10,8 +13,9 @@ import { createReadStream, statSync } from "node:fs";
 import { createServer } from "node:http";
 import { extname, join, normalize, resolve } from "node:path";
 
-const root = resolve(process.argv[2] ?? process.env.COURSE_ROOT ?? "fixtures/course-server/course");
-const port = Number(process.argv[3] ?? process.env.PORT ?? 8080);
+const args = process.argv.slice(2);
+const pairs = args.length ? [] : [[process.env.COURSE_ROOT ?? "fixtures/course-server/course", process.env.PORT ?? "8080"]];
+for (let i = 0; i < args.length; i += 2) pairs.push([args[i], args[i + 1] ?? process.env.PORT ?? "8080"]);
 
 const TYPES = {
   ".json": "application/json",
@@ -25,10 +29,11 @@ const TYPES = {
   ".gif": "image/gif",
   ".svg": "image/svg+xml",
   ".pdf": "application/pdf",
-  ".zip": "application/zip"
+  ".zip": "application/zip",
+  ".txt": "text/plain; charset=utf-8"
 };
 
-const server = createServer((req, res) => {
+const serve = (root) => (req, res) => {
   // Node adds a Date header by default; the fixture is deterministic without it.
   res.sendDate = false;
   const headers = { "access-control-allow-origin": "*", "cache-control": "no-store" };
@@ -46,5 +51,10 @@ const server = createServer((req, res) => {
   } catch {
     res.writeHead(404, headers).end("not found");
   }
-});
-server.listen(port, () => console.log(JSON.stringify({ level: "info", message: "fixture course server listening", port, root })));
+};
+
+for (const [dir, p] of pairs) {
+  const root = resolve(dir);
+  const port = Number(p);
+  createServer(serve(root)).listen(port, () => console.log(JSON.stringify({ level: "info", message: "fixture course server listening", port, root })));
+}

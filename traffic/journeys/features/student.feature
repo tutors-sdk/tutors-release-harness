@@ -40,3 +40,80 @@ Feature: Student journeys the harness drives on both sides
       And the student presses the button starting "View Online"
       Then the dialog "View Online" shows the link "Harness Student"
       And the page is captured as "online-list"
+
+  @rule-0584 @ears-event-driven @journey-quiz-notebook-talk @role-enrolled @course-rules
+  Rule: When the harness runs the quiz, notebook and talk journey, it shall sign in as the enrolled stub student, move forward a slide of a talk, a cell of a notebook, answer and submit a quiz, and compare each page, its state on screen, the rows written and the Realtime cost of both sides.
+
+    Scenario: An enrolled student works through a talk, a notebook and a quiz (exercises Rules 0047, 0049, 0050)
+      Given the student signs in from the course
+      When the student opens the topic "Topic 1"
+      And the student opens the talk "Talk 1"
+      Then the page shows the text "1 of 4"
+      When the student presses the button "Forward 1 slide"
+      Then the page shows the text "2 of 4"
+      And the page is captured as "talk-slide-2"
+      When the student goes back to the topic "Topic 1"
+      And the student opens the notebook "Notebook 1"
+      Then the page shows the text "Cell 1 of 2"
+      When the student presses the button "Next cell"
+      Then the page shows the text "Cell 2 of 2"
+      And the page is captured as "notebook-cell-2"
+      When the student goes back to the topic "Topic 1"
+      And the student opens the quiz "Quiz 1"
+      And the student chooses "const" in the group "1. Which keyword declares a constant?"
+      And the student presses the button "Next"
+      And the student chooses "True" in the group "2. A lab step can hold code."
+      And the student presses the button "Previous"
+      Then the page shows the radio "const"
+      When the student presses the button "Next"
+      And the student presses the button "Submit"
+      Then the page shows the status "You answered 2 of 2 questions correctly. 100%."
+      And the page is captured as "quiz-results"
+
+  @rule-0585 @ears-event-driven @journey-preferences @role-enrolled @course-rules
+  Rule: When the harness runs the preferences journey, it shall sign in as the enrolled stub student, choose the dark appearance and a theme, reload the page, and compare the page in its chosen appearance and the Preferences menu after the reload on both sides.
+
+    Scenario: A student's appearance and theme survive a reload (exercises Rules 0037, 0038, 0039)
+      Given the student signs in from the course
+      When the student opens the Preferences menu
+      Then the button "Light" is pressed
+      When the student presses the button "Dark"
+      And the student selects "Dyslexia" in the combobox "Theme"
+      Then the button "Dark" is pressed
+      When the student closes every dialog
+      And the student reloads the page
+      Then the page shows the Preferences button
+      And the page is captured as "course-dark"
+      When the student opens the Preferences menu
+      Then the button "Dark" is pressed
+      And the combobox "Theme" shows "Dyslexia"
+      And the page is captured as "preferences-after-reload"
+
+  @rule-0586 @ears-unwanted @journey-private-course @course-rules
+  Rule: If the stub student signs in to the Rule journeys' private course, which does not list them, then the harness shall see the reader send them to My courses, at sign-in and when they type the course's address, and compare that page on both sides.
+
+    Scenario: A student the course does not list is turned away (exercises Rules 0011, 0267; whitelist-management.feature "Non-whitelisted student denied access")
+      Given the student signs in from the course and is turned away
+      Then the page shows the region "Welcome to Tutors"
+      And the page is captured as "turned-away"
+      When the student opens the course by its address and is turned away
+      Then the page shows no heading "Harness Rules Course"
+      And the page is captured as "turned-away-again"
+
+  @rule-0587 @ears-event-driven @journey-calendar-llm @role-enrolled @course-rules
+  Rule: When the harness runs the calendar and LLM journey, it shall sign in as the enrolled stub student, filter the course calendar to assessments, open the course's page for LLMs, and compare the calendar, the LLM page and its links on both sides.
+
+    Scenario: A student filters the calendar and finds the course for LLMs (exercises Rules 0042, 0284)
+      Given the student signs in from the course
+      When the student presses the button starting "View Calendar"
+      Then the page shows the dialog "Harness Rules Course Calendar · 2026"
+      And the table "Harness Rules Course Calendar" has 5 rows
+      When the student selects "Assessments" in the combobox "Show"
+      Then the table "Harness Rules Course Calendar" has 2 rows
+      And the page shows the row starting "Sep 21, 2026 3 Week 3 Assignment 1"
+      And the page is captured as "calendar-assessments"
+      When the student closes every dialog
+      And the student presses the link "A version of this course for LLMs"
+      Then the page shows the heading "Docs for LLMs"
+      And the page shows the link "harness-rules-course-complete-llms.txt"
+      And the page is captured as "llm"

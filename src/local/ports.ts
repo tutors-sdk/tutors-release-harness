@@ -5,6 +5,8 @@
 /** Default host ports of compose.harness.yaml, by the variable that moves each. tests/local-tasks.test.ts holds this to the compose file. */
 export const DEFAULT_PORTS: Record<string, number> = {
   COURSE_PORT: 8080,
+  // Since 1.44.0: the Rule journeys' course (fixtures/course-server/rules-course), served beside the fixture course.
+  RULES_COURSE_PORT: 8081,
   IDENTITY_PORT: 8443,
   EDGE_PORT: 3300,
   PERSISTENCE_PORT_A: 8090,

@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.43.0`
+Contract version: `1.44.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -2105,6 +2105,14 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.44.0 (minor; the Rule journeys' course)
+
+The release note is [releases/1.44.0.md](releases/1.44.0.md). A minor. Four more Rule journeys (0584 quiz, notebook and
+talk; 0585 preferences across a reload; 0586 a private course turning away a student it does not list; 0587 the
+calendar and the LLM page) on a second fixture course, `fixtures/course-server/rules-course`, which the course server
+publishes on a new host port, 8081 (`RULES_COURSE_PORT`): 20 host ports. A Rule journey tagged `@course-rules` reads it;
+`StackUrls` gains the optional `rulesCourseId`. New pages, new page keys; no verdict, Gate, score or exit code moves.
 
 ### 1.43.0 (minor; Rule journeys)
 

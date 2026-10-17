@@ -37,6 +37,8 @@ const PORTS: Record<SideName, Record<App, number> & { readerAuth: number; persis
 };
 
 export const COURSE_ID = process.env.COURSE_ID ?? `localhost:${process.env.COURSE_PORT ?? 8080}`;
+/** Since 1.44.0: the Rule journeys' course, signed in and private (fixtures/course-server/rules-course). */
+export const RULES_COURSE_ID = `localhost:${process.env.RULES_COURSE_PORT ?? 8081}`;
 export const IDENTITY_URL = `https://localhost:${process.env.IDENTITY_PORT ?? 8443}`;
 export const EDGE_URL = `http://localhost:${process.env.EDGE_PORT ?? 3300}`;
 
@@ -66,7 +68,8 @@ export function urlsFor(side: SideName): StackUrls {
     time: `http://localhost:${p.time}`,
     readerAuth: `http://localhost:${p.readerAuth}`,
     persistence: `http://persistence-${side}.harness.test:${p.persistence}`,
-    courseId: COURSE_ID
+    courseId: COURSE_ID,
+    rulesCourseId: RULES_COURSE_ID
   };
 }
 
