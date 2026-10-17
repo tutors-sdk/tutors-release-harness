@@ -201,7 +201,7 @@ export function keepReport(opts: KeepOptions): { entry: ReportEntry; dropped: st
   const delta = deltaLead(report, id, before, root);
   const beside = scoredBeside(runDir, report);
   const scored = beside && moved.length ? { ...beside, confidence: relink(beside.confidence, moved) } : beside;
-  const attribution = scored?.changes ? attributionLead(report, scored.changes, delta, root) : undefined;
+  const attribution = scored?.changes ? attributionLead(report, scored.changes, delta, root, before, id) : undefined;
   for (const name of KEPT_FILES) {
     const from = join(runDir, name);
     if (!existsSync(from)) continue;
@@ -292,14 +292,28 @@ const causesOf = (r: Partial<RunReport> | undefined) => r?.causes?.causes ?? (un
  * the delta was counted against (its kept report.json and changes.json), by path for the rest. Undefined for a run with
  * no unclaimed set.
  */
-export function attributionLead(report: RunReport, changes: Changes, delta: DeltaLead | undefined, root: string): Attribution | undefined {
+export function attributionLead(report: RunReport, changes: Changes, delta: DeltaLead | undefined, root: string, index?: ReportIndex, id?: string): Attribution | undefined {
   const causes = causesOf(report);
   if (!causes) return undefined;
-  const against = delta?.delta.against;
+  // Since 1.41.1: a forecast judged again on the same build (a rerun) is attributed against the last forecast of another
+  // build. Against itself nothing was merged, so every cause would fall back to a path match.
+  const against = (index && id ? otherBuild(report, id, index, root) : undefined) ?? delta?.delta.against;
   const prev = against ? causesOf(readJson<RunReport>(join(root, against.id, "report.json"))) : undefined;
   const prevChanges = against ? readJson<Changes>(join(root, against.id, CHANGES_FILE)) : undefined;
   const previous = against && prev ? { id: against.id, candidate: against.candidate, keys: new Set(prev.map((c) => c.key)), ...(prevChanges && Array.isArray(prevChanges.prs) ? { changes: prevChanges } : {}) } : undefined;
   return attribute(causes, changes, previous);
+}
+
+/** The newest kept release run before this one, beside the same baseline, that judged another candidate. */
+function otherBuild(report: RunReport, id: string, index: ReportIndex, root: string): { id: string; candidate: string } | undefined {
+  const baseline = tagOf(report.sides?.a?.reader);
+  const candidate = tagOf(report.sides?.b?.reader);
+  const at = Date.parse(report.ranAt);
+  const r = index.runs
+    .filter((r) => r.id !== id && r.mode === report.mode && Date.parse(r.ranAt) < at && tagOf(r.sides?.a?.reader) === baseline && tagOf(r.sides?.b?.reader) !== candidate)
+    .sort((x, y) => Date.parse(y.ranAt) - Date.parse(x.ranAt))
+    .find((r) => unclaimedOf(readJson<RunReport>(join(root, r.id, "report.json"))));
+  return r ? { id: r.id, candidate: tagOf(r.sides?.b?.reader) } : undefined;
 }
 
 // ---- claims owed, in place of the glance on a forecast (since 1.20.2) -------------------------------------
