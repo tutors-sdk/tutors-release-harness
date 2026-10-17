@@ -266,3 +266,22 @@ export function ledgerSentence(e: Explanation, top = 3): string {
   parts.push(`${e.unexplained.hunks} unexplained`);
   return `${e.total} difference${e.total === 1 ? "" : "s"}: ${parts.join("; ")}.`;
 }
+
+/** A forecast judges a build of main (`sha-<short>` on side b); a release candidate carries a version tag. */
+const forecastOf = (r: RunReport) => /:sha-[0-9a-f]{7,40}$/.test(r.sides?.b?.reader?.split("@")[0] ?? "");
+
+/**
+ * PASS, explained (since 1.42.0): a forecast whose only reason to fail is unclaimed differences, every one of them
+ * declared in the CHANGELOG line of the PR that made it, passes. The sentence says so and names the PRs; the release
+ * author still pastes the claims from those lines when the release is cut, and a release candidate still needs them.
+ * Undefined for anything else: a release candidate, another reason to fail, or one difference nobody declared.
+ */
+export function declaredPass(run: Pick<RunReport, "verdict" | "reasons" | "sides" | "compare">, e: Explanation): string | undefined {
+  if (run.verdict !== "fail" || !forecastOf(run as RunReport)) return undefined;
+  if (!(run.reasons ?? []).every((r) => /^\d+ unclaimed diff\(s\)$/.test(r))) return undefined;
+  const unclaimed = (run.compare?.unclaimed ?? []).filter((h) => h.severity === "fail").length;
+  const declared = e.declared?.hunks ?? 0;
+  if (!unclaimed || declared !== unclaimed || e.contributed.hunks || e.unexplained.hunks) return undefined;
+  const by = e.declared!.rows.map((r) => `${prWords([r.pr])}: ${r.hunks}`).join(", ");
+  return `PASS, explained: ${unclaimed === 1 ? "the 1 difference no claim covers yet is" : `all ${unclaimed} differences no claim covers yet are`} declared in the CHANGELOG line of the PR that made ${unclaimed === 1 ? "it" : "them"} (${by}). Nothing is owed on main; the release author pastes the claims from those lines when the release is cut.`;
+}

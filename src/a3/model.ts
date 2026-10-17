@@ -12,7 +12,7 @@
  * Pure: src/a3/read.ts reads the files, src/a3/github.ts asks GitHub, src/a3/render.ts draws the page.
  */
 import { coverageWords } from "../readiness/claims.ts";
-import { explainGap, ledgerSentence, missedWords, prWords, type Explanation, type LedgerRun } from "../changes/explain.ts";
+import { declaredPass, explainGap, ledgerSentence, missedWords, prWords, type Explanation, type LedgerRun } from "../changes/explain.ts";
 import type { Changes } from "../changes/signals.ts";
 import { decidingClaims, decisionsOf } from "../claims/decisions.ts";
 import { claimLabel } from "../claims/rules.ts";
@@ -850,10 +850,19 @@ export function buildA3(i: A3Inputs): A3 {
     `Why it matters: production is ${prod}; main (${cand}) is what the next release would ship. Every unclaimed difference is a claim or a fix that release will need, and every red check after a deploy is a question about what students are running.`
   ];
 
-  const gap = gapOf(i.runs, subject, score?.gate);
+  let gap = gapOf(i.runs, subject, score?.gate);
   if (score && subject && gap) {
     const why = gateWhy(subject, gap.explanation);
     if (why) score.why = why;
+    // Since 1.42.0: a forecast whose every unclaimed difference its PR declared passes, with the explanation. A
+    // confidence.json kept before 1.42.0 still says FAIL; the same reading turns it here.
+    const passed = subject.report ? declaredPass(subject.report, gap.explanation) : undefined;
+    if (passed && score.gate.startsWith("FAIL")) {
+      score.gate = "PASS";
+      score.why = passed;
+      score.note = passed;
+      gap = gapOf(i.runs, subject, score.gate);
+    }
   }
   // Beside the same production only: a new release moves production's own limits.
   const timing = subject?.report?.timingControl ? timingCharts(i.runs.filter((r) => r.stream === subject.stream && r.sides?.a?.reader === subject.sides?.a?.reader && Date.parse(r.ranAt) <= Date.parse(subject.ranAt))) : undefined;

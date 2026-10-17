@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.41.0`
+Contract version: `1.42.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -1420,8 +1420,12 @@ and the Gate's sentence (`score.why`) says which line missed which artefact. `ga
 #466 most likely contributed 195; …; 148 unexplained"), and the first fact line carries both. When the
 Gate and the kept verdict differ (a FAIL kept as WARN because the A/A did not count),
 `gap.verdictNote` says why. Differences are matched across runs by artefact, scope and kind with
-numbers and hashes folded. It is a lead to read: **it never changes the Gate, the score, a verdict
-or an exit code.**
+numbers and hashes folded. It is a lead to read: **it never changes the Gate, the score, a verdict or an exit code**, with one
+exception since 1.42.0, **PASS, explained**: a
+Main to RC forecast whose only reason to fail is unclaimed differences, every one of them declared by the PR that
+made it (`src/changes/explain.ts` `declaredPass`), shows its Gate as PASS, the explanation as the note of the
+kept `confidence.json`, in the index entry's `confidence`, the report's lead and `a3.json`'s `score`. The run's own
+`report.json` keeps its FAIL. A release candidate still needs every claim.
 
 Since 1.32.0 the two sides are compared page by page and journey by journey
 (`src/course/compare.ts`; `compare` on each row, `worsePages`, `betterPages` and `worseJourneys`
@@ -2095,6 +2099,14 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.42.0 (minor; PASS, explained)
+
+The release note is [releases/1.42.0.md](releases/1.42.0.md). A minor. A Main to RC forecast whose only reason to
+fail is unclaimed differences, each declared in the CHANGELOG line of the PR that made it, is kept with its Gate as
+PASS and the explanation as the note (`confidence.json` `gate` and `note`, the index entry's `confidence`, the
+report's lead, `a3.json` `score.gate` and `score.why`). `report.json`'s verdict, a release candidate's Gate and every
+exit code of `harness run` are unchanged.
 
 ### 1.41.0 (minor; a difference its PR declared is not owed on main)
 
