@@ -9,6 +9,7 @@
  * table too, and every bar and box says its value on hover.
  */
 import { missedWords, prWords, unexplainedWords, type Explanation } from "../changes/explain.ts";
+import { ruleTouchedWords } from "../report/rules-touched.ts";
 import { declaredWords } from "../changes/declares.ts";
 import { REPO, duration, type A3, type Decisions, type FiveWhys, type Pareto, type Rca, type Score, type ValueStream } from "./model.ts";
 import type { TimingJourney } from "./timing.ts";
@@ -496,7 +497,7 @@ function gapHtml(a: A3): string {
   ].join("");
   return `<section class="blk wide gap" id="gap"><h2>The gap, explained <span class="hint">every difference ${esc(g.comparing)} found, in one row each</span></h2>
 <p class="ledger"><strong>${esc(g.sentence)}</strong></p>${g.verdictNote ? `<p class="src">${esc(g.verdictNote)}</p>` : ""}
-<div class="scroll"><table><thead><tr><th>Explained by</th><th>Differences</th><th>Share</th><th>What changed (kinds)</th><th>First seen</th></tr></thead><tbody>${rows}</tbody></table></div>
+<div class="scroll"><table><thead><tr><th>Explained by</th><th>Differences</th><th>Share</th><th>What changed (kinds)</th><th>First seen</th></tr></thead><tbody>${rows}</tbody></table></div>${e.rules?.length ? `\n<p class="src">The behaviour behind these Rules moved: ${e.rules.map((r) => esc(ruleTouchedWords(r))).join("; ")}.</p>` : ""}
 <p class="src">A PR is named when the difference first appeared in the forecast after it merged and its files touch what changed; several PRs merged the same night stay one row ("one of"), never split by guesswork. A PR whose CHANGELOG line names the artefact that moved, as CONTRIBUTING.md asks (<code>(axe, dom)</code>), declared it: nothing is owed on main, and the release author claims it from that line. Read from ${e.history.runs} earlier forecasts beside the same production${e.history.first ? `, ${esc(day(e.history.first))} to ${esc(day(e.history.last ?? ""))}` : ""}.</p></section>`;
 }
 

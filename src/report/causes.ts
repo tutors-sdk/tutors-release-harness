@@ -19,6 +19,7 @@
 import { createHash } from "node:crypto";
 import { APPS } from "../image-ref.ts";
 import type { Artefact, Hunk } from "../types.ts";
+import { rulesTouched, ruleTouchedWords, type RuleTouched } from "./rules-touched.ts";
 
 /** One cause: a kind of difference, folded across apps, pages and packages. */
 export interface Cause {
@@ -57,6 +58,8 @@ export interface Causes {
   causes: Cause[];
   /** Pages on which two or more artefacts moved, grouped by the same set of artefacts; most pages first. */
   together: PagesTogether[];
+  /** Since 1.43.0: the Rule journeys whose pages or ledgers moved (src/report/rules-touched.ts); absent when none did. */
+  rules?: RuleTouched[];
 }
 
 const APP_SET = new Set<string>(APPS);
@@ -149,7 +152,8 @@ export function foldCauses(unclaimed: Hunk[]): Causes {
     g.hunks += [...arts.values()].reduce((a, b) => a + b, 0);
   }
   const together = [...groups.values()].map((g) => ({ ...g, pages: g.pages.sort() })).sort((x, y) => y.pages.length - x.pages.length || y.hunks - x.hunks || x.artefacts.join().localeCompare(y.artefacts.join()));
-  return { unclaimed: unclaimed.length, causes, together };
+  const rules = rulesTouched(unclaimed);
+  return { unclaimed: unclaimed.length, causes, together, ...(rules.length ? { rules } : {}) };
 }
 
 // ---- rendering: report.html and report.md ---------------------------------------------------------------
@@ -182,6 +186,9 @@ export function causesHtml(c: Causes | undefined, esc: (s: string) => string): s
   const together = c.together.length
     ? `<p>Moved together on the same pages, so likely one change each:</p><ul>${c.together.map((g) => `<li>${g.artefacts.map((a) => `<code>${esc(a)}</code>`).join(", ")} on ${g.pages.length} page${g.pages.length === 1 ? "" : "s"} (${g.hunks} differences): ${listed(g.pages, CAUSE_LISTED.pages, (p) => `<code>${esc(p)}</code>`)}</li>`).join("")}</ul>`
     : "";
+  const rules = c.rules?.length
+    ? `<p>The behaviour behind these Rules moved: their journeys' pages or ledgers differ (traffic/journeys/features):</p><ul>${c.rules.map((r) => `<li><code>${esc(r.journey)}</code>: ${esc(ruleTouchedWords(r))}</li>`).join("")}</ul>`
+    : "";
   return `<section class="causes">
 <h2 id="causes">${esc(causesHeadline(c))}</h2>
 <p>The unclaimed differences folded by kind across apps, pages and packages: a number, a hash or a package name does not make a new cause. Read beside the verdict; it never changes it.</p>
@@ -189,6 +196,7 @@ export function causesHtml(c: Causes | undefined, esc: (s: string) => string): s
 ${rows.join("\n")}
 </tbody></table>
 ${together}
+${rules}
 </section>`;
 }
 
@@ -207,6 +215,11 @@ export function causesMarkdown(c: Causes | undefined): string[] {
   if (c.together.length) {
     lines.push("Moved together on the same pages, so likely one change each:", "");
     for (const g of c.together) lines.push(`- ${g.artefacts.map((a) => `\`${a}\``).join(", ")} on ${g.pages.length} page${g.pages.length === 1 ? "" : "s"} (${g.hunks} differences): ${listed(g.pages, CAUSE_LISTED.pages, (p) => `\`${p}\``)}`);
+    lines.push("");
+  }
+  if (c.rules?.length) {
+    lines.push("The behaviour behind these Rules moved: their journeys' pages or ledgers differ:", "");
+    for (const r of c.rules) lines.push(`- \`${r.journey}\`: ${ruleTouchedWords(r)}`);
     lines.push("");
   }
   return lines;

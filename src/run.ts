@@ -473,7 +473,7 @@ export const defaultRunOptions = (): Omit<RunOptions, "mode" | "a" | "b"> => ({
   outDir: resolve(ROOT, "out"),
   now: process.env.HARNESS_NOW ?? DEFAULT_NOW,
   runs: 1,
-  sets: ["fixture", "auth", "reference", "replay"],
+  sets: ["fixture", "auth", "reference", "replay", "rules"],
   journeys: [],
   masksFile: DEFAULT_MASKS_FILE,
   noiseMaxAgeDays: 7,

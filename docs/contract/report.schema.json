@@ -204,6 +204,22 @@
               "hunks": { "type": "integer", "minimum": 2 }
             }
           }
+        },
+        "rules": {
+          "type": "array",
+          "description": "Since contract 1.43.0. The Rule journeys (traffic/journeys/features) whose pages or ledgers are among the unclaimed differences, most differences first: the behaviour behind those Rules moved. Absent when none did. Informational.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["rule", "journey", "exercises", "hunks", "artefacts"],
+            "properties": {
+              "rule": { "type": "string", "pattern": "^[0-9]{4}$", "description": "The Rule journey's own id." },
+              "journey": { "type": "string", "description": "Its journey's name, `rule-<id>-<slug>`." },
+              "exercises": { "type": "array", "items": { "type": "string", "pattern": "^[0-9]{4}$" }, "description": "The monorepo Rules its scenario exercises." },
+              "hunks": { "type": "integer", "minimum": 1 },
+              "artefacts": { "type": "array", "items": { "$ref": "#/definitions/artefact" } }
+            }
+          }
         }
       }
     },

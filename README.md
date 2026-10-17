@@ -206,7 +206,7 @@ blind spot you chose.
 
 ### Journeys
 
-Four sets, all role-and-name selectors, all parameterised by base URL:
+Five sets, all role-and-name selectors, all parameterised by base URL:
 
 | Set | Journeys | Against |
 | --- | --- | --- |
@@ -214,6 +214,7 @@ Four sets, all role-and-name selectors, all parameterised by base URL:
 | `auth` | a student signs in through the identity stub, reads a topic; what the reader persists is compared | the signed-in reader per side + the persistence stub |
 | `reference` | anonymous reader of the published reference course | `reference-course.netlify.app` — the same upstream for both sides, and the only set that can run against production |
 | `replay` (since 1.28.0) | a fixed list of course URLs ([`traffic/replay/urls.ts`](traffic/replay/urls.ts)) opened once, compared on status, headers and network only, as the informing `replay` artefact | the pinned course in `fixtures/course-server` |
+| `rules` (since 1.43.0) | one journey per EARS Rule in [`traffic/journeys/features`](traffic/journeys/features) (Rules 0582 and up), written in Gherkin; each names the monorepo Rules it exercises, so a difference on its pages reads as that behaviour moving ([guide](docs/user-guide/12-rule-journeys.md)) | the signed-in reader per side + the persistence stub |
 
 ### The harness's own signal
 
@@ -231,7 +232,7 @@ mutants has no business gating a release.
 
 ```
 harness run --mode <mode> --a <ref> --b <ref> [--substrate compose|kind] [--claims f] [--noise f|skip]
-            [--runs n] [--set fixture,auth,reference,replay] [--journey name]... [--load 20x30s]
+            [--runs n] [--set fixture,auth,reference,replay,rules] [--journey name]... [--load 20x30s]
             [--now iso] [--out dir] [--image-prefix p|template-with-{app}] [--allow-unsigned]
             [--no-screenshots] [--no-axe] [--no-focus] [--no-runtime] [--startup-restarts n] [--keep] [--no-stack]
             post-deploy: --recorded <release run dir> --production reader=URL,catalogue=URL,live=URL[,time=URL]
@@ -371,7 +372,7 @@ migration fixtures under `tests/fixtures/migrations`. See [TESTING.md](TESTING.m
 
 ## Where to stop
 
-Seven journeys in four sets, not a hundred; sixteen mutants, not thirty. The harness
+Nine journeys in five sets, not a hundred; sixteen mutants, not thirty. The harness
 compares artefacts, so its power comes from breadth of *capture* per journey,
 not from the number of journeys. Add a journey only when a real regression
 escaped that a journey would have caught.

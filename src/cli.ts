@@ -1,6 +1,6 @@
 import { parseArgs } from "node:util";
 import { resolve } from "node:path";
-import { journeys, type JourneySet } from "../traffic/journeys/journeys.ts";
+import { JOURNEY_SETS, journeys, type JourneySet } from "../traffic/journeys/journeys.ts";
 import { loadClaims } from "./claims/schema.ts";
 import { loadSlo } from "./slo/schema.ts";
 import { isUrl, loadRules } from "./claims/rules.ts";
@@ -68,7 +68,8 @@ const USAGE = `tutors-release-harness
       --override-reason, --override-by  accept a FAIL and say so: the verdict stays FAIL, the run exits 0, and the
                     report records who overrode it and why (both required together; reason 20+ characters)
       --runs        journey repetitions per side; timing needs 4+ to ever reach alpha 0.05, 5 recommended (default 1)
-      --set         journey sets, comma separated: fixture,auth,reference,replay (default all four; replay since 1.28.0)
+      --set         journey sets, comma separated: fixture,auth,reference,replay,rules (default all five; replay since 1.28.0,
+                    rules since 1.43.0: the Rule journeys in traffic/journeys/features)
       --journey     run only this journey (repeatable)
       --load        k6 after the journeys on each side: "<rate>x<duration>", e.g. 20x30s
       --now         frozen clock, ISO instant (default ${defaultRunOptions().now})
@@ -471,7 +472,7 @@ async function main(argv: string[]): Promise<number> {
 
   const defaults = defaultRunOptions();
   const sets = values.set ? (values.set.split(",").map((s) => s.trim()) as JourneySet[]) : defaults.sets;
-  for (const s of sets) if (!["fixture", "auth", "reference", "replay"].includes(s)) fail(`unknown journey set "${s}"`);
+  for (const s of sets) if (!(JOURNEY_SETS as readonly string[]).includes(s)) fail(`unknown journey set "${s}"`);
   const load = parseLoad(values.load);
   let override: ReturnType<typeof parseOverride>;
   try {
@@ -667,7 +668,7 @@ async function main(argv: string[]): Promise<number> {
     case "course":
       return courseCommand(positionals[0], values, { home: harnessHome(), harnessVersion: harnessInfo().version });
     case "journeys":
-      for (const j of journeys) console.log(`${j.name.padEnd(34)} set=${j.set.padEnd(9)} ${j.anonymous ? "anonymous" : "signed-in"}`);
+      for (const j of journeys) console.log(`${j.name.padEnd(34)} set=${j.set.padEnd(9)} ${j.anonymous ? "anonymous" : "signed-in"}${j.role ? ` as ${j.role}` : ""}${j.rules?.length ? `  Rule ${j.rules[0]}${j.rules.length > 1 ? `, exercises ${j.rules.slice(1).join(" ")}` : ""}` : ""}`);
       return 0;
     default:
       fail(`unknown command "${command}"\n${USAGE}`);

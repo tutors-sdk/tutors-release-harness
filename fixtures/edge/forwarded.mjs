@@ -4,8 +4,8 @@
 // origin from the request, and without a proxy header it assumes https. The
 // harness publishes plain http on localhost, so a Kit 3 reader would compare
 // the browser's http origin with an https one it made up and refuse sign-in.
-// Production puts a proxy here that says which protocol the browser used; this
-// is that proxy, saying "http". Older images still read ORIGIN and ignore it.
+// Production puts a proxy here that says which protocol the browser used and
+// from where; this is that proxy, saying "http" and the browser's address. Older images still read ORIGIN and ignore it.
 //
 //   node fixtures/edge/forwarded.mjs
 //     UPSTREAM=http://reader-auth-a:3000 PORT=3000
@@ -16,7 +16,10 @@ const target = new URL(process.env.UPSTREAM ?? "http://reader-auth-a:3000");
 
 http
   .createServer((req, res) => {
-    const headers = { ...req.headers, "x-forwarded-proto": "http" };
+    // Since 1.43.0 also the client's address, as a production edge does: without it Better Auth cannot tell clients
+    // apart, warns once per process ("Rate limiting could not determine a client IP"), and that warning landed in one
+    // side's log window only (a `logs` A/A difference).
+    const headers = { ...req.headers, "x-forwarded-proto": "http", "x-forwarded-for": (req.socket.remoteAddress ?? "").replace(/^::ffff:/, "") };
     const upstream = http.request({ host: target.hostname, port: target.port || 80, method: req.method, path: req.url, headers }, (up) => {
       res.writeHead(up.statusCode ?? 502, up.headers);
       up.pipe(res);
