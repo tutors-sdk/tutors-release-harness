@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "mode": "noise",
+  "ranAt": "2026-10-14T07:49:29.993Z",
+  "verdict": "warn",
+  "score": 100,
+  "grade": "A",
+  "deductions": [],
+  "normalness": {
+    "state": "normal",
+    "source": "this-run",
+    "hunks": 0,
+    "ranAt": "2026-10-14T07:49:29.993Z"
+  },
+  "rules": [],
+  "manual": []
+}

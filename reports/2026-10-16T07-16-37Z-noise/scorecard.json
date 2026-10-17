@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "mode": "noise",
+  "ranAt": "2026-10-16T07:16:37.192Z",
+  "verdict": "warn",
+  "score": 95,
+  "grade": "A",
+  "deductions": [
+    {
+      "points": 5,
+      "why": "1 diff(s) between identical images: noise the gate has to mask or fix"
+    }
+  ],
+  "normalness": {
+    "state": "noisy",
+    "source": "this-run",
+    "hunks": 1,
+    "ranAt": "2026-10-16T07:16:37.192Z"
+  },
+  "rules": [
+    {
+      "rule": null,
+      "hunks": 1,
+      "artefacts": [
+        "screenshot"
+      ],
+      "scopes": [
+        "/"
+      ],
+      "prs": [],
+      "status": "unclaimed"
+    }
+  ],
+  "manual": [
+    {
+      "scope": "/",
+      "path": "/",
+      "artefacts": [
+        "screenshot"
+      ],
+      "hunks": 1,
+      "why": "moved and no claim covers it"
+    }
+  ]
+}

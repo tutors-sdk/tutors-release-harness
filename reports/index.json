@@ -1,0 +1,537 @@
+{
+  "schemaVersion": 1,
+  "runs": [
+    {
+      "id": "2026-10-17T07-00-11Z-noise",
+      "mode": "noise",
+      "ranAt": "2026-10-17T07:00:11.159Z",
+      "verdict": "pass",
+      "reasons": [
+        "A/A is clean: the harness may gate releases"
+      ],
+      "sides": {
+        "a": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:17.0.0",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:17.0.0",
+          "live": "quay.io/tutors-sdk/tutors-live:17.0.0",
+          "time": "quay.io/tutors-sdk/tutors-time:17.0.0"
+        },
+        "b": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:17.0.0",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:17.0.0",
+          "live": "quay.io/tutors-sdk/tutors-live:17.0.0",
+          "time": "quay.io/tutors-sdk/tutors-time:17.0.0"
+        }
+      },
+      "harnessVersion": "1.40.0",
+      "runUrl": "https://github.com/tutors-sdk/tutors-release-harness/actions/runs/39011255426",
+      "score": {
+        "score": 100,
+        "grade": "A",
+        "normalness": "normal",
+        "manual": 0
+      },
+      "files": [
+        "2026-10-17T07-00-11Z-noise/report.json",
+        "2026-10-17T07-00-11Z-noise/report.md",
+        "2026-10-17T07-00-11Z-noise/report.html",
+        "2026-10-17T07-00-11Z-noise/scorecard.json",
+        "2026-10-17T07-00-11Z-noise/scorecard.md"
+      ]
+    },
+    {
+      "id": "2026-10-16T07-16-37Z-noise",
+      "mode": "noise",
+      "ranAt": "2026-10-16T07:16:37.192Z",
+      "verdict": "warn",
+      "reasons": [
+        "A/A produced 1 diff(s): the normaliser needs a mask for each, or the stack is not deterministic; the harness is advisory until this is 0"
+      ],
+      "sides": {
+        "a": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:17.0.0",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:17.0.0",
+          "live": "quay.io/tutors-sdk/tutors-live:17.0.0",
+          "time": "quay.io/tutors-sdk/tutors-time:17.0.0"
+        },
+        "b": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:17.0.0",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:17.0.0",
+          "live": "quay.io/tutors-sdk/tutors-live:17.0.0",
+          "time": "quay.io/tutors-sdk/tutors-time:17.0.0"
+        }
+      },
+      "harnessVersion": "1.39.1",
+      "runUrl": "https://github.com/tutors-sdk/tutors-release-harness/actions/runs/38865129640",
+      "score": {
+        "score": 95,
+        "grade": "A",
+        "normalness": "noisy",
+        "manual": 1
+      },
+      "files": [
+        "2026-10-16T07-16-37Z-noise/report.json",
+        "2026-10-16T07-16-37Z-noise/report.md",
+        "2026-10-16T07-16-37Z-noise/report.html",
+        "2026-10-16T07-16-37Z-noise/scorecard.json",
+        "2026-10-16T07-16-37Z-noise/scorecard.md"
+      ]
+    },
+    {
+      "id": "2026-10-16T06-57-52Z-noise",
+      "mode": "noise",
+      "ranAt": "2026-10-16T06:57:52.875Z",
+      "verdict": "pass",
+      "reasons": [
+        "A/A is clean: the harness may gate releases"
+      ],
+      "sides": {
+        "a": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:17.0.0",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:17.0.0",
+          "live": "quay.io/tutors-sdk/tutors-live:17.0.0",
+          "time": "quay.io/tutors-sdk/tutors-time:17.0.0"
+        },
+        "b": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:17.0.0",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:17.0.0",
+          "live": "quay.io/tutors-sdk/tutors-live:17.0.0",
+          "time": "quay.io/tutors-sdk/tutors-time:17.0.0"
+        }
+      },
+      "harnessVersion": "1.39.1",
+      "runUrl": "https://github.com/tutors-sdk/tutors-release-harness/actions/runs/38863239216",
+      "score": {
+        "score": 100,
+        "grade": "A",
+        "normalness": "normal",
+        "manual": 0
+      },
+      "files": [
+        "2026-10-16T06-57-52Z-noise/report.json",
+        "2026-10-16T06-57-52Z-noise/report.md",
+        "2026-10-16T06-57-52Z-noise/report.html",
+        "2026-10-16T06-57-52Z-noise/scorecard.json",
+        "2026-10-16T06-57-52Z-noise/scorecard.md"
+      ]
+    },
+    {
+      "id": "2026-10-15T21-09-11Z-noise",
+      "mode": "noise",
+      "ranAt": "2026-10-15T21:09:11.052Z",
+      "verdict": "pass",
+      "reasons": [
+        "A/A is clean: the harness may gate releases"
+      ],
+      "sides": {
+        "a": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:17.0.0",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:17.0.0",
+          "live": "quay.io/tutors-sdk/tutors-live:17.0.0",
+          "time": "quay.io/tutors-sdk/tutors-time:17.0.0"
+        },
+        "b": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:17.0.0",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:17.0.0",
+          "live": "quay.io/tutors-sdk/tutors-live:17.0.0",
+          "time": "quay.io/tutors-sdk/tutors-time:17.0.0"
+        }
+      },
+      "harnessVersion": "1.39.0",
+      "runUrl": "https://github.com/tutors-sdk/tutors-release-harness/actions/runs/38806230763",
+      "score": {
+        "score": 100,
+        "grade": "A",
+        "normalness": "normal",
+        "manual": 0
+      },
+      "files": [
+        "2026-10-15T21-09-11Z-noise/report.json",
+        "2026-10-15T21-09-11Z-noise/report.md",
+        "2026-10-15T21-09-11Z-noise/report.html",
+        "2026-10-15T21-09-11Z-noise/scorecard.json",
+        "2026-10-15T21-09-11Z-noise/scorecard.md"
+      ]
+    },
+    {
+      "id": "2026-10-15T19-39-16Z-noise",
+      "mode": "noise",
+      "ranAt": "2026-10-15T19:39:16.959Z",
+      "verdict": "pass",
+      "reasons": [
+        "A/A is clean: the harness may gate releases"
+      ],
+      "sides": {
+        "a": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:17.0.0",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:17.0.0",
+          "live": "quay.io/tutors-sdk/tutors-live:17.0.0",
+          "time": "quay.io/tutors-sdk/tutors-time:17.0.0"
+        },
+        "b": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:17.0.0",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:17.0.0",
+          "live": "quay.io/tutors-sdk/tutors-live:17.0.0",
+          "time": "quay.io/tutors-sdk/tutors-time:17.0.0"
+        }
+      },
+      "harnessVersion": "1.37.4",
+      "runUrl": "https://github.com/tutors-sdk/tutors-release-harness/actions/runs/38794440262",
+      "score": {
+        "score": 100,
+        "grade": "A",
+        "normalness": "normal",
+        "manual": 0
+      },
+      "files": [
+        "2026-10-15T19-39-16Z-noise/report.json",
+        "2026-10-15T19-39-16Z-noise/report.md",
+        "2026-10-15T19-39-16Z-noise/report.html",
+        "2026-10-15T19-39-16Z-noise/scorecard.json",
+        "2026-10-15T19-39-16Z-noise/scorecard.md"
+      ]
+    },
+    {
+      "id": "2026-10-15T17-50-33Z-noise",
+      "mode": "noise",
+      "ranAt": "2026-10-15T17:50:33.391Z",
+      "verdict": "pass",
+      "reasons": [
+        "A/A is clean: the harness may gate releases"
+      ],
+      "sides": {
+        "a": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:17.0.0",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:17.0.0",
+          "live": "quay.io/tutors-sdk/tutors-live:17.0.0",
+          "time": "quay.io/tutors-sdk/tutors-time:17.0.0"
+        },
+        "b": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:17.0.0",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:17.0.0",
+          "live": "quay.io/tutors-sdk/tutors-live:17.0.0",
+          "time": "quay.io/tutors-sdk/tutors-time:17.0.0"
+        }
+      },
+      "harnessVersion": "1.37.3",
+      "runUrl": "https://github.com/tutors-sdk/tutors-release-harness/actions/runs/38779232127",
+      "score": {
+        "score": 100,
+        "grade": "A",
+        "normalness": "normal",
+        "manual": 0
+      },
+      "files": [
+        "2026-10-15T17-50-33Z-noise/report.json",
+        "2026-10-15T17-50-33Z-noise/report.md",
+        "2026-10-15T17-50-33Z-noise/report.html",
+        "2026-10-15T17-50-33Z-noise/scorecard.json",
+        "2026-10-15T17-50-33Z-noise/scorecard.md"
+      ]
+    },
+    {
+      "id": "2026-10-15T07-38-30Z-noise",
+      "mode": "noise",
+      "ranAt": "2026-10-15T07:38:30.465Z",
+      "verdict": "warn",
+      "reasons": [
+        "A/A is clean but DEGRADED, so it does not count: journey \"reference-course-reads\" failed on both sides, so this run saw nothing of its pages"
+      ],
+      "sides": {
+        "a": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:main",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:main",
+          "live": "quay.io/tutors-sdk/tutors-live:main",
+          "time": "quay.io/tutors-sdk/tutors-time:main"
+        },
+        "b": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:main",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:main",
+          "live": "quay.io/tutors-sdk/tutors-live:main",
+          "time": "quay.io/tutors-sdk/tutors-time:main"
+        }
+      },
+      "harnessVersion": "1.36.1",
+      "runUrl": "https://github.com/tutors-sdk/tutors-release-harness/actions/runs/38698358523",
+      "score": {
+        "score": 100,
+        "grade": "A",
+        "normalness": "normal",
+        "manual": 0
+      },
+      "files": [
+        "2026-10-15T07-38-30Z-noise/report.json",
+        "2026-10-15T07-38-30Z-noise/report.md",
+        "2026-10-15T07-38-30Z-noise/report.html",
+        "2026-10-15T07-38-30Z-noise/scorecard.json",
+        "2026-10-15T07-38-30Z-noise/scorecard.md"
+      ]
+    },
+    {
+      "id": "2026-10-14T07-49-29Z-noise",
+      "mode": "noise",
+      "ranAt": "2026-10-14T07:49:29.993Z",
+      "verdict": "warn",
+      "reasons": [
+        "A/A is clean but DEGRADED, so it does not count: journey \"reference-course-reads\" failed on both sides, so this run saw nothing of its pages"
+      ],
+      "sides": {
+        "a": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:main",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:main",
+          "live": "quay.io/tutors-sdk/tutors-live:main",
+          "time": "quay.io/tutors-sdk/tutors-time:main"
+        },
+        "b": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:main",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:main",
+          "live": "quay.io/tutors-sdk/tutors-live:main",
+          "time": "quay.io/tutors-sdk/tutors-time:main"
+        }
+      },
+      "harnessVersion": "1.36.1",
+      "runUrl": "https://github.com/tutors-sdk/tutors-release-harness/actions/runs/38529150340",
+      "score": {
+        "score": 100,
+        "grade": "A",
+        "normalness": "normal",
+        "manual": 0
+      },
+      "files": [
+        "2026-10-14T07-49-29Z-noise/report.json",
+        "2026-10-14T07-49-29Z-noise/report.md",
+        "2026-10-14T07-49-29Z-noise/report.html",
+        "2026-10-14T07-49-29Z-noise/scorecard.json",
+        "2026-10-14T07-49-29Z-noise/scorecard.md"
+      ]
+    },
+    {
+      "id": "2026-10-13T09-37-31Z-noise",
+      "mode": "noise",
+      "ranAt": "2026-10-13T09:37:31.975Z",
+      "verdict": "warn",
+      "reasons": [
+        "A/A is clean but DEGRADED, so it does not count: journey \"student-signs-in\" failed on both sides, so this run saw nothing of its pages; journey \"reference-course-reads\" failed on both sides, so this run saw nothing of its pages"
+      ],
+      "sides": {
+        "a": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:main",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:main",
+          "live": "quay.io/tutors-sdk/tutors-live:main",
+          "time": "quay.io/tutors-sdk/tutors-time:main"
+        },
+        "b": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:main",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:main",
+          "live": "quay.io/tutors-sdk/tutors-live:main",
+          "time": "quay.io/tutors-sdk/tutors-time:main"
+        }
+      },
+      "harnessVersion": "1.35.1",
+      "runUrl": "https://github.com/tutors-sdk/tutors-release-harness/actions/runs/38375814369",
+      "score": {
+        "score": 100,
+        "grade": "A",
+        "normalness": "normal",
+        "manual": 0
+      },
+      "files": [
+        "2026-10-13T09-37-31Z-noise/report.json",
+        "2026-10-13T09-37-31Z-noise/report.md",
+        "2026-10-13T09-37-31Z-noise/report.html",
+        "2026-10-13T09-37-31Z-noise/scorecard.json",
+        "2026-10-13T09-37-31Z-noise/scorecard.md"
+      ]
+    },
+    {
+      "id": "2026-10-12T09-22-42Z-noise",
+      "mode": "noise",
+      "ranAt": "2026-10-12T09:22:42.894Z",
+      "verdict": "warn",
+      "reasons": [
+        "A/A is clean but DEGRADED, so it does not count: journey \"reference-course-reads\" failed on both sides, so this run saw nothing of its pages"
+      ],
+      "sides": {
+        "a": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:main",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:main",
+          "live": "quay.io/tutors-sdk/tutors-live:main",
+          "time": "quay.io/tutors-sdk/tutors-time:main"
+        },
+        "b": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:main",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:main",
+          "live": "quay.io/tutors-sdk/tutors-live:main",
+          "time": "quay.io/tutors-sdk/tutors-time:main"
+        }
+      },
+      "harnessVersion": "1.35.0",
+      "runUrl": "https://github.com/tutors-sdk/tutors-release-harness/actions/runs/38227917238",
+      "score": {
+        "score": 100,
+        "grade": "A",
+        "normalness": "normal",
+        "manual": 0
+      },
+      "files": [
+        "2026-10-12T09-22-42Z-noise/report.json",
+        "2026-10-12T09-22-42Z-noise/report.md",
+        "2026-10-12T09-22-42Z-noise/report.html",
+        "2026-10-12T09-22-42Z-noise/scorecard.json",
+        "2026-10-12T09-22-42Z-noise/scorecard.md"
+      ]
+    },
+    {
+      "id": "2026-10-11T09-00-00Z-noise",
+      "mode": "noise",
+      "ranAt": "2026-10-11T09:00:00.508Z",
+      "verdict": "warn",
+      "reasons": [
+        "A/A is clean but DEGRADED, so it does not count: journey \"reference-course-reads\" failed on both sides, so this run saw nothing of its pages"
+      ],
+      "sides": {
+        "a": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:main",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:main",
+          "live": "quay.io/tutors-sdk/tutors-live:main",
+          "time": "quay.io/tutors-sdk/tutors-time:main"
+        },
+        "b": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:main",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:main",
+          "live": "quay.io/tutors-sdk/tutors-live:main",
+          "time": "quay.io/tutors-sdk/tutors-time:main"
+        }
+      },
+      "harnessVersion": "1.33.0",
+      "runUrl": "https://github.com/tutors-sdk/tutors-release-harness/actions/runs/38125953731",
+      "score": {
+        "score": 100,
+        "grade": "A",
+        "normalness": "normal",
+        "manual": 0
+      },
+      "files": [
+        "2026-10-11T09-00-00Z-noise/report.json",
+        "2026-10-11T09-00-00Z-noise/report.md",
+        "2026-10-11T09-00-00Z-noise/report.html",
+        "2026-10-11T09-00-00Z-noise/scorecard.json",
+        "2026-10-11T09-00-00Z-noise/scorecard.md"
+      ]
+    },
+    {
+      "id": "2026-10-10T08-41-44Z-noise",
+      "mode": "noise",
+      "ranAt": "2026-10-10T08:41:44.073Z",
+      "verdict": "warn",
+      "reasons": [
+        "A/A is clean but DEGRADED, so it does not count: journey \"reference-course-reads\" failed on both sides, so this run saw nothing of its pages"
+      ],
+      "sides": {
+        "a": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:main",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:main",
+          "live": "quay.io/tutors-sdk/tutors-live:main",
+          "time": "quay.io/tutors-sdk/tutors-time:main"
+        },
+        "b": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:main",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:main",
+          "live": "quay.io/tutors-sdk/tutors-live:main",
+          "time": "quay.io/tutors-sdk/tutors-time:main"
+        }
+      },
+      "harnessVersion": "1.33.0",
+      "runUrl": "https://github.com/tutors-sdk/tutors-release-harness/actions/runs/38037918839",
+      "score": {
+        "score": 100,
+        "grade": "A",
+        "normalness": "normal",
+        "manual": 0
+      },
+      "files": [
+        "2026-10-10T08-41-44Z-noise/report.json",
+        "2026-10-10T08-41-44Z-noise/report.md",
+        "2026-10-10T08-41-44Z-noise/report.html",
+        "2026-10-10T08-41-44Z-noise/scorecard.json",
+        "2026-10-10T08-41-44Z-noise/scorecard.md"
+      ]
+    },
+    {
+      "id": "2026-10-09T09-12-52Z-noise",
+      "mode": "noise",
+      "ranAt": "2026-10-09T09:12:52.291Z",
+      "verdict": "warn",
+      "reasons": [
+        "A/A is clean but DEGRADED, so it does not count: journey \"reference-course-reads\" failed on both sides, so this run saw nothing of its pages"
+      ],
+      "sides": {
+        "a": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:main",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:main",
+          "live": "quay.io/tutors-sdk/tutors-live:main",
+          "time": "quay.io/tutors-sdk/tutors-time:main"
+        },
+        "b": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:main",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:main",
+          "live": "quay.io/tutors-sdk/tutors-live:main",
+          "time": "quay.io/tutors-sdk/tutors-time:main"
+        }
+      },
+      "harnessVersion": "1.33.0",
+      "runUrl": "https://github.com/tutors-sdk/tutors-release-harness/actions/runs/37908325330",
+      "score": {
+        "score": 100,
+        "grade": "A",
+        "normalness": "normal",
+        "manual": 0
+      },
+      "files": [
+        "2026-10-09T09-12-52Z-noise/report.json",
+        "2026-10-09T09-12-52Z-noise/report.md",
+        "2026-10-09T09-12-52Z-noise/report.html",
+        "2026-10-09T09-12-52Z-noise/scorecard.json",
+        "2026-10-09T09-12-52Z-noise/scorecard.md"
+      ]
+    },
+    {
+      "id": "2026-10-08T09-07-10Z-noise",
+      "mode": "noise",
+      "ranAt": "2026-10-08T09:07:10.204Z",
+      "verdict": "pass",
+      "reasons": [
+        "A/A is clean: the harness may gate releases"
+      ],
+      "sides": {
+        "a": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:main",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:main",
+          "live": "quay.io/tutors-sdk/tutors-live:main",
+          "time": "quay.io/tutors-sdk/tutors-time:main"
+        },
+        "b": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:main",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:main",
+          "live": "quay.io/tutors-sdk/tutors-live:main",
+          "time": "quay.io/tutors-sdk/tutors-time:main"
+        }
+      },
+      "harnessVersion": "1.29.0",
+      "runUrl": "https://github.com/tutors-sdk/tutors-release-harness/actions/runs/37753027802",
+      "score": {
+        "score": 100,
+        "grade": "A",
+        "normalness": "normal",
+        "manual": 0
+      },
+      "files": [
+        "2026-10-08T09-07-10Z-noise/report.json",
+        "2026-10-08T09-07-10Z-noise/report.md",
+        "2026-10-08T09-07-10Z-noise/report.html",
+        "2026-10-08T09-07-10Z-noise/scorecard.json",
+        "2026-10-08T09-07-10Z-noise/scorecard.md"
+      ]
+    }
+  ]
+}

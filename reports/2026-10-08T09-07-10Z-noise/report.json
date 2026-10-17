@@ -1,0 +1,640 @@
+{
+  "schemaVersion": 1,
+  "harness": {
+    "version": "1.29.0",
+    "gitSha": "309b6a5388159271d554a3fd01b42a939c1b5d04",
+    "contractVersion": "1.29.0"
+  },
+  "harnessVersion": "1.29.0",
+  "mode": "noise",
+  "substrate": "compose",
+  "ranAt": "2026-10-08T09:07:10.204Z",
+  "now": "2026-09-16T09:05:00.000Z",
+  "runs": 5,
+  "sides": {
+    "a": {
+      "reader": "quay.io/tutors-sdk/tutors-reader:main",
+      "catalogue": "quay.io/tutors-sdk/tutors-catalogue:main",
+      "live": "quay.io/tutors-sdk/tutors-live:main",
+      "time": "quay.io/tutors-sdk/tutors-time:main"
+    },
+    "b": {
+      "reader": "quay.io/tutors-sdk/tutors-reader:main",
+      "catalogue": "quay.io/tutors-sdk/tutors-catalogue:main",
+      "live": "quay.io/tutors-sdk/tutors-live:main",
+      "time": "quay.io/tutors-sdk/tutors-time:main"
+    }
+  },
+  "provenance": {
+    "a": {
+      "summary": "pulled+verified",
+      "images": {
+        "reader": {
+          "ref": "quay.io/tutors-sdk/tutors-reader:main",
+          "id": "sha256:4e05172d16123ab9f65387c0604f222aaff52cea4e3a39a9cceeb989a887f810",
+          "digest": "sha256:edf78868bcff2df308ba1601d2d35f0119b0211928d41d421195a5931b1673f8",
+          "revision": "7c5f248269445fad730e65054c937bc5dcc7f675",
+          "version": "sha-7c5f248",
+          "created": "2026-10-08T06:49:19.951Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "catalogue": {
+          "ref": "quay.io/tutors-sdk/tutors-catalogue:main",
+          "id": "sha256:6ae6f9dd08212ea76ca2dbeefa5ebe21105c65c545e8e6b3b301e1e3d9ebc23b",
+          "digest": "sha256:334c2d6d0be2952095ee8dc89090ba34e869650b9adf15b2c1b410ee288d6752",
+          "revision": "7c5f248269445fad730e65054c937bc5dcc7f675",
+          "version": "sha-7c5f248",
+          "created": "2026-10-08T06:49:19.035Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "live": {
+          "ref": "quay.io/tutors-sdk/tutors-live:main",
+          "id": "sha256:2eb0ee156fa1a1f2b824f7ba0503cc4199f9839663dd21ca11eb82727777881a",
+          "digest": "sha256:cb931c5d95231c0b0c1ff7db3377b028280fb0980be093717da05dbba72e1e34",
+          "revision": "7c5f248269445fad730e65054c937bc5dcc7f675",
+          "version": "sha-7c5f248",
+          "created": "2026-10-08T06:49:15.278Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "time": {
+          "ref": "quay.io/tutors-sdk/tutors-time:main",
+          "id": "sha256:6a963e1a3c91b607a6df69fe8db6b9c33ec57d28012d252415339c1c11d99b52",
+          "digest": "sha256:d3d9f65ddccc22e7ee35f6d7add19a6468393065da3c38a4d933c253fb9d9afd",
+          "revision": "7c5f248269445fad730e65054c937bc5dcc7f675",
+          "version": "sha-7c5f248",
+          "created": "2026-10-08T06:49:27.791Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        }
+      }
+    },
+    "b": {
+      "summary": "pulled+verified",
+      "images": {
+        "reader": {
+          "ref": "quay.io/tutors-sdk/tutors-reader:main",
+          "id": "sha256:4e05172d16123ab9f65387c0604f222aaff52cea4e3a39a9cceeb989a887f810",
+          "digest": "sha256:edf78868bcff2df308ba1601d2d35f0119b0211928d41d421195a5931b1673f8",
+          "revision": "7c5f248269445fad730e65054c937bc5dcc7f675",
+          "version": "sha-7c5f248",
+          "created": "2026-10-08T06:49:19.951Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "catalogue": {
+          "ref": "quay.io/tutors-sdk/tutors-catalogue:main",
+          "id": "sha256:6ae6f9dd08212ea76ca2dbeefa5ebe21105c65c545e8e6b3b301e1e3d9ebc23b",
+          "digest": "sha256:334c2d6d0be2952095ee8dc89090ba34e869650b9adf15b2c1b410ee288d6752",
+          "revision": "7c5f248269445fad730e65054c937bc5dcc7f675",
+          "version": "sha-7c5f248",
+          "created": "2026-10-08T06:49:19.035Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "live": {
+          "ref": "quay.io/tutors-sdk/tutors-live:main",
+          "id": "sha256:2eb0ee156fa1a1f2b824f7ba0503cc4199f9839663dd21ca11eb82727777881a",
+          "digest": "sha256:cb931c5d95231c0b0c1ff7db3377b028280fb0980be093717da05dbba72e1e34",
+          "revision": "7c5f248269445fad730e65054c937bc5dcc7f675",
+          "version": "sha-7c5f248",
+          "created": "2026-10-08T06:49:15.278Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "time": {
+          "ref": "quay.io/tutors-sdk/tutors-time:main",
+          "id": "sha256:6a963e1a3c91b607a6df69fe8db6b9c33ec57d28012d252415339c1c11d99b52",
+          "digest": "sha256:d3d9f65ddccc22e7ee35f6d7add19a6468393065da3c38a4d933c253fb9d9afd",
+          "revision": "7c5f248269445fad730e65054c937bc5dcc7f675",
+          "version": "sha-7c5f248",
+          "created": "2026-10-08T06:49:27.791Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        }
+      }
+    }
+  },
+  "verdict": "pass",
+  "reasons": [
+    "A/A is clean: the harness may gate releases"
+  ],
+  "compare": {
+    "hunks": [
+      {
+        "id": "runtime:runtime/summary:1",
+        "artefact": "runtime",
+        "scope": "runtime/summary",
+        "severity": "info",
+        "summary": "container posture collected for catalogue, live, reader, reader-auth, time on both sides (compose)",
+        "detail": "catalogue: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n           b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nlive: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n        b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader-auth: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n             b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\ntime: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter"
+      },
+      {
+        "id": "startup:startup/summary:2",
+        "artefact": "startup",
+        "scope": "startup/summary",
+        "severity": "info",
+        "summary": "startup time collected on both sides (compose, 5 restart(s) per app)",
+        "detail": "catalogue: first healthy / 440 → 367 ms, ready 2359 → 2415 ms (median, a → b, n=5/5)\nlive: first healthy / 458 → 478 ms, ready 2405 → 2378 ms (median, a → b, n=5/5)\nreader: first healthy / 456 → 607 ms, ready 2386 → 2326 ms (median, a → b, n=5/5)\ntime: first healthy / 455 → 329 ms, ready 2375 → 2387 ms (median, a → b, n=5/5)"
+      },
+      {
+        "id": "image-hardening:reader/healthcheck:3",
+        "artefact": "image-hardening",
+        "scope": "reader/healthcheck",
+        "severity": "info",
+        "summary": "reader: declares no HEALTHCHECK (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "image-hardening:catalogue/healthcheck:4",
+        "artefact": "image-hardening",
+        "scope": "catalogue/healthcheck",
+        "severity": "info",
+        "summary": "catalogue: declares no HEALTHCHECK (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "image-hardening:live/healthcheck:5",
+        "artefact": "image-hardening",
+        "scope": "live/healthcheck",
+        "severity": "info",
+        "summary": "live: declares no HEALTHCHECK (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "image-hardening:time/healthcheck:6",
+        "artefact": "image-hardening",
+        "scope": "time/healthcheck",
+        "severity": "info",
+        "summary": "time: declares no HEALTHCHECK (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "build-provenance:reader/slsa:7",
+        "artefact": "build-provenance",
+        "scope": "reader/slsa",
+        "severity": "info",
+        "summary": "reader: carries no SLSA provenance verified under the publishing identity on edf78868bcff (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "build-provenance:catalogue/slsa:8",
+        "artefact": "build-provenance",
+        "scope": "catalogue/slsa",
+        "severity": "info",
+        "summary": "catalogue: carries no SLSA provenance verified under the publishing identity on 334c2d6d0be2 (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "build-provenance:live/slsa:9",
+        "artefact": "build-provenance",
+        "scope": "live/slsa",
+        "severity": "info",
+        "summary": "live: carries no SLSA provenance verified under the publishing identity on cb931c5d9523 (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "build-provenance:time/slsa:10",
+        "artefact": "build-provenance",
+        "scope": "time/slsa",
+        "severity": "info",
+        "summary": "time: carries no SLSA provenance verified under the publishing identity on d3d9f65ddccc (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "vuln-ceiling:reader/summary:11",
+        "artefact": "vuln-ceiling",
+        "scope": "reader/summary",
+        "severity": "info",
+        "summary": "reader: vuln-ceiling holds on b: 88 advisories scanned, 18 critical or high, none with a fix available"
+      },
+      {
+        "id": "vuln-ceiling:catalogue/summary:12",
+        "artefact": "vuln-ceiling",
+        "scope": "catalogue/summary",
+        "severity": "info",
+        "summary": "catalogue: vuln-ceiling holds on b: 88 advisories scanned, 18 critical or high, none with a fix available"
+      },
+      {
+        "id": "vuln-ceiling:live/summary:13",
+        "artefact": "vuln-ceiling",
+        "scope": "live/summary",
+        "severity": "info",
+        "summary": "live: vuln-ceiling holds on b: 88 advisories scanned, 18 critical or high, none with a fix available"
+      },
+      {
+        "id": "vuln-ceiling:time/summary:14",
+        "artefact": "vuln-ceiling",
+        "scope": "time/summary",
+        "severity": "info",
+        "summary": "time: vuln-ceiling holds on b: 88 advisories scanned, 18 critical or high, none with a fix available"
+      }
+    ],
+    "matches": [
+      {
+        "hunk": {
+          "id": "runtime:runtime/summary:1",
+          "artefact": "runtime",
+          "scope": "runtime/summary",
+          "severity": "info",
+          "summary": "container posture collected for catalogue, live, reader, reader-auth, time on both sides (compose)",
+          "detail": "catalogue: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n           b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nlive: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n        b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader-auth: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n             b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\ntime: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter"
+        }
+      },
+      {
+        "hunk": {
+          "id": "startup:startup/summary:2",
+          "artefact": "startup",
+          "scope": "startup/summary",
+          "severity": "info",
+          "summary": "startup time collected on both sides (compose, 5 restart(s) per app)",
+          "detail": "catalogue: first healthy / 440 → 367 ms, ready 2359 → 2415 ms (median, a → b, n=5/5)\nlive: first healthy / 458 → 478 ms, ready 2405 → 2378 ms (median, a → b, n=5/5)\nreader: first healthy / 456 → 607 ms, ready 2386 → 2326 ms (median, a → b, n=5/5)\ntime: first healthy / 455 → 329 ms, ready 2375 → 2387 ms (median, a → b, n=5/5)"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-hardening:reader/healthcheck:3",
+          "artefact": "image-hardening",
+          "scope": "reader/healthcheck",
+          "severity": "info",
+          "summary": "reader: declares no HEALTHCHECK (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-hardening:catalogue/healthcheck:4",
+          "artefact": "image-hardening",
+          "scope": "catalogue/healthcheck",
+          "severity": "info",
+          "summary": "catalogue: declares no HEALTHCHECK (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-hardening:live/healthcheck:5",
+          "artefact": "image-hardening",
+          "scope": "live/healthcheck",
+          "severity": "info",
+          "summary": "live: declares no HEALTHCHECK (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-hardening:time/healthcheck:6",
+          "artefact": "image-hardening",
+          "scope": "time/healthcheck",
+          "severity": "info",
+          "summary": "time: declares no HEALTHCHECK (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "build-provenance:reader/slsa:7",
+          "artefact": "build-provenance",
+          "scope": "reader/slsa",
+          "severity": "info",
+          "summary": "reader: carries no SLSA provenance verified under the publishing identity on edf78868bcff (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "build-provenance:catalogue/slsa:8",
+          "artefact": "build-provenance",
+          "scope": "catalogue/slsa",
+          "severity": "info",
+          "summary": "catalogue: carries no SLSA provenance verified under the publishing identity on 334c2d6d0be2 (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "build-provenance:live/slsa:9",
+          "artefact": "build-provenance",
+          "scope": "live/slsa",
+          "severity": "info",
+          "summary": "live: carries no SLSA provenance verified under the publishing identity on cb931c5d9523 (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "build-provenance:time/slsa:10",
+          "artefact": "build-provenance",
+          "scope": "time/slsa",
+          "severity": "info",
+          "summary": "time: carries no SLSA provenance verified under the publishing identity on d3d9f65ddccc (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vuln-ceiling:reader/summary:11",
+          "artefact": "vuln-ceiling",
+          "scope": "reader/summary",
+          "severity": "info",
+          "summary": "reader: vuln-ceiling holds on b: 88 advisories scanned, 18 critical or high, none with a fix available"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vuln-ceiling:catalogue/summary:12",
+          "artefact": "vuln-ceiling",
+          "scope": "catalogue/summary",
+          "severity": "info",
+          "summary": "catalogue: vuln-ceiling holds on b: 88 advisories scanned, 18 critical or high, none with a fix available"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vuln-ceiling:live/summary:13",
+          "artefact": "vuln-ceiling",
+          "scope": "live/summary",
+          "severity": "info",
+          "summary": "live: vuln-ceiling holds on b: 88 advisories scanned, 18 critical or high, none with a fix available"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vuln-ceiling:time/summary:14",
+          "artefact": "vuln-ceiling",
+          "scope": "time/summary",
+          "severity": "info",
+          "summary": "time: vuln-ceiling holds on b: 88 advisories scanned, 18 critical or high, none with a fix available"
+        }
+      }
+    ],
+    "unclaimed": [],
+    "staleClaims": [],
+    "broadUnapproved": []
+  },
+  "masksApplied": {
+    "response-date": 92,
+    "request-id": 92,
+    "etag": 92,
+    "metrics-process": 599,
+    "metrics-timing-histograms": 12,
+    "third-party-requests": 1553,
+    "persistence-stub-requests": 410,
+    "realtime-rest-fallback-warning": 0,
+    "media-range-status": 46,
+    "chromium-compute-pressure-policy": 0,
+    "hashed-assets": 8344,
+    "footer-tutors-version": 344,
+    "transport-length": 92,
+    "transport-connection": 92,
+    "transport-encoding": 0,
+    "transport-transfer": 0,
+    "transport-keepalive": 92
+  },
+  "load": {
+    "a": {
+      "requests": 601,
+      "failed": 0,
+      "serverErrors": 0,
+      "p50": 1.33,
+      "p95": 2.25,
+      "rate": 20,
+      "duration": "30s"
+    },
+    "b": {
+      "requests": 601,
+      "failed": 0,
+      "serverErrors": 0,
+      "p50": 1.25,
+      "p95": 2.17,
+      "rate": 20,
+      "duration": "30s"
+    }
+  },
+  "imageArtefacts": {
+    "a": {
+      "reader": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 258.5 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "104 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "88 advisories, db built 2026-10-08T06:33:47Z schema v6.1.10"
+        }
+      },
+      "catalogue": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 237.9 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "90 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "88 advisories, db built 2026-10-08T06:33:47Z schema v6.1.10"
+        }
+      },
+      "live": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 238.0 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "90 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "88 advisories, db built 2026-10-08T06:33:47Z schema v6.1.10"
+        }
+      },
+      "time": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 243.8 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "100 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "88 advisories, db built 2026-10-08T06:33:47Z schema v6.1.10"
+        }
+      }
+    },
+    "b": {
+      "reader": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 258.5 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "104 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "88 advisories, db built 2026-10-08T06:33:47Z schema v6.1.10"
+        }
+      },
+      "catalogue": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 237.9 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "90 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "88 advisories, db built 2026-10-08T06:33:47Z schema v6.1.10"
+        }
+      },
+      "live": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 238.0 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "90 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "88 advisories, db built 2026-10-08T06:33:47Z schema v6.1.10"
+        }
+      },
+      "time": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 243.8 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "100 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "88 advisories, db built 2026-10-08T06:33:47Z schema v6.1.10"
+        }
+      }
+    }
+  },
+  "levels": {
+    "dom": {
+      "level": "blocking"
+    },
+    "screenshot": {
+      "level": "blocking"
+    },
+    "network": {
+      "level": "blocking"
+    },
+    "console": {
+      "level": "blocking"
+    },
+    "headers": {
+      "level": "blocking"
+    },
+    "axe": {
+      "level": "blocking"
+    },
+    "focus": {
+      "level": "blocking"
+    },
+    "metrics": {
+      "level": "blocking"
+    },
+    "logs": {
+      "level": "blocking"
+    },
+    "timing": {
+      "level": "blocking"
+    },
+    "persistence": {
+      "level": "blocking"
+    },
+    "bus": {
+      "level": "blocking"
+    },
+    "migration": {
+      "level": "blocking"
+    },
+    "upgrade": {
+      "level": "blocking"
+    },
+    "image-manifest": {
+      "level": "blocking"
+    },
+    "sbom": {
+      "level": "blocking"
+    },
+    "vulns": {
+      "level": "blocking"
+    },
+    "runtime": {
+      "level": "blocking"
+    },
+    "startup": {
+      "level": "blocking"
+    },
+    "image-hardening": {
+      "level": "informing"
+    },
+    "build-provenance": {
+      "level": "informing"
+    },
+    "vuln-ceiling": {
+      "level": "informing"
+    },
+    "timing-tolerance": {
+      "level": "informing"
+    },
+    "asset-graph": {
+      "level": "informing"
+    },
+    "replay": {
+      "level": "informing"
+    }
+  },
+  "causes": {
+    "unclaimed": 0,
+    "causes": [],
+    "together": []
+  }
+}
