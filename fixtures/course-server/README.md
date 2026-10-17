@@ -39,7 +39,9 @@ course does not:
   `harness-enrolled` (the identity stub's `enrolled` role) and whose educators name
   `harness-lecturer`, so the stub's `student` is turned away (Rule 0586).
 - A quiz (`quiz-01`, two questions), a notebook (`notebook-01`, one markdown and one
-  code cell) and the scaffolder's talk, lab and note in one topic.
+  code cell) and the scaffolder's talk, lab and note in Topic 1.
+- Since 1.45.0 a second topic, Topic 2 (the scaffolder's talk, lab and note), which the
+  content lock journey (Rule 0588) locks, so the course page still has a topic to show.
 - A `calendar.yaml` on fixed dates around the harness clock (`HARNESS_NOW`,
   2026-09-16): week 2 is the current week, week 3 holds the one assessment.
 - `llm: 2`, so the course links its page for LLMs and its `llms/` downloads are served.

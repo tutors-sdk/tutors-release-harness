@@ -4,7 +4,7 @@
 //
 //   node fixtures/persistence/stub.mjs [port]
 //
-//   GET    /rest/v1/<table>        -> []            (reads see an empty table)
+//   GET    /rest/v1/<table>        -> []            (reads see an empty table; a kept table, below, its rows)
 //   POST   /rest/v1/<table>        -> 201 [body]    recorded as a write
 //   PATCH  /rest/v1/<table>        -> 200 []        recorded as a write
 //   DELETE /rest/v1/<table>        -> 204           recorded as a write
@@ -17,6 +17,11 @@
 //   GET    /_harness/writes        -> the log, oldest first
 //   POST   /_harness/reset         -> clears the log
 //
+// Since 1.45.0 the stub keeps the rows written to the tables in KEPT until the next reset, and answers reads of
+// them with those rows (filtered by `col=eq.value`, upserted by `on_conflict`): a lecturer's content lock is read
+// back by the student's browser in the same journey (the lock journey, Rule 0588). Every other table still reads
+// empty. What is kept never reaches the ledger: the writes are recorded as before.
+//
 // Both sides get their own stub, so a write is attributable. The stub sends no
 // Date header and no ids: nothing here may differ between the sides.
 import { createHash } from "node:crypto";
@@ -26,6 +31,9 @@ const port = Number(process.argv[2] ?? process.env.PORT ?? 8090);
 const BROADCAST = /^\/realtime\/v1\/api\/broadcast(\/[^/]+\/events\/[^/]+)?$/;
 let writes = [];
 let seq = 0;
+/** The tables whose rows are kept and read back (the reader's content locks, packages/svelte/utils/rbac/src/lock-store.ts). */
+const KEPT = new Set(["tutors_content_locks"]);
+let kept = new Map();
 
 const cors = {
   "access-control-allow-origin": "*",
@@ -57,6 +65,7 @@ const server = createServer(async (req, res) => {
   if (url.pathname === "/_harness/writes") return send(200, writes);
   if (url.pathname === "/_harness/reset" && req.method === "POST") {
     writes = [];
+    kept = new Map();
     return send(204);
   }
 
@@ -68,10 +77,13 @@ const server = createServer(async (req, res) => {
       writes.push({ seq: ++seq, kind: "rpc", method: req.method, table: name });
       return send(200, []);
     }
+    if (KEPT.has(name)) keep(req.method, name, url.searchParams, body);
     switch (req.method) {
       case "GET":
-      case "HEAD":
-        return send(200, [], { "content-range": "*/0" });
+      case "HEAD": {
+        const rows = KEPT.has(name) ? matching(name, url.searchParams) : [];
+        return send(200, rows, { "content-range": rows.length ? `0-${rows.length - 1}/${rows.length}` : "*/0" });
+      }
       case "POST": {
         writes.push({ seq: ++seq, kind: "write", method: "POST", table: name, rows: rowCount(body) });
         return send(201, body ? safeJson(body) : []);
@@ -104,6 +116,40 @@ const server = createServer(async (req, res) => {
   if (url.pathname.startsWith("/storage/v1/")) return send(404, { message: "no storage in the harness" });
   return send(404, { message: "not found" });
 });
+
+/** PostgREST's `col=eq.value` filters; every other parameter (select, order, limit, on_conflict) is not a filter. */
+function filtersOf(params) {
+  const out = [];
+  for (const [key, value] of params) if (value.startsWith("eq.")) out.push([key, value.slice(3)]);
+  return out;
+}
+function matches(row, filters) {
+  return filters.every(([key, value]) => String(row[key]) === value);
+}
+function matching(table, params) {
+  const filters = filtersOf(params);
+  return (kept.get(table) ?? []).filter((row) => matches(row, filters));
+}
+/** Apply a write to a kept table: insert or upsert (by `on_conflict`), update, or delete the matching rows. */
+function keep(method, table, params, body) {
+  const rows = kept.get(table) ?? [];
+  kept.set(table, rows);
+  if (method === "POST") {
+    const conflict = (params.get("on_conflict") ?? "").split(",").filter(Boolean);
+    for (const row of safeJson(body)) {
+      const at = conflict.length ? rows.findIndex((r) => conflict.every((c) => String(r[c]) === String(row[c]))) : -1;
+      if (at >= 0) rows[at] = { ...rows[at], ...row };
+      else rows.push(row);
+    }
+  } else if (method === "PATCH" || method === "PUT") {
+    const [patch] = safeJson(body);
+    const filters = filtersOf(params);
+    for (let i = 0; i < rows.length; i++) if (matches(rows[i], filters)) rows[i] = { ...rows[i], ...patch };
+  } else if (method === "DELETE") {
+    const filters = filtersOf(params);
+    kept.set(table, rows.filter((r) => !matches(r, filters)));
+  }
+}
 
 function safeJson(text) {
   try {

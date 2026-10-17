@@ -66,6 +66,30 @@ describe("persistence stub", () => {
     expect(await (await fetch(`${base}/_harness/writes`)).json()).toEqual([]);
   });
 
+  it("keeps the content locks written in a journey and reads them back, filtered and upserted, until reset", async () => {
+    await fetch(`${base}/_harness/reset`, { method: "POST" });
+    const locks = `${base}/rest/v1/tutors_content_locks`;
+    const upsert = (row: object) => fetch(`${locks}?on_conflict=course_id%2Clo_route`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(row) });
+    await upsert({ course_id: "c", lo_route: "/t/2", locked: true });
+    await upsert({ course_id: "c", lo_route: "/t/2", locked: false });
+    await upsert({ course_id: "c", lo_route: "@settings/show-locked", locked: true });
+    await upsert({ course_id: "other", lo_route: "/t/2", locked: true });
+    const read = async (q: string) => (await (await fetch(`${locks}?select=lo_route,locked&${q}`)).json()) as { lo_route: string; locked: boolean }[];
+    expect((await read("course_id=eq.c")).map((r) => [r.lo_route, r.locked])).toEqual([
+      ["/t/2", false],
+      ["@settings/show-locked", true]
+    ]);
+    await fetch(`${locks}?course_id=eq.c&lo_route=eq.%2Ft%2F2`, { method: "DELETE" });
+    expect((await read("course_id=eq.c")).map((r) => r.lo_route)).toEqual(["@settings/show-locked"]);
+    const writes = (await (await fetch(`${base}/_harness/writes`)).json()) as { method: string; table: string }[];
+    expect(writes.map((w) => w.method)).toEqual(["POST", "POST", "POST", "POST", "DELETE"]);
+    // Any other table still reads empty, and a reset forgets the locks.
+    await fetch(`${base}/rest/v1/learning_records`, { method: "POST", body: JSON.stringify({ a: 1 }) });
+    expect(await (await fetch(`${base}/rest/v1/learning_records`)).json()).toEqual([]);
+    await fetch(`${base}/_harness/reset`, { method: "POST" });
+    expect(await read("course_id=eq.c")).toEqual([]);
+  });
+
   it("accepts realtime broadcasts over REST without recording them as writes", async () => {
     await fetch(`${base}/_harness/reset`, { method: "POST" });
     const broadcast = await fetch(`${base}/realtime/v1/api/broadcast?apikey=k&vsn=2.0.0`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ messages: [] }) });

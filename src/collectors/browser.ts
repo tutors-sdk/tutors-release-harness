@@ -274,62 +274,84 @@ export async function quiet(count: () => number, quietMs: number, maxMs: number,
 }
 
 export async function captureJourney(browser: Browser, spec: SideSpec, journey: Journey, run: number, opts: BrowserCaptureOptions): Promise<JourneyCapture> {
-  const context = await newContext(browser, opts.now);
-  context.setDefaultTimeout(ACTION_TIMEOUT_MS);
-  if (journey.target === "readerAuth") await routeIdentity(context, journey.role);
-  // Google Fonts, Iconify and jsDelivr are answered from one recorded copy, the same bytes on both sides, at once
-  // (src/collectors/third-party-cache.ts): an icon or the typeface can no longer arrive on one side only before a shot.
-  await routeThirdParty(context);
-  const page = await context.newPage();
-  const crashed = new Promise<never>((_, reject) => page.on("crash", () => reject(new Error("renderer crashed"))));
+  const contexts: BrowserContext[] = [];
+  let crash: (e: Error) => void = () => undefined;
+  const crashed = new Promise<never>((_, reject) => (crash = reject));
   crashed.catch(() => undefined);
-  await page.clock.setFixedTime(new Date(opts.now));
+  // Since 1.45.0 a journey may act as a second person in a browser context of their own on the same side (a lecturer
+  // beside the student: Journey.run's `actors`). Each context signs in as its own role, and every page of every context
+  // is watched by the listeners below, so a capture's network, console and Realtime cost are what both people did since
+  // the last capture, in the order the journey did it; the aria, screenshot, axe and focus walk are of the page it names.
+  async function openPage(role: string | undefined): Promise<Page> {
+    const context = await newContext(browser, opts.now);
+    contexts.push(context);
+    context.setDefaultTimeout(ACTION_TIMEOUT_MS);
+    if (journey.target === "readerAuth") await routeIdentity(context, role);
+    // Google Fonts, Iconify and jsDelivr are answered from one recorded copy, the same bytes on both sides, at once
+    // (src/collectors/third-party-cache.ts): an icon or the typeface can no longer arrive on one side only before a shot.
+    await routeThirdParty(context);
+    const opened = await context.newPage();
+    opened.on("crash", () => crash(new Error("renderer crashed")));
+    await opened.clock.setFixedTime(new Date(opts.now));
+    watch(opened);
+    return opened;
+  }
 
   const pages: PageCapture[] = [];
   let pendingNetwork: Promise<NetworkEntry>[] = [];
   let pendingConsole: ConsoleEntry[] = [];
-  let documentResponse: Response | undefined;
+  const documentResponses = new Map<Page, Response>();
   // Since 1.36.0: the page's Realtime cost (src/collectors/realtime.ts), counted from the browser's own events and kept
   // outside `network`, whose persistence-stub-requests mask drops /realtime/v1/. Counted when a request starts, so a
   // broadcast still in flight when the page is captured is the page's. A frame belongs to the page open when it is sent,
   // whichever page opened the socket.
   let pendingRealtime: RealtimeCost = emptyRealtime();
 
-  page.on("response", (response) => {
-    pendingNetwork.push(entryFor(response, spec));
-    if (response.request().isNavigationRequest() && response.frame() === page.mainFrame()) documentResponse = response;
-  });
-  page.on("console", (message) => {
-    const type = message.type();
-    if (type === "error" || type === "warning") pendingConsole.push({ level: type, text: stripOrigins(consoleText(message.text(), message.location().url), spec) });
-  });
-  page.on("pageerror", (error) => pendingConsole.push({ level: "error", text: stripOrigins(error.message, spec) }));
-  // Requests in flight right now. waitForLoadState("networkidle") resolves at once when the page reached
-  // idle earlier in its life, so it does not wait for requests a page starts later: the course shell's icons
-  // (Iconify, requested from its API on first use) arrive after the heading, and a capture taken before them
-  // screenshotted the page with an icon missing on one side only. They are served from the third-party cache now,
-  // so they arrive at once, but still after the page asked for them.
   const inFlight = new Set<Request>();
-  page.on("request", (request) => {
-    inFlight.add(request);
-    if (isBroadcast(request.method(), request.url())) pendingRealtime.broadcasts++;
-  });
-  page.on("websocket", (socket) => {
-    if (!isRealtimeSocket(socket.url())) return;
-    pendingRealtime.sockets++;
-    socket.on("framesent", (frame) => {
-      if (isDataFrame(frame.payload)) pendingRealtime.framesSent++;
+  function watch(page: Page) {
+    page.on("response", (response) => {
+      pendingNetwork.push(entryFor(response, spec));
+      if (response.request().isNavigationRequest() && response.frame() === page.mainFrame()) documentResponses.set(page, response);
     });
-  });
-  page.on("requestfinished", (request) => inFlight.delete(request));
-  page.on("requestfailed", (request) => inFlight.delete(request));
-  // Since 1.37.4: a request that is not a read is settled once its status is in. The reader's learning events
-  // (POST /api/live/activity, mono-repo #481) are fire-and-forget `keepalive` fetches, and headless Chromium never
-  // reports them finished: each held the page "in flight" until both waits below timed out, about 10 s a page, so
-  // student-signs-in read about 23 s on main against 4 s on 17.0.0 while the student saw no difference.
-  page.on("response", (response) => {
-    if (settlesOnResponse(response.request().method())) inFlight.delete(response.request());
-  });
+    page.on("console", (message) => {
+      const type = message.type();
+      if (type === "error" || type === "warning") pendingConsole.push({ level: type, text: stripOrigins(consoleText(message.text(), message.location().url), spec) });
+    });
+    page.on("pageerror", (error) => pendingConsole.push({ level: "error", text: stripOrigins(error.message, spec) }));
+    // Requests in flight right now. waitForLoadState("networkidle") resolves at once when the page reached
+    // idle earlier in its life, so it does not wait for requests a page starts later: the course shell's icons
+    // (Iconify, requested from its API on first use) arrive after the heading, and a capture taken before them
+    // screenshotted the page with an icon missing on one side only. They are served from the third-party cache now,
+    // so they arrive at once, but still after the page asked for them.
+    page.on("request", (request) => {
+      inFlight.add(request);
+      if (isBroadcast(request.method(), request.url())) pendingRealtime.broadcasts++;
+    });
+    page.on("websocket", (socket) => {
+      if (!isRealtimeSocket(socket.url())) return;
+      pendingRealtime.sockets++;
+      socket.on("framesent", (frame) => {
+        if (isDataFrame(frame.payload)) pendingRealtime.framesSent++;
+      });
+    });
+    page.on("requestfinished", (request) => inFlight.delete(request));
+    page.on("requestfailed", (request) => inFlight.delete(request));
+    // Since 1.37.4: a request that is not a read is settled once its status is in. The reader's learning events
+    // (POST /api/live/activity, mono-repo #481) are fire-and-forget `keepalive` fetches, and headless Chromium never
+    // reports them finished: each held the page "in flight" until both waits below timed out, about 10 s a page, so
+    // student-signs-in read about 23 s on main against 4 s on 17.0.0 while the student saw no difference.
+    page.on("response", (response) => {
+      if (settlesOnResponse(response.request().method())) inFlight.delete(response.request());
+    });
+  }
+
+  const journeyPage = await openPage(journey.role);
+  const actors = new Map<string, Page>([[journey.role ?? "student", journeyPage]]);
+  const as = async (role: string): Promise<Page> => {
+    let other = actors.get(role);
+    if (!other) actors.set(role, (other = await openPage(role)));
+    return other;
+  };
 
   const shotDir = join(opts.outDir, `${journey.name}-${run}`);
   if (opts.screenshots) mkdirSync(shotDir, { recursive: true });
@@ -338,7 +360,9 @@ export async function captureJourney(browser: Browser, spec: SideSpec, journey: 
   let error: string | undefined;
   const timeoutMs = opts.journeyTimeoutMs ?? JOURNEY_TIMEOUT_MS;
   try {
-    await withDeadline(journey.run(page, spec.urls, async (pageKey) => {
+    await withDeadline(journey.run(journeyPage, spec.urls, async (pageKey, on) => {
+      const page = on ?? journeyPage;
+      const documentResponse = documentResponses.get(page);
       // Let in-flight requests settle so the network set is the page's, not the race's.
       // Since 1.37.4 the harness's own count alone: Playwright's networkidle also waits on the keepalive requests
       // above, and the count sees every request the page made, so it waits for everything networkidle did.
@@ -383,11 +407,11 @@ export async function captureJourney(browser: Browser, spec: SideSpec, journey: 
       // Last, because it moves focus.
       if (opts.focusStops > 0) capture.focus = await focusWalk(page, opts.focusStops);
       pages.push(capture);
-    }), timeoutMs, () => new Error(`journey timed out after ${Math.round(timeoutMs / 1000)}s`), crashed);
+    }, { as }), timeoutMs, () => new Error(`journey timed out after ${Math.round(timeoutMs / 1000)}s`), crashed);
   } catch (e) {
     error = e instanceof Error ? stripOrigins(e.message.split("\n")[0] ?? e.message, spec) : String(e);
   } finally {
-    await withDeadline(context.close(), CLOSE_TIMEOUT_MS, () => new Error("context close timed out")).catch(() => undefined);
+    for (const context of contexts) await withDeadline(context.close(), CLOSE_TIMEOUT_MS, () => new Error("context close timed out")).catch(() => undefined);
   }
 
   // A copy: a journey cut off by its deadline may still be running, and must not add pages to a result already returned.

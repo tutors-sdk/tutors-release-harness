@@ -73,12 +73,24 @@ export function journeyOf(feature: GherkinFeature, rule: GherkinRule): Journey {
     ...(role !== "student" ? { role } : {}),
     ...(course !== "fixture" ? { course } : {}),
     rules: [rule.id, ...exercisedBy(rule.scenario.name).filter((r) => r !== rule.id)],
-    async run(page, urls, onPage) {
+    async run(page, urls, onPage, actors) {
       const id = course === "rules" ? urls.rulesCourseId : urls.courseId;
       if (!id) throw new Error(`this side serves no ${course} course (external side?)`);
-      const world: World = { page, urls, onPage, rule: rule.id, course: { id, title: course === "rules" ? RULES_COURSE_TITLE : fixture.title } };
+      const world: World = {
+        page,
+        urls,
+        onPage,
+        rule: rule.id,
+        course: { id, title: course === "rules" ? RULES_COURSE_TITLE : fixture.title },
+        async act(who) {
+          if (who === "student") world.page = page;
+          else if (!actors) throw new Error("this run cannot open a second browser");
+          else world.page = await actors.as("lecturer");
+        }
+      };
       for (const s of bound) {
         try {
+          if (s.actor) await world.act(s.actor);
           await s.def.run(world, ...s.args);
         } catch (e) {
           // The report shows the first line of a journey's error: lead with the step a person can find in the feature.

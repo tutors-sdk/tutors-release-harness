@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.44.0`
+Contract version: `1.45.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -2105,6 +2105,16 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.45.0 (minor; the first lecturer journey)
+
+The release note is [releases/1.45.0.md](releases/1.45.0.md). A minor. One more Rule journey, 0588 (a lecturer's content
+lock hides a topic from the student, then shows it greyed out), the first to act as two people on one side: a Rule
+journey's "the lecturer ..." steps run in a second browser context signed in as the stub lecturer (`Journey.run` gains
+the optional `actors`; `OnPage` the optional page to capture). The persistence stub keeps the rows written to
+`tutors_content_locks` until the next reset and reads them back; every other table still reads empty and the ledger is
+unchanged. The Rule journeys' course gains a second topic, so 0584 to 0587 capture one more card. New pages, new page
+keys; no verdict, Gate, score or exit code moves.
 
 ### 1.44.0 (minor; the Rule journeys' course)
 

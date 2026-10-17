@@ -1,4 +1,4 @@
-# 12 Rule journeys: a student's side of Tutors, written as EARS Rules
+# 12 Rule journeys: a student's and a lecturer's side of Tutors, written as EARS Rules
 
 Since 1.43.0 the harness has a fifth journey set, `rules`. Each journey in it is one EARS Rule written in Gherkin in
 [`traffic/journeys/features/`](../../traffic/journeys/features), with one scenario a person can read top to bottom. The
@@ -20,11 +20,12 @@ the Claude Doc "Harness user journeys" (Rules 0582 to 0592).
 | 0585 | `rule-0585-preferences` | as the enrolled student: dark appearance and the Dyslexia theme, then a reload keeps both | 0037, 0038, 0039 |
 | 0586 | `rule-0586-private-course` | the stub student, whom the private course does not list, is sent to My courses at sign-in and by the course's address | 0011, 0267 |
 | 0587 | `rule-0587-calendar-llm` | as the enrolled student: the calendar filtered to assessments, then the course's page for LLMs | 0042, 0284 |
+| 0588 | `rule-0588-content-lock` | the lecturer locks Topic 2 in Educator Control; the enrolled student no longer sees it, then sees it greyed out and labelled Locked once the lecturer shows locked content | 0052, 0053, 0054 |
 
 0582 and 0583 read the fixture course. Since 1.44.0, 0584 to 0587 read the **Rule journeys' course**
 ([`fixtures/course-server/rules-course`](../../fixtures/course-server/README.md#the-rule-journeys-course-since-1440)):
-signed in and private, with a quiz, a notebook, a calendar on fixed dates and an LLM page. The lecturer journeys
-(0588 to 0592) follow as the stubs grow. The ids 0582 to 0599 are reserved for the harness's journeys;
+signed in and private, with a quiz, a notebook, a calendar on fixed dates and an LLM page; since 1.45.0 a second topic,
+which 0588 locks. The other lecturer journeys (0589 to 0592) follow as the stubs grow. The ids 0582 to 0599 are reserved for the harness's journeys;
 `tests/rule-journeys.test.ts` fails on an id outside that block.
 
 ## Running them
@@ -70,6 +71,13 @@ Rule: When the harness runs the presence journey, it shall ...
   `enrolled`, `lecturer`, `owner`, `admin`), and `@course-rules` (since 1.44.0): read the Rule journeys' course, not
   the fixture course. Its whitelist lists the `enrolled` role only, so a journey there signs in `@role-enrolled` unless it
   proves the turning away.
+- **Two people in one journey** (since 1.45.0): every "the student ..." step can be said of "the lecturer ..."
+  instead. The lecturer gets a browser of their own on the same side, signed in through the identity stub as the
+  `lecturer` role (the enrollment list names them as an educator), opened the first time a step names them; "the
+  student" stays the journey's `@role`. A step that names nobody (`the page shows ...`, `the page is captured as ...`)
+  runs in the browser of whoever acted last, so a capture is of that person's page. Both browsers write to the same
+  side's persistence stub, so the lecturer's lock reaches the student (see below), and a capture's network and ledger
+  hold what both did since the previous capture.
 - **The Rule's sentence** is about the harness: when it runs the journey, what it drives and what it compares.
 - **The scenario's name** ends `(exercises Rules 0011, 0250-0258)`: ids and ranges as the monorepo numbers them. Since
   1.44.0 a `;` ends the ids and starts a note, for a monorepo scenario that has no Rule yet:
@@ -98,11 +106,14 @@ Rule: When the harness runs the presence journey, it shall ...
 - the student opens the Preferences menu: its header button (named "Preferences", or "Open Theme Menu" up to 17.0.0), then the dialog "Preferences"
 - the student chooses "const" in the group "1. Which keyword declares a constant?": a radio button by its label
 - the student selects "Assessments" in the combobox "Show": an option of a select by its label
+- the student switches on "Lock Topic 2" (also off): a switch by its accessible name, then it reads as asked
 - the student closes the dialog "View Online": Escape, then it is gone
 - the student closes every dialog: Escape until none is open (a capture's focus walk may already have closed some)
 - the page shows the heading "Lab 1" (a status or alert by its text, present even when visually hidden; also button, link, dialog, tab, checkbox, menuitem, region, navigation, article, status, alert, group, radio, combobox, table, row, progressbar): exact accessible name, visible
 - the page shows no heading "Harness Rules Course": nothing visible by that role and exact name
 - the page shows the button starting "Share Presence" (also link, row)
+- the page shows no link starting "Topic 2" (also button, row): nothing visible whose name starts so
+- the card "Topic 2" shows the text "Locked": the article whose heading is the card's title holds the words
 - the page shows the Preferences button: named "Preferences", or "Open Theme Menu" up to 17.0.0
 - the page shows the text "2 of 4": words on the page that no role names
 - the combobox "Theme" shows "Dyslexia": its selected option
@@ -124,3 +135,11 @@ origin (`paceSignIn` in `traffic/journeys/ui.ts`): after two quick sign-ins it w
 runs from when a sign-in landed (its callback is its last request), and a sign-in the reader refuses ("Unable to
 load") is tried once more after a whole gap; a second refusal fails the journey, naming the limiter. The local edge also
 sends `X-Forwarded-For`, as production's edge does, so the reader can name the client and logs no warning about it.
+
+## What the persistence stub keeps (since 1.45.0)
+
+The persistence stub answers reads with an empty table, so nothing one browser writes is seen by another. The content
+lock journey needs the opposite: the student's reader reads the course's locks from `tutors_content_locks`, which the
+lecturer's reader has just written. So the stub keeps the rows written to that one table until the next journey's
+reset and answers reads of it with them (`col=eq.value` filters, `on_conflict` upserts, deletes). Every other table
+still reads empty, and the ledger is unchanged: it records the writes, never what is kept.

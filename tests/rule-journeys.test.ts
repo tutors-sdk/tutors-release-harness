@@ -126,8 +126,30 @@ describe("the Rule journeys", () => {
     const tutors = JSON.parse(readFileSync(resolve(ROOT, "fixtures/course-server/rules-course/tutors.json"), "utf8"));
     expect(tutors).toMatchObject({ title: "Harness Rules Course", properties: { auth: 1, private: 1, llm: 2 }, enrollment: { whitelist: ["harness-enrolled"] } });
     const onRules = ruleJourneys.filter((j) => j.course === "rules");
-    expect(onRules.map((j) => j.rules![0])).toEqual(["0584", "0585", "0586", "0587"]);
+    expect(onRules.map((j) => j.rules![0]).sort()).toEqual(["0584", "0585", "0586", "0587", "0588"]);
+    expect(tutors.enrollment.educators).toEqual(["harness-lecturer"]);
     for (const j of onRules) expect(j.role ?? "student", j.name).toBe(j.name === "rule-0586-private-course" ? "student" : "enrolled");
+  });
+
+  it("say a student's step of the lecturer too, run in the lecturer's browser; a step that names nobody keeps whoever acted last", () => {
+    expect(bind('the lecturer presses the button "Open Educator Control"')).toMatchObject({ args: ["button", "Open Educator Control"], actor: "lecturer" });
+    expect(bind('the student presses the button "Preferences"')).toMatchObject({ actor: "student" });
+    expect(bind('the page shows the heading "Topic 1"')!.actor).toBeUndefined();
+    expect(bind('the lecturer is somewhere else')).toBeUndefined();
+  });
+
+  it("act as the lecturer in a second browser opened once, and as the student in the journey's own", async () => {
+    const j = ruleJourneys.find((x) => x.name === "rule-0588-content-lock")!;
+    expect(j).toMatchObject({ role: "enrolled", course: "rules", rules: ["0588", "0052", "0053", "0054"] });
+    const asked: string[] = [];
+    const own = { tag: "student" };
+    const lecturer = { tag: "lecturer" };
+    const seen: string[] = [];
+    // Every step fails at once on these fake pages; what matters is whose page the first step got.
+    const fake = (p: { tag: string }) => new Proxy(p, { get: (t, k) => (k === "tag" ? t.tag : (seen.push(t.tag), () => { throw new Error("fake page"); })) });
+    await expect(j.run(fake(own) as never, { reader: "http://r", catalogue: "http://c", live: "http://l", courseId: "c", rulesCourseId: "localhost:8081", readerAuth: "http://ra" }, async () => {}, { as: async (role) => (asked.push(role), fake(lecturer) as never) })).rejects.toThrow(/lecturer signs in/);
+    expect(asked).toEqual(["lecturer"]);
+    expect(seen[0]).toBe("lecturer");
   });
 
   it("run a step against a side that serves no Rule journeys' course as a failure that says so", async () => {

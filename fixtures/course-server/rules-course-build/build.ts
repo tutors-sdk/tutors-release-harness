@@ -22,7 +22,7 @@ export const RULES_COURSE_SPEC = {
   courseId: "harness-rules",
   unitCount: 1,
   includeSide: false,
-  topicsPerUnit: 1,
+  topicsPerUnit: 2,
   includeNotes: true,
   includeLabs: true,
   includeCalendar: false,
