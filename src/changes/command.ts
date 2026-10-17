@@ -11,7 +11,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { parseToolingChangelog, type ToolingChangelog } from "./changelog.ts";
 import { ChangesInputError, collect, type Git } from "./facts.ts";
-import { githubReviews, readReviews, tokenFrom, type FetchLike, type ReviewSource } from "./github.ts";
+import { githubBodies, githubReviews, readBodies, readReviews, tokenFrom, type BodySource, type FetchLike, type ReviewSource } from "./github.ts";
 import { renderChangesBoard } from "./render.ts";
 import { computeChanges, type Changes } from "./signals.ts";
 
@@ -42,6 +42,8 @@ export interface ChangesDeps {
   env?: NodeJS.ProcessEnv;
   /** The review source; absent, GitHub's REST API when a token and a GitHub remote are there. */
   reviews?: ReviewSource;
+  /** Since 1.41.0: the PR bodies' source; absent, GitHub's REST API when a token and a GitHub remote are there. */
+  bodies?: BodySource;
   fetch?: FetchLike;
 }
 
@@ -75,7 +77,9 @@ export async function runChanges(o: ChangesOptions, deps: ChangesDeps = {}): Pro
         ? { reason: "the monorepo checkout's origin is not a GitHub repository" }
         : githubReviews({ token, repo: facts.repo, fetch: deps.fetch ?? (globalThis.fetch as unknown as FetchLike) }));
   const reviews = await readReviews(source, prs);
-  const changes = computeChanges(facts, { reviews, ...(o.changelog ? { tooling: tooling(resolve(o.changelog)) } : {}), ...(o.harness ? { harness: o.harness } : {}) });
+  const bodySource = deps.bodies ?? (token && facts.repo && !deps.reviews ? githubBodies({ token, repo: facts.repo, fetch: deps.fetch ?? (globalThis.fetch as unknown as FetchLike) }) : undefined);
+  const bodies = await readBodies(bodySource, prs);
+  const changes = computeChanges(facts, { reviews, bodies, ...(o.changelog ? { tooling: tooling(resolve(o.changelog)) } : {}), ...(o.harness ? { harness: o.harness } : {}) });
   if (!o.out) return { changes };
   const file = resolve(o.out);
   mkdirSync(dirname(file), { recursive: true });

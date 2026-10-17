@@ -12,7 +12,7 @@
  * Pure: src/a3/read.ts reads the files, src/a3/github.ts asks GitHub, src/a3/render.ts draws the page.
  */
 import { coverageWords } from "../readiness/claims.ts";
-import { explainGap, ledgerSentence, type Explanation, type LedgerRun } from "../changes/explain.ts";
+import { explainGap, ledgerSentence, missedWords, prWords, type Explanation, type LedgerRun } from "../changes/explain.ts";
 import type { Changes } from "../changes/signals.ts";
 import { decidingClaims, decisionsOf } from "../claims/decisions.ts";
 import { claimLabel } from "../claims/rules.ts";
@@ -387,10 +387,20 @@ export function stopCauses(run: Pick<KeptRun, "verdict" | "reasons">): string[] 
  * Why the Gate says what it says (since 1.38.0), as the sheet's first sentence: a FAIL names each difference nothing
  * explains and what turns it round; a WARN or PASS gives the run's own first reason.
  */
-export function gateWhy(run: Pick<KeptRun, "verdict" | "reasons" | "report">): string | undefined {
+export function gateWhy(run: Pick<KeptRun, "verdict" | "reasons" | "report"> & { stream?: Stream }, e?: Explanation): string | undefined {
   const unclaimed = (run.report?.compare?.unclaimed ?? []).filter((h) => h.severity === "fail");
   const advisory = run.reasons.find((r) => /^advisory only/.test(r));
   const names = (hs: Hunk[]) => hs.slice(0, 3).map((h) => `${h.summary} (${h.artefact})`).join("; ") + (hs.length > 3 ? `; and ${hs.length - 3} more` : "");
+  // Since 1.41.0: what a PR declared in its CHANGELOG line is not owed on main; the release author claims it from that line.
+  const declared = e?.declared?.hunks ?? 0;
+  if (run.verdict === "fail" && unclaimed.length && declared) {
+    const by = e!.declared!.rows.map((r) => `${prWords([r.pr])}: ${r.hunks}`).join(", ");
+    const forecast = run.stream === "main-preview";
+    const then = forecast ? "nothing is owed on main, and the release author claims them from those lines when the release is cut" : "copy each line into release/claims.yaml as its claim";
+    if (declared >= unclaimed.length) return `FAIL only because ${plural(declared, "difference")} ${declared === 1 ? "is" : "are"} not claimed yet, and each is declared in its PR's CHANGELOG line (${by}): ${then}.`;
+    const missed = e!.contributed.rows.filter((r) => r.missed?.length).map(missedWords);
+    return `FAIL because ${unclaimed.length - declared === 1 ? "1 difference has" : `${unclaimed.length - declared} differences have`} no claim and no PR declared ${unclaimed.length - declared === 1 ? "it" : "them"}${missed.length ? ` (${missed.join("; ")})` : ""}. The other ${declared} ${declared === 1 ? "is" : "are"} declared in its PR's CHANGELOG line (${by}): ${then}. A CHANGELOG line that names what moved, a Rule that claims it, or a fix on main turns this to PASS; the gap below says where each came from.`;
+  }
   if (run.verdict === "fail" && unclaimed.length) return `FAIL because ${unclaimed.length === 1 ? "1 difference has" : `${unclaimed.length} differences have`} no claim and no fix: ${names(unclaimed)}. A Rule that claims it, or a fix on main, turns this to PASS; the gap below says where each came from.`;
   if (run.verdict === "warn" && unclaimed.length) return `WARN, not FAIL, because ${advisory ? advisory.replace(/^advisory only: /, "") : run.reasons[0] ?? "the A/A could not be trusted"}. Unclaimed: ${names(unclaimed)}.`;
   return run.reasons[0];
@@ -841,6 +851,10 @@ export function buildA3(i: A3Inputs): A3 {
   ];
 
   const gap = gapOf(i.runs, subject, score?.gate);
+  if (score && subject && gap) {
+    const why = gateWhy(subject, gap.explanation);
+    if (why) score.why = why;
+  }
   // Beside the same production only: a new release moves production's own limits.
   const timing = subject?.report?.timingControl ? timingCharts(i.runs.filter((r) => r.stream === subject.stream && r.sides?.a?.reader === subject.sides?.a?.reader && Date.parse(r.ranAt) <= Date.parse(subject.ranAt))) : undefined;
   const facts: string[] = [];

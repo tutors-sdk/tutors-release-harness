@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.40.0`
+Contract version: `1.41.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -1411,7 +1411,12 @@ so the first forecast beside a new release names the PRs since it; a PR that mat
 than the others merged that night leads its row, "most likely", otherwise the night's PRs are one
 row, "one of"), or **unexplained** (no PR merged between the two forecasts it appeared between; or
 more than eight PRs could have made it, with the best file matches named as suspects and never
-counted as theirs). `gap.sentence` is the ledger in one line ("1110 differences: claims explain 698;
+counted as theirs). Since 1.41.0 a contributed difference whose PR **declared** it, its title or the
+CHANGELOG line in its body naming the difference's artefact in a trailing parenthesis as the monorepo's
+CONTRIBUTING.md asks (`(axe, dom)`), is its own row, **declared by its PR** (`gap.explanation.declared`):
+the release author turns that line into the claim when the release is cut, so nothing is owed on main. A
+contributed row whose PR wrote a CHANGELOG line that does not name what moved carries that PR in `missed`,
+and the Gate's sentence (`score.why`) says which line missed which artefact. `gap.sentence` is the ledger in one line ("1110 differences: claims explain 698;
 #466 most likely contributed 195; …; 148 unexplained"), and the first fact line carries both. When the
 Gate and the kept verdict differ (a FAIL kept as WARN because the A/A did not count),
 `gap.verdictNote` says why. Differences are matched across runs by artefact, scope and kind with
@@ -2090,6 +2095,15 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.41.0 (minor; a difference its PR declared is not owed on main)
+
+The release note is [releases/1.41.0.md](releases/1.41.0.md). A minor. `changes.json`'s `prs[]` gain an optional
+`declares` (the artefacts the PR's title, else its body's CHANGELOG line, names; `harness changes` reads each PR's body
+with the token it already uses for reviews). `a3.json`'s `gap.explanation` gains `declared` and its contributed rows an
+optional `missed`; the forecast's "Causes and the PRs behind them" names the PR that declared a new cause, and its claims
+owed draft a declared cause with the CHANGELOG line as its reason and no Rule to name. No verdict, Gate, exit code,
+claims key, flag, mask or workflow changes: the release gate still needs every claim.
 
 ### 1.40.0 (minor; the release timeline, countermeasures that can be checked)
 

@@ -13,6 +13,10 @@
  *    otherwise the group is the row ("one of #a, #b"). A difference is never split between PRs by guesswork.
  *    A difference already there in the oldest kept forecast is narrowed the same way within that forecast's whole
  *    range (every PR since the baseline), which is what the first forecast beside a new release reads.
+ * 2a. **Declared by a PR** (since 1.41.0): contributed, and that PR's CHANGELOG line names the difference's artefact
+ *    (src/changes/declares.ts). The contributor said so in the PR; the release author turns the line into a claim
+ *    when the release is cut, so nothing is owed on main. A contributed row whose PR wrote a CHANGELOG line that does not
+ *    name the artefact keeps that PR in `missed`: the line is the thing to fix.
  * 3. **Unexplained**: unclaimed, and the history cannot say who made it: it appeared between two forecasts with no PR
  *    merged between them (the stack or the world moved, not the code), or more than `MAX_GROUP` PRs could have made it
  *    (named as suspects, never counted as theirs).
@@ -25,8 +29,9 @@
 import type { Hunk, RunReport } from "../types.ts";
 import { claimLabel } from "../claims/rules.ts";
 import { causeKey, foldCauses, kindOf } from "../report/causes.ts";
-import { byPath, mergedSince, type AttributedPr } from "./attribute.ts";
-import type { Changes, PrRisk } from "./signals.ts";
+import { byPath, declarer, mergedSince, missedBy, named, type AttributedPr } from "./attribute.ts";
+import { declaredWords } from "./declares.ts";
+import type { Changes } from "./signals.ts";
 
 /** A run the ledger reads: the report it judged and the range of PRs it was built from. */
 export interface LedgerRun {
@@ -57,6 +62,16 @@ export interface PrRow {
   causes: LedgerCause[];
   /** The forecast it first appeared in (the run id and the candidate it judged). */
   firstSeen: { id: string; ranAt: string }[];
+  /** Since 1.41.0: its PRs that wrote a CHANGELOG line naming other artefacts, not the ones that moved. */
+  missed?: AttributedPr[];
+}
+
+/** Since 1.41.0: differences a PR made and its CHANGELOG line declared. */
+export interface DeclaredRow {
+  pr: AttributedPr;
+  hunks: number;
+  causes: LedgerCause[];
+  firstSeen: { id: string; ranAt: string }[];
 }
 
 /** More PRs than this in one window is not an explanation anyone can act on. */
@@ -79,6 +94,8 @@ export interface Explanation {
   total: number;
   claimed: { hunks: number; rows: ClaimRow[] };
   contributed: { hunks: number; rows: PrRow[] };
+  /** Since 1.41.0; absent in an explanation kept before it. */
+  declared?: { hunks: number; rows: DeclaredRow[] };
   unexplained: { hunks: number; rows: UnexplainedRow[] };
   /** The forecasts read for history, oldest first; the run itself is not among them. */
   history: { runs: number; first: string | null; last: string | null };
@@ -89,7 +106,6 @@ export const differenceKey = (h: Pick<Hunk, "artefact" | "scope" | "summary">) =
 
 const keysOf = (r: RunReport) => new Set(r.compare.unclaimed.map(differenceKey));
 const prId = (p: Pick<AttributedPr, "pr" | "sha">) => (p.pr !== null ? `#${p.pr}` : p.sha.slice(0, 7));
-const named = (p: PrRisk): AttributedPr => ({ pr: p.pr, sha: p.sha, title: p.title, ...(p.url ? { url: p.url } : {}), files: 0, direct: 0 });
 
 function tallyCauses(hunks: Hunk[]): LedgerCause[] {
   const m = new Map<string, number>();
@@ -123,7 +139,8 @@ export function explainGap(run: LedgerRun, history: LedgerRun[]): Explanation {
   }
 
   // Unclaimed: walk back from the run to the start of the difference's current streak.
-  const contributed = new Map<string, { prs: AttributedPr[]; hunks: Hunk[]; firstSeen: Map<string, string> }>();
+  const contributed = new Map<string, { prs: AttributedPr[]; hunks: Hunk[]; firstSeen: Map<string, string>; missed: Map<string, AttributedPr> }>();
+  const declared = new Map<string, { pr: AttributedPr; hunks: Hunk[]; firstSeen: Map<string, string> }>();
   type Pending = { why: UnexplainedWhy; since?: string; hunks: Hunk[]; suspects: Map<string, { pr: AttributedPr; n: number }> };
   const unexplained = new Map<string, Pending>();
   const unexplain = (why: UnexplainedWhy, h: Hunk, suspects: AttributedPr[] = [], since?: string) => {
@@ -154,26 +171,39 @@ export function explainGap(run: LedgerRun, history: LedgerRun[]): Explanation {
     const cause = foldCauses([h]).causes[0];
     // A range kept by an older harness may carry PRs without their files: they match no path.
     const matched = cause ? byPath(cause, window.map((p) => ({ ...p, files: p.files ?? [] }))) : [];
-    const prs = matched.length ? matched : window.map(named);
+    const prs = matched.length ? matched : window.map((p) => named(p));
     if (prs.length > MAX_GROUP) {
       if (before) unexplain("too-many", h, prs);
       else unexplain("before-record", h, prs, at.ranAt);
+      continue;
+    }
+    const by = declarer(prs, h.artefact);
+    if (by) {
+      const row = declared.get(prId(by)) ?? { pr: by, hunks: [], firstSeen: new Map<string, string>() };
+      row.hunks.push(h);
+      row.firstSeen.set(at.id, at.ranAt);
+      declared.set(prId(by), row);
       continue;
     }
     // A PR that matched more files than any other merged that night leads its row, so one PR's work is one row however
     // many nights it showed up on; otherwise the row is the group.
     const lead = prs.length === 1 || prs[0]!.files > (prs[1]?.files ?? 0) ? prs[0]! : undefined;
     const id = lead ? prId(lead) : prs.map(prId).sort().join(",");
-    const row = contributed.get(id) ?? { prs: lead ? [lead] : prs, hunks: [], firstSeen: new Map<string, string>() };
+    const row = contributed.get(id) ?? { prs: lead ? [lead] : prs, hunks: [], firstSeen: new Map<string, string>(), missed: new Map<string, AttributedPr>() };
+    for (const p of missedBy(prs, h.artefact)) row.missed.set(prId(p), p);
     if (lead) for (const p of prs.slice(1)) if (!row.prs.some((q) => prId(q) === prId(p))) row.prs.push(p);
     row.hunks.push(h);
     row.firstSeen.set(at.id, at.ranAt);
     contributed.set(id, row);
   }
 
+  const seen = (m: Map<string, string>) => [...m].map(([id, ranAt]) => ({ id, ranAt })).sort((x, y) => x.ranAt.localeCompare(y.ranAt));
   const prRows: PrRow[] = [...contributed.values()]
-    .map((r) => ({ prs: r.prs, hunks: r.hunks.length, causes: tallyCauses(r.hunks), firstSeen: [...r.firstSeen].map(([id, ranAt]) => ({ id, ranAt })).sort((x, y) => x.ranAt.localeCompare(y.ranAt)) }))
+    .map((r) => ({ prs: r.prs, hunks: r.hunks.length, causes: tallyCauses(r.hunks), firstSeen: seen(r.firstSeen), ...(r.missed.size ? { missed: [...r.missed.values()] } : {}) }))
     .sort((x, y) => y.hunks - x.hunks || x.prs.length - y.prs.length);
+  const declaredRows: DeclaredRow[] = [...declared.values()]
+    .map((r) => ({ pr: r.pr, hunks: r.hunks.length, causes: tallyCauses(r.hunks), firstSeen: seen(r.firstSeen) }))
+    .sort((x, y) => y.hunks - x.hunks);
   const unexplainedRows: UnexplainedRow[] = [...unexplained.values()]
     .map((r) => {
       const suspects = [...r.suspects.values()].sort((x, y) => y.n - x.n).slice(0, 3).map((x) => x.pr);
@@ -185,6 +215,7 @@ export function explainGap(run: LedgerRun, history: LedgerRun[]): Explanation {
     total: claimedHunks + unclaimed.length,
     claimed: { hunks: claimedHunks, rows: [...claims.values()].sort((x, y) => y.hunks - x.hunks || x.label.localeCompare(y.label)) },
     contributed: { hunks: sum(prRows), rows: prRows },
+    declared: { hunks: sum(declaredRows), rows: declaredRows },
     unexplained: { hunks: sum(unexplainedRows), rows: unexplainedRows },
     history: { runs: past.length, first: past[0]?.ranAt ?? null, last: past.at(-1)?.ranAt ?? null }
   };
@@ -204,11 +235,18 @@ export function unexplainedWords(r: Pick<UnexplainedRow, "why" | "since">): stri
   return `already in the oldest kept forecast${r.since ? ` (${r.since.slice(0, 10)})` : ""}, and more than ${MAX_GROUP} PRs since the baseline could have made it`;
 }
 
+/** What the missed lines said, beside what moved: `#505's CHANGELOG line says (axe, dom); focus moved`. */
+export function missedWords(r: Pick<PrRow, "missed" | "causes">): string {
+  const moved = [...new Set(r.causes.map((c) => c.key.split(":")[0]!))].join(", ");
+  return `${(r.missed ?? []).map((p) => `${prWords([p])}'s CHANGELOG line says ${declaredWords(p.declares!)}`).join("; ")}; ${moved} moved`;
+}
+
 /** The one-sentence ledger: "1388 differences: claims explain 976; #466 contributed 169; ...; 112 unexplained." */
 export function ledgerSentence(e: Explanation, top = 3): string {
   const parts: string[] = [];
   if (e.claimed.hunks) parts.push(`claims explain ${e.claimed.hunks}`);
-  for (const r of e.contributed.rows.slice(0, top)) parts.push(`${prWords(r.prs)} contributed ${r.hunks}`);
+  for (const r of e.declared?.rows ?? []) parts.push(`${prWords([r.pr])} declared ${r.hunks} in its CHANGELOG line`);
+  for (const r of e.contributed.rows.slice(0, top)) parts.push(`${prWords(r.prs)} contributed ${r.hunks}${r.missed?.length ? ` (${missedWords(r)})` : ""}`);
   const rest = e.contributed.rows.slice(top);
   if (rest.length) parts.push(`${rest.length} more PR group${rest.length === 1 ? "" : "s"} contributed ${rest.reduce((n, r) => n + r.hunks, 0)}`);
   parts.push(`${e.unexplained.hunks} unexplained`);

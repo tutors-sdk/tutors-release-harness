@@ -28,6 +28,40 @@ export function githubReviews(o: { token: string; repo: string; fetch: FetchLike
   };
 }
 
+/** Since 1.41.0: a PR's body, for its CHANGELOG line (src/changes/declares.ts). Throws when GitHub cannot say. */
+export interface BodySource {
+  body: (pr: number) => Promise<string>;
+}
+
+/** The REST source: GET /repos/{repo}/pulls/{n}, its `body`. */
+export function githubBodies(o: { token: string; repo: string; fetch: FetchLike; api?: string }): BodySource {
+  const api = o.api ?? "https://api.github.com";
+  return {
+    body: async (pr) => {
+      const r = await o.fetch(`${api}/repos/${o.repo}/pulls/${pr}`, {
+        headers: { accept: "application/vnd.github+json", authorization: `Bearer ${o.token}`, "x-github-api-version": "2022-11-28", "user-agent": "tutors-release-harness" }
+      });
+      if (!r.ok) throw new Error(`GitHub answered ${r.status} for PR #${pr}`);
+      const body = ((await r.json()) as { body?: unknown }).body;
+      return typeof body === "string" ? body : "";
+    }
+  };
+}
+
+/** Every PR's body GitHub could give; one it could not is left out, and the PR is read from its title alone. */
+export async function readBodies(source: BodySource | undefined, prs: number[]): Promise<Map<number, string>> {
+  const out = new Map<number, string>();
+  if (!source) return out;
+  for (const pr of prs) {
+    try {
+      out.set(pr, await source.body(pr));
+    } catch {
+      // A declaration is a lead: without the body the title still speaks for the PR.
+    }
+  }
+  return out;
+}
+
 /** The token the harness may use: GITHUB_TOKEN, else GH_TOKEN. */
 export const tokenFrom = (env: NodeJS.ProcessEnv): string | undefined => env.GITHUB_TOKEN?.trim() || env.GH_TOKEN?.trim() || undefined;
 
