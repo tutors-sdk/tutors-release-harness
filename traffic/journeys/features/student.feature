@@ -117,3 +117,17 @@ Feature: Student journeys the harness drives on both sides
       Then the page shows the heading "Docs for LLMs"
       And the page shows the link "harness-rules-course-complete-llms.txt"
       And the page is captured as "llm"
+
+  @rule-0592 @ears-event-driven @journey-whiteboard @role-enrolled @course-rules
+  Rule: When the harness runs the whiteboard journey, it shall open the course whiteboard as the enrolled stub student alone, draw one stroke in Edit mode, and compare the page, the scene saved and the Realtime cost on both sides.
+
+    Scenario: One stroke drawn alone is saved once and broadcast to no one (exercises Rules 0275, 0276; realtime-usage.feature, course-tools.feature)
+      Given the student signs in from the course
+      When the student opens the topic "Topic 1"
+      And the student opens the whiteboard "Whiteboard 1"
+      And the student presses the button "Edit"
+      Then the button "Edit" is pressed
+      And the page shows the status "Use the whiteboard export menu to keep a copy of your work."
+      When the student draws a stroke on the whiteboard "Whiteboard 1"
+      Then the page shows the status "Drawing changes saved"
+      And the page is captured as "stroke-saved"

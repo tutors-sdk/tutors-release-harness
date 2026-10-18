@@ -16,7 +16,7 @@ import { ruleJourneys } from "./rules.ts";
  * something by role, that is an accessibility finding, not a reason to reach
  * for CSS.
  *
- * 17 journeys in five sets (fixture 4, auth 1, reference 1, replay 1, rules 10 since 1.43.0), not a hundred: the harness's power is breadth of capture
+ * 18 journeys in five sets (fixture 4, auth 1, reference 1, replay 1, rules 11 since 1.43.0), not a hundred: the harness's power is breadth of capture
  * per page, not the number of pages. Add one only when a real regression
  * escaped that a journey would have caught.
  */

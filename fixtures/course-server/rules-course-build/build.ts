@@ -111,6 +111,11 @@ await Deno.writeTextFile(
   ) + "\n"
 );
 
+// Since 1.48.0: an empty whiteboard, which the whiteboard journey (Rule 0592) draws one stroke on.
+await Deno.mkdir(`${topic}/whiteboard-01`);
+await write(`${topic}/whiteboard-01/whiteboard.md`, ["# Whiteboard 1", "", "A whiteboard to draw on."]);
+await Deno.writeTextFile(`${topic}/whiteboard-01/board.excalidraw`, JSON.stringify({ type: "excalidraw", version: 2, source: "https://excalidraw.com", elements: [], appState: {}, files: {} }, null, 2) + "\n");
+
 Deno.chdir(courseDir);
 const [course, lr] = parseCourse(courseDir);
 generateDynamicCourse(course, outDir);

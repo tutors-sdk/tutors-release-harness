@@ -285,7 +285,8 @@ follow the mask rules; loosening them hides real visual regressions.
 typeface comes from Google Fonts (`fonts.googleapis.com`, `fonts.gstatic.com`),
 its icons from the Iconify API on first use (`api.iconify.design`, with the
 fallback hosts `api.simplesvg.com` and `api.unisvg.com`), and the KaTeX
-stylesheet from `cdn.jsdelivr.net`. Fetched live, each arrived when the network
+stylesheet from `cdn.jsdelivr.net` (and, since 1.48.0, the whiteboard's
+Excalidraw editor and React from `esm.sh`). Fetched live, each arrived when the network
 let it, and a shot taken after an icon arrived on one side and before it on the
 other was an intermittent A/A hunk on `reader:home` ("0.37% of pixels differ
 (threshold 0.10%)"). The browser no longer fetches them: the collector
