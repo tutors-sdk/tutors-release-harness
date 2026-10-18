@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.48.0`
+Contract version: `1.48.1`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -2105,6 +2105,14 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.48.1 (patch; a cause first measured is not pinned on the newest PRs)
+
+The release note is [releases/1.48.1.md](releases/1.48.1.md). A patch: wording of the kept forecast's lead and the A3 gap
+ledger. A cause whose every difference is on a Rule journey the previous forecast did not run is matched by path over the
+whole range, and its row says it was first measured by that journey, instead of being called new and pinned on the PRs
+merged since. The ledger reads such a difference the same way, with a new unexplained reason, `first-measured`. No
+verdict, Gate, score or exit code moves.
 
 ### 1.48.0 (minor; the whiteboard drawn on alone)
 

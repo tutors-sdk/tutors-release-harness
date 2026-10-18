@@ -53,3 +53,19 @@ export function rulesTouched(hunks: Pick<Hunk, "scope" | "summary" | "artefact">
 export function ruleTouchedWords(r: RuleTouched): string {
   return `Rule ${r.rule}${r.exercises.length ? ` (exercises ${r.exercises.join(", ")})` : ""}: ${r.hunks} difference${r.hunks === 1 ? "" : "s"} in ${r.artefacts.join(", ")}`;
 }
+
+/**
+ * Since 1.48.1: the Rule journeys a report ran, read from its timing control chart (every journey that completed on both
+ * sides). Undefined for a report kept before 1.39.0, which did not record them: then every journey counts as run.
+ */
+export function rulesRun(r: { timingControl?: { journeys: { journey: string }[] } }): Set<string> | undefined {
+  const journeys = r.timingControl?.journeys;
+  if (!journeys) return undefined;
+  return new Set(journeys.map((j) => /^rule-(\d{4})-/.exec(j.journey)?.[1]).filter((id): id is string => id !== undefined));
+}
+
+/** Since 1.48.1: the Rule journey of a difference an earlier report could not have seen, because it did not run that journey. */
+export function unrunRule(h: Pick<Hunk, "scope" | "summary">, ran: Set<string> | undefined): string | undefined {
+  const id = ran ? ruleOfHunk(h) : undefined;
+  return id && !ran!.has(id) ? id : undefined;
+}

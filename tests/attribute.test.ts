@@ -80,6 +80,13 @@ describe("attribution by delta", () => {
     expect(a.causes.find((c) => c.key.startsWith("sbom"))).toMatchObject({ how: "new", prs: [{ pr: 350, files: 0, direct: 0 }] });
   });
 
+  it("matches a cause first measured by a Rule journey the last forecast did not run by path, and says so", () => {
+    const a = attribute(cs, changes([DOCKER, PAPER, CATALOGUE]), { id: "prev", candidate: "sha-1", keys: new Set([key("network")]), changes: changes([DOCKER]), unmeasured: new Map([[key("sbom"), ["0589"]]]) });
+    expect(a.causes.find((c) => c.key.startsWith("sbom"))).toMatchObject({ how: "path", prs: [{ pr: 143 }], firstMeasured: ["0589"] });
+    expect(a.causes.find((c) => c.key.startsWith("dom"))).toMatchObject({ how: "new" });
+    expect(attributionLeadMarkdown(a)).toContain("first measured by Rule journey 0589, which the last forecast did not run: matched by path over the whole range");
+  });
+
   it("falls back to path when nothing earlier was kept, or nothing was merged since, or the earlier range is unknown", () => {
     for (const previous of [undefined, { id: "p", candidate: "c", keys: new Set<string>(), changes: changes([DOCKER, PAPER, CATALOGUE]) }, { id: "p", candidate: "c", keys: new Set<string>() }]) {
       const a = attribute(cs, changes([DOCKER, PAPER, CATALOGUE]), previous);
