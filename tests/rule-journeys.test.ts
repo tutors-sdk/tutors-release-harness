@@ -126,7 +126,7 @@ describe("the Rule journeys", () => {
     const tutors = JSON.parse(readFileSync(resolve(ROOT, "fixtures/course-server/rules-course/tutors.json"), "utf8"));
     expect(tutors).toMatchObject({ title: "Harness Rules Course", properties: { auth: 1, private: 1, llm: 2 }, enrollment: { whitelist: ["harness-enrolled"] } });
     const onRules = ruleJourneys.filter((j) => j.course === "rules");
-    expect(onRules.map((j) => j.rules![0]).sort()).toEqual(["0584", "0585", "0586", "0587", "0588"]);
+    expect(onRules.map((j) => j.rules![0]).sort()).toEqual(["0584", "0585", "0586", "0587", "0588", "0592"]);
     expect(tutors.enrollment.educators).toEqual(["harness-lecturer"]);
     for (const j of onRules) expect(j.role ?? "student", j.name).toBe(j.name === "rule-0586-private-course" ? "student" : "enrolled");
   });

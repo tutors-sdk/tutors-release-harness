@@ -157,10 +157,23 @@ step(/^the student opens the lab "([^"]+)"$/, 'the student opens the lab "Lab 1"
   await labSteps(w.page).waitFor(VISIBLE);
 });
 
-step(/^the student opens the (talk|note|notebook|quiz) "([^"]+)"$/, 'the student opens the quiz "Quiz 1" (also talk, note, notebook): its card on the page', async (w, type, title) => {
+step(/^the student opens the (talk|note|notebook|quiz|whiteboard) "([^"]+)"$/, 'the student opens the quiz "Quiz 1" (also talk, note, notebook, whiteboard): its card on the page', async (w, type, title) => {
   await w.page.getByRole("main").getByRole("link", { name: new RegExp(`^${escapeRegExp(title!)}\\b`) }).first().click();
   await w.page.waitForURL(new RegExp(`/${type}/`), { timeout: VISIBLE.timeout });
   await w.page.getByRole("main").getByRole("navigation", { name: "Breadcrumbs" }).getByText(title!, { exact: true }).waitFor(VISIBLE);
+});
+
+step(/^the student draws a stroke on the whiteboard "([^"]+)"$/, 'the student draws a stroke on the whiteboard "Whiteboard 1": the Draw tool by its name in the editor, then one stroke across the middle of its canvas, the one thing no role names (since 1.48.0)', async (w, title) => {
+  const frame = w.page.frameLocator(`iframe[title="${title!.replaceAll('"', '\\"')}"]`);
+  await frame.getByRole("radio", { name: /^Draw/ }).first().click();
+  const box = await w.page.locator(`iframe[title="${title!.replaceAll('"', '\\"')}"]`).boundingBox();
+  if (!box) throw new Error(`the whiteboard "${title}" has no box on the page`);
+  // A freehand stroke, not a shape: a shape is drawn rough with a random seed, a stroke the same from the same points.
+  const [x, y] = [box.x + box.width / 2, box.y + box.height / 2];
+  await w.page.mouse.move(x - 100, y);
+  await w.page.mouse.down();
+  for (let i = 1; i <= 10; i++) await w.page.mouse.move(x - 100 + i * 20, y + (i % 2 ? 10 : -10));
+  await w.page.mouse.up();
 });
 
 step(/^the student goes back to the topic "([^"]+)"$/, 'the student goes back to the topic "Topic 1": its link in the breadcrumbs', async (w, title) => {

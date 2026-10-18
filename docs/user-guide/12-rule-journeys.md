@@ -24,13 +24,14 @@ the Claude Doc "Harness user journeys" (Rules 0582 to 0592).
 | 0589 | `rule-0589-live` | the stub student, who shares presence, opens Lab 1 of the fixture course; the lecturer opens Tutors Live while the student opens it again, and finds one course and the student on it | 0330, 0335 |
 | 0590 | `rule-0590-time-calendar` | with two students' calendar days seeded, the lecturer opens the time app past its PIN: medians, calendar by week, calendar by day | 0319 |
 | 0591 | `rule-0591-time-labs` | with three students' lab records seeded, the lecturer opens labs by lab and by step, the learning records and the least engaged student's page | 0319 |
+| 0592 | `rule-0592-whiteboard` | as the enrolled student, alone: the course whiteboard in Edit mode, one stroke drawn, the scene saved | 0275, 0276 |
 
 0582 and 0583 read the fixture course. Since 1.44.0, 0584 to 0587 read the **Rule journeys' course**
 ([`fixtures/course-server/rules-course`](../../fixtures/course-server/README.md#the-rule-journeys-course-since-1440)):
 signed in and private, with a quiz, a notebook, a calendar on fixed dates and an LLM page; since 1.45.0 a second topic,
 which 0588 locks. Since 1.46.0, 0589 opens Tutors Live on the side's `liveAuth` (below). Since 1.47.0, 0590 and 0591
-open the time app on the side's `timeAuth`, reading rows seeded into the persistence stub (below). The whiteboard
-journey (0592) follows. The ids 0582 to 0599 are reserved for the harness's journeys;
+open the time app on the side's `timeAuth`, reading rows seeded into the persistence stub (below). Since 1.48.0, 0592
+draws on the course's whiteboard (below). The ids 0582 to 0599 are reserved for the harness's journeys;
 `tests/rule-journeys.test.ts` fails on an id outside that block.
 
 ## Running them
@@ -107,7 +108,7 @@ Rule: When the harness runs the presence journey, it shall ...
 - the persistence stub relays Realtime broadcasts: until the journey ends, a broadcast reaches the other browsers joined to its topic, as Supabase Realtime sends it (since 1.46.0)
 - the student looks at their own browser: the steps that name nobody act on it again (said of the lecturer, since 1.46.0)
 - the student opens the lab "Lab 1": its card on the page, then its first step
-- the student opens the quiz "Quiz 1" (also talk, note, notebook): its card on the page
+- the student opens the quiz "Quiz 1" (also talk, note, notebook, whiteboard): its card on the page
 - the student goes back to the topic "Topic 1": its link in the breadcrumbs
 - the student reloads the page: as the browser's reload button does, then the banner is back
 - the student moves to the step "Step 1": its link in the lab's step navigation
@@ -117,6 +118,7 @@ Rule: When the harness runs the presence journey, it shall ...
 - the student chooses "const" in the group "1. Which keyword declares a constant?": a radio button by its label
 - the student selects "Assessments" in the combobox "Show": an option of a select by its label
 - the student types "4321" in the textbox "PIN code": a text field by its label (since 1.47.0)
+- the student draws a stroke on the whiteboard "Whiteboard 1": the Draw tool by its name in the editor, then one stroke across the middle of its canvas, the one thing no role names (since 1.48.0)
 - the student switches on "Lock Topic 2" (also off): a switch by its accessible name, then it reads as asked
 - the student closes the dialog "View Online": Escape, then it is gone
 - the student closes every dialog: Escape until none is open (a capture's focus walk may already have closed some)
@@ -199,3 +201,14 @@ load to the next on the same build; 0590 and 0591 scroll to the tables below the
 screenshots compare the tables. On main `83d4ccf` and 17.0.0 the time app's first load stalls about one time in eight
 (a Supabase client per read; mono-repo #507), so the step that opens it reloads once, and first drops what the stalled
 load requested (`Actors.forget`), so a side that stalled compares like one that did not.
+
+## The whiteboard drawn on alone (since 1.48.0)
+
+Since 1.48.0 the Rule journeys' course holds an empty whiteboard (`whiteboard-01` in Topic 1). The whiteboard runs the
+Excalidraw editor in an iframe, which loads Excalidraw and React from `esm.sh`; that host is answered from the
+third-party record like the fonts and icons ([noise burndown](../noise-burndown.md)), so both sides draw with the same
+editor. 0592 signs in as the enrolled student, opens the whiteboard, presses Edit and draws one freehand stroke (a
+shape would be drawn rough from a random seed; a stroke is the same from the same points). The editor saves the scene
+two seconds after the last change (`Drawing changes saved`), so the ledger holds one write of `whiteboard_scenes` on
+each side. The student is alone on the board, so the editor sends no scene or cursor broadcasts: a build that
+broadcasts to an empty room shows up in the realtime artefact as a cost the other side does not have.

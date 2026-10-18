@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.47.0`
+Contract version: `1.48.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -2105,6 +2105,13 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.48.0 (minor; the whiteboard drawn on alone)
+
+The release note is [releases/1.48.0.md](releases/1.48.0.md). A minor. One more Rule journey, 0592: the enrolled
+student opens the Rule journeys' course's new whiteboard, presses Edit and draws one stroke, and the scene is saved.
+`esm.sh` joins the third-party hosts answered from the record, as the whiteboard's editor loads Excalidraw and React
+from it. New pages, new page keys; no verdict, Gate, score or exit code moves.
 
 ### 1.47.0 (minor; the time app reading seeded rows)
 

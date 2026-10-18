@@ -8,9 +8,10 @@ import { thirdPartyCacheDir } from "../local/home.ts";
  * Third-party hosts the Tutors apps load in the browser, answered from one recorded copy.
  *
  * The course shell loads its typeface from Google Fonts, its icons from the Iconify API on first use, and the reader
- * the KaTeX stylesheet from jsDelivr. Fetched live, each arrives when the network lets it: a screenshot taken on one
- * side after an icon or the font arrived and on the other before it differed in an A/A ("reader:home: 0.37% of pixels
- * differ"), and an outage of any of them broke a run that had nothing to do with them.
+ * the KaTeX stylesheet from jsDelivr (and, since 1.48.0, the whiteboard's Excalidraw and React from esm.sh). Fetched
+ * live, each arrives when the network lets it: a screenshot taken on one side after an icon or the font arrived and on
+ * the other before it differed in an A/A ("reader:home: 0.37% of pixels differ"), and an outage of any of them broke a
+ * run that had nothing to do with them.
  *
  * So the browser never fetches them itself. The first request for a URL is fetched once (by Node, see `liveFetcher`) and recorded:
  * status, the headers that describe the content (not the ones that describe the moment: date, age, expires, cookies,
@@ -24,7 +25,7 @@ import { thirdPartyCacheDir } from "../local/home.ts";
  */
 
 /** The hosts answered from the record. Iconify's API has fallback hosts the client tries when the first does not answer. */
-export const THIRD_PARTY_HOSTS = ["fonts.googleapis.com", "fonts.gstatic.com", "api.iconify.design", "api.simplesvg.com", "api.unisvg.com", "cdn.jsdelivr.net"] as const;
+export const THIRD_PARTY_HOSTS = ["fonts.googleapis.com", "fonts.gstatic.com", "api.iconify.design", "api.simplesvg.com", "api.unisvg.com", "cdn.jsdelivr.net", "esm.sh"] as const;
 
 /** Any http(s) URL on one of THIRD_PARTY_HOSTS (the host exactly, any path). */
 export const THIRD_PARTY_URL = new RegExp(`^https?://(${THIRD_PARTY_HOSTS.map((h) => h.replaceAll(".", "\\.")).join("|")})(:\\d+)?(/|$)`);

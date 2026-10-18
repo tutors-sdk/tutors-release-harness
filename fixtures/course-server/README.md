@@ -42,6 +42,8 @@ course does not:
   code cell) and the scaffolder's talk, lab and note in Topic 1.
 - Since 1.45.0 a second topic, Topic 2 (the scaffolder's talk, lab and note), which the
   content lock journey (Rule 0588) locks, so the course page still has a topic to show.
+- Since 1.48.0 an empty whiteboard (`whiteboard-01`, an `.excalidraw` file with no
+  elements) in Topic 1, which the whiteboard journey (Rule 0592) draws one stroke on.
 - A `calendar.yaml` on fixed dates around the harness clock (`HARNESS_NOW`,
   2026-09-16): week 2 is the current week, week 3 holds the one assessment.
 - `llm: 2`, so the course links its page for LLMs and its `llms/` downloads are served.
