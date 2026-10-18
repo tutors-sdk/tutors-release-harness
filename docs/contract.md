@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.48.2`
+Contract version: `1.48.3`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -2105,6 +2105,14 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.48.3 (patch; the A3 counts only the line stops about the monorepo)
+
+The release note is [releases/1.48.3.md](releases/1.48.3.md). A patch to the A3's wording and counts. "Why the line
+stops" counts the red runs about the monorepo and production only: not the Nightly A/A's (the harness's own noise, Q5),
+not a run that had to build an image instead of pulling it, and not a post-deploy run that stopped before it judged
+production. The post-deploy red count, its andon and its first-pass yield leave those runs out too. No verdict, Gate,
+score or exit code moves.
 
 ### 1.48.2 (patch; the cache header Netlify leaves off, claimed, and a warn that says so)
 

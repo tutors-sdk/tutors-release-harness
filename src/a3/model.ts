@@ -406,11 +406,22 @@ export function gateWhy(run: Pick<KeptRun, "verdict" | "reasons" | "report"> & {
   return run.reasons[0];
 }
 
+/**
+ * Since 1.48.3: the stops the harness made about itself, not about the monorepo or production: its own A/A (the noise
+ * stream), an image it had to build instead of pull, and a post-deploy run that stopped before judging production. Leigh,
+ * 18 Oct 2026: the line-stop count is about the monorepo, and harness issues must not pollute the A3. The A/A has its
+ * own question (Q5) and the harness's CI its own repository.
+ */
+export const HARNESS_STOPS = new Set(["A/A degraded: a journey saw nothing", "A/A noise: the normaliser needs a mask", "an image not pulled from the registry"]);
+const PRODUCTION_DIFFERS = "production differs from the recorded release";
+/** A post-deploy run that failed before it judged production: the harness's failure, not production's. */
+const harnessFailed = (g: GithubSnapshot | undefined) => new Set((g?.postDeploySteps ?? []).filter((s) => postDeployCause(s.step) !== PRODUCTION_DIFFERS).map((s) => s.id));
+
 /** Why a post-deploy run went red, from the step it stopped at. */
 export function postDeployCause(step: string | null): string {
   if (step === null) return "the workflow could not start";
   if (/recorded release run|recording/i.test(step)) return "no recorded release to compare with";
-  if (/post-deploy mode/i.test(step)) return "production differs from the recorded release";
+  if (/post-deploy mode/i.test(step)) return PRODUCTION_DIFFERS;
   return `stopped at "${step}"`;
 }
 
@@ -465,13 +476,15 @@ export function releaseWindow(g: GithubSnapshot | undefined): { runs: WorkflowRu
 /** The failed post-deploy steps of the current release's runs only (since 1.40.0). */
 function windowSteps(g: GithubSnapshot | undefined): { id: number; step: string | null }[] {
   const ids = new Set(releaseWindow(g).runs.map((r) => r.id));
-  return (g?.postDeploySteps ?? []).filter((s) => ids.has(s.id));
+  return (g?.postDeploySteps ?? []).filter((s) => ids.has(s.id) && postDeployCause(s.step) === PRODUCTION_DIFFERS);
 }
 
 function postDeployState(g: GithubSnapshot | undefined, release?: string): Score["postDeploy"] | undefined {
   if (!g?.workflows["post-deploy.yml"]?.length) return undefined;
   const { runs, deployedAt } = releaseWindow(g);
-  const done = runs.filter((r) => r.conclusion !== null);
+  // Since 1.48.3: a run that failed before judging production says nothing about production, red or green.
+  const skipped = harnessFailed(g);
+  const done = runs.filter((r) => r.conclusion !== null && !skipped.has(r.id));
   let red = 0;
   for (const r of done) {
     if (r.conclusion !== "failure") break;
@@ -520,19 +533,20 @@ function unclaimedPareto(subject: KeptRun | undefined): Pareto | undefined {
 function lineStopPareto(i: A3Inputs): Pareto {
   const counts = new Map<string, { value: number }>();
   const add = (k: string) => counts.set(k, { value: (counts.get(k)?.value ?? 0) + 1 });
-  for (const r of i.runs) for (const c of stopCauses(r)) add(`${STREAM_NAMES[r.stream]}: ${c}`);
+  const judged = i.runs.filter((r) => r.stream !== "noise");
+  for (const r of judged) for (const c of stopCauses(r)) if (!HARNESS_STOPS.has(c)) add(`${STREAM_NAMES[r.stream]}: ${c}`);
   const steps = windowSteps(i.github);
   for (const s of steps) add(`Post-deploy: ${postDeployCause(s.step)}`);
-  const source: Link[] = [{ label: `${i.runs.length} kept runs (index.json of each stream)` }];
+  const source: Link[] = [{ label: `${judged.length} kept runs of the monorepo (index.json of the release and forecast streams; the harness's own A/A and failures left out)` }];
   const deployedAt = releaseWindow(i.github).deployedAt;
   if (i.github?.postDeploySteps) source.push({ label: `${steps.length} failed post-deploy runs${deployedAt ? ` since the deploy of ${deployedAt.slice(0, 10)}` : ""} (GitHub Actions)`, href: `${REPO}/actions/workflows/post-deploy.yml` });
   return pareto({
     id: "line-stops",
-    title: "Why the line stops, every red run",
+    title: "Why the line stops, every red run about the monorepo",
     unit: "stops",
     counts,
     source,
-    caption: (p) => (p.total ? `${p.total} stops over the kept runs and ${deployedAt ? "the post-deploy runs since the current release was deployed" : "the post-deploy history"}. ${plural(p.vitalFew, "cause")} carry ${pct(p.vitalShare)}: ${p.bars.slice(0, p.vitalFew).map((b) => b.label).join("; ")}.` : "No red run kept.")
+    caption: (p) => (p.total ? `${p.total} stops over the kept runs and ${deployedAt ? "the post-deploy runs since the current release was deployed" : "the post-deploy history"}, about the monorepo and production only: the harness's own A/A and its failures are not counted. ${plural(p.vitalFew, "cause")} carry ${pct(p.vitalShare)}: ${p.bars.slice(0, p.vitalFew).map((b) => b.label).join("; ")}.` : "No red run about the monorepo kept.")
   });
 }
 
@@ -599,7 +613,7 @@ function valueStream(i: A3Inputs, subject: KeptRun | undefined): ValueStream {
     { id: "forecast", name: "Main to RC forecast", where: "main-preview.yml", ...proc(wf("main-preview.yml")), note: "main judged as if it were a candidate" },
     { id: "gate", name: "Release gate (Jidoka)", where: "release.yml", ...proc(wf("release.yml")), note: "stops the line on any unclaimed difference" },
     { id: "deploy", name: "Promote and deploy", where: "monorepo deploy.yml, and today Netlify", processMs: null, n: 0, note: dispatched ? `${dispatched} deploy(s) announced to the harness` : "no deploy has ever been announced to the harness", ...(dispatched ? {} : { andon: "not the gated build" }) },
-    { id: "verify", name: "Post-deploy verify", where: "post-deploy.yml", ...proc(wf("post-deploy.yml")), note: "production against the recorded release", ...(pd && pd.red ? { andon: `red × ${pd.red}` } : {}) }
+    { id: "verify", name: "Post-deploy verify", where: "post-deploy.yml", ...proc(wf("post-deploy.yml")?.filter((r) => !harnessFailed(g).has(r.id))), note: "production against the recorded release", ...(pd && pd.red ? { andon: `red × ${pd.red}` } : {}) }
   ];
   if (!g) notMeasured.push("process times and first-pass yield: the pages were built without --fetch-github");
   if (g && !g.imageBuild) notMeasured.push("image build time: GitHub did not answer for the monorepo's image-build.yml");
