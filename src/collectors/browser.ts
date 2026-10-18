@@ -376,6 +376,12 @@ export async function captureJourney(browser: Browser, spec: SideSpec, journey: 
     if (!other) actors.set(role, (other = await openPage(role)));
     return other;
   };
+  const forget = async (): Promise<void> => {
+    await quiet(() => inFlight.size, 500, 5_000);
+    pendingNetwork = [];
+    pendingConsole = [];
+    pendingRealtime = emptyRealtime();
+  };
 
   const shotDir = join(opts.outDir, `${journey.name}-${run}`);
   if (opts.screenshots) mkdirSync(shotDir, { recursive: true });
@@ -431,7 +437,7 @@ export async function captureJourney(browser: Browser, spec: SideSpec, journey: 
       // Last, because it moves focus.
       if (opts.focusStops > 0) capture.focus = await focusWalk(page, opts.focusStops);
       pages.push(capture);
-    }, { as }), timeoutMs, () => new Error(`journey timed out after ${Math.round(timeoutMs / 1000)}s`), crashed);
+    }, { as, forget }), timeoutMs, () => new Error(`journey timed out after ${Math.round(timeoutMs / 1000)}s`), crashed);
   } catch (e) {
     error = e instanceof Error ? stripOrigins(e.message.split("\n")[0] ?? e.message, spec) : String(e);
   } finally {

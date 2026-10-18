@@ -194,5 +194,8 @@ it does for the tables it keeps. Seeded rows are not writes, so they never enter
 rows, so a difference in a total, a median or an order is the time app's.
 
 `the page shows no ...` waits up to the visible timeout for what it names to go, so a closing PIN dialog is not
-counted. The student page draws its heat maps after load, and their day grids lay out differently from one load to the
-next on the same build; 0591 scrolls to the student's tables before its capture, so the screenshot compares them.
+counted. The medians and the student page draw heat maps after load, and their day grids lay out differently from one
+load to the next on the same build; 0590 and 0591 scroll to the tables below them before those captures, so the
+screenshots compare the tables. On main `83d4ccf` and 17.0.0 the time app's first load stalls about one time in eight
+(a Supabase client per read; mono-repo #507), so the step that opens it reloads once, and first drops what the stalled
+load requested (`Actors.forget`), so a side that stalled compares like one that did not.

@@ -29,6 +29,11 @@ export type OnPage = (pageKey: string, on?: Page) => Promise<void>;
  */
 export interface Actors {
   as(role: string): Promise<Page>;
+  /**
+   * Since 1.47.0: drop what every page did since the last capture (its network, console and Realtime cost), for a
+   * step that retries after a stall the app has on both sides, so only the attempt that worked is compared.
+   */
+  forget?(): Promise<void>;
 }
 
 export const JOURNEY_SETS = ["fixture", "auth", "reference", "replay", "rules"] as const;

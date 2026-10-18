@@ -30,6 +30,8 @@ export interface World {
    * stub's lecturer in a browser of their own on the same side, opened the first time a step names them.
    */
   act(who: Actor): Promise<void>;
+  /** Since 1.47.0: drop what the pages did since the last capture (`Actors.forget`), before a step retries. */
+  forget(): Promise<void>;
 }
 
 /** Who a step's sentence names as its subject. */
@@ -127,6 +129,8 @@ step(/^the student opens the time app at "([a-z/-]+)"$/, 'the student opens the 
     // its course read (no request open; the clients share one stored session; mono-repo #507). A person reloads, so the step does
     // once; a second stall fails the journey.
     await w.page.getByRole("main").first().waitFor(VISIBLE).catch(async () => {
+      // What the stalled load requested is dropped, so a side that stalled compares like one that did not.
+      await w.forget();
       await w.page.reload();
       await w.page.getByRole("main").first().waitFor(VISIBLE);
     });

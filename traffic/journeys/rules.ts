@@ -86,6 +86,9 @@ export function journeyOf(feature: GherkinFeature, rule: GherkinRule): Journey {
           if (who === "student") world.page = page;
           else if (!actors) throw new Error("this run cannot open a second browser");
           else world.page = await actors.as("lecturer");
+        },
+        async forget() {
+          await actors?.forget?.();
         }
       };
       for (const s of bound) {

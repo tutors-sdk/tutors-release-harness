@@ -61,7 +61,10 @@ Feature: Lecturer journeys the harness drives on both sides
       Then the page shows no dialog "Enter PIN"
       And the page shows the heading "Medians"
       And the page shows the row "Median 130 78 104"
-      And the page is captured as "medians"
+      # The time app draws its heat maps after load, and their day grids lay out differently from one load to the next on
+      # the same build, so the capture starts at the tables below them.
+      When the page scrolls to the heading "Calendar median by week"
+      Then the page is captured as "medians"
       When the lecturer opens the time app at "calendar/byweek"
       Then the page shows the heading "Calendar by week"
       And the page shows the row starting "Harness Enrolled Student"
@@ -94,7 +97,6 @@ Feature: Lecturer journeys the harness drives on both sides
       And the page is captured as "learning-records"
       When the lecturer opens the time app at "harness-quiet"
       Then the page shows the heading "Harness Quiet Student"
-      # The student page draws its heat maps after load, and their day grids lay out differently from one load to the
-      # next on the same build, so the capture starts at the student's tables.
+      # As on the medians, the capture starts at the tables below the heat maps.
       When the page scrolls to the heading "Calendar activity by week"
       Then the page is captured as "student"
