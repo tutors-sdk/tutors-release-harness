@@ -15,15 +15,20 @@
 //   WS     /realtime/v1/websocket  -> a Phoenix socket that replies ok to every push (joins, heartbeats,
 //                                     presence) and never broadcasts unless relaying (below); not recorded
 //   GET    /_harness/writes        -> the log, oldest first
-//   POST   /_harness/reset         -> clears the log (and what is kept, and relaying)
+//   POST   /_harness/reset         -> clears the log, what is kept and seeded, and relaying
 //   POST   /_harness/relay         -> since 1.46.0: until the next reset, every broadcast (over REST or the socket)
 //                                     reaches the other sockets joined to its topic, as Supabase Realtime sends it
+//   POST   /_harness/seed          -> {"<table>": [rows]}: since 1.47.0, rows a journey's reads see (below); not a write
 //
 // Since 1.45.0 the stub keeps the rows written to the tables in KEPT until the next reset, and answers reads of
 // them with those rows (filtered by `col=eq.value`, upserted by `on_conflict`): a lecturer's content lock is read
 // back by the student's browser in the same journey (the lock journey, Rule 0588). Since 1.46.0 also the latest
 // learning object each student opened, which Tutors Live reads (`gte`, `order` and `limit` too: the Live journey, Rule
 // 0589). Every other table still reads empty. What is kept never reaches the ledger: the writes are recorded as before.
+//
+// Since 1.47.0 a journey can seed tables over `/_harness/seed` before it reads them (the time app's calendar and
+// learning records: Rules 0590 and 0591, fixtures/persistence/seeds). A seeded table is kept like the tables above until
+// the next reset, so its reads answer the seeded rows (and `in.(a,b)` too).
 //
 // Both sides get their own stub, so a write is attributable. The stub sends no
 // Date header and no ids: nothing here may differ between the sides.
@@ -45,6 +50,9 @@ let kept = new Map();
 let relay = false;
 /** Each open Realtime socket and the topics (`realtime:<name>`) it has joined. */
 const sockets = new Map();
+/** Tables seeded by the journey running now: read back like KEPT until the next reset. */
+let seeded = new Set();
+const isKept = (table) => KEPT.has(table) || seeded.has(table);
 
 const cors = {
   "access-control-allow-origin": "*",
@@ -78,10 +86,20 @@ const server = createServer(async (req, res) => {
     writes = [];
     kept = new Map();
     relay = false;
+    seeded = new Set();
     return send(204);
   }
   if (url.pathname === "/_harness/relay" && req.method === "POST") {
     relay = true;
+    return send(204);
+  }
+  if (url.pathname === "/_harness/seed" && req.method === "POST") {
+    const seed = safeJson(await readBody(req))[0] ?? {};
+    for (const [table, rows] of Object.entries(seed)) {
+      if (!Array.isArray(rows)) return send(400, { message: `seed for ${table} is not a list of rows` });
+      seeded.add(table);
+      kept.set(table, [...(kept.get(table) ?? []), ...rows]);
+    }
     return send(204);
   }
 
@@ -93,11 +111,11 @@ const server = createServer(async (req, res) => {
       writes.push({ seq: ++seq, kind: "rpc", method: req.method, table: name });
       return send(200, []);
     }
-    if (KEPT.has(name)) keep(req.method, name, url.searchParams, body);
+    if (isKept(name)) keep(req.method, name, url.searchParams, body);
     switch (req.method) {
       case "GET":
       case "HEAD": {
-        const rows = KEPT.has(name) ? matching(name, url.searchParams) : [];
+        const rows = isKept(name) ? matching(name, url.searchParams) : [];
         return send(200, rows, { "content-range": rows.length ? `0-${rows.length - 1}/${rows.length}` : "*/0" });
       }
       case "POST": {
@@ -143,12 +161,12 @@ const server = createServer(async (req, res) => {
   return send(404, { message: "not found" });
 });
 
-const OPS = { eq: (x, y) => x === y, gt: (x, y) => x > y, gte: (x, y) => x >= y, lt: (x, y) => x < y, lte: (x, y) => x <= y };
-/** PostgREST's `col=<op>.value` filters (eq, gt, gte, lt, lte; compared as strings, as ISO times are); every other parameter (select, order, limit, on_conflict) is not a filter. */
+const OPS = { eq: (x, y) => x === y, gt: (x, y) => x > y, gte: (x, y) => x >= y, lt: (x, y) => x < y, lte: (x, y) => x <= y, in: (x, y) => y.replace(/^\(|\)$/g, "").split(",").map((v) => v.replace(/^"|"$/g, "")).includes(x) };
+/** PostgREST's `col=<op>.value` filters (eq, gt, gte, lt, lte, in; compared as strings, as ISO times are); every other parameter (select, order, limit, on_conflict) is not a filter. */
 function filtersOf(params) {
   const out = [];
   for (const [key, value] of params) {
-    const m = /^(eq|gte?|lte?)\.(.*)$/s.exec(value);
+    const m = /^(eq|gte?|lte?|in)\.(.*)$/s.exec(value);
     if (m && !["select", "order", "limit", "offset", "on_conflict"].includes(key)) out.push([key, OPS[m[1]], m[2]]);
   }
   return out;

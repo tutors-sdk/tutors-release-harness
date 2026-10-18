@@ -39,6 +39,8 @@ export interface StackUrls {
    * itself has no sign-in). The Live journey (Rule 0589) opens it; absent for an external side.
    */
   liveAuth?: string;
+  /** Since 1.47.0: the time app the same way (no sign-in either), for the time app journeys (Rules 0590 and 0591). */
+  timeAuth?: string;
   /** The side's persistence stub, when it has one. */
   persistence?: string;
   /** A course id the reader resolves to http(s)://<id>/tutors.json. */

@@ -20,3 +20,10 @@ export const fixture = {
   /** A resource the search term does not match; its link must not be among the results. */
   searchNonResultTitle: /^Talk 1\b/
 };
+
+/**
+ * Since 1.47.0: the plain id the time app journeys give the Rule journeys' course (its tutors.json `courseId`). The time
+ * app reads a course's PIN from `https://<id>.netlify.app/tutors.json`, which the harness answers from the course server
+ * (src/collectors/browser.ts); the seeds name the course by it (fixtures/persistence/seeds).
+ */
+export const TIME_COURSE_ID = "harness-rules";

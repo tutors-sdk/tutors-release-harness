@@ -22,12 +22,15 @@ the Claude Doc "Harness user journeys" (Rules 0582 to 0592).
 | 0587 | `rule-0587-calendar-llm` | as the enrolled student: the calendar filtered to assessments, then the course's page for LLMs | 0042, 0284 |
 | 0588 | `rule-0588-content-lock` | the lecturer locks Topic 2 in Educator Control; the enrolled student no longer sees it, then sees it greyed out and labelled Locked once the lecturer shows locked content | 0052, 0053, 0054 |
 | 0589 | `rule-0589-live` | the stub student, who shares presence, opens Lab 1 of the fixture course; the lecturer opens Tutors Live while the student opens it again, and finds one course and the student on it | 0330, 0335 |
+| 0590 | `rule-0590-time-calendar` | with two students' calendar days seeded, the lecturer opens the time app past its PIN: medians, calendar by week, calendar by day | 0319 |
+| 0591 | `rule-0591-time-labs` | with three students' lab records seeded, the lecturer opens labs by lab and by step, the learning records and the least engaged student's page | 0319 |
 
 0582 and 0583 read the fixture course. Since 1.44.0, 0584 to 0587 read the **Rule journeys' course**
 ([`fixtures/course-server/rules-course`](../../fixtures/course-server/README.md#the-rule-journeys-course-since-1440)):
 signed in and private, with a quiz, a notebook, a calendar on fixed dates and an LLM page; since 1.45.0 a second topic,
-which 0588 locks. Since 1.46.0, 0589 opens Tutors Live on the side's `liveAuth` (below). The time app and whiteboard
-journeys (0590 to 0592) follow as the stubs grow. The ids 0582 to 0599 are reserved for the harness's journeys;
+which 0588 locks. Since 1.46.0, 0589 opens Tutors Live on the side's `liveAuth` (below). Since 1.47.0, 0590 and 0591
+open the time app on the side's `timeAuth`, reading rows seeded into the persistence stub (below). The whiteboard
+journey (0592) follows. The ids 0582 to 0599 are reserved for the harness's journeys;
 `tests/rule-journeys.test.ts` fails on an id outside that block.
 
 ## Running them
@@ -98,6 +101,8 @@ Rule: When the harness runs the presence journey, it shall ...
 - the student signs in from the course and is turned away: signed in, then sent to My courses, not the course (a private course they are not enrolled on)
 - the student opens the course by its address and is turned away: the course URL typed in, then sent to My courses
 - the student opens Tutors Live: Live's home page on this side, reading the side's persistence stub (said of the lecturer, since 1.46.0)
+- the student opens the time app at "calendar/byweek": that view of the Rule journeys' course, as harness-rules, on this side's time app reading its persistence stub (said of the lecturer, since 1.47.0)
+- the persistence stub holds the seed "time-course": the rows of fixtures/persistence/seeds/time-course.json, read by this journey only (since 1.47.0)
 - the student opens the topic "Topic 1": its card on the page
 - the persistence stub relays Realtime broadcasts: until the journey ends, a broadcast reaches the other browsers joined to its topic, as Supabase Realtime sends it (since 1.46.0)
 - the student looks at their own browser: the steps that name nobody act on it again (said of the lecturer, since 1.46.0)
@@ -111,6 +116,7 @@ Rule: When the harness runs the presence journey, it shall ...
 - the student opens the Preferences menu: its header button (named "Preferences", or "Open Theme Menu" up to 17.0.0), then the dialog "Preferences"
 - the student chooses "const" in the group "1. Which keyword declares a constant?": a radio button by its label
 - the student selects "Assessments" in the combobox "Show": an option of a select by its label
+- the student types "4321" in the textbox "PIN code": a text field by its label (since 1.47.0)
 - the student switches on "Lock Topic 2" (also off): a switch by its accessible name, then it reads as asked
 - the student closes the dialog "View Online": Escape, then it is gone
 - the student closes every dialog: Escape until none is open (a capture's focus walk may already have closed some)
@@ -118,6 +124,7 @@ Rule: When the harness runs the presence journey, it shall ...
 - the page shows no heading "Harness Rules Course": nothing visible by that role and exact name
 - the page shows the button starting "Share Presence" (also link, row)
 - the page shows no link starting "Topic 2" (also button, row): nothing visible whose name starts so
+- the page scrolls to the heading "Calendar by week": the heading at the top of the viewport, so a capture shows what follows it
 - the card "Topic 2" shows the text "Locked": the article whose heading is the card's title holds the words
 - the page shows the Preferences button: named "Preferences", or "Open Theme Menu" up to 17.0.0
 - the page shows the text "2 of 4": words on the page that no role names
@@ -169,3 +176,23 @@ the stored activity), and the journey proves the behaviour on the production rel
 Running locally behind an HTTP proxy, add `.harness.test` to `no_proxy`. Chromium sends a WebSocket to a host it
 does not bypass through the proxy, which refuses `persistence-a.harness.test`, and Live's Realtime socket then
 logs a 403 on both sides.
+
+## The time app reading seeded rows (since 1.47.0)
+
+Each compose side runs a second time app, `time-auth-a` and `time-auth-b` (host ports 3106 and 3206,
+`TIME_AUTH_PORT_A`/`_B`), with anonymous mode off and the side's persistence stub as its Supabase, as `live-auth` is.
+The time app has no sign-in of its own; it asks for the course's PIN, which it reads from
+`https://<course id>.netlify.app/tutors.json`. So the time journeys name the Rule journeys' course `harness-rules`
+(`TIME_COURSE_ID` in `traffic/journeys/fixture.ts`), and the lecturer's browser answers that address with the course
+server's `tutors.json`, whose `ignorepin` is 4321. Its pages are captured as `time-auth:rule-<id>-<name>`.
+
+The time app only reads: calendar days, lab records, students and the course's row. A journey writes them first with
+`the persistence stub holds the seed "<name>"`, which posts
+[`fixtures/persistence/seeds/<name>.json`](../../fixtures/persistence/seeds/README.md) to the side's stub. The stub
+keeps a seeded table until the next journey's reset and answers reads of it (`eq`, `in`, `gte`, `order`, `limit`), as
+it does for the tables it keeps. Seeded rows are not writes, so they never enter the ledger. Both sides get the same
+rows, so a difference in a total, a median or an order is the time app's.
+
+`the page shows no ...` waits up to the visible timeout for what it names to go, so a closing PIN dialog is not
+counted. The student page draws its heat maps after load, and their day grids lay out differently from one load to the
+next on the same build; 0591 scrolls to the student's tables before its capture, so the screenshot compares them.

@@ -17,6 +17,8 @@ export const DEFAULT_PORTS: Record<string, number> = {
   TIME_PORT_A: 3104,
   // Since 1.46.0: Tutors Live reading side a's persistence stub (anonymous mode off), for the Live journey (Rule 0589).
   LIVE_AUTH_PORT_A: 3105,
+  // Since 1.47.0: the time app reading side a's persistence stub, for the time app journeys (Rules 0590 and 0591).
+  TIME_AUTH_PORT_A: 3106,
   PERSISTENCE_PORT_B: 8091,
   READER_PORT_B: 3200,
   CATALOGUE_PORT_B: 3201,
@@ -24,6 +26,7 @@ export const DEFAULT_PORTS: Record<string, number> = {
   READER_AUTH_PORT_B: 3203,
   TIME_PORT_B: 3204,
   LIVE_AUTH_PORT_B: 3205,
+  TIME_AUTH_PORT_B: 3206,
   // Since 1.24.0: side a2 (profile a2, `harness run --a2`), a second copy of side a's apps for in-run noise.
   READER_PORT_A2: 3400,
   CATALOGUE_PORT_A2: 3401,

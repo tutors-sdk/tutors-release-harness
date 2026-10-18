@@ -17,13 +17,14 @@ export const COMPOSE_PROJECT = orExit(() => composeProject().name);
 export const COMPOSE_NETWORK = `${COMPOSE_PROJECT}_default`;
 
 /** Host ports per side; the compose file's defaults, overridable through the environment. */
-const PORTS: Record<SideName, Record<App, number> & { readerAuth: number; liveAuth: number; persistence: number }> = {
+const PORTS: Record<SideName, Record<App, number> & { readerAuth: number; liveAuth: number; timeAuth: number; persistence: number }> = {
   a: {
     reader: Number(process.env.READER_PORT_A ?? 3100),
     catalogue: Number(process.env.CATALOGUE_PORT_A ?? 3101),
     live: Number(process.env.LIVE_PORT_A ?? 3102),
     readerAuth: Number(process.env.READER_AUTH_PORT_A ?? 3103),
     liveAuth: Number(process.env.LIVE_AUTH_PORT_A ?? 3105),
+    timeAuth: Number(process.env.TIME_AUTH_PORT_A ?? 3106),
     time: Number(process.env.TIME_PORT_A ?? 3104),
     persistence: Number(process.env.PERSISTENCE_PORT_A ?? 8090)
   },
@@ -33,6 +34,7 @@ const PORTS: Record<SideName, Record<App, number> & { readerAuth: number; liveAu
     live: Number(process.env.LIVE_PORT_B ?? 3202),
     readerAuth: Number(process.env.READER_AUTH_PORT_B ?? 3203),
     liveAuth: Number(process.env.LIVE_AUTH_PORT_B ?? 3205),
+    timeAuth: Number(process.env.TIME_AUTH_PORT_B ?? 3206),
     time: Number(process.env.TIME_PORT_B ?? 3204),
     persistence: Number(process.env.PERSISTENCE_PORT_B ?? 8091)
   }
@@ -70,6 +72,7 @@ export function urlsFor(side: SideName): StackUrls {
     time: `http://localhost:${p.time}`,
     readerAuth: `http://localhost:${p.readerAuth}`,
     liveAuth: `http://localhost:${p.liveAuth}`,
+    timeAuth: `http://localhost:${p.timeAuth}`,
     persistence: `http://persistence-${side}.harness.test:${p.persistence}`,
     courseId: COURSE_ID,
     rulesCourseId: RULES_COURSE_ID

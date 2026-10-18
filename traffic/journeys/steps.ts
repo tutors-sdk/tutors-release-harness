@@ -1,6 +1,9 @@
-import type { Page } from "playwright";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import type { Locator, Page } from "playwright";
 import type { StackUrls } from "../../src/types.ts";
 import type { OnPage } from "./journeys.ts";
+import { TIME_COURSE_ID } from "./fixture.ts";
 import { VISIBLE, escapeRegExp, labSteps, pageHeading, signInFromAuthPage, stepLink, turnedAway } from "./ui.ts";
 
 /**
@@ -47,6 +50,7 @@ export function appOf(url: string, urls: StackUrls): string {
   const origin = new URL(url).origin;
   if (urls.readerAuth && origin === new URL(urls.readerAuth).origin) return "reader-auth";
   if (urls.liveAuth && origin === new URL(urls.liveAuth).origin) return "live-auth";
+  if (urls.timeAuth && origin === new URL(urls.timeAuth).origin) return "time-auth";
   for (const app of ["reader", "catalogue", "live", "time"] as const) {
     const u = urls[app];
     if (u && origin === new URL(u).origin) return app;
@@ -96,6 +100,47 @@ step(/^the persistence stub relays Realtime broadcasts$/, "the persistence stub 
 });
 
 step(/^the student looks at their own browser$/, "the student looks at their own browser: the steps that name nobody act on it again (said of the lecturer, since 1.46.0)", async () => {});
+
+/** Since 1.47.0: the seeds a journey can give the persistence stub (fixtures/persistence/seeds/<name>.json). */
+export const SEEDS_DIR = join(import.meta.dirname, "../../fixtures/persistence/seeds");
+
+step(/^the persistence stub holds the seed "([a-z0-9-]+)"$/, 'the persistence stub holds the seed "time-course": the rows of fixtures/persistence/seeds/time-course.json, read by this journey only (since 1.47.0)', async (w, name) => {
+  if (!w.urls.persistence) throw new Error("this side has no persistence stub (external side?)");
+  const seed = Object.fromEntries(Object.entries(JSON.parse(readFileSync(join(SEEDS_DIR, `${name}.json`), "utf8")) as Record<string, unknown>).filter(([table]) => !table.startsWith("_")));
+  // The stub's address as the containers see it, rewritten for the harness's own process (src/persistence/supabase-rest.ts).
+  const stub = w.urls.persistence.replace(/persistence-[ab]\.harness\.test/, "localhost");
+  const response = await fetch(`${stub}/_harness/seed`, { method: "POST", body: JSON.stringify(seed) });
+  if (!response.ok) throw new Error(`POST ${stub}/_harness/seed -> ${response.status}`);
+});
+
+step(/^the student opens the time app at "([a-z/-]+)"$/, 'the student opens the time app at "calendar/byweek": that view of the Rule journeys\' course, as harness-rules, on this side\'s time app reading its persistence stub (said of the lecturer, since 1.47.0)', async (w, view) => {
+  if (!w.urls.timeAuth) throw new Error("this side has no time app reading its persistence stub (external side?)");
+  // The time app loads the course from the stub in the browser before it draws anything: when it never does, say which
+  // requests were still open, so the report points at the read that hung rather than at a missing <main>.
+  const open = new Set<string>();
+  const track = (r: { url: () => string }) => open.add(r.url());
+  const done = (r: { url: () => string }) => open.delete(r.url());
+  w.page.on("request", track).on("requestfinished", done).on("requestfailed", done);
+  try {
+    await w.page.goto(`${w.urls.timeAuth}/${TIME_COURSE_ID}/${view}`);
+    // On main 83d4ccf the time app makes a Supabase client per read, and about one first load in eight never finishes
+    // its course read (no request open; the clients share one stored session; mono-repo #507). A person reloads, so the step does
+    // once; a second stall fails the journey.
+    await w.page.getByRole("main").first().waitFor(VISIBLE).catch(async () => {
+      await w.page.reload();
+      await w.page.getByRole("main").first().waitFor(VISIBLE);
+    });
+  } catch (e) {
+    const text = (await w.page.locator("body").innerText().catch(() => "")).replace(/\s+/g, " ").slice(0, 160);
+    throw new Error(`${(e as Error).message.split("\n")[0]} at ${w.page.url()}; page reads "${text}"; still open: ${[...open].join(", ") || "none"}`);
+  } finally {
+    w.page.off("request", track).off("requestfinished", done).off("requestfailed", done);
+  }
+});
+
+step(/^the student types "([^"]+)" in the textbox "([^"]+)"$/, 'the student types "4321" in the textbox "PIN code": a text field by its label (since 1.47.0)', async (w, text, name) => {
+  await w.page.getByRole("textbox", { name, exact: true }).filter({ visible: true }).first().fill(text!);
+});
 
 step(/^the student opens the topic "([^"]+)"$/, 'the student opens the topic "Topic 1": its card on the page', async (w, title) => {
   await w.page.getByRole("main").getByRole("link", { name: new RegExp(`^${escapeRegExp(title)}\\b`) }).first().click();
@@ -187,6 +232,16 @@ step(/^the student closes every dialog$/, "the student closes every dialog: Esca
   if ((await w.page.getByRole("dialog").count()) > 0) throw new Error("a dialog is still open after Escape");
 });
 
+// What is still visible once a closing dialog or a leaving element has had VISIBLE.timeout to go: 0 when nothing is.
+async function noneVisible(locator: Locator): Promise<number> {
+  const deadline = Date.now() + VISIBLE.timeout;
+  for (;;) {
+    const n = await locator.filter({ visible: true }).count();
+    if (n === 0 || Date.now() > deadline) return n;
+    await locator.page().waitForTimeout(100);
+  }
+}
+
 // ---- what is on the page -----------------------------------------------------------------------------------------
 
 step(new RegExp(`^the page shows the (${ROLES}) "([^"]+)"$`), 'the page shows the heading "Lab 1" (a status or alert by its text, present even when visually hidden; also button, link, dialog, tab, checkbox, menuitem, region, navigation, article, status, alert, group, radio, combobox, table, row, progressbar): exact accessible name, visible', async (w, role, name) => {
@@ -198,7 +253,7 @@ step(new RegExp(`^the page shows the (${ROLES}) "([^"]+)"$`), 'the page shows th
 
 step(new RegExp(`^the page shows no (${ROLES}) "([^"]+)"$`), 'the page shows no heading "Harness Rules Course": nothing visible by that role and exact name', async (w, role, name) => {
   if (!isRole(role!)) throw new Error(`not a role: ${role}`);
-  const n = await w.page.getByRole(role, { name, exact: true }).filter({ visible: true }).count();
+  const n = await noneVisible(w.page.getByRole(role, { name, exact: true }));
   if (n) throw new Error(`the page shows ${n} ${role}(s) "${name}"`);
 });
 
@@ -209,8 +264,14 @@ step(/^the page shows the (button|link|row) starting "([^"]+)"$/, 'the page show
 
 step(/^the page shows no (button|link|row) starting "([^"]+)"$/, 'the page shows no link starting "Topic 2" (also button, row): nothing visible whose name starts so', async (w, role, start) => {
   if (!isRole(role!)) throw new Error(`not a role: ${role}`);
-  const n = await w.page.getByRole(role, { name: new RegExp(`^${escapeRegExp(start!)}`) }).filter({ visible: true }).count();
+  const n = await noneVisible(w.page.getByRole(role, { name: new RegExp(`^${escapeRegExp(start!)}`) }));
   if (n) throw new Error(`the page shows ${n} ${role}(s) starting "${start}"`);
+});
+
+step(/^the page scrolls to the heading "([^"]+)"$/, 'the page scrolls to the heading "Calendar by week": the heading at the top of the viewport, so a capture shows what follows it', async (w, name) => {
+  const heading = w.page.getByRole("heading", { name, exact: true }).filter({ visible: true }).first();
+  await heading.waitFor(VISIBLE);
+  await heading.evaluate((el) => el.scrollIntoView({ block: "start", behavior: "instant" }));
 });
 
 step(/^the card "([^"]+)" shows the text "([^"]+)"$/, 'the card "Topic 2" shows the text "Locked": the article whose heading is the card\'s title holds the words', async (w, title, text) => {

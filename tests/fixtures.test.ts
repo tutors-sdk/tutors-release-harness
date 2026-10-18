@@ -101,6 +101,18 @@ describe("persistence stub", () => {
     expect(await read("order=received_at.asc")).toEqual(["s3", "s2", "s1"]);
   });
 
+  it("serves a journey's seeded rows to its reads, with in.(...) filters, records no write for them, and forgets them on reset", async () => {
+    await fetch(`${base}/_harness/reset`, { method: "POST" });
+    const seeded = await fetch(`${base}/_harness/seed`, { method: "POST", body: JSON.stringify({ calendar: [{ id: "2026-09-14", studentid: "s1" }, { id: "2026-09-15", studentid: "s2" }], "tutors-connect-users": [{ github_id: "s1", full_name: "One" }] }) });
+    expect(seeded.status).toBe(204);
+    expect(await (await fetch(`${base}/rest/v1/calendar?select=*&id=gte.2026-09-15`)).json()).toEqual([{ id: "2026-09-15", studentid: "s2" }]);
+    expect(await (await fetch(`${base}/rest/v1/tutors-connect-users?select=github_id,full_name&github_id=in.(s1,s3)`)).json()).toEqual([{ github_id: "s1", full_name: "One" }]);
+    expect(await (await fetch(`${base}/_harness/writes`)).json()).toEqual([]);
+    expect((await fetch(`${base}/_harness/seed`, { method: "POST", body: JSON.stringify({ calendar: {} }) })).status).toBe(400);
+    await fetch(`${base}/_harness/reset`, { method: "POST" });
+    expect(await (await fetch(`${base}/rest/v1/calendar`)).json()).toEqual([]);
+  });
+
   it("accepts realtime broadcasts over REST without recording them as writes", async () => {
     await fetch(`${base}/_harness/reset`, { method: "POST" });
     const broadcast = await fetch(`${base}/realtime/v1/api/broadcast?apikey=k&vsn=2.0.0`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ messages: [] }) });
