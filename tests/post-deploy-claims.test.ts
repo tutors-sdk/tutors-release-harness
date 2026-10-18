@@ -56,6 +56,14 @@ describe("post-deploy/claims.yaml", () => {
     expect(gate({ mode: "post-deploy", compare, noise: clean, noiseWaived: false, noiseMaxAgeDays: 7, ranAt }).verdict).toBe("fail");
   });
 
+  it("claims the keyboard order of reference:topic and reference:lab the recorded run walked from the clicked card, not reference:course (since 1.48.5)", () => {
+    const recorded = [hunk("focus", "reference:topic", "/topic/reference-course/topic-07-reference"), hunk("focus", "reference:lab", "/lab/reference-course/topic-07-reference/book-a")];
+    const course = hunk("focus", "reference:course");
+    const compare = matchClaims([...recorded, course], claims);
+    expect(compare.unclaimed.map((h) => h.id)).toEqual([course.id]);
+    for (const c of claims.filter((c) => c.artefact === "focus")) expect(c.until).toBe("17.0.1");
+  });
+
   it("does not claim what sits next to them", () => {
     const near = [
       hunk("network", "GET {{course}}/other.png"),
@@ -64,7 +72,7 @@ describe("post-deploy/claims.yaml", () => {
       hunk("headers", "reference:course/cache-control"),
       hunk("console", "reference:topic"),
       hunk("console", "reader:home"),
-      hunk("focus", "reference:lab"),
+      hunk("focus", "reference:note"),
       hunk("dom", "reference:course"),
       hunk("axe", "reference:course"),
       hunk("screenshot", "reference:lab")
