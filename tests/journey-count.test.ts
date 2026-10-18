@@ -12,8 +12,8 @@ const WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "e
 const read = (f: string) => readFileSync(resolve(ROOT, f), "utf8");
 
 describe("journey counts written in prose", () => {
-  it("there are 13 journeys in five sets (the replay set since 1.28.0, the rules set since 1.43.0, six of them since 1.44.0)", () => {
-    expect(journeys).toHaveLength(13);
+  it("there are 14 journeys in five sets (the replay set since 1.28.0, the rules set since 1.43.0, seven of them since 1.45.0)", () => {
+    expect(journeys).toHaveLength(14);
     expect(new Set(journeys.map((j) => j.set)).size).toBe(5);
   });
 

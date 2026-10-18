@@ -16,11 +16,20 @@ import { ruleJourneys } from "./rules.ts";
  * something by role, that is an accessibility finding, not a reason to reach
  * for CSS.
  *
- * 13 journeys in five sets (fixture 4, auth 1, reference 1, replay 1, rules 6 since 1.43.0), not a hundred: the harness's power is breadth of capture
+ * 14 journeys in five sets (fixture 4, auth 1, reference 1, replay 1, rules 7 since 1.43.0), not a hundred: the harness's power is breadth of capture
  * per page, not the number of pages. Add one only when a real regression
  * escaped that a journey would have caught.
  */
-export type OnPage = (pageKey: string) => Promise<void>;
+/** Capture the page under `pageKey`: the journey's own page, or since 1.45.0 another person's (`on`, from `actors.as`). */
+export type OnPage = (pageKey: string, on?: Page) => Promise<void>;
+
+/**
+ * Since 1.45.0: the people a journey may act as besides its own role, each in a browser context of its own on the same
+ * side and signed in through the identity stub as that role: `as("lecturer")` opens it once, then returns the same page.
+ */
+export interface Actors {
+  as(role: string): Promise<Page>;
+}
 
 export const JOURNEY_SETS = ["fixture", "auth", "reference", "replay", "rules"] as const;
 export type JourneySet = (typeof JOURNEY_SETS)[number];
@@ -50,7 +59,7 @@ export interface Journey {
   rules?: string[];
   /** Since 1.44.0: a Rule journey that reads the Rule journeys' course (`@course-rules`), not the fixture course. */
   course?: string;
-  run: (page: Page, urls: StackUrls, onPage: OnPage) => Promise<void>;
+  run: (page: Page, urls: StackUrls, onPage: OnPage, actors?: Actors) => Promise<void>;
 }
 
 // ---- fixture course, anonymous ------------------------------------------------------

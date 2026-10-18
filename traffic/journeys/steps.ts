@@ -22,7 +22,15 @@ export interface World {
   rule: string;
   /** Since 1.44.0: the course the journey reads (`@course-rules` picks the Rule journeys' course), its id and title. */
   course: { id: string; title: string };
+  /**
+   * Since 1.45.0: make `page` the named person's: "the student" is the journey's own role, "the lecturer" the identity
+   * stub's lecturer in a browser of their own on the same side, opened the first time a step names them.
+   */
+  act(who: Actor): Promise<void>;
 }
+
+/** Who a step's sentence names as its subject. */
+export type Actor = "student" | "lecturer";
 
 export interface StepDefinition {
   pattern: RegExp;
@@ -136,6 +144,19 @@ step(/^the student selects "([^"]+)" in the combobox "([^"]+)"$/, 'the student s
   await w.page.getByRole("combobox", { name: box, exact: true }).filter({ visible: true }).first().selectOption({ label: option! });
 });
 
+// Skeleton's Switch: a visually hidden checkbox inside a label, named by aria-label. Pressing the label is what a person does.
+const switchNamed = (w: World, name: string) => w.page.getByRole("switch", { name, exact: true }).or(w.page.getByRole("checkbox", { name, exact: true })).first();
+
+step(/^the student switches (on|off) "([^"]+)"$/, 'the student switches on "Lock Topic 2" (also off): a switch by its accessible name, then it reads as asked', async (w, state, name) => {
+  const toggle = switchNamed(w, name!);
+  const want = state === "on";
+  if ((await toggle.isChecked()) !== want) await toggle.setChecked(want, { force: true });
+  for (const deadline = Date.now() + VISIBLE.timeout; (await toggle.isChecked()) !== want; ) {
+    if (Date.now() > deadline) throw new Error(`the switch "${name}" is not ${state}`);
+    await w.page.waitForTimeout(100);
+  }
+});
+
 step(/^the student closes the dialog "([^"]+)"$/, 'the student closes the dialog "View Online": Escape, then it is gone', async (w, name) => {
   await w.page.keyboard.press("Escape");
   await w.page.getByRole("dialog", { name }).waitFor({ state: "hidden", timeout: VISIBLE.timeout });
@@ -167,6 +188,16 @@ step(new RegExp(`^the page shows no (${ROLES}) "([^"]+)"$`), 'the page shows no 
 step(/^the page shows the (button|link|row) starting "([^"]+)"$/, 'the page shows the button starting "Share Presence" (also link, row)', async (w, role, start) => {
   if (!isRole(role!)) throw new Error(`not a role: ${role}`);
   await w.page.getByRole(role, { name: new RegExp(`^${escapeRegExp(start)}`) }).filter({ visible: true }).first().waitFor(VISIBLE);
+});
+
+step(/^the page shows no (button|link|row) starting "([^"]+)"$/, 'the page shows no link starting "Topic 2" (also button, row): nothing visible whose name starts so', async (w, role, start) => {
+  if (!isRole(role!)) throw new Error(`not a role: ${role}`);
+  const n = await w.page.getByRole(role, { name: new RegExp(`^${escapeRegExp(start!)}`) }).filter({ visible: true }).count();
+  if (n) throw new Error(`the page shows ${n} ${role}(s) starting "${start}"`);
+});
+
+step(/^the card "([^"]+)" shows the text "([^"]+)"$/, 'the card "Topic 2" shows the text "Locked": the article whose heading is the card\'s title holds the words', async (w, title, text) => {
+  await w.page.getByRole("article").filter({ has: w.page.getByRole("heading", { name: title, exact: true }) }).getByText(text!, { exact: true }).first().waitFor(VISIBLE);
 });
 
 step(/^the page shows the text "([^"]+)"$/, 'the page shows the text "2 of 4": words on the page that no role names', async (w, text) => {
@@ -202,14 +233,20 @@ step(/^the lab step "([^"]+)" is shown$/, 'the lab step "Step 1" is shown: the s
 });
 
 step(/^the page is captured as "([a-z0-9-]+)"$/, 'the page is captured as "lab-step": every artefact, under the page key <app>:rule-<id>-lab-step', async (w, name) => {
-  await w.onPage(pageKeyOf(appOf(w.page.url(), w.urls), w.rule, name!));
+  await w.onPage(pageKeyOf(appOf(w.page.url(), w.urls), w.rule, name!), w.page);
 });
 
-/** The step a sentence runs, and its quoted arguments; undefined when no step matches. */
-export function bind(text: string): { def: StepDefinition; args: string[] } | undefined {
+/**
+ * The step a sentence runs, its quoted arguments, and who acts; undefined when no step matches. Since 1.45.0 every
+ * "the student ..." step can be said of "the lecturer ..." instead: the same step, run in the lecturer's browser. A step
+ * that names nobody ("the page shows ...") runs in the browser of whoever acted last.
+ */
+export function bind(text: string): { def: StepDefinition; args: string[]; actor?: Actor } | undefined {
+  const lecturer = text.startsWith("the lecturer ");
+  const said = lecturer ? `the student ${text.slice("the lecturer ".length)}` : text;
   for (const def of STEPS) {
-    const m = def.pattern.exec(text);
-    if (m) return { def, args: m.slice(1) };
+    const m = def.pattern.exec(said);
+    if (m) return { def, args: m.slice(1), ...(lecturer ? { actor: "lecturer" as const } : said.startsWith("the student ") ? { actor: "student" as const } : {}) };
   }
   return undefined;
 }

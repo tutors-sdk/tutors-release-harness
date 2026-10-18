@@ -141,3 +141,96 @@ question: A lab step can hold code.
 type: true-false
 correct: true
 ```
+
+### Topic : Topic 2
+
+ 
+Summary of this topic (this line appears on the topic card).
+
+This topic introduces the key concepts for week 2 of the course.
+
+#### Talk : Talk 2
+
+ 
+### Presentation Title
+
+---
+
+## What We'll Cover
+
+- The goals for this topic
+- Key concepts and vocabulary
+- How the ideas fit together
+- Where to go next
+
+---
+
+## Key Concept
+
+> Replace this with the central idea of your talk.
+
+- Explain the concept in plain language
+- Give a concrete example
+- Connect it to what students already know
+
+---
+
+## Summary
+
+- Recap the main points
+- Point students to the accompanying note and lab
+- Preview what comes next
+
+#### Lab : Lab 1
+
+ 
+## Prerequisites
+
+- List any tools or accounts needed
+
+## Getting Started
+
+Describe the initial setup steps here.
+
+##### Step : Lab 1
+
+ 
+## Prerequisites
+
+- List any tools or accounts needed
+
+## Getting Started
+
+Describe the initial setup steps here.
+
+##### Step : Step 1
+
+ 
+Write your lab instructions for step 1 of 5 here.
+
+##### Step : Step 2
+
+ 
+Write your lab instructions for step 2 of 5 here.
+
+##### Step : Step 3
+
+ 
+Write your lab instructions for step 3 of 5 here.
+
+##### Step : Step 4
+
+ 
+Write your lab instructions for step 4 of 5 here.
+
+##### Step : Step 5
+
+ 
+Write your lab instructions for step 5 of 5 here.
+
+#### Note : Note 2
+
+ 
+Summary of this note (appears on the note card).
+
+Add your reference material or supplementary notes here.
