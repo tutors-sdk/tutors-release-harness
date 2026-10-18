@@ -2113,7 +2113,8 @@ who shares presence, opens a lab, and the lecturer finds them in Tutors Live's C
 side runs a second Live, `live-auth-a` and `live-auth-b`, with anonymous mode off and the side's persistence stub as its
 Supabase, on two new host ports, 3105 and 3205 (`LIVE_AUTH_PORT_A`/`_B`): 22 host ports. `StackUrls` gains the
 optional `liveAuth`; its pages are captured as `live-auth:<page>`. The persistence stub also keeps
-`tutors-connect-latest` and answers `gte`, `order` and `limit`. New pages, new page keys; no verdict, Gate, score or exit
+`tutors-connect-latest` and answers `gte`, `order` and `limit`, and when a journey asks (`POST /_harness/relay`,
+until reset) relays Realtime broadcasts to the sockets joined to their topic. New pages, new page keys; no verdict, Gate, score or exit
 code moves.
 
 ### 1.45.0 (minor; the first lecturer journey)

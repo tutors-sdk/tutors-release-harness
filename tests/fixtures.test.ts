@@ -139,6 +139,50 @@ describe("persistence stub", () => {
     expect(await (await fetch(`${base}/_harness/writes`)).json()).toEqual([]);
   });
 
+  it("relays broadcasts to the sockets joined to their topic once a journey asks, and stops at reset (since 1.46.0)", async () => {
+    await fetch(`${base}/_harness/reset`, { method: "POST" });
+    const open = async () => {
+      const ws = new WebSocket(`${base.replace("http", "ws")}/realtime/v1/websocket?apikey=k&vsn=2.0.0`);
+      ws.binaryType = "arraybuffer";
+      const got: unknown[] = [];
+      ws.addEventListener("message", (e) => typeof e.data === "string" && got.push(JSON.parse(e.data)));
+      await new Promise((resolve, reject) => {
+        ws.addEventListener("open", resolve);
+        ws.addEventListener("error", reject);
+      });
+      return { ws, got };
+    };
+    const live = await open();
+    const reader = await open();
+    live.ws.send(JSON.stringify(["1", "1", "realtime:course-x", "phx_join", {}]));
+    reader.ws.send(JSON.stringify(["1", "1", "realtime:course-x", "phx_join", {}]));
+    const broadcasts = (got: unknown[]) => got.filter((m) => (m as unknown[])[3] === "broadcast");
+    const settle = () => new Promise((r) => setTimeout(r, 150));
+    await fetch(`${base}/realtime/v1/api/broadcast/course-x/events/lo-event`, { method: "POST", body: JSON.stringify({ n: 0 }) });
+    await settle();
+    expect(broadcasts(live.got)).toEqual([]);
+
+    expect((await fetch(`${base}/_harness/relay`, { method: "POST" })).status).toBe(204);
+    await fetch(`${base}/realtime/v1/api/broadcast/course-x/events/lo-event`, { method: "POST", body: JSON.stringify({ n: 1 }) });
+    await fetch(`${base}/realtime/v1/api/broadcast`, { method: "POST", body: JSON.stringify({ messages: [{ topic: "course-x", event: "lo-event", payload: { n: 2 } }, { topic: "other", event: "lo-event", payload: {} }] }) });
+    // realtime-js's binary user broadcast push: kind 3, sizes of join ref, ref, topic, event, metadata, then 1 for JSON.
+    const enc = new TextEncoder();
+    const [topic, event, payload] = [enc.encode("realtime:course-x"), enc.encode("lo-event"), enc.encode(JSON.stringify({ n: 3 }))];
+    reader.ws.send(new Uint8Array([3, 0, 0, topic.length, event.length, 0, 1, ...topic, ...event, ...payload]));
+    await settle();
+    const relayed = (n: number) => [null, null, "realtime:course-x", "broadcast", { type: "broadcast", event: "lo-event", payload: { n } }];
+    expect(broadcasts(live.got)).toEqual([relayed(1), relayed(2), relayed(3)]);
+    expect(broadcasts(reader.got)).toEqual([relayed(1), relayed(2)]); // not its own push back
+
+    await fetch(`${base}/_harness/reset`, { method: "POST" });
+    await fetch(`${base}/realtime/v1/api/broadcast/course-x/events/lo-event`, { method: "POST", body: JSON.stringify({ n: 4 }) });
+    await settle();
+    expect(broadcasts(live.got)).toHaveLength(3);
+    live.ws.close();
+    reader.ws.close();
+    expect(await (await fetch(`${base}/_harness/writes`)).json()).toEqual([]);
+  });
+
   it("answers CORS preflight and never sends a Date header", async () => {
     const preflight = await fetch(`${base}/rest/v1/x`, { method: "OPTIONS" });
     expect(preflight.status).toBe(204);

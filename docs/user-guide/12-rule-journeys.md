@@ -21,7 +21,7 @@ the Claude Doc "Harness user journeys" (Rules 0582 to 0592).
 | 0586 | `rule-0586-private-course` | the stub student, whom the private course does not list, is sent to My courses at sign-in and by the course's address | 0011, 0267 |
 | 0587 | `rule-0587-calendar-llm` | as the enrolled student: the calendar filtered to assessments, then the course's page for LLMs | 0042, 0284 |
 | 0588 | `rule-0588-content-lock` | the lecturer locks Topic 2 in Educator Control; the enrolled student no longer sees it, then sees it greyed out and labelled Locked once the lecturer shows locked content | 0052, 0053, 0054 |
-| 0589 | `rule-0589-live` | the stub student, who shares presence, opens Lab 1 of the fixture course; the lecturer opens Tutors Live and finds one course and the student on it | 0330, 0335 |
+| 0589 | `rule-0589-live` | the stub student, who shares presence, opens Lab 1 of the fixture course; the lecturer opens Tutors Live while the student opens it again, and finds one course and the student on it | 0330, 0335 |
 
 0582 and 0583 read the fixture course. Since 1.44.0, 0584 to 0587 read the **Rule journeys' course**
 ([`fixtures/course-server/rules-course`](../../fixtures/course-server/README.md#the-rule-journeys-course-since-1440)):
@@ -99,6 +99,8 @@ Rule: When the harness runs the presence journey, it shall ...
 - the student opens the course by its address and is turned away: the course URL typed in, then sent to My courses
 - the student opens Tutors Live: Live's home page on this side, reading the side's persistence stub (said of the lecturer, since 1.46.0)
 - the student opens the topic "Topic 1": its card on the page
+- the persistence stub relays Realtime broadcasts: until the journey ends, a broadcast reaches the other browsers joined to its topic, as Supabase Realtime sends it (since 1.46.0)
+- the student looks at their own browser: the steps that name nobody act on it again (said of the lecturer, since 1.46.0)
 - the student opens the lab "Lab 1": its card on the page, then its first step
 - the student opens the quiz "Quiz 1" (also talk, note, notebook): its card on the page
 - the student goes back to the topic "Topic 1": its link in the breadcrumbs
@@ -154,7 +156,14 @@ always. Every other table still reads empty, and the ledger is unchanged: it rec
 Each compose side runs a second Live, `live-auth-a` and `live-auth-b` (host ports 3105 and 3205,
 `LIVE_AUTH_PORT_A`/`_B`), with anonymous mode off and the side's persistence stub as its Supabase, as `reader-auth`
 is the reader set up that way. Live has no sign-in of its own, so the lecturer's browser just opens it. Its pages are
-captured as `live-auth:rule-<id>-<name>`. The plain `live-a` and `live-b` stay anonymous, as before. kind runs no
+captured as `live-auth:rule-<id>-<name>`.
+
+Live learns who is online two ways. On main it also reads `tutors-connect-latest`; up to 17.0.0 it only hears the
+`lo-event` broadcasts the reader sends as a student opens a page, which the stub never sent on. So 0589 asks the stub
+to relay broadcasts (`POST /_harness/relay`, until the journey's reset): a broadcast posted over REST, or pushed on a
+socket, reaches the other sockets joined to its topic, as Supabase Realtime sends it. A broadcast is only heard by a
+page already listening, so the student opens the lab again once Live is open (main's Live has already read it from
+the stored activity), and the journey proves the behaviour on the production release as well as on main. Every other journey still sees no broadcasts. The plain `live-a` and `live-b` stay anonymous, as before. kind runs no
 `live-auth`, so on kind 0589 fails with a step saying so, as the signed-in journeys do without `readerAuth`.
 
 Running locally behind an HTTP proxy, add `.harness.test` to `no_proxy`. Chromium sends a WebSocket to a host it

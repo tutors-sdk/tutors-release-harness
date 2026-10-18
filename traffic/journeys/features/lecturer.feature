@@ -30,14 +30,20 @@ Feature: Lecturer journeys the harness drives on both sides
       And the page is captured as "student-locked-card"
 
   @rule-0589 @ears-event-driven @journey-live
-  Rule: When the harness runs the Live journey, it shall have the stub student, who shares presence, open a lab of the fixture course, then open Tutors Live as the stub lecturer, and compare its Courses and Students tabs on both sides.
+  Rule: When the harness runs the Live journey, it shall have the stub student, who shares presence, open a lab of the fixture course, open Tutors Live as the stub lecturer while the student opens the lab again, and compare Live's Courses and Students tabs on both sides.
 
     Scenario: A student who shares presence appears in Tutors Live (exercises Rules 0330, 0335; presence-tracking.feature, student-engagement.feature)
-      Given the student signs in from the course
+      Given the persistence stub relays Realtime broadcasts
+      And the student signs in from the course
       When the student opens the topic "Topic 1"
       And the student opens the lab "Lab 1"
       Then the lab step "Lab 1" is shown
       When the lecturer opens Tutors Live
+      # Live reads the stored activity as it opens (main); up to 17.0.0 it only hears the broadcast the reader sends as
+      # a page is opened, so the student opens Lab 1 again while Live listens.
+      And the student reloads the page
+      Then the lab step "Lab 1" is shown
+      When the lecturer looks at their own browser
       Then the page shows the tab "Courses (1)"
       And the page is captured as "courses"
       When the lecturer presses the tab "Students (1)"
