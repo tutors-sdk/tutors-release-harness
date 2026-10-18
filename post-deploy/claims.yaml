@@ -18,8 +18,20 @@ claims:
   # send for SvelteKit's hashed assets: the apps' netlify.toml sets it on `/build/*`, but SvelteKit serves them from
   # `/_app/immutable/*`. The assets are only cached for less long. Fixed by tutors-sdk/tutors-mono-repo#500, which
   # reaches production with the next release: the claim expires once the recorded release is 17.0.1 or later. Rollback
-  # issue tutors-sdk/tutors-release-harness#131; its focus difference on reference:course is not this and stays news.
+  # issue tutors-sdk/tutors-release-harness#131.
   - artefact: network
     scope: "GET /_app/immutable/**"
     reason: "Issue #131: Netlify omits the immutable Cache-Control on /_app/immutable/* that the release images send; fixed by tutors-sdk/tutors-mono-repo#500"
+    until: "17.0.1"
+  # The keyboard order the recorded 17.0.0-rc.1 run kept for reference:topic and reference:lab began at the card the
+  # journey had just clicked, not at the top: before 1.48.4 the walk blurred and pressed Tab, and a blur leaves Tab's
+  # starting point where focus was. Since 1.48.4 production is walked from the top, so these two pages differ from the
+  # recording without any change in production (issue #131). The next release is recorded with 1.48.4 or later.
+  - artefact: focus
+    scope: "reference:topic"
+    reason: "Issue #131: the recorded 17.0.0-rc.1 walked reference:topic from the clicked card (harness before 1.48.4), production is walked from the top"
+    until: "17.0.1"
+  - artefact: focus
+    scope: "reference:lab"
+    reason: "Issue #131: the recorded 17.0.0-rc.1 walked reference:lab from the clicked card (harness before 1.48.4), production is walked from the top"
     until: "17.0.1"

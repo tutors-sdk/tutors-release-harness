@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.48.4`
+Contract version: `1.48.5`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -2105,6 +2105,12 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.48.5 (patch; claims for the keyboard order the recorded release walked from a clicked card)
+
+The release note is [releases/1.48.5.md](releases/1.48.5.md). `post-deploy/claims.yaml` claims `focus` on
+`reference:topic` and `reference:lab` until 17.0.1: the recorded 17.0.0-rc.1 run walked those pages from the card the
+journey had clicked, and since 1.48.4 production is walked from the top. No verdict, Gate or exit code rule moves.
 
 ### 1.48.4 (patch; the keyboard-order walk starts at the top of the page)
 
