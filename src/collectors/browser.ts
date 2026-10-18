@@ -203,10 +203,26 @@ async function axeOn(page: Page): Promise<AxeFinding[]> {
  * not a lost focus stop or a reordered one.
  */
 async function focusWalk(page: Page, stops: number): Promise<string[]> {
+  // Since 1.48.4 the walk starts from a mark the harness puts at the top of the body and focuses. A blur alone leaves the
+  // browser's starting point for Tab where focus last was, so a page that had moved focus into its content before the
+  // walk was walked from there: production's reference:course started past the header (issue #131).
   await page.evaluate(() => {
     (document.activeElement as HTMLElement | null)?.blur?.();
+    const start = document.createElement("span");
+    start.id = "tutors-harness-focus-start";
+    start.tabIndex = -1;
+    document.body.prepend(start);
+    start.focus({ preventScroll: true });
     window.scrollTo(0, 0);
   });
+  try {
+    return await walkFromStart(page, stops);
+  } finally {
+    await page.evaluate(() => document.getElementById("tutors-harness-focus-start")?.remove()).catch(() => undefined);
+  }
+}
+
+async function walkFromStart(page: Page, stops: number): Promise<string[]> {
   const seen: string[] = [];
   for (let i = 0; i < stops; i += 1) {
     await page.keyboard.press("Tab");
