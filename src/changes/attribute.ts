@@ -55,6 +55,11 @@ export interface CauseAttribution {
    * artefact: declared, not owed. Never by path: a PR that touched the packages weeks ago declares nothing about tonight.
    */
   declaredBy?: AttributedPr;
+  /**
+   * Since 1.48.1: the Rule journeys a cause was first measured by. The previous forecast did not run them, so its lacking
+   * the cause says nothing: the cause is matched by path over the whole range, never pinned on the PRs merged since.
+   */
+  firstMeasured?: string[];
 }
 
 /** For the lead: the previous forecast compared with, and what was merged since. */
@@ -121,9 +126,11 @@ export function mergedSince(now: Changes, before: Changes): PrRisk[] {
 
 /**
  * Attribute each cause. `previous`, when a forecast beside the same baseline was kept, is its cause keys and its
- * changes.json; a cause whose key it lacks is new and is attributed by delta.
+ * changes.json; a cause whose key it lacks is new and is attributed by delta. Since 1.48.1, `unmeasured` names the causes
+ * whose every difference is on a Rule journey the previous forecast did not run (cause key -> those Rule ids): lacking
+ * them there is not news, so they are matched by path like the rest.
  */
-export function attribute(causes: Cause[], changes: Changes, previous?: { id: string; candidate: string; keys: Set<string>; changes?: Changes }): Attribution {
+export function attribute(causes: Cause[], changes: Changes, previous?: { id: string; candidate: string; keys: Set<string>; changes?: Changes; unmeasured?: Map<string, string[]> }): Attribution {
   const since = previous?.changes ? mergedSince(changes, previous.changes) : undefined;
   const prs = changes.prs.filter((p) => !p.release);
   const withDeclarer = (a: CauseAttribution, artefact: string): CauseAttribution => {
@@ -131,6 +138,8 @@ export function attribute(causes: Cause[], changes: Changes, previous?: { id: st
     return by ? { ...a, declaredBy: by } : a;
   };
   const out = causes.map((c): CauseAttribution => {
+    const unrun = previous?.keys.has(c.key) ? undefined : previous?.unmeasured?.get(c.key);
+    if (unrun) return { cause: c.id, key: c.key, hunks: c.hunks, how: "path", prs: byPath(c, prs), firstMeasured: unrun };
     if (previous && !previous.keys.has(c.key) && since?.length) {
       const matched = byPath(c, since);
       return withDeclarer({ cause: c.id, key: c.key, hunks: c.hunks, how: "new", prs: matched.length ? matched : since.map((p) => named(p)) }, c.artefact);

@@ -52,6 +52,22 @@ describe("the gap, explained", () => {
     expect(e.contributed.hunks).toBe(0);
   });
 
+  it("reads a difference on a Rule journey the forecast before did not run as first measured: the whole range, not that night's PRs", () => {
+    const live: Hunk = { id: "persistence:live", artefact: "persistence", scope: "rule-0589-live/realtime_watch", severity: "fail", summary: "rule-0589-live: RPC realtime_watch — 0 row(s) on a, 1 on b" };
+    const ran = (r: RunReport, ...journeys: string[]) => ({ ...r, timingControl: { journeys: journeys.map((journey) => ({ journey, a: [], b: [], above: 0, below: 0 })) } }) as RunReport;
+    const realtime = pr(481, ["apps/reader/src/routes/api/live/activity/+server.ts", "apps/reader/src/lib/live-publish.ts"]);
+    const a11y = pr(505, ["packages/svelte/ui-navigators/src/Preferences.svelte"]);
+    const before = run(17, ran(report([]), "reader-loads"), changes(realtime));
+    const now = run(18, ran(report([live]), "reader-loads", "rule-0589-live"), changes(realtime, a11y));
+    const e = explainGap(now, [before]);
+    // #505 merged between the two, but the forecast before never ran rule-0589-live: matched over the whole range, the
+    // reader's own source (#481) leads the shared package (#505).
+    expect(e.contributed.rows).toMatchObject([{ hunks: 1, firstSeen: [{ id: "d18" }] }]);
+    expect(prWords(e.contributed.rows[0]!.prs)).toBe("#481 most likely");
+    // A forecast kept before 1.39.0 records no journeys: every journey counts as run, as before.
+    expect(explainGap(now, [run(17, report([]), changes(realtime))]).contributed.rows).toMatchObject([{ prs: [{ pr: 505 }] }]);
+  });
+
   it("never reads a forecast beside another production, or one that ran after the run", () => {
     const other = run(10, report([], [], "16.1.0"), changes());
     const later = run(13, report([]), changes(ui, kit));

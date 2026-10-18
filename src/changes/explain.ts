@@ -12,7 +12,8 @@
  *    than the rest it leads the row ("#466 most likely, one of #466, #468"), and every night it led adds to that row;
  *    otherwise the group is the row ("one of #a, #b"). A difference is never split between PRs by guesswork.
  *    A difference already there in the oldest kept forecast is narrowed the same way within that forecast's whole
- *    range (every PR since the baseline), which is what the first forecast beside a new release reads.
+ *    range (every PR since the baseline), which is what the first forecast beside a new release reads. Since 1.48.1 so is
+ *    a difference on a Rule journey the forecast before it did not run: it was first measured there, not first made.
  * 2a. **Declared by a PR** (since 1.41.0): contributed, and that PR's CHANGELOG line names the difference's artefact
  *    (src/changes/declares.ts). The contributor said so in the PR; the release author turns the line into a claim
  *    when the release is cut, so nothing is owed on main. A contributed row whose PR wrote a CHANGELOG line that does not
@@ -31,7 +32,7 @@ import { claimLabel } from "../claims/rules.ts";
 import { causeKey, foldCauses, kindOf } from "../report/causes.ts";
 import { byPath, declarer, mergedSince, missedBy, named, type AttributedPr } from "./attribute.ts";
 import { declaredWords } from "./declares.ts";
-import { rulesTouched } from "../report/rules-touched.ts";
+import { rulesRun, rulesTouched, unrunRule } from "../report/rules-touched.ts";
 import type { RuleTouched } from "../report/rules-touched.ts";
 import type { Changes } from "./signals.ts";
 
@@ -79,15 +80,15 @@ export interface DeclaredRow {
 /** More PRs than this in one window is not an explanation anyone can act on. */
 export const MAX_GROUP = 8;
 
-export type UnexplainedWhy = "before-record" | "too-many" | "no-merge";
+export type UnexplainedWhy = "before-record" | "too-many" | "no-merge" | "first-measured";
 
 export interface UnexplainedRow {
   why: UnexplainedWhy;
   hunks: number;
   causes: LedgerCause[];
-  /** before-record: the oldest kept forecast, which already had it. */
+  /** before-record: the oldest kept forecast, which already had it; first-measured: the first that ran its journey. */
   since?: string;
-  /** too-many and before-record: the PRs whose files match best, as leads to read. */
+  /** too-many, before-record and first-measured: the PRs whose files match best, as leads to read. */
   suspects?: AttributedPr[];
 }
 
@@ -177,13 +178,16 @@ export function explainGap(run: LedgerRun, history: LedgerRun[]): Explanation {
     // kind of difference on the same build stays where it is: the stack moved, not the code.
     while (first > 0 && candidateOf(chain[first - 1]!) === candidateOf(chain[first]!) && causesIn[first - 1]!.has(causeKey(h))) first -= 1;
     const at = chain[first]!;
-    const before = first > 0 ? chain[first - 1] : undefined;
+    // Since 1.48.1: a forecast that did not run the difference's Rule journey could not have seen it, so the difference
+    // was first measured, not first made, at `at`: like the oldest kept forecast, its window is the whole range.
+    const unrun = first > 0 ? unrunRule(h, rulesRun(chain[first - 1]!.report)) : undefined;
+    const before = first > 0 && !unrun ? chain[first - 1] : undefined;
     // The oldest kept forecast's window is its whole range, every PR since the baseline; when it kept no range, the
     // oldest range that was kept.
     const window = before ? (at.changes && before.changes ? mergedSince(at.changes, before.changes) : []) : ((at.changes ?? chain.find((r) => r.changes)?.changes)?.prs.filter((p) => !p.release) ?? []);
     if (!window.length) {
       if (before) unexplain("no-merge", h);
-      else unexplain("before-record", h, [], at.ranAt);
+      else unexplain(unrun ? "first-measured" : "before-record", h, [], at.ranAt);
       continue;
     }
     const cause = foldCauses([h]).causes[0];
@@ -192,7 +196,7 @@ export function explainGap(run: LedgerRun, history: LedgerRun[]): Explanation {
     const prs = (matched.length ? matched : window.map((p) => named(p))).map(declaredNow);
     if (prs.length > MAX_GROUP) {
       if (before) unexplain("too-many", h, prs);
-      else unexplain("before-record", h, prs, at.ranAt);
+      else unexplain(unrun ? "first-measured" : "before-record", h, prs, at.ranAt);
       continue;
     }
     const by = declarer(prs, h.artefact);
@@ -252,6 +256,7 @@ export function prWords(prs: Pick<AttributedPr, "pr" | "sha" | "files">[]): stri
 export function unexplainedWords(r: Pick<UnexplainedRow, "why" | "since">): string {
   if (r.why === "no-merge") return "appeared between two forecasts with no PR merged between them (the stack moved, not the code)";
   if (r.why === "too-many") return `appeared on a night more than ${MAX_GROUP} PRs could have made it`;
+  if (r.why === "first-measured") return `first measured by a Rule journey${r.since ? ` (${r.since.slice(0, 10)})` : ""} the forecasts before it did not run, and more than ${MAX_GROUP} PRs since the baseline could have made it`;
   return `already in the oldest kept forecast${r.since ? ` (${r.since.slice(0, 10)})` : ""}, and more than ${MAX_GROUP} PRs since the baseline could have made it`;
 }
 

@@ -61,7 +61,8 @@ import { CONFIDENCE_FILE } from "../score/read.ts";
 import { LEAD_CSS, attributionLeadHtml, attributionLeadMarkdown, claimsOwedHtml, claimsOwedMarkdown, deltaLeadHtml, deltaLeadMarkdown, gateLineHtml, scoreLeadHtml, scoreLeadMarkdown } from "../report/lead.ts";
 import { attribute, type Attribution } from "../changes/attribute.ts";
 import { declaredPass, explainGap } from "../changes/explain.ts";
-import { foldCauses } from "../report/causes.ts";
+import { causeKey, foldCauses } from "../report/causes.ts";
+import { rulesRun, unrunRule } from "../report/rules-touched.ts";
 import { draftClaims, type ClaimDraft } from "../claims/draft.ts";
 import { deltaCounts, unclaimedDelta, type DeltaLead, type ReportDelta } from "../report/delta.ts";
 import { renderGateSummary } from "../local/tasks.ts";
@@ -300,10 +301,29 @@ export function attributionLead(report: RunReport, changes: Changes, delta: Delt
   // Since 1.41.1: a forecast judged again on the same build (a rerun) is attributed against the last forecast of another
   // build. Against itself nothing was merged, so every cause would fall back to a path match.
   const against = (index && id ? otherBuild(report, id, index, root) : undefined) ?? delta?.delta.against;
-  const prev = against ? causesOf(readJson<RunReport>(join(root, against.id, "report.json"))) : undefined;
+  const prevReport = against ? readJson<RunReport>(join(root, against.id, "report.json")) : undefined;
+  const prev = causesOf(prevReport);
   const prevChanges = against ? readJson<Changes>(join(root, against.id, CHANGES_FILE)) : undefined;
-  const previous = against && prev ? { id: against.id, candidate: against.candidate, keys: new Set(prev.map((c) => c.key)), ...(prevChanges && Array.isArray(prevChanges.prs) ? { changes: prevChanges } : {}) } : undefined;
+  const unmeasured = prevReport ? unmeasuredCauses(report, rulesRun(prevReport)) : undefined;
+  const previous = against && prev ? { id: against.id, candidate: against.candidate, keys: new Set(prev.map((c) => c.key)), ...(prevChanges && Array.isArray(prevChanges.prs) ? { changes: prevChanges } : {}), ...(unmeasured?.size ? { unmeasured } : {}) } : undefined;
   return attribute(causes, changes, previous);
+}
+
+/**
+ * Since 1.48.1: the causes of `report` whose every difference is on a Rule journey the earlier forecast did not run
+ * (cause key -> those Rule ids). That forecast could not have seen them, so lacking them there is not news.
+ */
+function unmeasuredCauses(report: RunReport, ran: Set<string> | undefined): Map<string, string[]> {
+  const by = new Map<string, Set<string> | null>();
+  for (const h of unclaimedOf(report) ?? []) {
+    const k = causeKey(h);
+    const rule = unrunRule(h, ran);
+    const seen = by.get(k);
+    if (seen === null) continue;
+    if (!rule) by.set(k, null);
+    else by.set(k, (seen ?? new Set<string>()).add(rule));
+  }
+  return new Map([...by].filter((e): e is [string, Set<string>] => e[1] !== null).map(([k, rules]) => [k, [...rules].sort()]));
 }
 
 /** The newest kept release run before this one, beside the same baseline, that judged another candidate. */
