@@ -141,8 +141,22 @@ describe("the A3", () => {
     expect(a.score!.candidate).toBe("sha-185e87f");
     expect(a.score!.scorecard).toEqual({ score: 25, grade: "D" });
     expect(a.score!.lastRelease!.verdict).toBe("PASS");
-    expect(a.score!.postDeploy).toMatchObject({ red: 3, runs: 3, issue: { number: 38 } });
+    // Of the three red runs, only #3 judged production; #4 and #5 stopped before (the harness's failures, since 1.48.3).
+    expect(a.score!.postDeploy).toMatchObject({ red: 1, runs: 1, issue: { number: 38 } });
     expect(a.goal.find((g) => g.metric === "Release Confidence Score")!.now).toBe("none (Gate wins)");
+  });
+
+  it("counts only the line stops about the monorepo: the harness's own A/A and failures are left out (since 1.48.3)", () => {
+    const i = inputs(github);
+    const night = i.runs.find((r) => r.stream === "noise")!;
+    i.runs.push({ ...night, id: "2026-09-27T08-49-05Z-noise", ranAt: "2026-09-27T08:49:05Z", verdict: "warn", reasons: ['A/A is clean but DEGRADED, so it does not count: journey "x" failed on both sides'] });
+    const a = buildA3(i);
+    const stops = a.current.paretos.find((p) => p.id === "line-stops")!;
+    const labels = stops.bars.map((b) => b.label);
+    expect(labels).toContain("Post-deploy: production differs from the recorded release");
+    expect(labels.some((l) => l.startsWith("Nightly A/A"))).toBe(false);
+    expect(labels.some((l) => /not pulled from the registry|no recorded release|could not start/.test(l))).toBe(false);
+    expect(stops.title).toBe("Why the line stops, every red run about the monorepo");
   });
 
   it("puts the known side beside the gaps in the goal (since 1.28.1)", () => {
@@ -171,7 +185,8 @@ describe("the A3", () => {
     const stage = (id: string) => v.stages.find((s) => s.id === id)!;
     expect(stage("forecast").processMs).toBe(11 * 60_000);
     expect(stage("gate").firstPass).toEqual({ green: 1, runs: 2 });
-    expect(stage("verify").andon).toBe("red × 3");
+    expect(stage("verify").andon).toBe("red × 1");
+    expect(stage("verify").firstPass).toEqual({ green: 0, runs: 1 });
     expect(stage("deploy").andon).toBe("not the gated build");
     expect(v.waits.find((w) => w.label === "merge to image build")!.ms).toBe(60_000);
     expect(v.waits.find((w) => w.label === "images ready to forecast")!.ms).toBe(Date.parse("2026-09-28T08:59:53Z") - Date.parse("2026-09-28T07:50:00Z"));
