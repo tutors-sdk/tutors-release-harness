@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.45.0`
+Contract version: `1.46.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -2105,6 +2105,17 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.46.0 (minor; Tutors Live with a student in it)
+
+The release note is [releases/1.46.0.md](releases/1.46.0.md). A minor. One more Rule journey, 0589: the stub student,
+who shares presence, opens a lab, and the lecturer finds them in Tutors Live's Courses and Students tabs. Each compose
+side runs a second Live, `live-auth-a` and `live-auth-b`, with anonymous mode off and the side's persistence stub as its
+Supabase, on two new host ports, 3105 and 3205 (`LIVE_AUTH_PORT_A`/`_B`): 22 host ports. `StackUrls` gains the
+optional `liveAuth`; its pages are captured as `live-auth:<page>`. The persistence stub also keeps
+`tutors-connect-latest` and answers `gte`, `order` and `limit`, and when a journey asks (`POST /_harness/relay`,
+until reset) relays Realtime broadcasts to the sockets joined to their topic. New pages, new page keys; no verdict, Gate, score or exit
+code moves.
 
 ### 1.45.0 (minor; the first lecturer journey)
 

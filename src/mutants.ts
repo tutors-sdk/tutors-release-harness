@@ -134,6 +134,10 @@ export async function runMutants(options: MutantsOptions): Promise<boolean> {
   // The fixture and signed-in journeys are enough to catch every mutant, and
   // they need nothing outside this stack.
   const sets = opts.sets.filter((s) => s !== "reference");
+  // Since 1.46.0 the A/A on the base runs the Rule journeys too, which proves they run on the release in production, but
+  // the mutants do not: no mutant needs them to be caught, and running ten more journeys per mutant took the self-test
+  // past its two hours.
+  const mutantSets = sets.filter((s) => s !== "rules");
   opts.log(`self-test: A/A on ${baseImages.reader} first`);
   // A mutant is a local build with no attestation, and the base is a pulled image with one: the SBOMs are generated locally
   // on both sides so they are comparable, and so the added-package mutant can be seen at all.
@@ -157,7 +161,7 @@ export async function runMutants(options: MutantsOptions): Promise<boolean> {
     // One mutant that cannot be run is that mutant escaping, not the end of the self-test: the others still report.
     let outcome: Awaited<ReturnType<typeof run>>;
     try {
-      outcome = await run({ ...opts, static: staticOpts, sets, mode: "release", recordRelease: false, a: baseSpec, b: bSpec, noise: noiseStatus, runs: Math.max(opts.runs, mutant.runs ?? 1) });
+      outcome = await run({ ...opts, static: staticOpts, sets: mutantSets, mode: "release", recordRelease: false, a: baseSpec, b: bSpec, noise: noiseStatus, runs: Math.max(opts.runs, mutant.runs ?? 1) });
     } catch (e) {
       const message = e instanceof Error ? e.message.split("\n")[0]! : String(e);
       results.push({ name: mutant.name, caught: false, attributed: false, byInforming: false, verdict: "error", artefacts: [], report: message });

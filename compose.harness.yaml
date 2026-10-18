@@ -232,6 +232,27 @@ services:
       reader-auth-a:
         condition: service_healthy
 
+  # Since 1.46.0: Tutors Live with anonymous mode off, reading side a's persistence stub (the Live journey, Rule 0589).
+  # Live has no sign-in of its own and renders in the browser, which reads the stub's stored activity directly.
+  live-auth-a:
+    <<: *app
+    image: ${LIVE_IMAGE_A:-tutors/live:local}
+    ports:
+      - "${LIVE_AUTH_PORT_A:-3105}:3000"
+    environment:
+      LOG_LEVEL: info
+      HARNESS_NOW: ${HARNESS_NOW:-2026-09-16T09:05:00.000Z}
+      PRIVATE_AUTH_SECRET: harness-only-not-a-real-secret-000000000000
+      PUBLIC_ANON_MODE: ""
+      PUBLIC_SUPABASE_ANON_KEY: harness-anon-key
+      PUBLIC_SUPABASE_URL: http://persistence-a.harness.test:${PERSISTENCE_PORT_A:-8090}
+      ORIGIN: http://localhost:${LIVE_AUTH_PORT_A:-3105}
+    depends_on:
+      course:
+        condition: service_healthy
+      persistence-a:
+        condition: service_healthy
+
   # ---- side b -------------------------------------------------------------
   persistence-b:
     <<: *stub
@@ -316,6 +337,27 @@ services:
       - "${READER_AUTH_PORT_B:-3203}:3000"
     depends_on:
       reader-auth-b:
+        condition: service_healthy
+
+  # Since 1.46.0: Tutors Live with anonymous mode off, reading side b's persistence stub (the Live journey, Rule 0589).
+  # Live has no sign-in of its own and renders in the browser, which reads the stub's stored activity directly.
+  live-auth-b:
+    <<: *app
+    image: ${LIVE_IMAGE_B:-tutors/live:local}
+    ports:
+      - "${LIVE_AUTH_PORT_B:-3205}:3000"
+    environment:
+      LOG_LEVEL: info
+      HARNESS_NOW: ${HARNESS_NOW:-2026-09-16T09:05:00.000Z}
+      PRIVATE_AUTH_SECRET: harness-only-not-a-real-secret-000000000000
+      PUBLIC_ANON_MODE: ""
+      PUBLIC_SUPABASE_ANON_KEY: harness-anon-key
+      PUBLIC_SUPABASE_URL: http://persistence-b.harness.test:${PERSISTENCE_PORT_B:-8091}
+      ORIGIN: http://localhost:${LIVE_AUTH_PORT_B:-3205}
+    depends_on:
+      course:
+        condition: service_healthy
+      persistence-b:
         condition: service_healthy
 
   # ---- side a2 (since 1.24.0, profile a2) ------------------------------------

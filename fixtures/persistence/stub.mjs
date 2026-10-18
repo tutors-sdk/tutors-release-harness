@@ -13,14 +13,17 @@
 //   POST   /realtime/v1/api/broadcast -> 202        accepted, not recorded (presence runs on timers)
 //   POST   /realtime/v1/api/broadcast/<topic>/events/<event> -> 202  the same, as supabase-js's httpSend() posts it
 //   WS     /realtime/v1/websocket  -> a Phoenix socket that replies ok to every push (joins, heartbeats,
-//                                     presence) and never broadcasts; not recorded
+//                                     presence) and never broadcasts unless relaying (below); not recorded
 //   GET    /_harness/writes        -> the log, oldest first
-//   POST   /_harness/reset         -> clears the log
+//   POST   /_harness/reset         -> clears the log (and what is kept, and relaying)
+//   POST   /_harness/relay         -> since 1.46.0: until the next reset, every broadcast (over REST or the socket)
+//                                     reaches the other sockets joined to its topic, as Supabase Realtime sends it
 //
 // Since 1.45.0 the stub keeps the rows written to the tables in KEPT until the next reset, and answers reads of
 // them with those rows (filtered by `col=eq.value`, upserted by `on_conflict`): a lecturer's content lock is read
-// back by the student's browser in the same journey (the lock journey, Rule 0588). Every other table still reads
-// empty. What is kept never reaches the ledger: the writes are recorded as before.
+// back by the student's browser in the same journey (the lock journey, Rule 0588). Since 1.46.0 also the latest
+// learning object each student opened, which Tutors Live reads (`gte`, `order` and `limit` too: the Live journey, Rule
+// 0589). Every other table still reads empty. What is kept never reaches the ledger: the writes are recorded as before.
 //
 // Both sides get their own stub, so a write is attributable. The stub sends no
 // Date header and no ids: nothing here may differ between the sides.
@@ -31,9 +34,17 @@ const port = Number(process.argv[2] ?? process.env.PORT ?? 8090);
 const BROADCAST = /^\/realtime\/v1\/api\/broadcast(\/[^/]+\/events\/[^/]+)?$/;
 let writes = [];
 let seq = 0;
-/** The tables whose rows are kept and read back (the reader's content locks, packages/svelte/utils/rbac/src/lock-store.ts). */
-const KEPT = new Set(["tutors_content_locks"]);
+/**
+ * The tables whose rows are kept and read back: the reader's content locks (packages/svelte/utils/rbac/src/lock-store.ts)
+ * and, since 1.46.0, each student's latest learning object, Tutors Live's stored activity
+ * (packages/svelte/community/src/utils/supabase-client.ts).
+ */
+const KEPT = new Set(["tutors_content_locks", "tutors-connect-latest"]);
 let kept = new Map();
+/** Since 1.46.0: whether broadcasts reach the sockets joined to their topic (a journey asks; reset turns it off). */
+let relay = false;
+/** Each open Realtime socket and the topics (`realtime:<name>`) it has joined. */
+const sockets = new Map();
 
 const cors = {
   "access-control-allow-origin": "*",
@@ -66,6 +77,11 @@ const server = createServer(async (req, res) => {
   if (url.pathname === "/_harness/reset" && req.method === "POST") {
     writes = [];
     kept = new Map();
+    relay = false;
+    return send(204);
+  }
+  if (url.pathname === "/_harness/relay" && req.method === "POST") {
+    relay = true;
     return send(204);
   }
 
@@ -109,26 +125,45 @@ const server = createServer(async (req, res) => {
   // as Supabase does; they are presence, not writes, so the persistence artefact does not record them.
   // Since 1.37.2 also the per-topic path supabase-js 2.7x's channel.httpSend() posts to: answering it 404 put
   // "httpSend() requires Realtime server v2.97.0 or newer" in the reader's console on both sides, 8 errors a run.
-  if (BROADCAST.test(url.pathname) && req.method === "POST") {
-    await readBody(req);
+  const broadcast = BROADCAST.exec(url.pathname);
+  if (broadcast && req.method === "POST") {
+    const body = await readBody(req);
+    if (relay) {
+      try {
+        const topicEvent = /^\/([^/]+)\/events\/([^/]+)$/.exec(broadcast[1] ?? "");
+        if (topicEvent) fanOut(decodeURIComponent(topicEvent[1]), decodeURIComponent(topicEvent[2]), JSON.parse(body || "null"));
+        else for (const m of JSON.parse(body || "{}").messages ?? []) fanOut(m.topic, m.event, m.payload);
+      } catch {
+        /* not JSON: nothing to relay */
+      }
+    }
     return send(202);
   }
   if (url.pathname.startsWith("/storage/v1/")) return send(404, { message: "no storage in the harness" });
   return send(404, { message: "not found" });
 });
 
-/** PostgREST's `col=eq.value` filters; every other parameter (select, order, limit, on_conflict) is not a filter. */
+const OPS = { eq: (x, y) => x === y, gt: (x, y) => x > y, gte: (x, y) => x >= y, lt: (x, y) => x < y, lte: (x, y) => x <= y };
+/** PostgREST's `col=<op>.value` filters (eq, gt, gte, lt, lte; compared as strings, as ISO times are); every other parameter (select, order, limit, on_conflict) is not a filter. */
 function filtersOf(params) {
   const out = [];
-  for (const [key, value] of params) if (value.startsWith("eq.")) out.push([key, value.slice(3)]);
+  for (const [key, value] of params) {
+    const m = /^(eq|gte?|lte?)\.(.*)$/s.exec(value);
+    if (m && !["select", "order", "limit", "offset", "on_conflict"].includes(key)) out.push([key, OPS[m[1]], m[2]]);
+  }
   return out;
 }
 function matches(row, filters) {
-  return filters.every(([key, value]) => String(row[key]) === value);
+  return filters.every(([key, op, value]) => op(String(row[key]), value));
 }
+/** The kept rows a read asks for: filtered, then `order=col.asc|desc` (first column only), then `limit`. */
 function matching(table, params) {
   const filters = filtersOf(params);
-  return (kept.get(table) ?? []).filter((row) => matches(row, filters));
+  const rows = (kept.get(table) ?? []).filter((row) => matches(row, filters));
+  const [column, direction] = (params.get("order") ?? "").split(",")[0].split(".");
+  if (column) rows.sort((x, y) => String(x[column]).localeCompare(String(y[column])) * (direction === "desc" ? -1 : 1));
+  const limit = Number(params.get("limit"));
+  return limit > 0 ? rows.slice(0, limit) : rows;
 }
 /** Apply a write to a kept table: insert or upsert (by `on_conflict`), update, or delete the matching rows. */
 function keep(method, table, params, body) {
@@ -184,6 +219,9 @@ server.on("upgrade", (req, socket) => {
   }
   const accept = createHash("sha1").update(`${key}258EAFA5-E914-47DA-95CA-C5AB0DC85B11`).digest("base64");
   socket.write(`HTTP/1.1 101 Switching Protocols\r\nupgrade: websocket\r\nconnection: Upgrade\r\nsec-websocket-accept: ${accept}\r\n\r\n`);
+  const topics = new Set();
+  sockets.set(socket, topics);
+  socket.on("close", () => sockets.delete(socket));
   socket.on("error", () => socket.destroy());
   let buffer = Buffer.alloc(0);
   socket.on("data", (chunk) => {
@@ -198,12 +236,58 @@ server.on("upgrade", (req, socket) => {
       }
       if (frame.opcode === 0x9) socket.write(frameOf(0xa, frame.payload));
       if (frame.opcode === 0x1) {
-        const reply = phoenixReply(frame.payload.toString("utf8"));
+        const text = frame.payload.toString("utf8");
+        track(text, topics, socket);
+        const reply = phoenixReply(text);
         if (reply) socket.write(frameOf(0x1, Buffer.from(reply)));
+      }
+      if (frame.opcode === 0x2 && relay) {
+        const push = userBroadcastPush(frame.payload);
+        if (push) fanOut(push.topic.replace(/^realtime:/, ""), push.event, push.payload, socket);
       }
     }
   });
 });
+
+/** Joins and leaves, so a relayed broadcast reaches the sockets on its topic; a JSON broadcast push is relayed too. */
+function track(text, topics, from) {
+  let message;
+  try {
+    message = JSON.parse(text);
+  } catch {
+    return;
+  }
+  if (!Array.isArray(message)) return;
+  const [, , topic, event, payload] = message;
+  if (typeof topic !== "string") return;
+  if (event === "phx_join") topics.add(topic);
+  if (event === "phx_leave") topics.delete(topic);
+  if (event === "broadcast" && relay && payload && typeof payload.event === "string") fanOut(topic.replace(/^realtime:/, ""), payload.event, payload.payload, from);
+}
+
+/** realtime-js's binary user broadcast push (kind 3): sizes of join ref, ref, topic, event and metadata, then the encoding (1 is JSON). */
+function userBroadcastPush(bytes) {
+  if (bytes.length < 7 || bytes[0] !== 3) return undefined;
+  const [joinRef, ref, topic, event, meta, encoding] = bytes.subarray(1, 7);
+  let at = 7 + joinRef + ref;
+  const text = (n) => bytes.subarray(at, (at += n)).toString("utf8");
+  const topicName = text(topic);
+  const eventName = text(event);
+  at += meta;
+  if (encoding !== 1) return undefined;
+  try {
+    return { topic: topicName, event: eventName, payload: JSON.parse(bytes.subarray(at).toString("utf8")) };
+  } catch {
+    return undefined;
+  }
+}
+
+/** Sends a broadcast to every other socket joined to `realtime:<topic>`, as a Phoenix "broadcast" message. */
+function fanOut(topic, event, payload, from) {
+  if (typeof topic !== "string" || typeof event !== "string") return;
+  const frame = frameOf(0x1, Buffer.from(JSON.stringify([null, null, `realtime:${topic}`, "broadcast", { type: "broadcast", event, payload }])));
+  for (const [socket, topics] of sockets) if (socket !== from && topics.has(`realtime:${topic}`)) socket.write(frame);
+}
 
 function phoenixReply(text) {
   let message;

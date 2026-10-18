@@ -12,6 +12,9 @@ The self-test first runs noise mode on the base (so the harness has the right
 to fail anything), then release mode against each mutant. It passes only when
 every mutant produces a FAIL verdict with an unclaimed hunk of the expected
 artefact. Run it weekly; run it whenever a mask or an engine changes.
+Since 1.46.0 the A/A runs the Rule journeys (the `rules` set) and the mutant runs
+do not: the A/A proves they run on the release in production, and no mutant
+needs them to be caught.
 
 ## How faults are planted
 

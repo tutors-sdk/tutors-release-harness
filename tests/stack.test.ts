@@ -44,7 +44,7 @@ describe("compose.harness.yaml", () => {
   const apps = [...APPS, "reader-auth"];
 
   it("has both sides for every app, a persistence stub per side, and the shared fixtures", () => {
-    const expected = [...apps.flatMap((app) => [`${app}-a`, `${app}-b`]), ...["reader", "catalogue", "live", "time"].map((app) => `${app}-a2`), "persistence-a", "persistence-b", "reader-auth-edge-a", "reader-auth-edge-b", "course", "identity", "edge"].sort();
+    const expected = [...apps.flatMap((app) => [`${app}-a`, `${app}-b`]), ...["reader", "catalogue", "live", "time"].map((app) => `${app}-a2`), "persistence-a", "persistence-b", "reader-auth-edge-a", "reader-auth-edge-b", "live-auth-a", "live-auth-b", "course", "identity", "edge"].sort();
     expect(Object.keys(compose.services).sort()).toEqual(expected);
   });
 
@@ -135,6 +135,17 @@ describe("compose.harness.yaml", () => {
     expect((compose.services.identity!.networks as { default: { ipv4_address: string } }).default.ipv4_address).toBe("172.29.0.10");
   });
 
+  it("runs a Tutors Live per side with anonymous mode off, reading that side's persistence stub (since 1.46.0)", () => {
+    for (const side of ["a", "b"]) {
+      const live = compose.services[`live-auth-${side}`]!;
+      const env = live.environment as Record<string, string>;
+      expect(live.image).toBe(`\${LIVE_IMAGE_${side.toUpperCase()}:-tutors/live:local}`);
+      expect(env.PUBLIC_ANON_MODE).toBe("");
+      expect(env.PUBLIC_SUPABASE_URL).toContain(`persistence-${side}.harness.test`);
+      expect(live.ports).toEqual([`\${LIVE_AUTH_PORT_${side.toUpperCase()}:-${side === "a" ? 3105 : 3205}}:3000`]);
+    }
+  });
+
   it("the edge proxy is only part of the upgrade profile", () => {
     expect(compose.services.edge!.profiles).toEqual(["upgrade"]);
   });
@@ -146,6 +157,7 @@ describe("compose.harness.yaml", () => {
       live: "http://localhost:3102",
       time: "http://localhost:3104",
       readerAuth: "http://localhost:3103",
+      liveAuth: "http://localhost:3105",
       persistence: "http://persistence-a.harness.test:8090",
       courseId: "localhost:8080",
       rulesCourseId: "localhost:8081"

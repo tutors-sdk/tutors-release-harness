@@ -34,6 +34,11 @@ export interface StackUrls {
   time?: string;
   /** The reader configured for sign-in (identity + persistence stubs); absent for an external side. */
   readerAuth?: string;
+  /**
+   * Since 1.46.0: Tutors Live with anonymous mode off, reading this side's persistence stub, as `readerAuth` does (Live
+   * itself has no sign-in). The Live journey (Rule 0589) opens it; absent for an external side.
+   */
+  liveAuth?: string;
   /** The side's persistence stub, when it has one. */
   persistence?: string;
   /** A course id the reader resolves to http(s)://<id>/tutors.json. */

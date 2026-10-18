@@ -17,12 +17,12 @@ const read = (f: string) => readFileSync(resolve(ROOT, f), "utf8");
 describe("host ports", () => {
   const published = composePorts(read("compose.harness.yaml"), {});
 
-  it("compose publishes 20 (15, since 1.24.0 side a2's four, since 1.44.0 the Rule journeys' course), and every one has a variable in DEFAULT_PORTS", () => {
-    expect(published).toHaveLength(20);
-    expect(Object.keys(DEFAULT_PORTS)).toHaveLength(20);
+  it("compose publishes 22 (15, since 1.24.0 side a2's four, since 1.44.0 the Rule journeys' course, since 1.46.0 each side's live-auth), and every one has a variable in DEFAULT_PORTS", () => {
+    expect(published).toHaveLength(22);
+    expect(Object.keys(DEFAULT_PORTS)).toHaveLength(22);
   });
 
-  it("docs/local.md says 20 wherever it counts them, and no other number", () => {
+  it("docs/local.md says 22 wherever it counts them, and no other number", () => {
     const said = [...read("docs/local.md").matchAll(/(?:the (\d+) host ports|Host ports \((\d+)\))/g)].map((m) => Number(m[1] ?? m[2]));
     expect(said.length).toBeGreaterThanOrEqual(2);
     for (const n of said) expect(n).toBe(published.length);
