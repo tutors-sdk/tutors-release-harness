@@ -132,7 +132,7 @@ step(/^the student opens the time app at "([a-z/-]+)"$/, 'the student opens the 
     });
   } catch (e) {
     const text = (await w.page.locator("body").innerText().catch(() => "")).replace(/\s+/g, " ").slice(0, 160);
-    throw new Error(`${(e as Error).message.split("\n")[0]} at ${w.page.url()}; page reads "${text}"; still open: ${[...open].join(", ") || "none"}`);
+    throw new Error(`${(e as Error).message.split("\n")[0]} at ${w.page.url()}; page reads "${text}"; still open: ${[...open].join(", ") || "none"}`, { cause: e });
   } finally {
     w.page.off("request", track).off("requestfinished", done).off("requestfailed", done);
   }
