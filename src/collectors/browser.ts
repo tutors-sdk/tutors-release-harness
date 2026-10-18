@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { AxeBuilder } from "@axe-core/playwright";
 import { chromium, type Browser, type BrowserContext, type Page, type Request, type Response } from "playwright";
 import type { Journey } from "../../traffic/journeys/journeys.ts";
+import { TIME_COURSE_ID } from "../../traffic/journeys/fixture.ts";
 import { reference } from "../../traffic/journeys/reference.ts";
 import { redactSecrets } from "../normalise/redact.ts";
 import { IDENTITY_URL } from "../stack.ts";
@@ -85,7 +86,7 @@ export function consoleText(text: string, locationUrl: string | undefined): stri
 
 export function stripOrigins(text: string, spec: SideSpec): string {
   let out = text;
-  const origins = [spec.urls.reader, spec.urls.catalogue, spec.urls.live, spec.urls.time, spec.urls.readerAuth, spec.urls.liveAuth, spec.urls.persistence].filter((o): o is string => !!o);
+  const origins = [spec.urls.reader, spec.urls.catalogue, spec.urls.live, spec.urls.time, spec.urls.readerAuth, spec.urls.liveAuth, spec.urls.timeAuth, spec.urls.persistence].filter((o): o is string => !!o);
   for (const origin of origins) {
     out = out.split(origin).join("{{origin}}");
     // The same origin over a WebSocket (`ws://persistence-a.harness.test:8090/realtime/...`, which the browser prints in a
@@ -93,6 +94,9 @@ export function stripOrigins(text: string, spec: SideSpec): string {
     const socket = origin.replace(/^http/, "ws");
     if (socket !== origin) out = out.split(socket).join("{{origin}}");
   }
+  // Since 1.47.0: supabase-js names its auth storage key after the stub's host (`sb-persistence-a-auth-token`), and prints
+  // it in a warning when a page makes more than one client (the time app does), so one side's warning says a, the other b.
+  if (spec.urls.persistence) out = out.split(`sb-${new URL(spec.urls.persistence).hostname.split(".")[0]}-`).join("sb-{{persistence}}-");
   const courseHosts = [...new Set([spec.urls.courseId, ...(spec.urls.rulesCourseId ? [spec.urls.rulesCourseId] : []), reference.host, reference.courseId])].sort((x, y) => y.length - x.length);
   for (const host of courseHosts) for (const scheme of ["http://", "https://"]) out = out.split(`${scheme}${host}`).join("{{course}}");
   return redactSecrets(out);
@@ -254,6 +258,25 @@ async function routeIdentity(context: BrowserContext, role?: string) {
 }
 
 /**
+ * Since 1.47.0, for the Rule journeys: the time app reads a course's PIN from `https://<course id>.netlify.app/tutors.json`
+ * (`CourseTime.getCoursePin`, packages/jsr/time), as a production course id names its Netlify site. The time app
+ * journeys therefore name the Rule journeys' course by its plain id, `harness-rules`, and that one site is answered
+ * from the course server, the same file on both sides. A course id with a port (`localhost:8081`) makes no valid
+ * netlify.app URL, so the time app could never read its PIN. Every other netlify.app request goes on as before.
+ */
+async function routeCoursePin(context: BrowserContext, spec: SideSpec) {
+  const served = spec.urls.rulesCourseId;
+  if (!served) return;
+  await context.route(`https://${TIME_COURSE_ID}.netlify.app/tutors.json`, async (route) => {
+    try {
+      await route.fulfill({ response: await route.fetch({ url: `http://${served}/tutors.json` }) });
+    } catch (error) {
+      await route.fulfill({ status: 502, body: `course server unreachable at ${served}: ${error instanceof Error ? error.message : error}` });
+    }
+  });
+}
+
+/**
  * Run one journey against one side and capture everything observable at every
  * page it reaches. A journey that throws is recorded with its error and the
  * pages it did reach; the run continues with the next journey.
@@ -287,6 +310,7 @@ export async function captureJourney(browser: Browser, spec: SideSpec, journey: 
     contexts.push(context);
     context.setDefaultTimeout(ACTION_TIMEOUT_MS);
     if (journey.target === "readerAuth") await routeIdentity(context, role);
+    if (journey.set === "rules") await routeCoursePin(context, spec);
     // Google Fonts, Iconify and jsDelivr are answered from one recorded copy, the same bytes on both sides, at once
     // (src/collectors/third-party-cache.ts): an icon or the typeface can no longer arrive on one side only before a shot.
     await routeThirdParty(context);
@@ -352,6 +376,12 @@ export async function captureJourney(browser: Browser, spec: SideSpec, journey: 
     if (!other) actors.set(role, (other = await openPage(role)));
     return other;
   };
+  const forget = async (): Promise<void> => {
+    await quiet(() => inFlight.size, 500, 5_000);
+    pendingNetwork = [];
+    pendingConsole = [];
+    pendingRealtime = emptyRealtime();
+  };
 
   const shotDir = join(opts.outDir, `${journey.name}-${run}`);
   if (opts.screenshots) mkdirSync(shotDir, { recursive: true });
@@ -407,7 +437,7 @@ export async function captureJourney(browser: Browser, spec: SideSpec, journey: 
       // Last, because it moves focus.
       if (opts.focusStops > 0) capture.focus = await focusWalk(page, opts.focusStops);
       pages.push(capture);
-    }, { as }), timeoutMs, () => new Error(`journey timed out after ${Math.round(timeoutMs / 1000)}s`), crashed);
+    }, { as, forget }), timeoutMs, () => new Error(`journey timed out after ${Math.round(timeoutMs / 1000)}s`), crashed);
   } catch (e) {
     error = e instanceof Error ? stripOrigins(e.message.split("\n")[0] ?? e.message, spec) : String(e);
   } finally {

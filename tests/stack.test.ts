@@ -44,7 +44,7 @@ describe("compose.harness.yaml", () => {
   const apps = [...APPS, "reader-auth"];
 
   it("has both sides for every app, a persistence stub per side, and the shared fixtures", () => {
-    const expected = [...apps.flatMap((app) => [`${app}-a`, `${app}-b`]), ...["reader", "catalogue", "live", "time"].map((app) => `${app}-a2`), "persistence-a", "persistence-b", "reader-auth-edge-a", "reader-auth-edge-b", "live-auth-a", "live-auth-b", "course", "identity", "edge"].sort();
+    const expected = [...apps.flatMap((app) => [`${app}-a`, `${app}-b`]), ...["reader", "catalogue", "live", "time"].map((app) => `${app}-a2`), "persistence-a", "persistence-b", "reader-auth-edge-a", "reader-auth-edge-b", "live-auth-a", "live-auth-b", "time-auth-a", "time-auth-b", "course", "identity", "edge"].sort();
     expect(Object.keys(compose.services).sort()).toEqual(expected);
   });
 
@@ -146,6 +146,17 @@ describe("compose.harness.yaml", () => {
     }
   });
 
+  it("runs a time app per side with anonymous mode off, reading that side's persistence stub (since 1.47.0)", () => {
+    for (const side of ["a", "b"]) {
+      const time = compose.services[`time-auth-${side}`]!;
+      const env = time.environment as Record<string, string>;
+      expect(time.image).toBe(`\${TIME_IMAGE_${side.toUpperCase()}:-tutors/time:local}`);
+      expect(env.PUBLIC_ANON_MODE).toBe("");
+      expect(env.PUBLIC_SUPABASE_URL).toContain(`persistence-${side}.harness.test`);
+      expect(time.ports).toEqual([`\${TIME_AUTH_PORT_${side.toUpperCase()}:-${side === "a" ? 3106 : 3206}}:3000`]);
+    }
+  });
+
   it("the edge proxy is only part of the upgrade profile", () => {
     expect(compose.services.edge!.profiles).toEqual(["upgrade"]);
   });
@@ -158,6 +169,7 @@ describe("compose.harness.yaml", () => {
       time: "http://localhost:3104",
       readerAuth: "http://localhost:3103",
       liveAuth: "http://localhost:3105",
+      timeAuth: "http://localhost:3106",
       persistence: "http://persistence-a.harness.test:8090",
       courseId: "localhost:8080",
       rulesCourseId: "localhost:8081"

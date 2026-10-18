@@ -41,7 +41,7 @@ const write = (path: string, lines: string[]) => Deno.writeTextFile(path, lines.
 
 // Signed in, private, the LLM page linked. The whitelist names harness-enrolled only, so the identity stub's
 // student (harness-student) is the one person turned away (Rule 0586); the lecturer is an educator.
-await Deno.writeTextFile(`${courseDir}/properties.yaml`, ["", "auth: 1", "private: 1", "llm: 2", ""].join("\n"), { append: true });
+await Deno.writeTextFile(`${courseDir}/properties.yaml`, ["", "auth: 1", "private: 1", "llm: 2", "ignorepin: 4321", ""].join("\n"), { append: true });
 await write(`${courseDir}/enrollment.yaml`, ["educators:", "  - harness-lecturer", "whitelist:", "  - harness-enrolled", "students:", "  - name: Harness Enrolled Student", "    id: harness-enrolled"]);
 
 // Fixed dates around the harness clock (HARNESS_NOW, 2026-09-16T09:05Z): week 2 is the current week.

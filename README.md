@@ -372,7 +372,7 @@ migration fixtures under `tests/fixtures/migrations`. See [TESTING.md](TESTING.m
 
 ## Where to stop
 
-15 journeys in five sets, not a hundred; sixteen mutants, not thirty. The harness
+17 journeys in five sets, not a hundred; sixteen mutants, not thirty. The harness
 compares artefacts, so its power comes from breadth of *capture* per journey,
 not from the number of journeys. Add a journey only when a real regression
 escaped that a journey would have caught.

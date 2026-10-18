@@ -253,6 +253,26 @@ services:
       persistence-a:
         condition: service_healthy
 
+  # Since 1.47.0: the time app the same way, for the time app journeys (Rules 0590 and 0591), which seed the stub first.
+  time-auth-a:
+    <<: *app
+    image: ${TIME_IMAGE_A:-tutors/time:local}
+    ports:
+      - "${TIME_AUTH_PORT_A:-3106}:3000"
+    environment:
+      LOG_LEVEL: info
+      HARNESS_NOW: ${HARNESS_NOW:-2026-09-16T09:05:00.000Z}
+      PRIVATE_AUTH_SECRET: harness-only-not-a-real-secret-000000000000
+      PUBLIC_ANON_MODE: ""
+      PUBLIC_SUPABASE_ANON_KEY: harness-anon-key
+      PUBLIC_SUPABASE_URL: http://persistence-a.harness.test:${PERSISTENCE_PORT_A:-8090}
+      ORIGIN: http://localhost:${TIME_AUTH_PORT_A:-3106}
+    depends_on:
+      course:
+        condition: service_healthy
+      persistence-a:
+        condition: service_healthy
+
   # ---- side b -------------------------------------------------------------
   persistence-b:
     <<: *stub
@@ -354,6 +374,26 @@ services:
       PUBLIC_SUPABASE_ANON_KEY: harness-anon-key
       PUBLIC_SUPABASE_URL: http://persistence-b.harness.test:${PERSISTENCE_PORT_B:-8091}
       ORIGIN: http://localhost:${LIVE_AUTH_PORT_B:-3205}
+    depends_on:
+      course:
+        condition: service_healthy
+      persistence-b:
+        condition: service_healthy
+
+  # Since 1.47.0: the time app the same way, for the time app journeys (Rules 0590 and 0591), which seed the stub first.
+  time-auth-b:
+    <<: *app
+    image: ${TIME_IMAGE_B:-tutors/time:local}
+    ports:
+      - "${TIME_AUTH_PORT_B:-3206}:3000"
+    environment:
+      LOG_LEVEL: info
+      HARNESS_NOW: ${HARNESS_NOW:-2026-09-16T09:05:00.000Z}
+      PRIVATE_AUTH_SECRET: harness-only-not-a-real-secret-000000000000
+      PUBLIC_ANON_MODE: ""
+      PUBLIC_SUPABASE_ANON_KEY: harness-anon-key
+      PUBLIC_SUPABASE_URL: http://persistence-b.harness.test:${PERSISTENCE_PORT_B:-8091}
+      ORIGIN: http://localhost:${TIME_AUTH_PORT_B:-3206}
     depends_on:
       course:
         condition: service_healthy

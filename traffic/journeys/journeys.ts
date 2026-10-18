@@ -16,7 +16,7 @@ import { ruleJourneys } from "./rules.ts";
  * something by role, that is an accessibility finding, not a reason to reach
  * for CSS.
  *
- * 15 journeys in five sets (fixture 4, auth 1, reference 1, replay 1, rules 8 since 1.43.0), not a hundred: the harness's power is breadth of capture
+ * 17 journeys in five sets (fixture 4, auth 1, reference 1, replay 1, rules 10 since 1.43.0), not a hundred: the harness's power is breadth of capture
  * per page, not the number of pages. Add one only when a real regression
  * escaped that a journey would have caught.
  */
@@ -29,6 +29,11 @@ export type OnPage = (pageKey: string, on?: Page) => Promise<void>;
  */
 export interface Actors {
   as(role: string): Promise<Page>;
+  /**
+   * Since 1.47.0: drop what every page did since the last capture (its network, console and Realtime cost), for a
+   * step that retries after a stall the app has on both sides, so only the attempt that worked is compared.
+   */
+  forget?(): Promise<void>;
 }
 
 export const JOURNEY_SETS = ["fixture", "auth", "reference", "replay", "rules"] as const;

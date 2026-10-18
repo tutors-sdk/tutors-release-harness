@@ -49,3 +49,54 @@ Feature: Lecturer journeys the harness drives on both sides
       When the lecturer presses the tab "Students (1)"
       Then the page shows the link "Harness Student"
       And the page is captured as "students"
+
+  @rule-0590 @ears-event-driven @journey-time-calendar @role-lecturer
+  Rule: When the harness runs the time calendar journey, it shall seed two students' calendar days for the Rule journeys' course, open the time app's medians and its calendar by week and by day as the stub lecturer, and compare the tables on both sides.
+
+    Scenario: The time app's calendar views compute the same totals and medians from the same days (exercises Rule 0319; analytics-calendar.feature)
+      Given the persistence stub holds the seed "time-course"
+      When the lecturer opens the time app at "medians"
+      And the lecturer types "4321" in the textbox "PIN code"
+      And the lecturer presses the button "Verify"
+      Then the page shows no dialog "Enter PIN"
+      And the page shows the heading "Medians"
+      And the page shows the row "Median 130 78 104"
+      # The time app draws its heat maps after load, and their day grids lay out differently from one load to the next on
+      # the same build, so the capture starts at the tables below them.
+      When the page scrolls to the heading "Calendar median by week"
+      Then the page is captured as "medians"
+      When the lecturer opens the time app at "calendar/byweek"
+      Then the page shows the heading "Calendar by week"
+      And the page shows the row starting "Harness Enrolled Student"
+      And the page is captured as "calendar-byweek"
+      When the lecturer opens the time app at "calendar/byday"
+      Then the page shows the heading "Calendar by day"
+      And the page shows the row starting "Harness Student"
+      And the page is captured as "calendar-byday"
+
+  @rule-0591 @ears-event-driven @journey-time-labs @role-lecturer
+  Rule: When the harness runs the time labs journey, it shall seed three students' lab records for the Rule journeys' course, open the time app's labs by lab and by step, its learning records and the least engaged student's page as the stub lecturer, and compare them on both sides.
+
+    Scenario: The time app's lab views rank the same students the same way (exercises Rule 0319; analytics-lab.feature, lab-analytics.feature)
+      Given the persistence stub holds the seed "time-course"
+      When the lecturer opens the time app at "lab/bylab"
+      And the lecturer types "4321" in the textbox "PIN code"
+      And the lecturer presses the button "Verify"
+      Then the page shows no dialog "Enter PIN"
+      And the page shows the heading "Labs by lab"
+      And the page shows the row starting "Harness Enrolled Student"
+      And the page shows the row starting "Harness Quiet Student"
+      And the page is captured as "lab-bylab"
+      When the lecturer opens the time app at "lab/bystep"
+      Then the page shows the heading "Labs by step"
+      And the page shows the row starting "Harness Student"
+      And the page is captured as "lab-bystep"
+      When the lecturer opens the time app at "lab/learning-records"
+      Then the page shows the heading "Learning records"
+      And the page shows the row starting "harness-quiet"
+      And the page is captured as "learning-records"
+      When the lecturer opens the time app at "harness-quiet"
+      Then the page shows the heading "Harness Quiet Student"
+      # As on the medians, the capture starts at the tables below the heat maps.
+      When the page scrolls to the heading "Calendar activity by week"
+      Then the page is captured as "student"

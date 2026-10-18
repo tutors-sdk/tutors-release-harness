@@ -54,6 +54,14 @@ describe("origin stripping", () => {
     expect(stripOrigins(message(a), a)).toBe(stripOrigins(message(b), b));
   });
 
+  it("names supabase-js's auth storage key the same on both sides, though it is named after each side's stub", () => {
+    const a = sideSpec("a", { reader: "r", catalogue: "c", live: "l", time: "t" });
+    const b = sideSpec("b", { reader: "r", catalogue: "c", live: "l", time: "t" });
+    const warning = (side: string) => `GoTrueClient@sb-persistence-${side}-auth-token:2 (2.117.2) Multiple GoTrueClient instances detected in the same browser context.`;
+    expect(stripOrigins(warning("a"), a)).toBe("GoTrueClient@sb-{{persistence}}-auth-token:2 (2.117.2) Multiple GoTrueClient instances detected in the same browser context.");
+    expect(stripOrigins(warning("a"), a)).toBe(stripOrigins(warning("b"), b));
+  });
+
   it("normalises the reference course host the same way on a harness side and an external side", () => {
     const local = sideSpec("a", { reader: "r", catalogue: "c", live: "l", time: "t" });
     const live = externalSide("b", "reader=https://tutors.dev,catalogue=https://c,live=https://l", "reference-course");

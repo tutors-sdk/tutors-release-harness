@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.46.0`
+Contract version: `1.47.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -2105,6 +2105,17 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.47.0 (minor; the time app reading seeded rows)
+
+The release note is [releases/1.47.0.md](releases/1.47.0.md). A minor. Two more Rule journeys, 0590 (the time app's
+medians and calendars) and 0591 (its lab views, learning records and one student's page), as the stub lecturer. Each
+compose side runs a second time app, `time-auth-a` and `time-auth-b`, with anonymous mode off and the side's
+persistence stub as its Supabase, on two new host ports, 3106 and 3206 (`TIME_AUTH_PORT_A`/`_B`): 24 host ports.
+`StackUrls` gains the optional `timeAuth`; its pages are captured as `time-auth:<page>`. The persistence stub takes
+rows at `POST /_harness/seed`, keeps seeded tables until the next reset, answers `in`, and never records seeded rows
+as writes. A browser's `sb-<persistence host>-` storage keys are compared as `sb-{{persistence}}-`. New pages, new page
+keys; no verdict, Gate, score or exit code moves.
 
 ### 1.46.0 (minor; Tutors Live with a student in it)
 
