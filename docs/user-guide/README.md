@@ -40,6 +40,7 @@ It is not:
 | **A harness developer**: you add an artefact, mask, mutant or journey | [09 Extending](09-extending.md) | [01 Concepts](01-concepts.md), [05 Noise and self-test](05-noise-and-self-test.md) |
 | **Anyone who wants a real course to test against** | [11 Course capture](11-course-capture.md) | [docs/course-capture.md](../course-capture.md) |
 | **Anyone writing a journey as an EARS Rule** | [12 Rule journeys](12-rule-journeys.md) | [09 Extending](09-extending.md#adding-a-journey) |
+| **Anyone reading a journey's result**, technical or not | [13 What the user journeys check](13-what-the-journeys-check.md) | [12 Rule journeys](12-rule-journeys.md) |
 
 Read in this order the first time: 01, 10, 03, 04, then the rest as you need them. The roles are the monorepo's `release/SOP.md`; the Lean ideas behind them are in [docs/lean.md](../lean.md).
 
@@ -57,6 +58,7 @@ Read in this order the first time: 01, 10, 03, 04, then the rest as you need the
 | [10 Running a release](10-running-a-release.md) | The release SOP step by step: prerequisites, `pnpm release:candidate`, `harness release` and its seven stages, the Gate, the score and the glance, go or no-go, deploy and the watch window, the 5 Whys, closing the release, `--fast`, how CI runs the same |
 | [11 Course capture](11-course-capture.md) | A live, public course onto disk: capture, verify, serve, check it loads in a reader, and the curated course corpus |
 | [12 Rule journeys](12-rule-journeys.md) | The `rules` set: a journey per EARS Rule in Gherkin, the steps it may use, what it captures, and how a difference is attributed to the Rules it exercises |
+| [13 What the user journeys check](13-what-the-journeys-check.md) | The user journeys in plain and technical terms: what each one does and protects, the two sealed stacks they run in, how a result is validated (A/A, mutants), what they do not check and what they found |
 | [Glossary](glossary.md) | The terms used in this guide |
 
 Older, narrower documents this guide builds on and links to: [the integration contract](../contract.md), [Lean in the harness](../lean.md), [where the images come from](../images.md), [modes](../modes.md), [running locally (parity matrix)](../local.md), [the noise burn-down playbook](../noise-burndown.md), [the kaizen register](../../kaizen/README.md), [claims](../../claims/README.md), [mutants](../../mutants/README.md) and [TESTING.md](../../TESTING.md). Where they and this guide disagree, the code and the contract win; please report the difference.
