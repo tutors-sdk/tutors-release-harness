@@ -165,7 +165,12 @@ step(/^the student opens the (talk|note|notebook|quiz|whiteboard) "([^"]+)"$/, '
 
 step(/^the student draws a stroke on the whiteboard "([^"]+)"$/, 'the student draws a stroke on the whiteboard "Whiteboard 1": the Draw tool by its name in the editor, then one stroke across the middle of its canvas, the one thing no role names (since 1.48.0)', async (w, title) => {
   const frame = w.page.frameLocator(`iframe[title="${title!.replaceAll('"', '\\"')}"]`);
-  await frame.getByRole("radio", { name: /^Draw/ }).first().click();
+  // Excalidraw's tool radios are visually hidden under their icon (no pointer events), so the click lands on the icon.
+  const draw = frame.getByRole("radio", { name: /^Draw/ }).first();
+  await draw.waitFor({ state: "attached", timeout: 30_000 }).catch((e: unknown) => {
+    throw new Error(`the whiteboard "${title}" shows no Draw tool: its editor did not load`, { cause: e });
+  });
+  await draw.check({ force: true });
   const box = await w.page.locator(`iframe[title="${title!.replaceAll('"', '\\"')}"]`).boundingBox();
   if (!box) throw new Error(`the whiteboard "${title}" has no box on the page`);
   // A freehand stroke, not a shape: a shape is drawn rough with a random seed, a stroke the same from the same points.
