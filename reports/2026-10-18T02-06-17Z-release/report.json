@@ -1,0 +1,3021 @@
+{
+  "schemaVersion": 1,
+  "harness": {
+    "version": "1.44.0",
+    "gitSha": "dbb77918985b4cc89ce7baa2dc2c206dbd94be43",
+    "contractVersion": "1.44.0"
+  },
+  "harnessVersion": "1.44.0",
+  "mode": "release",
+  "substrate": "compose",
+  "ranAt": "2026-10-18T02:06:17.110Z",
+  "now": "2026-09-16T09:05:00.000Z",
+  "runs": 5,
+  "sides": {
+    "a": {
+      "reader": "quay.io/tutors-sdk/tutors-reader:17.0.0",
+      "catalogue": "quay.io/tutors-sdk/tutors-catalogue:17.0.0",
+      "live": "quay.io/tutors-sdk/tutors-live:17.0.0",
+      "time": "quay.io/tutors-sdk/tutors-time:17.0.0"
+    },
+    "b": {
+      "reader": "quay.io/tutors-sdk/tutors-reader:sha-83d4ccf",
+      "catalogue": "quay.io/tutors-sdk/tutors-catalogue:sha-83d4ccf",
+      "live": "quay.io/tutors-sdk/tutors-live:sha-83d4ccf",
+      "time": "quay.io/tutors-sdk/tutors-time:sha-83d4ccf"
+    }
+  },
+  "provenance": {
+    "a": {
+      "summary": "pulled+verified",
+      "images": {
+        "reader": {
+          "ref": "quay.io/tutors-sdk/tutors-reader:17.0.0",
+          "id": "sha256:abdbbf48bdaa8867cf970bf780df734196bdbb25c3f1ce6e358b1a0c5b4d36a7",
+          "digest": "sha256:15e3aa22476d608db97e05917b1990ade0a7871e7ec6e113da5fec741b427233",
+          "revision": "432d46864626ce14e07eb7715e0408c643ca906a",
+          "version": "17.0.0-rc.1",
+          "created": "2026-10-14T11:22:23.868Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "catalogue": {
+          "ref": "quay.io/tutors-sdk/tutors-catalogue:17.0.0",
+          "id": "sha256:b3e0c40b6430ecd6ac154972584252a179abb99412e1b1deeaa0a6c2e64966e3",
+          "digest": "sha256:e9f2764654cb074d7dd4412ca163bf4c2666870444d5520361d5425bda4cec0b",
+          "revision": "432d46864626ce14e07eb7715e0408c643ca906a",
+          "version": "17.0.0-rc.1",
+          "created": "2026-10-14T11:22:20.481Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "live": {
+          "ref": "quay.io/tutors-sdk/tutors-live:17.0.0",
+          "id": "sha256:a5ac0ab5beba43906f3b94f74531fa8588d82c8efa38eb07070969981181bf80",
+          "digest": "sha256:52740e55cfa7e7db3b2944137caada4e876990b937f1034c0c5e79796054f8a0",
+          "revision": "432d46864626ce14e07eb7715e0408c643ca906a",
+          "version": "17.0.0-rc.1",
+          "created": "2026-10-14T11:22:19.078Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "time": {
+          "ref": "quay.io/tutors-sdk/tutors-time:17.0.0",
+          "id": "sha256:abd5fc2e4e4a8b7e35bd54c9fe8ec9fbc3e07fc797e6fe27c67b7a66108f4708",
+          "digest": "sha256:d0a9f4a2f4624038ecea3629d1a536567756d458410bee43b45e060d738d195d",
+          "revision": "432d46864626ce14e07eb7715e0408c643ca906a",
+          "version": "17.0.0-rc.1",
+          "created": "2026-10-14T11:22:24.942Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        }
+      }
+    },
+    "b": {
+      "summary": "pulled+verified",
+      "images": {
+        "reader": {
+          "ref": "quay.io/tutors-sdk/tutors-reader:sha-83d4ccf",
+          "id": "sha256:c7640e80bdcf72616379114cddb716009f5230bdee125093d2f902393dda685d",
+          "digest": "sha256:0627d3940eb982013b4491015586ea36e738fa1f22aebf648ad94e049a9e6d99",
+          "revision": "83d4ccf7f5ca2440bbc94224e40c5bfef3e410d9",
+          "version": "sha-83d4ccf",
+          "created": "2026-10-16T19:11:29.813Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "catalogue": {
+          "ref": "quay.io/tutors-sdk/tutors-catalogue:sha-83d4ccf",
+          "id": "sha256:b3c704105ec45dec5a03f79a0a300e0a297568d9f95db1b4619b8a7074753e0e",
+          "digest": "sha256:8c61baa1c1e97df5cd6db100733809c404ca87044b0a05c40a2acbfccb996195",
+          "revision": "83d4ccf7f5ca2440bbc94224e40c5bfef3e410d9",
+          "version": "sha-83d4ccf",
+          "created": "2026-10-16T19:11:31.947Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "live": {
+          "ref": "quay.io/tutors-sdk/tutors-live:sha-83d4ccf",
+          "id": "sha256:af162b40f5c844965c1054c1a47af7b717da6d217d5408ffa7eefbc12c55b73e",
+          "digest": "sha256:af5231fe19ed7c74d30dc7fec5a55ea3819c7b3ff1a22c3d4e803436aef97bd2",
+          "revision": "83d4ccf7f5ca2440bbc94224e40c5bfef3e410d9",
+          "version": "sha-83d4ccf",
+          "created": "2026-10-16T19:11:36.503Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "time": {
+          "ref": "quay.io/tutors-sdk/tutors-time:sha-83d4ccf",
+          "id": "sha256:34efcdc854521ebb76e90c06373974880d9aa3dbd1242ebeb4b6236ae9c34b01",
+          "digest": "sha256:4db2acd4bfa8059eb2ad18a87f68583a19dbd358cd6b6e99e1aab4913830abc8",
+          "revision": "83d4ccf7f5ca2440bbc94224e40c5bfef3e410d9",
+          "version": "sha-83d4ccf",
+          "created": "2026-10-16T19:11:35.817Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        }
+      }
+    }
+  },
+  "verdict": "fail",
+  "reasons": [
+    "35 unclaimed diff(s)"
+  ],
+  "noise": {
+    "schemaVersion": 1,
+    "ranAt": "2026-10-18T01:45:23.090Z",
+    "clean": true,
+    "hunks": 0
+  },
+  "compare": {
+    "hunks": [
+      {
+        "id": "dom:reader:home:1",
+        "artefact": "dom",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "fail",
+        "summary": "reader:home: semantic DOM differs (+1 −1 lines at line 10)",
+        "detail": "     - link \"My courses\":\n       - /url: /\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+      },
+      {
+        "id": "dom:reader:course:2",
+        "artefact": "dom",
+        "scope": "reader:course",
+        "path": "/course/localhost:8080",
+        "severity": "fail",
+        "summary": "reader:course: semantic DOM differs (+1 −1 lines at line 9)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+      },
+      {
+        "id": "dom:reader:topic:3",
+        "artefact": "dom",
+        "scope": "reader:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader:topic: semantic DOM differs (+1 −1 lines at line 8)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+      },
+      {
+        "id": "dom:reader:lab-step:4",
+        "artefact": "dom",
+        "scope": "reader:lab-step",
+        "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01",
+        "severity": "fail",
+        "summary": "reader:lab-step: semantic DOM differs (+1 −1 lines at line 8)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+      },
+      {
+        "id": "dom:reader:lab-step-2:5",
+        "artefact": "dom",
+        "scope": "reader:lab-step-2",
+        "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01/Step-01",
+        "severity": "fail",
+        "summary": "reader:lab-step-2: semantic DOM differs (+1 −1 lines at line 8)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+      },
+      {
+        "id": "dom:reader:search:6",
+        "artefact": "dom",
+        "scope": "reader:search",
+        "path": "/search/localhost:8080",
+        "severity": "fail",
+        "summary": "reader:search: semantic DOM differs (+1 −1 lines at line 8)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+      },
+      {
+        "id": "dom:reader:search-results:7",
+        "artefact": "dom",
+        "scope": "reader:search-results",
+        "path": "/search/localhost:8080?q=reference+material",
+        "severity": "fail",
+        "summary": "reader:search-results: semantic DOM differs (+1 −1 lines at line 8)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+      },
+      {
+        "id": "dom:catalogue:home:8",
+        "artefact": "dom",
+        "scope": "catalogue:home",
+        "path": "/",
+        "severity": "fail",
+        "summary": "catalogue:home: semantic DOM differs (+1 −1 lines at line 10)",
+        "detail": "     - link \"Catalogue\":\n       - /url: /\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n - complementary \"Course navigation\":\n   - navigation:"
+      },
+      {
+        "id": "dom:live:home:9",
+        "artefact": "dom",
+        "scope": "live:home",
+        "path": "/",
+        "severity": "fail",
+        "summary": "live:home: semantic DOM differs (+1 −1 lines at line 10)",
+        "detail": "     - link \"Live\":\n       - /url: /\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n - complementary \"Course navigation\":\n   - navigation:"
+      },
+      {
+        "id": "dom:reader-auth:course:10",
+        "artefact": "dom",
+        "scope": "reader-auth:course",
+        "path": "/course/localhost:8080",
+        "severity": "fail",
+        "summary": "reader-auth:course: semantic DOM differs (+1 −1 lines at line 9)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Profile menu\":\n       - img \"Harness Student\""
+      },
+      {
+        "id": "dom:reader-auth:topic:11",
+        "artefact": "dom",
+        "scope": "reader-auth:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader-auth:topic: semantic DOM differs (+1 −1 lines at line 8)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Profile menu\":\n       - img \"Harness Student\""
+      },
+      {
+        "id": "dom:reference:course:12",
+        "artefact": "dom",
+        "scope": "reference:course",
+        "path": "/course/reference-course",
+        "severity": "fail",
+        "summary": "reference:course: semantic DOM differs (+1 −1 lines at line 10)",
+        "detail": "     - text: A reference course containing all supported learning objects\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+      },
+      {
+        "id": "dom:reference:topic:13",
+        "artefact": "dom",
+        "scope": "reference:topic",
+        "path": "/topic/reference-course/topic-07-reference",
+        "severity": "fail",
+        "summary": "reference:topic: semantic DOM differs (+1 −1 lines at line 9)",
+        "detail": "     - text: A reference course containing all supported learning objects\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+      },
+      {
+        "id": "dom:reference:lab:14",
+        "artefact": "dom",
+        "scope": "reference:lab",
+        "path": "/lab/reference-course/topic-07-reference/book-a",
+        "severity": "fail",
+        "summary": "reference:lab: semantic DOM differs (+1 −1 lines at line 9)",
+        "detail": "     - text: A reference course containing all supported learning objects\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+      },
+      {
+        "id": "dom:reference:note:15",
+        "artefact": "dom",
+        "scope": "reference:note",
+        "path": "/note/reference-course/topic-07-reference/note-1",
+        "severity": "fail",
+        "summary": "reference:note: semantic DOM differs (+1 −1 lines at line 9)",
+        "detail": "     - text: A reference course containing all supported learning objects\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+      },
+      {
+        "id": "dom:reader-auth:rule-0582-course:16",
+        "artefact": "dom",
+        "scope": "reader-auth:rule-0582-course",
+        "path": "/course/localhost:8080",
+        "severity": "fail",
+        "summary": "reader-auth:rule-0582-course: semantic DOM differs (+1 −1 lines at line 9)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Profile menu\":\n       - img \"Harness Student\""
+      },
+      {
+        "id": "dom:reader-auth:rule-0582-lab-step:17",
+        "artefact": "dom",
+        "scope": "reader-auth:rule-0582-lab-step",
+        "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01",
+        "severity": "fail",
+        "summary": "reader-auth:rule-0582-lab-step: semantic DOM differs (+1 −1 lines at line 8)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Profile menu\":\n       - img \"Harness Student\""
+      },
+      {
+        "id": "dom:reader-auth:rule-0582-lab-step-2:18",
+        "artefact": "dom",
+        "scope": "reader-auth:rule-0582-lab-step-2",
+        "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01/Step-01",
+        "severity": "fail",
+        "summary": "reader-auth:rule-0582-lab-step-2: semantic DOM differs (+1 −1 lines at line 8)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Profile menu\":\n       - img \"Harness Student\""
+      },
+      {
+        "id": "dom:reader-auth:rule-0582-lab-step-back:19",
+        "artefact": "dom",
+        "scope": "reader-auth:rule-0582-lab-step-back",
+        "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01/Setup",
+        "severity": "fail",
+        "summary": "reader-auth:rule-0582-lab-step-back: semantic DOM differs (+1 −1 lines at line 8)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Profile menu\":\n       - img \"Harness Student\""
+      },
+      {
+        "id": "dom:reader-auth:rule-0583-profile-menu:20",
+        "artefact": "dom",
+        "scope": "reader-auth:rule-0583-profile-menu",
+        "path": "/course/localhost:8080",
+        "severity": "fail",
+        "summary": "reader-auth:rule-0583-profile-menu: semantic DOM differs (+1 −1 lines at line 9)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Profile menu\" [expanded]:\n       - img \"Harness Student\""
+      },
+      {
+        "id": "dom:reader-auth:rule-0584-talk-slide-2:21",
+        "artefact": "dom",
+        "scope": "reader-auth:rule-0584-talk-slide-2",
+        "path": "/talk/localhost:8081/unit-1/topic-01/talk-01",
+        "severity": "fail",
+        "summary": "reader-auth:rule-0584-talk-slide-2: semantic DOM differs (+1 −1 lines at line 8)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n - complementary \"Course navigation\":\n   - navigation:"
+      },
+      {
+        "id": "dom:reader-auth:rule-0584-notebook-cell-2:22",
+        "artefact": "dom",
+        "scope": "reader-auth:rule-0584-notebook-cell-2",
+        "path": "/notebook/localhost:8081/unit-1/topic-01/notebook-01",
+        "severity": "fail",
+        "summary": "reader-auth:rule-0584-notebook-cell-2: semantic DOM differs (+1 −1 lines at line 8)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n - complementary \"Course navigation\":\n   - navigation:"
+      },
+      {
+        "id": "dom:reader-auth:rule-0584-quiz-results:23",
+        "artefact": "dom",
+        "scope": "reader-auth:rule-0584-quiz-results",
+        "path": "/quiz/localhost:8081/unit-1/topic-01/quiz-01",
+        "severity": "fail",
+        "summary": "reader-auth:rule-0584-quiz-results: semantic DOM differs (+1 −1 lines at line 8)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n - complementary \"Course navigation\":\n   - navigation:"
+      },
+      {
+        "id": "dom:reader-auth:rule-0585-course-dark:24",
+        "artefact": "dom",
+        "scope": "reader-auth:rule-0585-course-dark",
+        "path": "/course/localhost:8081",
+        "severity": "fail",
+        "summary": "reader-auth:rule-0585-course-dark: semantic DOM differs (+1 −1 lines at line 9)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n - complementary \"Course navigation\":\n   - navigation:"
+      },
+      {
+        "id": "dom:reader-auth:rule-0585-preferences-after-reload:25",
+        "artefact": "dom",
+        "scope": "reader-auth:rule-0585-preferences-after-reload",
+        "path": "/course/localhost:8081",
+        "severity": "fail",
+        "summary": "reader-auth:rule-0585-preferences-after-reload: semantic DOM differs (+1 −1 lines at line 9)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\" [expanded]: Preferences\n+    - button \"Preferences\" [expanded]\n - complementary \"Course navigation\":\n   - navigation:"
+      },
+      {
+        "id": "dom:reader-auth:rule-0586-turned-away:26",
+        "artefact": "dom",
+        "scope": "reader-auth:rule-0586-turned-away",
+        "path": "/",
+        "severity": "fail",
+        "summary": "reader-auth:rule-0586-turned-away: semantic DOM differs (+1 −1 lines at line 10)",
+        "detail": "     - link \"My courses\":\n       - /url: /\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Profile menu\":\n       - img \"Harness Student\""
+      },
+      {
+        "id": "dom:reader-auth:rule-0586-turned-away-again:27",
+        "artefact": "dom",
+        "scope": "reader-auth:rule-0586-turned-away-again",
+        "path": "/",
+        "severity": "fail",
+        "summary": "reader-auth:rule-0586-turned-away-again: semantic DOM differs (+1 −1 lines at line 10)",
+        "detail": "     - link \"My courses\":\n       - /url: /\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Profile menu\":\n       - img \"Harness Student\""
+      },
+      {
+        "id": "dom:reader-auth:rule-0587-llm:28",
+        "artefact": "dom",
+        "scope": "reader-auth:rule-0587-llm",
+        "path": "/llm/localhost:8081",
+        "severity": "fail",
+        "summary": "reader-auth:rule-0587-llm: semantic DOM differs (+1 −1 lines at line 8)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n - complementary \"Course navigation\":\n   - navigation:"
+      },
+      {
+        "id": "network:POST_/api/live/activity:29",
+        "artefact": "network",
+        "scope": "POST /api/live/activity",
+        "path": "/course/localhost:8080",
+        "severity": "fail",
+        "summary": "reader-auth:course: new request on b: POST /api/live/activity"
+      },
+      {
+        "id": "network:POST_/api/live/activity:30",
+        "artefact": "network",
+        "scope": "POST /api/live/activity",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader-auth:topic: new request on b: POST /api/live/activity"
+      },
+      {
+        "id": "network:GET_/_app/immutable/chunks/__hash__.js:31",
+        "artefact": "network",
+        "scope": "GET /_app/immutable/chunks/{{hash}}.js",
+        "path": "/course/reference-course",
+        "severity": "fail",
+        "summary": "reference:course: GET /_app/immutable/chunks/{{hash}}.js requested 43× on a, 44× on b"
+      },
+      {
+        "id": "network:GET_/_app/immutable/chunks/__hash__.js:32",
+        "artefact": "network",
+        "scope": "GET /_app/immutable/chunks/{{hash}}.js",
+        "path": "/note/reference-course/topic-07-reference/note-1",
+        "severity": "fail",
+        "summary": "reference:note: GET /_app/immutable/chunks/{{hash}}.js requested 39× on a, 40× on b"
+      },
+      {
+        "id": "network:POST_/api/live/activity:33",
+        "artefact": "network",
+        "scope": "POST /api/live/activity",
+        "path": "/course/localhost:8080",
+        "severity": "fail",
+        "summary": "reader-auth:rule-0582-course: new request on b: POST /api/live/activity"
+      },
+      {
+        "id": "network:POST_/api/live/activity:34",
+        "artefact": "network",
+        "scope": "POST /api/live/activity",
+        "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01",
+        "severity": "fail",
+        "summary": "reader-auth:rule-0582-lab-step: new request on b: POST /api/live/activity"
+      },
+      {
+        "id": "network:POST_/api/live/activity:35",
+        "artefact": "network",
+        "scope": "POST /api/live/activity",
+        "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01/Step-01",
+        "severity": "fail",
+        "summary": "reader-auth:rule-0582-lab-step-2: new request on b: POST /api/live/activity"
+      },
+      {
+        "id": "network:POST_/api/live/activity:36",
+        "artefact": "network",
+        "scope": "POST /api/live/activity",
+        "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01/Setup",
+        "severity": "fail",
+        "summary": "reader-auth:rule-0582-lab-step-back: new request on b: POST /api/live/activity"
+      },
+      {
+        "id": "network:POST_/api/live/activity:37",
+        "artefact": "network",
+        "scope": "POST /api/live/activity",
+        "path": "/course/localhost:8080",
+        "severity": "fail",
+        "summary": "reader-auth:rule-0583-profile-menu: new request on b: POST /api/live/activity"
+      },
+      {
+        "id": "console:catalogue:home:38",
+        "artefact": "console",
+        "scope": "catalogue:home",
+        "path": "/",
+        "severity": "info",
+        "summary": "catalogue:home: console message gone on b",
+        "detail": "error: {\"app\":\"tutors-catalogue\",\"environment\":\"production\",\"error\":\"Cannot read properties of undefined (reading 'from')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'from')\\n    at Object.getCatalogue ({{origin}}/_app/immutable/chunks/2lYorbfj.js:69:102918)\\n    at V ({{origin}}/_app/immutable/nodes/2.NAkx_ofm.js:1:484)\\n    at Wn ({{origin}}/_app/immutable/chunks/XgCIYxIE.js:2:24206)\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Error fetching courses:\"}"
+      },
+      {
+        "id": "console:catalogue:home:39",
+        "artefact": "console",
+        "scope": "catalogue:home",
+        "path": "/",
+        "severity": "info",
+        "summary": "catalogue:home: console message gone on b",
+        "detail": "error: {\"app\":\"tutors-catalogue\",\"environment\":\"production\",\"error\":\"Cannot read properties of undefined (reading 'from')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'from')\\n    at Object.getStudentCount ({{origin}}/_app/immutable/chunks/2lYorbfj.js:69:103346)\\n    at {{origin}}/_app/immutable/nodes/2.NAkx_ofm.js:1:5193\\n    at Cr ({{origin}}/_app/immutable/chunks/Cv2zGAZD.js:1:23871)\\n    at {{origin}}/_app/immutable/chunks/Cv2zGAZD.js:2:2704\\n    at mr ({{origin}}/_app/immutable/chunks/Cv2zGAZD.js:1:21611)\\n    at vr ({{origin}}/_app/immutable/chunks/Cv2zGAZD.js:1:22749)\\n    at Xt ({{origin}}/_app/immutable/chunks/Cv2zGAZD.js:1:12091)\\n    at #_ ({{origin}}/_app/immutable/chunks/Cv2zGAZD.js:1:9277)\\n    at e.flush ({{origin}}/_app/immutable/chunks/Cv2zGAZD.js:1:10794)\\n    at Array.<anonymous> ({{origin}}/_app/immutable/chunks/Cv2zGAZD.js:1:11554)\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Error fetching course count:\"}"
+      },
+      {
+        "id": "focus:reader:home:40",
+        "artefact": "focus",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "fail",
+        "summary": "reader:home: keyboard order changed (12 stops on a, 12 on b)",
+        "detail": " a \"My courses\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n button \"Anonymous Tutors Profile\""
+      },
+      {
+        "id": "focus:catalogue:home:41",
+        "artefact": "focus",
+        "scope": "catalogue:home",
+        "path": "/",
+        "severity": "fail",
+        "summary": "catalogue:home: keyboard order changed (12 stops on a, 12 on b)",
+        "detail": " a \"Catalogue\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n a \"My courses\""
+      },
+      {
+        "id": "focus:reference:course:42",
+        "artefact": "focus",
+        "scope": "reference:course",
+        "path": "/course/reference-course",
+        "severity": "fail",
+        "summary": "reference:course: keyboard order changed (12 stops on a, 12 on b)",
+        "detail": " button \"Search this course\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n button \"Anonymous Tutors Profile\""
+      },
+      {
+        "id": "focus:reader-auth:rule-0586-turned-away:43",
+        "artefact": "focus",
+        "scope": "reader-auth:rule-0586-turned-away",
+        "path": "/",
+        "severity": "fail",
+        "summary": "reader-auth:rule-0586-turned-away: keyboard order changed (12 stops on a, 12 on b)",
+        "detail": " a \"My courses\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n button \"Profile menu\""
+      },
+      {
+        "id": "focus:reader-auth:rule-0586-turned-away-again:44",
+        "artefact": "focus",
+        "scope": "reader-auth:rule-0586-turned-away-again",
+        "path": "/",
+        "severity": "fail",
+        "summary": "reader-auth:rule-0586-turned-away-again: keyboard order changed (12 stops on a, 12 on b)",
+        "detail": " a \"My courses\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n button \"Profile menu\""
+      },
+      {
+        "id": "persistence:student-signs-in/realtime_claim_live_publish:45",
+        "artefact": "persistence",
+        "scope": "student-signs-in/realtime_claim_live_publish",
+        "severity": "fail",
+        "summary": "student-signs-in: RPC realtime_claim_live_publish — 0 row(s) on a, 2 on b"
+      },
+      {
+        "id": "persistence:rule-0582-signed-in-lab/realtime_claim_live_publish:46",
+        "artefact": "persistence",
+        "scope": "rule-0582-signed-in-lab/realtime_claim_live_publish",
+        "severity": "fail",
+        "summary": "rule-0582-signed-in-lab: RPC realtime_claim_live_publish — 0 row(s) on a, 5 on b"
+      },
+      {
+        "id": "persistence:rule-0583-presence/realtime_claim_live_publish:47",
+        "artefact": "persistence",
+        "scope": "rule-0583-presence/realtime_claim_live_publish",
+        "severity": "fail",
+        "summary": "rule-0583-presence: RPC realtime_claim_live_publish — 0 row(s) on a, 2 on b"
+      },
+      {
+        "id": "realtime:reader-auth/messages:48",
+        "artefact": "realtime",
+        "scope": "reader-auth/messages",
+        "severity": "info",
+        "summary": "reader-auth: Realtime messages per reader page view fell: a 1 / b 0 per reader page (broadcasts a 18 / b 0, socket data frames a 0 / b 0, over 18 page view(s))"
+      },
+      {
+        "id": "runtime:runtime/summary:49",
+        "artefact": "runtime",
+        "scope": "runtime/summary",
+        "severity": "info",
+        "summary": "container posture collected for catalogue, live, reader, reader-auth, time on both sides (compose)",
+        "detail": "catalogue: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n           b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nlive: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n        b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader-auth: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n             b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\ntime: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter"
+      },
+      {
+        "id": "startup:startup/summary:50",
+        "artefact": "startup",
+        "scope": "startup/summary",
+        "severity": "info",
+        "summary": "startup time collected on both sides (compose, 5 restart(s) per app)",
+        "detail": "catalogue: first healthy / 435 → 437 ms, ready 2278 → 2312 ms (median, a → b, n=5/5)\nlive: first healthy / 444 → 453 ms, ready 2381 → 2340 ms (median, a → b, n=5/5)\nreader: first healthy / 584 → 562 ms, ready 2321 → 2370 ms (median, a → b, n=5/5)\ntime: first healthy / 449 → 420 ms, ready 2357 → 2345 ms (median, a → b, n=5/5)"
+      },
+      {
+        "id": "image-hardening:reader/healthcheck:51",
+        "artefact": "image-hardening",
+        "scope": "reader/healthcheck",
+        "severity": "info",
+        "summary": "reader: declares no HEALTHCHECK (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "image-hardening:catalogue/healthcheck:52",
+        "artefact": "image-hardening",
+        "scope": "catalogue/healthcheck",
+        "severity": "info",
+        "summary": "catalogue: declares no HEALTHCHECK (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "image-hardening:live/healthcheck:53",
+        "artefact": "image-hardening",
+        "scope": "live/healthcheck",
+        "severity": "info",
+        "summary": "live: declares no HEALTHCHECK (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "image-hardening:time/healthcheck:54",
+        "artefact": "image-hardening",
+        "scope": "time/healthcheck",
+        "severity": "info",
+        "summary": "time: declares no HEALTHCHECK (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "build-provenance:reader/slsa:55",
+        "artefact": "build-provenance",
+        "scope": "reader/slsa",
+        "severity": "info",
+        "summary": "reader: carries no SLSA provenance verified under the publishing identity on 0627d3940eb9 (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "build-provenance:catalogue/slsa:56",
+        "artefact": "build-provenance",
+        "scope": "catalogue/slsa",
+        "severity": "info",
+        "summary": "catalogue: carries no SLSA provenance verified under the publishing identity on 8c61baa1c1e9 (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "build-provenance:live/slsa:57",
+        "artefact": "build-provenance",
+        "scope": "live/slsa",
+        "severity": "info",
+        "summary": "live: carries no SLSA provenance verified under the publishing identity on af5231fe19ed (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "build-provenance:time/slsa:58",
+        "artefact": "build-provenance",
+        "scope": "time/slsa",
+        "severity": "info",
+        "summary": "time: carries no SLSA provenance verified under the publishing identity on 4db2acd4bfa8 (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "vuln-ceiling:reader/summary:59",
+        "artefact": "vuln-ceiling",
+        "scope": "reader/summary",
+        "severity": "info",
+        "summary": "reader: vuln-ceiling holds on b: 94 advisories scanned, 20 critical or high, none with a fix available"
+      },
+      {
+        "id": "vuln-ceiling:catalogue/summary:60",
+        "artefact": "vuln-ceiling",
+        "scope": "catalogue/summary",
+        "severity": "info",
+        "summary": "catalogue: vuln-ceiling holds on b: 94 advisories scanned, 20 critical or high, none with a fix available"
+      },
+      {
+        "id": "vuln-ceiling:live/summary:61",
+        "artefact": "vuln-ceiling",
+        "scope": "live/summary",
+        "severity": "info",
+        "summary": "live: vuln-ceiling holds on b: 94 advisories scanned, 20 critical or high, none with a fix available"
+      },
+      {
+        "id": "vuln-ceiling:time/summary:62",
+        "artefact": "vuln-ceiling",
+        "scope": "time/summary",
+        "severity": "info",
+        "summary": "time: vuln-ceiling holds on b: 94 advisories scanned, 20 critical or high, none with a fix available"
+      },
+      {
+        "id": "asset-graph:reader:63",
+        "artefact": "asset-graph",
+        "scope": "reader",
+        "severity": "info",
+        "summary": "reader: the asset graph changed: 173 → 173 immutable requests (JS 142 → 142, CSS 31 → 31), 1.6 MB → 1.6 MB; 0 network and 0 headers difference(s) are this churn",
+        "level": "informing"
+      },
+      {
+        "id": "asset-graph:catalogue:64",
+        "artefact": "asset-graph",
+        "scope": "catalogue",
+        "severity": "info",
+        "summary": "catalogue: the asset graph changed: 19 → 19 immutable requests (JS 15 → 15, CSS 4 → 4), 529 KB → 530 KB; 0 network and 0 headers difference(s) are this churn",
+        "level": "informing"
+      },
+      {
+        "id": "asset-graph:live:65",
+        "artefact": "asset-graph",
+        "scope": "live",
+        "severity": "info",
+        "summary": "live: the asset graph changed: 24 → 24 immutable requests (JS 19 → 19, CSS 5 → 5), 540 KB → 541 KB; 0 network and 0 headers difference(s) are this churn",
+        "level": "informing"
+      },
+      {
+        "id": "asset-graph:reader-auth:66",
+        "artefact": "asset-graph",
+        "scope": "reader-auth",
+        "severity": "info",
+        "summary": "reader-auth: the asset graph changed: 810 → 810 immutable requests (JS 689 → 689, CSS 121 → 121), 9.1 MB → 9.1 MB; 0 network and 0 headers difference(s) are this churn",
+        "level": "informing"
+      },
+      {
+        "id": "asset-graph:reference:67",
+        "artefact": "asset-graph",
+        "scope": "reference",
+        "severity": "info",
+        "summary": "reference: the asset graph changed: 121 → 123 immutable requests (JS 99 → 101, CSS 22 → 22), 1.2 MB → 1.2 MB; 2 network and 0 headers difference(s) are this churn",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET___course__/tutors.json:68",
+        "artefact": "replay",
+        "scope": "replay:topic-02 GET {{course}}/tutors.json",
+        "path": "/topic/localhost:8080/unit-1/topic-02",
+        "severity": "info",
+        "summary": "replay:topic-02: request no longer made on b: GET {{course}}/tutors.json",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET___course__/tutors.json:69",
+        "artefact": "replay",
+        "scope": "replay:talk-01 GET {{course}}/tutors.json",
+        "path": "/talk/localhost:8080/unit-1/topic-01/talk-01",
+        "severity": "info",
+        "summary": "replay:talk-01: GET {{course}}/tutors.json requested 1× on a, 2× on b",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET___course__/tutors.json:70",
+        "artefact": "replay",
+        "scope": "replay:note-01 GET {{course}}/tutors.json",
+        "path": "/note/localhost:8080/unit-1/topic-01/note-01",
+        "severity": "info",
+        "summary": "replay:note-01: request no longer made on b: GET {{course}}/tutors.json",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET_/_app/immutable/assets/1.__hash__.css:71",
+        "artefact": "replay",
+        "scope": "replay:note-01 GET /_app/immutable/assets/1.{{hash}}.css",
+        "path": "/note/localhost:8080/unit-1/topic-01/note-01",
+        "severity": "info",
+        "summary": "replay:note-01: request no longer made on b: GET /_app/immutable/assets/1.{{hash}}.css",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET_/_app/immutable/chunks/__hash__.js:72",
+        "artefact": "replay",
+        "scope": "replay:note-01 GET /_app/immutable/chunks/{{hash}}.js",
+        "path": "/note/localhost:8080/unit-1/topic-01/note-01",
+        "severity": "info",
+        "summary": "replay:note-01: GET /_app/immutable/chunks/{{hash}}.js requested 38× on a, 37× on b",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET_/_app/immutable/nodes/1.__hash__.js:73",
+        "artefact": "replay",
+        "scope": "replay:note-01 GET /_app/immutable/nodes/1.{{hash}}.js",
+        "path": "/note/localhost:8080/unit-1/topic-01/note-01",
+        "severity": "info",
+        "summary": "replay:note-01: request no longer made on b: GET /_app/immutable/nodes/1.{{hash}}.js",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET_/note/localhost:8080/unit-1/topic-01/note-01/__data.json_x-sveltekit-invalidated_100:74",
+        "artefact": "replay",
+        "scope": "replay:note-01 GET /note/localhost:8080/unit-1/topic-01/note-01/__data.json?x-sveltekit-invalidated=100",
+        "path": "/note/localhost:8080/unit-1/topic-01/note-01",
+        "severity": "info",
+        "summary": "replay:note-01: request no longer made on b: GET /note/localhost:8080/unit-1/topic-01/note-01/__data.json?x-sveltekit-invalidated=100",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET_/_app/immutable/assets/1.__hash__.css:75",
+        "artefact": "replay",
+        "scope": "replay:note-02 GET /_app/immutable/assets/1.{{hash}}.css",
+        "path": "/note/localhost:8080/unit-1/topic-02/note-02",
+        "severity": "info",
+        "summary": "replay:note-02: GET /_app/immutable/assets/1.{{hash}}.css requested 1× on a, 2× on b",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET_/_app/immutable/chunks/__hash__.js:76",
+        "artefact": "replay",
+        "scope": "replay:note-02 GET /_app/immutable/chunks/{{hash}}.js",
+        "path": "/note/localhost:8080/unit-1/topic-02/note-02",
+        "severity": "info",
+        "summary": "replay:note-02: GET /_app/immutable/chunks/{{hash}}.js requested 38× on a, 39× on b",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET_/_app/immutable/nodes/1.__hash__.js:77",
+        "artefact": "replay",
+        "scope": "replay:note-02 GET /_app/immutable/nodes/1.{{hash}}.js",
+        "path": "/note/localhost:8080/unit-1/topic-02/note-02",
+        "severity": "info",
+        "summary": "replay:note-02: GET /_app/immutable/nodes/1.{{hash}}.js requested 1× on a, 2× on b",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET_/note/localhost:8080/unit-1/topic-01/note-01/__data.json_x-sveltekit-invalidated_100:78",
+        "artefact": "replay",
+        "scope": "replay:note-02 GET /note/localhost:8080/unit-1/topic-01/note-01/__data.json?x-sveltekit-invalidated=100",
+        "path": "/note/localhost:8080/unit-1/topic-02/note-02",
+        "severity": "info",
+        "summary": "replay:note-02: new request on b: GET /note/localhost:8080/unit-1/topic-01/note-01/__data.json?x-sveltekit-invalidated=100",
+        "level": "informing"
+      },
+      {
+        "id": "slo:reader-availability:79",
+        "artefact": "slo",
+        "scope": "reader-availability",
+        "severity": "info",
+        "summary": "reader-availability: 100.0% of 62 reader requests not 5xx on b (its /metrics across the journeys), objective 99.90% (harness floor; monorepo 99.50%): holds"
+      },
+      {
+        "id": "slo:reader-availability/load:80",
+        "artefact": "slo",
+        "scope": "reader-availability/load",
+        "severity": "info",
+        "summary": "reader-availability: 100.0% of 601 reader requests not 5xx on b (the k6 load leg), objective 99.90% (harness floor; monorepo 99.50%): holds"
+      },
+      {
+        "id": "slo:reader-latency:81",
+        "artefact": "slo",
+        "scope": "reader-latency",
+        "severity": "info",
+        "summary": "reader-latency: 100.0% of 62 reader requests under 1s on b (its /metrics across the journeys), objective 99.0% (harness floor; monorepo 95.0%): holds"
+      },
+      {
+        "id": "slo:reader-latency/load:82",
+        "artefact": "slo",
+        "scope": "reader-latency/load",
+        "severity": "info",
+        "summary": "reader-latency: 100.0% of 601 reader requests under 1s on b (the k6 load leg), objective 99.0% (harness floor; monorepo 95.0%): holds"
+      },
+      {
+        "id": "slo:catalogue-availability/not-evaluated:83",
+        "artefact": "slo",
+        "scope": "catalogue-availability/not-evaluated",
+        "severity": "info",
+        "summary": "catalogue-availability: not evaluated on b: 5 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "slo:catalogue-latency/not-evaluated:84",
+        "artefact": "slo",
+        "scope": "catalogue-latency/not-evaluated",
+        "severity": "info",
+        "summary": "catalogue-latency: not evaluated on b: 5 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "slo:live-availability/not-evaluated:85",
+        "artefact": "slo",
+        "scope": "live-availability/not-evaluated",
+        "severity": "info",
+        "summary": "live-availability: not evaluated on b: 5 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "slo:live-latency/not-evaluated:86",
+        "artefact": "slo",
+        "scope": "live-latency/not-evaluated",
+        "severity": "info",
+        "summary": "live-latency: not evaluated on b: 5 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "slo:time-availability/not-evaluated:87",
+        "artefact": "slo",
+        "scope": "time-availability/not-evaluated",
+        "severity": "info",
+        "summary": "time-availability: not evaluated on b: its /metrics across the journeys carries no availability SLI for time"
+      },
+      {
+        "id": "slo:time-latency/not-evaluated:88",
+        "artefact": "slo",
+        "scope": "time-latency/not-evaluated",
+        "severity": "info",
+        "summary": "time-latency: not evaluated on b: its /metrics across the journeys carries no latency SLI for time"
+      },
+      {
+        "id": "slo:reader-latency-tail:89",
+        "artefact": "slo",
+        "scope": "reader-latency-tail",
+        "severity": "info",
+        "summary": "reader-latency-tail: 100.0% of 62 reader requests under 2.5s on b (its /metrics across the journeys), objective 99.0%: holds"
+      },
+      {
+        "id": "slo:reader-latency-tail/load:90",
+        "artefact": "slo",
+        "scope": "reader-latency-tail/load",
+        "severity": "info",
+        "summary": "reader-latency-tail: 100.0% of 601 reader requests under 2.5s on b (the k6 load leg), objective 99.0%: holds"
+      }
+    ],
+    "matches": [
+      {
+        "hunk": {
+          "id": "dom:reader:home:1",
+          "artefact": "dom",
+          "scope": "reader:home",
+          "path": "/",
+          "severity": "fail",
+          "summary": "reader:home: semantic DOM differs (+1 −1 lines at line 10)",
+          "detail": "     - link \"My courses\":\n       - /url: /\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reader:course:2",
+          "artefact": "dom",
+          "scope": "reader:course",
+          "path": "/course/localhost:8080",
+          "severity": "fail",
+          "summary": "reader:course: semantic DOM differs (+1 −1 lines at line 9)",
+          "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reader:topic:3",
+          "artefact": "dom",
+          "scope": "reader:topic",
+          "path": "/topic/localhost:8080/unit-1/topic-01",
+          "severity": "fail",
+          "summary": "reader:topic: semantic DOM differs (+1 −1 lines at line 8)",
+          "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reader:lab-step:4",
+          "artefact": "dom",
+          "scope": "reader:lab-step",
+          "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01",
+          "severity": "fail",
+          "summary": "reader:lab-step: semantic DOM differs (+1 −1 lines at line 8)",
+          "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reader:lab-step-2:5",
+          "artefact": "dom",
+          "scope": "reader:lab-step-2",
+          "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01/Step-01",
+          "severity": "fail",
+          "summary": "reader:lab-step-2: semantic DOM differs (+1 −1 lines at line 8)",
+          "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reader:search:6",
+          "artefact": "dom",
+          "scope": "reader:search",
+          "path": "/search/localhost:8080",
+          "severity": "fail",
+          "summary": "reader:search: semantic DOM differs (+1 −1 lines at line 8)",
+          "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reader:search-results:7",
+          "artefact": "dom",
+          "scope": "reader:search-results",
+          "path": "/search/localhost:8080?q=reference+material",
+          "severity": "fail",
+          "summary": "reader:search-results: semantic DOM differs (+1 −1 lines at line 8)",
+          "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:catalogue:home:8",
+          "artefact": "dom",
+          "scope": "catalogue:home",
+          "path": "/",
+          "severity": "fail",
+          "summary": "catalogue:home: semantic DOM differs (+1 −1 lines at line 10)",
+          "detail": "     - link \"Catalogue\":\n       - /url: /\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n - complementary \"Course navigation\":\n   - navigation:"
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:live:home:9",
+          "artefact": "dom",
+          "scope": "live:home",
+          "path": "/",
+          "severity": "fail",
+          "summary": "live:home: semantic DOM differs (+1 −1 lines at line 10)",
+          "detail": "     - link \"Live\":\n       - /url: /\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n - complementary \"Course navigation\":\n   - navigation:"
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reader-auth:course:10",
+          "artefact": "dom",
+          "scope": "reader-auth:course",
+          "path": "/course/localhost:8080",
+          "severity": "fail",
+          "summary": "reader-auth:course: semantic DOM differs (+1 −1 lines at line 9)",
+          "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Profile menu\":\n       - img \"Harness Student\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reader-auth:topic:11",
+          "artefact": "dom",
+          "scope": "reader-auth:topic",
+          "path": "/topic/localhost:8080/unit-1/topic-01",
+          "severity": "fail",
+          "summary": "reader-auth:topic: semantic DOM differs (+1 −1 lines at line 8)",
+          "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Profile menu\":\n       - img \"Harness Student\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reference:course:12",
+          "artefact": "dom",
+          "scope": "reference:course",
+          "path": "/course/reference-course",
+          "severity": "fail",
+          "summary": "reference:course: semantic DOM differs (+1 −1 lines at line 10)",
+          "detail": "     - text: A reference course containing all supported learning objects\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reference:topic:13",
+          "artefact": "dom",
+          "scope": "reference:topic",
+          "path": "/topic/reference-course/topic-07-reference",
+          "severity": "fail",
+          "summary": "reference:topic: semantic DOM differs (+1 −1 lines at line 9)",
+          "detail": "     - text: A reference course containing all supported learning objects\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reference:lab:14",
+          "artefact": "dom",
+          "scope": "reference:lab",
+          "path": "/lab/reference-course/topic-07-reference/book-a",
+          "severity": "fail",
+          "summary": "reference:lab: semantic DOM differs (+1 −1 lines at line 9)",
+          "detail": "     - text: A reference course containing all supported learning objects\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reference:note:15",
+          "artefact": "dom",
+          "scope": "reference:note",
+          "path": "/note/reference-course/topic-07-reference/note-1",
+          "severity": "fail",
+          "summary": "reference:note: semantic DOM differs (+1 −1 lines at line 9)",
+          "detail": "     - text: A reference course containing all supported learning objects\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reader-auth:rule-0582-course:16",
+          "artefact": "dom",
+          "scope": "reader-auth:rule-0582-course",
+          "path": "/course/localhost:8080",
+          "severity": "fail",
+          "summary": "reader-auth:rule-0582-course: semantic DOM differs (+1 −1 lines at line 9)",
+          "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Profile menu\":\n       - img \"Harness Student\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reader-auth:rule-0582-lab-step:17",
+          "artefact": "dom",
+          "scope": "reader-auth:rule-0582-lab-step",
+          "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01",
+          "severity": "fail",
+          "summary": "reader-auth:rule-0582-lab-step: semantic DOM differs (+1 −1 lines at line 8)",
+          "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Profile menu\":\n       - img \"Harness Student\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reader-auth:rule-0582-lab-step-2:18",
+          "artefact": "dom",
+          "scope": "reader-auth:rule-0582-lab-step-2",
+          "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01/Step-01",
+          "severity": "fail",
+          "summary": "reader-auth:rule-0582-lab-step-2: semantic DOM differs (+1 −1 lines at line 8)",
+          "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Profile menu\":\n       - img \"Harness Student\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reader-auth:rule-0582-lab-step-back:19",
+          "artefact": "dom",
+          "scope": "reader-auth:rule-0582-lab-step-back",
+          "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01/Setup",
+          "severity": "fail",
+          "summary": "reader-auth:rule-0582-lab-step-back: semantic DOM differs (+1 −1 lines at line 8)",
+          "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Profile menu\":\n       - img \"Harness Student\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reader-auth:rule-0583-profile-menu:20",
+          "artefact": "dom",
+          "scope": "reader-auth:rule-0583-profile-menu",
+          "path": "/course/localhost:8080",
+          "severity": "fail",
+          "summary": "reader-auth:rule-0583-profile-menu: semantic DOM differs (+1 −1 lines at line 9)",
+          "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Profile menu\" [expanded]:\n       - img \"Harness Student\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reader-auth:rule-0584-talk-slide-2:21",
+          "artefact": "dom",
+          "scope": "reader-auth:rule-0584-talk-slide-2",
+          "path": "/talk/localhost:8081/unit-1/topic-01/talk-01",
+          "severity": "fail",
+          "summary": "reader-auth:rule-0584-talk-slide-2: semantic DOM differs (+1 −1 lines at line 8)",
+          "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n - complementary \"Course navigation\":\n   - navigation:"
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reader-auth:rule-0584-notebook-cell-2:22",
+          "artefact": "dom",
+          "scope": "reader-auth:rule-0584-notebook-cell-2",
+          "path": "/notebook/localhost:8081/unit-1/topic-01/notebook-01",
+          "severity": "fail",
+          "summary": "reader-auth:rule-0584-notebook-cell-2: semantic DOM differs (+1 −1 lines at line 8)",
+          "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n - complementary \"Course navigation\":\n   - navigation:"
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reader-auth:rule-0584-quiz-results:23",
+          "artefact": "dom",
+          "scope": "reader-auth:rule-0584-quiz-results",
+          "path": "/quiz/localhost:8081/unit-1/topic-01/quiz-01",
+          "severity": "fail",
+          "summary": "reader-auth:rule-0584-quiz-results: semantic DOM differs (+1 −1 lines at line 8)",
+          "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n - complementary \"Course navigation\":\n   - navigation:"
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reader-auth:rule-0585-course-dark:24",
+          "artefact": "dom",
+          "scope": "reader-auth:rule-0585-course-dark",
+          "path": "/course/localhost:8081",
+          "severity": "fail",
+          "summary": "reader-auth:rule-0585-course-dark: semantic DOM differs (+1 −1 lines at line 9)",
+          "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n - complementary \"Course navigation\":\n   - navigation:"
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reader-auth:rule-0585-preferences-after-reload:25",
+          "artefact": "dom",
+          "scope": "reader-auth:rule-0585-preferences-after-reload",
+          "path": "/course/localhost:8081",
+          "severity": "fail",
+          "summary": "reader-auth:rule-0585-preferences-after-reload: semantic DOM differs (+1 −1 lines at line 9)",
+          "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\" [expanded]: Preferences\n+    - button \"Preferences\" [expanded]\n - complementary \"Course navigation\":\n   - navigation:"
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reader-auth:rule-0586-turned-away:26",
+          "artefact": "dom",
+          "scope": "reader-auth:rule-0586-turned-away",
+          "path": "/",
+          "severity": "fail",
+          "summary": "reader-auth:rule-0586-turned-away: semantic DOM differs (+1 −1 lines at line 10)",
+          "detail": "     - link \"My courses\":\n       - /url: /\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Profile menu\":\n       - img \"Harness Student\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reader-auth:rule-0586-turned-away-again:27",
+          "artefact": "dom",
+          "scope": "reader-auth:rule-0586-turned-away-again",
+          "path": "/",
+          "severity": "fail",
+          "summary": "reader-auth:rule-0586-turned-away-again: semantic DOM differs (+1 −1 lines at line 10)",
+          "detail": "     - link \"My courses\":\n       - /url: /\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Profile menu\":\n       - img \"Harness Student\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reader-auth:rule-0587-llm:28",
+          "artefact": "dom",
+          "scope": "reader-auth:rule-0587-llm",
+          "path": "/llm/localhost:8081",
+          "severity": "fail",
+          "summary": "reader-auth:rule-0587-llm: semantic DOM differs (+1 −1 lines at line 8)",
+          "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n - complementary \"Course navigation\":\n   - navigation:"
+        }
+      },
+      {
+        "hunk": {
+          "id": "network:POST_/api/live/activity:29",
+          "artefact": "network",
+          "scope": "POST /api/live/activity",
+          "path": "/course/localhost:8080",
+          "severity": "fail",
+          "summary": "reader-auth:course: new request on b: POST /api/live/activity"
+        },
+        "claim": {
+          "artefact": "network",
+          "scope": "POST /api/live/activity",
+          "reason": "Rule 0330: the reader sends each learning event to its own server (POST /api/live/activity) instead of broadcasting it from the browser (#481)",
+          "rule": "0330",
+          "ruleTitle": "When a student opens a learning object, the reader shall send the learning event to the reader's server without publishing it over Realtime from the browser."
+        }
+      },
+      {
+        "hunk": {
+          "id": "network:POST_/api/live/activity:30",
+          "artefact": "network",
+          "scope": "POST /api/live/activity",
+          "path": "/topic/localhost:8080/unit-1/topic-01",
+          "severity": "fail",
+          "summary": "reader-auth:topic: new request on b: POST /api/live/activity"
+        },
+        "claim": {
+          "artefact": "network",
+          "scope": "POST /api/live/activity",
+          "reason": "Rule 0330: the reader sends each learning event to its own server (POST /api/live/activity) instead of broadcasting it from the browser (#481)",
+          "rule": "0330",
+          "ruleTitle": "When a student opens a learning object, the reader shall send the learning event to the reader's server without publishing it over Realtime from the browser."
+        }
+      },
+      {
+        "hunk": {
+          "id": "network:GET_/_app/immutable/chunks/__hash__.js:31",
+          "artefact": "network",
+          "scope": "GET /_app/immutable/chunks/{{hash}}.js",
+          "path": "/course/reference-course",
+          "severity": "fail",
+          "summary": "reference:course: GET /_app/immutable/chunks/{{hash}}.js requested 43× on a, 44× on b"
+        },
+        "claim": {
+          "artefact": "network",
+          "scope": "GET /_app/immutable/chunks/\\{\\{hash\\}\\}.js",
+          "reason": "Rule 0330: moving learning events from browser Realtime to the reader's server adds one immutable chunk on reference:course and reference:note (#478, #481)",
+          "rule": "0330",
+          "ruleTitle": "When a student opens a learning object, the reader shall send the learning event to the reader's server without publishing it over Realtime from the browser."
+        }
+      },
+      {
+        "hunk": {
+          "id": "network:GET_/_app/immutable/chunks/__hash__.js:32",
+          "artefact": "network",
+          "scope": "GET /_app/immutable/chunks/{{hash}}.js",
+          "path": "/note/reference-course/topic-07-reference/note-1",
+          "severity": "fail",
+          "summary": "reference:note: GET /_app/immutable/chunks/{{hash}}.js requested 39× on a, 40× on b"
+        },
+        "claim": {
+          "artefact": "network",
+          "scope": "GET /_app/immutable/chunks/\\{\\{hash\\}\\}.js",
+          "reason": "Rule 0330: moving learning events from browser Realtime to the reader's server adds one immutable chunk on reference:course and reference:note (#478, #481)",
+          "rule": "0330",
+          "ruleTitle": "When a student opens a learning object, the reader shall send the learning event to the reader's server without publishing it over Realtime from the browser."
+        }
+      },
+      {
+        "hunk": {
+          "id": "network:POST_/api/live/activity:33",
+          "artefact": "network",
+          "scope": "POST /api/live/activity",
+          "path": "/course/localhost:8080",
+          "severity": "fail",
+          "summary": "reader-auth:rule-0582-course: new request on b: POST /api/live/activity"
+        },
+        "claim": {
+          "artefact": "network",
+          "scope": "POST /api/live/activity",
+          "reason": "Rule 0330: the reader sends each learning event to its own server (POST /api/live/activity) instead of broadcasting it from the browser (#481)",
+          "rule": "0330",
+          "ruleTitle": "When a student opens a learning object, the reader shall send the learning event to the reader's server without publishing it over Realtime from the browser."
+        }
+      },
+      {
+        "hunk": {
+          "id": "network:POST_/api/live/activity:34",
+          "artefact": "network",
+          "scope": "POST /api/live/activity",
+          "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01",
+          "severity": "fail",
+          "summary": "reader-auth:rule-0582-lab-step: new request on b: POST /api/live/activity"
+        },
+        "claim": {
+          "artefact": "network",
+          "scope": "POST /api/live/activity",
+          "reason": "Rule 0330: the reader sends each learning event to its own server (POST /api/live/activity) instead of broadcasting it from the browser (#481)",
+          "rule": "0330",
+          "ruleTitle": "When a student opens a learning object, the reader shall send the learning event to the reader's server without publishing it over Realtime from the browser."
+        }
+      },
+      {
+        "hunk": {
+          "id": "network:POST_/api/live/activity:35",
+          "artefact": "network",
+          "scope": "POST /api/live/activity",
+          "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01/Step-01",
+          "severity": "fail",
+          "summary": "reader-auth:rule-0582-lab-step-2: new request on b: POST /api/live/activity"
+        },
+        "claim": {
+          "artefact": "network",
+          "scope": "POST /api/live/activity",
+          "reason": "Rule 0330: the reader sends each learning event to its own server (POST /api/live/activity) instead of broadcasting it from the browser (#481)",
+          "rule": "0330",
+          "ruleTitle": "When a student opens a learning object, the reader shall send the learning event to the reader's server without publishing it over Realtime from the browser."
+        }
+      },
+      {
+        "hunk": {
+          "id": "network:POST_/api/live/activity:36",
+          "artefact": "network",
+          "scope": "POST /api/live/activity",
+          "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01/Setup",
+          "severity": "fail",
+          "summary": "reader-auth:rule-0582-lab-step-back: new request on b: POST /api/live/activity"
+        },
+        "claim": {
+          "artefact": "network",
+          "scope": "POST /api/live/activity",
+          "reason": "Rule 0330: the reader sends each learning event to its own server (POST /api/live/activity) instead of broadcasting it from the browser (#481)",
+          "rule": "0330",
+          "ruleTitle": "When a student opens a learning object, the reader shall send the learning event to the reader's server without publishing it over Realtime from the browser."
+        }
+      },
+      {
+        "hunk": {
+          "id": "network:POST_/api/live/activity:37",
+          "artefact": "network",
+          "scope": "POST /api/live/activity",
+          "path": "/course/localhost:8080",
+          "severity": "fail",
+          "summary": "reader-auth:rule-0583-profile-menu: new request on b: POST /api/live/activity"
+        },
+        "claim": {
+          "artefact": "network",
+          "scope": "POST /api/live/activity",
+          "reason": "Rule 0330: the reader sends each learning event to its own server (POST /api/live/activity) instead of broadcasting it from the browser (#481)",
+          "rule": "0330",
+          "ruleTitle": "When a student opens a learning object, the reader shall send the learning event to the reader's server without publishing it over Realtime from the browser."
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:catalogue:home:38",
+          "artefact": "console",
+          "scope": "catalogue:home",
+          "path": "/",
+          "severity": "info",
+          "summary": "catalogue:home: console message gone on b",
+          "detail": "error: {\"app\":\"tutors-catalogue\",\"environment\":\"production\",\"error\":\"Cannot read properties of undefined (reading 'from')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'from')\\n    at Object.getCatalogue ({{origin}}/_app/immutable/chunks/2lYorbfj.js:69:102918)\\n    at V ({{origin}}/_app/immutable/nodes/2.NAkx_ofm.js:1:484)\\n    at Wn ({{origin}}/_app/immutable/chunks/XgCIYxIE.js:2:24206)\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Error fetching courses:\"}"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:catalogue:home:39",
+          "artefact": "console",
+          "scope": "catalogue:home",
+          "path": "/",
+          "severity": "info",
+          "summary": "catalogue:home: console message gone on b",
+          "detail": "error: {\"app\":\"tutors-catalogue\",\"environment\":\"production\",\"error\":\"Cannot read properties of undefined (reading 'from')\",\"stack\":\"TypeError: Cannot read properties of undefined (reading 'from')\\n    at Object.getStudentCount ({{origin}}/_app/immutable/chunks/2lYorbfj.js:69:103346)\\n    at {{origin}}/_app/immutable/nodes/2.NAkx_ofm.js:1:5193\\n    at Cr ({{origin}}/_app/immutable/chunks/Cv2zGAZD.js:1:23871)\\n    at {{origin}}/_app/immutable/chunks/Cv2zGAZD.js:2:2704\\n    at mr ({{origin}}/_app/immutable/chunks/Cv2zGAZD.js:1:21611)\\n    at vr ({{origin}}/_app/immutable/chunks/Cv2zGAZD.js:1:22749)\\n    at Xt ({{origin}}/_app/immutable/chunks/Cv2zGAZD.js:1:12091)\\n    at #_ ({{origin}}/_app/immutable/chunks/Cv2zGAZD.js:1:9277)\\n    at e.flush ({{origin}}/_app/immutable/chunks/Cv2zGAZD.js:1:10794)\\n    at Array.<anonymous> ({{origin}}/_app/immutable/chunks/Cv2zGAZD.js:1:11554)\",\"timestamp\":\"2026-09-16T09:05:00.000Z\",\"level\":\"error\",\"message\":\"Error fetching course count:\"}"
+        }
+      },
+      {
+        "hunk": {
+          "id": "focus:reader:home:40",
+          "artefact": "focus",
+          "scope": "reader:home",
+          "path": "/",
+          "severity": "fail",
+          "summary": "reader:home: keyboard order changed (12 stops on a, 12 on b)",
+          "detail": " a \"My courses\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n button \"Anonymous Tutors Profile\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "focus:catalogue:home:41",
+          "artefact": "focus",
+          "scope": "catalogue:home",
+          "path": "/",
+          "severity": "fail",
+          "summary": "catalogue:home: keyboard order changed (12 stops on a, 12 on b)",
+          "detail": " a \"Catalogue\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n a \"My courses\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "focus:reference:course:42",
+          "artefact": "focus",
+          "scope": "reference:course",
+          "path": "/course/reference-course",
+          "severity": "fail",
+          "summary": "reference:course: keyboard order changed (12 stops on a, 12 on b)",
+          "detail": " button \"Search this course\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n button \"Anonymous Tutors Profile\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "focus:reader-auth:rule-0586-turned-away:43",
+          "artefact": "focus",
+          "scope": "reader-auth:rule-0586-turned-away",
+          "path": "/",
+          "severity": "fail",
+          "summary": "reader-auth:rule-0586-turned-away: keyboard order changed (12 stops on a, 12 on b)",
+          "detail": " a \"My courses\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n button \"Profile menu\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "focus:reader-auth:rule-0586-turned-away-again:44",
+          "artefact": "focus",
+          "scope": "reader-auth:rule-0586-turned-away-again",
+          "path": "/",
+          "severity": "fail",
+          "summary": "reader-auth:rule-0586-turned-away-again: keyboard order changed (12 stops on a, 12 on b)",
+          "detail": " a \"My courses\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n button \"Profile menu\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "persistence:student-signs-in/realtime_claim_live_publish:45",
+          "artefact": "persistence",
+          "scope": "student-signs-in/realtime_claim_live_publish",
+          "severity": "fail",
+          "summary": "student-signs-in: RPC realtime_claim_live_publish — 0 row(s) on a, 2 on b"
+        },
+        "claim": {
+          "artefact": "persistence",
+          "scope": "student-signs-in/realtime_claim_live_publish",
+          "reason": "Rule 0331: the reader's server claims the topics to publish to, and charges the day's Live budget, through realtime_claim_live_publish (#481)",
+          "rule": "0331",
+          "ruleTitle": "When the reader's server receives a learning event, the reader shall publish it only to the activity feeds a live dashboard has watched in the last 90 seconds."
+        }
+      },
+      {
+        "hunk": {
+          "id": "persistence:rule-0582-signed-in-lab/realtime_claim_live_publish:46",
+          "artefact": "persistence",
+          "scope": "rule-0582-signed-in-lab/realtime_claim_live_publish",
+          "severity": "fail",
+          "summary": "rule-0582-signed-in-lab: RPC realtime_claim_live_publish — 0 row(s) on a, 5 on b"
+        }
+      },
+      {
+        "hunk": {
+          "id": "persistence:rule-0583-presence/realtime_claim_live_publish:47",
+          "artefact": "persistence",
+          "scope": "rule-0583-presence/realtime_claim_live_publish",
+          "severity": "fail",
+          "summary": "rule-0583-presence: RPC realtime_claim_live_publish — 0 row(s) on a, 2 on b"
+        }
+      },
+      {
+        "hunk": {
+          "id": "realtime:reader-auth/messages:48",
+          "artefact": "realtime",
+          "scope": "reader-auth/messages",
+          "severity": "info",
+          "summary": "reader-auth: Realtime messages per reader page view fell: a 1 / b 0 per reader page (broadcasts a 18 / b 0, socket data frames a 0 / b 0, over 18 page view(s))"
+        }
+      },
+      {
+        "hunk": {
+          "id": "runtime:runtime/summary:49",
+          "artefact": "runtime",
+          "scope": "runtime/summary",
+          "severity": "info",
+          "summary": "container posture collected for catalogue, live, reader, reader-auth, time on both sides (compose)",
+          "detail": "catalogue: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n           b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nlive: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n        b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader-auth: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n             b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\ntime: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter"
+        }
+      },
+      {
+        "hunk": {
+          "id": "startup:startup/summary:50",
+          "artefact": "startup",
+          "scope": "startup/summary",
+          "severity": "info",
+          "summary": "startup time collected on both sides (compose, 5 restart(s) per app)",
+          "detail": "catalogue: first healthy / 435 → 437 ms, ready 2278 → 2312 ms (median, a → b, n=5/5)\nlive: first healthy / 444 → 453 ms, ready 2381 → 2340 ms (median, a → b, n=5/5)\nreader: first healthy / 584 → 562 ms, ready 2321 → 2370 ms (median, a → b, n=5/5)\ntime: first healthy / 449 → 420 ms, ready 2357 → 2345 ms (median, a → b, n=5/5)"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-hardening:reader/healthcheck:51",
+          "artefact": "image-hardening",
+          "scope": "reader/healthcheck",
+          "severity": "info",
+          "summary": "reader: declares no HEALTHCHECK (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-hardening:catalogue/healthcheck:52",
+          "artefact": "image-hardening",
+          "scope": "catalogue/healthcheck",
+          "severity": "info",
+          "summary": "catalogue: declares no HEALTHCHECK (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-hardening:live/healthcheck:53",
+          "artefact": "image-hardening",
+          "scope": "live/healthcheck",
+          "severity": "info",
+          "summary": "live: declares no HEALTHCHECK (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-hardening:time/healthcheck:54",
+          "artefact": "image-hardening",
+          "scope": "time/healthcheck",
+          "severity": "info",
+          "summary": "time: declares no HEALTHCHECK (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "build-provenance:reader/slsa:55",
+          "artefact": "build-provenance",
+          "scope": "reader/slsa",
+          "severity": "info",
+          "summary": "reader: carries no SLSA provenance verified under the publishing identity on 0627d3940eb9 (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "build-provenance:catalogue/slsa:56",
+          "artefact": "build-provenance",
+          "scope": "catalogue/slsa",
+          "severity": "info",
+          "summary": "catalogue: carries no SLSA provenance verified under the publishing identity on 8c61baa1c1e9 (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "build-provenance:live/slsa:57",
+          "artefact": "build-provenance",
+          "scope": "live/slsa",
+          "severity": "info",
+          "summary": "live: carries no SLSA provenance verified under the publishing identity on af5231fe19ed (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "build-provenance:time/slsa:58",
+          "artefact": "build-provenance",
+          "scope": "time/slsa",
+          "severity": "info",
+          "summary": "time: carries no SLSA provenance verified under the publishing identity on 4db2acd4bfa8 (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vuln-ceiling:reader/summary:59",
+          "artefact": "vuln-ceiling",
+          "scope": "reader/summary",
+          "severity": "info",
+          "summary": "reader: vuln-ceiling holds on b: 94 advisories scanned, 20 critical or high, none with a fix available"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vuln-ceiling:catalogue/summary:60",
+          "artefact": "vuln-ceiling",
+          "scope": "catalogue/summary",
+          "severity": "info",
+          "summary": "catalogue: vuln-ceiling holds on b: 94 advisories scanned, 20 critical or high, none with a fix available"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vuln-ceiling:live/summary:61",
+          "artefact": "vuln-ceiling",
+          "scope": "live/summary",
+          "severity": "info",
+          "summary": "live: vuln-ceiling holds on b: 94 advisories scanned, 20 critical or high, none with a fix available"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vuln-ceiling:time/summary:62",
+          "artefact": "vuln-ceiling",
+          "scope": "time/summary",
+          "severity": "info",
+          "summary": "time: vuln-ceiling holds on b: 94 advisories scanned, 20 critical or high, none with a fix available"
+        }
+      },
+      {
+        "hunk": {
+          "id": "asset-graph:reader:63",
+          "artefact": "asset-graph",
+          "scope": "reader",
+          "severity": "info",
+          "summary": "reader: the asset graph changed: 173 → 173 immutable requests (JS 142 → 142, CSS 31 → 31), 1.6 MB → 1.6 MB; 0 network and 0 headers difference(s) are this churn",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "asset-graph:catalogue:64",
+          "artefact": "asset-graph",
+          "scope": "catalogue",
+          "severity": "info",
+          "summary": "catalogue: the asset graph changed: 19 → 19 immutable requests (JS 15 → 15, CSS 4 → 4), 529 KB → 530 KB; 0 network and 0 headers difference(s) are this churn",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "asset-graph:live:65",
+          "artefact": "asset-graph",
+          "scope": "live",
+          "severity": "info",
+          "summary": "live: the asset graph changed: 24 → 24 immutable requests (JS 19 → 19, CSS 5 → 5), 540 KB → 541 KB; 0 network and 0 headers difference(s) are this churn",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "asset-graph:reader-auth:66",
+          "artefact": "asset-graph",
+          "scope": "reader-auth",
+          "severity": "info",
+          "summary": "reader-auth: the asset graph changed: 810 → 810 immutable requests (JS 689 → 689, CSS 121 → 121), 9.1 MB → 9.1 MB; 0 network and 0 headers difference(s) are this churn",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "asset-graph:reference:67",
+          "artefact": "asset-graph",
+          "scope": "reference",
+          "severity": "info",
+          "summary": "reference: the asset graph changed: 121 → 123 immutable requests (JS 99 → 101, CSS 22 → 22), 1.2 MB → 1.2 MB; 2 network and 0 headers difference(s) are this churn",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET___course__/tutors.json:68",
+          "artefact": "replay",
+          "scope": "replay:topic-02 GET {{course}}/tutors.json",
+          "path": "/topic/localhost:8080/unit-1/topic-02",
+          "severity": "info",
+          "summary": "replay:topic-02: request no longer made on b: GET {{course}}/tutors.json",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET___course__/tutors.json:69",
+          "artefact": "replay",
+          "scope": "replay:talk-01 GET {{course}}/tutors.json",
+          "path": "/talk/localhost:8080/unit-1/topic-01/talk-01",
+          "severity": "info",
+          "summary": "replay:talk-01: GET {{course}}/tutors.json requested 1× on a, 2× on b",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET___course__/tutors.json:70",
+          "artefact": "replay",
+          "scope": "replay:note-01 GET {{course}}/tutors.json",
+          "path": "/note/localhost:8080/unit-1/topic-01/note-01",
+          "severity": "info",
+          "summary": "replay:note-01: request no longer made on b: GET {{course}}/tutors.json",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET_/_app/immutable/assets/1.__hash__.css:71",
+          "artefact": "replay",
+          "scope": "replay:note-01 GET /_app/immutable/assets/1.{{hash}}.css",
+          "path": "/note/localhost:8080/unit-1/topic-01/note-01",
+          "severity": "info",
+          "summary": "replay:note-01: request no longer made on b: GET /_app/immutable/assets/1.{{hash}}.css",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET_/_app/immutable/chunks/__hash__.js:72",
+          "artefact": "replay",
+          "scope": "replay:note-01 GET /_app/immutable/chunks/{{hash}}.js",
+          "path": "/note/localhost:8080/unit-1/topic-01/note-01",
+          "severity": "info",
+          "summary": "replay:note-01: GET /_app/immutable/chunks/{{hash}}.js requested 38× on a, 37× on b",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET_/_app/immutable/nodes/1.__hash__.js:73",
+          "artefact": "replay",
+          "scope": "replay:note-01 GET /_app/immutable/nodes/1.{{hash}}.js",
+          "path": "/note/localhost:8080/unit-1/topic-01/note-01",
+          "severity": "info",
+          "summary": "replay:note-01: request no longer made on b: GET /_app/immutable/nodes/1.{{hash}}.js",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET_/note/localhost:8080/unit-1/topic-01/note-01/__data.json_x-sveltekit-invalidated_100:74",
+          "artefact": "replay",
+          "scope": "replay:note-01 GET /note/localhost:8080/unit-1/topic-01/note-01/__data.json?x-sveltekit-invalidated=100",
+          "path": "/note/localhost:8080/unit-1/topic-01/note-01",
+          "severity": "info",
+          "summary": "replay:note-01: request no longer made on b: GET /note/localhost:8080/unit-1/topic-01/note-01/__data.json?x-sveltekit-invalidated=100",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET_/_app/immutable/assets/1.__hash__.css:75",
+          "artefact": "replay",
+          "scope": "replay:note-02 GET /_app/immutable/assets/1.{{hash}}.css",
+          "path": "/note/localhost:8080/unit-1/topic-02/note-02",
+          "severity": "info",
+          "summary": "replay:note-02: GET /_app/immutable/assets/1.{{hash}}.css requested 1× on a, 2× on b",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET_/_app/immutable/chunks/__hash__.js:76",
+          "artefact": "replay",
+          "scope": "replay:note-02 GET /_app/immutable/chunks/{{hash}}.js",
+          "path": "/note/localhost:8080/unit-1/topic-02/note-02",
+          "severity": "info",
+          "summary": "replay:note-02: GET /_app/immutable/chunks/{{hash}}.js requested 38× on a, 39× on b",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET_/_app/immutable/nodes/1.__hash__.js:77",
+          "artefact": "replay",
+          "scope": "replay:note-02 GET /_app/immutable/nodes/1.{{hash}}.js",
+          "path": "/note/localhost:8080/unit-1/topic-02/note-02",
+          "severity": "info",
+          "summary": "replay:note-02: GET /_app/immutable/nodes/1.{{hash}}.js requested 1× on a, 2× on b",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET_/note/localhost:8080/unit-1/topic-01/note-01/__data.json_x-sveltekit-invalidated_100:78",
+          "artefact": "replay",
+          "scope": "replay:note-02 GET /note/localhost:8080/unit-1/topic-01/note-01/__data.json?x-sveltekit-invalidated=100",
+          "path": "/note/localhost:8080/unit-1/topic-02/note-02",
+          "severity": "info",
+          "summary": "replay:note-02: new request on b: GET /note/localhost:8080/unit-1/topic-01/note-01/__data.json?x-sveltekit-invalidated=100",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:reader-availability:79",
+          "artefact": "slo",
+          "scope": "reader-availability",
+          "severity": "info",
+          "summary": "reader-availability: 100.0% of 62 reader requests not 5xx on b (its /metrics across the journeys), objective 99.90% (harness floor; monorepo 99.50%): holds"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:reader-availability/load:80",
+          "artefact": "slo",
+          "scope": "reader-availability/load",
+          "severity": "info",
+          "summary": "reader-availability: 100.0% of 601 reader requests not 5xx on b (the k6 load leg), objective 99.90% (harness floor; monorepo 99.50%): holds"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:reader-latency:81",
+          "artefact": "slo",
+          "scope": "reader-latency",
+          "severity": "info",
+          "summary": "reader-latency: 100.0% of 62 reader requests under 1s on b (its /metrics across the journeys), objective 99.0% (harness floor; monorepo 95.0%): holds"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:reader-latency/load:82",
+          "artefact": "slo",
+          "scope": "reader-latency/load",
+          "severity": "info",
+          "summary": "reader-latency: 100.0% of 601 reader requests under 1s on b (the k6 load leg), objective 99.0% (harness floor; monorepo 95.0%): holds"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:catalogue-availability/not-evaluated:83",
+          "artefact": "slo",
+          "scope": "catalogue-availability/not-evaluated",
+          "severity": "info",
+          "summary": "catalogue-availability: not evaluated on b: 5 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:catalogue-latency/not-evaluated:84",
+          "artefact": "slo",
+          "scope": "catalogue-latency/not-evaluated",
+          "severity": "info",
+          "summary": "catalogue-latency: not evaluated on b: 5 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:live-availability/not-evaluated:85",
+          "artefact": "slo",
+          "scope": "live-availability/not-evaluated",
+          "severity": "info",
+          "summary": "live-availability: not evaluated on b: 5 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:live-latency/not-evaluated:86",
+          "artefact": "slo",
+          "scope": "live-latency/not-evaluated",
+          "severity": "info",
+          "summary": "live-latency: not evaluated on b: 5 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:time-availability/not-evaluated:87",
+          "artefact": "slo",
+          "scope": "time-availability/not-evaluated",
+          "severity": "info",
+          "summary": "time-availability: not evaluated on b: its /metrics across the journeys carries no availability SLI for time"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:time-latency/not-evaluated:88",
+          "artefact": "slo",
+          "scope": "time-latency/not-evaluated",
+          "severity": "info",
+          "summary": "time-latency: not evaluated on b: its /metrics across the journeys carries no latency SLI for time"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:reader-latency-tail:89",
+          "artefact": "slo",
+          "scope": "reader-latency-tail",
+          "severity": "info",
+          "summary": "reader-latency-tail: 100.0% of 62 reader requests under 2.5s on b (its /metrics across the journeys), objective 99.0%: holds"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:reader-latency-tail/load:90",
+          "artefact": "slo",
+          "scope": "reader-latency-tail/load",
+          "severity": "info",
+          "summary": "reader-latency-tail: 100.0% of 601 reader requests under 2.5s on b (the k6 load leg), objective 99.0%: holds"
+        }
+      }
+    ],
+    "unclaimed": [
+      {
+        "id": "dom:reader:home:1",
+        "artefact": "dom",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "fail",
+        "summary": "reader:home: semantic DOM differs (+1 −1 lines at line 10)",
+        "detail": "     - link \"My courses\":\n       - /url: /\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+      },
+      {
+        "id": "dom:reader:course:2",
+        "artefact": "dom",
+        "scope": "reader:course",
+        "path": "/course/localhost:8080",
+        "severity": "fail",
+        "summary": "reader:course: semantic DOM differs (+1 −1 lines at line 9)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+      },
+      {
+        "id": "dom:reader:topic:3",
+        "artefact": "dom",
+        "scope": "reader:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader:topic: semantic DOM differs (+1 −1 lines at line 8)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+      },
+      {
+        "id": "dom:reader:lab-step:4",
+        "artefact": "dom",
+        "scope": "reader:lab-step",
+        "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01",
+        "severity": "fail",
+        "summary": "reader:lab-step: semantic DOM differs (+1 −1 lines at line 8)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+      },
+      {
+        "id": "dom:reader:lab-step-2:5",
+        "artefact": "dom",
+        "scope": "reader:lab-step-2",
+        "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01/Step-01",
+        "severity": "fail",
+        "summary": "reader:lab-step-2: semantic DOM differs (+1 −1 lines at line 8)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+      },
+      {
+        "id": "dom:reader:search:6",
+        "artefact": "dom",
+        "scope": "reader:search",
+        "path": "/search/localhost:8080",
+        "severity": "fail",
+        "summary": "reader:search: semantic DOM differs (+1 −1 lines at line 8)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+      },
+      {
+        "id": "dom:reader:search-results:7",
+        "artefact": "dom",
+        "scope": "reader:search-results",
+        "path": "/search/localhost:8080?q=reference+material",
+        "severity": "fail",
+        "summary": "reader:search-results: semantic DOM differs (+1 −1 lines at line 8)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+      },
+      {
+        "id": "dom:catalogue:home:8",
+        "artefact": "dom",
+        "scope": "catalogue:home",
+        "path": "/",
+        "severity": "fail",
+        "summary": "catalogue:home: semantic DOM differs (+1 −1 lines at line 10)",
+        "detail": "     - link \"Catalogue\":\n       - /url: /\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n - complementary \"Course navigation\":\n   - navigation:"
+      },
+      {
+        "id": "dom:live:home:9",
+        "artefact": "dom",
+        "scope": "live:home",
+        "path": "/",
+        "severity": "fail",
+        "summary": "live:home: semantic DOM differs (+1 −1 lines at line 10)",
+        "detail": "     - link \"Live\":\n       - /url: /\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n - complementary \"Course navigation\":\n   - navigation:"
+      },
+      {
+        "id": "dom:reader-auth:course:10",
+        "artefact": "dom",
+        "scope": "reader-auth:course",
+        "path": "/course/localhost:8080",
+        "severity": "fail",
+        "summary": "reader-auth:course: semantic DOM differs (+1 −1 lines at line 9)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Profile menu\":\n       - img \"Harness Student\""
+      },
+      {
+        "id": "dom:reader-auth:topic:11",
+        "artefact": "dom",
+        "scope": "reader-auth:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader-auth:topic: semantic DOM differs (+1 −1 lines at line 8)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Profile menu\":\n       - img \"Harness Student\""
+      },
+      {
+        "id": "dom:reference:course:12",
+        "artefact": "dom",
+        "scope": "reference:course",
+        "path": "/course/reference-course",
+        "severity": "fail",
+        "summary": "reference:course: semantic DOM differs (+1 −1 lines at line 10)",
+        "detail": "     - text: A reference course containing all supported learning objects\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+      },
+      {
+        "id": "dom:reference:topic:13",
+        "artefact": "dom",
+        "scope": "reference:topic",
+        "path": "/topic/reference-course/topic-07-reference",
+        "severity": "fail",
+        "summary": "reference:topic: semantic DOM differs (+1 −1 lines at line 9)",
+        "detail": "     - text: A reference course containing all supported learning objects\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+      },
+      {
+        "id": "dom:reference:lab:14",
+        "artefact": "dom",
+        "scope": "reference:lab",
+        "path": "/lab/reference-course/topic-07-reference/book-a",
+        "severity": "fail",
+        "summary": "reference:lab: semantic DOM differs (+1 −1 lines at line 9)",
+        "detail": "     - text: A reference course containing all supported learning objects\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+      },
+      {
+        "id": "dom:reference:note:15",
+        "artefact": "dom",
+        "scope": "reference:note",
+        "path": "/note/reference-course/topic-07-reference/note-1",
+        "severity": "fail",
+        "summary": "reference:note: semantic DOM differs (+1 −1 lines at line 9)",
+        "detail": "     - text: A reference course containing all supported learning objects\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+      },
+      {
+        "id": "dom:reader-auth:rule-0582-course:16",
+        "artefact": "dom",
+        "scope": "reader-auth:rule-0582-course",
+        "path": "/course/localhost:8080",
+        "severity": "fail",
+        "summary": "reader-auth:rule-0582-course: semantic DOM differs (+1 −1 lines at line 9)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Profile menu\":\n       - img \"Harness Student\""
+      },
+      {
+        "id": "dom:reader-auth:rule-0582-lab-step:17",
+        "artefact": "dom",
+        "scope": "reader-auth:rule-0582-lab-step",
+        "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01",
+        "severity": "fail",
+        "summary": "reader-auth:rule-0582-lab-step: semantic DOM differs (+1 −1 lines at line 8)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Profile menu\":\n       - img \"Harness Student\""
+      },
+      {
+        "id": "dom:reader-auth:rule-0582-lab-step-2:18",
+        "artefact": "dom",
+        "scope": "reader-auth:rule-0582-lab-step-2",
+        "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01/Step-01",
+        "severity": "fail",
+        "summary": "reader-auth:rule-0582-lab-step-2: semantic DOM differs (+1 −1 lines at line 8)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Profile menu\":\n       - img \"Harness Student\""
+      },
+      {
+        "id": "dom:reader-auth:rule-0582-lab-step-back:19",
+        "artefact": "dom",
+        "scope": "reader-auth:rule-0582-lab-step-back",
+        "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01/Setup",
+        "severity": "fail",
+        "summary": "reader-auth:rule-0582-lab-step-back: semantic DOM differs (+1 −1 lines at line 8)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Profile menu\":\n       - img \"Harness Student\""
+      },
+      {
+        "id": "dom:reader-auth:rule-0583-profile-menu:20",
+        "artefact": "dom",
+        "scope": "reader-auth:rule-0583-profile-menu",
+        "path": "/course/localhost:8080",
+        "severity": "fail",
+        "summary": "reader-auth:rule-0583-profile-menu: semantic DOM differs (+1 −1 lines at line 9)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Profile menu\" [expanded]:\n       - img \"Harness Student\""
+      },
+      {
+        "id": "dom:reader-auth:rule-0584-talk-slide-2:21",
+        "artefact": "dom",
+        "scope": "reader-auth:rule-0584-talk-slide-2",
+        "path": "/talk/localhost:8081/unit-1/topic-01/talk-01",
+        "severity": "fail",
+        "summary": "reader-auth:rule-0584-talk-slide-2: semantic DOM differs (+1 −1 lines at line 8)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n - complementary \"Course navigation\":\n   - navigation:"
+      },
+      {
+        "id": "dom:reader-auth:rule-0584-notebook-cell-2:22",
+        "artefact": "dom",
+        "scope": "reader-auth:rule-0584-notebook-cell-2",
+        "path": "/notebook/localhost:8081/unit-1/topic-01/notebook-01",
+        "severity": "fail",
+        "summary": "reader-auth:rule-0584-notebook-cell-2: semantic DOM differs (+1 −1 lines at line 8)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n - complementary \"Course navigation\":\n   - navigation:"
+      },
+      {
+        "id": "dom:reader-auth:rule-0584-quiz-results:23",
+        "artefact": "dom",
+        "scope": "reader-auth:rule-0584-quiz-results",
+        "path": "/quiz/localhost:8081/unit-1/topic-01/quiz-01",
+        "severity": "fail",
+        "summary": "reader-auth:rule-0584-quiz-results: semantic DOM differs (+1 −1 lines at line 8)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n - complementary \"Course navigation\":\n   - navigation:"
+      },
+      {
+        "id": "dom:reader-auth:rule-0585-course-dark:24",
+        "artefact": "dom",
+        "scope": "reader-auth:rule-0585-course-dark",
+        "path": "/course/localhost:8081",
+        "severity": "fail",
+        "summary": "reader-auth:rule-0585-course-dark: semantic DOM differs (+1 −1 lines at line 9)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n - complementary \"Course navigation\":\n   - navigation:"
+      },
+      {
+        "id": "dom:reader-auth:rule-0585-preferences-after-reload:25",
+        "artefact": "dom",
+        "scope": "reader-auth:rule-0585-preferences-after-reload",
+        "path": "/course/localhost:8081",
+        "severity": "fail",
+        "summary": "reader-auth:rule-0585-preferences-after-reload: semantic DOM differs (+1 −1 lines at line 9)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\" [expanded]: Preferences\n+    - button \"Preferences\" [expanded]\n - complementary \"Course navigation\":\n   - navigation:"
+      },
+      {
+        "id": "dom:reader-auth:rule-0586-turned-away:26",
+        "artefact": "dom",
+        "scope": "reader-auth:rule-0586-turned-away",
+        "path": "/",
+        "severity": "fail",
+        "summary": "reader-auth:rule-0586-turned-away: semantic DOM differs (+1 −1 lines at line 10)",
+        "detail": "     - link \"My courses\":\n       - /url: /\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Profile menu\":\n       - img \"Harness Student\""
+      },
+      {
+        "id": "dom:reader-auth:rule-0586-turned-away-again:27",
+        "artefact": "dom",
+        "scope": "reader-auth:rule-0586-turned-away-again",
+        "path": "/",
+        "severity": "fail",
+        "summary": "reader-auth:rule-0586-turned-away-again: semantic DOM differs (+1 −1 lines at line 10)",
+        "detail": "     - link \"My courses\":\n       - /url: /\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Profile menu\":\n       - img \"Harness Student\""
+      },
+      {
+        "id": "dom:reader-auth:rule-0587-llm:28",
+        "artefact": "dom",
+        "scope": "reader-auth:rule-0587-llm",
+        "path": "/llm/localhost:8081",
+        "severity": "fail",
+        "summary": "reader-auth:rule-0587-llm: semantic DOM differs (+1 −1 lines at line 8)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n - complementary \"Course navigation\":\n   - navigation:"
+      },
+      {
+        "id": "focus:reader:home:40",
+        "artefact": "focus",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "fail",
+        "summary": "reader:home: keyboard order changed (12 stops on a, 12 on b)",
+        "detail": " a \"My courses\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n button \"Anonymous Tutors Profile\""
+      },
+      {
+        "id": "focus:catalogue:home:41",
+        "artefact": "focus",
+        "scope": "catalogue:home",
+        "path": "/",
+        "severity": "fail",
+        "summary": "catalogue:home: keyboard order changed (12 stops on a, 12 on b)",
+        "detail": " a \"Catalogue\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n a \"My courses\""
+      },
+      {
+        "id": "focus:reference:course:42",
+        "artefact": "focus",
+        "scope": "reference:course",
+        "path": "/course/reference-course",
+        "severity": "fail",
+        "summary": "reference:course: keyboard order changed (12 stops on a, 12 on b)",
+        "detail": " button \"Search this course\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n button \"Anonymous Tutors Profile\""
+      },
+      {
+        "id": "focus:reader-auth:rule-0586-turned-away:43",
+        "artefact": "focus",
+        "scope": "reader-auth:rule-0586-turned-away",
+        "path": "/",
+        "severity": "fail",
+        "summary": "reader-auth:rule-0586-turned-away: keyboard order changed (12 stops on a, 12 on b)",
+        "detail": " a \"My courses\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n button \"Profile menu\""
+      },
+      {
+        "id": "focus:reader-auth:rule-0586-turned-away-again:44",
+        "artefact": "focus",
+        "scope": "reader-auth:rule-0586-turned-away-again",
+        "path": "/",
+        "severity": "fail",
+        "summary": "reader-auth:rule-0586-turned-away-again: keyboard order changed (12 stops on a, 12 on b)",
+        "detail": " a \"My courses\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n button \"Profile menu\""
+      },
+      {
+        "id": "persistence:rule-0582-signed-in-lab/realtime_claim_live_publish:46",
+        "artefact": "persistence",
+        "scope": "rule-0582-signed-in-lab/realtime_claim_live_publish",
+        "severity": "fail",
+        "summary": "rule-0582-signed-in-lab: RPC realtime_claim_live_publish — 0 row(s) on a, 5 on b"
+      },
+      {
+        "id": "persistence:rule-0583-presence/realtime_claim_live_publish:47",
+        "artefact": "persistence",
+        "scope": "rule-0583-presence/realtime_claim_live_publish",
+        "severity": "fail",
+        "summary": "rule-0583-presence: RPC realtime_claim_live_publish — 0 row(s) on a, 2 on b"
+      }
+    ],
+    "staleClaims": [],
+    "broadUnapproved": []
+  },
+  "masksApplied": {
+    "response-date": 152,
+    "request-id": 152,
+    "etag": 152,
+    "metrics-process": 599,
+    "metrics-timing-histograms": 12,
+    "third-party-requests": 3192,
+    "persistence-stub-requests": 1220,
+    "realtime-rest-fallback-warning": 0,
+    "oauth-callback-state": 70,
+    "media-range-status": 48,
+    "chromium-compute-pressure-policy": 0,
+    "hashed-assets": 12154,
+    "footer-tutors-version": 620,
+    "transport-length": 152,
+    "transport-connection": 152,
+    "transport-encoding": 0,
+    "transport-transfer": 0,
+    "transport-keepalive": 152
+  },
+  "load": {
+    "a": {
+      "requests": 600,
+      "failed": 0,
+      "serverErrors": 0,
+      "p50": 1.43,
+      "p95": 2.25,
+      "p99": 3.52,
+      "rate": 20,
+      "duration": "30s"
+    },
+    "b": {
+      "requests": 601,
+      "failed": 0,
+      "serverErrors": 0,
+      "p50": 1.4,
+      "p95": 2.18,
+      "p99": 3.19,
+      "rate": 20,
+      "duration": "30s"
+    }
+  },
+  "claimHygiene": {
+    "claims": 3,
+    "claimedHunks": 10,
+    "hunksPerClaim": 3.33,
+    "maxHunksPerClaim": 7,
+    "threshold": 10,
+    "flagged": []
+  },
+  "imageArtefacts": {
+    "a": {
+      "reader": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 309.2 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "134 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "94 advisories, db built 2026-10-17T06:27:09Z schema v6.1.10, OpenVEX openvex.json (0 statement(s)): none set aside"
+        }
+      },
+      "catalogue": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 274.2 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "134 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "94 advisories, db built 2026-10-17T06:27:09Z schema v6.1.10, OpenVEX openvex.json (0 statement(s)): none set aside"
+        }
+      },
+      "live": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 274.5 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "134 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "94 advisories, db built 2026-10-17T06:27:09Z schema v6.1.10, OpenVEX openvex.json (0 statement(s)): none set aside"
+        }
+      },
+      "time": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 285.2 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "143 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "94 advisories, db built 2026-10-17T06:27:09Z schema v6.1.10, OpenVEX openvex.json (0 statement(s)): none set aside"
+        }
+      }
+    },
+    "b": {
+      "reader": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 308.9 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "134 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "94 advisories, db built 2026-10-17T06:27:09Z schema v6.1.10, OpenVEX openvex.json (0 statement(s)): none set aside"
+        }
+      },
+      "catalogue": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 274.2 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "134 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "94 advisories, db built 2026-10-17T06:27:09Z schema v6.1.10, OpenVEX openvex.json (0 statement(s)): none set aside"
+        }
+      },
+      "live": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 274.5 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "134 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "94 advisories, db built 2026-10-17T06:27:09Z schema v6.1.10, OpenVEX openvex.json (0 statement(s)): none set aside"
+        }
+      },
+      "time": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 285.2 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "143 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "94 advisories, db built 2026-10-17T06:27:09Z schema v6.1.10, OpenVEX openvex.json (0 statement(s)): none set aside"
+        }
+      }
+    }
+  },
+  "levels": {
+    "dom": {
+      "level": "blocking"
+    },
+    "screenshot": {
+      "level": "blocking"
+    },
+    "network": {
+      "level": "blocking"
+    },
+    "console": {
+      "level": "blocking"
+    },
+    "headers": {
+      "level": "blocking"
+    },
+    "axe": {
+      "level": "blocking"
+    },
+    "focus": {
+      "level": "blocking"
+    },
+    "metrics": {
+      "level": "blocking"
+    },
+    "logs": {
+      "level": "blocking"
+    },
+    "timing": {
+      "level": "informing"
+    },
+    "persistence": {
+      "level": "blocking"
+    },
+    "bus": {
+      "level": "blocking"
+    },
+    "migration": {
+      "level": "blocking"
+    },
+    "upgrade": {
+      "level": "blocking"
+    },
+    "image-manifest": {
+      "level": "blocking"
+    },
+    "sbom": {
+      "level": "blocking"
+    },
+    "vulns": {
+      "level": "blocking"
+    },
+    "runtime": {
+      "level": "blocking"
+    },
+    "startup": {
+      "level": "blocking"
+    },
+    "image-hardening": {
+      "level": "informing"
+    },
+    "build-provenance": {
+      "level": "informing"
+    },
+    "vuln-ceiling": {
+      "level": "informing"
+    },
+    "timing-tolerance": {
+      "level": "informing"
+    },
+    "asset-graph": {
+      "level": "informing"
+    },
+    "replay": {
+      "level": "informing"
+    },
+    "slo": {
+      "level": "informing"
+    },
+    "realtime": {
+      "level": "informing"
+    }
+  },
+  "inRunNoise": {
+    "stack": "a2",
+    "runs": 1,
+    "artefacts": [
+      "dom",
+      "network",
+      "console",
+      "headers",
+      "axe",
+      "focus"
+    ],
+    "journeys": [
+      "anonymous-student-reads-course",
+      "anonymous-student-searches",
+      "catalogue-loads",
+      "live-loads",
+      "reference-course-reads",
+      "replay-course-urls"
+    ],
+    "hunks": [],
+    "alsoOnB": []
+  },
+  "timingControl": {
+    "journeys": [
+      {
+        "journey": "anonymous-student-reads-course",
+        "a": [
+          9266,
+          4644,
+          4629,
+          4920,
+          4730
+        ],
+        "b": [
+          9121,
+          4733,
+          4630,
+          4720,
+          4596
+        ],
+        "limits": {
+          "n": 5,
+          "centre": 5637.8,
+          "mrBar": 1279.5,
+          "ucl": 9041.27,
+          "lcl": 2234.33,
+          "provisional": true
+        },
+        "above": 1,
+        "below": 0
+      },
+      {
+        "journey": "anonymous-student-searches",
+        "a": [
+          4670,
+          2469,
+          2702,
+          2695,
+          2579
+        ],
+        "b": [
+          4649,
+          2400,
+          2526,
+          2459,
+          2602
+        ],
+        "limits": {
+          "n": 5,
+          "centre": 3023,
+          "mrBar": 639.25,
+          "ucl": 4723.41,
+          "lcl": 1322.59,
+          "provisional": true
+        },
+        "above": 0,
+        "below": 0
+      },
+      {
+        "journey": "catalogue-loads",
+        "a": [
+          2298,
+          1252,
+          1297,
+          1359,
+          1399
+        ],
+        "b": [
+          2210,
+          1276,
+          1360,
+          1295,
+          1397
+        ],
+        "limits": {
+          "n": 5,
+          "centre": 1521,
+          "mrBar": 298.25,
+          "ucl": 2314.35,
+          "lcl": 727.66,
+          "provisional": true
+        },
+        "above": 0,
+        "below": 0
+      },
+      {
+        "journey": "live-loads",
+        "a": [
+          2187,
+          1420,
+          1350,
+          1319,
+          1541
+        ],
+        "b": [
+          2438,
+          1465,
+          1381,
+          1529,
+          1298
+        ],
+        "limits": {
+          "n": 5,
+          "centre": 1563.4,
+          "mrBar": 272.5,
+          "ucl": 2288.25,
+          "lcl": 838.55,
+          "provisional": true
+        },
+        "above": 1,
+        "below": 0
+      },
+      {
+        "journey": "reference-course-reads",
+        "a": [
+          13742,
+          7477,
+          7015,
+          7037,
+          7264
+        ],
+        "b": [
+          11703,
+          6632,
+          6981,
+          6582,
+          6742
+        ],
+        "limits": {
+          "n": 5,
+          "centre": 8507,
+          "mrBar": 1744,
+          "ucl": 13146.04,
+          "lcl": 3867.96,
+          "provisional": true
+        },
+        "above": 0,
+        "below": 0
+      },
+      {
+        "journey": "replay-course-urls",
+        "a": [
+          26998
+        ],
+        "b": [
+          18903
+        ],
+        "above": 0,
+        "below": 0
+      },
+      {
+        "journey": "rule-0582-signed-in-lab",
+        "a": [
+          8092,
+          4309,
+          4564,
+          4522,
+          4531
+        ],
+        "b": [
+          8065,
+          4726,
+          4496,
+          4615,
+          4599
+        ],
+        "limits": {
+          "n": 5,
+          "centre": 5203.6,
+          "mrBar": 1022.25,
+          "ucl": 7922.79,
+          "lcl": 2484.42,
+          "provisional": true
+        },
+        "above": 1,
+        "below": 0
+      },
+      {
+        "journey": "rule-0583-presence",
+        "a": [
+          5463,
+          11227,
+          11446,
+          11131,
+          10813
+        ],
+        "b": [
+          5549,
+          10549,
+          11029,
+          10716,
+          10994
+        ],
+        "limits": {
+          "n": 5,
+          "centre": 10016,
+          "mrBar": 1654,
+          "ucl": 14415.64,
+          "lcl": 5616.36,
+          "provisional": true
+        },
+        "above": 0,
+        "below": 1
+      },
+      {
+        "journey": "rule-0584-quiz-notebook-talk",
+        "a": [
+          13750,
+          5082,
+          4908,
+          4917,
+          4773
+        ],
+        "b": [
+          13614,
+          4728,
+          5187,
+          5403,
+          4997
+        ],
+        "limits": {
+          "n": 5,
+          "centre": 6686,
+          "mrBar": 2248.75,
+          "ucl": 12667.68,
+          "lcl": 704.32,
+          "provisional": true
+        },
+        "above": 1,
+        "below": 0
+      },
+      {
+        "journey": "rule-0585-preferences",
+        "a": [
+          7372,
+          12318,
+          12060,
+          11790,
+          12386
+        ],
+        "b": [
+          6948,
+          12193,
+          12024,
+          11609,
+          12056
+        ],
+        "limits": {
+          "n": 5,
+          "centre": 11185.2,
+          "mrBar": 1517.5,
+          "ucl": 15221.75,
+          "lcl": 7148.65,
+          "provisional": true
+        },
+        "above": 0,
+        "below": 1
+      },
+      {
+        "journey": "rule-0586-private-course",
+        "a": [
+          10157,
+          4187,
+          4339,
+          4199,
+          4147
+        ],
+        "b": [
+          10403,
+          4141,
+          4089,
+          4189,
+          4116
+        ],
+        "limits": {
+          "n": 5,
+          "centre": 5405.8,
+          "mrBar": 1578.5,
+          "ucl": 9604.61,
+          "lcl": 1206.99,
+          "provisional": true
+        },
+        "above": 1,
+        "below": 0
+      },
+      {
+        "journey": "rule-0587-calendar-llm",
+        "a": [
+          5480,
+          12047,
+          12177,
+          12177,
+          12346
+        ],
+        "b": [
+          5419,
+          12350,
+          12255,
+          12263,
+          12245
+        ],
+        "limits": {
+          "n": 5,
+          "centre": 10845.4,
+          "mrBar": 1716.5,
+          "ucl": 15411.29,
+          "lcl": 6279.51,
+          "provisional": true
+        },
+        "above": 0,
+        "below": 1
+      },
+      {
+        "journey": "student-signs-in",
+        "a": [
+          6284,
+          3491,
+          3789,
+          3813,
+          3675
+        ],
+        "b": [
+          6298,
+          3526,
+          3583,
+          3795,
+          3931
+        ],
+        "limits": {
+          "n": 5,
+          "centre": 4210.4,
+          "mrBar": 813.25,
+          "ucl": 6373.65,
+          "lcl": 2047.15,
+          "provisional": true
+        },
+        "above": 0,
+        "below": 0
+      }
+    ]
+  },
+  "causes": {
+    "unclaimed": 35,
+    "causes": [
+      {
+        "id": "a36188a9",
+        "key": "dom: semantic DOM differs (+# −# lines at line #)",
+        "artefact": "dom",
+        "kind": "semantic DOM differs (+# −# lines at line #)",
+        "hunks": 28,
+        "apps": [
+          "reader",
+          "catalogue",
+          "live"
+        ],
+        "pages": [
+          "catalogue:home",
+          "live:home",
+          "reader-auth:course",
+          "reader-auth:rule-0582-course",
+          "reader-auth:rule-0582-lab-step",
+          "reader-auth:rule-0582-lab-step-2",
+          "reader-auth:rule-0582-lab-step-back",
+          "reader-auth:rule-0583-profile-menu",
+          "reader-auth:rule-0584-notebook-cell-2",
+          "reader-auth:rule-0584-quiz-results",
+          "reader-auth:rule-0584-talk-slide-2",
+          "reader-auth:rule-0585-course-dark",
+          "reader-auth:rule-0585-preferences-after-reload",
+          "reader-auth:rule-0586-turned-away",
+          "reader-auth:rule-0586-turned-away-again",
+          "reader-auth:rule-0587-llm",
+          "reader-auth:topic",
+          "reader:course",
+          "reader:home",
+          "reader:lab-step",
+          "reader:lab-step-2",
+          "reader:search",
+          "reader:search-results",
+          "reader:topic",
+          "reference:course",
+          "reference:lab",
+          "reference:note",
+          "reference:topic"
+        ],
+        "items": [],
+        "example": {
+          "id": "dom:reader:home:1",
+          "scope": "reader:home",
+          "summary": "reader:home: semantic DOM differs (+1 −1 lines at line 10)"
+        }
+      },
+      {
+        "id": "6109393d",
+        "key": "focus: keyboard order changed (# stops on a, # on b)",
+        "artefact": "focus",
+        "kind": "keyboard order changed (# stops on a, # on b)",
+        "hunks": 5,
+        "apps": [
+          "reader",
+          "catalogue"
+        ],
+        "pages": [
+          "catalogue:home",
+          "reader-auth:rule-0586-turned-away",
+          "reader-auth:rule-0586-turned-away-again",
+          "reader:home",
+          "reference:course"
+        ],
+        "items": [],
+        "example": {
+          "id": "focus:reader:home:40",
+          "scope": "reader:home",
+          "summary": "reader:home: keyboard order changed (12 stops on a, 12 on b)"
+        }
+      },
+      {
+        "id": "35a5835a",
+        "key": "persistence: RPC realtime_claim_live_publish — # row(s) on a, # on b",
+        "artefact": "persistence",
+        "kind": "RPC realtime_claim_live_publish — # row(s) on a, # on b",
+        "hunks": 2,
+        "apps": [],
+        "pages": [],
+        "items": [],
+        "example": {
+          "id": "persistence:rule-0582-signed-in-lab/realtime_claim_live_publish:46",
+          "scope": "rule-0582-signed-in-lab/realtime_claim_live_publish",
+          "summary": "rule-0582-signed-in-lab: RPC realtime_claim_live_publish — 0 row(s) on a, 5 on b"
+        }
+      }
+    ],
+    "together": [
+      {
+        "artefacts": [
+          "dom",
+          "focus"
+        ],
+        "pages": [
+          "catalogue:home",
+          "reader-auth:rule-0586-turned-away",
+          "reader-auth:rule-0586-turned-away-again",
+          "reader:home",
+          "reference:course"
+        ],
+        "hunks": 10
+      }
+    ],
+    "rules": [
+      {
+        "rule": "0582",
+        "journey": "rule-0582-signed-in-lab",
+        "exercises": [
+          "0011",
+          "0250",
+          "0252",
+          "0260",
+          "0303",
+          "0330"
+        ],
+        "hunks": 5,
+        "artefacts": [
+          "dom",
+          "persistence"
+        ]
+      },
+      {
+        "rule": "0586",
+        "journey": "rule-0586-private-course",
+        "exercises": [
+          "0011",
+          "0267"
+        ],
+        "hunks": 4,
+        "artefacts": [
+          "dom",
+          "focus"
+        ]
+      },
+      {
+        "rule": "0584",
+        "journey": "rule-0584-quiz-notebook-talk",
+        "exercises": [
+          "0047",
+          "0049",
+          "0050"
+        ],
+        "hunks": 3,
+        "artefacts": [
+          "dom"
+        ]
+      },
+      {
+        "rule": "0583",
+        "journey": "rule-0583-presence",
+        "exercises": [
+          "0046",
+          "0064",
+          "0280"
+        ],
+        "hunks": 2,
+        "artefacts": [
+          "dom",
+          "persistence"
+        ]
+      },
+      {
+        "rule": "0585",
+        "journey": "rule-0585-preferences",
+        "exercises": [
+          "0037",
+          "0038",
+          "0039"
+        ],
+        "hunks": 2,
+        "artefacts": [
+          "dom"
+        ]
+      },
+      {
+        "rule": "0587",
+        "journey": "rule-0587-calendar-llm",
+        "exercises": [
+          "0042",
+          "0284"
+        ],
+        "hunks": 1,
+        "artefacts": [
+          "dom"
+        ]
+      }
+    ]
+  }
+}
