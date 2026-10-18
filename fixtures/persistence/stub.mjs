@@ -19,8 +19,9 @@
 //
 // Since 1.45.0 the stub keeps the rows written to the tables in KEPT until the next reset, and answers reads of
 // them with those rows (filtered by `col=eq.value`, upserted by `on_conflict`): a lecturer's content lock is read
-// back by the student's browser in the same journey (the lock journey, Rule 0588). Every other table still reads
-// empty. What is kept never reaches the ledger: the writes are recorded as before.
+// back by the student's browser in the same journey (the lock journey, Rule 0588). Since 1.46.0 also the latest
+// learning object each student opened, which Tutors Live reads (`gte`, `order` and `limit` too: the Live journey, Rule
+// 0589). Every other table still reads empty. What is kept never reaches the ledger: the writes are recorded as before.
 //
 // Both sides get their own stub, so a write is attributable. The stub sends no
 // Date header and no ids: nothing here may differ between the sides.
@@ -31,8 +32,12 @@ const port = Number(process.argv[2] ?? process.env.PORT ?? 8090);
 const BROADCAST = /^\/realtime\/v1\/api\/broadcast(\/[^/]+\/events\/[^/]+)?$/;
 let writes = [];
 let seq = 0;
-/** The tables whose rows are kept and read back (the reader's content locks, packages/svelte/utils/rbac/src/lock-store.ts). */
-const KEPT = new Set(["tutors_content_locks"]);
+/**
+ * The tables whose rows are kept and read back: the reader's content locks (packages/svelte/utils/rbac/src/lock-store.ts)
+ * and, since 1.46.0, each student's latest learning object, Tutors Live's stored activity
+ * (packages/svelte/community/src/utils/supabase-client.ts).
+ */
+const KEPT = new Set(["tutors_content_locks", "tutors-connect-latest"]);
 let kept = new Map();
 
 const cors = {
@@ -117,18 +122,27 @@ const server = createServer(async (req, res) => {
   return send(404, { message: "not found" });
 });
 
-/** PostgREST's `col=eq.value` filters; every other parameter (select, order, limit, on_conflict) is not a filter. */
+const OPS = { eq: (x, y) => x === y, gt: (x, y) => x > y, gte: (x, y) => x >= y, lt: (x, y) => x < y, lte: (x, y) => x <= y };
+/** PostgREST's `col=<op>.value` filters (eq, gt, gte, lt, lte; compared as strings, as ISO times are); every other parameter (select, order, limit, on_conflict) is not a filter. */
 function filtersOf(params) {
   const out = [];
-  for (const [key, value] of params) if (value.startsWith("eq.")) out.push([key, value.slice(3)]);
+  for (const [key, value] of params) {
+    const m = /^(eq|gte?|lte?)\.(.*)$/s.exec(value);
+    if (m && !["select", "order", "limit", "offset", "on_conflict"].includes(key)) out.push([key, OPS[m[1]], m[2]]);
+  }
   return out;
 }
 function matches(row, filters) {
-  return filters.every(([key, value]) => String(row[key]) === value);
+  return filters.every(([key, op, value]) => op(String(row[key]), value));
 }
+/** The kept rows a read asks for: filtered, then `order=col.asc|desc` (first column only), then `limit`. */
 function matching(table, params) {
   const filters = filtersOf(params);
-  return (kept.get(table) ?? []).filter((row) => matches(row, filters));
+  const rows = (kept.get(table) ?? []).filter((row) => matches(row, filters));
+  const [column, direction] = (params.get("order") ?? "").split(",")[0].split(".");
+  if (column) rows.sort((x, y) => String(x[column]).localeCompare(String(y[column])) * (direction === "desc" ? -1 : 1));
+  const limit = Number(params.get("limit"));
+  return limit > 0 ? rows.slice(0, limit) : rows;
 }
 /** Apply a write to a kept table: insert or upsert (by `on_conflict`), update, or delete the matching rows. */
 function keep(method, table, params, body) {

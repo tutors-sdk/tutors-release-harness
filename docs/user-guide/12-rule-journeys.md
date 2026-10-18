@@ -21,11 +21,13 @@ the Claude Doc "Harness user journeys" (Rules 0582 to 0592).
 | 0586 | `rule-0586-private-course` | the stub student, whom the private course does not list, is sent to My courses at sign-in and by the course's address | 0011, 0267 |
 | 0587 | `rule-0587-calendar-llm` | as the enrolled student: the calendar filtered to assessments, then the course's page for LLMs | 0042, 0284 |
 | 0588 | `rule-0588-content-lock` | the lecturer locks Topic 2 in Educator Control; the enrolled student no longer sees it, then sees it greyed out and labelled Locked once the lecturer shows locked content | 0052, 0053, 0054 |
+| 0589 | `rule-0589-live` | the stub student, who shares presence, opens Lab 1 of the fixture course; the lecturer opens Tutors Live and finds one course and the student on it | 0330, 0335 |
 
 0582 and 0583 read the fixture course. Since 1.44.0, 0584 to 0587 read the **Rule journeys' course**
 ([`fixtures/course-server/rules-course`](../../fixtures/course-server/README.md#the-rule-journeys-course-since-1440)):
 signed in and private, with a quiz, a notebook, a calendar on fixed dates and an LLM page; since 1.45.0 a second topic,
-which 0588 locks. The other lecturer journeys (0589 to 0592) follow as the stubs grow. The ids 0582 to 0599 are reserved for the harness's journeys;
+which 0588 locks. Since 1.46.0, 0589 opens Tutors Live on the side's `liveAuth` (below). The time app and whiteboard
+journeys (0590 to 0592) follow as the stubs grow. The ids 0582 to 0599 are reserved for the harness's journeys;
 `tests/rule-journeys.test.ts` fails on an id outside that block.
 
 ## Running them
@@ -95,6 +97,7 @@ Rule: When the harness runs the presence journey, it shall ...
 - the student signs in from the course: GitHub sign-in through the identity stub, back on the course page
 - the student signs in from the course and is turned away: signed in, then sent to My courses, not the course (a private course they are not enrolled on)
 - the student opens the course by its address and is turned away: the course URL typed in, then sent to My courses
+- the student opens Tutors Live: Live's home page on this side, reading the side's persistence stub (said of the lecturer, since 1.46.0)
 - the student opens the topic "Topic 1": its card on the page
 - the student opens the lab "Lab 1": its card on the page, then its first step
 - the student opens the quiz "Quiz 1" (also talk, note, notebook): its card on the page
@@ -141,5 +144,19 @@ sends `X-Forwarded-For`, as production's edge does, so the reader can name the c
 The persistence stub answers reads with an empty table, so nothing one browser writes is seen by another. The content
 lock journey needs the opposite: the student's reader reads the course's locks from `tutors_content_locks`, which the
 lecturer's reader has just written. So the stub keeps the rows written to that one table until the next journey's
-reset and answers reads of it with them (`col=eq.value` filters, `on_conflict` upserts, deletes). Every other table
-still reads empty, and the ledger is unchanged: it records the writes, never what is kept.
+reset and answers reads of it with them (`col=eq.value` filters, `on_conflict` upserts, deletes). Since 1.46.0 it
+also keeps `tutors-connect-latest`, the latest learning object of each student who shares presence: Tutors Live reads
+it (`gte`, `order` and `limit` too) to show who is online when no Realtime message reaches it, which in the harness is
+always. Every other table still reads empty, and the ledger is unchanged: it records the writes, never what is kept.
+
+## Tutors Live reading the stub (since 1.46.0)
+
+Each compose side runs a second Live, `live-auth-a` and `live-auth-b` (host ports 3105 and 3205,
+`LIVE_AUTH_PORT_A`/`_B`), with anonymous mode off and the side's persistence stub as its Supabase, as `reader-auth`
+is the reader set up that way. Live has no sign-in of its own, so the lecturer's browser just opens it. Its pages are
+captured as `live-auth:rule-<id>-<name>`. The plain `live-a` and `live-b` stay anonymous, as before. kind runs no
+`live-auth`, so on kind 0589 fails with a step saying so, as the signed-in journeys do without `readerAuth`.
+
+Running locally behind an HTTP proxy, add `.harness.test` to `no_proxy`. Chromium sends a WebSocket to a host it
+does not bypass through the proxy, which refuses `persistence-a.harness.test`, and Live's Realtime socket then
+logs a 403 on both sides.

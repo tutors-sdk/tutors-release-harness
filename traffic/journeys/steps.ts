@@ -46,6 +46,7 @@ const step = (pattern: RegExp, doc: string, run: StepDefinition["run"]) => STEPS
 export function appOf(url: string, urls: StackUrls): string {
   const origin = new URL(url).origin;
   if (urls.readerAuth && origin === new URL(urls.readerAuth).origin) return "reader-auth";
+  if (urls.liveAuth && origin === new URL(urls.liveAuth).origin) return "live-auth";
   for (const app of ["reader", "catalogue", "live", "time"] as const) {
     const u = urls[app];
     if (u && origin === new URL(u).origin) return app;
@@ -78,6 +79,12 @@ step(/^the student signs in from the course and is turned away$/, "the student s
 step(/^the student opens the course by its address and is turned away$/, "the student opens the course by its address and is turned away: the course URL typed in, then sent to My courses", async (w) => {
   await w.page.goto(`${w.urls.readerAuth}/course/${w.course.id}`);
   await turnedAway(w.page);
+});
+
+step(/^the student opens Tutors Live$/, "the student opens Tutors Live: Live's home page on this side, reading the side's persistence stub (said of the lecturer, since 1.46.0)", async (w) => {
+  if (!w.urls.liveAuth) throw new Error("this side has no Tutors Live reading its persistence stub (external side?)");
+  await w.page.goto(`${w.urls.liveAuth}/`);
+  await w.page.getByRole("heading", { level: 1, name: "Tutors Live" }).waitFor(VISIBLE);
 });
 
 step(/^the student opens the topic "([^"]+)"$/, 'the student opens the topic "Topic 1": its card on the page', async (w, title) => {

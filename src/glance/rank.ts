@@ -156,7 +156,7 @@ function median(xs: number[]): number | null {
 }
 
 /** A page key's first part is the app (or the signed-in reader) it was read from: `reader-auth:topic`. */
-export const APP_OF_PREFIX: Record<string, string> = { reader: "reader", "reader-auth": "reader", reference: "reader", catalogue: "catalogue", live: "live", time: "time" };
+export const APP_OF_PREFIX: Record<string, string> = { reader: "reader", "reader-auth": "reader", "live-auth": "live", reference: "reader", catalogue: "catalogue", live: "live", time: "time" };
 const appOfFile = (path: string) => /^apps\/([^/]+)\//.exec(path)?.[1];
 
 // ---- the journey set -------------------------------------------------------------------------------------

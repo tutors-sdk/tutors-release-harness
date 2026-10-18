@@ -85,7 +85,7 @@ export function consoleText(text: string, locationUrl: string | undefined): stri
 
 export function stripOrigins(text: string, spec: SideSpec): string {
   let out = text;
-  const origins = [spec.urls.reader, spec.urls.catalogue, spec.urls.live, spec.urls.time, spec.urls.readerAuth, spec.urls.persistence].filter((o): o is string => !!o);
+  const origins = [spec.urls.reader, spec.urls.catalogue, spec.urls.live, spec.urls.time, spec.urls.readerAuth, spec.urls.liveAuth, spec.urls.persistence].filter((o): o is string => !!o);
   for (const origin of origins) {
     out = out.split(origin).join("{{origin}}");
     // The same origin over a WebSocket (`ws://persistence-a.harness.test:8090/realtime/...`, which the browser prints in a
