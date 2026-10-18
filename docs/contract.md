@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.48.3`
+Contract version: `1.48.4`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -2105,6 +2105,13 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.48.4 (patch; the keyboard-order walk starts at the top of the page)
+
+The release note is [releases/1.48.4.md](releases/1.48.4.md). The `focus` walk focuses a mark the harness puts at the
+top of the body before its first Tab, and removes it after. A blur alone left the browser's starting point where focus
+last was, so a page that moved focus into its content was walked from there. A page walked from the top before gives
+the same `focus` stops; one that was not now gives its header first. No verdict, Gate, claim or exit code rule moves.
 
 ### 1.48.3 (patch; the A3 counts only the line stops about the monorepo)
 
