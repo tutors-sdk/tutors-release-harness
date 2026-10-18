@@ -55,7 +55,7 @@ exercises, so a difference on its pages points back to the requirement it touche
 | 0589 | Lecturer and student | A student opens a lab; the lecturer opens Tutors Live and finds them. | Lecturers can see who is working on what, live. | Live's Courses (1) and Students tabs, reading the side's persistence stub; Realtime broadcasts relayed by the stub. | 0330, 0335 |
 | 0590 | Lecturer | Opens the time app past its PIN; reads the medians and the calendar by week and by day. | Time-on-task totals and medians are computed right. | Two students' calendar rows seeded; PIN 4321 from the course's `tutors.json`; tables captured below the heat maps. | 0319 |
 | 0591 | Lecturer | Reads labs by lab and by step, the learning records and the least engaged student's page. | Lab analytics and the per-student view are right. | Three students' lab records seeded; row order and totals; the student's page. | 0319 |
-| 0592 | Enrolled student, alone | Opens the course whiteboard, switches to Edit and draws one stroke. | Drawing saves once and costs no Realtime when nobody else is on the board. | The Excalidraw editor in an iframe (Excalidraw and React from `esm.sh`, recorded once); one freehand stroke; `Drawing changes saved`; the `whiteboard_scenes` write and the Realtime cost compared. | 0275, 0276 |
+| 0592 | Enrolled student, alone | Opens the course whiteboard, switches to Edit and draws one stroke. | Drawing saves once, and an empty board costs no more Realtime than before. | The Excalidraw editor in an iframe (Excalidraw and React from `esm.sh`, recorded once); one freehand stroke; `Drawing changes saved`; the `whiteboard_scenes` write and the Realtime cost compared. | 0275, 0276 |
 
 The seven older journeys check what an anonymous visitor reads: the fixture course, its search, the catalogue and Live
 home pages, a plain sign-in, a reference course, and a fixed list of course URLs replayed.
@@ -125,7 +125,9 @@ Since 1.43.0 a difference on a journey's page carries its Rule, so the A3 can sa
 
 **What validating 0592 looked like.** The whiteboard's editor loads from `esm.sh`. The first CI A/A failed on both sides
 at the Draw tool: Excalidraw keeps its tool radios visually hidden under their icons, so a plain click never lands. The
-step now selects the tool past its icon, and the next A/A on 17.0.0 was clean.
+step now selects the tool past its icon. The next mutants A/A on 17.0.0 was clean, and so was a separate A/A of three
+runs per side (after one sign-in to warm the stack). That run also showed that the whiteboard, with nobody else on it,
+still opens a Realtime websocket and sends 6 frames on 17.0.0, reported as an informing finding.
 
 ## What the journeys do not check
 

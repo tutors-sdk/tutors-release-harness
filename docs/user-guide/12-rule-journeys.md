@@ -210,5 +210,6 @@ third-party record like the fonts and icons ([noise burndown](../noise-burndown.
 editor. 0592 signs in as the enrolled student, opens the whiteboard, presses Edit and draws one freehand stroke (a
 shape would be drawn rough from a random seed; a stroke is the same from the same points). The editor saves the scene
 two seconds after the last change (`Drawing changes saved`), so the ledger holds one write of `whiteboard_scenes` on
-each side. The student is alone on the board, so the editor sends no scene or cursor broadcasts: a build that
-broadcasts to an empty room shows up in the realtime artefact as a cost the other side does not have.
+each side. The student is alone on the board, and the realtime artefact records what the page still sends: on 17.0.0
+one websocket and 6 data frames (an informing finding, since a reader page should only publish). A build that sends
+more to an empty room shows up as a cost the other side does not have.
