@@ -141,17 +141,17 @@ on both sides passes, which is why the findings below were raised on their own.
 
 ## What they found on the monorepo's main
 
-Found while the journeys were built against main `83d4ccf`. Each is a monorepo pull request that names the journey that
-found it.
+Found while the journeys were built against main `83d4ccf`. Each is a monorepo pull request that credits the journey that
+found it; the monorepo's maintainers merge them.
 
 | Finding | Effect for a person | Found by | Fix |
 | --- | --- | --- | --- |
-| The course page for LLMs links `https` on an `http` course | The LLM downloads break on a course served over http | 0587 | monorepo #506 (Rule 0600) |
-| The time app makes a new Supabase client for every read | About one first load in eight never finishes | 0590, 0591 | monorepo #507 (Rule 0601) |
-| Labs by lab and by step key a lab by its last path segment | Two topics' Lab 1 add up into one column | 0591 | Rule 0602 |
-| The time app reads the PIN from `<id>.netlify.app` only | A course served anywhere else never opens past the PIN | 0590, 0591 | Rule 0603 |
-| The heat maps lay out differently from one load to the next | Their screenshots never compare; the journeys capture the tables below | 0590, 0591 | Rule 0604 |
-| A turned-away student still has the private course in Recently accessed | The course's name and card are shown to someone it turned away | 0586 | Rule 0605 |
+| The course page for LLMs links `https` on an `http` course | The LLM downloads break on a course served over http | 0587 | [monorepo #506](https://github.com/tutors-sdk/tutors-mono-repo/pull/506) (Rule 0600) |
+| The time app makes a new Supabase client for every read | About one first load in eight never finishes | 0590, 0591 | [monorepo #507](https://github.com/tutors-sdk/tutors-mono-repo/pull/507) (Rule 0601) |
+| Labs by lab and by step key a lab by its last path segment | Two topics' Lab 1 add up into one column | 0591 | [monorepo #511](https://github.com/tutors-sdk/tutors-mono-repo/pull/511) (Rule 0602) |
+| The time app reads the PIN from `<id>.netlify.app` only | A course served anywhere else never opens past the PIN | 0590, 0591 | [monorepo #508](https://github.com/tutors-sdk/tutors-mono-repo/pull/508) (Rule 0603) |
+| The heat maps lay out differently from one load to the next | Their screenshots never compare; the journeys capture the tables below | 0590, 0591 | [monorepo #509](https://github.com/tutors-sdk/tutors-mono-repo/pull/509) (Rule 0604) |
+| A turned-away student still has the private course in Recently accessed | The course's name and card are shown to someone it turned away | 0586 | [monorepo #510](https://github.com/tutors-sdk/tutors-mono-repo/pull/510) (Rule 0605) |
 
 ## Technical reference
 
