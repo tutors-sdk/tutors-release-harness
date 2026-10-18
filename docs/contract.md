@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.48.1`
+Contract version: `1.48.2`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -2105,6 +2105,14 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.48.2 (patch; the cache header Netlify leaves off, claimed, and a warn that says so)
+
+The release note is [releases/1.48.2.md](releases/1.48.2.md). A patch. `post-deploy/claims.yaml` claims one known
+difference, rollback issue #131: Netlify serves `GET /_app/immutable/**` without the immutable Cache-Control the
+release images send (fixed by the monorepo's #500), `until: "17.0.1"`. `post-deploy.yml` gains a step that, when the
+verdict is a warn (advisory only: the A/A could not be trusted), says so as a warning annotation and in the run's
+summary, where before the run was a silent green. No verdict, Gate, score or exit code moves.
 
 ### 1.48.1 (patch; a cause first measured is not pinned on the newest PRs)
 

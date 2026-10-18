@@ -2,7 +2,8 @@
  * Since 1.28.4: post-deploy/claims.yaml, the claims post-deploy mode applies (docs/contract.md, "The post-deploy claims").
  * Every claim is narrow and has an `until` and an issue; and post-deploy.yml and `harness local watch` both pass the
  * file. The five claims of tutors-release-harness#38 expired with 17.0.0, which replaced the build they explained, and
- * were removed in 1.40.0: the file is back to its normal state, empty.
+ * were removed in 1.40.0. Since 1.48.2 it claims the cache header Netlify leaves off SvelteKit's hashed assets (issue
+ * #131, fixed by tutors-mono-repo#500), until the recorded release reaches 17.0.1.
  */
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -40,9 +41,18 @@ describe("post-deploy/claims.yaml", () => {
   });
 
   it("no longer claims the five differences of issue #38: 17.0.0 replaced that build, so a return of any is news (since 1.40.0)", () => {
-    expect(claims).toEqual([]);
     const compare = matchClaims(issue38, claims);
     expect(compare.unclaimed.map((h) => h.id)).toEqual(issue38.map((h) => h.id));
+    expect(gate({ mode: "post-deploy", compare, noise: clean, noiseWaived: false, noiseMaxAgeDays: 7, ranAt }).verdict).toBe("fail");
+  });
+
+  it("claims the cache header of issue #131 on SvelteKit's hashed assets, not the focus order that moved with it (since 1.48.2)", () => {
+    const cache = ["GET /_app/immutable/assets/0.{{hash}}.css", "GET /_app/immutable/chunks/{{hash}}.js", "GET /_app/immutable/entry/app.{{hash}}.js", "GET /_app/immutable/nodes/17.{{hash}}.js"].map((s) => hunk("network", s));
+    const focus = hunk("focus", "reference:course");
+    const compare = matchClaims([...cache, focus], claims);
+    expect(compare.unclaimed.map((h) => h.id)).toEqual([focus.id]);
+    expect(claims.find((c) => c.artefact === "network")).toMatchObject({ until: "17.0.1" });
+    // The focus order is not explained by the header, so the monitor still fails on it.
     expect(gate({ mode: "post-deploy", compare, noise: clean, noiseWaived: false, noiseMaxAgeDays: 7, ranAt }).verdict).toBe("fail");
   });
 
@@ -50,6 +60,8 @@ describe("post-deploy/claims.yaml", () => {
     const near = [
       hunk("network", "GET {{course}}/other.png"),
       hunk("network", "GET {{course}}/topic-01/course.png"),
+      hunk("network", "GET /_app/version.json"),
+      hunk("headers", "reference:course/cache-control"),
       hunk("console", "reference:topic"),
       hunk("console", "reader:home"),
       hunk("focus", "reference:lab"),
@@ -59,6 +71,12 @@ describe("post-deploy/claims.yaml", () => {
     ];
     const compare = matchClaims(near, claims);
     expect(compare.unclaimed.map((h) => h.id)).toEqual(near.map((h) => h.id));
+  });
+
+  it("says on the run when a warn left it green: the verdict was advisory only (since 1.48.2)", () => {
+    const workflow = readFileSync(resolve(ROOT, ".github/workflows/post-deploy.yml"), "utf8");
+    expect(workflow).toContain("name: Say when the verdict is advisory only");
+    expect(workflow).toContain("::warning title=Post-deploy advisory only::");
   });
 
   it("is what post-deploy.yml and `harness local watch` pass to post-deploy mode", () => {
