@@ -158,6 +158,18 @@ jobs:
             { echo "### Production build"; echo; echo "${summary}"; } >> "$GITHUB_STEP_SUMMARY"
           fi
 
+      # Since 1.48.2: a warn exits 0, so the run is green, yet production differed: the verdict is advisory only because
+      # the A/A was not clean, degraded, missing or too old to trust. It says so as a warning on the run, so a noisy A/A
+      # cannot hide a difference as a quiet green (16 to 17 Oct 2026: one A/A difference hid #131's for a day).
+      - name: Say when the verdict is advisory only
+        if: always() && steps.recording.outputs.found == 'true'
+        run: |
+          report="$(find out -path '*-post-deploy/report.json' | head -1)"
+          if [ -n "$report" ] && [ "$(jq -r '.verdict' "$report")" = "warn" ]; then
+            echo "::warning title=Post-deploy advisory only::$(jq -r '.reasons | join("; ")' "$report")"
+            { echo "### Post-deploy: advisory only"; echo; echo "Production differed, but the A/A could not be trusted, so this run did not fail:"; echo; jq -r '.reasons[] | "- " + .' "$report"; } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always() && steps.recording.outputs.found == 'true'
         with:

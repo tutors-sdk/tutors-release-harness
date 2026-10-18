@@ -13,4 +13,13 @@
 # Empty is the normal state: `claims: []`.
 # The five claims for tutors-release-harness#38 (the untracked 2026-09-18 build) expired with 17.0.0, which replaced
 # that build; four matched nothing on 15 Oct 2026 and the fifth would hide a 17.0.0 difference. Removed in 1.40.0.
-claims: []
+claims:
+  # Netlify serves production without the `Cache-Control: public, max-age=31536000, immutable` that the release images
+  # send for SvelteKit's hashed assets: the apps' netlify.toml sets it on `/build/*`, but SvelteKit serves them from
+  # `/_app/immutable/*`. The assets are only cached for less long. Fixed by tutors-sdk/tutors-mono-repo#500, which
+  # reaches production with the next release: the claim expires once the recorded release is 17.0.1 or later. Rollback
+  # issue tutors-sdk/tutors-release-harness#131; its focus difference on reference:course is not this and stays news.
+  - artefact: network
+    scope: "GET /_app/immutable/**"
+    reason: "Issue #131: Netlify omits the immutable Cache-Control on /_app/immutable/* that the release images send; fixed by tutors-sdk/tutors-mono-repo#500"
+    until: "17.0.1"
