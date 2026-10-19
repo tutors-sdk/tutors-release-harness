@@ -2,6 +2,90 @@
   "schemaVersion": 1,
   "runs": [
     {
+      "id": "2026-10-19T02-24-07Z-release",
+      "mode": "release",
+      "ranAt": "2026-10-19T02:24:07.366Z",
+      "verdict": "warn",
+      "reasons": [
+        "advisory only: the last A/A run (2026-10-19T01:53:53.848Z) had 1 diff(s)",
+        "86 unclaimed diff(s)"
+      ],
+      "sides": {
+        "a": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:17.0.0",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:17.0.0",
+          "live": "quay.io/tutors-sdk/tutors-live:17.0.0",
+          "time": "quay.io/tutors-sdk/tutors-time:17.0.0"
+        },
+        "b": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:sha-83d4ccf",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:sha-83d4ccf",
+          "live": "quay.io/tutors-sdk/tutors-live:sha-83d4ccf",
+          "time": "quay.io/tutors-sdk/tutors-time:sha-83d4ccf"
+        }
+      },
+      "harnessVersion": "1.48.5",
+      "runUrl": "https://github.com/tutors-sdk/tutors-release-harness/actions/runs/39187460461",
+      "score": {
+        "score": 30,
+        "grade": "D",
+        "normalness": "noisy",
+        "manual": 5
+      },
+      "confidence": {
+        "gate": "WARN",
+        "rcs": 37,
+        "band": "Red",
+        "meaning": "hold, open a 5 Whys, do not re-run hoping for a better number",
+        "glance": 3,
+        "scoredBy": "1.48.5"
+      },
+      "changes": {
+        "score": 0,
+        "prs": 11,
+        "risky": 9,
+        "floorBreached": false,
+        "range": "v17.0.0..83d4ccf7f5ca2440bbc94224e40c5bfef3e410d9"
+      },
+      "delta": {
+        "baseline": "17.0.0",
+        "against": {
+          "id": "2026-10-18T12-16-24Z-release",
+          "ranAt": "2026-10-18T12:16:24.694Z",
+          "candidate": "sha-83d4ccf",
+          "harnessVersion": "1.48.0"
+        },
+        "new": 36,
+        "gone": 0,
+        "byArtefact": {
+          "dom": {
+            "new": 5,
+            "gone": 0
+          },
+          "focus": {
+            "new": 31,
+            "gone": 0
+          }
+        }
+      },
+      "files": [
+        "2026-10-19T02-24-07Z-release/migration/report.json",
+        "2026-10-19T02-24-07Z-release/migration/report.md",
+        "2026-10-19T02-24-07Z-release/migration/report.html",
+        "2026-10-19T02-24-07Z-release/upgrade/report.json",
+        "2026-10-19T02-24-07Z-release/upgrade/report.md",
+        "2026-10-19T02-24-07Z-release/upgrade/report.html",
+        "2026-10-19T02-24-07Z-release/report.json",
+        "2026-10-19T02-24-07Z-release/report.md",
+        "2026-10-19T02-24-07Z-release/report.html",
+        "2026-10-19T02-24-07Z-release/confidence.json",
+        "2026-10-19T02-24-07Z-release/changes.json",
+        "2026-10-19T02-24-07Z-release/quality.json",
+        "2026-10-19T02-24-07Z-release/scorecard.json",
+        "2026-10-19T02-24-07Z-release/scorecard.md"
+      ]
+    },
+    {
       "id": "2026-10-18T12-16-24Z-release",
       "mode": "release",
       "ranAt": "2026-10-18T12:16:24.694Z",
