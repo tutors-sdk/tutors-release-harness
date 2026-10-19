@@ -1,0 +1,413 @@
+{
+  "schemaVersion": 1,
+  "gate": "FAIL",
+  "weightsUsed": {
+    "claim-coverage": 23.53,
+    "noise-health": 17.65,
+    "statistical-margin": 11.76,
+    "rehearsals": 11.76,
+    "test-signal": 17.65,
+    "change-risk": 17.65
+  },
+  "weightsVersion": "5943f7bc2e73",
+  "dimensions": [
+    {
+      "id": "claim-coverage",
+      "name": "Claim coverage",
+      "weight": 20,
+      "status": "measured",
+      "score": 0,
+      "floorBreached": false,
+      "deductions": [
+        {
+          "points": 20,
+          "why": "unclaimed: dom /: reader:home: semantic DOM differs (+1 −1 lines at line 10)",
+          "evidence": "report.html#hunk-dom:reader:home:1"
+        },
+        {
+          "points": 20,
+          "why": "unclaimed: dom /course/localhost:8080: reader:course: semantic DOM differs (+1 −1 lines at line 9)",
+          "evidence": "report.html#hunk-dom:reader:course:2"
+        },
+        {
+          "points": 20,
+          "why": "unclaimed: dom /topic/localhost:8080/unit-1/topic-01: reader:topic: semantic DOM differs (+1 −1 lines at line 8)",
+          "evidence": "report.html#hunk-dom:reader:topic:3"
+        },
+        {
+          "points": 20,
+          "why": "unclaimed: dom /lab/localhost:8080/unit-1/topic-01/book-lab-01: reader:lab-step: semantic DOM differs (+1 −1 lines at line 8)",
+          "evidence": "report.html#hunk-dom:reader:lab-step:4"
+        },
+        {
+          "points": 20,
+          "why": "unclaimed: dom /lab/localhost:8080/unit-1/topic-01/book-lab-01/Step-01: reader:lab-step-2: semantic DOM differs (+1 −1 lines at line 8) (and 87 more like it, not counted again: report.html#differences)",
+          "evidence": "report.html#hunk-dom:reader:lab-step-2:5"
+        }
+      ],
+      "evidence": [
+        "report.html#differences"
+      ]
+    },
+    {
+      "id": "noise-health",
+      "name": "Noise health",
+      "weight": 15,
+      "status": "measured",
+      "score": 80,
+      "floorBreached": false,
+      "deductions": [
+        {
+          "points": 5,
+          "why": "mask realtime-rest-fallback-warning fired nothing in this run (a mask that never fires is a mask to delete)",
+          "evidence": "report.html#masks"
+        },
+        {
+          "points": 5,
+          "why": "mask chromium-compute-pressure-policy fired nothing in this run (a mask that never fires is a mask to delete)",
+          "evidence": "report.html#masks"
+        },
+        {
+          "points": 5,
+          "why": "mask transport-encoding fired nothing in this run (a mask that never fires is a mask to delete)",
+          "evidence": "report.html#masks"
+        },
+        {
+          "points": 5,
+          "why": "mask transport-transfer fired nothing in this run (a mask that never fires is a mask to delete)",
+          "evidence": "report.html#masks"
+        }
+      ],
+      "evidence": [
+        "report.html#noise",
+        "report.html#masks"
+      ],
+      "gaps": [
+        "masks added this release (needs the diff of normalise/masks.yaml between the two tags: C1)"
+      ]
+    },
+    {
+      "id": "statistical-margin",
+      "name": "Statistical margin",
+      "weight": 10,
+      "status": "measured",
+      "score": 100,
+      "floorBreached": false,
+      "deductions": [],
+      "evidence": [
+        "report.html#differences",
+        "report.html#load"
+      ]
+    },
+    {
+      "id": "rehearsals",
+      "name": "Rehearsals",
+      "weight": 10,
+      "status": "measured",
+      "score": 100,
+      "floorBreached": false,
+      "deductions": [],
+      "evidence": [
+        "migration/report.html#migration",
+        "upgrade/report.html#upgrade"
+      ]
+    },
+    {
+      "id": "test-signal",
+      "name": "Test signal",
+      "weight": 15,
+      "status": "measured",
+      "score": 10,
+      "floorBreached": true,
+      "deductions": [
+        {
+          "points": 30,
+          "why": "mutation score 72.73% on @tutors/i18n, below 80%",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/actions/runs/39224727587"
+        },
+        {
+          "points": 30,
+          "why": "mutation score 75.93% on @tutors/metrics, below 80%",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/actions/runs/39224727587"
+        },
+        {
+          "points": 30,
+          "why": "mutation score 55.11% on @tutors/ui-navigators, below 80%",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/actions/runs/39224727587",
+          "floor": true
+        }
+      ],
+      "evidence": [
+        "https://github.com/tutors-sdk/tutors-mono-repo/actions/runs/39224727587"
+      ]
+    },
+    {
+      "id": "traceability",
+      "name": "Requirements traceability",
+      "weight": 10,
+      "status": "not measured",
+      "score": null,
+      "floorBreached": false,
+      "reason": "needs the changelog, the EARS files and the claims side by side: pass --traceability <json>; changes.json already reports 13 orphan changes between the tags (a changelog entry with no diff, or a diff with no entry), a floor breach once it is measured",
+      "deductions": [],
+      "evidence": []
+    },
+    {
+      "id": "change-risk",
+      "name": "Change risk",
+      "weight": 15,
+      "status": "measured",
+      "score": 0,
+      "floorBreached": false,
+      "deductions": [
+        {
+          "points": 10,
+          "why": "PR #476 changed Reader, Development but no changelog entry under v2bff81a779424d44aab12c4e4074a75c4457eac8 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/476/files#diff-f9cfd30e49727585d340eb245e9e85897abbbba627faf3c588167b9ed13bf276"
+        },
+        {
+          "points": 3,
+          "why": "PR #478 touches hotspot packages/svelte/connect/src/services/connect.svelte.ts (3 of the last 6 releases)",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/478/files#diff-fd4035ac7c862123cdae65175cc120073c7245aa50e8aab37b76da2aaefd542b"
+        },
+        {
+          "points": 10,
+          "why": "PR #478 changed Reader, Shared Packages, Infrastructure, Development but no changelog entry under v2bff81a779424d44aab12c4e4074a75c4457eac8 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/478/files#diff-f9cfd30e49727585d340eb245e9e85897abbbba627faf3c588167b9ed13bf276"
+        },
+        {
+          "points": 10,
+          "why": "PR #480 changed Shared Packages, Infrastructure, Development but no changelog entry under v2bff81a779424d44aab12c4e4074a75c4457eac8 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/480/files#diff-058494e42758c8229a1aa355997e6c7f3996785e11ea8dffba79c3870e22bce2"
+        },
+        {
+          "points": 10,
+          "why": "PR #481 changed Reader, Infrastructure, Development but no changelog entry under v2bff81a779424d44aab12c4e4074a75c4457eac8 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/481/files#diff-e4fcc76d91071866c7d54b16b300e500d67b42190747baa90741fe8de58a8179"
+        },
+        {
+          "points": 10,
+          "why": "PR #483 changed Infrastructure, Reader, Live, Catalogue, Time, Development but no changelog entry under v2bff81a779424d44aab12c4e4074a75c4457eac8 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/483/files#diff-c19c016987c6b7d3f8a014d7e4df17402c3557f0741538318a2b573727ddfff4"
+        },
+        {
+          "points": 10,
+          "why": "PR #484 changed Infrastructure, Development but no changelog entry under v2bff81a779424d44aab12c4e4074a75c4457eac8 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/484/files#diff-a36c2b23480830b1d23bfca9ee3e98f172b1bee39d034c06780f9790dcd8c3f4"
+        },
+        {
+          "points": 10,
+          "why": "PR #487 changed Reader, Development but no changelog entry under v2bff81a779424d44aab12c4e4074a75c4457eac8 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/487/files#diff-13d8ab5e67e09ca92971e77ee1fcbb71b39dd5a018144bf33a3bbabd5b3da020"
+        },
+        {
+          "points": 10,
+          "why": "PR #504 changed Infrastructure, Development but no changelog entry under v2bff81a779424d44aab12c4e4074a75c4457eac8 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/504/files#diff-dd2c0eb6ea5cfc6c4bd4eac30934e2d5746747af48fef6da689e85b752f39557"
+        },
+        {
+          "points": 3,
+          "why": "PR #505 touches 4 hotspots packages/svelte/utils/i18n/src/messages/fr.ts (3 of the last 6 releases), packages/svelte/utils/i18n/src/messages/es.ts (3 of the last 6 releases), packages/svelte/utils/i18n/src/messages/de.ts (3 of the last 6 releases) and 1 more",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/505/files#diff-6b04260c901911736eca0c9f57d6921cf6ec7c4c4308d209b08bfb4774bc8741"
+        },
+        {
+          "points": 10,
+          "why": "PR #505 changed 11 production lines in packages/svelte/ui-navigators with 2 test lines (0.18): below 0.2",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/505/files#diff-d4a40094af72b0eb12eea04ebee4e682bfc581553326bf472d1c2f849c7c623b"
+        },
+        {
+          "points": 10,
+          "why": "PR #505 changed Reader, Development but no changelog entry under v2bff81a779424d44aab12c4e4074a75c4457eac8 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/505/files#diff-4be7739a1047b396bc6d3e9502bee98cfdd9bde50bfcb576e9df02edfd063dd3"
+        },
+        {
+          "points": 10,
+          "why": "PR #500 changed Reader, Live, Catalogue, Time, Development but no changelog entry under v2bff81a779424d44aab12c4e4074a75c4457eac8 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/500/files#diff-c5f7478f9ea43955917de963b542918dbd3c74bd2e710935fd2606ee0ce67ecd"
+        },
+        {
+          "points": 10,
+          "why": "PR #501 changed Infrastructure, Reader, Development but no changelog entry under v2bff81a779424d44aab12c4e4074a75c4457eac8 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/501/files#diff-dd2c0eb6ea5cfc6c4bd4eac30934e2d5746747af48fef6da689e85b752f39557"
+        },
+        {
+          "points": 10,
+          "why": "PR #502 changed Infrastructure, Development but no changelog entry under v2bff81a779424d44aab12c4e4074a75c4457eac8 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/502/files#diff-a36c2b23480830b1d23bfca9ee3e98f172b1bee39d034c06780f9790dcd8c3f4"
+        },
+        {
+          "points": 5,
+          "why": "PR #513 moves happy-dom 20.14.0 → 21.0.1 in the root: a major bump, ground the journeys may not cover",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/513/files#diff-32824c984905bb02bc7ffcef96a77addd1f1602cff71a11fbbfdd7f53ee026bb"
+        },
+        {
+          "points": 3,
+          "why": "PR #514 touches 4 hotspots packages/svelte/utils/i18n/src/messages/fr.ts (3 of the last 6 releases), packages/svelte/utils/i18n/src/messages/es.ts (3 of the last 6 releases), packages/svelte/utils/i18n/src/messages/de.ts (3 of the last 6 releases) and 1 more",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/514/files#diff-6b04260c901911736eca0c9f57d6921cf6ec7c4c4308d209b08bfb4774bc8741"
+        },
+        {
+          "points": 5,
+          "why": "reader churn 343 lines, above 2× its median of 101.5 over the last 6 releases; PR #514 is the largest part (202 lines)",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/514/files#diff-13bc0a33f184cb8d792a48300081d13e799b31f2a6adebb9b06a5609f0068def"
+        },
+        {
+          "points": 10,
+          "why": "PR #514 changed Reader, Development but no changelog entry under v2bff81a779424d44aab12c4e4074a75c4457eac8 names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/514/files#diff-13bc0a33f184cb8d792a48300081d13e799b31f2a6adebb9b06a5609f0068def"
+        }
+      ],
+      "evidence": [
+        "changes.json"
+      ],
+      "gaps": [
+        "orphan entries (a changelog entry with no diff): CHANGELOG.md at 2bff81a779424d44aab12c4e4074a75c4457eac8 has no \"### v2bff81a779424d44aab12c4e4074a75c4457eac8\" entries under a product section"
+      ]
+    },
+    {
+      "id": "post-deploy",
+      "name": "Post-deploy history",
+      "weight": 5,
+      "status": "not measured",
+      "score": null,
+      "floorBreached": false,
+      "reason": "needs the last release's post-deploy record: pass --post-deploy <its run dir or report.json>",
+      "deductions": [],
+      "evidence": []
+    }
+  ],
+  "glance": [
+    {
+      "rank": 1,
+      "kind": "major-bump",
+      "key": "happy-dom",
+      "finding": "happy-dom 20.14.0 → 21.0.1 in the root (PR #513): a major bump; unmapped: the root is not an app, and a package's reach into the journeys is not mapped",
+      "links": {
+        "pr": "https://github.com/tutors-sdk/tutors-mono-repo/pull/513",
+        "diff": "https://github.com/tutors-sdk/tutors-mono-repo/pull/513/files#diff-32824c984905bb02bc7ffcef96a77addd1f1602cff71a11fbbfdd7f53ee026bb"
+      },
+      "novelty": 1,
+      "exposure": 1,
+      "score": 1,
+      "basis": {
+        "novelty": "seen in 0 of the last 1 release that recorded it",
+        "exposure": "unmapped (the root is not an app, and a package's reach into the journeys is not mapped): counted as all 17 journeys, so what cannot be placed is not ranked below what can"
+      },
+      "mark": null
+    },
+    {
+      "rank": 2,
+      "kind": "fixed-on-b",
+      "key": "console catalogue:home",
+      "finding": "catalogue:home: 2 console errors fixed on b, undecided; a fix is a decision: claim it to say why, and this item switches off",
+      "links": {
+        "hunk": "report.html#hunk-console:catalogue:home:52"
+      },
+      "hunks": [
+        "report.html#hunk-console:catalogue:home:52",
+        "report.html#hunk-console:catalogue:home:53"
+      ],
+      "detail": "error: {\"app\":\"tutors-catalogue\",\"environment\":\"production\",\"error\":\"Cannot read properti… | error: {\"app\":\"tutors-catalogue\",\"environment\":\"production\",\"error\":\"Cannot read properti…",
+      "novelty": 0.5,
+      "exposure": 0.06,
+      "score": 0.03,
+      "basis": {
+        "novelty": "seen in 1 of the last 1 release that recorded it (17.0.0-rc.1)",
+        "exposure": "1 of 17 journeys: catalogue-loads"
+      },
+      "mark": null
+    }
+  ],
+  "run": {
+    "candidate": "sha-2bff81a",
+    "baseline": "17.0.0",
+    "ranAt": "2026-10-19T10:14:10.750Z",
+    "reports": {
+      "release": "report.json",
+      "migration": "migration/report.json",
+      "upgrade": "upgrade/report.json"
+    },
+    "inputs": {
+      "testSignal": "quality.json",
+      "changeRisk": "changes.json"
+    },
+    "harness": {
+      "version": "1.48.6",
+      "contractVersion": "1.48.6"
+    }
+  },
+  "rcs": null,
+  "band": null,
+  "mean": null,
+  "note": "No RCS: Gate FAIL. The Gate wins: no number talks a FAIL back on. The dimensions are shown for the 5 Whys, not for a decision.",
+  "glanceBasis": {
+    "rule": "novelty × exposure, highest first, at most 7; ties in the plan's order (broad-claim, mask-added, near-miss, first-time-hotspot, new-persistence, fixed-on-b, major-bump, duration-moved). Novelty is (n − seen + 1) ÷ (n + 1) over the last 6 releases on the scoreboard that recorded the kind (1 with no history); exposure is the share of the journey set the finding touches (1 when it cannot be placed).",
+    "history": {
+      "releases": [
+        "17.0.0-rc.1"
+      ],
+      "source": "/home/runner/work/tutors-release-harness/tutors-release-harness/scoreboard.jsonl"
+    },
+    "journeys": {
+      "total": 17,
+      "names": [
+        "anonymous-student-reads-course",
+        "anonymous-student-searches",
+        "catalogue-loads",
+        "live-loads",
+        "reference-course-reads",
+        "rule-0582-signed-in-lab",
+        "rule-0583-presence",
+        "rule-0584-quiz-notebook-talk",
+        "rule-0585-preferences",
+        "rule-0586-private-course",
+        "rule-0587-calendar-llm",
+        "rule-0588-content-lock",
+        "rule-0589-live",
+        "rule-0590-time-calendar",
+        "rule-0591-time-labs",
+        "rule-0592-whiteboard",
+        "student-signs-in"
+      ],
+      "source": "the journeys in the release run's a/ and b/ capture.json"
+    },
+    "checked": [
+      {
+        "kind": "broad-claim",
+        "candidates": 0
+      },
+      {
+        "kind": "mask-added",
+        "candidates": 0
+      },
+      {
+        "kind": "near-miss",
+        "candidates": 0
+      },
+      {
+        "kind": "first-time-hotspot",
+        "candidates": 0
+      },
+      {
+        "kind": "new-persistence",
+        "candidates": 0
+      },
+      {
+        "kind": "fixed-on-b",
+        "candidates": 1
+      },
+      {
+        "kind": "major-bump",
+        "candidates": 1
+      },
+      {
+        "kind": "duration-moved",
+        "candidates": 0
+      }
+    ],
+    "notChecked": [],
+    "seen": [
+      "fixed-on-b:console catalogue:home",
+      "major-bump:happy-dom"
+    ]
+  }
+}
