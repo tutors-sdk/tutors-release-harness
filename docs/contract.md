@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.48.7`
+Contract version: `1.49.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -2106,9 +2106,13 @@ Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on t
 
 ## Changes
 
+### 1.49.0 (minor; pixelmatch 8, which scores screenshot differences in OKLab)
+
+The release note is [releases/1.49.0.md](releases/1.49.0.md). The `screenshot` engine counts differing pixels with pixelmatch 8 (OKLab and HyAB instead of YIQ); the threshold keeps its scale, the counts move, so screenshot differences are comparable only between reports judged by 1.49.0 or later. No Gate or exit code rule moves.
+
 ### 1.48.7 (patch; Playwright 1.64 and the minor and patch npm group)
 
-The release note is [releases/1.48.7.md](releases/1.48.7.md). Dependency bumps only. No verdict, Gate or exit code rule moves.
+The release note is [releases/1.48.7.md](releases/1.48.7.md). The `screenshot` engine counts differing pixels with pixelmatch 8 (OKLab and HyAB instead of YIQ); the threshold keeps its scale, the counts move, so screenshot differences are comparable only between reports judged by 1.49.0 or later. No Gate or exit code rule moves.
 
 ### 1.48.6 (patch; the keyboard-order walk waits for the page to settle after the blur)
 
