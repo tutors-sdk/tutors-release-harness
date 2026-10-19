@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.48.5`
+Contract version: `1.48.6`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -2105,6 +2105,12 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.48.6 (patch; the keyboard-order walk waits for the page to settle after the blur)
+
+The release note is [releases/1.48.6.md](releases/1.48.6.md). The `focus` walk waits for the page to settle after its blur (three equal readings of the tabbable elements 100 ms
+apart, no finite animation running, at most 2 s) before the first Tab, so a menu that closes when focus leaves it is
+walked closed on both sides. No verdict, Gate or exit code rule moves.
 
 ### 1.48.5 (patch; claims for the keyboard order the recorded release walked from a clicked card)
 

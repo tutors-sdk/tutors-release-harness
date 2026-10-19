@@ -215,10 +215,39 @@ async function focusWalk(page: Page, stops: number): Promise<string[]> {
     start.focus({ preventScroll: true });
     window.scrollTo(0, 0);
   });
+  await settleAfterBlur(page);
   try {
     return await walkFromStart(page, stops);
   } finally {
     await page.evaluate(() => document.getElementById("tutors-harness-focus-start")?.remove()).catch(() => undefined);
+  }
+}
+
+/**
+ * Since 1.48.6: wait for the page to stop changing after the blur. A menu that closes when focus leaves it (the
+ * profile menu of Rule journey 0583) closes on its own clock, so an A/A night walked it open on one side and closed on
+ * the other (A/A of 19 Oct 2026, and the mutants' A/A on the base the same morning). Settled means three readings
+ * 100 ms apart agree on the visible tabbable elements and no finite animation is running; capped at 2 s so a page that
+ * never settles is walked as it is.
+ */
+async function settleAfterBlur(page: Page): Promise<void> {
+  let last = "";
+  let same = 0;
+  for (let waited = 0; waited < 2000; waited += 100) {
+    const reading = await page.evaluate(() => {
+      const tabbable = [...document.querySelectorAll<HTMLElement>("a[href], button, input, select, textarea, [tabindex]")]
+        .filter((el) => el.tabIndex >= 0 && el.getClientRects().length > 0)
+        .map((el) => `${el.tagName}:${(el.getAttribute("aria-label") ?? el.innerText ?? "").slice(0, 20)}`)
+        .join("|");
+      const animating = document
+        .getAnimations()
+        .some((a) => a.playState === "running" && a.effect?.getComputedTiming().endTime !== Infinity);
+      return animating ? `animating ${Math.random()}` : tabbable;
+    });
+    same = reading === last ? same + 1 : 0;
+    if (same >= 2) return;
+    last = reading;
+    await page.waitForTimeout(100);
   }
 }
 
