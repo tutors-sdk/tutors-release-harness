@@ -1,0 +1,1447 @@
+{
+  "schemaVersion": 1,
+  "a": "17.0.0",
+  "b": "8534430cb0681d2f21383b56e7227bfbf35bfd2c",
+  "refs": {
+    "a": "v17.0.0",
+    "b": "8534430cb0681d2f21383b56e7227bfbf35bfd2c"
+  },
+  "version": "8534430cb0681d2f21383b56e7227bfbf35bfd2c",
+  "repo": "tutors-sdk/tutors-mono-repo",
+  "history": {
+    "asked": 6,
+    "releases": [
+      {
+        "from": "v16.2.2",
+        "to": "v17.0.0"
+      },
+      {
+        "from": "v16.2.1",
+        "to": "v16.2.2"
+      },
+      {
+        "from": "v16.2.0",
+        "to": "v16.2.1"
+      },
+      {
+        "from": "v16.1.8",
+        "to": "v16.2.0"
+      },
+      {
+        "from": "v16.1.6",
+        "to": "v16.1.8"
+      },
+      {
+        "from": "v16.1.5",
+        "to": "v16.1.6"
+      }
+    ]
+  },
+  "score": 0,
+  "lost": 136,
+  "floorBreached": false,
+  "prs": [
+    {
+      "pr": 476,
+      "sha": "90152846e9fea43cfe37ec0489a038ce9f2bfa8f",
+      "title": "Give each whiteboard room a Realtime budget",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/476",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        "apps/reader/static/excalidraw-editor.html",
+        "guides/WHITEBOARD.md",
+        "tests/bdd/features/shared/realtime-usage.feature",
+        "tests/bdd/steps/shared/realtime-usage.steps.ts",
+        "tests/bdd/support/whiteboard-editor.ts"
+      ],
+      "churn": 377,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 285,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": true,
+      "points": 10,
+      "deductions": [
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #476 changed Reader, Development but no changelog entry under v8534430cb0681d2f21383b56e7227bfbf35bfd2c names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/476/files#diff-f9cfd30e49727585d340eb245e9e85897abbbba627faf3c588167b9ed13bf276",
+          "file": "apps/reader/static/excalidraw-editor.html",
+          "pr": 476,
+          "author": "Claude"
+        }
+      ]
+    },
+    {
+      "pr": 478,
+      "sha": "7c4028ade19fde26ea11b236e2b16dff572f1a5e",
+      "title": "Route every Realtime channel through a budgeted port",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/478",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        ".dependency-cruiser.cjs",
+        "ARCHITECTURE.md",
+        "CHANGELOG.md",
+        "CONTRIBUTING.md",
+        "README.md",
+        "apps/reader/static/excalidraw-editor.html",
+        "deno.json",
+        "etc/realtime.api.md",
+        "packages/jsr/realtime/deno.json",
+        "packages/jsr/realtime/package.json",
+        "packages/jsr/realtime/src/index.ts",
+        "packages/svelte/community/package.json",
+        "packages/svelte/community/src/services/live.svelte.ts",
+        "packages/svelte/community/src/services/presence.svelte.ts",
+        "packages/svelte/community/src/services/realtime.ts",
+        "packages/svelte/community/src/types.svelte.ts",
+        "packages/svelte/community/src/utils/supabase-client.ts",
+        "packages/svelte/connect/src/services/connect.svelte.ts",
+        "packages/svelte/realtime-supabase/package.json",
+        "packages/svelte/realtime-supabase/src/index.ts",
+        "pnpm-lock.yaml",
+        "release/README.md",
+        "release/claims.yaml",
+        "scripts/api-surface.ts",
+        "scripts/checks/release-claims.ts",
+        "scripts/release-claims-draft.ts",
+        "tests/architecture/dependency-rules.test.ts",
+        "tests/architecture/fixtures/workspace/packages/jsr/realtime/src/broker.ts",
+        "tests/architecture/realtime-boundary.test.ts",
+        "tests/bdd/features/shared/realtime-gateway.feature",
+        "tests/bdd/features/shared/realtime-usage.feature",
+        "tests/bdd/steps/shared/realtime-gateway.steps.ts",
+        "tests/bdd/steps/shared/realtime-usage.steps.ts",
+        "tests/bdd/support/connect.ts",
+        "tests/bdd/support/supabase-recorder.ts",
+        "tests/bdd/support/whiteboard-editor.ts",
+        "tests/conformance/release-claims.test.ts",
+        "tests/suite-health/coverage-floors.json",
+        "tests/unit/community/health-check.test.ts",
+        "tests/unit/community/presence-broadcast.test.ts",
+        "vitest.aliases.ts"
+      ],
+      "churn": 1349,
+      "hotspotsTouched": [
+        "packages/svelte/connect/src/services/connect.svelte.ts"
+      ],
+      "testDelta": {
+        "production": 446,
+        "tests": 650,
+        "ratio": 1.46,
+        "packages": [
+          {
+            "package": "packages/jsr/realtime",
+            "production": 280,
+            "tests": 650,
+            "ratio": 2.32
+          },
+          {
+            "package": "packages/svelte/community",
+            "production": 131,
+            "tests": 650,
+            "ratio": 4.96
+          },
+          {
+            "package": "packages/svelte/connect",
+            "production": 1,
+            "tests": 650,
+            "ratio": 650
+          },
+          {
+            "package": "packages/svelte/realtime-supabase",
+            "production": 34,
+            "tests": 650,
+            "ratio": 19.12
+          }
+        ]
+      },
+      "reviewed": true,
+      "points": 13,
+      "deductions": [
+        {
+          "points": 3,
+          "rule": "hotspot",
+          "why": "PR #478 touches hotspot packages/svelte/connect/src/services/connect.svelte.ts (3 of the last 6 releases)",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/478/files#diff-fd4035ac7c862123cdae65175cc120073c7245aa50e8aab37b76da2aaefd542b",
+          "file": "packages/svelte/connect/src/services/connect.svelte.ts",
+          "pr": 478,
+          "author": "Claude"
+        },
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #478 changed Reader, Shared Packages, Infrastructure, Development but no changelog entry under v8534430cb0681d2f21383b56e7227bfbf35bfd2c names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/478/files#diff-f9cfd30e49727585d340eb245e9e85897abbbba627faf3c588167b9ed13bf276",
+          "file": "apps/reader/static/excalidraw-editor.html",
+          "pr": 478,
+          "author": "Claude"
+        }
+      ]
+    },
+    {
+      "pr": 480,
+      "sha": "9bf447dee21d5d88653e92ba52ae7a603412ab42",
+      "title": "Tutors Time: read only the chosen days of a course's calendar",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/480",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        "packages/jsr/time/src/services/course-time.ts",
+        "supabase/migrations/20261015_calendar_course_day_index.sql",
+        "tests/bdd/features/student/learning-progress.feature",
+        "tests/bdd/steps/student/learning-progress.steps.ts",
+        "tests/bdd/support/supabase-recorder.ts",
+        "tests/suite-health/coverage-floors.json"
+      ],
+      "churn": 92,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 20,
+        "tests": 66,
+        "ratio": 3.3,
+        "packages": [
+          {
+            "package": "packages/jsr/time",
+            "production": 20,
+            "tests": 66,
+            "ratio": 3.3
+          }
+        ]
+      },
+      "reviewed": true,
+      "points": 10,
+      "deductions": [
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #480 changed Shared Packages, Infrastructure, Development but no changelog entry under v8534430cb0681d2f21383b56e7227bfbf35bfd2c names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/480/files#diff-058494e42758c8229a1aa355997e6c7f3996785e11ea8dffba79c3870e22bce2",
+          "file": "packages/jsr/time/src/services/course-time.ts",
+          "pr": 480,
+          "author": "Claude"
+        }
+      ]
+    },
+    {
+      "pr": 481,
+      "sha": "3613ee3644e9aa2a10c9fa8f0b404d0cd3e372f0",
+      "title": "Tutors Live: publish from the reader's server within a daily Realtime budget",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/481",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        "ARCHITECTURE.md",
+        "apps/reader/src/routes/api/live/activity/+server.ts",
+        "packages/svelte/community/src/services/live-activity.ts",
+        "packages/svelte/community/src/services/live-feed.ts",
+        "packages/svelte/community/src/services/live.svelte.ts",
+        "packages/svelte/community/src/services/presence.svelte.ts",
+        "packages/svelte/community/src/utils/supabase-client.ts",
+        "supabase/migrations/20261016_realtime_live_budget.sql",
+        "tests/bdd/features/shared/live-activity-budget.feature",
+        "tests/bdd/features/shared/realtime-usage.feature",
+        "tests/bdd/features/student/live-presence.feature",
+        "tests/bdd/steps/shared/authentication.steps.ts",
+        "tests/bdd/steps/shared/live-activity-budget.steps.ts",
+        "tests/bdd/steps/shared/realtime-usage.steps.ts",
+        "tests/bdd/steps/student/learning-progress.steps.ts",
+        "tests/bdd/steps/student/live-presence.steps.ts",
+        "tests/bdd/support/connect.ts",
+        "tests/bdd/support/supabase-recorder.ts",
+        "tests/security/mutating-routes.txt",
+        "tests/suite-health/coverage-floors.json",
+        "tests/unit/community/error-transport.test.ts",
+        "tests/unit/community/presence-broadcast.test.ts",
+        "tests/unit/community/presence-live-report.test.ts"
+      ],
+      "churn": 1421,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 281,
+        "tests": 950,
+        "ratio": 3.38,
+        "packages": [
+          {
+            "package": "apps/reader",
+            "production": 16,
+            "tests": 950,
+            "ratio": 59.38
+          },
+          {
+            "package": "packages/svelte/community",
+            "production": 265,
+            "tests": 950,
+            "ratio": 3.58
+          }
+        ]
+      },
+      "reviewed": true,
+      "points": 10,
+      "deductions": [
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #481 changed Reader, Infrastructure, Development but no changelog entry under v8534430cb0681d2f21383b56e7227bfbf35bfd2c names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/481/files#diff-e4fcc76d91071866c7d54b16b300e500d67b42190747baa90741fe8de58a8179",
+          "file": "apps/reader/src/routes/api/live/activity/+server.ts",
+          "pr": 481,
+          "author": "Claude"
+        }
+      ],
+      "declares": {
+        "artefacts": [
+          "network"
+        ],
+        "entry": "Tutors Live activity is published by the reader's server, only to watched feeds, within a daily Realtime budget",
+        "source": "body"
+      }
+    },
+    {
+      "pr": 483,
+      "sha": "1279669f9afe1db619edf837270137b2c6c0ba54",
+      "title": "Release 17.0.0 to main and pin production to it",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/483",
+      "direct": false,
+      "release": false,
+      "author": "Eamonn de Leastar",
+      "firstContribution": false,
+      "files": [
+        "CHANGELOG.md",
+        "apps/catalogue/package.json",
+        "apps/live/package.json",
+        "apps/reader/package.json",
+        "apps/time/package.json",
+        "deploy/k8s/overlays/catalogue/kustomization.yaml",
+        "deploy/k8s/overlays/live/kustomization.yaml",
+        "deploy/k8s/overlays/reader/kustomization.yaml",
+        "deploy/k8s/overlays/time/kustomization.yaml",
+        "package.json",
+        "release/claims.yaml",
+        "release/deployed.json",
+        "tests/generator/claims.yaml"
+      ],
+      "churn": 424,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 20,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": true,
+      "points": 10,
+      "deductions": [
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #483 changed Infrastructure, Reader, Live, Catalogue, Time, Development but no changelog entry under v8534430cb0681d2f21383b56e7227bfbf35bfd2c names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/483/files#diff-c19c016987c6b7d3f8a014d7e4df17402c3557f0741538318a2b573727ddfff4",
+          "file": "apps/catalogue/package.json",
+          "pr": 483,
+          "author": "Eamonn de Leastar"
+        }
+      ]
+    },
+    {
+      "pr": 484,
+      "sha": "ecc56f74aea1618b564f0e27ffa9150737b714f4",
+      "title": "ci(deploy): open the pin pull request when a release tag's images are published",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/484",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        ".github/workflows/deploy-pin-pr.yml",
+        ".github/workflows/image-build.yml",
+        "guides/Release-Strategy.md",
+        "release/SOP.md",
+        "tests/conformance/deploy-pins.test.ts"
+      ],
+      "churn": 247,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 40,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": true,
+      "points": 10,
+      "deductions": [
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #484 changed Infrastructure, Development but no changelog entry under v8534430cb0681d2f21383b56e7227bfbf35bfd2c names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/484/files#diff-a36c2b23480830b1d23bfca9ee3e98f172b1bee39d034c06780f9790dcd8c3f4",
+          "file": ".github/workflows/image-build.yml",
+          "pr": 484,
+          "author": "Claude"
+        }
+      ]
+    },
+    {
+      "pr": 485,
+      "sha": "dc6613589c3aed964fe258272e23e58482f536e8",
+      "title": "fix(deps): clear the three advisories failing the dependency audit",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/485",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        "pnpm-lock.yaml",
+        "pnpm-workspace.yaml",
+        "tests/security/audit-allowlist.json"
+      ],
+      "churn": 79,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 9,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": true,
+      "points": 0,
+      "deductions": []
+    },
+    {
+      "pr": 487,
+      "sha": "d3d72277634afc7370a4432eb3fdd64d57e5bf9a",
+      "title": "fix(community): show an empty catalogue without Supabase instead of logging errors",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/487",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        "packages/svelte/community/src/services/catalogue.ts",
+        "tests/bdd/features/student/course-discovery.feature",
+        "tests/bdd/steps/student/course-discovery.steps.ts"
+      ],
+      "churn": 67,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 15,
+        "tests": 52,
+        "ratio": 3.47,
+        "packages": [
+          {
+            "package": "packages/svelte/community",
+            "production": 15,
+            "tests": 52,
+            "ratio": 3.47
+          }
+        ]
+      },
+      "reviewed": true,
+      "points": 10,
+      "deductions": [
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #487 changed Reader, Development but no changelog entry under v8534430cb0681d2f21383b56e7227bfbf35bfd2c names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/487/files#diff-13d8ab5e67e09ca92971e77ee1fcbb71b39dd5a018144bf33a3bbabd5b3da020",
+          "file": "packages/svelte/community/src/services/catalogue.ts",
+          "pr": 487,
+          "author": "Claude"
+        }
+      ]
+    },
+    {
+      "pr": 493,
+      "sha": "c867ee87107a603c3d1ea34be9ff70beab119ee2",
+      "title": "Claim main's Live budget differences and archive 17.0.0's claims",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/493",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        "release/claims.yaml",
+        "release/claims/17.0.0.yaml"
+      ],
+      "churn": 497,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 0,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": true,
+      "points": 0,
+      "deductions": []
+    },
+    {
+      "pr": 504,
+      "sha": "84ffbb680a286eb1a65ece555570e526e6c993f5",
+      "title": "fix(nightly): make the three red Nightly jobs pass for real",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/504",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        ".dockerignore",
+        ".github/workflows/nightly.yml",
+        "Dockerfile",
+        "guides/testing/MUTATION-TESTING.md",
+        "guides/testing/TESTING.md",
+        "package.json",
+        "patches/@stryker-mutator__vitest-runner@10.0.0.patch",
+        "pnpm-lock.yaml",
+        "pnpm-workspace.yaml",
+        "stryker.nightly.config.json",
+        "tests/bdd/steps/developer/test-quality-ratchets.steps.ts",
+        "tests/e2e-stack/fixture-course/build.ts",
+        "tests/e2e-stack/journeys/journeys.ts",
+        "tests/mutation/mutation-floors.json",
+        "tests/mutation/nightly-mutation-floors.json",
+        "tests/unit/community/catalogue-service.test.ts",
+        "tests/unit/community/catalogue-without-supabase.test.ts",
+        "tests/unit/runes/runes.test.ts"
+      ],
+      "churn": 357,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 293,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": true,
+      "points": 10,
+      "deductions": [
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #504 changed Infrastructure, Development but no changelog entry under v8534430cb0681d2f21383b56e7227bfbf35bfd2c names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/504/files#diff-dd2c0eb6ea5cfc6c4bd4eac30934e2d5746747af48fef6da689e85b752f39557",
+          "file": "Dockerfile",
+          "pr": 504,
+          "author": "Claude"
+        }
+      ],
+      "declares": {
+        "artefacts": [],
+        "entry": "none",
+        "source": "body"
+      }
+    },
+    {
+      "pr": 505,
+      "sha": "83d4ccf7f5ca2440bbc94224e40c5bfef3e410d9",
+      "title": "fix(a11y): button names contain their visible text",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/505",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        "apps/reader/tests/e2e/accessibility.spec.ts",
+        "apps/reader/tests/e2e/course-tools.spec.ts",
+        "apps/reader/tests/e2e/preferences-and-themes.spec.ts",
+        "apps/reader/tests/e2e/search.spec.ts",
+        "apps/reader/tests/e2e/shell-and-navigation.spec.ts",
+        "apps/reader/tests/e2e/support.ts",
+        "packages/svelte/ui-navigators/src/LayoutMenu.svelte",
+        "packages/svelte/ui-navigators/src/buttons/SearchButton.svelte",
+        "packages/svelte/utils/i18n/src/messages/de.ts",
+        "packages/svelte/utils/i18n/src/messages/en.ts",
+        "packages/svelte/utils/i18n/src/messages/es.ts",
+        "packages/svelte/utils/i18n/src/messages/fr.ts",
+        "packages/svelte/utils/i18n/src/messages/ga.ts",
+        "packages/svelte/utils/i18n/src/messages/it.ts",
+        "tests/bdd/features/ui/shell-and-navigation.feature"
+      ],
+      "churn": 47,
+      "hotspotsTouched": [
+        "packages/svelte/utils/i18n/src/messages/fr.ts",
+        "packages/svelte/utils/i18n/src/messages/es.ts",
+        "packages/svelte/utils/i18n/src/messages/de.ts",
+        "packages/svelte/utils/i18n/src/messages/it.ts"
+      ],
+      "testDelta": {
+        "production": 17,
+        "tests": 30,
+        "ratio": 1.76,
+        "packages": [
+          {
+            "package": "packages/svelte/ui-navigators",
+            "production": 11,
+            "tests": 2,
+            "ratio": 0.18
+          },
+          {
+            "package": "packages/svelte/utils",
+            "production": 6,
+            "tests": 2,
+            "ratio": 0.33
+          }
+        ]
+      },
+      "reviewed": true,
+      "points": 23,
+      "deductions": [
+        {
+          "points": 3,
+          "rule": "hotspot",
+          "why": "PR #505 touches 4 hotspots packages/svelte/utils/i18n/src/messages/fr.ts (3 of the last 6 releases), packages/svelte/utils/i18n/src/messages/es.ts (3 of the last 6 releases), packages/svelte/utils/i18n/src/messages/de.ts (3 of the last 6 releases) and 1 more",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/505/files#diff-6b04260c901911736eca0c9f57d6921cf6ec7c4c4308d209b08bfb4774bc8741",
+          "file": "packages/svelte/utils/i18n/src/messages/fr.ts",
+          "pr": 505,
+          "author": "Claude"
+        },
+        {
+          "points": 10,
+          "rule": "tests",
+          "why": "PR #505 changed 11 production lines in packages/svelte/ui-navigators with 2 test lines (0.18): below 0.2",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/505/files#diff-d4a40094af72b0eb12eea04ebee4e682bfc581553326bf472d1c2f849c7c623b",
+          "file": "packages/svelte/ui-navigators/src/buttons/SearchButton.svelte",
+          "pr": 505,
+          "author": "Claude"
+        },
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #505 changed Reader, Development but no changelog entry under v8534430cb0681d2f21383b56e7227bfbf35bfd2c names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/505/files#diff-4be7739a1047b396bc6d3e9502bee98cfdd9bde50bfcb576e9df02edfd063dd3",
+          "file": "apps/reader/tests/e2e/accessibility.spec.ts",
+          "pr": 505,
+          "author": "Claude"
+        }
+      ],
+      "declares": {
+        "artefacts": [
+          "dom",
+          "focus"
+        ],
+        "entry": "Screen readers announce the Preferences button as \"Preferences\", and the search and close buttons announce their keyboard shortcuts",
+        "source": "body"
+      }
+    },
+    {
+      "pr": 500,
+      "sha": "05c390901d4b19eb6f6a00526c310b9a18a3051f",
+      "title": "fix(deploy): immutable Cache-Control on /_app/immutable/* for Netlify",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/500",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        "apps/catalogue/netlify.toml",
+        "apps/live/netlify.toml",
+        "apps/reader/netlify.toml",
+        "apps/time/netlify.toml",
+        "tests/conformance/netlify-headers.test.ts"
+      ],
+      "churn": 30,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 22,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": true,
+      "points": 10,
+      "deductions": [
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #500 changed Reader, Live, Catalogue, Time, Development but no changelog entry under v8534430cb0681d2f21383b56e7227bfbf35bfd2c names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/500/files#diff-c5f7478f9ea43955917de963b542918dbd3c74bd2e710935fd2606ee0ce67ecd",
+          "file": "apps/catalogue/netlify.toml",
+          "pr": 500,
+          "author": "Claude"
+        }
+      ]
+    },
+    {
+      "pr": 501,
+      "sha": "a22cc9adf34f2b1ccef57dcfd59e7546e38e86db",
+      "title": "feat(image): declare a HEALTHCHECK and expose request SLIs from start (image-hardening, image-manifest, metrics)",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/501",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        "Dockerfile",
+        "deploy/README.md",
+        "packages/svelte/utils/metrics/src/metrics.ts",
+        "tests/bdd/features/developer/runtime-image.feature",
+        "tests/bdd/features/developer/service-level-objectives.feature",
+        "tests/bdd/steps/developer/runtime-image.steps.ts",
+        "tests/bdd/steps/developer/service-level-objectives.steps.ts"
+      ],
+      "churn": 256,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 19,
+        "tests": 222,
+        "ratio": 11.68,
+        "packages": [
+          {
+            "package": "packages/svelte/utils",
+            "production": 19,
+            "tests": 222,
+            "ratio": 11.68
+          }
+        ]
+      },
+      "reviewed": true,
+      "points": 10,
+      "deductions": [
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #501 changed Infrastructure, Reader, Development but no changelog entry under v8534430cb0681d2f21383b56e7227bfbf35bfd2c names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/501/files#diff-dd2c0eb6ea5cfc6c4bd4eac30934e2d5746747af48fef6da689e85b752f39557",
+          "file": "Dockerfile",
+          "pr": 501,
+          "author": "Claude"
+        }
+      ],
+      "declares": {
+        "artefacts": [
+          "image-hardening",
+          "image-manifest",
+          "metrics"
+        ],
+        "entry": "feat(image): declare a HEALTHCHECK and expose request SLIs from start",
+        "source": "title"
+      }
+    },
+    {
+      "pr": 502,
+      "sha": "8534430cb0681d2f21383b56e7227bfbf35bfd2c",
+      "title": "ci(image): attest SLSA v1 build provenance to every published image (build-provenance)",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/502",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        ".github/workflows/image-build.yml",
+        "deploy/README.md",
+        "tests/conformance/image-provenance.test.ts"
+      ],
+      "churn": 205,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 109,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": true,
+      "points": 10,
+      "deductions": [
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #502 changed Infrastructure, Development but no changelog entry under v8534430cb0681d2f21383b56e7227bfbf35bfd2c names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/502/files#diff-a36c2b23480830b1d23bfca9ee3e98f172b1bee39d034c06780f9790dcd8c3f4",
+          "file": ".github/workflows/image-build.yml",
+          "pr": 502,
+          "author": "Claude"
+        }
+      ],
+      "declares": {
+        "artefacts": [
+          "build-provenance"
+        ],
+        "entry": "ci(image): attest SLSA v1 build provenance to every published image",
+        "source": "title"
+      }
+    }
+  ],
+  "signals": {
+    "churn": {
+      "status": "measured",
+      "apps": [
+        {
+          "app": "reader",
+          "churn": 141,
+          "median": 101.5,
+          "above": false,
+          "history": [
+            3795,
+            2,
+            109,
+            94,
+            119,
+            40
+          ]
+        },
+        {
+          "app": "catalogue",
+          "churn": 2,
+          "median": 7.5,
+          "above": false,
+          "history": [
+            206,
+            2,
+            11,
+            73,
+            2,
+            4
+          ]
+        },
+        {
+          "app": "live",
+          "churn": 2,
+          "median": 3.5,
+          "above": false,
+          "history": [
+            308,
+            2,
+            3,
+            73,
+            2,
+            4
+          ]
+        },
+        {
+          "app": "time",
+          "churn": 2,
+          "median": 14,
+          "above": false,
+          "history": [
+            2177,
+            2,
+            15,
+            107,
+            13,
+            6
+          ]
+        }
+      ]
+    },
+    "hotspots": {
+      "status": "measured",
+      "files": [
+        {
+          "path": "packages/svelte/utils/i18n/src/messages/fr.ts",
+          "releases": 3,
+          "weight": 407
+        },
+        {
+          "path": "packages/svelte/utils/i18n/src/messages/es.ts",
+          "releases": 3,
+          "weight": 387
+        },
+        {
+          "path": "packages/svelte/utils/i18n/src/messages/de.ts",
+          "releases": 3,
+          "weight": 373
+        },
+        {
+          "path": "packages/svelte/utils/i18n/src/messages/it.ts",
+          "releases": 3,
+          "weight": 323
+        },
+        {
+          "path": "packages/svelte/ui-components/src/learning-objects/content/whiteboard/WhiteboardViewer.svelte",
+          "releases": 3,
+          "weight": 254
+        },
+        {
+          "path": "packages/svelte/utils/logger/src/request-logger.ts",
+          "releases": 3,
+          "weight": 216
+        },
+        {
+          "path": "packages/svelte/ui-primitives/src/components/LoContextTreeView.svelte",
+          "releases": 3,
+          "weight": 184
+        },
+        {
+          "path": "apps/reader/src/hooks.server.ts",
+          "releases": 3,
+          "weight": 175
+        },
+        {
+          "path": "packages/svelte/connect/src/services/connect.svelte.ts",
+          "releases": 3,
+          "weight": 107
+        },
+        {
+          "path": "apps/reader/src/routes/(course-reader)/+layout.svelte",
+          "releases": 3,
+          "weight": 91
+        },
+        {
+          "path": "packages/svelte/community/src/utils/error-transport.ts",
+          "releases": 3,
+          "weight": 58
+        },
+        {
+          "path": "packages/jsr/model/src/utils/markdown-utils.ts",
+          "releases": 3,
+          "weight": 51
+        },
+        {
+          "path": "packages/svelte/ui-components/src/learning-objects/content/talk/TalkMarp.svelte",
+          "releases": 3,
+          "weight": 49
+        },
+        {
+          "path": "apps/time/src/hooks.server.ts",
+          "releases": 3,
+          "weight": 48
+        },
+        {
+          "path": "packages/svelte/course/src/course/services/lo-tree.ts",
+          "releases": 3,
+          "weight": 23
+        }
+      ],
+      "touched": [
+        {
+          "path": "packages/svelte/connect/src/services/connect.svelte.ts",
+          "prs": [
+            478
+          ]
+        },
+        {
+          "path": "packages/svelte/utils/i18n/src/messages/fr.ts",
+          "prs": [
+            505
+          ]
+        },
+        {
+          "path": "packages/svelte/utils/i18n/src/messages/es.ts",
+          "prs": [
+            505
+          ]
+        },
+        {
+          "path": "packages/svelte/utils/i18n/src/messages/de.ts",
+          "prs": [
+            505
+          ]
+        },
+        {
+          "path": "packages/svelte/utils/i18n/src/messages/it.ts",
+          "prs": [
+            505
+          ]
+        }
+      ]
+    },
+    "ownership": {
+      "files": []
+    },
+    "orphans": {
+      "diffs": {
+        "status": "measured",
+        "source": "pnpm release:changelog --json",
+        "items": [
+          {
+            "pr": 476,
+            "sha": "9015284",
+            "title": "Give each whiteboard room a Realtime budget",
+            "sections": [
+              "Reader",
+              "Development"
+            ]
+          },
+          {
+            "pr": 478,
+            "sha": "7c4028a",
+            "title": "Route every Realtime channel through a budgeted port",
+            "sections": [
+              "Reader",
+              "Shared Packages",
+              "Infrastructure",
+              "Development"
+            ]
+          },
+          {
+            "pr": 480,
+            "sha": "9bf447d",
+            "title": "Tutors Time: read only the chosen days of a course's calendar",
+            "sections": [
+              "Shared Packages",
+              "Infrastructure",
+              "Development"
+            ]
+          },
+          {
+            "pr": 481,
+            "sha": "3613ee3",
+            "title": "Tutors Live: publish from the reader's server within a daily Realtime budget",
+            "sections": [
+              "Reader",
+              "Infrastructure",
+              "Development"
+            ]
+          },
+          {
+            "pr": 483,
+            "sha": "1279669",
+            "title": "Release 17.0.0 to main and pin production to it",
+            "sections": [
+              "Infrastructure",
+              "Reader",
+              "Live",
+              "Catalogue",
+              "Time",
+              "Development"
+            ]
+          },
+          {
+            "pr": 484,
+            "sha": "ecc56f7",
+            "title": "Open the pin pull request when a release tag's images are published",
+            "sections": [
+              "Infrastructure",
+              "Development"
+            ]
+          },
+          {
+            "pr": 487,
+            "sha": "d3d7227",
+            "title": "Show an empty catalogue without Supabase instead of logging errors",
+            "sections": [
+              "Reader",
+              "Development"
+            ]
+          },
+          {
+            "pr": 504,
+            "sha": "84ffbb6",
+            "title": "Make the three red Nightly jobs pass for real",
+            "sections": [
+              "Infrastructure",
+              "Development"
+            ]
+          },
+          {
+            "pr": 505,
+            "sha": "83d4ccf",
+            "title": "Button names contain their visible text",
+            "sections": [
+              "Reader",
+              "Development"
+            ]
+          },
+          {
+            "pr": 500,
+            "sha": "05c3909",
+            "title": "Immutable Cache-Control on /_app/immutable/* for Netlify",
+            "sections": [
+              "Reader",
+              "Live",
+              "Catalogue",
+              "Time",
+              "Development"
+            ]
+          },
+          {
+            "pr": 501,
+            "sha": "a22cc9a",
+            "title": "Declare a HEALTHCHECK and expose request SLIs from start",
+            "sections": [
+              "Infrastructure",
+              "Reader",
+              "Development"
+            ]
+          },
+          {
+            "pr": 502,
+            "sha": "8534430",
+            "title": "Attest SLSA v1 build provenance to every published image",
+            "sections": [
+              "Infrastructure",
+              "Development"
+            ]
+          }
+        ]
+      },
+      "entries": {
+        "status": "not measured",
+        "reason": "CHANGELOG.md at 8534430cb0681d2f21383b56e7227bfbf35bfd2c has no \"### v8534430cb0681d2f21383b56e7227bfbf35bfd2c\" entries under a product section"
+      }
+    },
+    "tests": {
+      "packages": [
+        {
+          "package": "apps/reader",
+          "production": 16,
+          "tests": 950,
+          "ratio": 59.38,
+          "below": false
+        },
+        {
+          "package": "packages/jsr/realtime",
+          "production": 280,
+          "tests": 650,
+          "ratio": 2.32,
+          "below": false
+        },
+        {
+          "package": "packages/jsr/time",
+          "production": 20,
+          "tests": 66,
+          "ratio": 3.3,
+          "below": false
+        },
+        {
+          "package": "packages/svelte/community",
+          "production": 411,
+          "tests": 1652,
+          "ratio": 4.02,
+          "below": false
+        },
+        {
+          "package": "packages/svelte/connect",
+          "production": 1,
+          "tests": 650,
+          "ratio": 650,
+          "below": false
+        },
+        {
+          "package": "packages/svelte/realtime-supabase",
+          "production": 34,
+          "tests": 650,
+          "ratio": 19.12,
+          "below": false
+        },
+        {
+          "package": "packages/svelte/ui-navigators",
+          "production": 11,
+          "tests": 2,
+          "ratio": 0.18,
+          "below": true
+        },
+        {
+          "package": "packages/svelte/utils",
+          "production": 25,
+          "tests": 224,
+          "ratio": 8.96,
+          "below": false
+        }
+      ]
+    },
+    "reviews": {
+      "status": "measured",
+      "reviewed": [
+        476,
+        478,
+        480,
+        481,
+        483,
+        484,
+        485,
+        487,
+        493,
+        504,
+        505,
+        500,
+        501,
+        502
+      ],
+      "unreviewed": [],
+      "unknown": [],
+      "problems": [],
+      "direct": []
+    },
+    "dependencies": {
+      "status": "measured",
+      "majorBumps": [],
+      "newPackages": [
+        {
+          "kind": "new",
+          "name": "@supabase/supabase-js",
+          "importer": "packages/svelte/realtime-supabase",
+          "to": "2.117.2",
+          "pr": 478
+        }
+      ]
+    }
+  },
+  "notMeasured": [
+    {
+      "signal": "orphan entries (a changelog entry with no diff)",
+      "reason": "CHANGELOG.md at 8534430cb0681d2f21383b56e7227bfbf35bfd2c has no \"### v8534430cb0681d2f21383b56e7227bfbf35bfd2c\" entries under a product section"
+    }
+  ],
+  "changeRisk": {
+    "score": 0,
+    "prs": [
+      {
+        "number": 476,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/476",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 478,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/478",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": [
+          "packages/svelte/connect/src/services/connect.svelte.ts"
+        ]
+      },
+      {
+        "number": 480,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/480",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 481,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/481",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 483,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/483",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 484,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/484",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 485,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/485",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 487,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/487",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 493,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/493",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 504,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/504",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 505,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/505",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": [
+          "packages/svelte/utils/i18n/src/messages/fr.ts",
+          "packages/svelte/utils/i18n/src/messages/es.ts",
+          "packages/svelte/utils/i18n/src/messages/de.ts",
+          "packages/svelte/utils/i18n/src/messages/it.ts"
+        ]
+      },
+      {
+        "number": 500,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/500",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 501,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/501",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 502,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/502",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      }
+    ],
+    "direct": [],
+    "deductions": [
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #476 changed Reader, Development but no changelog entry under v8534430cb0681d2f21383b56e7227bfbf35bfd2c names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/476/files#diff-f9cfd30e49727585d340eb245e9e85897abbbba627faf3c588167b9ed13bf276",
+        "file": "apps/reader/static/excalidraw-editor.html",
+        "pr": 476,
+        "author": "Claude"
+      },
+      {
+        "points": 3,
+        "rule": "hotspot",
+        "why": "PR #478 touches hotspot packages/svelte/connect/src/services/connect.svelte.ts (3 of the last 6 releases)",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/478/files#diff-fd4035ac7c862123cdae65175cc120073c7245aa50e8aab37b76da2aaefd542b",
+        "file": "packages/svelte/connect/src/services/connect.svelte.ts",
+        "pr": 478,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #478 changed Reader, Shared Packages, Infrastructure, Development but no changelog entry under v8534430cb0681d2f21383b56e7227bfbf35bfd2c names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/478/files#diff-f9cfd30e49727585d340eb245e9e85897abbbba627faf3c588167b9ed13bf276",
+        "file": "apps/reader/static/excalidraw-editor.html",
+        "pr": 478,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #480 changed Shared Packages, Infrastructure, Development but no changelog entry under v8534430cb0681d2f21383b56e7227bfbf35bfd2c names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/480/files#diff-058494e42758c8229a1aa355997e6c7f3996785e11ea8dffba79c3870e22bce2",
+        "file": "packages/jsr/time/src/services/course-time.ts",
+        "pr": 480,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #481 changed Reader, Infrastructure, Development but no changelog entry under v8534430cb0681d2f21383b56e7227bfbf35bfd2c names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/481/files#diff-e4fcc76d91071866c7d54b16b300e500d67b42190747baa90741fe8de58a8179",
+        "file": "apps/reader/src/routes/api/live/activity/+server.ts",
+        "pr": 481,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #483 changed Infrastructure, Reader, Live, Catalogue, Time, Development but no changelog entry under v8534430cb0681d2f21383b56e7227bfbf35bfd2c names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/483/files#diff-c19c016987c6b7d3f8a014d7e4df17402c3557f0741538318a2b573727ddfff4",
+        "file": "apps/catalogue/package.json",
+        "pr": 483,
+        "author": "Eamonn de Leastar"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #484 changed Infrastructure, Development but no changelog entry under v8534430cb0681d2f21383b56e7227bfbf35bfd2c names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/484/files#diff-a36c2b23480830b1d23bfca9ee3e98f172b1bee39d034c06780f9790dcd8c3f4",
+        "file": ".github/workflows/image-build.yml",
+        "pr": 484,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #487 changed Reader, Development but no changelog entry under v8534430cb0681d2f21383b56e7227bfbf35bfd2c names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/487/files#diff-13d8ab5e67e09ca92971e77ee1fcbb71b39dd5a018144bf33a3bbabd5b3da020",
+        "file": "packages/svelte/community/src/services/catalogue.ts",
+        "pr": 487,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #504 changed Infrastructure, Development but no changelog entry under v8534430cb0681d2f21383b56e7227bfbf35bfd2c names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/504/files#diff-dd2c0eb6ea5cfc6c4bd4eac30934e2d5746747af48fef6da689e85b752f39557",
+        "file": "Dockerfile",
+        "pr": 504,
+        "author": "Claude"
+      },
+      {
+        "points": 3,
+        "rule": "hotspot",
+        "why": "PR #505 touches 4 hotspots packages/svelte/utils/i18n/src/messages/fr.ts (3 of the last 6 releases), packages/svelte/utils/i18n/src/messages/es.ts (3 of the last 6 releases), packages/svelte/utils/i18n/src/messages/de.ts (3 of the last 6 releases) and 1 more",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/505/files#diff-6b04260c901911736eca0c9f57d6921cf6ec7c4c4308d209b08bfb4774bc8741",
+        "file": "packages/svelte/utils/i18n/src/messages/fr.ts",
+        "pr": 505,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "tests",
+        "why": "PR #505 changed 11 production lines in packages/svelte/ui-navigators with 2 test lines (0.18): below 0.2",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/505/files#diff-d4a40094af72b0eb12eea04ebee4e682bfc581553326bf472d1c2f849c7c623b",
+        "file": "packages/svelte/ui-navigators/src/buttons/SearchButton.svelte",
+        "pr": 505,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #505 changed Reader, Development but no changelog entry under v8534430cb0681d2f21383b56e7227bfbf35bfd2c names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/505/files#diff-4be7739a1047b396bc6d3e9502bee98cfdd9bde50bfcb576e9df02edfd063dd3",
+        "file": "apps/reader/tests/e2e/accessibility.spec.ts",
+        "pr": 505,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #500 changed Reader, Live, Catalogue, Time, Development but no changelog entry under v8534430cb0681d2f21383b56e7227bfbf35bfd2c names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/500/files#diff-c5f7478f9ea43955917de963b542918dbd3c74bd2e710935fd2606ee0ce67ecd",
+        "file": "apps/catalogue/netlify.toml",
+        "pr": 500,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #501 changed Infrastructure, Reader, Development but no changelog entry under v8534430cb0681d2f21383b56e7227bfbf35bfd2c names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/501/files#diff-dd2c0eb6ea5cfc6c4bd4eac30934e2d5746747af48fef6da689e85b752f39557",
+        "file": "Dockerfile",
+        "pr": 501,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #502 changed Infrastructure, Development but no changelog entry under v8534430cb0681d2f21383b56e7227bfbf35bfd2c names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/502/files#diff-a36c2b23480830b1d23bfca9ee3e98f172b1bee39d034c06780f9790dcd8c3f4",
+        "file": ".github/workflows/image-build.yml",
+        "pr": 502,
+        "author": "Claude"
+      }
+    ],
+    "gaps": [
+      "orphan entries (a changelog entry with no diff): CHANGELOG.md at 8534430cb0681d2f21383b56e7227bfbf35bfd2c has no \"### v8534430cb0681d2f21383b56e7227bfbf35bfd2c\" entries under a product section"
+    ],
+    "orphans": 12,
+    "evidence": "changes.json"
+  },
+  "harness": {
+    "version": "1.48.5",
+    "contractVersion": "1.48.5"
+  }
+}

@@ -1,0 +1,161 @@
+{
+  "schemaVersion": 1,
+  "mode": "release",
+  "ranAt": "2026-10-19T08:41:29.517Z",
+  "verdict": "warn",
+  "score": 30,
+  "grade": "D",
+  "deductions": [
+    {
+      "points": 60,
+      "why": "92 diff(s) no claim covers"
+    },
+    {
+      "points": 10,
+      "why": "the A/A noise status is noisy: diffs may be noise"
+    }
+  ],
+  "normalness": {
+    "state": "noisy",
+    "source": "noise-status",
+    "hunks": 1,
+    "ranAt": "2026-10-19T08:10:00.716Z"
+  },
+  "rules": [
+    {
+      "rule": null,
+      "hunks": 92,
+      "artefacts": [
+        "dom",
+        "metrics",
+        "focus",
+        "persistence",
+        "startup"
+      ],
+      "scopes": [
+        "/",
+        "/course/localhost:8080",
+        "/topic/localhost:8080/unit-1/topic-01",
+        "/lab/localhost:8080/unit-1/topic-01/book-lab-01",
+        "/lab/localhost:8080/unit-1/topic-01/book-lab-01/Step-01",
+        "/search/localhost:8080",
+        "/search/localhost:8080?q=reference+material",
+        "/course/reference-course",
+        "/topic/reference-course/topic-07-reference",
+        "/lab/reference-course/topic-07-reference/book-a",
+        "/note/reference-course/topic-07-reference/note-1",
+        "/course/localhost:8081",
+        "/harness-rules/medians",
+        "/harness-rules/calendar/byweek",
+        "/harness-rules/calendar/byday",
+        "/harness-rules/lab/bylab",
+        "/harness-rules/lab/bystep",
+        "/harness-rules/lab/learning-records",
+        "/harness-rules/harness-quiet",
+        "/lab/localhost:8080/unit-1/topic-01/book-lab-01/Setup",
+        "/talk/localhost:8081/unit-1/topic-01/talk-01",
+        "/notebook/localhost:8081/unit-1/topic-01/notebook-01",
+        "/quiz/localhost:8081/unit-1/topic-01/quiz-01",
+        "/llm/localhost:8081",
+        "/whiteboard/localhost:8081/unit-1/topic-01/whiteboard-01",
+        "time/http_request_duration_seconds_count",
+        "time/http_requests_total",
+        "rule-0589-live/realtime_claim_live_publish",
+        "rule-0589-live/realtime_watch",
+        "rule-0582-signed-in-lab/realtime_claim_live_publish",
+        "rule-0583-presence/realtime_claim_live_publish",
+        "catalogue/ready",
+        "live/ready",
+        "reader/ready",
+        "time/ready"
+      ],
+      "prs": [],
+      "status": "unclaimed"
+    },
+    {
+      "rule": "0330",
+      "title": "When a student opens a learning object, the reader shall send the learning event to the reader's server without publishing it over Realtime from the browser.",
+      "hunks": 10,
+      "artefacts": [
+        "network"
+      ],
+      "scopes": [
+        "/course/localhost:8080",
+        "/topic/localhost:8080/unit-1/topic-01",
+        "/course/reference-course",
+        "/note/reference-course/topic-07-reference/note-1",
+        "/",
+        "/lab/localhost:8080/unit-1/topic-01/book-lab-01",
+        "/lab/localhost:8080/unit-1/topic-01/book-lab-01/Step-01",
+        "/lab/localhost:8080/unit-1/topic-01/book-lab-01/Setup"
+      ],
+      "prs": [],
+      "status": "covered"
+    },
+    {
+      "rule": "0331",
+      "title": "When the reader's server receives a learning event, the reader shall publish it only to the activity feeds a live dashboard has watched in the last 90 seconds.",
+      "hunks": 1,
+      "artefacts": [
+        "persistence"
+      ],
+      "scopes": [
+        "student-signs-in/realtime_claim_live_publish"
+      ],
+      "prs": [],
+      "status": "covered"
+    }
+  ],
+  "manual": [
+    {
+      "scope": "/",
+      "path": "/",
+      "artefacts": [
+        "dom",
+        "focus"
+      ],
+      "hunks": 14,
+      "why": "moved and no claim covers it"
+    },
+    {
+      "scope": "/course/localhost:8081",
+      "path": "/course/localhost:8081",
+      "artefacts": [
+        "dom",
+        "focus"
+      ],
+      "hunks": 10,
+      "why": "moved and no claim covers it"
+    },
+    {
+      "scope": "/course/localhost:8080",
+      "path": "/course/localhost:8080",
+      "artefacts": [
+        "dom",
+        "focus"
+      ],
+      "hunks": 8,
+      "why": "moved and no claim covers it"
+    },
+    {
+      "scope": "/lab/localhost:8080/unit-1/topic-01/book-lab-01",
+      "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01",
+      "artefacts": [
+        "dom",
+        "focus"
+      ],
+      "hunks": 4,
+      "why": "moved and no claim covers it"
+    },
+    {
+      "scope": "/lab/localhost:8080/unit-1/topic-01/book-lab-01/Step-01",
+      "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01/Step-01",
+      "artefacts": [
+        "dom",
+        "focus"
+      ],
+      "hunks": 4,
+      "why": "moved and no claim covers it"
+    }
+  ]
+}

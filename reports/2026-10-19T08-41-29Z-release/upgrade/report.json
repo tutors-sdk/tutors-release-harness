@@ -1,0 +1,1080 @@
+{
+  "schemaVersion": 1,
+  "harness": {
+    "version": "1.48.5",
+    "gitSha": "1eb3f30f102bec0217e33b2b63eeca6be344d5f0",
+    "contractVersion": "1.48.5"
+  },
+  "harnessVersion": "1.48.5",
+  "mode": "upgrade",
+  "substrate": "compose",
+  "ranAt": "2026-10-19T08:15:15.609Z",
+  "now": "2026-09-16T09:05:00.000Z",
+  "runs": 1,
+  "sides": {
+    "a": {
+      "reader": "quay.io/tutors-sdk/tutors-reader:17.0.0",
+      "catalogue": "quay.io/tutors-sdk/tutors-catalogue:17.0.0",
+      "live": "quay.io/tutors-sdk/tutors-live:17.0.0",
+      "time": "quay.io/tutors-sdk/tutors-time:17.0.0"
+    },
+    "b": {
+      "reader": "quay.io/tutors-sdk/tutors-reader:sha-8534430",
+      "catalogue": "quay.io/tutors-sdk/tutors-catalogue:sha-8534430",
+      "live": "quay.io/tutors-sdk/tutors-live:sha-8534430",
+      "time": "quay.io/tutors-sdk/tutors-time:sha-8534430"
+    }
+  },
+  "provenance": {
+    "a": {
+      "summary": "pulled+verified",
+      "images": {
+        "reader": {
+          "ref": "quay.io/tutors-sdk/tutors-reader:17.0.0",
+          "id": "sha256:abdbbf48bdaa8867cf970bf780df734196bdbb25c3f1ce6e358b1a0c5b4d36a7",
+          "digest": "sha256:15e3aa22476d608db97e05917b1990ade0a7871e7ec6e113da5fec741b427233",
+          "revision": "432d46864626ce14e07eb7715e0408c643ca906a",
+          "version": "17.0.0-rc.1",
+          "created": "2026-10-14T11:22:23.868Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "catalogue": {
+          "ref": "quay.io/tutors-sdk/tutors-catalogue:17.0.0",
+          "id": "sha256:b3e0c40b6430ecd6ac154972584252a179abb99412e1b1deeaa0a6c2e64966e3",
+          "digest": "sha256:e9f2764654cb074d7dd4412ca163bf4c2666870444d5520361d5425bda4cec0b",
+          "revision": "432d46864626ce14e07eb7715e0408c643ca906a",
+          "version": "17.0.0-rc.1",
+          "created": "2026-10-14T11:22:20.481Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "live": {
+          "ref": "quay.io/tutors-sdk/tutors-live:17.0.0",
+          "id": "sha256:a5ac0ab5beba43906f3b94f74531fa8588d82c8efa38eb07070969981181bf80",
+          "digest": "sha256:52740e55cfa7e7db3b2944137caada4e876990b937f1034c0c5e79796054f8a0",
+          "revision": "432d46864626ce14e07eb7715e0408c643ca906a",
+          "version": "17.0.0-rc.1",
+          "created": "2026-10-14T11:22:19.078Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "time": {
+          "ref": "quay.io/tutors-sdk/tutors-time:17.0.0",
+          "id": "sha256:abd5fc2e4e4a8b7e35bd54c9fe8ec9fbc3e07fc797e6fe27c67b7a66108f4708",
+          "digest": "sha256:d0a9f4a2f4624038ecea3629d1a536567756d458410bee43b45e060d738d195d",
+          "revision": "432d46864626ce14e07eb7715e0408c643ca906a",
+          "version": "17.0.0-rc.1",
+          "created": "2026-10-14T11:22:24.942Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        }
+      }
+    },
+    "b": {
+      "summary": "pulled+verified",
+      "images": {
+        "reader": {
+          "ref": "quay.io/tutors-sdk/tutors-reader:sha-8534430",
+          "id": "sha256:38eb84dad049aec0bdb1b867ed8e2e409c9f8d72220014fd8c7faf777b691294",
+          "digest": "sha256:89ca1729eb2fdb53522bbe8903109c4b00c8d563bfba20149226fd6812c85a29",
+          "revision": "8534430cb0681d2f21383b56e7227bfbf35bfd2c",
+          "version": "sha-8534430",
+          "created": "2026-10-19T07:40:29.807Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "catalogue": {
+          "ref": "quay.io/tutors-sdk/tutors-catalogue:sha-8534430",
+          "id": "sha256:9adc764daaaccfd2c20bb6ac424e3d9cc09bac7c0fdb1f1b88148ed2d7e4a0a0",
+          "digest": "sha256:4eac027a536ceb22e8265d3a7459711189cea1c8d899be64f15c7cf938590f44",
+          "revision": "8534430cb0681d2f21383b56e7227bfbf35bfd2c",
+          "version": "sha-8534430",
+          "created": "2026-10-19T07:36:44.847Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "live": {
+          "ref": "quay.io/tutors-sdk/tutors-live:sha-8534430",
+          "id": "sha256:7cf895f5f7886b6f20a23ae00d474ac3bd5d028a0d9e9c03bbb887d022e0786f",
+          "digest": "sha256:f922989906f59960be3b293604848dbd43ed551596ed090908e2acf448474b20",
+          "revision": "8534430cb0681d2f21383b56e7227bfbf35bfd2c",
+          "version": "sha-8534430",
+          "created": "2026-10-19T07:36:13.703Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "time": {
+          "ref": "quay.io/tutors-sdk/tutors-time:sha-8534430",
+          "id": "sha256:a633899d99e83e86789f17c7581c8395c0e9f0d8a759460335c4570f0257c02e",
+          "digest": "sha256:60b3524d78783f90cba5e3d32b32b74d26e2a4c14373e6426a6018a14d1ae4eb",
+          "revision": "8534430cb0681d2f21383b56e7227bfbf35bfd2c",
+          "version": "sha-8534430",
+          "created": "2026-10-19T07:35:35.428Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        }
+      }
+    }
+  },
+  "verdict": "pass",
+  "reasons": [
+    "the candidate rolled in under load with no failed request",
+    "7 difference(s) between a and b outside the rollout, judged by release mode",
+    "NOT COLLECTED: vulns of reader, catalogue, live, time on side a: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)",
+    "NOT COLLECTED: vulns of reader, catalogue, live, time on side b: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+  ],
+  "compare": {
+    "hunks": [
+      {
+        "id": "dom:anonymous-student-reads-course:1",
+        "artefact": "dom",
+        "scope": "anonymous-student-reads-course",
+        "severity": "info",
+        "summary": "journey \"anonymous-student-reads-course\" failed on a but completed on b (fixed)",
+        "detail": "locator.waitFor: Timeout 15000ms exceeded."
+      },
+      {
+        "id": "metrics:http_request_duration_seconds_count:2",
+        "artefact": "metrics",
+        "scope": "catalogue/http_request_duration_seconds_count",
+        "severity": "fail",
+        "summary": "catalogue: new series on b: http_request_duration_seconds_count"
+      },
+      {
+        "id": "metrics:http_requests_total:3",
+        "artefact": "metrics",
+        "scope": "catalogue/http_requests_total",
+        "severity": "fail",
+        "summary": "catalogue: new series on b: http_requests_total"
+      },
+      {
+        "id": "metrics:http_request_duration_seconds_count:4",
+        "artefact": "metrics",
+        "scope": "live/http_request_duration_seconds_count",
+        "severity": "fail",
+        "summary": "live: new series on b: http_request_duration_seconds_count"
+      },
+      {
+        "id": "metrics:http_requests_total:5",
+        "artefact": "metrics",
+        "scope": "live/http_requests_total",
+        "severity": "fail",
+        "summary": "live: new series on b: http_requests_total"
+      },
+      {
+        "id": "metrics:http_request_duration_seconds_count:6",
+        "artefact": "metrics",
+        "scope": "time/http_request_duration_seconds_count",
+        "severity": "fail",
+        "summary": "time: new series on b: http_request_duration_seconds_count"
+      },
+      {
+        "id": "metrics:http_requests_total:7",
+        "artefact": "metrics",
+        "scope": "time/http_requests_total",
+        "severity": "fail",
+        "summary": "time: new series on b: http_requests_total"
+      },
+      {
+        "id": "logs:reader:8",
+        "artefact": "logs",
+        "scope": "reader/info",
+        "severity": "fail",
+        "summary": "reader: info-level lines: 3 on a, 6 on b"
+      },
+      {
+        "id": "vulns:reader/not-collected:9",
+        "artefact": "vulns",
+        "scope": "reader/not-collected",
+        "severity": "info",
+        "summary": "NOT COLLECTED: vulns of reader on both sides: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)",
+        "detail": "a: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)\nb: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+      },
+      {
+        "id": "vulns:catalogue/not-collected:10",
+        "artefact": "vulns",
+        "scope": "catalogue/not-collected",
+        "severity": "info",
+        "summary": "NOT COLLECTED: vulns of catalogue on both sides: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)",
+        "detail": "a: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)\nb: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+      },
+      {
+        "id": "vulns:live/not-collected:11",
+        "artefact": "vulns",
+        "scope": "live/not-collected",
+        "severity": "info",
+        "summary": "NOT COLLECTED: vulns of live on both sides: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)",
+        "detail": "a: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)\nb: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+      },
+      {
+        "id": "vulns:time/not-collected:12",
+        "artefact": "vulns",
+        "scope": "time/not-collected",
+        "severity": "info",
+        "summary": "NOT COLLECTED: vulns of time on both sides: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)",
+        "detail": "a: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)\nb: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+      },
+      {
+        "id": "runtime:runtime/summary:13",
+        "artefact": "runtime",
+        "scope": "runtime/summary",
+        "severity": "info",
+        "summary": "container posture collected for catalogue, live, reader, reader-auth, time on both sides (compose)",
+        "detail": "catalogue: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n           b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nlive: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n        b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader-auth: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n             b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\ntime: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter"
+      },
+      {
+        "id": "startup:startup/not-collected:14",
+        "artefact": "startup",
+        "scope": "startup/not-collected",
+        "severity": "info",
+        "summary": "NOT COLLECTED: startup time on side a: switched off with --startup-restarts 0"
+      },
+      {
+        "id": "startup:startup/not-collected:15",
+        "artefact": "startup",
+        "scope": "startup/not-collected",
+        "severity": "info",
+        "summary": "NOT COLLECTED: startup time on side b: switched off with --startup-restarts 0"
+      },
+      {
+        "id": "image-hardening:reader/summary:16",
+        "artefact": "image-hardening",
+        "scope": "reader/summary",
+        "severity": "info",
+        "summary": "reader: image-hardening holds on b: USER 1001, HEALTHCHECK CMD node -e fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/healthz/live').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1)), 0 secret-looking environment variable(s), 0 in the layer history"
+      },
+      {
+        "id": "image-hardening:catalogue/summary:17",
+        "artefact": "image-hardening",
+        "scope": "catalogue/summary",
+        "severity": "info",
+        "summary": "catalogue: image-hardening holds on b: USER 1001, HEALTHCHECK CMD node -e fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/healthz/live').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1)), 0 secret-looking environment variable(s), 0 in the layer history"
+      },
+      {
+        "id": "image-hardening:live/summary:18",
+        "artefact": "image-hardening",
+        "scope": "live/summary",
+        "severity": "info",
+        "summary": "live: image-hardening holds on b: USER 1001, HEALTHCHECK CMD node -e fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/healthz/live').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1)), 0 secret-looking environment variable(s), 0 in the layer history"
+      },
+      {
+        "id": "image-hardening:time/summary:19",
+        "artefact": "image-hardening",
+        "scope": "time/summary",
+        "severity": "info",
+        "summary": "time: image-hardening holds on b: USER 1001, HEALTHCHECK CMD node -e fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/healthz/live').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1)), 0 secret-looking environment variable(s), 0 in the layer history"
+      },
+      {
+        "id": "build-provenance:reader/summary:20",
+        "artefact": "build-provenance",
+        "scope": "reader/summary",
+        "severity": "info",
+        "summary": "reader: build-provenance holds on b: SLSA provenance v1 by .github/workflows/image-build.yml@refs/heads/main"
+      },
+      {
+        "id": "build-provenance:catalogue/summary:21",
+        "artefact": "build-provenance",
+        "scope": "catalogue/summary",
+        "severity": "info",
+        "summary": "catalogue: build-provenance holds on b: SLSA provenance v1 by .github/workflows/image-build.yml@refs/heads/main"
+      },
+      {
+        "id": "build-provenance:live/summary:22",
+        "artefact": "build-provenance",
+        "scope": "live/summary",
+        "severity": "info",
+        "summary": "live: build-provenance holds on b: SLSA provenance v1 by .github/workflows/image-build.yml@refs/heads/main"
+      },
+      {
+        "id": "build-provenance:time/summary:23",
+        "artefact": "build-provenance",
+        "scope": "time/summary",
+        "severity": "info",
+        "summary": "time: build-provenance holds on b: SLSA provenance v1 by .github/workflows/image-build.yml@refs/heads/main"
+      },
+      {
+        "id": "vuln-ceiling:reader/not-evaluated:24",
+        "artefact": "vuln-ceiling",
+        "scope": "reader/not-evaluated",
+        "severity": "info",
+        "summary": "reader: vuln-ceiling could not be evaluated on b: no vulnerability scan: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+      },
+      {
+        "id": "vuln-ceiling:catalogue/not-evaluated:25",
+        "artefact": "vuln-ceiling",
+        "scope": "catalogue/not-evaluated",
+        "severity": "info",
+        "summary": "catalogue: vuln-ceiling could not be evaluated on b: no vulnerability scan: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+      },
+      {
+        "id": "vuln-ceiling:live/not-evaluated:26",
+        "artefact": "vuln-ceiling",
+        "scope": "live/not-evaluated",
+        "severity": "info",
+        "summary": "live: vuln-ceiling could not be evaluated on b: no vulnerability scan: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+      },
+      {
+        "id": "vuln-ceiling:time/not-evaluated:27",
+        "artefact": "vuln-ceiling",
+        "scope": "time/not-evaluated",
+        "severity": "info",
+        "summary": "time: vuln-ceiling could not be evaluated on b: no vulnerability scan: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+      },
+      {
+        "id": "slo:reader-availability/not-evaluated:28",
+        "artefact": "slo",
+        "scope": "reader-availability/not-evaluated",
+        "severity": "info",
+        "summary": "reader-availability: not evaluated on b: 4 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "slo:reader-latency/not-evaluated:29",
+        "artefact": "slo",
+        "scope": "reader-latency/not-evaluated",
+        "severity": "info",
+        "summary": "reader-latency: not evaluated on b: 4 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "slo:catalogue-availability/not-evaluated:30",
+        "artefact": "slo",
+        "scope": "catalogue-availability/not-evaluated",
+        "severity": "info",
+        "summary": "catalogue-availability: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "slo:catalogue-latency/not-evaluated:31",
+        "artefact": "slo",
+        "scope": "catalogue-latency/not-evaluated",
+        "severity": "info",
+        "summary": "catalogue-latency: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "slo:live-availability/not-evaluated:32",
+        "artefact": "slo",
+        "scope": "live-availability/not-evaluated",
+        "severity": "info",
+        "summary": "live-availability: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "slo:live-latency/not-evaluated:33",
+        "artefact": "slo",
+        "scope": "live-latency/not-evaluated",
+        "severity": "info",
+        "summary": "live-latency: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "slo:time-availability/not-evaluated:34",
+        "artefact": "slo",
+        "scope": "time-availability/not-evaluated",
+        "severity": "info",
+        "summary": "time-availability: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "slo:time-latency/not-evaluated:35",
+        "artefact": "slo",
+        "scope": "time-latency/not-evaluated",
+        "severity": "info",
+        "summary": "time-latency: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "upgrade:rollout:1",
+        "artefact": "upgrade",
+        "scope": "rollout",
+        "severity": "info",
+        "summary": "901 requests through the rollout, none failed; switched at 17.2s"
+      }
+    ],
+    "matches": [
+      {
+        "hunk": {
+          "id": "dom:anonymous-student-reads-course:1",
+          "artefact": "dom",
+          "scope": "anonymous-student-reads-course",
+          "severity": "info",
+          "summary": "journey \"anonymous-student-reads-course\" failed on a but completed on b (fixed)",
+          "detail": "locator.waitFor: Timeout 15000ms exceeded."
+        }
+      },
+      {
+        "hunk": {
+          "id": "metrics:http_request_duration_seconds_count:2",
+          "artefact": "metrics",
+          "scope": "catalogue/http_request_duration_seconds_count",
+          "severity": "fail",
+          "summary": "catalogue: new series on b: http_request_duration_seconds_count"
+        }
+      },
+      {
+        "hunk": {
+          "id": "metrics:http_requests_total:3",
+          "artefact": "metrics",
+          "scope": "catalogue/http_requests_total",
+          "severity": "fail",
+          "summary": "catalogue: new series on b: http_requests_total"
+        }
+      },
+      {
+        "hunk": {
+          "id": "metrics:http_request_duration_seconds_count:4",
+          "artefact": "metrics",
+          "scope": "live/http_request_duration_seconds_count",
+          "severity": "fail",
+          "summary": "live: new series on b: http_request_duration_seconds_count"
+        }
+      },
+      {
+        "hunk": {
+          "id": "metrics:http_requests_total:5",
+          "artefact": "metrics",
+          "scope": "live/http_requests_total",
+          "severity": "fail",
+          "summary": "live: new series on b: http_requests_total"
+        }
+      },
+      {
+        "hunk": {
+          "id": "metrics:http_request_duration_seconds_count:6",
+          "artefact": "metrics",
+          "scope": "time/http_request_duration_seconds_count",
+          "severity": "fail",
+          "summary": "time: new series on b: http_request_duration_seconds_count"
+        }
+      },
+      {
+        "hunk": {
+          "id": "metrics:http_requests_total:7",
+          "artefact": "metrics",
+          "scope": "time/http_requests_total",
+          "severity": "fail",
+          "summary": "time: new series on b: http_requests_total"
+        }
+      },
+      {
+        "hunk": {
+          "id": "logs:reader:8",
+          "artefact": "logs",
+          "scope": "reader/info",
+          "severity": "fail",
+          "summary": "reader: info-level lines: 3 on a, 6 on b"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:reader/not-collected:9",
+          "artefact": "vulns",
+          "scope": "reader/not-collected",
+          "severity": "info",
+          "summary": "NOT COLLECTED: vulns of reader on both sides: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)",
+          "detail": "a: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)\nb: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:catalogue/not-collected:10",
+          "artefact": "vulns",
+          "scope": "catalogue/not-collected",
+          "severity": "info",
+          "summary": "NOT COLLECTED: vulns of catalogue on both sides: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)",
+          "detail": "a: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)\nb: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:live/not-collected:11",
+          "artefact": "vulns",
+          "scope": "live/not-collected",
+          "severity": "info",
+          "summary": "NOT COLLECTED: vulns of live on both sides: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)",
+          "detail": "a: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)\nb: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:time/not-collected:12",
+          "artefact": "vulns",
+          "scope": "time/not-collected",
+          "severity": "info",
+          "summary": "NOT COLLECTED: vulns of time on both sides: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)",
+          "detail": "a: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)\nb: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      {
+        "hunk": {
+          "id": "runtime:runtime/summary:13",
+          "artefact": "runtime",
+          "scope": "runtime/summary",
+          "severity": "info",
+          "summary": "container posture collected for catalogue, live, reader, reader-auth, time on both sides (compose)",
+          "detail": "catalogue: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n           b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nlive: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n        b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader-auth: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n             b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\ntime: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter"
+        }
+      },
+      {
+        "hunk": {
+          "id": "startup:startup/not-collected:14",
+          "artefact": "startup",
+          "scope": "startup/not-collected",
+          "severity": "info",
+          "summary": "NOT COLLECTED: startup time on side a: switched off with --startup-restarts 0"
+        }
+      },
+      {
+        "hunk": {
+          "id": "startup:startup/not-collected:15",
+          "artefact": "startup",
+          "scope": "startup/not-collected",
+          "severity": "info",
+          "summary": "NOT COLLECTED: startup time on side b: switched off with --startup-restarts 0"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-hardening:reader/summary:16",
+          "artefact": "image-hardening",
+          "scope": "reader/summary",
+          "severity": "info",
+          "summary": "reader: image-hardening holds on b: USER 1001, HEALTHCHECK CMD node -e fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/healthz/live').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1)), 0 secret-looking environment variable(s), 0 in the layer history"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-hardening:catalogue/summary:17",
+          "artefact": "image-hardening",
+          "scope": "catalogue/summary",
+          "severity": "info",
+          "summary": "catalogue: image-hardening holds on b: USER 1001, HEALTHCHECK CMD node -e fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/healthz/live').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1)), 0 secret-looking environment variable(s), 0 in the layer history"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-hardening:live/summary:18",
+          "artefact": "image-hardening",
+          "scope": "live/summary",
+          "severity": "info",
+          "summary": "live: image-hardening holds on b: USER 1001, HEALTHCHECK CMD node -e fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/healthz/live').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1)), 0 secret-looking environment variable(s), 0 in the layer history"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-hardening:time/summary:19",
+          "artefact": "image-hardening",
+          "scope": "time/summary",
+          "severity": "info",
+          "summary": "time: image-hardening holds on b: USER 1001, HEALTHCHECK CMD node -e fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/healthz/live').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1)), 0 secret-looking environment variable(s), 0 in the layer history"
+        }
+      },
+      {
+        "hunk": {
+          "id": "build-provenance:reader/summary:20",
+          "artefact": "build-provenance",
+          "scope": "reader/summary",
+          "severity": "info",
+          "summary": "reader: build-provenance holds on b: SLSA provenance v1 by .github/workflows/image-build.yml@refs/heads/main"
+        }
+      },
+      {
+        "hunk": {
+          "id": "build-provenance:catalogue/summary:21",
+          "artefact": "build-provenance",
+          "scope": "catalogue/summary",
+          "severity": "info",
+          "summary": "catalogue: build-provenance holds on b: SLSA provenance v1 by .github/workflows/image-build.yml@refs/heads/main"
+        }
+      },
+      {
+        "hunk": {
+          "id": "build-provenance:live/summary:22",
+          "artefact": "build-provenance",
+          "scope": "live/summary",
+          "severity": "info",
+          "summary": "live: build-provenance holds on b: SLSA provenance v1 by .github/workflows/image-build.yml@refs/heads/main"
+        }
+      },
+      {
+        "hunk": {
+          "id": "build-provenance:time/summary:23",
+          "artefact": "build-provenance",
+          "scope": "time/summary",
+          "severity": "info",
+          "summary": "time: build-provenance holds on b: SLSA provenance v1 by .github/workflows/image-build.yml@refs/heads/main"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vuln-ceiling:reader/not-evaluated:24",
+          "artefact": "vuln-ceiling",
+          "scope": "reader/not-evaluated",
+          "severity": "info",
+          "summary": "reader: vuln-ceiling could not be evaluated on b: no vulnerability scan: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vuln-ceiling:catalogue/not-evaluated:25",
+          "artefact": "vuln-ceiling",
+          "scope": "catalogue/not-evaluated",
+          "severity": "info",
+          "summary": "catalogue: vuln-ceiling could not be evaluated on b: no vulnerability scan: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vuln-ceiling:live/not-evaluated:26",
+          "artefact": "vuln-ceiling",
+          "scope": "live/not-evaluated",
+          "severity": "info",
+          "summary": "live: vuln-ceiling could not be evaluated on b: no vulnerability scan: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vuln-ceiling:time/not-evaluated:27",
+          "artefact": "vuln-ceiling",
+          "scope": "time/not-evaluated",
+          "severity": "info",
+          "summary": "time: vuln-ceiling could not be evaluated on b: no vulnerability scan: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:reader-availability/not-evaluated:28",
+          "artefact": "slo",
+          "scope": "reader-availability/not-evaluated",
+          "severity": "info",
+          "summary": "reader-availability: not evaluated on b: 4 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:reader-latency/not-evaluated:29",
+          "artefact": "slo",
+          "scope": "reader-latency/not-evaluated",
+          "severity": "info",
+          "summary": "reader-latency: not evaluated on b: 4 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:catalogue-availability/not-evaluated:30",
+          "artefact": "slo",
+          "scope": "catalogue-availability/not-evaluated",
+          "severity": "info",
+          "summary": "catalogue-availability: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:catalogue-latency/not-evaluated:31",
+          "artefact": "slo",
+          "scope": "catalogue-latency/not-evaluated",
+          "severity": "info",
+          "summary": "catalogue-latency: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:live-availability/not-evaluated:32",
+          "artefact": "slo",
+          "scope": "live-availability/not-evaluated",
+          "severity": "info",
+          "summary": "live-availability: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:live-latency/not-evaluated:33",
+          "artefact": "slo",
+          "scope": "live-latency/not-evaluated",
+          "severity": "info",
+          "summary": "live-latency: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:time-availability/not-evaluated:34",
+          "artefact": "slo",
+          "scope": "time-availability/not-evaluated",
+          "severity": "info",
+          "summary": "time-availability: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:time-latency/not-evaluated:35",
+          "artefact": "slo",
+          "scope": "time-latency/not-evaluated",
+          "severity": "info",
+          "summary": "time-latency: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "upgrade:rollout:1",
+          "artefact": "upgrade",
+          "scope": "rollout",
+          "severity": "info",
+          "summary": "901 requests through the rollout, none failed; switched at 17.2s"
+        }
+      }
+    ],
+    "unclaimed": [
+      {
+        "id": "metrics:http_request_duration_seconds_count:2",
+        "artefact": "metrics",
+        "scope": "catalogue/http_request_duration_seconds_count",
+        "severity": "fail",
+        "summary": "catalogue: new series on b: http_request_duration_seconds_count"
+      },
+      {
+        "id": "metrics:http_requests_total:3",
+        "artefact": "metrics",
+        "scope": "catalogue/http_requests_total",
+        "severity": "fail",
+        "summary": "catalogue: new series on b: http_requests_total"
+      },
+      {
+        "id": "metrics:http_request_duration_seconds_count:4",
+        "artefact": "metrics",
+        "scope": "live/http_request_duration_seconds_count",
+        "severity": "fail",
+        "summary": "live: new series on b: http_request_duration_seconds_count"
+      },
+      {
+        "id": "metrics:http_requests_total:5",
+        "artefact": "metrics",
+        "scope": "live/http_requests_total",
+        "severity": "fail",
+        "summary": "live: new series on b: http_requests_total"
+      },
+      {
+        "id": "metrics:http_request_duration_seconds_count:6",
+        "artefact": "metrics",
+        "scope": "time/http_request_duration_seconds_count",
+        "severity": "fail",
+        "summary": "time: new series on b: http_request_duration_seconds_count"
+      },
+      {
+        "id": "metrics:http_requests_total:7",
+        "artefact": "metrics",
+        "scope": "time/http_requests_total",
+        "severity": "fail",
+        "summary": "time: new series on b: http_requests_total"
+      },
+      {
+        "id": "logs:reader:8",
+        "artefact": "logs",
+        "scope": "reader/info",
+        "severity": "fail",
+        "summary": "reader: info-level lines: 3 on a, 6 on b"
+      }
+    ],
+    "staleClaims": [],
+    "broadUnapproved": []
+  },
+  "masksApplied": {
+    "response-date": 2,
+    "request-id": 2,
+    "etag": 2,
+    "metrics-process": 599,
+    "metrics-timing-histograms": 18,
+    "third-party-requests": 31,
+    "persistence-stub-requests": 0,
+    "realtime-rest-fallback-warning": 0,
+    "oauth-callback-state": 0,
+    "media-range-status": 0,
+    "chromium-compute-pressure-policy": 0,
+    "hashed-assets": 111,
+    "footer-tutors-version": 10,
+    "transport-length": 2,
+    "transport-connection": 2,
+    "transport-encoding": 0,
+    "transport-transfer": 0,
+    "transport-keepalive": 2
+  },
+  "upgrade": {
+    "substrate": "compose",
+    "requests": 901,
+    "failed": 0,
+    "serverErrors": 0,
+    "byUpstream": {
+      "a": {
+        "requests": 300,
+        "failed": 0,
+        "serverErrors": 0,
+        "p95": 4.3
+      },
+      "b": {
+        "requests": 601,
+        "failed": 0,
+        "serverErrors": 0,
+        "p95": 3.9
+      }
+    },
+    "switchedAt": 17209,
+    "durationMs": 47482
+  },
+  "imageArtefacts": {
+    "a": {
+      "reader": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 309.2 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "134 distinct package(s)"
+        },
+        "vulns": {
+          "collected": false,
+          "reason": "grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      "catalogue": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 274.2 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "134 distinct package(s)"
+        },
+        "vulns": {
+          "collected": false,
+          "reason": "grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      "live": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 274.5 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "134 distinct package(s)"
+        },
+        "vulns": {
+          "collected": false,
+          "reason": "grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      "time": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 285.2 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "143 distinct package(s)"
+        },
+        "vulns": {
+          "collected": false,
+          "reason": "grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      }
+    },
+    "b": {
+      "reader": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 308.9 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "134 distinct package(s)"
+        },
+        "vulns": {
+          "collected": false,
+          "reason": "grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      "catalogue": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 274.2 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "134 distinct package(s)"
+        },
+        "vulns": {
+          "collected": false,
+          "reason": "grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      "live": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 274.5 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "134 distinct package(s)"
+        },
+        "vulns": {
+          "collected": false,
+          "reason": "grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      "time": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 285.2 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "143 distinct package(s)"
+        },
+        "vulns": {
+          "collected": false,
+          "reason": "grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      }
+    }
+  },
+  "levels": {
+    "dom": {
+      "level": "blocking"
+    },
+    "screenshot": {
+      "level": "blocking"
+    },
+    "network": {
+      "level": "blocking"
+    },
+    "console": {
+      "level": "blocking"
+    },
+    "headers": {
+      "level": "blocking"
+    },
+    "axe": {
+      "level": "blocking"
+    },
+    "focus": {
+      "level": "blocking"
+    },
+    "metrics": {
+      "level": "blocking"
+    },
+    "logs": {
+      "level": "blocking"
+    },
+    "timing": {
+      "level": "informing"
+    },
+    "persistence": {
+      "level": "blocking"
+    },
+    "bus": {
+      "level": "blocking"
+    },
+    "migration": {
+      "level": "blocking"
+    },
+    "upgrade": {
+      "level": "blocking"
+    },
+    "image-manifest": {
+      "level": "blocking"
+    },
+    "sbom": {
+      "level": "blocking"
+    },
+    "vulns": {
+      "level": "blocking"
+    },
+    "runtime": {
+      "level": "blocking"
+    },
+    "startup": {
+      "level": "blocking"
+    },
+    "image-hardening": {
+      "level": "informing"
+    },
+    "build-provenance": {
+      "level": "informing"
+    },
+    "vuln-ceiling": {
+      "level": "informing"
+    },
+    "timing-tolerance": {
+      "level": "informing"
+    },
+    "asset-graph": {
+      "level": "informing"
+    },
+    "replay": {
+      "level": "informing"
+    },
+    "slo": {
+      "level": "informing"
+    },
+    "realtime": {
+      "level": "informing"
+    }
+  },
+  "causes": {
+    "unclaimed": 7,
+    "causes": [
+      {
+        "id": "c20ba75a",
+        "key": "metrics: new series on b",
+        "artefact": "metrics",
+        "kind": "new series on b",
+        "hunks": 6,
+        "apps": [
+          "catalogue",
+          "live",
+          "time"
+        ],
+        "pages": [],
+        "items": [
+          "http_request_duration_seconds_count",
+          "http_requests_total"
+        ],
+        "example": {
+          "id": "metrics:http_request_duration_seconds_count:2",
+          "scope": "catalogue/http_request_duration_seconds_count",
+          "summary": "catalogue: new series on b: http_request_duration_seconds_count"
+        }
+      },
+      {
+        "id": "2add6269",
+        "key": "logs: info-level lines",
+        "artefact": "logs",
+        "kind": "info-level lines",
+        "hunks": 1,
+        "apps": [
+          "reader"
+        ],
+        "pages": [],
+        "items": [
+          "info"
+        ],
+        "example": {
+          "id": "logs:reader:8",
+          "scope": "reader/info",
+          "summary": "reader: info-level lines: 3 on a, 6 on b"
+        }
+      }
+    ],
+    "together": []
+  }
+}
