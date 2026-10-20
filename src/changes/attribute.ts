@@ -15,7 +15,7 @@
  *    Dockerfile, a package manifest or the lockfile; logs and metrics match the app and the packages; a journey's table
  *    (persistence) matches the reader and the packages. Documentation, tests and workflows never match: they cannot
  *    change what an image does. The PRs are ranked by how many files matched the direct paths (the app's source, a
- *    Dockerfile), then the indirect ones (the packages, a manifest), then by merge order.
+ *    Dockerfile, for an image's packages the app's own package.json), then the indirect ones (the packages, a manifest), then by merge order.
  *
  * The attribution is a lead to read, never a verdict: it names who to ask, and nothing that judges reads it.
  */
@@ -86,7 +86,14 @@ const INERT = picomatch(["**/*.md", "**/*.mdx", "**/LICENSE*", "**/*.{test,spec}
  */
 export function pathsOf(c: Pick<Cause, "artefact" | "apps">): { primary: string[]; secondary: string[] } {
   const apps = c.apps.length ? c.apps : c.artefact === "persistence" ? ["reader"] : ["*"];
-  if (IMAGE.has(c.artefact)) return { primary: ["**/Dockerfile*", "**/.dockerignore"], secondary: c.artefact === "sbom" || c.artefact === "vulns" ? ["pnpm-lock.yaml", "package.json", "apps/*/package.json", "packages/**/package.json"] : [] };
+  // Since 1.49.1: a package added to or removed from one app's image is made directly by that app's own manifest: the
+  // 20 Oct forecast named "one of #518, #519, #491" for @supabase/* moving from time's image to the reader's, when
+  // #518 alone had changed apps/reader/package.json and #519 alone apps/time/package.json.
+  if (c.artefact === "sbom" || c.artefact === "vulns") {
+    const own = c.apps.map((a) => `apps/${a}/package.json`);
+    return { primary: ["**/Dockerfile*", "**/.dockerignore", ...own], secondary: ["pnpm-lock.yaml", "package.json", "apps/*/package.json", "packages/**/package.json"] };
+  }
+  if (IMAGE.has(c.artefact)) return { primary: ["**/Dockerfile*", "**/.dockerignore"], secondary: [] };
   // A page, a log, a metric, a journey's table: the app's own source, then the packages every app is built from.
   return { primary: apps.map((a) => `apps/${a}/**`), secondary: ["packages/**"] };
 }

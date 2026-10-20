@@ -209,7 +209,7 @@ export function explainGap(run: LedgerRun, history: LedgerRun[]): Explanation {
     }
     // A PR that matched more files than any other merged that night leads its row, so one PR's work is one row however
     // many nights it showed up on; otherwise the row is the group.
-    const lead = prs.length === 1 || prs[0]!.files > (prs[1]?.files ?? 0) ? prs[0]! : undefined;
+    const lead = prs.length === 1 || leads(prs[0]!, prs[1]) ? prs[0]! : undefined;
     const id = lead ? prId(lead) : prs.map(prId).sort().join(",");
     const row = contributed.get(id) ?? { prs: lead ? [lead] : prs, hunks: [], firstSeen: new Map<string, string>(), missed: new Map<string, AttributedPr>() };
     for (const p of missedBy(prs, h.artefact)) row.missed.set(prId(p), p);
@@ -245,11 +245,19 @@ export function explainGap(run: LedgerRun, history: LedgerRun[]): Explanation {
   };
 }
 
+/**
+ * Whether the first PR of a ranked list leads the second (src/changes/attribute.ts `byPath`): more direct files, or as
+ * many and more files in all. Since 1.49.1 direct files count first, as they rank: on 20 Oct #518 changed the reader's own
+ * manifest and the lockfile, #519 time's and the lockfile, and two files each made them a group for the reader's packages.
+ */
+export const leads = (a: Pick<AttributedPr, "files"> & { direct?: number }, b?: Pick<AttributedPr, "files"> & { direct?: number }): boolean =>
+  !b || (a.direct ?? 0) > (b.direct ?? 0) || ((a.direct ?? 0) === (b.direct ?? 0) && a.files > b.files);
+
 /** `#466`, `#466 most likely` (it matched the most files of the PRs merged that night), or `one of #a, #b`. */
-export function prWords(prs: Pick<AttributedPr, "pr" | "sha" | "files">[]): string {
+export function prWords(prs: (Pick<AttributedPr, "pr" | "sha" | "files"> & { direct?: number })[]): string {
   const ids = prs.map(prId);
   if (ids.length === 1) return ids[0]!;
-  return prs[0]!.files > (prs[1]?.files ?? 0) ? `${ids[0]} most likely` : `one of ${ids.join(", ")}`;
+  return leads(prs[0]!, prs[1]) ? `${ids[0]} most likely` : `one of ${ids.join(", ")}`;
 }
 
 /** Why a row is unexplained, in words. */
