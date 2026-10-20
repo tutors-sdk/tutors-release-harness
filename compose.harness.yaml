@@ -54,7 +54,9 @@ x-app: &app
     interval: 2s
     # Since 1.49.1: the startup clock's own cadence, whatever the image declares. Docker keeps an image HEALTHCHECK's
     # start period when compose names none, and probes every 5 s (its default start interval) inside it, so an image
-    # with `--start-period` read ~3 s slower to ready with no change to the app (20 Oct, mono-repo #501).
+    # with `--start-period` read ~3 s slower to ready with no change to the app (20 Oct, mono-repo #501). Compose
+    # takes start_interval only beside start_period; 2 s of each keeps the first probe at 2 s, as before.
+    start_period: 2s
     start_interval: 2s
     timeout: 3s
     retries: 30
