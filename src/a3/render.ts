@@ -8,7 +8,7 @@
  * Pages and printed on an A3 sheet alike. Light and dark follow the reader's setting. Every chart has its numbers in a
  * table too, and every bar and box says its value on hover.
  */
-import { missedWords, prWords, unexplainedWords, type Explanation } from "../changes/explain.ts";
+import { leads, missedWords, prWords, unexplainedWords, type Explanation } from "../changes/explain.ts";
 import { ruleTouchedWords } from "../report/rules-touched.ts";
 import { declaredWords } from "../changes/declares.ts";
 import { REPO, duration, type A3, type Decisions, type FiveWhys, type Pareto, type Rca, type Score, type ValueStream } from "./model.ts";
@@ -472,7 +472,7 @@ function gapHtml(a: A3): string {
   const prLinks = (prs: Explanation["contributed"]["rows"][number]["prs"]) => {
     const words = esc(prWords(prs));
     const name = (p: (typeof prs)[number]) => link(`${p.pr !== null ? `#${p.pr}` : p.sha.slice(0, 7)} ${p.title}`, p.url);
-    const ledBy = prs.length > 1 && prs[0]!.files > (prs[1]?.files ?? 0);
+    const ledBy = prs.length > 1 && leads(prs[0]!, prs[1]);
     const listed = ledBy ? `${name(prs[0]!)}<br>also merged those nights: ${prs.slice(1, 6).map((p) => link(p.pr !== null ? `#${p.pr}` : p.sha.slice(0, 7), p.url)).join(", ")}${prs.length > 6 ? ` and ${prs.length - 6} more` : ""}` : `${prs.slice(0, 3).map(name).join("<br>")}${prs.length > 3 ? `<br>and ${prs.length - 3} more` : ""}`;
     return `<strong>${words}</strong><br><span class="src">${listed}</span>`;
   };

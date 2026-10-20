@@ -78,6 +78,8 @@ describe("the gap, explained", () => {
   it("names the PR that matched the most files as most likely, and keeps a tie as one group", () => {
     expect(prWords([{ pr: 466, sha: "a", files: 3 }, { pr: 461, sha: "b", files: 1 }])).toBe("#466 most likely");
     expect(prWords([{ pr: 1, sha: "a", files: 1 }, { pr: 2, sha: "b", files: 1 }])).toBe("one of #1, #2");
+    // Since 1.49.1 direct files count first: #518 changed the reader's own manifest, #519 only the lockfile beside it.
+    expect(prWords([{ pr: 518, sha: "a", files: 2, direct: 1 }, { pr: 519, sha: "b", files: 2, direct: 0 }])).toBe("#518 most likely");
   });
 
   it("counts more than eight PRs as unexplained, naming the best matches as suspects only", () => {

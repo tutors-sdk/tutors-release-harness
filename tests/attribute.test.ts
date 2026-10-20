@@ -29,7 +29,7 @@ const causes = (...hunks: Hunk[]) => foldCauses(hunks).causes;
 
 describe("attribution by path", () => {
   it("an image cause is about Dockerfiles first and manifests after; a page cause is about its app, then the packages", () => {
-    expect(pathsOf({ artefact: "sbom", apps: ["reader"] })).toEqual({ primary: ["**/Dockerfile*", "**/.dockerignore"], secondary: ["pnpm-lock.yaml", "package.json", "apps/*/package.json", "packages/**/package.json"] });
+    expect(pathsOf({ artefact: "sbom", apps: ["reader"] })).toEqual({ primary: ["**/Dockerfile*", "**/.dockerignore", "apps/reader/package.json"], secondary: ["pnpm-lock.yaml", "package.json", "apps/*/package.json", "packages/**/package.json"] });
     expect(pathsOf({ artefact: "image-manifest", apps: ["reader"] }).secondary).toEqual([]);
     expect(pathsOf({ artefact: "dom", apps: ["reader", "live"] })).toEqual({ primary: ["apps/reader/**", "apps/live/**"], secondary: ["packages/**"] });
     // A journey's table names no app: the reader is the app every journey drives; anything else names every app.
@@ -39,9 +39,10 @@ describe("attribution by path", () => {
 
   it("ranks the PRs by direct files, then indirect, then merge order, and never matches documentation, tests or workflows", () => {
     const [sbom] = causes(h("sbom", "reader/minipass", "reader: package removed: minipass@7.1.2"));
+    // The reader's own manifest is direct for the reader's packages: #282 changed it, its Dockerfile and the lockfile.
     expect(byPath(sbom!, [PAPER, DOCKER, MANIFEST, DOCS]).map((p) => [p.pr, p.files, p.direct])).toEqual([
-      [143, 2, 2],
-      [282, 3, 1]
+      [282, 3, 2],
+      [143, 2, 2]
     ]);
     const [dom] = causes(h("dom", "catalogue:home", "catalogue:home: semantic DOM differs (+1 −1 lines at line 2)"));
     // A Dockerfile under the app is the app's own: it can change what the page serves.
@@ -52,6 +53,16 @@ describe("attribution by path", () => {
     ]);
     const [reader] = causes(h("dom", "reader:home", "reader:home: semantic DOM differs (+1 −1 lines at line 2)"));
     expect(byPath(reader!, [DOCS]).length).toBe(0);
+  });
+
+  it("a package that moved from one app's image to another's is the PR that changed that app's own manifest (20 Oct, #518 and #519)", () => {
+    const LOCKS = pr(518, ["apps/reader/package.json", "pnpm-lock.yaml", "apps/reader/src/lib/server/educator.ts"]);
+    const SYNC = pr(519, ["apps/time/package.json", "pnpm-lock.yaml", "apps/reader/src/routes/x/+server.ts"]);
+    const DASH = pr(491, ["package.json", "scripts/ears-dashboard.ts"]);
+    const [added] = causes(h("sbom", "reader/@supabase/supabase-js", "reader: package added: @supabase/supabase-js@2.117.1"));
+    const [removed] = causes(h("sbom", "time/@supabase/supabase-js", "time: package removed: @supabase/supabase-js@2.117.1"));
+    expect(byPath(added!, [LOCKS, SYNC, DASH]).map((p) => [p.pr, p.direct])).toEqual([[518, 1], [519, 0], [491, 0]]);
+    expect(byPath(removed!, [LOCKS, SYNC, DASH]).map((p) => [p.pr, p.direct])).toEqual([[519, 1], [518, 0], [491, 0]]);
   });
 
   it("names what was merged between two forecasts: this range less the last one's, release merges left out", () => {

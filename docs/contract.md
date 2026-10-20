@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.49.0`
+Contract version: `1.49.1`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -2105,6 +2105,10 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.49.1 (patch; startup reads ready at the harness's own cadence, an image's packages match its app's manifest)
+
+The release note is [releases/1.49.1.md](releases/1.49.1.md). Compose probes the apps every 2 s inside an image's HEALTHCHECK start period too (`start_period: 2s`, `start_interval: 2s`), so `startup` `*/ready` no longer reads ~3 s slower when an image declares `--start-period`. Attribution matches an `sbom` or `vulns` cause on an app's image to that app's own `package.json` directly. No Gate or exit code rule moves.
 
 ### 1.49.0 (minor; pixelmatch 8, which scores screenshot differences in OKLab)
 
