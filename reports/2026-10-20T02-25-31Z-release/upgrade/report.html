@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Harness upgrade pass</title>
+<style>
+  :root { color-scheme: light dark; --pass:#2f7a4f; --warn:#8a6119; --fail:#a12a2a; --rule:#8884; }
+  body { margin:0; padding:24px 16px; font:15px/1.5 system-ui, sans-serif; max-width: 64rem; margin-inline:auto; }
+  h1 { font-size:1.4rem; margin:0 0 4px; }
+  .verdict { display:inline-block; padding:2px 10px; border-radius:4px; color:#fff; font-weight:600; text-transform:uppercase; letter-spacing:.05em; }
+  .verdict.pass { background:var(--pass);} .verdict.warn { background:var(--warn);} .verdict.fail { background:var(--fail);}
+  table { border-collapse:collapse; width:100%; margin:12px 0 24px; font-size:14px; }
+  th, td { text-align:left; vertical-align:top; padding:6px 8px; border-bottom:1px solid var(--rule); }
+  th { font-size:12px; text-transform:uppercase; letter-spacing:.06em; opacity:.7; }
+  tr.info td { opacity:.75; }
+  tr.fail td:last-child strong { color:var(--fail); }
+  table.provenance td { font-size:13px; word-break:break-all; }
+  .loud { border-left:4px solid var(--warn); padding:6px 10px; font-weight:600; }
+  code, pre { font-family: ui-monospace, Menlo, Consolas, monospace; font-size:13px; }
+  pre { white-space:pre-wrap; margin:6px 0 0; padding:8px; background:#8881; border-radius:4px; }
+  details summary { cursor:pointer; font-size:13px; opacity:.8; }
+  ul { padding-left:1.2rem; }
+  td code, td a, td pre { overflow-wrap:anywhere; }
+  .causes small { opacity:.8; }
+  @media (max-width: 640px) {
+    .causes thead { display:none; }
+    .causes table, .causes tbody, .causes tr, .causes td { display:block; }
+    .causes tr { border-bottom:1px solid var(--rule); padding:6px 0; }
+    .causes td { border:0; padding:2px 0; }
+    .causes td[data-label]::before { content:attr(data-label) ": "; font-size:12px; opacity:.7; }
+    table.informing thead, table.policy thead { display:none; }
+    table.informing, table.informing tbody, table.informing tr, table.informing td, table.policy, table.policy tbody, table.policy tr, table.policy td { display:block; overflow:visible; }
+    table.informing tr, table.policy tr { border-bottom:1px solid var(--rule); padding:6px 0; }
+    table.informing td, table.policy td { border:0; padding:2px 0; overflow-wrap:anywhere; }
+    table.informing td[data-label]::before, table.policy td[data-label]::before { content:attr(data-label) ": "; font-size:12px; opacity:.7; }
+  }
+  @media (max-width:640px){table{display:block;overflow-x:auto;max-width:100%}p,li,dd,summary,h1,h2,h3,h4{overflow-wrap:anywhere}}
+  .level { white-space:nowrap; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; padding:1px 8px; border-radius:4px; border:1px solid currentColor; opacity:.8; vertical-align:middle; }
+  table.informing td:first-child code { font-style:italic; }
+  footer { font-size:12px; opacity:.7; border-top:1px solid var(--rule); padding-top:12px; }
+</style>
+</head>
+<body>
+<h1>Tutors release harness — <code>upgrade</code> <span class="verdict pass">pass</span></h1>
+<p><small>2026-10-20T02:03:28.745Z · clock 2026-09-16T09:05:00.000Z · 1 run(s) per side · harness 1.49.0</small></p>
+
+
+<ul><li>the candidate rolled in under load with no failed request</li><li>36 difference(s) between a and b outside the rollout, judged by release mode</li><li>NOT COLLECTED: vulns of reader, catalogue, live, time on side a: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)</li><li>NOT COLLECTED: vulns of reader, catalogue, live, time on side b: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)</li></ul>
+<section class="causes">
+<h2 id="causes">36 unclaimed differences, 6 causes</h2>
+<p>The unclaimed differences folded by kind across apps, pages and packages: a number, a hash or a package name does not make a new cause. Read beside the verdict; it never changes it.</p>
+<table><thead><tr><th>cause</th><th>differences</th><th>apps</th><th>pages</th><th>example</th></tr></thead><tbody>
+<tr id="cause-bedb38b7"><td><code>sbom</code> package added<br><small>9 packages: <code>@supabase/auth-js</code>, <code>@supabase/functions-js</code>, <code>@supabase/phoenix</code>, <code>@supabase/postgrest-js</code>, <code>@supabase/realtime-js</code>, <code>@supabase/storage-js</code>, <code>@supabase/supabase-js</code>, <code>iceberg-js</code> and 1 more</small></td><td data-label="differences">9</td><td data-label="apps">reader</td><td data-label="pages">—</td><td data-label="example"><a href="#hunk-sbom:reader/_supabase/auth-js:19">reader: package added: @supabase/auth-js@2.117.2</a></td></tr>
+<tr id="cause-3eff5a88"><td><code>sbom</code> package removed<br><small>9 packages: <code>@supabase/auth-js</code>, <code>@supabase/functions-js</code>, <code>@supabase/phoenix</code>, <code>@supabase/postgrest-js</code>, <code>@supabase/realtime-js</code>, <code>@supabase/storage-js</code>, <code>@supabase/supabase-js</code>, <code>iceberg-js</code> and 1 more</small></td><td data-label="differences">9</td><td data-label="apps">time</td><td data-label="pages">—</td><td data-label="example"><a href="#hunk-sbom:time/_supabase/auth-js:31">time: package removed: @supabase/auth-js@2.117.2</a></td></tr>
+<tr id="cause-c20ba75a"><td><code>metrics</code> new series on b<br><small>2 names: <code>http_request_duration_seconds_count</code>, <code>http_requests_total</code></small></td><td data-label="differences">6</td><td data-label="apps">catalogue, live, time</td><td data-label="pages">—</td><td data-label="example"><a href="#hunk-metrics:http_request_duration_seconds_count:8">catalogue: new series on b: http_request_duration_seconds_count</a></td></tr>
+<tr id="cause-a36188a9"><td><code>dom</code> semantic DOM differs (+# −# lines at line #)</td><td data-label="differences">5</td><td data-label="apps">reader</td><td data-label="pages">5<br><small><code>reader:course</code>, <code>reader:home</code>, <code>reader:lab-step</code>, <code>reader:lab-step-2</code>, <code>reader:topic</code></small></td><td data-label="example"><a href="#hunk-dom:reader:home:1">reader:home: semantic DOM differs (+1 −1 lines at line 10)</a></td></tr>
+<tr id="cause-6109393d"><td><code>focus</code> keyboard order changed (# stops on a, # on b)</td><td data-label="differences">5</td><td data-label="apps">reader</td><td data-label="pages">5<br><small><code>reader:course</code>, <code>reader:home</code>, <code>reader:lab-step</code>, <code>reader:lab-step-2</code>, <code>reader:topic</code></small></td><td data-label="example"><a href="#hunk-focus:reader:home:14">reader:home: keyboard order changed (12 stops on a, 12 on b)</a></td></tr>
+<tr id="cause-9b37aef5"><td><code>network</code> GET {{asset}} requested #× on a, #× on b<br><small>1 route: <code>GET /_app/immutable/chunks/{{hash}}.js</code></small></td><td data-label="differences">2</td><td data-label="apps">reader</td><td data-label="pages">2<br><small><code>reader:course</code>, <code>reader:home</code></small></td><td data-label="example"><a href="#hunk-network:GET_/_app/immutable/chunks/__hash__.js:6">reader:home: GET /_app/immutable/chunks/{{hash}}.js requested 33× on a, 34× on b</a></td></tr>
+</tbody></table>
+<p>Moved together on the same pages, so likely one change each:</p><ul><li><code>dom</code>, <code>focus</code> on 3 pages (6 differences): <code>reader:lab-step</code>, <code>reader:lab-step-2</code>, <code>reader:topic</code></li><li><code>dom</code>, <code>focus</code>, <code>network</code> on 2 pages (6 differences): <code>reader:course</code>, <code>reader:home</code></li></ul>
+
+</section>
+
+<table>
+<thead><tr><th></th><th>a</th><th>b</th></tr></thead>
+<tbody><tr><td>reader</td><td><code>quay.io/tutors-sdk/tutors-reader:17.0.0</code></td><td><code>quay.io/tutors-sdk/tutors-reader:sha-a31e5ef</code></td></tr><tr><td>catalogue</td><td><code>quay.io/tutors-sdk/tutors-catalogue:17.0.0</code></td><td><code>quay.io/tutors-sdk/tutors-catalogue:sha-a31e5ef</code></td></tr><tr><td>live</td><td><code>quay.io/tutors-sdk/tutors-live:17.0.0</code></td><td><code>quay.io/tutors-sdk/tutors-live:sha-a31e5ef</code></td></tr><tr><td>time</td><td><code>quay.io/tutors-sdk/tutors-time:17.0.0</code></td><td><code>quay.io/tutors-sdk/tutors-time:sha-a31e5ef</code></td></tr></tbody>
+</table>
+<table class="provenance">
+<thead><tr><th>provenance</th><th>a — pulled+verified</th><th>b — pulled+verified</th></tr></thead>
+<tbody><tr><td>reader</td><td>digest <code>sha256:15e3aa22476d608db97e05917b1990ade0a7871e7ec6e113da5fec741b427233</code><br>revision <code>432d46864626</code><br>version <code>17.0.0-rc.1</code></td><td>digest <code>sha256:2bd1936f720d5602b7e80f8950180cb7f347930a38042b6a01fdd45eba9a3a9e</code><br>revision <code>a31e5effdb4f</code><br>version <code>sha-a31e5ef</code></td></tr><tr><td>catalogue</td><td>digest <code>sha256:e9f2764654cb074d7dd4412ca163bf4c2666870444d5520361d5425bda4cec0b</code><br>revision <code>432d46864626</code><br>version <code>17.0.0-rc.1</code></td><td>digest <code>sha256:e82b160dedf65322815a2cfeada995f5fc92482e13c77b9b0f457b480859ce4c</code><br>revision <code>a31e5effdb4f</code><br>version <code>sha-a31e5ef</code></td></tr><tr><td>live</td><td>digest <code>sha256:52740e55cfa7e7db3b2944137caada4e876990b937f1034c0c5e79796054f8a0</code><br>revision <code>432d46864626</code><br>version <code>17.0.0-rc.1</code></td><td>digest <code>sha256:846b6fd39425b065da3359297172239a8cceffe2950da3ec49370d0b509ce9e6</code><br>revision <code>a31e5effdb4f</code><br>version <code>sha-a31e5ef</code></td></tr><tr><td>time</td><td>digest <code>sha256:d0a9f4a2f4624038ecea3629d1a536567756d458410bee43b45e060d738d195d</code><br>revision <code>432d46864626</code><br>version <code>17.0.0-rc.1</code></td><td>digest <code>sha256:7f47ebc675b4f98c0107c8f0ac368f4244564cc376278d328c4426da293e22d0</code><br>revision <code>a31e5effdb4f</code><br>version <code>sha-a31e5ef</code></td></tr></tbody>
+</table>
+
+
+<h2>Image artefacts</h2><p><small>Collected from the images, not the running apps. A cell that says NOT COLLECTED was not compared.</small></p><table><thead><tr><th>app</th><th>artefact</th><th>a</th><th>b</th></tr></thead><tbody><tr><td>reader</td><td>manifest</td><td>10 layers, 309.2 MB, USER 1001, ports 3000/tcp (docker image inspect)</td><td>10 layers, 314.9 MB, USER 1001, ports 3000/tcp (docker image inspect)</td></tr><tr><td>reader</td><td>sbom</td><td>134 distinct package(s) (cosign attestation (signature verified))</td><td>143 distinct package(s) (cosign attestation (signature verified))</td></tr><tr><td>reader</td><td>vulns</td><td class="loud">NOT COLLECTED: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)</td><td class="loud">NOT COLLECTED: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)</td></tr><tr><td>catalogue</td><td>manifest</td><td>10 layers, 274.2 MB, USER 1001, ports 3000/tcp (docker image inspect)</td><td>10 layers, 274.2 MB, USER 1001, ports 3000/tcp (docker image inspect)</td></tr><tr><td>catalogue</td><td>sbom</td><td>134 distinct package(s) (cosign attestation (signature verified))</td><td>134 distinct package(s) (cosign attestation (signature verified))</td></tr><tr><td>catalogue</td><td>vulns</td><td class="loud">NOT COLLECTED: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)</td><td class="loud">NOT COLLECTED: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)</td></tr><tr><td>live</td><td>manifest</td><td>10 layers, 274.5 MB, USER 1001, ports 3000/tcp (docker image inspect)</td><td>10 layers, 274.5 MB, USER 1001, ports 3000/tcp (docker image inspect)</td></tr><tr><td>live</td><td>sbom</td><td>134 distinct package(s) (cosign attestation (signature verified))</td><td>134 distinct package(s) (cosign attestation (signature verified))</td></tr><tr><td>live</td><td>vulns</td><td class="loud">NOT COLLECTED: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)</td><td class="loud">NOT COLLECTED: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)</td></tr><tr><td>time</td><td>manifest</td><td>10 layers, 285.2 MB, USER 1001, ports 3000/tcp (docker image inspect)</td><td>10 layers, 279.4 MB, USER 1001, ports 3000/tcp (docker image inspect)</td></tr><tr><td>time</td><td>sbom</td><td>143 distinct package(s) (cosign attestation (signature verified))</td><td>134 distinct package(s) (cosign attestation (signature verified))</td></tr><tr><td>time</td><td>vulns</td><td class="loud">NOT COLLECTED: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)</td><td class="loud">NOT COLLECTED: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)</td></tr></tbody></table>
+
+
+<h2 id="upgrade">Upgrade rehearsal (compose)</h2><table><thead><tr><th>upstream</th><th>requests</th><th>failed</th><th>5xx</th><th>p95</th></tr></thead><tbody><tr><td>a</td><td>300</td><td>0</td><td>0</td><td>5 ms</td></tr><tr><td>b</td><td>601</td><td>0</td><td>0</td><td>3.9 ms</td></tr><tr><td><strong>all</strong></td><td>901</td><td>0</td><td>0</td><td>switched at 17.1 s</td></tr></tbody></table>
+
+
+<h2 id="differences">Differences (65; 36 unclaimed)</h2>
+<table><thead><tr><th>artefact</th><th>scope</th><th>what changed</th><th>claimed by</th></tr></thead><tbody><tr id="hunk-dom:reader:home:1" class="fail"><td><code>dom</code></td><td><code>reader:home</code><br><small>/</small></td><td>reader:home: semantic DOM differs (+1 −1 lines at line 10)<details><summary>detail</summary><pre>     - link &quot;My courses&quot;:
+       - /url: /
+-    - button &quot;Open Theme Menu&quot;: Preferences
++    - button &quot;Preferences&quot;
+     - button &quot;Anonymous Tutors Profile&quot;
+ - complementary &quot;Course navigation&quot;:</pre></details></td><td><strong>unclaimed</strong></td></tr>
+<tr id="hunk-dom:reader:course:2" class="fail"><td><code>dom</code></td><td><code>reader:course</code><br><small>/course/localhost:8080</small></td><td>reader:course: semantic DOM differs (+1 −1 lines at line 9)<details><summary>detail</summary><pre>     - text: Tutors CI
+     - button &quot;Search this course&quot;: Search
+-    - button &quot;Open Theme Menu&quot;: Preferences
++    - button &quot;Preferences&quot;
+     - button &quot;Anonymous Tutors Profile&quot;
+ - complementary &quot;Course navigation&quot;:</pre></details></td><td><strong>unclaimed</strong></td></tr>
+<tr id="hunk-dom:reader:topic:3" class="fail"><td><code>dom</code></td><td><code>reader:topic</code><br><small>/topic/localhost:8080/unit-1/topic-01</small></td><td>reader:topic: semantic DOM differs (+1 −1 lines at line 8)<details><summary>detail</summary><pre>     - text: Tutors CI
+     - button &quot;Search this course&quot;: Search
+-    - button &quot;Open Theme Menu&quot;: Preferences
++    - button &quot;Preferences&quot;
+     - button &quot;Anonymous Tutors Profile&quot;
+ - complementary &quot;Course navigation&quot;:</pre></details></td><td><strong>unclaimed</strong></td></tr>
+<tr id="hunk-dom:reader:lab-step:4" class="fail"><td><code>dom</code></td><td><code>reader:lab-step</code><br><small>/lab/localhost:8080/unit-1/topic-01/book-lab-01</small></td><td>reader:lab-step: semantic DOM differs (+1 −1 lines at line 8)<details><summary>detail</summary><pre>     - text: Tutors CI
+     - button &quot;Search this course&quot;: Search
+-    - button &quot;Open Theme Menu&quot;: Preferences
++    - button &quot;Preferences&quot;
+     - button &quot;Anonymous Tutors Profile&quot;
+ - complementary &quot;Course navigation&quot;:</pre></details></td><td><strong>unclaimed</strong></td></tr>
+<tr id="hunk-dom:reader:lab-step-2:5" class="fail"><td><code>dom</code></td><td><code>reader:lab-step-2</code><br><small>/lab/localhost:8080/unit-1/topic-01/book-lab-01/Step-01</small></td><td>reader:lab-step-2: semantic DOM differs (+1 −1 lines at line 8)<details><summary>detail</summary><pre>     - text: Tutors CI
+     - button &quot;Search this course&quot;: Search
+-    - button &quot;Open Theme Menu&quot;: Preferences
++    - button &quot;Preferences&quot;
+     - button &quot;Anonymous Tutors Profile&quot;
+ - complementary &quot;Course navigation&quot;:</pre></details></td><td><strong>unclaimed</strong></td></tr>
+<tr id="hunk-network:GET_/_app/immutable/chunks/__hash__.js:6" class="fail"><td><code>network</code></td><td><code>GET /_app/immutable/chunks/{{hash}}.js</code><br><small>/</small></td><td>reader:home: GET /_app/immutable/chunks/{{hash}}.js requested 33× on a, 34× on b</td><td><strong>unclaimed</strong></td></tr>
+<tr id="hunk-network:GET_/_app/immutable/chunks/__hash__.js:7" class="fail"><td><code>network</code></td><td><code>GET /_app/immutable/chunks/{{hash}}.js</code><br><small>/course/localhost:8080</small></td><td>reader:course: GET /_app/immutable/chunks/{{hash}}.js requested 42× on a, 43× on b</td><td><strong>unclaimed</strong></td></tr>
+<tr id="hunk-metrics:http_request_duration_seconds_count:8" class="fail"><td><code>metrics</code></td><td><code>catalogue/http_request_duration_seconds_count</code></td><td>catalogue: new series on b: http_request_duration_seconds_count</td><td><strong>unclaimed</strong></td></tr>
+<tr id="hunk-metrics:http_requests_total:9" class="fail"><td><code>metrics</code></td><td><code>catalogue/http_requests_total</code></td><td>catalogue: new series on b: http_requests_total</td><td><strong>unclaimed</strong></td></tr>
+<tr id="hunk-metrics:http_request_duration_seconds_count:10" class="fail"><td><code>metrics</code></td><td><code>live/http_request_duration_seconds_count</code></td><td>live: new series on b: http_request_duration_seconds_count</td><td><strong>unclaimed</strong></td></tr>
+<tr id="hunk-metrics:http_requests_total:11" class="fail"><td><code>metrics</code></td><td><code>live/http_requests_total</code></td><td>live: new series on b: http_requests_total</td><td><strong>unclaimed</strong></td></tr>
+<tr id="hunk-metrics:http_request_duration_seconds_count:12" class="fail"><td><code>metrics</code></td><td><code>time/http_request_duration_seconds_count</code></td><td>time: new series on b: http_request_duration_seconds_count</td><td><strong>unclaimed</strong></td></tr>
+<tr id="hunk-metrics:http_requests_total:13" class="fail"><td><code>metrics</code></td><td><code>time/http_requests_total</code></td><td>time: new series on b: http_requests_total</td><td><strong>unclaimed</strong></td></tr>
+<tr id="hunk-focus:reader:home:14" class="fail"><td><code>focus</code></td><td><code>reader:home</code><br><small>/</small></td><td>reader:home: keyboard order changed (12 stops on a, 12 on b)<details><summary>detail</summary><pre> a &quot;My courses&quot;
+-button &quot;Open Theme Menu&quot;
++button &quot;Preferences&quot;
+ button &quot;Anonymous Tutors Profile&quot;</pre></details></td><td><strong>unclaimed</strong></td></tr>
+<tr id="hunk-focus:reader:course:15" class="fail"><td><code>focus</code></td><td><code>reader:course</code><br><small>/course/localhost:8080</small></td><td>reader:course: keyboard order changed (12 stops on a, 12 on b)<details><summary>detail</summary><pre> button &quot;Search this course&quot;
+-button &quot;Open Theme Menu&quot;
++button &quot;Preferences&quot;
+ button &quot;Anonymous Tutors Profile&quot;</pre></details></td><td><strong>unclaimed</strong></td></tr>
+<tr id="hunk-focus:reader:topic:16" class="fail"><td><code>focus</code></td><td><code>reader:topic</code><br><small>/topic/localhost:8080/unit-1/topic-01</small></td><td>reader:topic: keyboard order changed (12 stops on a, 12 on b)<details><summary>detail</summary><pre> button &quot;Search this course&quot;
+-button &quot;Open Theme Menu&quot;
++button &quot;Preferences&quot;
+ button &quot;Anonymous Tutors Profile&quot;</pre></details></td><td><strong>unclaimed</strong></td></tr>
+<tr id="hunk-focus:reader:lab-step:17" class="fail"><td><code>focus</code></td><td><code>reader:lab-step</code><br><small>/lab/localhost:8080/unit-1/topic-01/book-lab-01</small></td><td>reader:lab-step: keyboard order changed (12 stops on a, 12 on b)<details><summary>detail</summary><pre> button &quot;Search this course&quot;
+-button &quot;Open Theme Menu&quot;
++button &quot;Preferences&quot;
+ button &quot;Anonymous Tutors Profile&quot;</pre></details></td><td><strong>unclaimed</strong></td></tr>
+<tr id="hunk-focus:reader:lab-step-2:18" class="fail"><td><code>focus</code></td><td><code>reader:lab-step-2</code><br><small>/lab/localhost:8080/unit-1/topic-01/book-lab-01/Step-01</small></td><td>reader:lab-step-2: keyboard order changed (12 stops on a, 12 on b)<details><summary>detail</summary><pre> button &quot;Search this course&quot;
+-button &quot;Open Theme Menu&quot;
++button &quot;Preferences&quot;
+ button &quot;Anonymous Tutors Profile&quot;</pre></details></td><td><strong>unclaimed</strong></td></tr>
+<tr id="hunk-sbom:reader/_supabase/auth-js:19" class="fail"><td><code>sbom</code></td><td><code>reader/@supabase/auth-js</code></td><td>reader: package added: @supabase/auth-js@2.117.2</td><td><strong>unclaimed</strong></td></tr>
+<tr id="hunk-sbom:reader/_supabase/functions-js:20" class="fail"><td><code>sbom</code></td><td><code>reader/@supabase/functions-js</code></td><td>reader: package added: @supabase/functions-js@2.117.2</td><td><strong>unclaimed</strong></td></tr>
+<tr id="hunk-sbom:reader/_supabase/phoenix:21" class="fail"><td><code>sbom</code></td><td><code>reader/@supabase/phoenix</code></td><td>reader: package added: @supabase/phoenix@0.4.5</td><td><strong>unclaimed</strong></td></tr>
+<tr id="hunk-sbom:reader/_supabase/postgrest-js:22" class="fail"><td><code>sbom</code></td><td><code>reader/@supabase/postgrest-js</code></td><td>reader: package added: @supabase/postgrest-js@2.117.2</td><td><strong>unclaimed</strong></td></tr>
+<tr id="hunk-sbom:reader/_supabase/realtime-js:23" class="fail"><td><code>sbom</code></td><td><code>reader/@supabase/realtime-js</code></td><td>reader: package added: @supabase/realtime-js@2.117.2</td><td><strong>unclaimed</strong></td></tr>
+<tr id="hunk-sbom:reader/_supabase/storage-js:24" class="fail"><td><code>sbom</code></td><td><code>reader/@supabase/storage-js</code></td><td>reader: package added: @supabase/storage-js@2.117.2</td><td><strong>unclaimed</strong></td></tr>
+<tr id="hunk-sbom:reader/_supabase/supabase-js:25" class="fail"><td><code>sbom</code></td><td><code>reader/@supabase/supabase-js</code></td><td>reader: package added: @supabase/supabase-js@2.117.2</td><td><strong>unclaimed</strong></td></tr>
+<tr id="hunk-sbom:reader/iceberg-js:26" class="fail"><td><code>sbom</code></td><td><code>reader/iceberg-js</code></td><td>reader: package added: iceberg-js@0.8.1</td><td><strong>unclaimed</strong></td></tr>
+<tr id="hunk-sbom:reader/tslib:27" class="fail"><td><code>sbom</code></td><td><code>reader/tslib</code></td><td>reader: package added: tslib@2.8.1</td><td><strong>unclaimed</strong></td></tr>
+<tr id="hunk-vulns:reader/not-collected:28" class="info"><td><code>vulns</code></td><td><code>reader/not-collected</code></td><td>NOT COLLECTED: vulns of reader on both sides: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)<details><summary>detail</summary><pre>a: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)
+b: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)</pre></details></td><td><em>informational</em></td></tr>
+<tr id="hunk-vulns:catalogue/not-collected:29" class="info"><td><code>vulns</code></td><td><code>catalogue/not-collected</code></td><td>NOT COLLECTED: vulns of catalogue on both sides: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)<details><summary>detail</summary><pre>a: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)
+b: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)</pre></details></td><td><em>informational</em></td></tr>
+<tr id="hunk-vulns:live/not-collected:30" class="info"><td><code>vulns</code></td><td><code>live/not-collected</code></td><td>NOT COLLECTED: vulns of live on both sides: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)<details><summary>detail</summary><pre>a: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)
+b: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)</pre></details></td><td><em>informational</em></td></tr>
+<tr id="hunk-sbom:time/_supabase/auth-js:31" class="fail"><td><code>sbom</code></td><td><code>time/@supabase/auth-js</code></td><td>time: package removed: @supabase/auth-js@2.117.2</td><td><strong>unclaimed</strong></td></tr>
+<tr id="hunk-sbom:time/_supabase/functions-js:32" class="fail"><td><code>sbom</code></td><td><code>time/@supabase/functions-js</code></td><td>time: package removed: @supabase/functions-js@2.117.2</td><td><strong>unclaimed</strong></td></tr>
+<tr id="hunk-sbom:time/_supabase/phoenix:33" class="fail"><td><code>sbom</code></td><td><code>time/@supabase/phoenix</code></td><td>time: package removed: @supabase/phoenix@0.4.5</td><td><strong>unclaimed</strong></td></tr>
+<tr id="hunk-sbom:time/_supabase/postgrest-js:34" class="fail"><td><code>sbom</code></td><td><code>time/@supabase/postgrest-js</code></td><td>time: package removed: @supabase/postgrest-js@2.117.2</td><td><strong>unclaimed</strong></td></tr>
+<tr id="hunk-sbom:time/_supabase/realtime-js:35" class="fail"><td><code>sbom</code></td><td><code>time/@supabase/realtime-js</code></td><td>time: package removed: @supabase/realtime-js@2.117.2</td><td><strong>unclaimed</strong></td></tr>
+<tr id="hunk-sbom:time/_supabase/storage-js:36" class="fail"><td><code>sbom</code></td><td><code>time/@supabase/storage-js</code></td><td>time: package removed: @supabase/storage-js@2.117.2</td><td><strong>unclaimed</strong></td></tr>
+<tr id="hunk-sbom:time/_supabase/supabase-js:37" class="fail"><td><code>sbom</code></td><td><code>time/@supabase/supabase-js</code></td><td>time: package removed: @supabase/supabase-js@2.117.2</td><td><strong>unclaimed</strong></td></tr>
+<tr id="hunk-sbom:time/iceberg-js:38" class="fail"><td><code>sbom</code></td><td><code>time/iceberg-js</code></td><td>time: package removed: iceberg-js@0.8.1</td><td><strong>unclaimed</strong></td></tr>
+<tr id="hunk-sbom:time/tslib:39" class="fail"><td><code>sbom</code></td><td><code>time/tslib</code></td><td>time: package removed: tslib@2.8.1</td><td><strong>unclaimed</strong></td></tr>
+<tr id="hunk-vulns:time/not-collected:40" class="info"><td><code>vulns</code></td><td><code>time/not-collected</code></td><td>NOT COLLECTED: vulns of time on both sides: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)<details><summary>detail</summary><pre>a: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)
+b: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)</pre></details></td><td><em>informational</em></td></tr>
+<tr id="hunk-runtime:runtime/summary:41" class="info"><td><code>runtime</code></td><td><code>runtime/summary</code></td><td>container posture collected for catalogue, live, reader, reader-auth, time on both sides (compose)<details><summary>detail</summary><pre>catalogue: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+           b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+live: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+reader: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+        b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+reader-auth: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+             b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+time: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter</pre></details></td><td><em>informational</em></td></tr>
+<tr id="hunk-startup:startup/not-collected:42" class="info"><td><code>startup</code></td><td><code>startup/not-collected</code></td><td>NOT COLLECTED: startup time on side a: switched off with --startup-restarts 0</td><td><em>informational</em></td></tr>
+<tr id="hunk-startup:startup/not-collected:43" class="info"><td><code>startup</code></td><td><code>startup/not-collected</code></td><td>NOT COLLECTED: startup time on side b: switched off with --startup-restarts 0</td><td><em>informational</em></td></tr>
+<tr id="hunk-image-hardening:reader/summary:44" class="info"><td><code>image-hardening</code></td><td><code>reader/summary</code></td><td>reader: image-hardening holds on b: USER 1001, HEALTHCHECK CMD node -e fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/healthz/live').then((r) =&gt; process.exit(r.ok ? 0 : 1), () =&gt; process.exit(1)), 0 secret-looking environment variable(s), 0 in the layer history</td><td><em>informational</em></td></tr>
+<tr id="hunk-image-hardening:catalogue/summary:45" class="info"><td><code>image-hardening</code></td><td><code>catalogue/summary</code></td><td>catalogue: image-hardening holds on b: USER 1001, HEALTHCHECK CMD node -e fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/healthz/live').then((r) =&gt; process.exit(r.ok ? 0 : 1), () =&gt; process.exit(1)), 0 secret-looking environment variable(s), 0 in the layer history</td><td><em>informational</em></td></tr>
+<tr id="hunk-image-hardening:live/summary:46" class="info"><td><code>image-hardening</code></td><td><code>live/summary</code></td><td>live: image-hardening holds on b: USER 1001, HEALTHCHECK CMD node -e fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/healthz/live').then((r) =&gt; process.exit(r.ok ? 0 : 1), () =&gt; process.exit(1)), 0 secret-looking environment variable(s), 0 in the layer history</td><td><em>informational</em></td></tr>
+<tr id="hunk-image-hardening:time/summary:47" class="info"><td><code>image-hardening</code></td><td><code>time/summary</code></td><td>time: image-hardening holds on b: USER 1001, HEALTHCHECK CMD node -e fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/healthz/live').then((r) =&gt; process.exit(r.ok ? 0 : 1), () =&gt; process.exit(1)), 0 secret-looking environment variable(s), 0 in the layer history</td><td><em>informational</em></td></tr>
+<tr id="hunk-build-provenance:reader/summary:48" class="info"><td><code>build-provenance</code></td><td><code>reader/summary</code></td><td>reader: build-provenance holds on b: SLSA provenance v1 by .github/workflows/image-build.yml@refs/heads/main</td><td><em>informational</em></td></tr>
+<tr id="hunk-build-provenance:catalogue/summary:49" class="info"><td><code>build-provenance</code></td><td><code>catalogue/summary</code></td><td>catalogue: build-provenance holds on b: SLSA provenance v1 by .github/workflows/image-build.yml@refs/heads/main</td><td><em>informational</em></td></tr>
+<tr id="hunk-build-provenance:live/summary:50" class="info"><td><code>build-provenance</code></td><td><code>live/summary</code></td><td>live: build-provenance holds on b: SLSA provenance v1 by .github/workflows/image-build.yml@refs/heads/main</td><td><em>informational</em></td></tr>
+<tr id="hunk-build-provenance:time/summary:51" class="info"><td><code>build-provenance</code></td><td><code>time/summary</code></td><td>time: build-provenance holds on b: SLSA provenance v1 by .github/workflows/image-build.yml@refs/heads/main</td><td><em>informational</em></td></tr>
+<tr id="hunk-vuln-ceiling:reader/not-evaluated:52" class="info"><td><code>vuln-ceiling</code></td><td><code>reader/not-evaluated</code></td><td>reader: vuln-ceiling could not be evaluated on b: no vulnerability scan: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)</td><td><em>informational</em></td></tr>
+<tr id="hunk-vuln-ceiling:catalogue/not-evaluated:53" class="info"><td><code>vuln-ceiling</code></td><td><code>catalogue/not-evaluated</code></td><td>catalogue: vuln-ceiling could not be evaluated on b: no vulnerability scan: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)</td><td><em>informational</em></td></tr>
+<tr id="hunk-vuln-ceiling:live/not-evaluated:54" class="info"><td><code>vuln-ceiling</code></td><td><code>live/not-evaluated</code></td><td>live: vuln-ceiling could not be evaluated on b: no vulnerability scan: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)</td><td><em>informational</em></td></tr>
+<tr id="hunk-vuln-ceiling:time/not-evaluated:55" class="info"><td><code>vuln-ceiling</code></td><td><code>time/not-evaluated</code></td><td>time: vuln-ceiling could not be evaluated on b: no vulnerability scan: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)</td><td><em>informational</em></td></tr>
+<tr id="hunk-asset-graph:reader:56" class="info"><td><code>asset-graph</code></td><td><code>reader</code></td><td>reader: the asset graph changed: 111 → 113 immutable requests (JS 92 → 94, CSS 19 → 19), 1.1 MB → 1.1 MB; 2 network and 0 headers difference(s) are this churn</td><td><em>informing</em> <a href="#informing">(reported, never gates)</a></td></tr>
+<tr id="hunk-slo:reader-availability/not-evaluated:57" class="info"><td><code>slo</code></td><td><code>reader-availability/not-evaluated</code></td><td>reader-availability: not evaluated on b: 4 request(s) from its /metrics across the journeys, fewer than 20</td><td><em>informational</em></td></tr>
+<tr id="hunk-slo:reader-latency/not-evaluated:58" class="info"><td><code>slo</code></td><td><code>reader-latency/not-evaluated</code></td><td>reader-latency: not evaluated on b: 4 request(s) from its /metrics across the journeys, fewer than 20</td><td><em>informational</em></td></tr>
+<tr id="hunk-slo:catalogue-availability/not-evaluated:59" class="info"><td><code>slo</code></td><td><code>catalogue-availability/not-evaluated</code></td><td>catalogue-availability: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20</td><td><em>informational</em></td></tr>
+<tr id="hunk-slo:catalogue-latency/not-evaluated:60" class="info"><td><code>slo</code></td><td><code>catalogue-latency/not-evaluated</code></td><td>catalogue-latency: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20</td><td><em>informational</em></td></tr>
+<tr id="hunk-slo:live-availability/not-evaluated:61" class="info"><td><code>slo</code></td><td><code>live-availability/not-evaluated</code></td><td>live-availability: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20</td><td><em>informational</em></td></tr>
+<tr id="hunk-slo:live-latency/not-evaluated:62" class="info"><td><code>slo</code></td><td><code>live-latency/not-evaluated</code></td><td>live-latency: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20</td><td><em>informational</em></td></tr>
+<tr id="hunk-slo:time-availability/not-evaluated:63" class="info"><td><code>slo</code></td><td><code>time-availability/not-evaluated</code></td><td>time-availability: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20</td><td><em>informational</em></td></tr>
+<tr id="hunk-slo:time-latency/not-evaluated:64" class="info"><td><code>slo</code></td><td><code>time-latency/not-evaluated</code></td><td>time-latency: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20</td><td><em>informational</em></td></tr>
+<tr id="hunk-upgrade:rollout:1" class="info"><td><code>upgrade</code></td><td><code>rollout</code></td><td>901 requests through the rollout, none failed; switched at 17.1s</td><td><em>informational</em></td></tr></tbody></table>
+
+<h2 id="policy">Policy: what b must be <span class="level">informing</span></h2>
+<p>Checks on the candidate alone, whatever production is: image hardening (root user, no healthcheck, a secret in the environment or the layer history), build provenance (SLSA provenance from image-build.yml) and the vulnerability ceiling (a critical or high advisory with a fix available). Informing: reported, never gates; a claim can still cover a finding. Hover a cell for what was checked.</p>
+<table class="policy"><thead><tr><th>app</th><th>image-hardening</th><th>build-provenance</th><th>vuln-ceiling</th></tr></thead><tbody><tr><td><code>reader</code></td><td data-label="image-hardening" title="reader: image-hardening holds on b: USER 1001, HEALTHCHECK CMD node -e fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/healthz/live').then((r) =&gt; process.exit(r.ok ? 0 : 1), () =&gt; process.exit(1)), 0 secret-looking environment variable(s), 0 in the layer history">holds</td><td data-label="build-provenance" title="reader: build-provenance holds on b: SLSA provenance v1 by .github/workflows/image-build.yml@refs/heads/main">holds</td><td data-label="vuln-ceiling" title="reader: vuln-ceiling could not be evaluated on b: no vulnerability scan: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"><em>not evaluated</em></td></tr><tr><td><code>catalogue</code></td><td data-label="image-hardening" title="catalogue: image-hardening holds on b: USER 1001, HEALTHCHECK CMD node -e fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/healthz/live').then((r) =&gt; process.exit(r.ok ? 0 : 1), () =&gt; process.exit(1)), 0 secret-looking environment variable(s), 0 in the layer history">holds</td><td data-label="build-provenance" title="catalogue: build-provenance holds on b: SLSA provenance v1 by .github/workflows/image-build.yml@refs/heads/main">holds</td><td data-label="vuln-ceiling" title="catalogue: vuln-ceiling could not be evaluated on b: no vulnerability scan: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"><em>not evaluated</em></td></tr><tr><td><code>live</code></td><td data-label="image-hardening" title="live: image-hardening holds on b: USER 1001, HEALTHCHECK CMD node -e fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/healthz/live').then((r) =&gt; process.exit(r.ok ? 0 : 1), () =&gt; process.exit(1)), 0 secret-looking environment variable(s), 0 in the layer history">holds</td><td data-label="build-provenance" title="live: build-provenance holds on b: SLSA provenance v1 by .github/workflows/image-build.yml@refs/heads/main">holds</td><td data-label="vuln-ceiling" title="live: vuln-ceiling could not be evaluated on b: no vulnerability scan: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"><em>not evaluated</em></td></tr><tr><td><code>time</code></td><td data-label="image-hardening" title="time: image-hardening holds on b: USER 1001, HEALTHCHECK CMD node -e fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/healthz/live').then((r) =&gt; process.exit(r.ok ? 0 : 1), () =&gt; process.exit(1)), 0 secret-looking environment variable(s), 0 in the layer history">holds</td><td data-label="build-provenance" title="time: build-provenance holds on b: SLSA provenance v1 by .github/workflows/image-build.yml@refs/heads/main">holds</td><td data-label="vuln-ceiling" title="time: vuln-ceiling could not be evaluated on b: no vulnerability scan: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"><em>not evaluated</em></td></tr></tbody></table>
+
+<h2 id="informing">Informing (1; 1 unclaimed) <span class="level">reported, never gates</span></h2>
+<p>18 of 27 engines are blocking; informing (reported, never gates): timing (no date set to block; load/errors still blocks), image-hardening (no date set to block), build-provenance (no date set to block), vuln-ceiling (no date set to block), timing-tolerance (no date set to block), asset-graph (no date set to block), replay (no date set to block), slo (no date set to block), realtime (no date set to block). An informing engine's findings are listed here and never change the verdict, the Gate or the exit code; a claim can still cover one.</p>
+<table class="informing"><thead><tr><th>engine</th><th>scope</th><th>what it found</th><th>level</th><th>claimed by</th></tr></thead><tbody><tr id="informing-asset-graph:reader:56"><td data-label="engine"><code>asset-graph</code></td><td data-label="scope"><code>reader</code></td><td data-label="found">reader: the asset graph changed: 111 → 113 immutable requests (JS 92 → 94, CSS 19 → 19), 1.1 MB → 1.1 MB; 2 network and 0 headers difference(s) are this churn</td><td data-label="level">no date set</td><td data-label="claimed by"><em>unclaimed</em></td></tr></tbody></table>
+
+
+
+
+
+
+
+<h2 id="masks">Masks</h2>
+<p>Fired: <code>response-date</code>×4, <code>request-id</code>×4, <code>etag</code>×4, <code>metrics-process</code>×599, <code>metrics-timing-histograms</code>×18, <code>third-party-requests</code>×62, <code>hashed-assets</code>×224, <code>footer-tutors-version</code>×20, <code>transport-length</code>×4, <code>transport-connection</code>×4, <code>transport-keepalive</code>×4.<br>
+Silent this run: <code>persistence-stub-requests</code>, <code>realtime-rest-fallback-warning</code>, <code>oauth-callback-state</code>, <code>media-range-status</code>, <code>chromium-compute-pressure-policy</code>, <code>transport-encoding</code>, <code>transport-transfer</code> — a mask that never fires is a mask to delete.</p>
+
+<footer>Every masked field is listed in <code>normalise/masks.yaml</code> with a reason. A mask is a blind spot you chose.<br>harness 1.49.0 · ca3e67224fec · contract 1.49.0</footer>
+</body>
+</html>
