@@ -217,6 +217,8 @@ export interface ComputeOptions {
   harness?: { version: string; contractVersion: string };
   /** Since 1.41.0: each PR's body, for its CHANGELOG line; a PR missing here is read from its title alone. */
   bodies?: Map<number, string>;
+  /** Since 1.49.2: the PRs' titles as GitHub has them now, for the hint; absent, the merge commits' titles. */
+  titles?: Map<number, string>;
 }
 
 export function computeChanges(f: ChangeFacts, o: ComputeOptions): Changes {
@@ -431,7 +433,7 @@ export function computeChanges(f: ChangeFacts, o: ComputeOptions): Changes {
   const prs: PrRisk[] = f.units.map((u) => {
     const ds = byUnit.get(u)!.sort((x, y) => order(x) - order(y));
     const url = prUrl(repo, u);
-    const declares = declarationOf(u.title, u.pr !== null ? o.bodies?.get(u.pr) : undefined);
+    const declares = declarationOf((u.pr !== null ? o.titles?.get(u.pr) : undefined) ?? u.title, u.pr !== null ? o.bodies?.get(u.pr) : undefined);
     return {
       pr: u.pr,
       sha: u.sha,

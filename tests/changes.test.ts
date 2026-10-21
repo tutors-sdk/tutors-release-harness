@@ -145,6 +145,13 @@ describe("guardrails: explainable line by line, and never about the person", () 
     expect(x.score).toBe(100);
   });
 
+  it("reads the hint from the title GitHub has now when it has one, else the merge commit's (1.49.2)", () => {
+    const merged = unit(20, { title: "fix(reader): locks (persistence)", files: [f("apps/reader/src/locks.ts", 10)] });
+    const live = computeChanges(facts([merged]), { reviews: allReviewed([20]), titles: new Map([[20, "fix(reader): locks (persistence, sbom)"]]) });
+    expect(live.prs[0]!.declares).toMatchObject({ artefacts: ["persistence", "sbom"], source: "title" });
+    expect(computeChanges(facts([merged]), { reviews: allReviewed([20]) }).prs[0]!.declares).toMatchObject({ artefacts: ["persistence"] });
+  });
+
   it("the penalty lands only when a first contribution meets a hotspot (10, not 3) or lacks tests (the 10 anyone's would)", () => {
     const history = [1, 2, 3].map((n) => ({ from: `v1.0.${n - 1}`, to: `v1.0.${n}`, files: [f("apps/reader/src/hot.ts", 4)] }));
     const mk = (first: boolean) => computeChanges(facts([unit(20, { firstContribution: first, files: [f("apps/reader/src/hot.ts", 1), f("tests/x.test.ts", 1)] })], { history }), { reviews: allReviewed([20]) });

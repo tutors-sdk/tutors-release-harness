@@ -11,7 +11,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { parseToolingChangelog, type ToolingChangelog } from "./changelog.ts";
 import { ChangesInputError, collect, type Git } from "./facts.ts";
-import { githubBodies, githubReviews, readBodies, readReviews, tokenFrom, type BodySource, type FetchLike, type ReviewSource } from "./github.ts";
+import { githubBodies, githubReviews, readBodies, readTitles, readReviews, tokenFrom, type BodySource, type FetchLike, type ReviewSource } from "./github.ts";
 import { renderChangesBoard } from "./render.ts";
 import { computeChanges, type Changes } from "./signals.ts";
 
@@ -79,7 +79,8 @@ export async function runChanges(o: ChangesOptions, deps: ChangesDeps = {}): Pro
   const reviews = await readReviews(source, prs);
   const bodySource = deps.bodies ?? (token && facts.repo && !deps.reviews ? githubBodies({ token, repo: facts.repo, fetch: deps.fetch ?? (globalThis.fetch as unknown as FetchLike) }) : undefined);
   const bodies = await readBodies(bodySource, prs);
-  const changes = computeChanges(facts, { reviews, bodies, ...(o.changelog ? { tooling: tooling(resolve(o.changelog)) } : {}), ...(o.harness ? { harness: o.harness } : {}) });
+  const titles = await readTitles(bodySource, prs);
+  const changes = computeChanges(facts, { reviews, bodies, titles, ...(o.changelog ? { tooling: tooling(resolve(o.changelog)) } : {}), ...(o.harness ? { harness: o.harness } : {}) });
   if (!o.out) return { changes };
   const file = resolve(o.out);
   mkdirSync(dirname(file), { recursive: true });

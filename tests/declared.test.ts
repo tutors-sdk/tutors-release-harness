@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { attribute } from "../src/changes/attribute.ts";
 import { changelogLineOf, declarationOf, hintOf } from "../src/changes/declares.ts";
 import { explainGap, ledgerSentence, type LedgerRun } from "../src/changes/explain.ts";
-import { readBodies } from "../src/changes/github.ts";
+import { githubBodies, readBodies, readTitles } from "../src/changes/github.ts";
 import type { Changes, PrRisk } from "../src/changes/signals.ts";
 import { gateWhy } from "../src/a3/model.ts";
 import { draftClaims, draftsYaml } from "../src/claims/draft.ts";
@@ -40,6 +40,26 @@ describe("what a PR declares", () => {
   it("reads a body GitHub cannot give as no body, so the title alone speaks for the PR", async () => {
     const bodies = await readBodies({ body: async (n) => (n === 2 ? Promise.reject(new Error("404")) : `body ${n}`) }, [1, 2]);
     expect([...bodies]).toEqual([[1, "body 1"]]);
+  });
+
+  it("reads the title GitHub has now, in the same request as the body: #518's hint was corrected after it merged (20 Oct)", async () => {
+    const asked: string[] = [];
+    const source = githubBodies({
+      token: "t",
+      repo: "tutors-sdk/tutors-mono-repo",
+      fetch: async (url) => {
+        asked.push(url);
+        if (url.endsWith("/2")) return { ok: false, status: 404, json: async () => ({}) };
+        return { ok: true, status: 200, json: async () => ({ title: "fix(reader): locks on the server (persistence, sbom, logs)", body: "no line" }) };
+      }
+    });
+    const titles = await readTitles(source, [518, 2]);
+    expect(await source.body(518)).toBe("no line");
+    expect([...titles]).toEqual([[518, "fix(reader): locks on the server (persistence, sbom, logs)"]]);
+    expect(asked.filter((u) => u.endsWith("/518"))).toHaveLength(1);
+    expect(await readTitles({ body: async () => "" }, [518])).toEqual(new Map());
+    // The live title's hint wins over the merge commit's.
+    expect(declarationOf(titles.get(518) ?? "fix(reader): locks on the server (persistence)", "no line")).toMatchObject({ artefacts: ["persistence", "sbom", "logs"], source: "title" });
   });
 });
 
