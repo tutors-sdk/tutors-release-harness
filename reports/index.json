@@ -2,6 +2,80 @@
   "schemaVersion": 1,
   "runs": [
     {
+      "id": "2026-10-21T08-26-51Z-release",
+      "mode": "release",
+      "ranAt": "2026-10-21T08:26:51.836Z",
+      "verdict": "fail",
+      "reasons": [
+        "123 unclaimed diff(s)"
+      ],
+      "sides": {
+        "a": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:17.0.0",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:17.0.0",
+          "live": "quay.io/tutors-sdk/tutors-live:17.0.0",
+          "time": "quay.io/tutors-sdk/tutors-time:17.0.0"
+        },
+        "b": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:sha-260bdc4",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:sha-260bdc4",
+          "live": "quay.io/tutors-sdk/tutors-live:sha-260bdc4",
+          "time": "quay.io/tutors-sdk/tutors-time:sha-260bdc4"
+        }
+      },
+      "harnessVersion": "1.49.2",
+      "runUrl": "https://github.com/tutors-sdk/tutors-release-harness/actions/runs/39565445749",
+      "score": {
+        "score": 37,
+        "grade": "D",
+        "normalness": "normal",
+        "manual": 5
+      },
+      "confidence": {
+        "gate": "PASS",
+        "rcs": null,
+        "band": null,
+        "note": "PASS, explained: all 123 differences no claim covers yet are declared in the CHANGELOG line of the PR that made them (#505: 87, #519: 18, #518: 9, #509: 3, #507: 3, #501: 2, #511: 1). Nothing is owed on main; the release author pastes the claims from those lines when the release is cut.",
+        "glance": 3,
+        "scoredBy": "1.49.2"
+      },
+      "changes": {
+        "score": 0,
+        "prs": 28,
+        "risky": 23,
+        "floorBreached": false,
+        "range": "v17.0.0..260bdc4ef10d8a40785dce838cb99a92cd9b7cde"
+      },
+      "delta": {
+        "baseline": "17.0.0",
+        "against": {
+          "id": "2026-10-21T02-21-21Z-release",
+          "ranAt": "2026-10-21T02:21:21.298Z",
+          "candidate": "sha-260bdc4",
+          "harnessVersion": "1.49.1"
+        },
+        "new": 0,
+        "gone": 0,
+        "byArtefact": {}
+      },
+      "files": [
+        "2026-10-21T08-26-51Z-release/migration/report.json",
+        "2026-10-21T08-26-51Z-release/migration/report.md",
+        "2026-10-21T08-26-51Z-release/migration/report.html",
+        "2026-10-21T08-26-51Z-release/upgrade/report.json",
+        "2026-10-21T08-26-51Z-release/upgrade/report.md",
+        "2026-10-21T08-26-51Z-release/upgrade/report.html",
+        "2026-10-21T08-26-51Z-release/report.json",
+        "2026-10-21T08-26-51Z-release/report.md",
+        "2026-10-21T08-26-51Z-release/report.html",
+        "2026-10-21T08-26-51Z-release/confidence.json",
+        "2026-10-21T08-26-51Z-release/changes.json",
+        "2026-10-21T08-26-51Z-release/quality.json",
+        "2026-10-21T08-26-51Z-release/scorecard.json",
+        "2026-10-21T08-26-51Z-release/scorecard.md"
+      ]
+    },
+    {
       "id": "2026-10-21T02-21-21Z-release",
       "mode": "release",
       "ranAt": "2026-10-21T02:21:21.298Z",
