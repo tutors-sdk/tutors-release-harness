@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.49.1`
+Contract version: `1.49.2`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -2105,6 +2105,10 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.49.2 (patch; a PR's hint is read from the title GitHub has now)
+
+The release note is [releases/1.49.2.md](releases/1.49.2.md). `harness changes` reads each PR's current title beside its body, in the same request, and `prs[].declares` takes its hint from that title before the merge commit's. A hint corrected after the merge now counts. No Gate or exit code rule moves.
 
 ### 1.49.1 (patch; startup reads ready at the harness's own cadence, an image's packages match its app's manifest)
 
