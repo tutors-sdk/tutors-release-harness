@@ -1,0 +1,1956 @@
+{
+  "schemaVersion": 1,
+  "harness": {
+    "version": "1.49.1",
+    "gitSha": "82775d665cc6f7659574066870ac1768225f4f65",
+    "contractVersion": "1.49.1"
+  },
+  "harnessVersion": "1.49.1",
+  "mode": "upgrade",
+  "substrate": "compose",
+  "ranAt": "2026-10-21T02:00:12.429Z",
+  "now": "2026-09-16T09:05:00.000Z",
+  "runs": 1,
+  "sides": {
+    "a": {
+      "reader": "quay.io/tutors-sdk/tutors-reader:17.0.0",
+      "catalogue": "quay.io/tutors-sdk/tutors-catalogue:17.0.0",
+      "live": "quay.io/tutors-sdk/tutors-live:17.0.0",
+      "time": "quay.io/tutors-sdk/tutors-time:17.0.0"
+    },
+    "b": {
+      "reader": "quay.io/tutors-sdk/tutors-reader:sha-260bdc4",
+      "catalogue": "quay.io/tutors-sdk/tutors-catalogue:sha-260bdc4",
+      "live": "quay.io/tutors-sdk/tutors-live:sha-260bdc4",
+      "time": "quay.io/tutors-sdk/tutors-time:sha-260bdc4"
+    }
+  },
+  "provenance": {
+    "a": {
+      "summary": "pulled+verified",
+      "images": {
+        "reader": {
+          "ref": "quay.io/tutors-sdk/tutors-reader:17.0.0",
+          "id": "sha256:abdbbf48bdaa8867cf970bf780df734196bdbb25c3f1ce6e358b1a0c5b4d36a7",
+          "digest": "sha256:15e3aa22476d608db97e05917b1990ade0a7871e7ec6e113da5fec741b427233",
+          "revision": "432d46864626ce14e07eb7715e0408c643ca906a",
+          "version": "17.0.0-rc.1",
+          "created": "2026-10-14T11:22:23.868Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "catalogue": {
+          "ref": "quay.io/tutors-sdk/tutors-catalogue:17.0.0",
+          "id": "sha256:b3e0c40b6430ecd6ac154972584252a179abb99412e1b1deeaa0a6c2e64966e3",
+          "digest": "sha256:e9f2764654cb074d7dd4412ca163bf4c2666870444d5520361d5425bda4cec0b",
+          "revision": "432d46864626ce14e07eb7715e0408c643ca906a",
+          "version": "17.0.0-rc.1",
+          "created": "2026-10-14T11:22:20.481Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "live": {
+          "ref": "quay.io/tutors-sdk/tutors-live:17.0.0",
+          "id": "sha256:a5ac0ab5beba43906f3b94f74531fa8588d82c8efa38eb07070969981181bf80",
+          "digest": "sha256:52740e55cfa7e7db3b2944137caada4e876990b937f1034c0c5e79796054f8a0",
+          "revision": "432d46864626ce14e07eb7715e0408c643ca906a",
+          "version": "17.0.0-rc.1",
+          "created": "2026-10-14T11:22:19.078Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "time": {
+          "ref": "quay.io/tutors-sdk/tutors-time:17.0.0",
+          "id": "sha256:abd5fc2e4e4a8b7e35bd54c9fe8ec9fbc3e07fc797e6fe27c67b7a66108f4708",
+          "digest": "sha256:d0a9f4a2f4624038ecea3629d1a536567756d458410bee43b45e060d738d195d",
+          "revision": "432d46864626ce14e07eb7715e0408c643ca906a",
+          "version": "17.0.0-rc.1",
+          "created": "2026-10-14T11:22:24.942Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        }
+      }
+    },
+    "b": {
+      "summary": "pulled+verified",
+      "images": {
+        "reader": {
+          "ref": "quay.io/tutors-sdk/tutors-reader:sha-260bdc4",
+          "id": "sha256:ebe2ef872fb38c34efcd2c8a190d0212032caf1824b1d159b708192544860030",
+          "digest": "sha256:93aceccf69c98b9416b140d9737c37b71fbfbe5c34a4b4ec92917cb7c4c588a3",
+          "revision": "260bdc4ef10d8a40785dce838cb99a92cd9b7cde",
+          "version": "sha-260bdc4",
+          "created": "2026-10-20T20:01:26.593Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "catalogue": {
+          "ref": "quay.io/tutors-sdk/tutors-catalogue:sha-260bdc4",
+          "id": "sha256:19b63d16f14bd2a9f597cf276363d57ab9dcb1b770e969a78da46c646ade96e4",
+          "digest": "sha256:27f992c58080aae6c8b5d0aa9ce5cbe11d38a702a740cee98fc8427a79fdcddf",
+          "revision": "260bdc4ef10d8a40785dce838cb99a92cd9b7cde",
+          "version": "sha-260bdc4",
+          "created": "2026-10-20T20:01:37.502Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "live": {
+          "ref": "quay.io/tutors-sdk/tutors-live:sha-260bdc4",
+          "id": "sha256:d58c5ff3fda92dbf4351c87e6526865325f58ea163f224f2643073e91b197a35",
+          "digest": "sha256:418fa8a3b41b4db2f849cdedfee53462526a029817646181889f3604cdd00eca",
+          "revision": "260bdc4ef10d8a40785dce838cb99a92cd9b7cde",
+          "version": "sha-260bdc4",
+          "created": "2026-10-20T20:01:29.341Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "time": {
+          "ref": "quay.io/tutors-sdk/tutors-time:sha-260bdc4",
+          "id": "sha256:cf2fb16a9de53ff6ba9d59eb70d0ac9ccb6d2a7719a8186e9a6ec64d3ae10761",
+          "digest": "sha256:3887b4a263d765069d7b999d63bc740c604ca79740bee2d0913f25c5edb7ec91",
+          "revision": "260bdc4ef10d8a40785dce838cb99a92cd9b7cde",
+          "version": "sha-260bdc4",
+          "created": "2026-10-20T20:01:49.015Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        }
+      }
+    }
+  },
+  "verdict": "pass",
+  "reasons": [
+    "the candidate rolled in under load with no failed request",
+    "36 difference(s) between a and b outside the rollout, judged by release mode",
+    "NOT COLLECTED: vulns of reader, catalogue, live, time on side a: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)",
+    "NOT COLLECTED: vulns of reader, catalogue, live, time on side b: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+  ],
+  "compare": {
+    "hunks": [
+      {
+        "id": "dom:reader:home:1",
+        "artefact": "dom",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "fail",
+        "summary": "reader:home: semantic DOM differs (+1 −1 lines at line 10)",
+        "detail": "     - link \"My courses\":\n       - /url: /\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+      },
+      {
+        "id": "dom:reader:course:2",
+        "artefact": "dom",
+        "scope": "reader:course",
+        "path": "/course/localhost:8080",
+        "severity": "fail",
+        "summary": "reader:course: semantic DOM differs (+1 −1 lines at line 9)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+      },
+      {
+        "id": "dom:reader:topic:3",
+        "artefact": "dom",
+        "scope": "reader:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader:topic: semantic DOM differs (+1 −1 lines at line 8)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+      },
+      {
+        "id": "dom:reader:lab-step:4",
+        "artefact": "dom",
+        "scope": "reader:lab-step",
+        "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01",
+        "severity": "fail",
+        "summary": "reader:lab-step: semantic DOM differs (+1 −1 lines at line 8)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+      },
+      {
+        "id": "dom:reader:lab-step-2:5",
+        "artefact": "dom",
+        "scope": "reader:lab-step-2",
+        "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01/Step-01",
+        "severity": "fail",
+        "summary": "reader:lab-step-2: semantic DOM differs (+1 −1 lines at line 8)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+      },
+      {
+        "id": "network:GET_/_app/immutable/chunks/__hash__.js:6",
+        "artefact": "network",
+        "scope": "GET /_app/immutable/chunks/{{hash}}.js",
+        "path": "/",
+        "severity": "fail",
+        "summary": "reader:home: GET /_app/immutable/chunks/{{hash}}.js requested 33× on a, 34× on b"
+      },
+      {
+        "id": "network:GET_/_app/immutable/chunks/__hash__.js:7",
+        "artefact": "network",
+        "scope": "GET /_app/immutable/chunks/{{hash}}.js",
+        "path": "/course/localhost:8080",
+        "severity": "fail",
+        "summary": "reader:course: GET /_app/immutable/chunks/{{hash}}.js requested 42× on a, 43× on b"
+      },
+      {
+        "id": "metrics:http_request_duration_seconds_count:8",
+        "artefact": "metrics",
+        "scope": "catalogue/http_request_duration_seconds_count",
+        "severity": "fail",
+        "summary": "catalogue: new series on b: http_request_duration_seconds_count"
+      },
+      {
+        "id": "metrics:http_requests_total:9",
+        "artefact": "metrics",
+        "scope": "catalogue/http_requests_total",
+        "severity": "fail",
+        "summary": "catalogue: new series on b: http_requests_total"
+      },
+      {
+        "id": "metrics:http_request_duration_seconds_count:10",
+        "artefact": "metrics",
+        "scope": "live/http_request_duration_seconds_count",
+        "severity": "fail",
+        "summary": "live: new series on b: http_request_duration_seconds_count"
+      },
+      {
+        "id": "metrics:http_requests_total:11",
+        "artefact": "metrics",
+        "scope": "live/http_requests_total",
+        "severity": "fail",
+        "summary": "live: new series on b: http_requests_total"
+      },
+      {
+        "id": "metrics:http_request_duration_seconds_count:12",
+        "artefact": "metrics",
+        "scope": "time/http_request_duration_seconds_count",
+        "severity": "fail",
+        "summary": "time: new series on b: http_request_duration_seconds_count"
+      },
+      {
+        "id": "metrics:http_requests_total:13",
+        "artefact": "metrics",
+        "scope": "time/http_requests_total",
+        "severity": "fail",
+        "summary": "time: new series on b: http_requests_total"
+      },
+      {
+        "id": "focus:reader:home:14",
+        "artefact": "focus",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "fail",
+        "summary": "reader:home: keyboard order changed (12 stops on a, 12 on b)",
+        "detail": " a \"My courses\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n button \"Anonymous Tutors Profile\""
+      },
+      {
+        "id": "focus:reader:course:15",
+        "artefact": "focus",
+        "scope": "reader:course",
+        "path": "/course/localhost:8080",
+        "severity": "fail",
+        "summary": "reader:course: keyboard order changed (12 stops on a, 12 on b)",
+        "detail": " button \"Search this course\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n button \"Anonymous Tutors Profile\""
+      },
+      {
+        "id": "focus:reader:topic:16",
+        "artefact": "focus",
+        "scope": "reader:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader:topic: keyboard order changed (12 stops on a, 12 on b)",
+        "detail": " button \"Search this course\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n button \"Anonymous Tutors Profile\""
+      },
+      {
+        "id": "focus:reader:lab-step:17",
+        "artefact": "focus",
+        "scope": "reader:lab-step",
+        "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01",
+        "severity": "fail",
+        "summary": "reader:lab-step: keyboard order changed (12 stops on a, 12 on b)",
+        "detail": " button \"Search this course\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n button \"Anonymous Tutors Profile\""
+      },
+      {
+        "id": "focus:reader:lab-step-2:18",
+        "artefact": "focus",
+        "scope": "reader:lab-step-2",
+        "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01/Step-01",
+        "severity": "fail",
+        "summary": "reader:lab-step-2: keyboard order changed (12 stops on a, 12 on b)",
+        "detail": " button \"Search this course\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n button \"Anonymous Tutors Profile\""
+      },
+      {
+        "id": "sbom:reader/_supabase/auth-js:19",
+        "artefact": "sbom",
+        "scope": "reader/@supabase/auth-js",
+        "severity": "fail",
+        "summary": "reader: package added: @supabase/auth-js@2.117.2"
+      },
+      {
+        "id": "sbom:reader/_supabase/functions-js:20",
+        "artefact": "sbom",
+        "scope": "reader/@supabase/functions-js",
+        "severity": "fail",
+        "summary": "reader: package added: @supabase/functions-js@2.117.2"
+      },
+      {
+        "id": "sbom:reader/_supabase/phoenix:21",
+        "artefact": "sbom",
+        "scope": "reader/@supabase/phoenix",
+        "severity": "fail",
+        "summary": "reader: package added: @supabase/phoenix@0.4.5"
+      },
+      {
+        "id": "sbom:reader/_supabase/postgrest-js:22",
+        "artefact": "sbom",
+        "scope": "reader/@supabase/postgrest-js",
+        "severity": "fail",
+        "summary": "reader: package added: @supabase/postgrest-js@2.117.2"
+      },
+      {
+        "id": "sbom:reader/_supabase/realtime-js:23",
+        "artefact": "sbom",
+        "scope": "reader/@supabase/realtime-js",
+        "severity": "fail",
+        "summary": "reader: package added: @supabase/realtime-js@2.117.2"
+      },
+      {
+        "id": "sbom:reader/_supabase/storage-js:24",
+        "artefact": "sbom",
+        "scope": "reader/@supabase/storage-js",
+        "severity": "fail",
+        "summary": "reader: package added: @supabase/storage-js@2.117.2"
+      },
+      {
+        "id": "sbom:reader/_supabase/supabase-js:25",
+        "artefact": "sbom",
+        "scope": "reader/@supabase/supabase-js",
+        "severity": "fail",
+        "summary": "reader: package added: @supabase/supabase-js@2.117.2"
+      },
+      {
+        "id": "sbom:reader/iceberg-js:26",
+        "artefact": "sbom",
+        "scope": "reader/iceberg-js",
+        "severity": "fail",
+        "summary": "reader: package added: iceberg-js@0.8.1"
+      },
+      {
+        "id": "sbom:reader/tslib:27",
+        "artefact": "sbom",
+        "scope": "reader/tslib",
+        "severity": "fail",
+        "summary": "reader: package added: tslib@2.8.1"
+      },
+      {
+        "id": "vulns:reader/not-collected:28",
+        "artefact": "vulns",
+        "scope": "reader/not-collected",
+        "severity": "info",
+        "summary": "NOT COLLECTED: vulns of reader on both sides: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)",
+        "detail": "a: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)\nb: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+      },
+      {
+        "id": "vulns:catalogue/not-collected:29",
+        "artefact": "vulns",
+        "scope": "catalogue/not-collected",
+        "severity": "info",
+        "summary": "NOT COLLECTED: vulns of catalogue on both sides: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)",
+        "detail": "a: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)\nb: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+      },
+      {
+        "id": "vulns:live/not-collected:30",
+        "artefact": "vulns",
+        "scope": "live/not-collected",
+        "severity": "info",
+        "summary": "NOT COLLECTED: vulns of live on both sides: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)",
+        "detail": "a: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)\nb: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+      },
+      {
+        "id": "sbom:time/_supabase/auth-js:31",
+        "artefact": "sbom",
+        "scope": "time/@supabase/auth-js",
+        "severity": "fail",
+        "summary": "time: package removed: @supabase/auth-js@2.117.2"
+      },
+      {
+        "id": "sbom:time/_supabase/functions-js:32",
+        "artefact": "sbom",
+        "scope": "time/@supabase/functions-js",
+        "severity": "fail",
+        "summary": "time: package removed: @supabase/functions-js@2.117.2"
+      },
+      {
+        "id": "sbom:time/_supabase/phoenix:33",
+        "artefact": "sbom",
+        "scope": "time/@supabase/phoenix",
+        "severity": "fail",
+        "summary": "time: package removed: @supabase/phoenix@0.4.5"
+      },
+      {
+        "id": "sbom:time/_supabase/postgrest-js:34",
+        "artefact": "sbom",
+        "scope": "time/@supabase/postgrest-js",
+        "severity": "fail",
+        "summary": "time: package removed: @supabase/postgrest-js@2.117.2"
+      },
+      {
+        "id": "sbom:time/_supabase/realtime-js:35",
+        "artefact": "sbom",
+        "scope": "time/@supabase/realtime-js",
+        "severity": "fail",
+        "summary": "time: package removed: @supabase/realtime-js@2.117.2"
+      },
+      {
+        "id": "sbom:time/_supabase/storage-js:36",
+        "artefact": "sbom",
+        "scope": "time/@supabase/storage-js",
+        "severity": "fail",
+        "summary": "time: package removed: @supabase/storage-js@2.117.2"
+      },
+      {
+        "id": "sbom:time/_supabase/supabase-js:37",
+        "artefact": "sbom",
+        "scope": "time/@supabase/supabase-js",
+        "severity": "fail",
+        "summary": "time: package removed: @supabase/supabase-js@2.117.2"
+      },
+      {
+        "id": "sbom:time/iceberg-js:38",
+        "artefact": "sbom",
+        "scope": "time/iceberg-js",
+        "severity": "fail",
+        "summary": "time: package removed: iceberg-js@0.8.1"
+      },
+      {
+        "id": "sbom:time/tslib:39",
+        "artefact": "sbom",
+        "scope": "time/tslib",
+        "severity": "fail",
+        "summary": "time: package removed: tslib@2.8.1"
+      },
+      {
+        "id": "vulns:time/not-collected:40",
+        "artefact": "vulns",
+        "scope": "time/not-collected",
+        "severity": "info",
+        "summary": "NOT COLLECTED: vulns of time on both sides: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)",
+        "detail": "a: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)\nb: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+      },
+      {
+        "id": "runtime:runtime/summary:41",
+        "artefact": "runtime",
+        "scope": "runtime/summary",
+        "severity": "info",
+        "summary": "container posture collected for catalogue, live, reader, reader-auth, time on both sides (compose)",
+        "detail": "catalogue: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n           b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nlive: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n        b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader-auth: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n             b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\ntime: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter"
+      },
+      {
+        "id": "startup:startup/not-collected:42",
+        "artefact": "startup",
+        "scope": "startup/not-collected",
+        "severity": "info",
+        "summary": "NOT COLLECTED: startup time on side a: switched off with --startup-restarts 0"
+      },
+      {
+        "id": "startup:startup/not-collected:43",
+        "artefact": "startup",
+        "scope": "startup/not-collected",
+        "severity": "info",
+        "summary": "NOT COLLECTED: startup time on side b: switched off with --startup-restarts 0"
+      },
+      {
+        "id": "image-hardening:reader/summary:44",
+        "artefact": "image-hardening",
+        "scope": "reader/summary",
+        "severity": "info",
+        "summary": "reader: image-hardening holds on b: USER 1001, HEALTHCHECK CMD node -e fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/healthz/live').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1)), 0 secret-looking environment variable(s), 0 in the layer history"
+      },
+      {
+        "id": "image-hardening:catalogue/summary:45",
+        "artefact": "image-hardening",
+        "scope": "catalogue/summary",
+        "severity": "info",
+        "summary": "catalogue: image-hardening holds on b: USER 1001, HEALTHCHECK CMD node -e fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/healthz/live').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1)), 0 secret-looking environment variable(s), 0 in the layer history"
+      },
+      {
+        "id": "image-hardening:live/summary:46",
+        "artefact": "image-hardening",
+        "scope": "live/summary",
+        "severity": "info",
+        "summary": "live: image-hardening holds on b: USER 1001, HEALTHCHECK CMD node -e fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/healthz/live').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1)), 0 secret-looking environment variable(s), 0 in the layer history"
+      },
+      {
+        "id": "image-hardening:time/summary:47",
+        "artefact": "image-hardening",
+        "scope": "time/summary",
+        "severity": "info",
+        "summary": "time: image-hardening holds on b: USER 1001, HEALTHCHECK CMD node -e fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/healthz/live').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1)), 0 secret-looking environment variable(s), 0 in the layer history"
+      },
+      {
+        "id": "build-provenance:reader/summary:48",
+        "artefact": "build-provenance",
+        "scope": "reader/summary",
+        "severity": "info",
+        "summary": "reader: build-provenance holds on b: SLSA provenance v1 by .github/workflows/image-build.yml@refs/heads/main"
+      },
+      {
+        "id": "build-provenance:catalogue/summary:49",
+        "artefact": "build-provenance",
+        "scope": "catalogue/summary",
+        "severity": "info",
+        "summary": "catalogue: build-provenance holds on b: SLSA provenance v1 by .github/workflows/image-build.yml@refs/heads/main"
+      },
+      {
+        "id": "build-provenance:live/summary:50",
+        "artefact": "build-provenance",
+        "scope": "live/summary",
+        "severity": "info",
+        "summary": "live: build-provenance holds on b: SLSA provenance v1 by .github/workflows/image-build.yml@refs/heads/main"
+      },
+      {
+        "id": "build-provenance:time/summary:51",
+        "artefact": "build-provenance",
+        "scope": "time/summary",
+        "severity": "info",
+        "summary": "time: build-provenance holds on b: SLSA provenance v1 by .github/workflows/image-build.yml@refs/heads/main"
+      },
+      {
+        "id": "vuln-ceiling:reader/not-evaluated:52",
+        "artefact": "vuln-ceiling",
+        "scope": "reader/not-evaluated",
+        "severity": "info",
+        "summary": "reader: vuln-ceiling could not be evaluated on b: no vulnerability scan: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+      },
+      {
+        "id": "vuln-ceiling:catalogue/not-evaluated:53",
+        "artefact": "vuln-ceiling",
+        "scope": "catalogue/not-evaluated",
+        "severity": "info",
+        "summary": "catalogue: vuln-ceiling could not be evaluated on b: no vulnerability scan: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+      },
+      {
+        "id": "vuln-ceiling:live/not-evaluated:54",
+        "artefact": "vuln-ceiling",
+        "scope": "live/not-evaluated",
+        "severity": "info",
+        "summary": "live: vuln-ceiling could not be evaluated on b: no vulnerability scan: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+      },
+      {
+        "id": "vuln-ceiling:time/not-evaluated:55",
+        "artefact": "vuln-ceiling",
+        "scope": "time/not-evaluated",
+        "severity": "info",
+        "summary": "time: vuln-ceiling could not be evaluated on b: no vulnerability scan: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+      },
+      {
+        "id": "asset-graph:reader:56",
+        "artefact": "asset-graph",
+        "scope": "reader",
+        "severity": "info",
+        "summary": "reader: the asset graph changed: 111 → 113 immutable requests (JS 92 → 94, CSS 19 → 19), 1.1 MB → 1.1 MB; 2 network and 0 headers difference(s) are this churn",
+        "level": "informing"
+      },
+      {
+        "id": "slo:reader-availability/not-evaluated:57",
+        "artefact": "slo",
+        "scope": "reader-availability/not-evaluated",
+        "severity": "info",
+        "summary": "reader-availability: not evaluated on b: 4 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "slo:reader-latency/not-evaluated:58",
+        "artefact": "slo",
+        "scope": "reader-latency/not-evaluated",
+        "severity": "info",
+        "summary": "reader-latency: not evaluated on b: 4 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "slo:catalogue-availability/not-evaluated:59",
+        "artefact": "slo",
+        "scope": "catalogue-availability/not-evaluated",
+        "severity": "info",
+        "summary": "catalogue-availability: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "slo:catalogue-latency/not-evaluated:60",
+        "artefact": "slo",
+        "scope": "catalogue-latency/not-evaluated",
+        "severity": "info",
+        "summary": "catalogue-latency: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "slo:live-availability/not-evaluated:61",
+        "artefact": "slo",
+        "scope": "live-availability/not-evaluated",
+        "severity": "info",
+        "summary": "live-availability: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "slo:live-latency/not-evaluated:62",
+        "artefact": "slo",
+        "scope": "live-latency/not-evaluated",
+        "severity": "info",
+        "summary": "live-latency: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "slo:time-availability/not-evaluated:63",
+        "artefact": "slo",
+        "scope": "time-availability/not-evaluated",
+        "severity": "info",
+        "summary": "time-availability: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "slo:time-latency/not-evaluated:64",
+        "artefact": "slo",
+        "scope": "time-latency/not-evaluated",
+        "severity": "info",
+        "summary": "time-latency: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "upgrade:rollout:1",
+        "artefact": "upgrade",
+        "scope": "rollout",
+        "severity": "info",
+        "summary": "901 requests through the rollout, none failed; switched at 16.2s"
+      }
+    ],
+    "matches": [
+      {
+        "hunk": {
+          "id": "dom:reader:home:1",
+          "artefact": "dom",
+          "scope": "reader:home",
+          "path": "/",
+          "severity": "fail",
+          "summary": "reader:home: semantic DOM differs (+1 −1 lines at line 10)",
+          "detail": "     - link \"My courses\":\n       - /url: /\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reader:course:2",
+          "artefact": "dom",
+          "scope": "reader:course",
+          "path": "/course/localhost:8080",
+          "severity": "fail",
+          "summary": "reader:course: semantic DOM differs (+1 −1 lines at line 9)",
+          "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reader:topic:3",
+          "artefact": "dom",
+          "scope": "reader:topic",
+          "path": "/topic/localhost:8080/unit-1/topic-01",
+          "severity": "fail",
+          "summary": "reader:topic: semantic DOM differs (+1 −1 lines at line 8)",
+          "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reader:lab-step:4",
+          "artefact": "dom",
+          "scope": "reader:lab-step",
+          "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01",
+          "severity": "fail",
+          "summary": "reader:lab-step: semantic DOM differs (+1 −1 lines at line 8)",
+          "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reader:lab-step-2:5",
+          "artefact": "dom",
+          "scope": "reader:lab-step-2",
+          "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01/Step-01",
+          "severity": "fail",
+          "summary": "reader:lab-step-2: semantic DOM differs (+1 −1 lines at line 8)",
+          "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+        }
+      },
+      {
+        "hunk": {
+          "id": "network:GET_/_app/immutable/chunks/__hash__.js:6",
+          "artefact": "network",
+          "scope": "GET /_app/immutable/chunks/{{hash}}.js",
+          "path": "/",
+          "severity": "fail",
+          "summary": "reader:home: GET /_app/immutable/chunks/{{hash}}.js requested 33× on a, 34× on b"
+        }
+      },
+      {
+        "hunk": {
+          "id": "network:GET_/_app/immutable/chunks/__hash__.js:7",
+          "artefact": "network",
+          "scope": "GET /_app/immutable/chunks/{{hash}}.js",
+          "path": "/course/localhost:8080",
+          "severity": "fail",
+          "summary": "reader:course: GET /_app/immutable/chunks/{{hash}}.js requested 42× on a, 43× on b"
+        }
+      },
+      {
+        "hunk": {
+          "id": "metrics:http_request_duration_seconds_count:8",
+          "artefact": "metrics",
+          "scope": "catalogue/http_request_duration_seconds_count",
+          "severity": "fail",
+          "summary": "catalogue: new series on b: http_request_duration_seconds_count"
+        }
+      },
+      {
+        "hunk": {
+          "id": "metrics:http_requests_total:9",
+          "artefact": "metrics",
+          "scope": "catalogue/http_requests_total",
+          "severity": "fail",
+          "summary": "catalogue: new series on b: http_requests_total"
+        }
+      },
+      {
+        "hunk": {
+          "id": "metrics:http_request_duration_seconds_count:10",
+          "artefact": "metrics",
+          "scope": "live/http_request_duration_seconds_count",
+          "severity": "fail",
+          "summary": "live: new series on b: http_request_duration_seconds_count"
+        }
+      },
+      {
+        "hunk": {
+          "id": "metrics:http_requests_total:11",
+          "artefact": "metrics",
+          "scope": "live/http_requests_total",
+          "severity": "fail",
+          "summary": "live: new series on b: http_requests_total"
+        }
+      },
+      {
+        "hunk": {
+          "id": "metrics:http_request_duration_seconds_count:12",
+          "artefact": "metrics",
+          "scope": "time/http_request_duration_seconds_count",
+          "severity": "fail",
+          "summary": "time: new series on b: http_request_duration_seconds_count"
+        }
+      },
+      {
+        "hunk": {
+          "id": "metrics:http_requests_total:13",
+          "artefact": "metrics",
+          "scope": "time/http_requests_total",
+          "severity": "fail",
+          "summary": "time: new series on b: http_requests_total"
+        }
+      },
+      {
+        "hunk": {
+          "id": "focus:reader:home:14",
+          "artefact": "focus",
+          "scope": "reader:home",
+          "path": "/",
+          "severity": "fail",
+          "summary": "reader:home: keyboard order changed (12 stops on a, 12 on b)",
+          "detail": " a \"My courses\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n button \"Anonymous Tutors Profile\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "focus:reader:course:15",
+          "artefact": "focus",
+          "scope": "reader:course",
+          "path": "/course/localhost:8080",
+          "severity": "fail",
+          "summary": "reader:course: keyboard order changed (12 stops on a, 12 on b)",
+          "detail": " button \"Search this course\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n button \"Anonymous Tutors Profile\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "focus:reader:topic:16",
+          "artefact": "focus",
+          "scope": "reader:topic",
+          "path": "/topic/localhost:8080/unit-1/topic-01",
+          "severity": "fail",
+          "summary": "reader:topic: keyboard order changed (12 stops on a, 12 on b)",
+          "detail": " button \"Search this course\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n button \"Anonymous Tutors Profile\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "focus:reader:lab-step:17",
+          "artefact": "focus",
+          "scope": "reader:lab-step",
+          "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01",
+          "severity": "fail",
+          "summary": "reader:lab-step: keyboard order changed (12 stops on a, 12 on b)",
+          "detail": " button \"Search this course\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n button \"Anonymous Tutors Profile\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "focus:reader:lab-step-2:18",
+          "artefact": "focus",
+          "scope": "reader:lab-step-2",
+          "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01/Step-01",
+          "severity": "fail",
+          "summary": "reader:lab-step-2: keyboard order changed (12 stops on a, 12 on b)",
+          "detail": " button \"Search this course\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n button \"Anonymous Tutors Profile\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:reader/_supabase/auth-js:19",
+          "artefact": "sbom",
+          "scope": "reader/@supabase/auth-js",
+          "severity": "fail",
+          "summary": "reader: package added: @supabase/auth-js@2.117.2"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:reader/_supabase/functions-js:20",
+          "artefact": "sbom",
+          "scope": "reader/@supabase/functions-js",
+          "severity": "fail",
+          "summary": "reader: package added: @supabase/functions-js@2.117.2"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:reader/_supabase/phoenix:21",
+          "artefact": "sbom",
+          "scope": "reader/@supabase/phoenix",
+          "severity": "fail",
+          "summary": "reader: package added: @supabase/phoenix@0.4.5"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:reader/_supabase/postgrest-js:22",
+          "artefact": "sbom",
+          "scope": "reader/@supabase/postgrest-js",
+          "severity": "fail",
+          "summary": "reader: package added: @supabase/postgrest-js@2.117.2"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:reader/_supabase/realtime-js:23",
+          "artefact": "sbom",
+          "scope": "reader/@supabase/realtime-js",
+          "severity": "fail",
+          "summary": "reader: package added: @supabase/realtime-js@2.117.2"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:reader/_supabase/storage-js:24",
+          "artefact": "sbom",
+          "scope": "reader/@supabase/storage-js",
+          "severity": "fail",
+          "summary": "reader: package added: @supabase/storage-js@2.117.2"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:reader/_supabase/supabase-js:25",
+          "artefact": "sbom",
+          "scope": "reader/@supabase/supabase-js",
+          "severity": "fail",
+          "summary": "reader: package added: @supabase/supabase-js@2.117.2"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:reader/iceberg-js:26",
+          "artefact": "sbom",
+          "scope": "reader/iceberg-js",
+          "severity": "fail",
+          "summary": "reader: package added: iceberg-js@0.8.1"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:reader/tslib:27",
+          "artefact": "sbom",
+          "scope": "reader/tslib",
+          "severity": "fail",
+          "summary": "reader: package added: tslib@2.8.1"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:reader/not-collected:28",
+          "artefact": "vulns",
+          "scope": "reader/not-collected",
+          "severity": "info",
+          "summary": "NOT COLLECTED: vulns of reader on both sides: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)",
+          "detail": "a: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)\nb: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:catalogue/not-collected:29",
+          "artefact": "vulns",
+          "scope": "catalogue/not-collected",
+          "severity": "info",
+          "summary": "NOT COLLECTED: vulns of catalogue on both sides: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)",
+          "detail": "a: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)\nb: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:live/not-collected:30",
+          "artefact": "vulns",
+          "scope": "live/not-collected",
+          "severity": "info",
+          "summary": "NOT COLLECTED: vulns of live on both sides: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)",
+          "detail": "a: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)\nb: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:time/_supabase/auth-js:31",
+          "artefact": "sbom",
+          "scope": "time/@supabase/auth-js",
+          "severity": "fail",
+          "summary": "time: package removed: @supabase/auth-js@2.117.2"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:time/_supabase/functions-js:32",
+          "artefact": "sbom",
+          "scope": "time/@supabase/functions-js",
+          "severity": "fail",
+          "summary": "time: package removed: @supabase/functions-js@2.117.2"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:time/_supabase/phoenix:33",
+          "artefact": "sbom",
+          "scope": "time/@supabase/phoenix",
+          "severity": "fail",
+          "summary": "time: package removed: @supabase/phoenix@0.4.5"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:time/_supabase/postgrest-js:34",
+          "artefact": "sbom",
+          "scope": "time/@supabase/postgrest-js",
+          "severity": "fail",
+          "summary": "time: package removed: @supabase/postgrest-js@2.117.2"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:time/_supabase/realtime-js:35",
+          "artefact": "sbom",
+          "scope": "time/@supabase/realtime-js",
+          "severity": "fail",
+          "summary": "time: package removed: @supabase/realtime-js@2.117.2"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:time/_supabase/storage-js:36",
+          "artefact": "sbom",
+          "scope": "time/@supabase/storage-js",
+          "severity": "fail",
+          "summary": "time: package removed: @supabase/storage-js@2.117.2"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:time/_supabase/supabase-js:37",
+          "artefact": "sbom",
+          "scope": "time/@supabase/supabase-js",
+          "severity": "fail",
+          "summary": "time: package removed: @supabase/supabase-js@2.117.2"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:time/iceberg-js:38",
+          "artefact": "sbom",
+          "scope": "time/iceberg-js",
+          "severity": "fail",
+          "summary": "time: package removed: iceberg-js@0.8.1"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:time/tslib:39",
+          "artefact": "sbom",
+          "scope": "time/tslib",
+          "severity": "fail",
+          "summary": "time: package removed: tslib@2.8.1"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:time/not-collected:40",
+          "artefact": "vulns",
+          "scope": "time/not-collected",
+          "severity": "info",
+          "summary": "NOT COLLECTED: vulns of time on both sides: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)",
+          "detail": "a: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)\nb: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      {
+        "hunk": {
+          "id": "runtime:runtime/summary:41",
+          "artefact": "runtime",
+          "scope": "runtime/summary",
+          "severity": "info",
+          "summary": "container posture collected for catalogue, live, reader, reader-auth, time on both sides (compose)",
+          "detail": "catalogue: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n           b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nlive: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n        b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader-auth: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n             b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\ntime: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter"
+        }
+      },
+      {
+        "hunk": {
+          "id": "startup:startup/not-collected:42",
+          "artefact": "startup",
+          "scope": "startup/not-collected",
+          "severity": "info",
+          "summary": "NOT COLLECTED: startup time on side a: switched off with --startup-restarts 0"
+        }
+      },
+      {
+        "hunk": {
+          "id": "startup:startup/not-collected:43",
+          "artefact": "startup",
+          "scope": "startup/not-collected",
+          "severity": "info",
+          "summary": "NOT COLLECTED: startup time on side b: switched off with --startup-restarts 0"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-hardening:reader/summary:44",
+          "artefact": "image-hardening",
+          "scope": "reader/summary",
+          "severity": "info",
+          "summary": "reader: image-hardening holds on b: USER 1001, HEALTHCHECK CMD node -e fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/healthz/live').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1)), 0 secret-looking environment variable(s), 0 in the layer history"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-hardening:catalogue/summary:45",
+          "artefact": "image-hardening",
+          "scope": "catalogue/summary",
+          "severity": "info",
+          "summary": "catalogue: image-hardening holds on b: USER 1001, HEALTHCHECK CMD node -e fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/healthz/live').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1)), 0 secret-looking environment variable(s), 0 in the layer history"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-hardening:live/summary:46",
+          "artefact": "image-hardening",
+          "scope": "live/summary",
+          "severity": "info",
+          "summary": "live: image-hardening holds on b: USER 1001, HEALTHCHECK CMD node -e fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/healthz/live').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1)), 0 secret-looking environment variable(s), 0 in the layer history"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-hardening:time/summary:47",
+          "artefact": "image-hardening",
+          "scope": "time/summary",
+          "severity": "info",
+          "summary": "time: image-hardening holds on b: USER 1001, HEALTHCHECK CMD node -e fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/healthz/live').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1)), 0 secret-looking environment variable(s), 0 in the layer history"
+        }
+      },
+      {
+        "hunk": {
+          "id": "build-provenance:reader/summary:48",
+          "artefact": "build-provenance",
+          "scope": "reader/summary",
+          "severity": "info",
+          "summary": "reader: build-provenance holds on b: SLSA provenance v1 by .github/workflows/image-build.yml@refs/heads/main"
+        }
+      },
+      {
+        "hunk": {
+          "id": "build-provenance:catalogue/summary:49",
+          "artefact": "build-provenance",
+          "scope": "catalogue/summary",
+          "severity": "info",
+          "summary": "catalogue: build-provenance holds on b: SLSA provenance v1 by .github/workflows/image-build.yml@refs/heads/main"
+        }
+      },
+      {
+        "hunk": {
+          "id": "build-provenance:live/summary:50",
+          "artefact": "build-provenance",
+          "scope": "live/summary",
+          "severity": "info",
+          "summary": "live: build-provenance holds on b: SLSA provenance v1 by .github/workflows/image-build.yml@refs/heads/main"
+        }
+      },
+      {
+        "hunk": {
+          "id": "build-provenance:time/summary:51",
+          "artefact": "build-provenance",
+          "scope": "time/summary",
+          "severity": "info",
+          "summary": "time: build-provenance holds on b: SLSA provenance v1 by .github/workflows/image-build.yml@refs/heads/main"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vuln-ceiling:reader/not-evaluated:52",
+          "artefact": "vuln-ceiling",
+          "scope": "reader/not-evaluated",
+          "severity": "info",
+          "summary": "reader: vuln-ceiling could not be evaluated on b: no vulnerability scan: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vuln-ceiling:catalogue/not-evaluated:53",
+          "artefact": "vuln-ceiling",
+          "scope": "catalogue/not-evaluated",
+          "severity": "info",
+          "summary": "catalogue: vuln-ceiling could not be evaluated on b: no vulnerability scan: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vuln-ceiling:live/not-evaluated:54",
+          "artefact": "vuln-ceiling",
+          "scope": "live/not-evaluated",
+          "severity": "info",
+          "summary": "live: vuln-ceiling could not be evaluated on b: no vulnerability scan: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vuln-ceiling:time/not-evaluated:55",
+          "artefact": "vuln-ceiling",
+          "scope": "time/not-evaluated",
+          "severity": "info",
+          "summary": "time: vuln-ceiling could not be evaluated on b: no vulnerability scan: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      {
+        "hunk": {
+          "id": "asset-graph:reader:56",
+          "artefact": "asset-graph",
+          "scope": "reader",
+          "severity": "info",
+          "summary": "reader: the asset graph changed: 111 → 113 immutable requests (JS 92 → 94, CSS 19 → 19), 1.1 MB → 1.1 MB; 2 network and 0 headers difference(s) are this churn",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:reader-availability/not-evaluated:57",
+          "artefact": "slo",
+          "scope": "reader-availability/not-evaluated",
+          "severity": "info",
+          "summary": "reader-availability: not evaluated on b: 4 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:reader-latency/not-evaluated:58",
+          "artefact": "slo",
+          "scope": "reader-latency/not-evaluated",
+          "severity": "info",
+          "summary": "reader-latency: not evaluated on b: 4 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:catalogue-availability/not-evaluated:59",
+          "artefact": "slo",
+          "scope": "catalogue-availability/not-evaluated",
+          "severity": "info",
+          "summary": "catalogue-availability: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:catalogue-latency/not-evaluated:60",
+          "artefact": "slo",
+          "scope": "catalogue-latency/not-evaluated",
+          "severity": "info",
+          "summary": "catalogue-latency: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:live-availability/not-evaluated:61",
+          "artefact": "slo",
+          "scope": "live-availability/not-evaluated",
+          "severity": "info",
+          "summary": "live-availability: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:live-latency/not-evaluated:62",
+          "artefact": "slo",
+          "scope": "live-latency/not-evaluated",
+          "severity": "info",
+          "summary": "live-latency: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:time-availability/not-evaluated:63",
+          "artefact": "slo",
+          "scope": "time-availability/not-evaluated",
+          "severity": "info",
+          "summary": "time-availability: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:time-latency/not-evaluated:64",
+          "artefact": "slo",
+          "scope": "time-latency/not-evaluated",
+          "severity": "info",
+          "summary": "time-latency: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "upgrade:rollout:1",
+          "artefact": "upgrade",
+          "scope": "rollout",
+          "severity": "info",
+          "summary": "901 requests through the rollout, none failed; switched at 16.2s"
+        }
+      }
+    ],
+    "unclaimed": [
+      {
+        "id": "dom:reader:home:1",
+        "artefact": "dom",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "fail",
+        "summary": "reader:home: semantic DOM differs (+1 −1 lines at line 10)",
+        "detail": "     - link \"My courses\":\n       - /url: /\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+      },
+      {
+        "id": "dom:reader:course:2",
+        "artefact": "dom",
+        "scope": "reader:course",
+        "path": "/course/localhost:8080",
+        "severity": "fail",
+        "summary": "reader:course: semantic DOM differs (+1 −1 lines at line 9)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+      },
+      {
+        "id": "dom:reader:topic:3",
+        "artefact": "dom",
+        "scope": "reader:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader:topic: semantic DOM differs (+1 −1 lines at line 8)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+      },
+      {
+        "id": "dom:reader:lab-step:4",
+        "artefact": "dom",
+        "scope": "reader:lab-step",
+        "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01",
+        "severity": "fail",
+        "summary": "reader:lab-step: semantic DOM differs (+1 −1 lines at line 8)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+      },
+      {
+        "id": "dom:reader:lab-step-2:5",
+        "artefact": "dom",
+        "scope": "reader:lab-step-2",
+        "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01/Step-01",
+        "severity": "fail",
+        "summary": "reader:lab-step-2: semantic DOM differs (+1 −1 lines at line 8)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+      },
+      {
+        "id": "network:GET_/_app/immutable/chunks/__hash__.js:6",
+        "artefact": "network",
+        "scope": "GET /_app/immutable/chunks/{{hash}}.js",
+        "path": "/",
+        "severity": "fail",
+        "summary": "reader:home: GET /_app/immutable/chunks/{{hash}}.js requested 33× on a, 34× on b"
+      },
+      {
+        "id": "network:GET_/_app/immutable/chunks/__hash__.js:7",
+        "artefact": "network",
+        "scope": "GET /_app/immutable/chunks/{{hash}}.js",
+        "path": "/course/localhost:8080",
+        "severity": "fail",
+        "summary": "reader:course: GET /_app/immutable/chunks/{{hash}}.js requested 42× on a, 43× on b"
+      },
+      {
+        "id": "metrics:http_request_duration_seconds_count:8",
+        "artefact": "metrics",
+        "scope": "catalogue/http_request_duration_seconds_count",
+        "severity": "fail",
+        "summary": "catalogue: new series on b: http_request_duration_seconds_count"
+      },
+      {
+        "id": "metrics:http_requests_total:9",
+        "artefact": "metrics",
+        "scope": "catalogue/http_requests_total",
+        "severity": "fail",
+        "summary": "catalogue: new series on b: http_requests_total"
+      },
+      {
+        "id": "metrics:http_request_duration_seconds_count:10",
+        "artefact": "metrics",
+        "scope": "live/http_request_duration_seconds_count",
+        "severity": "fail",
+        "summary": "live: new series on b: http_request_duration_seconds_count"
+      },
+      {
+        "id": "metrics:http_requests_total:11",
+        "artefact": "metrics",
+        "scope": "live/http_requests_total",
+        "severity": "fail",
+        "summary": "live: new series on b: http_requests_total"
+      },
+      {
+        "id": "metrics:http_request_duration_seconds_count:12",
+        "artefact": "metrics",
+        "scope": "time/http_request_duration_seconds_count",
+        "severity": "fail",
+        "summary": "time: new series on b: http_request_duration_seconds_count"
+      },
+      {
+        "id": "metrics:http_requests_total:13",
+        "artefact": "metrics",
+        "scope": "time/http_requests_total",
+        "severity": "fail",
+        "summary": "time: new series on b: http_requests_total"
+      },
+      {
+        "id": "focus:reader:home:14",
+        "artefact": "focus",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "fail",
+        "summary": "reader:home: keyboard order changed (12 stops on a, 12 on b)",
+        "detail": " a \"My courses\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n button \"Anonymous Tutors Profile\""
+      },
+      {
+        "id": "focus:reader:course:15",
+        "artefact": "focus",
+        "scope": "reader:course",
+        "path": "/course/localhost:8080",
+        "severity": "fail",
+        "summary": "reader:course: keyboard order changed (12 stops on a, 12 on b)",
+        "detail": " button \"Search this course\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n button \"Anonymous Tutors Profile\""
+      },
+      {
+        "id": "focus:reader:topic:16",
+        "artefact": "focus",
+        "scope": "reader:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader:topic: keyboard order changed (12 stops on a, 12 on b)",
+        "detail": " button \"Search this course\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n button \"Anonymous Tutors Profile\""
+      },
+      {
+        "id": "focus:reader:lab-step:17",
+        "artefact": "focus",
+        "scope": "reader:lab-step",
+        "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01",
+        "severity": "fail",
+        "summary": "reader:lab-step: keyboard order changed (12 stops on a, 12 on b)",
+        "detail": " button \"Search this course\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n button \"Anonymous Tutors Profile\""
+      },
+      {
+        "id": "focus:reader:lab-step-2:18",
+        "artefact": "focus",
+        "scope": "reader:lab-step-2",
+        "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01/Step-01",
+        "severity": "fail",
+        "summary": "reader:lab-step-2: keyboard order changed (12 stops on a, 12 on b)",
+        "detail": " button \"Search this course\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n button \"Anonymous Tutors Profile\""
+      },
+      {
+        "id": "sbom:reader/_supabase/auth-js:19",
+        "artefact": "sbom",
+        "scope": "reader/@supabase/auth-js",
+        "severity": "fail",
+        "summary": "reader: package added: @supabase/auth-js@2.117.2"
+      },
+      {
+        "id": "sbom:reader/_supabase/functions-js:20",
+        "artefact": "sbom",
+        "scope": "reader/@supabase/functions-js",
+        "severity": "fail",
+        "summary": "reader: package added: @supabase/functions-js@2.117.2"
+      },
+      {
+        "id": "sbom:reader/_supabase/phoenix:21",
+        "artefact": "sbom",
+        "scope": "reader/@supabase/phoenix",
+        "severity": "fail",
+        "summary": "reader: package added: @supabase/phoenix@0.4.5"
+      },
+      {
+        "id": "sbom:reader/_supabase/postgrest-js:22",
+        "artefact": "sbom",
+        "scope": "reader/@supabase/postgrest-js",
+        "severity": "fail",
+        "summary": "reader: package added: @supabase/postgrest-js@2.117.2"
+      },
+      {
+        "id": "sbom:reader/_supabase/realtime-js:23",
+        "artefact": "sbom",
+        "scope": "reader/@supabase/realtime-js",
+        "severity": "fail",
+        "summary": "reader: package added: @supabase/realtime-js@2.117.2"
+      },
+      {
+        "id": "sbom:reader/_supabase/storage-js:24",
+        "artefact": "sbom",
+        "scope": "reader/@supabase/storage-js",
+        "severity": "fail",
+        "summary": "reader: package added: @supabase/storage-js@2.117.2"
+      },
+      {
+        "id": "sbom:reader/_supabase/supabase-js:25",
+        "artefact": "sbom",
+        "scope": "reader/@supabase/supabase-js",
+        "severity": "fail",
+        "summary": "reader: package added: @supabase/supabase-js@2.117.2"
+      },
+      {
+        "id": "sbom:reader/iceberg-js:26",
+        "artefact": "sbom",
+        "scope": "reader/iceberg-js",
+        "severity": "fail",
+        "summary": "reader: package added: iceberg-js@0.8.1"
+      },
+      {
+        "id": "sbom:reader/tslib:27",
+        "artefact": "sbom",
+        "scope": "reader/tslib",
+        "severity": "fail",
+        "summary": "reader: package added: tslib@2.8.1"
+      },
+      {
+        "id": "sbom:time/_supabase/auth-js:31",
+        "artefact": "sbom",
+        "scope": "time/@supabase/auth-js",
+        "severity": "fail",
+        "summary": "time: package removed: @supabase/auth-js@2.117.2"
+      },
+      {
+        "id": "sbom:time/_supabase/functions-js:32",
+        "artefact": "sbom",
+        "scope": "time/@supabase/functions-js",
+        "severity": "fail",
+        "summary": "time: package removed: @supabase/functions-js@2.117.2"
+      },
+      {
+        "id": "sbom:time/_supabase/phoenix:33",
+        "artefact": "sbom",
+        "scope": "time/@supabase/phoenix",
+        "severity": "fail",
+        "summary": "time: package removed: @supabase/phoenix@0.4.5"
+      },
+      {
+        "id": "sbom:time/_supabase/postgrest-js:34",
+        "artefact": "sbom",
+        "scope": "time/@supabase/postgrest-js",
+        "severity": "fail",
+        "summary": "time: package removed: @supabase/postgrest-js@2.117.2"
+      },
+      {
+        "id": "sbom:time/_supabase/realtime-js:35",
+        "artefact": "sbom",
+        "scope": "time/@supabase/realtime-js",
+        "severity": "fail",
+        "summary": "time: package removed: @supabase/realtime-js@2.117.2"
+      },
+      {
+        "id": "sbom:time/_supabase/storage-js:36",
+        "artefact": "sbom",
+        "scope": "time/@supabase/storage-js",
+        "severity": "fail",
+        "summary": "time: package removed: @supabase/storage-js@2.117.2"
+      },
+      {
+        "id": "sbom:time/_supabase/supabase-js:37",
+        "artefact": "sbom",
+        "scope": "time/@supabase/supabase-js",
+        "severity": "fail",
+        "summary": "time: package removed: @supabase/supabase-js@2.117.2"
+      },
+      {
+        "id": "sbom:time/iceberg-js:38",
+        "artefact": "sbom",
+        "scope": "time/iceberg-js",
+        "severity": "fail",
+        "summary": "time: package removed: iceberg-js@0.8.1"
+      },
+      {
+        "id": "sbom:time/tslib:39",
+        "artefact": "sbom",
+        "scope": "time/tslib",
+        "severity": "fail",
+        "summary": "time: package removed: tslib@2.8.1"
+      }
+    ],
+    "staleClaims": [],
+    "broadUnapproved": []
+  },
+  "masksApplied": {
+    "response-date": 4,
+    "request-id": 4,
+    "etag": 4,
+    "metrics-process": 599,
+    "metrics-timing-histograms": 18,
+    "third-party-requests": 62,
+    "persistence-stub-requests": 0,
+    "realtime-rest-fallback-warning": 0,
+    "oauth-callback-state": 0,
+    "media-range-status": 0,
+    "chromium-compute-pressure-policy": 0,
+    "hashed-assets": 224,
+    "footer-tutors-version": 20,
+    "transport-length": 4,
+    "transport-connection": 4,
+    "transport-encoding": 0,
+    "transport-transfer": 0,
+    "transport-keepalive": 4
+  },
+  "upgrade": {
+    "substrate": "compose",
+    "requests": 901,
+    "failed": 0,
+    "serverErrors": 0,
+    "byUpstream": {
+      "a": {
+        "requests": 300,
+        "failed": 0,
+        "serverErrors": 0,
+        "p95": 4.6
+      },
+      "b": {
+        "requests": 601,
+        "failed": 0,
+        "serverErrors": 0,
+        "p95": 3.7
+      }
+    },
+    "switchedAt": 16163,
+    "durationMs": 46348
+  },
+  "imageArtefacts": {
+    "a": {
+      "reader": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 309.2 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "134 distinct package(s)"
+        },
+        "vulns": {
+          "collected": false,
+          "reason": "grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      "catalogue": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 274.2 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "134 distinct package(s)"
+        },
+        "vulns": {
+          "collected": false,
+          "reason": "grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      "live": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 274.5 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "134 distinct package(s)"
+        },
+        "vulns": {
+          "collected": false,
+          "reason": "grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      "time": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 285.2 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "143 distinct package(s)"
+        },
+        "vulns": {
+          "collected": false,
+          "reason": "grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      }
+    },
+    "b": {
+      "reader": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 314.9 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "143 distinct package(s)"
+        },
+        "vulns": {
+          "collected": false,
+          "reason": "grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      "catalogue": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 274.2 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "134 distinct package(s)"
+        },
+        "vulns": {
+          "collected": false,
+          "reason": "grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      "live": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 274.5 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "134 distinct package(s)"
+        },
+        "vulns": {
+          "collected": false,
+          "reason": "grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      "time": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 279.4 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "134 distinct package(s)"
+        },
+        "vulns": {
+          "collected": false,
+          "reason": "grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      }
+    }
+  },
+  "levels": {
+    "dom": {
+      "level": "blocking"
+    },
+    "screenshot": {
+      "level": "blocking"
+    },
+    "network": {
+      "level": "blocking"
+    },
+    "console": {
+      "level": "blocking"
+    },
+    "headers": {
+      "level": "blocking"
+    },
+    "axe": {
+      "level": "blocking"
+    },
+    "focus": {
+      "level": "blocking"
+    },
+    "metrics": {
+      "level": "blocking"
+    },
+    "logs": {
+      "level": "blocking"
+    },
+    "timing": {
+      "level": "informing"
+    },
+    "persistence": {
+      "level": "blocking"
+    },
+    "bus": {
+      "level": "blocking"
+    },
+    "migration": {
+      "level": "blocking"
+    },
+    "upgrade": {
+      "level": "blocking"
+    },
+    "image-manifest": {
+      "level": "blocking"
+    },
+    "sbom": {
+      "level": "blocking"
+    },
+    "vulns": {
+      "level": "blocking"
+    },
+    "runtime": {
+      "level": "blocking"
+    },
+    "startup": {
+      "level": "blocking"
+    },
+    "image-hardening": {
+      "level": "informing"
+    },
+    "build-provenance": {
+      "level": "informing"
+    },
+    "vuln-ceiling": {
+      "level": "informing"
+    },
+    "timing-tolerance": {
+      "level": "informing"
+    },
+    "asset-graph": {
+      "level": "informing"
+    },
+    "replay": {
+      "level": "informing"
+    },
+    "slo": {
+      "level": "informing"
+    },
+    "realtime": {
+      "level": "informing"
+    }
+  },
+  "timingControl": {
+    "journeys": [
+      {
+        "journey": "anonymous-student-reads-course",
+        "a": [
+          10979
+        ],
+        "b": [
+          11346
+        ],
+        "above": 0,
+        "below": 0
+      }
+    ]
+  },
+  "causes": {
+    "unclaimed": 36,
+    "causes": [
+      {
+        "id": "bedb38b7",
+        "key": "sbom: package added",
+        "artefact": "sbom",
+        "kind": "package added",
+        "hunks": 9,
+        "apps": [
+          "reader"
+        ],
+        "pages": [],
+        "items": [
+          "@supabase/auth-js",
+          "@supabase/functions-js",
+          "@supabase/phoenix",
+          "@supabase/postgrest-js",
+          "@supabase/realtime-js",
+          "@supabase/storage-js",
+          "@supabase/supabase-js",
+          "iceberg-js",
+          "tslib"
+        ],
+        "example": {
+          "id": "sbom:reader/_supabase/auth-js:19",
+          "scope": "reader/@supabase/auth-js",
+          "summary": "reader: package added: @supabase/auth-js@2.117.2"
+        }
+      },
+      {
+        "id": "3eff5a88",
+        "key": "sbom: package removed",
+        "artefact": "sbom",
+        "kind": "package removed",
+        "hunks": 9,
+        "apps": [
+          "time"
+        ],
+        "pages": [],
+        "items": [
+          "@supabase/auth-js",
+          "@supabase/functions-js",
+          "@supabase/phoenix",
+          "@supabase/postgrest-js",
+          "@supabase/realtime-js",
+          "@supabase/storage-js",
+          "@supabase/supabase-js",
+          "iceberg-js",
+          "tslib"
+        ],
+        "example": {
+          "id": "sbom:time/_supabase/auth-js:31",
+          "scope": "time/@supabase/auth-js",
+          "summary": "time: package removed: @supabase/auth-js@2.117.2"
+        }
+      },
+      {
+        "id": "c20ba75a",
+        "key": "metrics: new series on b",
+        "artefact": "metrics",
+        "kind": "new series on b",
+        "hunks": 6,
+        "apps": [
+          "catalogue",
+          "live",
+          "time"
+        ],
+        "pages": [],
+        "items": [
+          "http_request_duration_seconds_count",
+          "http_requests_total"
+        ],
+        "example": {
+          "id": "metrics:http_request_duration_seconds_count:8",
+          "scope": "catalogue/http_request_duration_seconds_count",
+          "summary": "catalogue: new series on b: http_request_duration_seconds_count"
+        }
+      },
+      {
+        "id": "a36188a9",
+        "key": "dom: semantic DOM differs (+# −# lines at line #)",
+        "artefact": "dom",
+        "kind": "semantic DOM differs (+# −# lines at line #)",
+        "hunks": 5,
+        "apps": [
+          "reader"
+        ],
+        "pages": [
+          "reader:course",
+          "reader:home",
+          "reader:lab-step",
+          "reader:lab-step-2",
+          "reader:topic"
+        ],
+        "items": [],
+        "example": {
+          "id": "dom:reader:home:1",
+          "scope": "reader:home",
+          "summary": "reader:home: semantic DOM differs (+1 −1 lines at line 10)"
+        }
+      },
+      {
+        "id": "6109393d",
+        "key": "focus: keyboard order changed (# stops on a, # on b)",
+        "artefact": "focus",
+        "kind": "keyboard order changed (# stops on a, # on b)",
+        "hunks": 5,
+        "apps": [
+          "reader"
+        ],
+        "pages": [
+          "reader:course",
+          "reader:home",
+          "reader:lab-step",
+          "reader:lab-step-2",
+          "reader:topic"
+        ],
+        "items": [],
+        "example": {
+          "id": "focus:reader:home:14",
+          "scope": "reader:home",
+          "summary": "reader:home: keyboard order changed (12 stops on a, 12 on b)"
+        }
+      },
+      {
+        "id": "9b37aef5",
+        "key": "network: GET {{asset}} requested #× on a, #× on b",
+        "artefact": "network",
+        "kind": "GET {{asset}} requested #× on a, #× on b",
+        "hunks": 2,
+        "apps": [
+          "reader"
+        ],
+        "pages": [
+          "reader:course",
+          "reader:home"
+        ],
+        "items": [
+          "GET /_app/immutable/chunks/{{hash}}.js"
+        ],
+        "example": {
+          "id": "network:GET_/_app/immutable/chunks/__hash__.js:6",
+          "scope": "GET /_app/immutable/chunks/{{hash}}.js",
+          "summary": "reader:home: GET /_app/immutable/chunks/{{hash}}.js requested 33× on a, 34× on b"
+        }
+      }
+    ],
+    "together": [
+      {
+        "artefacts": [
+          "dom",
+          "focus"
+        ],
+        "pages": [
+          "reader:lab-step",
+          "reader:lab-step-2",
+          "reader:topic"
+        ],
+        "hunks": 6
+      },
+      {
+        "artefacts": [
+          "dom",
+          "focus",
+          "network"
+        ],
+        "pages": [
+          "reader:course",
+          "reader:home"
+        ],
+        "hunks": 6
+      }
+    ]
+  }
+}
