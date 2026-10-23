@@ -48,7 +48,7 @@
           "additionalProperties": false,
           "required": ["candidate", "judgedAt", "verdict"],
           "description": "The release record consulted.",
-          "properties": { "candidate": { "type": "string" }, "judgedAt": { "type": "string", "format": "date-time" }, "verdict": { "enum": ["pass", "fail", "warn"] } }
+          "properties": { "candidate": { "type": "string" }, "judgedAt": { "type": "string", "format": "date-time" }, "verdict": { "enum": ["pass", "fail", "warn"] }, "pinned": { "type": "boolean", "description": "Since contract 1.54.0: the record's pinned, whether the candidate was judged on images pinned by digest." } }
         },
         "problems": { "type": "array", "items": { "type": "string" }, "description": "One line per disagreement or gap; empty exactly when status is match. For people." }
       }
@@ -65,6 +65,18 @@
         "buildName": { "type": "string", "description": "`version` from /_app/version.json, as production answered it. Absent when it did not answer." },
         "builtAt": { "type": "string", "format": "date-time", "description": "When buildName is a millisecond timestamp (a build given no commit): that instant." },
         "revision": { "type": "string", "description": "`revision` from /version, as production answered it (may be `unknown`). Absent when it did not answer." },
+        "servingBuild": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "evidence"],
+          "description": "Since contract 1.54.0: which kind of build serves production. image: /version names an image digest (id). netlify: Netlify's server or x-nf-request-id header answered (id: /version's buildId, when sent). unknown: neither. With a deployment whose release record is pinned, netlify adds a reason and turns a PASS into a WARN.",
+          "properties": {
+            "kind": { "enum": ["image", "netlify", "unknown"] },
+            "id": { "type": "string", "description": "The image digest, or /version's buildId." },
+            "builtAt": { "type": "string", "format": "date-time", "description": "/version's builtAt, when sent." },
+            "evidence": { "type": "string", "description": "What the kind was read from. For people." }
+          }
+        },
         "summary": { "type": "string", "description": "One line for people." }
       }
     },

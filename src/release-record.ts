@@ -156,7 +156,7 @@ export function findReleaseRecord(tag: string, where: string | undefined, home =
 export function judgeDeployment(o: { production?: string; digests: Digests; found?: FoundRecord }): Deployment {
   const { digests, found } = o;
   const record = found?.record;
-  const base = { ...(o.production ? { production: o.production } : {}), digests, ...(record ? { recorded: record.digests, record: { candidate: record.candidate, judgedAt: record.recordedAt, verdict: record.verdict } } : {}) };
+  const base = { ...(o.production ? { production: o.production } : {}), digests, ...(record ? { recorded: record.digests, record: { candidate: record.candidate, judgedAt: record.recordedAt, verdict: record.verdict, pinned: record.pinned } } : {}) };
   const tag = o.production ?? "the deployed release";
   if (!record) return { ...base, status: "no-record", problems: [`no release record for ${tag} (${found?.problem ?? "none was looked for"}): whether the deployed images are the ones release mode judged cannot be checked`] };
   const reported = Object.keys(digests) as App[];

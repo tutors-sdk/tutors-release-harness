@@ -17,7 +17,7 @@ import { ENGINE_LEVELS, applyLevels, levelsOn, type EngineLevels } from "./compa
 import { gate, rollbackIssueConfigured } from "./gate.ts";
 import { runMigration } from "./modes/migration.ts";
 import { runUpgrade } from "./modes/upgrade.ts";
-import { productionBuildReason, readProductionBuild } from "./modes/production-build.ts";
+import { productionBuildReason, readProductionBuild, servingBuildReason } from "./modes/production-build.ts";
 import { DEFAULT_MASKS_FILE, loadMasks, normalise, type MaskHits } from "./normalise/masks.ts";
 import { externalOrigins } from "./normalise/origins.ts";
 import { redactCapture } from "./normalise/redact.ts";
@@ -209,7 +209,9 @@ export function compareFromCaptures(input: CompareInput): RunOutcome {
   const deploymentLine = input.deployment ? deploymentReason(input.deployment) : undefined;
   // Which build production serves: a line in the reasons, never the verdict.
   const productionBuildLine = input.productionBuild ? productionBuildReason(input.productionBuild) : undefined;
-  const verdict = deploymentLine && gated.verdict === "pass" ? { ...gated, verdict: "warn" as const } : gated;
+  // Since 1.54.0: a release judged on pinned images, served by a Netlify build. Loud, advisory, like a digest that differs.
+  const servingLine = servingBuildReason(input.productionBuild, input.deployment?.record?.pinned);
+  const verdict = (deploymentLine || servingLine) && gated.verdict === "pass" ? { ...gated, verdict: "warn" as const } : gated;
   const override = input.override ? recordOverride(input.override, verdict.verdict, ranAt) : undefined;
   const hygiene = input.claims.length ? claimHygiene(compare, input.claimMaxHunks ?? DEFAULT_CLAIM_MAX_HUNKS) : undefined;
 
@@ -231,7 +233,7 @@ export function compareFromCaptures(input: CompareInput): RunOutcome {
     sides: { a: input.a.images, b: input.b.images },
     ...(input.a.provenance || input.b.provenance ? { provenance: { ...(input.a.provenance ? { a: input.a.provenance } : {}), ...(input.b.provenance ? { b: input.b.provenance } : {}) } } : {}),
     verdict: verdict.verdict,
-    reasons: [...(override ? [overrideLine(override)] : []), ...(deploymentLine ? [deploymentLine] : []), ...(productionBuildLine ? [productionBuildLine] : []), ...verdict.reasons, ...(input.mode === "noise" ? [] : blind), ...provenanceReasons(input.a, input.b), ...imageStaticReasons(input.a, input.b), ...clockReasons(clock, input.now)],
+    reasons: [...(override ? [overrideLine(override)] : []), ...(deploymentLine ? [deploymentLine] : []), ...(servingLine ? [servingLine] : []), ...(productionBuildLine ? [productionBuildLine] : []), ...verdict.reasons, ...(input.mode === "noise" ? [] : blind), ...provenanceReasons(input.a, input.b), ...imageStaticReasons(input.a, input.b), ...clockReasons(clock, input.now)],
     ...(noise.status ? { noise: noise.status } : {}),
     compare,
     masksApplied,

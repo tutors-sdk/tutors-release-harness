@@ -531,6 +531,12 @@ export interface ProductionBuild {
   builtAt?: string;
   /** `revision` from `<reader>/version` (may be `unknown`); absent when it did not answer. */
   revision?: string;
+  /**
+   * Since 1.54.0: which kind of build serves production. `image`: /version names an image digest (`id`). `netlify`:
+   * Netlify's `server` or `x-nf-request-id` header answered (`id`: /version's `buildId`, when sent). `unknown`: neither.
+   * Absent from a report written before 1.54.0.
+   */
+  servingBuild?: { kind: "image" | "netlify" | "unknown"; id?: string; builtAt?: string; evidence: string };
   /** One line for people. */
   summary: string;
 }
@@ -547,7 +553,7 @@ export interface Deployment {
   /** The digests recorded when the candidate was judged; absent without a record. */
   recorded?: Digests;
   /** The release record consulted; absent when none was found. */
-  record?: { candidate: string; judgedAt: string; verdict: Verdict };
+  record?: { candidate: string; judgedAt: string; verdict: Verdict; /** Since 1.54.0: the record's `pinned`, whether the candidate was judged on images pinned by digest. */ pinned?: boolean };
   /** One line per disagreement or gap. Empty exactly when `status` is `match`. */
   problems: string[];
 }

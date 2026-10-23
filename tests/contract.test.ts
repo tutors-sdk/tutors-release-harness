@@ -139,7 +139,7 @@ const full: DeepRequired<RunReport> = {
     status: "differs",
     digests: { reader: D(4), catalogue: D(5), live: D(6), time: D(8) },
     recorded: { reader: D(4), catalogue: D(5), live: D(7), time: D(8) },
-    record: { candidate: "16.3.0-rc.4", judgedAt: "2026-09-16T09:10:00.000Z", verdict: "pass" },
+    record: { candidate: "16.3.0-rc.4", judgedAt: "2026-09-16T09:10:00.000Z", verdict: "pass", pinned: true },
     problems: [`live: deployed ${D(6)}, but release mode judged ${D(7)} (16.3.0-rc.4)`]
   },
   productionBuild: {
@@ -149,6 +149,7 @@ const full: DeepRequired<RunReport> = {
     buildName: "1790000000000",
     builtAt: "2026-09-21T14:13:20.000Z",
     revision: "unknown",
+    servingBuild: { kind: "netlify", id: "6719f0c2a1b2c3d4e5f60718", builtAt: "2026-09-16T08:00:00.000Z", evidence: "server: Netlify; /version names the build id" },
     summary: "cannot tell whether production serves the recorded candidate's commit 0123456789ab: /version names no commit; built at 2026-09-21T14:13:20.000Z from an unnamed build"
   },
   causes: {
@@ -219,7 +220,7 @@ describe("report.json", () => {
     const cli = json("docs/contract/cli.json");
     for (const flag of cli.flags.filter((f: { since?: string }) => f.since === "1.2.0")) expect(changes, flag.name).toContain(`--${flag.name === "runtime" ? "no-runtime" : flag.name}`);
     for (const [name, v] of Object.entries(cli.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.2.0")) expect(changes, name).toContain(name);
-    expect(CONTRACT_VERSION).toBe("1.53.0");
+    expect(CONTRACT_VERSION).toBe("1.54.0");
     // The harness version is package.json's and moves at least as far as the contract's (docs/contract.md, Versioning):
     // a mask or engine PR bumps the patch of the harness alone, so do not pin a literal here.
     expect(json("package.json").version).toBe(HARNESS_VERSION);

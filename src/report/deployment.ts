@@ -58,6 +58,7 @@ export function productionBuildMarkdown(report: RunReport): string[] {
     "|---|---|",
     `| \`/_app/version.json\` build name | ${name} |`,
     `| \`/version\` revision | ${revision} |`,
+    ...(p.servingBuild ? [`| serving build (since 1.54.0) | ${p.servingBuild.kind}${p.servingBuild.id ? ` ${mdCode(p.servingBuild.id)}` : ""}${p.servingBuild.builtAt ? `, built at ${p.servingBuild.builtAt}` : ""} (${p.servingBuild.evidence.replaceAll("|", "\\|")}) |`] : []),
     "",
     `${p.summary}. Informational: never changes the verdict.`,
     ""
@@ -69,5 +70,5 @@ export function productionBuildHtml(report: RunReport, esc: (s: string) => strin
   if (!p) return "";
   const name = p.buildName === undefined ? "<em>not answered</em>" : `<code>${esc(p.buildName)}</code>${p.builtAt ? ` (built at ${esc(p.builtAt)} from an unnamed build)` : ""}`;
   const revision = p.revision === undefined ? "<em>not answered</em>" : `<code>${esc(p.revision)}</code>`;
-  return `<h2>Production build: ${esc(p.status)}</h2><p>Asked <code>${esc(p.url)}</code>; the recorded candidate's commit is ${p.recordedRevision ? `<code>${esc(p.recordedRevision)}</code>` : "<em>not recorded</em>"}.</p><table class="provenance"><thead><tr><th>source</th><th>answer</th></tr></thead><tbody><tr><td><code>/_app/version.json</code> build name</td><td>${name}</td></tr><tr><td><code>/version</code> revision</td><td>${revision}</td></tr></tbody></table><p>${esc(p.summary)}. Informational: never changes the verdict.</p>`;
+  return `<h2>Production build: ${esc(p.status)}</h2><p>Asked <code>${esc(p.url)}</code>; the recorded candidate's commit is ${p.recordedRevision ? `<code>${esc(p.recordedRevision)}</code>` : "<em>not recorded</em>"}.</p><table class="provenance"><thead><tr><th>source</th><th>answer</th></tr></thead><tbody><tr><td><code>/_app/version.json</code> build name</td><td>${name}</td></tr><tr><td><code>/version</code> revision</td><td>${revision}</td></tr>${p.servingBuild ? `<tr><td>serving build</td><td>${esc(p.servingBuild.kind)}${p.servingBuild.id ? ` <code>${esc(p.servingBuild.id)}</code>` : ""}${p.servingBuild.builtAt ? `, built at ${esc(p.servingBuild.builtAt)}` : ""} (${esc(p.servingBuild.evidence)})</td></tr>` : ""}</tbody></table><p>${esc(p.summary)}. Informational: never changes the verdict.</p>`;
 }

@@ -5,7 +5,7 @@ import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { builtAt, hashedBuildName, judgeProductionBuild, productionBuildReason, readProductionBuild } from "../src/modes/production-build.ts";
+import { builtAt, hashedBuildName, judgeProductionBuild, productionBuildReason, readProductionBuild, servingBuildOf, servingBuildReason } from "../src/modes/production-build.ts";
 import { compareFromCaptures } from "../src/run.ts";
 import { DEFAULT_MASKS_FILE } from "../src/normalise/masks.ts";
 import { renderHtml, renderMarkdown } from "../src/report/index.ts";
@@ -116,7 +116,7 @@ describe("asking production (a local server; no real network)", () => {
       else res.writeHead(404).end();
     });
     const p = await readProductionBuild(base, undefined);
-    expect(p).toEqual({ url: base, status: "unknown", summary: "cannot tell whether production serves the recorded candidate's commit (not recorded): /version did not answer; /_app/version.json did not answer" });
+    expect(p).toEqual({ url: base, status: "unknown", servingBuild: { kind: "unknown", evidence: "no server header, and /version names no image digest" }, summary: "cannot tell whether production serves the recorded candidate's commit (not recorded): /version did not answer; /_app/version.json did not answer" });
     const md = renderMarkdown({ ...minimal, productionBuild: p });
     expect(md).toContain("| `/_app/version.json` build name | not answered |");
     expect(md).toContain("| `/version` revision | not answered |");
@@ -215,5 +215,36 @@ describe("the report", () => {
         expect(extra[0]).toMatch(line);
       } else expect(extra).toEqual([]);
     }
+  });
+
+  it("since 1.54.0, which kind of build answered: Netlify by its headers, an image by the digest /version names", async () => {
+    const DIGEST = `sha256:${"d".repeat(64)}`;
+    const local = createServer((req, res) => {
+      if (req.url === "/version") res.writeHead(200, { "content-type": "application/json", server: "Netlify", "x-nf-request-id": "01J0" }).end(JSON.stringify({ revision: COMMIT, buildId: "6719f0c2a1b2c3d4e5f60718", builtAt: "2026-10-23T06:00:00Z" }));
+      else res.writeHead(404, { server: "Netlify" }).end();
+    });
+    await new Promise<void>((done) => local.listen(0, "127.0.0.1", done));
+    const n = await readProductionBuild(`http://127.0.0.1:${(local.address() as AddressInfo).port}`, COMMIT).finally(() => local.close());
+    expect(n.servingBuild).toEqual({ kind: "netlify", id: "6719f0c2a1b2c3d4e5f60718", builtAt: "2026-10-23T06:00:00.000Z", evidence: "server: Netlify; /version names the build id" });
+    expect(renderMarkdown({ ...minimal, productionBuild: n })).toContain("| serving build (since 1.54.0) | netlify `6719f0c2a1b2c3d4e5f60718`, built at 2026-10-23T06:00:00.000Z (server: Netlify; /version names the build id) |");
+    expect(renderHtml({ ...minimal, productionBuild: n })).toContain("<td>serving build</td><td>netlify <code>6719f0c2a1b2c3d4e5f60718</code>");
+    expect(servingBuildOf({ digest: DIGEST, headers: { server: "envoy" } })).toEqual({ kind: "image", id: DIGEST, evidence: "/version names the image digest" });
+    // Must not flag: a digest-shaped value that is not a digest is no image; Netlify's request id alone is Netlify.
+    expect(servingBuildOf({ digest: "sha256:abc" }).kind).toBe("unknown");
+    expect(servingBuildOf({ digest: DIGEST, headers: { "x-nf-request-id": "x" } })).toMatchObject({ kind: "netlify", evidence: "an x-nf-request-id header; /version names no build id" });
+    expect(servingBuildOf({ versionBuiltAt: "yesterday" }).builtAt).toBeUndefined();
+  });
+
+  it("since 1.54.0, a release judged on pinned images and served by Netlify is a WARN with a reason; unpinned, an image, or no deployment is not", () => {
+    const netlify = judgeProductionBuild({ url: URL_, recordedRevision: COMMIT, revision: COMMIT, headers: { server: "Netlify" } });
+    expect(servingBuildReason(netlify, true)).toMatch(/^PRODUCTION IS NOT THE PINNED ARTEFACT: /);
+    expect(servingBuildReason(netlify, false)).toBeUndefined();
+    expect(servingBuildReason(netlify, undefined)).toBeUndefined();
+    expect(servingBuildReason(judgeProductionBuild({ url: URL_, digest: `sha256:${"d".repeat(64)}` }), true)).toBeUndefined();
+    const dir = mkdtempSync(join(tmpdir(), "harness-serving-build-"));
+    const deployment = { production: "17.1.0", status: "match" as const, digests: {}, record: { candidate: "17.1.0-rc.1", judgedAt: "2026-10-22T09:00:00.000Z", verdict: "pass" as const, pinned: true }, problems: [] };
+    const r = compareFromCaptures({ mode: "post-deploy", substrate: "compose", captureDir: dir, a: capture("a"), b: capture("b"), claims: [], masksFile: DEFAULT_MASKS_FILE, noiseMaxAgeDays: 7, now: "2026-09-16T09:05:00.000Z", runs: 1, log: () => {}, productionBuild: netlify, deployment }).report;
+    expect(r.verdict).toBe("warn");
+    expect(r.reasons.filter((x) => x.startsWith("PRODUCTION IS NOT THE PINNED ARTEFACT"))).toHaveLength(1);
   });
 });
