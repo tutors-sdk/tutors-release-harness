@@ -8,7 +8,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { applyLevels } from "../src/compare/levels.ts";
-import { POLICY_FAMILY, ceiling, hardening, policy, provenance as provenanceCheck } from "../src/compare/policy.ts";
+import { POLICY_FAMILY, basePin, ceiling, hardening, policy, provenance as provenanceCheck } from "../src/compare/policy.ts";
 import { collectManifest, healthcheckOf } from "../src/image-static/manifest.ts";
 import { collectBuildProvenance, slsaStatements } from "../src/image-static/provenance.ts";
 import { secretsInEnv, secretsInHistory } from "../src/image-static/secrets.ts";
@@ -27,7 +27,8 @@ const trust = trustPolicyFromEnv({});
 const AT = new Date("2026-10-01T09:00:00Z");
 const PUBLISHING = "https://github.com/tutors-sdk/tutors-mono-repo/.github/workflows/image-build.yml@refs/heads/main";
 const good = (): BuildProvenanceData => ({ identity: trust.identity, statements: [{ predicateType: "https://slsa.dev/provenance/v1", builder: "https://github.com/actions/runner/github-hosted", workflow: ".github/workflows/image-build.yml@refs/heads/main" }] });
-const hardened = () => manifest({ healthcheck: "CMD node healthcheck.js", secretEnv: [], secretHistory: [] });
+const PINNED = `docker.io/library/node:22-bookworm-slim@sha256:${"c".repeat(64)}`;
+const hardened = () => manifest({ healthcheck: "CMD node healthcheck.js", secretEnv: [], secretHistory: [], baseName: PINNED, baseDigest: D("c") });
 
 /** A side whose every app has the given static artefacts and SLSA provenance. */
 function side(name: "a" | "b", over: Parameters<typeof staticSide>[0] = {}, prov: BuildProvenanceData | { reason: string } = good()): SideCapture {
@@ -41,12 +42,26 @@ const of = (hunks: Hunk[], artefact: string) => hunks.filter((h) => h.artefact =
 describe("image hardening", () => {
   it("A/A: a non-root image with a healthcheck and nothing secret-shaped holds, and says what it checked", () => {
     const h = hardening(hardened());
-    expect(h).toEqual({ findings: [], checked: "USER 1001, HEALTHCHECK CMD node healthcheck.js, 0 secret-looking environment variable(s), 0 in the layer history" });
+    expect(h).toEqual({ findings: [], checked: "USER 1001, HEALTHCHECK CMD node healthcheck.js, 0 secret-looking environment variable(s), 0 in the layer history, base pinned by digest (docker.io/library/node:22-bookworm-slim@sha256:cccccccccccc…)" });
   });
 
   it("planted: root, no healthcheck, a secret in the environment and one in the layer history are each a finding", () => {
     const h = hardening(manifest({ user: "", healthcheck: null, secretEnv: [{ name: "NPM_TOKEN", why: "its name says it holds a secret, and it has a value" }], secretHistory: [{ name: "GITHUB_TOKEN", entry: 4, why: "the value is a GitHub token, set in the build" }] }));
-    expect("findings" in h && h.findings.map((f) => f.key)).toEqual(["user", "healthcheck", "env/NPM_TOKEN", "history/GITHUB_TOKEN"]);
+    expect("findings" in h && h.findings.map((f) => f.key)).toEqual(["user", "healthcheck", "env/NPM_TOKEN", "history/GITHUB_TOKEN", "unrecorded-base"]);
+  });
+
+  it("planted (1.50.0): a base named by a tag is floating, one not named at all is unrecorded; the digest a tag resolved to is said, not taken as a pin", () => {
+    const floating = basePin({ baseName: "docker.io/library/node:22-bookworm-slim", baseDigest: D("e") });
+    expect(floating).toEqual({ finding: { key: "floating-base", text: `is built FROM docker.io/library/node:22-bookworm-slim, a tag and not a digest, resolved to ${"e".repeat(12)} on this build: the tag can move between two builds of the same commit` }, checked: "base docker.io/library/node:22-bookworm-slim" });
+    expect(basePin({}).finding?.key).toBe("unrecorded-base");
+    expect(basePin({ baseDigest: D("e") }).finding?.text).toContain("only a base.digest");
+    expect(hardening({ ...hardened(), baseName: "node:22" })).toMatchObject({ findings: [{ key: "floating-base" }] });
+  });
+
+  it("must not flag (1.50.0): a base named by digest, with or without a registry or a tag before it", () => {
+    for (const name of [PINNED, `node@sha256:${"0".repeat(64)}`, `quay.io/x/node:22@sha256:${"a".repeat(64)}`]) expect(basePin({ baseName: name }).finding).toBeUndefined();
+    // A truncated digest is not a pin.
+    expect(basePin({ baseName: "node@sha256:abc" }).finding?.key).toBe("floating-base");
   });
 
   it("a capture recorded before 1.22.0 is not evaluated, never passed", () => {
@@ -165,7 +180,7 @@ describe("the engine", () => {
   it("planted: each fault on b is a finding with its scope, saying whether production has it too", () => {
     const tar = vulns({ "CVE-2026-9": { severity: "Critical", packages: ["tar@7.4.3"], fixedIn: "7.5.2" } });
     const a = side("a", { vulns: tar }, { identity: "x", statements: [] });
-    const b = side("b", { vulns: tar, manifest: manifest({ healthcheck: null, secretEnv: [], secretHistory: [] }) }, { identity: "x", statements: [] });
+    const b = side("b", { vulns: tar, manifest: manifest({ ...hardened(), healthcheck: null }) }, { identity: "x", statements: [] });
     const hunks = failing(policy(a, b));
     expect(of(hunks, "image-hardening").map((h) => h.summary)).toEqual(["reader: declares no HEALTHCHECK (new on b)", "catalogue: declares no HEALTHCHECK (new on b)", "live: declares no HEALTHCHECK (new on b)", "time: declares no HEALTHCHECK (new on b)"]);
     expect(of(hunks, "build-provenance").map((h) => h.scope)).toEqual(["reader/slsa", "catalogue/slsa", "live/slsa", "time/slsa"]);
@@ -174,7 +189,7 @@ describe("the engine", () => {
   });
 
   it("only b is judged: a fault on production alone is no finding", () => {
-    expect(failing(policy(side("a", { manifest: manifest({ user: "0", healthcheck: null, secretEnv: [], secretHistory: [] }) }), side("b")))).toEqual([]);
+    expect(failing(policy(side("a", { manifest: manifest({ ...hardened(), user: "0", healthcheck: null }) }), side("b")))).toEqual([]);
   });
 
   it("what cannot be evaluated says why, informational, never a pass: no image config, no provenance, an old capture, no static artefacts at all", () => {
@@ -191,7 +206,7 @@ describe("the engine", () => {
   });
 
   it("every finding is informing: the Gate never sees it, a claim can still cover it", () => {
-    const b = side("b", { manifest: manifest({ user: "", healthcheck: null, secretEnv: [], secretHistory: [] }) }, { identity: "x", statements: [] });
+    const b = side("b", { manifest: manifest({ ...hardened(), user: "", healthcheck: null }) }, { identity: "x", statements: [] });
     const leveled = applyLevels(policy(side("a"), b), AT);
     expect(failing(leveled)).toEqual([]);
     expect(leveled.filter((h) => h.level === "informing")).toHaveLength(12);
@@ -205,7 +220,7 @@ describe("through a run", () => {
   it("a candidate that breaks every policy still passes when nothing else moved: the verdict, Gate and exit code are as before", () => {
     const tar = vulns({ "CVE-2026-9": { severity: "Critical", packages: ["tar@7.4.3"], fixedIn: "7.5.2" } });
     // Production has the same advisory, so the vulns diff is quiet: only the policy family speaks.
-    const r = run(side("b", { vulns: tar, manifest: manifest({ healthcheck: null, secretEnv: [], secretHistory: [] }) }, { identity: "x", statements: [] }), [], side("a", { vulns: tar }));
+    const r = run(side("b", { vulns: tar, manifest: manifest({ ...hardened(), healthcheck: null }) }, { identity: "x", statements: [] }), [], side("a", { vulns: tar }));
     expect(r.verdict).toBe("pass");
     expect(r.compare.hunks.filter((h) => h.level === "informing").length).toBe(12);
     expect(r.compare.unclaimed.filter((h) => (POLICY_FAMILY as readonly string[]).includes(h.artefact))).toEqual([]);
