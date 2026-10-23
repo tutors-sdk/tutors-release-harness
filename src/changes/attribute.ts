@@ -60,6 +60,13 @@ export interface CauseAttribution {
    * the cause says nothing: the cause is matched by path over the whole range, never pinned on the PRs merged since.
    */
   firstMeasured?: string[];
+  /**
+   * Since 1.49.4: a cause about what an image is built from (`sbom`, `image-manifest`, `vulns`), new since the last
+   * forecast, that no PR merged since touched by path (a Dockerfile, a manifest, the lockfile). Main was rebuilt and its
+   * base image or a package moved upstream: `prs` is empty, never every PR merged that night. On 23 Oct node 22.23.3 ->
+   * 22.23.4 in all four images (the floating `node:22-bookworm-slim` tag) was pinned on #516, which changed only docs.
+   */
+  rebuilt?: true;
 }
 
 /** For the lead: the previous forecast compared with, and what was merged since. */
@@ -76,6 +83,9 @@ export interface Attribution {
 }
 
 const IMAGE = new Set(["sbom", "image-manifest", "vulns", "runtime", "startup"]);
+
+/** Since 1.49.4: the artefacts that say what an image is built from; with no PR touching its inputs, a rebuild moved them. */
+export const BUILT_FROM = new Set(["sbom", "image-manifest", "vulns"]);
 
 /** Files that cannot change what an image does: documentation, tests, the CI. */
 const INERT = picomatch(["**/*.md", "**/*.mdx", "**/LICENSE*", "**/*.{test,spec}.{ts,js,svelte}", "**/{test,tests,e2e,__tests__}/**", ".github/**", ".changeset/**", "docs/**"], { dot: true });
@@ -149,6 +159,7 @@ export function attribute(causes: Cause[], changes: Changes, previous?: { id: st
     if (unrun) return { cause: c.id, key: c.key, hunks: c.hunks, how: "path", prs: byPath(c, prs), firstMeasured: unrun };
     if (previous && !previous.keys.has(c.key) && since?.length) {
       const matched = byPath(c, since);
+      if (!matched.length && BUILT_FROM.has(c.artefact)) return { cause: c.id, key: c.key, hunks: c.hunks, how: "new", prs: [], rebuilt: true };
       return withDeclarer({ cause: c.id, key: c.key, hunks: c.hunks, how: "new", prs: matched.length ? matched : since.map((p) => named(p)) }, c.artefact);
     }
     return { cause: c.id, key: c.key, hunks: c.hunks, how: "path", prs: byPath(c, prs) };

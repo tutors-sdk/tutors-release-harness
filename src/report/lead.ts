@@ -127,6 +127,7 @@ const prWhy = (p: AttributedPr) => (!p.files ? "" : ` (${p.files} file${p.files 
 /** Since 1.41.0: what the cause's PRs said in their CHANGELOG lines: declared, or a line that missed what moved. */
 function declaredNote(c: CauseAttribution): string {
   if (c.firstMeasured) return `first measured by Rule journey${c.firstMeasured.length === 1 ? "" : "s"} ${c.firstMeasured.join(", ")}, which the last forecast did not run: matched by path over the whole range`;
+  if (c.rebuilt) return "no PR merged since touched what builds the image (a Dockerfile, a manifest, the lockfile): main was rebuilt and its base image or a package moved upstream";
   if (c.declaredBy) return `declared by ${prName(c.declaredBy)} ${declaredWords(c.declaredBy.declares!)}`;
   const artefact = c.key.split(":")[0]!;
   const missed = c.how === "new" ? missedBy(c.prs, artefact) : [];
