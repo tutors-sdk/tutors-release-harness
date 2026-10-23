@@ -117,3 +117,55 @@ describe("chromium-compute-pressure-policy mask", () => {
     expect(hunks.some((h) => h.artefact === "headers")).toBe(true);
   });
 });
+
+describe("course-media-http2-reset mask", () => {
+  // The 2026-10-23 A/A (noise report 2026-10-23T02-01-40Z): its only difference, on reference:note, side b only.
+  const RESET = "course-media-http2-reset";
+  const RESET_TEXT = `Failed to load resource: net::ERR_HTTP2_PROTOCOL_ERROR: ${VIDEO_URL}`;
+
+  it("is narrow: console only, a drop of that transport error on media files under {{course}}, every mode, with its evidence", () => {
+    const m = masks.masks.find((x) => x.id === RESET)!;
+    expect(m.artefact).toEqual(["console"]);
+    expect(m.drop).toBe(true);
+    expect(m.modes).toBeUndefined();
+    for (const evidence of ["2026-10-23T02-01-40Z", "39884229709", "reference:note"]) expect(m.reason).toContain(evidence);
+    const re = new RegExp(m.pattern!);
+    for (const text of [RESET_TEXT, "Failed to load resource: net::ERR_HTTP2_PROTOCOL_ERROR: {{course}}/a/b.mp4", "Failed to load resource: net::ERR_HTTP2_PROTOCOL_ERROR: {{course}}/a/b.mp3"]) expect(re.test(text), text).toBe(true);
+    for (const text of [
+      `${RESET_TEXT} extra`,
+      `x ${RESET_TEXT}`,
+      `Failed to load resource: the server responded with a status of 404 (): ${VIDEO_URL}`,
+      `Failed to load resource: net::ERR_CONNECTION_RESET: ${VIDEO_URL}`,
+      "Failed to load resource: net::ERR_HTTP2_PROTOCOL_ERROR: {{origin}}/a/video.mov",
+      "Failed to load resource: net::ERR_HTTP2_PROTOCOL_ERROR: {{course}}/tutors.json",
+      "Failed to load resource: net::ERR_HTTP2_PROTOCOL_ERROR: {{course}}/course.png",
+      "Failed to load resource: net::ERR_HTTP2_PROTOCOL_ERROR: https://cdn.example/a/video.mov",
+    ])
+      expect(re.test(text), text).toBe(false);
+  });
+
+  it("A/A: the error on side b only (2026-10-23) is clean, either way round, in every mode, and is counted", () => {
+    for (const mode of ["noise", "release", "post-deploy"] as const) {
+      expect(diff(side("a", [DOC, video(206)]), side("b", [DOC, video(206)], [error(RESET_TEXT)]), mode)).toEqual([]);
+      expect(diff(side("a", [DOC, video(206)], [error(RESET_TEXT)]), side("b", [DOC, video(206)]), mode)).toEqual([]);
+    }
+    expect(normalise(side("b", [DOC], [error(RESET_TEXT)]), masks, "noise").hits[RESET]).toBe(1);
+    expect(normalise(side("b", [DOC]), masks, "noise").hits[RESET]).toBe(0);
+  });
+
+  it("planted: a 404 on the video, another net:: error, or another error beside it still shows", () => {
+    const notFound = error(`Failed to load resource: the server responded with a status of 404 (): ${VIDEO_URL}`);
+    const hunks = diff(side("a", [DOC, video(206)]), side("b", [DOC, video(206)], [error(RESET_TEXT), notFound]));
+    expect(hunks).toHaveLength(1);
+    expect(hunks[0]).toMatchObject({ artefact: "console", severity: "fail", scope: "reference:note" });
+    expect(hunks[0]!.detail).toContain("404");
+    expect(diff(side("a", [DOC]), side("b", [DOC], [error(`Failed to load resource: net::ERR_CONNECTION_RESET: ${VIDEO_URL}`)]))).toHaveLength(1);
+    expect(diff(side("a", [DOC]), side("b", [DOC], [error("Failed to load resource: net::ERR_HTTP2_PROTOCOL_ERROR: {{origin}}/a/video.mov")]))).toHaveLength(1);
+  });
+
+  it("the video failing outright still shows on the network artefact", () => {
+    const hunks = diff(side("a", [DOC, video(206)]), side("b", [DOC, video(500)], [error(RESET_TEXT)]));
+    expect(hunks).toHaveLength(1);
+    expect(hunks[0]).toMatchObject({ artefact: "network", scope: `GET ${VIDEO_URL}` });
+  });
+});

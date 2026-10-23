@@ -369,6 +369,20 @@ sign-in and the identity stub echoes it, as GitHub does. It is a CSRF nonce, so 
 Masked in 1.35.2, in its own PR: `oauth-callback-state` rewrites only the state value on the
 GitHub callback. Mask count 27 → 28, of the review limit of 40.
 
+### An HTTP/2 reset on the reference course's video
+
+*Shows as* a `console` hunk `error: Failed to load resource: net::ERR_HTTP2_PROTOCOL_ERROR:
+{{course}}/topic-07-reference/note-1/img/video.mov` on `reference:note`, one side only.
+
+Chromium cancels the byte ranges of a video it no longer needs, and over HTTP/2 to Netlify a cut
+stream is sometimes logged as a protocol error. The release does not serve the reference course, and
+the forecast's fixture course is HTTP/1.1 on localhost, where the error cannot happen. It was the
+only difference in the A/A of 2026-10-23 (run 39884229709), which broke the ratchet and turned that
+night's forecast into advisory only (Gate WARN). Masked in 1.49.3, in its own PR:
+`course-media-http2-reset` drops only that error, only on media files under `{{course}}`; a 404 or
+500 on the file, any other `net::` error and the network entry still compare. Mask count 28 → 29, of
+the review limit of 40.
+
 ### Also on the list
 
 - **Build strings** (git sha, build date) in the DOM: **M20** moves them to one
