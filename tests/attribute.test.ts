@@ -87,8 +87,31 @@ describe("attribution by delta", () => {
   });
 
   it("names every PR merged since when none matches the new cause's paths: one of them did it", () => {
-    const a = attribute(cs, changes([PAPER, DOCS]), { id: "prev", candidate: "sha-1", keys: new Set([key("dom"), key("network")]), changes: changes([PAPER]) });
-    expect(a.causes.find((c) => c.key.startsWith("sbom"))).toMatchObject({ how: "new", prs: [{ pr: 350, files: 0, direct: 0 }] });
+    const a = attribute(cs, changes([PAPER, DOCS]), { id: "prev", candidate: "sha-1", keys: new Set([key("sbom"), key("network")]), changes: changes([PAPER]) });
+    expect(a.causes.find((c) => c.key.startsWith("dom"))).toMatchObject({ how: "new", prs: [{ pr: 350, files: 0, direct: 0 }] });
+  });
+
+  it("names no PR for a new cause in what an image is built from when none merged since touched its inputs: a rebuild moved it (23 Oct, #516)", () => {
+    // 23 Oct: node 22.23.3 -> 22.23.4 and a new lowest layer in all four images, from the floating node:22-bookworm-slim
+    // tag; #516, merged that day, changed only docs.
+    const base = causes(
+      h("image-manifest", "reader/base", "reader: built FROM a different base image (lowest layer e58989146fce → 9b35de789337)"),
+      h("sbom", "reader/node", "reader: package bumped: node 22.23.3 → 22.23.4"),
+      h("dom", "catalogue:home", "catalogue:home: semantic DOM differs (+1 −1 lines at line 2)")
+    );
+    const DOCS_516 = pr(516, ["README.md", "ARCHITECTURE.md", "apps/live/README.md", ".devcontainer/post-create.sh"]);
+    const a = attribute(base, changes([PAPER, DOCS_516]), { id: "prev", candidate: "sha-260bdc4", keys: new Set(), changes: changes([PAPER]) });
+    for (const k of ["image-manifest", "sbom"]) expect(a.causes.find((c) => c.key.startsWith(k)), k).toMatchObject({ how: "new", prs: [], rebuilt: true });
+    // Any other new cause still names the PRs merged since.
+    expect(a.causes.find((c) => c.key.startsWith("dom"))).toMatchObject({ how: "new", prs: [{ pr: 516 }] });
+    expect(a.attributed).toBe(1);
+    const md = attributionLeadMarkdown(a);
+    expect(md).toContain("none matched; no PR merged since touched what builds the image (a Dockerfile, a manifest, the lockfile): main was rebuilt and its base image or a package moved upstream");
+    expect(attributionLeadHtml(a)).toContain("main was rebuilt and its base image or a package moved upstream");
+    // A PR that did touch the image's inputs is still named, and the rebuild is not.
+    const bump = attribute(base, changes([PAPER, DOCKER]), { id: "prev", candidate: "sha-1", keys: new Set(), changes: changes([PAPER]) });
+    expect(bump.causes.find((c) => c.key.startsWith("image-manifest"))).toMatchObject({ how: "new", prs: [{ pr: 143 }] });
+    expect(bump.causes.find((c) => c.key.startsWith("image-manifest"))!.rebuilt).toBeUndefined();
   });
 
   it("matches a cause first measured by a Rule journey the last forecast did not run by path, and says so", () => {

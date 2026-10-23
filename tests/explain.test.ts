@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { explainGap, ledgerSentence, prWords, type LedgerRun } from "../src/changes/explain.ts";
+import { explainGap, ledgerSentence, prWords, unexplainedWords, type LedgerRun } from "../src/changes/explain.ts";
 import type { Changes, PrRisk } from "../src/changes/signals.ts";
 import type { Hunk, RunReport } from "../src/types.ts";
 
@@ -50,6 +50,21 @@ describe("the gap, explained", () => {
     const e = explainGap(b, [a]);
     expect(e.unexplained.rows).toMatchObject([{ why: "no-merge", hunks: 1 }]);
     expect(e.contributed.hunks).toBe(0);
+  });
+
+  it("reads a difference in what an image is built from, on a night no merged PR touched its inputs, as the rebuild's (23 Oct, #516)", () => {
+    const node: Hunk = { id: "sbom:node", artefact: "sbom", scope: "reader/node", severity: "fail", summary: "reader: package bumped: node 22.23.3 → 22.23.4" };
+    const layer: Hunk = { id: "image-manifest:base", artefact: "image-manifest", scope: "reader/base", severity: "fail", summary: "reader: built FROM a different base image (lowest layer e58989146fce → 9b35de789337)" };
+    const before = run(21, report([]), changes(ui));
+    const now = run(22, report([node, layer, dom("reader:home")]), changes(ui, docs));
+    const e = explainGap(now, [before]);
+    expect(e.unexplained.rows).toMatchObject([{ why: "rebuilt", hunks: 2 }]);
+    expect(e.unexplained.rows[0]!.suspects).toBeUndefined();
+    expect(unexplainedWords(e.unexplained.rows[0]!)).toContain("its base image or a package moved upstream");
+    // The DOM difference is still the night's PR: only what an image is built from goes to the rebuild.
+    expect(e.contributed.rows).toMatchObject([{ hunks: 1, prs: [{ pr: 470 }] }]);
+    // A lockfile change that night is named, not the rebuild.
+    expect(explainGap(run(22, report([node]), changes(ui, kit)), [before]).contributed.rows).toMatchObject([{ prs: [{ pr: 466 }] }]);
   });
 
   it("reads a difference on a Rule journey the forecast before did not run as first measured: the whole range, not that night's PRs", () => {

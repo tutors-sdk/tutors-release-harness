@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.49.2`
+Contract version: `1.49.4`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -2105,6 +2105,15 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.49.4 (patch; a base image that moved on a rebuild is not pinned on the newest PR)
+
+The release note is [releases/1.49.4.md](releases/1.49.4.md). A patch: wording of the kept forecast's lead and the A3 gap
+ledger. A new `sbom`, `image-manifest` or `vulns` cause that no PR merged since the last forecast touched by path (a
+Dockerfile, a manifest, the lockfile) names no PR: its row says main was rebuilt and the base image or a package moved
+upstream (`causes[].rebuilt`), instead of naming every PR merged that night. The ledger reads such a difference the same
+way, with a new unexplained reason, `rebuilt`. 1.49.3 was masks only (`course-media-http2-reset`), with no contract
+change. No verdict, Gate, score or exit code moves.
 
 ### 1.49.2 (patch; a PR's hint is read from the title GitHub has now)
 

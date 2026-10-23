@@ -20,7 +20,8 @@
  *    name the artefact keeps that PR in `missed`: the line is the thing to fix.
  * 3. **Unexplained**: unclaimed, and the history cannot say who made it: it appeared between two forecasts with no PR
  *    merged between them (the stack or the world moved, not the code), or more than `MAX_GROUP` PRs could have made it
- *    (named as suspects, never counted as theirs).
+ *    (named as suspects, never counted as theirs). Since 1.49.4 also `rebuilt`: a difference in what an image is built
+ *    from (sbom, image-manifest, vulns) on a night no merged PR touched a Dockerfile, a manifest or the lockfile.
  *
  * Differences are matched across runs by artefact, scope and kind (src/report/causes.ts `kindOf`), with numbers and
  * hashes folded away, so a difference whose figures move a little is still the same difference.
@@ -30,7 +31,7 @@
 import type { Hunk, RunReport } from "../types.ts";
 import { claimLabel } from "../claims/rules.ts";
 import { causeKey, foldCauses, kindOf } from "../report/causes.ts";
-import { byPath, declarer, mergedSince, missedBy, named, type AttributedPr } from "./attribute.ts";
+import { BUILT_FROM, byPath, declarer, mergedSince, missedBy, named, type AttributedPr } from "./attribute.ts";
 import { declaredWords } from "./declares.ts";
 import { rulesRun, rulesTouched, unrunRule } from "../report/rules-touched.ts";
 import type { RuleTouched } from "../report/rules-touched.ts";
@@ -80,7 +81,7 @@ export interface DeclaredRow {
 /** More PRs than this in one window is not an explanation anyone can act on. */
 export const MAX_GROUP = 8;
 
-export type UnexplainedWhy = "before-record" | "too-many" | "no-merge" | "first-measured";
+export type UnexplainedWhy = "before-record" | "too-many" | "no-merge" | "first-measured" | "rebuilt";
 
 export interface UnexplainedRow {
   why: UnexplainedWhy;
@@ -193,6 +194,11 @@ export function explainGap(run: LedgerRun, history: LedgerRun[]): Explanation {
     const cause = foldCauses([h]).causes[0];
     // A range kept by an older harness may carry PRs without their files: they match no path.
     const matched = cause ? byPath(cause, window.map((p) => ({ ...p, files: p.files ?? [] }))) : [];
+    // Since 1.49.4: what an image is built from, moved on a night no merged PR touched its inputs, is the rebuild's.
+    if (!matched.length && before && BUILT_FROM.has(h.artefact)) {
+      unexplain("rebuilt", h);
+      continue;
+    }
     const prs = (matched.length ? matched : window.map((p) => named(p))).map(declaredNow);
     if (prs.length > MAX_GROUP) {
       if (before) unexplain("too-many", h, prs);
@@ -262,6 +268,7 @@ export function prWords(prs: (Pick<AttributedPr, "pr" | "sha" | "files"> & { dir
 
 /** Why a row is unexplained, in words. */
 export function unexplainedWords(r: Pick<UnexplainedRow, "why" | "since">): string {
+  if (r.why === "rebuilt") return "appeared when main was rebuilt with no merged PR touching what builds the image (a Dockerfile, a manifest, the lockfile): its base image or a package moved upstream";
   if (r.why === "no-merge") return "appeared between two forecasts with no PR merged between them (the stack moved, not the code)";
   if (r.why === "too-many") return `appeared on a night more than ${MAX_GROUP} PRs could have made it`;
   if (r.why === "first-measured") return `first measured by a Rule journey${r.since ? ` (${r.since.slice(0, 10)})` : ""} the forecasts before it did not run, and more than ${MAX_GROUP} PRs since the baseline could have made it`;
