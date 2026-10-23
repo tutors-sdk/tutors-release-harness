@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.53.0`
+Contract version: `1.54.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -140,7 +140,7 @@ written). Source of truth: `RunReport` in `src/types.ts`.
 | `claimHygiene` | optional — since 1.2.0 | present when the claims file had claims; see [Claim hygiene](#claim-hygiene). Informational: never changes the verdict |
 | `override` | optional — since 1.2.0 | present only when an override of a FAIL was requested; see [Overriding a FAIL](#overriding-a-fail) |
 | `deployment` | optional — since 1.3.0 | post-deploy mode, when the deploy reported what it deployed: `{ production?, status, digests, recorded?, record?, problems[] }`, the deployed digests against the release record; see [Checking a deployment](#checking-a-deployment). Advisory: a `status` other than `match` turns a `pass` into a `warn` and never touches a `fail` |
-| `productionBuild` | optional — since 1.6.0 | post-deploy mode only: `{ url, status, recordedRevision?, buildName?, builtAt?, revision?, summary }`, which build production's reader says it serves against the recorded candidate's commit; see [Which build production serves](#which-build-production-serves). Informational: never changes the verdict and is never a hunk |
+| `productionBuild` | optional — since 1.6.0 | post-deploy mode only: `{ url, status, recordedRevision?, buildName?, builtAt?, revision?, servingBuild? (since 1.54.0), summary }`, which build production's reader says it serves against the recorded candidate's commit; see [Which build production serves](#which-build-production-serves). Informational: never changes the verdict and is never a hunk |
 | `levels` | optional — since 1.21.0 | `{ [engine]: { level, blockingFrom? } }`: every engine's level on this run, by engine (its artefact), `blocking` or `informing`, and for an informing one the UTC date (`YYYY-MM-DD`) it becomes blocking when one is set; see [Engine levels](#engine-levels). Absent from a report written before 1.21.0, in which every engine was blocking |
 | `inRunNoise` | optional — since 1.24.0 | `{ stack: "a2", runs, artefacts, journeys, hunks: [{ artefact, scope, summary }], alsoOnB: [hunk id] }`: with `--a2`, side a against a second production stack started in the same run; see [In-run noise: side a2](#in-run-noise-side-a2). Never read by the verdict |
 | `causes` | optional — since 1.20.0 | `{ unclaimed, causes[], together[] }`: the unclaimed differences folded into causes, computed after the verdict when the report is written; see [Causes](#causes). Informational: never read by a verdict or the Gate |
@@ -912,6 +912,21 @@ and the exit code are exactly what they would be without it, and no hunk is
 added. What production answered is escaped in `report.html` and kept inside code
 spans in `report.md`; `reasons` and `summary` quote only values made of letters,
 digits and `._:+-`.
+
+Since 1.54.0 (harness hardening plan, A2) it also says which **kind** of build
+answered, as `productionBuild.servingBuild: { kind, id?, builtAt?, evidence }`:
+
+| `kind` | Read from |
+| --- | --- |
+| `netlify` | a `server: Netlify` or an `x-nf-request-id` header on either answer; `id` is `/version`'s `buildId` when it sends one |
+| `image` | `/version` names an image digest (`digest` or `imageDigest`, `sha256:<64 hex>`), and Netlify did not answer; `id` is that digest |
+| `unknown` | neither |
+
+`builtAt` is `/version`'s `builtAt` when it is a date. When the deployment was
+checked against a release record (`--deployed`) whose `pinned` is true, `netlify`
+adds a `PRODUCTION IS NOT THE PINNED ARTEFACT` line to `reasons` and turns a PASS
+into a WARN, as a digest that differs does; a FAIL stays a FAIL. `deployment.record`
+carries `pinned` since 1.54.0.
 
 ## Claims file
 
@@ -2141,6 +2156,13 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.54.0 (minor; production-readiness tranche 1, A2: which kind of build serves production)
+
+The release note is [releases/1.54.0.md](releases/1.54.0.md). Post-deploy's `productionBuild` gains `servingBuild`
+(`image`, `netlify` or `unknown`, with the image digest or `/version`'s `buildId`), read from the two requests it
+already makes, and `deployment.record` gains `pinned`. A release judged on pinned images and served by Netlify adds a
+reason and turns a PASS into a WARN (see [Which build production serves](#which-build-production-serves)).
 
 ### 1.53.0 (minor; production-readiness tranche 1, E4: a threshold on first-load JavaScript)
 
