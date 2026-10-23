@@ -68,6 +68,16 @@
         "summary": { "type": "string", "description": "One line for people." }
       }
     },
+    "clock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["a", "b"],
+      "description": "Since contract 1.51.0, every mode but post-deploy: does each side honour HARNESS_NOW (docs/harness-now.md)? The clock probe's verdict per side, read from the raw capture's aria snapshots and last-modified / expires headers. Informational: never a hunk, never read by the verdict; `ignores` adds a line to reasons and advice to each dom hunk whose lines hold the wall-clock instant.",
+      "properties": {
+        "a": { "$ref": "#/definitions/clockReading" },
+        "b": { "$ref": "#/definitions/clockReading" }
+      }
+    },
     "levels": {
       "type": "object",
       "description": "Since 1.21.0. Every engine's level on this run, by engine (its artefact): blocking, or informing (reported, never gates) with the UTC date it becomes blocking when one is set (src/compare/levels.ts).",
@@ -330,6 +340,30 @@
     }
   },
   "definitions": {
+    "clockReading": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["verdict", "samples"],
+      "description": "Since contract 1.51.0: one side's clock probe.",
+      "properties": {
+        "verdict": { "enum": ["honours", "ignores", "indistinguishable", "no-evidence"], "description": "honours: every server-stamped instant found is the frozen one. ignores: at least one is the real time of the capture. indistinguishable: the frozen instant is within 30 minutes of the capture, so the clocks cannot be told apart. no-evidence: nothing in the capture carries a server-stamped instant (not a pass)." },
+        "samples": {
+          "type": "array",
+          "maxItems": 5,
+          "description": "Up to five instants the probe classified, in capture order.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["where", "text", "clock"],
+            "properties": {
+              "where": { "type": "string", "description": "`<journey>/<pageKey> aria`, or `<journey>/<pageKey> header last-modified` / `expires`." },
+              "text": { "type": "string", "description": "The text matched." },
+              "clock": { "enum": ["frozen", "wall-clock"] }
+            }
+          }
+        }
+      }
+    },
     "digests": {
       "type": "object",
       "description": "app -> image digest. The apps are the harness's (reader, catalogue, live, time).",

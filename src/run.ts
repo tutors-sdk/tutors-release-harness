@@ -8,6 +8,7 @@ import { DEFAULT_CLAIM_MAX_HUNKS, claimHygiene, claimMaxHunksFromEnv } from "./c
 import { loadClaims } from "./claims/schema.ts";
 import { loadRules } from "./claims/rules.ts";
 import { captureSide } from "./collectors/index.ts";
+import { attributeClock, clockReading, clockReasons } from "./clock-probe.ts";
 import { foldAssetChurn } from "./compare/asset-graph.ts";
 import { isReplayJourney } from "./compare/replay.ts";
 import { compareCaptures } from "./compare/index.ts";
@@ -192,7 +193,9 @@ export function compareFromCaptures(input: CompareInput): RunOutcome {
   // Since 1.21.0: an informing engine's findings are reported, never gated (src/compare/levels.ts). Every engine is blocking today.
   const levelTable = input.levels ?? ENGINE_LEVELS;
   // Since 1.27.0: asset-graph folding; it changes nothing until asset-graph is blocking (src/compare/asset-graph.ts).
-  const hunks = foldAssetChurn(applyLevels([...compareCaptures(na.capture, nb.capture, masks, input.captureDir, input.slo), ...(input.extraHunks ?? [])], ranAt, levelTable), ranAt, levelTable);
+  // Since 1.51.0: does each side honour HARNESS_NOW? Read from the raw captures; an `ignores` explains the dom hunks it caused.
+  const clock = clockReading(input.a, input.b, input.mode, input.now);
+  const hunks = attributeClock(foldAssetChurn(applyLevels([...compareCaptures(na.capture, nb.capture, masks, input.captureDir, input.slo), ...(input.extraHunks ?? [])], ranAt, levelTable), ranAt, levelTable), clock, input.now);
   // Since 1.25.1: claims with a lifetime. Informing: an expired claim still covers, and is reported (src/claims/lifetime.ts).
   const lifeCtx = lifetimeContext(ranAt, input.a, input.b);
   const compare = matchClaims(hunks, claimsInForce(input.claims, lifeCtx));
@@ -228,7 +231,7 @@ export function compareFromCaptures(input: CompareInput): RunOutcome {
     sides: { a: input.a.images, b: input.b.images },
     ...(input.a.provenance || input.b.provenance ? { provenance: { ...(input.a.provenance ? { a: input.a.provenance } : {}), ...(input.b.provenance ? { b: input.b.provenance } : {}) } } : {}),
     verdict: verdict.verdict,
-    reasons: [...(override ? [overrideLine(override)] : []), ...(deploymentLine ? [deploymentLine] : []), ...(productionBuildLine ? [productionBuildLine] : []), ...verdict.reasons, ...(input.mode === "noise" ? [] : blind), ...provenanceReasons(input.a, input.b), ...imageStaticReasons(input.a, input.b)],
+    reasons: [...(override ? [overrideLine(override)] : []), ...(deploymentLine ? [deploymentLine] : []), ...(productionBuildLine ? [productionBuildLine] : []), ...verdict.reasons, ...(input.mode === "noise" ? [] : blind), ...provenanceReasons(input.a, input.b), ...imageStaticReasons(input.a, input.b), ...clockReasons(clock, input.now)],
     ...(noise.status ? { noise: noise.status } : {}),
     compare,
     masksApplied,
@@ -239,6 +242,7 @@ export function compareFromCaptures(input: CompareInput): RunOutcome {
     ...(imageArtefacts ? { imageArtefacts } : {}),
     ...(input.deployment ? { deployment: input.deployment } : {}),
     ...(input.productionBuild ? { productionBuild: input.productionBuild } : {}),
+    ...(clock ? { clock } : {}),
     levels: levelsOn(ranAt, levelTable),
     ...(input.a2 && aToA2 ? { inRunNoise: inRunNoise(input.a2, aToA2, compare.hunks) } : {}),
     ...(lifetimes.length ? { claimLifetimes: { level: CLAIM_LIFETIME_LEVEL, claims: lifetimes } } : {}),

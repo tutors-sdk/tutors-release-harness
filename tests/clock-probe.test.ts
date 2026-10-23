@@ -1,6 +1,11 @@
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { probeClock } from "../src/clock-probe.ts";
-import type { SideCapture } from "../src/types.ts";
+import { attributeClock, clockReading, clockReasons, probeClock } from "../src/clock-probe.ts";
+import { DEFAULT_MASKS_FILE } from "../src/normalise/masks.ts";
+import { compareFromCaptures } from "../src/run.ts";
+import type { Hunk, Mode, SideCapture } from "../src/types.ts";
 import { capture, clone, page, journey } from "./support/captures.ts";
 
 const FROZEN = "2026-09-16T09:05:00.000Z";
@@ -54,5 +59,58 @@ describe("clock probe", () => {
 
   it("refuses a frozen instant that is not a date", () => {
     expect(() => probeClock(capture("a"), "yesterday")).toThrow(/frozen instant/);
+  });
+});
+
+describe("clock probe, wired (1.51.0)", () => {
+  const plain = () => withAria('- heading "Runway Fixture Course" [level=1]');
+  const stamped = () => withAria('- heading "Runway Fixture Course" [level=1]\n- text: "Updated 2026-09-21T14:29:12Z"');
+  const run = (a: SideCapture, b: SideCapture, mode: Mode = "release") =>
+    compareFromCaptures({ mode, substrate: "compose", captureDir: mkdtempSync(join(tmpdir(), "harness-clock-")), a, b: { ...b, side: "b" }, claims: [], masksFile: DEFAULT_MASKS_FILE, noise: "skip", noiseMaxAgeDays: 7, now: FROZEN, runs: 1, ranAt: new Date("2026-09-21T14:40:00Z"), log: () => {} }).report;
+
+  it("A/A: no stamp on either side is no-evidence on both, no reason, no advice", () => {
+    const r = run(plain(), plain());
+    expect(r.clock).toEqual({ a: { verdict: "no-evidence", samples: [] }, b: { verdict: "no-evidence", samples: [] } });
+    expect(r.reasons.join("\n")).not.toMatch(/HARNESS_NOW/);
+  });
+
+  it("planted: b stamps the wall clock; a reason names it, and the dom hunk it caused carries the advice", () => {
+    const r = run(plain(), stamped());
+    expect(r.clock?.b).toEqual({ verdict: "ignores", samples: [{ where: "anonymous-student-reads-course/reader:course aria", text: "2026-09-21T14:29:12Z", clock: "wall-clock" }] });
+    expect(r.reasons).toContain(`side b ignores HARNESS_NOW: "2026-09-21T14:29:12Z" at anonymous-student-reads-course/reader:course aria is the real time of the capture, not the frozen ${FROZEN}; a difference it causes is the app's clock, not a change (docs/harness-now.md)`);
+    const dom = r.compare.hunks.filter((h) => h.artefact === "dom");
+    expect(dom).toHaveLength(1);
+    expect(dom[0]!.advice?.[0]).toMatch(/^"2026-09-21T14:29:12Z" is side b's real clock, not the frozen/);
+    // Advice, not a verdict: the hunk still fails and is still unclaimed.
+    expect(dom[0]!.severity).toBe("fail");
+    expect(r.verdict).toBe("fail");
+  });
+
+  it("must not flag: a stamp of the frozen clock, a date that is data, and post-deploy, whose live side never has HARNESS_NOW", () => {
+    expect(run(plain(), withAria('- text: "Updated 2026-09-16T09:05:00Z"')).reasons.join("\n")).not.toMatch(/ignores HARNESS_NOW/);
+    expect(run(plain(), withAria('- text: "Starts 2026-01-12"')).clock?.b.verdict).toBe("no-evidence");
+    const pd = run(plain(), stamped(), "post-deploy");
+    expect(pd.clock).toBeUndefined();
+    expect(pd.reasons.join("\n")).not.toMatch(/HARNESS_NOW/);
+  });
+
+  it("advice only on a dom hunk of the page the stamp was seen on, holding the stamp; a side that cannot be probed is skipped", () => {
+    const clock = clockReading(plain(), stamped(), "release", FROZEN)!;
+    const h = (scope: string, detail: string): Hunk => ({ id: scope, artefact: "dom", scope, severity: "fail", summary: "x", detail });
+    const other: Hunk = { ...h("reader:course", "+ 2026-09-21T14:29:12Z"), artefact: "network" };
+    const hunks = [h("reader:course", '+  - text: "Updated 2026-09-21T14:29:12Z"'), h("reader:course", "+ Topic 2"), h("reader:lab", "+ 2026-09-21T14:29:12Z"), other];
+    const got = attributeClock(hunks, clock, FROZEN);
+    expect(got.map((x) => Boolean(x.advice))).toEqual([true, false, false, false]);
+    expect(got[1]).toBe(hunks[1]);
+    expect(attributeClock(hunks, undefined, FROZEN)).toBe(hunks);
+    expect(clockReading(plain(), stamped(), "release", "yesterday")).toBeUndefined();
+    expect(clockReasons(undefined, FROZEN)).toEqual([]);
+  });
+
+  it("keeps at most five samples a side, and counts the rest in the reason", () => {
+    const many = withAria(Array.from({ length: 7 }, (_, i) => `- text: "Updated 2026-09-21T14:2${i}:00Z"`).join("\n"));
+    const clock = clockReading(plain(), many, "release", FROZEN)!;
+    expect(clock.b.samples).toHaveLength(5);
+    expect(clockReasons(clock, FROZEN)[0]).toContain("(and 4 more)");
   });
 });

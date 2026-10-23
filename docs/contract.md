@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.50.0`
+Contract version: `1.51.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -2105,6 +2105,14 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.51.0 (minor; production-readiness tranche 1, E2: the clock probe is wired)
+
+The release note is [releases/1.51.0.md](releases/1.51.0.md). Every comparison except post-deploy runs the clock probe
+(`src/clock-probe.ts`) on both raw captures and writes `clock` to `report.json` (a verdict per side and up to five
+instants). A side that `ignores` HARNESS_NOW adds a line to `reasons`, and each `dom` hunk on the page where the
+wall-clock instant was seen, whose lines hold it, gains a line of `advice`. `no-evidence` says nothing. No verdict,
+Gate, score or exit code moves.
 
 ### 1.50.0 (minor; production-readiness tranche 1, D4: a base image not pinned by digest is a hardening finding)
 

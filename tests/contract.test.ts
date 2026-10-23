@@ -133,6 +133,7 @@ const full: DeepRequired<RunReport> = {
   },
   override: { reason: "Rule 0044: payments hotfix, frame options restored in 16.3.1", by: "a-maintainer", verdict: "fail", applied: true, at: "2026-09-16T09:20:00.000Z" },
   imageArtefacts: { a: sideArtefacts, b: sideArtefacts },
+  clock: { a: { verdict: "honours", samples: [{ where: "reference/home aria", text: "2026-09-16", clock: "frozen" }] }, b: { verdict: "ignores", samples: [{ where: "reference/home aria", text: "2026-09-21T14:29:12Z", clock: "wall-clock" }] } },
   deployment: {
     production: "16.3.0",
     status: "differs",
@@ -218,7 +219,7 @@ describe("report.json", () => {
     const cli = json("docs/contract/cli.json");
     for (const flag of cli.flags.filter((f: { since?: string }) => f.since === "1.2.0")) expect(changes, flag.name).toContain(`--${flag.name === "runtime" ? "no-runtime" : flag.name}`);
     for (const [name, v] of Object.entries(cli.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.2.0")) expect(changes, name).toContain(name);
-    expect(CONTRACT_VERSION).toBe("1.50.0");
+    expect(CONTRACT_VERSION).toBe("1.51.0");
     // The harness version is package.json's and moves at least as far as the contract's (docs/contract.md, Versioning):
     // a mask or engine PR bumps the patch of the harness alone, so do not pin a literal here.
     expect(json("package.json").version).toBe(HARNESS_VERSION);
