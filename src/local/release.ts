@@ -172,6 +172,8 @@ export interface ReleaseOptions {
   vex?: string;
   /** Since 1.34.0: the release's service level objectives, --slo or release/slo.yaml in the monorepo checkout. */
   slo?: string;
+  /** Since 1.55.0: the monorepo's header contract, --header-contract or tests/security/header-contract.json in the checkout. */
+  headerContract?: string;
   fast: boolean;
   /** Given with --out: every run step writes there too. */
   out?: string;
@@ -219,6 +221,7 @@ export function planRelease(o: ReleaseOptions, noise: NoiseDecision): PlannedSta
     ...(o.rules ? { rules: o.rules } : {}),
     ...(o.vex ? { vex: o.vex } : {}),
     ...(o.slo ? { slo: o.slo } : {}),
+    ...(o.headerContract ? { headerContract: o.headerContract } : {}),
     ...(o.baseline.digests ? { productionDigests: o.baseline.digests } : {}),
     ...(o.fast ? { only: "release" as const } : {})
   });

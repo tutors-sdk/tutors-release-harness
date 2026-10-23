@@ -56,7 +56,10 @@ export const ENGINE_LEVELS: Readonly<Record<Artefact, EngineLevel>> = Object.fre
   realtime: { level: "informing" },
   // Since 1.52.0: secrets in what b sent the browser (src/compare/secrets-in-response.ts), informing until its mutant
   // (secret-in-body) has been caught on the soak.
-  "secrets-in-response": { level: "informing" }
+  "secrets-in-response": { level: "informing" },
+  // Since 1.55.0: the monorepo's header contract (src/compare/headers-policy.ts), informing until the monorepo ships a
+  // CSP and the mutant dropped-csp has been caught.
+  "headers-policy": { level: "informing" }
 });
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;

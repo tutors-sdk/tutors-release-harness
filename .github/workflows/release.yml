@@ -179,6 +179,12 @@ jobs:
         if: endsWith(env.CLAIMS_URL, '/claims.yaml')
         run: curl -fsSL "${CLAIMS_URL%claims.yaml}slo.yaml" -o slo.yaml || { rm -f slo.yaml; echo "no slo.yaml beside the claims, judging the harness floors alone"; }
 
+      # Since 1.55.0: the release's header contract, tests/security/header-contract.json at the same ref as
+      # release/claims.yaml, judged by headers-policy (--header-contract, informing). None (a 404) judges nothing.
+      - name: Fetch the release's header contract
+        if: endsWith(env.CLAIMS_URL, '/release/claims.yaml')
+        run: curl -fsSL "${CLAIMS_URL%release/claims.yaml}tests/security/header-contract.json" -o header-contract.json || { rm -f header-contract.json; echo "no header contract at the release's ref, judging no header policy"; }
+
       # The latest status the nightly published to the `noise` branch: the newest night, clean or not, never an older
       # clean one that a dirty night has since superseded. A missing or unusable file is dropped with a warning and the
       # run degrades to WARN; whether a present one is fresh, clean and verified enough to FAIL is decided by the gate.
@@ -197,9 +203,10 @@ jobs:
         run: |
           vex=""; if [ -s openvex.json ]; then vex=openvex.json; fi
           slo=""; if [ -s slo.yaml ]; then slo=slo.yaml; fi
+          headers=""; if [ -s header-contract.json ]; then headers=header-contract.json; fi
           pnpm harness run --mode release --a "$PRODUCTION" --b "$CANDIDATE" --runs "$RUNS" --load 20x30s \
             ${PRODUCTION_DIGESTS:+--a-digests "$PRODUCTION_DIGESTS"} ${CANDIDATE_DIGESTS:+--b-digests "$CANDIDATE_DIGESTS"} \
-            ${CLAIMS_URL:+--claims claims.yaml} ${RULES_URL:+--rules "$RULES_URL"} ${vex:+--vex "$vex"} ${slo:+--slo "$slo"} ${NOISE_FILE:+--noise "$NOISE_FILE"} \
+            ${CLAIMS_URL:+--claims claims.yaml} ${RULES_URL:+--rules "$RULES_URL"} ${vex:+--vex "$vex"} ${slo:+--slo "$slo"} ${headers:+--header-contract "$headers"} ${NOISE_FILE:+--noise "$NOISE_FILE"} \
             ${OVERRIDE_REASON:+--override-reason "$OVERRIDE_REASON" --override-by "$OVERRIDE_BY"}
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
