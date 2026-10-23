@@ -5,7 +5,7 @@ production reader image plus one planted fault, listed in `mutants.yaml` with
 the artefact the report must attribute it to.
 
 ```bash
-pnpm harness mutants --base 16.2.0          # builds seventeen images, runs A/A then seventeen A/B runs
+pnpm harness mutants --base 16.2.0          # builds twenty-four images, runs A/A then twenty-four A/B runs
 ```
 
 The self-test first runs noise mode on the base (so the harness has the right
@@ -24,13 +24,15 @@ edge — a dropped header, a 500 on a route, injected HTML, a delay. Nothing
 else about the image changes, so a mutant is a fair stand-in for a release
 that shipped that regression.
 
-Twelve mutants are edge faults (`kind: edge`, the default), all built this way:
+Nineteen mutants are edge faults (`kind: edge`, the default), all built this way:
 `dropped-header`, `route-500`, `console-error`, `dom-note`, `missing-alt`,
 `slow-ssr`, `anon-write` (every page records a learning event for anonymous readers,
 caught by the `persistence` collector), `focus-order` (navigator links leave
 the tab order, caught by the `focus` collector), since 1.26.0 `slow-ssr-mild`
 (the timing tolerance's mutant), since 1.27.0 `extra-chunk` (asset-graph's) and since
-1.28.0 `replay-header` (the replay set's) and since 1.52.0 `secret-in-body` (secrets-in-response's), all below. All twelve are in `mutants.yaml`
+1.28.0 `replay-header` (the replay set's), since 1.52.0 `secret-in-body` (secrets-in-response's) and since 1.57.0 one
+for each engine that had none (`screenshot-shift`, `metric-dropped`, `log-level-flood`, `writes-outside-tmp`,
+`slow-boot`, `slo-5xx-burst`, `realtime-chatty`), all below. All nineteen are in `mutants.yaml`
 and are built and run; none is waiting on anything.
 
 ## Image-level mutants (R5)
@@ -109,6 +111,23 @@ private setting does. Nothing a person sees changes, and the collector redacts n
 the raw scan finds it: `secrets-in-response` reports `<page>/body/PRIVATE_AUTH_SECRET` new on b. It is informing, so the
 run need not FAIL; the day it blocks, the mutant must FAIL the run.
 
+## The silent engines' mutants (since 1.57.0)
+
+Harness hardening plan, B5: eight engines had no planted fault, so the self-test could not say whether they work and
+the 2.0 promotion rule could not fire for them. Seven have one now; `bus` waits until there is a bus to plant on.
+
+| Mutant | Plants | Caught by |
+| --- | --- | --- |
+| `screenshot-shift` | `<style>html{margin-top:2px!important}</style>` in every page's head: no text, landmark or request changes | `screenshot` (every page is two pixels taller) |
+| `metric-dropped` | the `http_requests_in_flight` series (its samples, HELP and TYPE) removed from the reader's `/metrics` | `metrics` (`reader/http_requests_in_flight`: series missing on b) |
+| `log-level-flood` | one JSON `warn` line for every page served | `logs` (`reader/warn`: warn-level lines a against b) |
+| `writes-outside-tmp` | at boot, a cache written into the app's working directory; the read-only root filesystem refuses it, and the `EROFS` error is logged | `runtime` (`reader/writes-outside-tmp`) |
+| `slow-boot` | three seconds before the reader listens, on every start; this mutant's run restarts every app five times a side (`startupRestarts: 5`), the only run of the self-test that samples startup | `startup` (`reader/root`, `reader/ready`: slower on b, Mann-Whitney) |
+| `slo-5xx-burst` | every page calls `/harness-mutant-burst` three times; the wrapper answers 500 and adds those requests to the reader's `http_requests_total` with `status_code="500"` | `slo` (informing: the availability objective missed, new on b) |
+| `realtime-chatty` | every page posts two more Realtime broadcasts to the side's persistence | `realtime` (informing: `reader/messages`, more per page view on b) |
+
+`tests/mutant-wrap.test.ts` runs the real wrapper in front of a stand-in app and checks that each one is planted.
+
 ## Which test kills which mutant
 
 Every mutant is killed by the same test: the self-test itself, `harness mutants` (`src/mutants.ts`),
@@ -139,6 +158,13 @@ What the unit tests do hold, per mutant (`tests/mutant-build.test.ts` unless nam
 | `extra-chunk` | `asset-graph` | listed with its artefact; has a `wrap.mjs` case (`tests/contract.test.ts`) |
 | `replay-header` | `replay` | listed with its artefact; has a `wrap.mjs` case (`tests/contract.test.ts`) |
 | `secret-in-body` | `secrets-in-response` | listed with its artefact; has a `wrap.mjs` case; the scanner finds a canary in a body, and the engine reports it new on b (`tests/secrets-in-response.test.ts`) |
+| `screenshot-shift` | `screenshot` | listed with its artefact; planted through the real wrapper (`tests/mutant-wrap.test.ts`) |
+| `metric-dropped` | `metrics` | listed with its artefact; planted through the real wrapper (`tests/mutant-wrap.test.ts`) |
+| `log-level-flood` | `logs` | listed with its artefact; planted through the real wrapper (`tests/mutant-wrap.test.ts`) |
+| `writes-outside-tmp` | `runtime` | listed with its artefact; planted through the real wrapper on a read-only directory (`tests/mutant-wrap.test.ts`, not as root) |
+| `slow-boot` | `startup` | listed with its artefact and its five restarts; planted through the real wrapper (`tests/mutant-wrap.test.ts`) |
+| `slo-5xx-burst` | `slo` | listed with its artefact; planted through the real wrapper, the 500s counted in `/metrics` (`tests/mutant-wrap.test.ts`) |
+| `realtime-chatty` | `realtime` | listed with its artefact; planted through the real wrapper (`tests/mutant-wrap.test.ts`) |
 
 `tests/mutant-build.test.ts` fails when a mutant in `mutants.yaml` is missing from this table, or
 its artefacts here differ.

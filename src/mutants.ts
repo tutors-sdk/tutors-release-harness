@@ -19,6 +19,8 @@ const MutantsFileSchema = z.object({
       plants: z.string().min(1),
       expect: z.array(z.enum(ARTEFACTS)).min(1),
       runs: z.number().int().min(1).optional(),
+      /** Since 1.57.0: startup restarts per app for this mutant's run (the self-test runs none otherwise); slow-boot needs them. */
+      startupRestarts: z.number().int().min(1).optional(),
       kind: z.enum(MUTANT_KINDS).default("edge")
     })
   )
@@ -123,8 +125,9 @@ export interface MutantsOptions extends Omit<RunOptions, "mode" | "a" | "b"> {
  * asserting FAIL and the expected artefact.
  */
 export async function runMutants(options: MutantsOptions): Promise<boolean> {
-  // R5: startup time restarts every app N times per side. The self-test would pay that on every one of its runs (A/A plus one per mutant) for no signal (no
-  // mutant plants a slow boot); nightly noise and real release runs sample it. Posture is cheap and stays on.
+  // R5: startup time restarts every app N times per side. The self-test would pay that on every one of its runs (A/A plus one per mutant) for no signal;
+  // nightly noise and real release runs sample it. Posture is cheap and stays on. Since 1.57.0 the one mutant that plants a slow boot asks for its
+  // own restarts (`startupRestarts` in mutants.yaml), on its run alone.
   const opts: MutantsOptions = { ...options, startupRestarts: 0 };
   const mutants = loadMutants();
   const baseImages = imagesFor(opts.base, opts.imagePrefix);
@@ -161,7 +164,7 @@ export async function runMutants(options: MutantsOptions): Promise<boolean> {
     // One mutant that cannot be run is that mutant escaping, not the end of the self-test: the others still report.
     let outcome: Awaited<ReturnType<typeof run>>;
     try {
-      outcome = await run({ ...opts, static: staticOpts, sets: mutantSets, mode: "release", recordRelease: false, a: baseSpec, b: bSpec, noise: noiseStatus, runs: Math.max(opts.runs, mutant.runs ?? 1) });
+      outcome = await run({ ...opts, static: staticOpts, sets: mutantSets, mode: "release", recordRelease: false, a: baseSpec, b: bSpec, noise: noiseStatus, runs: Math.max(opts.runs, mutant.runs ?? 1), startupRestarts: mutant.startupRestarts ?? 0 });
     } catch (e) {
       const message = e instanceof Error ? e.message.split("\n")[0]! : String(e);
       results.push({ name: mutant.name, caught: false, attributed: false, byInforming: false, verdict: "error", artefacts: [], report: message });

@@ -1,4 +1,4 @@
-# The harness's own negative fixtures: seventeen planted regressions the release
+# The harness's own negative fixtures: twenty-four planted regressions the release
 # gate must catch, each attributed to the right artefact. `harness mutants`
 # builds each one from the base reader image, runs release mode (base vs
 # mutant) and asserts the verdict is FAIL with at least one unclaimed hunk of
@@ -107,3 +107,38 @@ mutants:
   - name: secret-in-body
     plants: every server-rendered page serves the reader's PRIVATE_AUTH_SECRET in an inline JSON script
     expect: [secrets-in-response]
+
+  # Since 1.57.0 (harness hardening plan, B5): every engine that had no planted fault has one, so the self-test can say
+  # it works and the 2.0 promotion rule can fire for it. bus waits: there is no bus to plant a fault on yet.
+  - name: screenshot-shift
+    plants: a stylesheet change moves every page down by two pixels
+    expect: [screenshot]
+
+  - name: metric-dropped
+    plants: the http_requests_in_flight series is gone from /metrics
+    expect: [metrics]
+
+  - name: log-level-flood
+    plants: a warning is logged for every page served
+    expect: [logs]
+
+  - name: writes-outside-tmp
+    plants: the reader writes a cache into its own directory at boot, which the read-only root filesystem refuses
+    expect: [runtime]
+
+  # Startup is sampled by restarting every app; the self-test runs no restarts except here, five a side, the least that
+  # lets Mann-Whitney say "slower" at alpha 0.05 with one overlapping pair (as slow-ssr's five runs).
+  - name: slow-boot
+    plants: three seconds before the reader listens, on every start
+    expect: [startup]
+    startupRestarts: 5
+
+  # slo is informing: caught when it reports the reader's availability objective missed, new on b.
+  - name: slo-5xx-burst
+    plants: every page calls an endpoint three times that answers 500, counted in the reader's request SLI
+    expect: [slo]
+
+  # realtime is informing: caught when it reports more Realtime messages per reader page view on b.
+  - name: realtime-chatty
+    plants: every page posts two more Realtime broadcasts
+    expect: [realtime]
