@@ -207,9 +207,9 @@ describe("report.json", () => {
   });
 
   it("the contract counts the artefacts truthfully and its 1.2.0 changelog lists every addition", () => {
-    const words = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty", "twenty-one", "twenty-two", "twenty-three", "twenty-four", "twenty-five", "twenty-six", "twenty-seven"];
+    const words = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty", "twenty-one", "twenty-two", "twenty-three", "twenty-four", "twenty-five", "twenty-six", "twenty-seven", "twenty-eight"];
     expect(contractMd).toContain(`one of the ${words[ARTEFACTS.length]} artefact names above`);
-    for (const stale of words.slice(1, 28).filter((w) => w !== words[ARTEFACTS.length])) expect(contractMd, stale).not.toContain(`one of the ${stale} artefact names`);
+    for (const stale of words.slice(1, 29).filter((w) => w !== words[ARTEFACTS.length])) expect(contractMd, stale).not.toContain(`one of the ${stale} artefact names`);
     const changes = contractMd.slice(contractMd.indexOf("### 1.2.0"));
     expect(changes).not.toContain("### 1.3.0");
     const since = new Set(["bus", "image-manifest", "sbom", "vulns", "runtime", "startup"]);
@@ -219,7 +219,7 @@ describe("report.json", () => {
     const cli = json("docs/contract/cli.json");
     for (const flag of cli.flags.filter((f: { since?: string }) => f.since === "1.2.0")) expect(changes, flag.name).toContain(`--${flag.name === "runtime" ? "no-runtime" : flag.name}`);
     for (const [name, v] of Object.entries(cli.environment as Record<string, { meaning?: string }>)) if (v.meaning?.includes("since 1.2.0")) expect(changes, name).toContain(name);
-    expect(CONTRACT_VERSION).toBe("1.51.0");
+    expect(CONTRACT_VERSION).toBe("1.52.0");
     // The harness version is package.json's and moves at least as far as the contract's (docs/contract.md, Versioning):
     // a mask or engine PR bumps the patch of the harness alone, so do not pin a literal here.
     expect(json("package.json").version).toBe(HARNESS_VERSION);

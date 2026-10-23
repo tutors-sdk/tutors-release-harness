@@ -53,7 +53,10 @@ export const ENGINE_LEVELS: Readonly<Record<Artefact, EngineLevel>> = Object.fre
   // Since 1.34.0: service level objectives (src/compare/slo.ts), informing with no date until 2.0.
   slo: { level: "informing" },
   // Since 1.36.0: the reader's Realtime cost per page view (src/compare/realtime.ts), informing with no date until 2.0.
-  realtime: { level: "informing" }
+  realtime: { level: "informing" },
+  // Since 1.52.0: secrets in what b sent the browser (src/compare/secrets-in-response.ts), informing until its mutant
+  // (secret-in-body) has been caught on the soak.
+  "secrets-in-response": { level: "informing" }
 });
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;

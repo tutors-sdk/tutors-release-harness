@@ -10,7 +10,8 @@ import { redactSecrets } from "../normalise/redact.ts";
 import { IDENTITY_URL } from "../stack.ts";
 import { routeThirdParty } from "./third-party-cache.ts";
 import { emptyRealtime, isBroadcast, isDataFrame, isRealtimeSocket } from "./realtime.ts";
-import type { AxeFinding, ConsoleEntry, JourneyCapture, NetworkEntry, PageCapture, RealtimeCost, SideSpec, Timing } from "../types.ts";
+import { distinctSecrets, secretsInText } from "./secrets.ts";
+import type { AxeFinding, ConsoleEntry, JourneyCapture, NetworkEntry, PageCapture, RealtimeCost, ResponseSecret, SideSpec, Timing } from "../types.ts";
 
 export interface BrowserCaptureOptions {
   /** Absolute directory the side's screenshots are written under. */
@@ -142,11 +143,27 @@ export function schemaHash(json: unknown): string {
   return createHash("sha256").update(JSON.stringify(shape(json))).digest("hex").slice(0, 16);
 }
 
-async function entryFor(response: Response, spec: SideSpec): Promise<NetworkEntry> {
+/** Since 1.52.0: the largest HTML document whose raw body is scanned for secrets; bigger ones are scanned by their first part. */
+const MAX_SCANNED_HTML = 2 * 1024 * 1024;
+
+async function entryFor(response: Response, spec: SideSpec, secrets: ResponseSecret[] = []): Promise<NetworkEntry> {
   const request = response.request();
   const headers = response.headers();
   const contentType = headers["content-type"] ?? "";
+  // Since 1.52.0: the raw URL and body, before redaction, for secrets-in-response (src/collectors/secrets.ts).
+  secrets.push(...secretsInText("url", response.url()));
   let hash = "";
+  if (/text\/html/.test(contentType) && response.status() < 400 && request.isNavigationRequest()) {
+    let timer: NodeJS.Timeout | undefined;
+    try {
+      const html = await Promise.race([response.text(), new Promise<never>((_, reject) => (timer = setTimeout(() => reject(new Error("body not read")), BODY_READ_MS)))]);
+      secrets.push(...secretsInText("body", html.slice(0, MAX_SCANNED_HTML)));
+    } catch {
+      // Not read: nothing to scan. The page's aria and headers are still scanned.
+    } finally {
+      clearTimeout(timer);
+    }
+  }
   if (/json/.test(contentType) && response.status() < 300) {
     let timer: NodeJS.Timeout | undefined;
     try {
@@ -154,6 +171,7 @@ async function entryFor(response: Response, spec: SideSpec): Promise<NetworkEntr
       // response (the anon-write mutant's fetch, or a beacon) can leave `text()` pending until the context closes, and an
       // unbounded await here stalled the whole run for as long as anyone was willing to wait.
       const text = await Promise.race([response.text(), new Promise<never>((_, reject) => (timer = setTimeout(() => reject(new Error("body not read")), bodyReadMs(request.method()))))]);
+      secrets.push(...secretsInText("body", text));
       if (text.length <= MAX_HASHED_BODY) hash = schemaHash(JSON.parse(text));
     } catch {
       // The browser dropped the body (the page navigated away while an invalidation request was in flight) or it was not
@@ -369,6 +387,8 @@ export async function captureJourney(browser: Browser, spec: SideSpec, journey: 
   const pages: PageCapture[] = [];
   let pendingNetwork: Promise<NetworkEntry>[] = [];
   let pendingConsole: ConsoleEntry[] = [];
+  // Since 1.52.0: secrets in what the browser received since the last capture, scanned raw (src/collectors/secrets.ts).
+  let pendingSecrets: ResponseSecret[] = [];
   const documentResponses = new Map<Page, Response>();
   // Since 1.36.0: the page's Realtime cost (src/collectors/realtime.ts), counted from the browser's own events and kept
   // outside `network`, whose persistence-stub-requests mask drops /realtime/v1/. Counted when a request starts, so a
@@ -379,14 +399,18 @@ export async function captureJourney(browser: Browser, spec: SideSpec, journey: 
   const inFlight = new Set<Request>();
   function watch(page: Page) {
     page.on("response", (response) => {
-      pendingNetwork.push(entryFor(response, spec));
+      pendingNetwork.push(entryFor(response, spec, pendingSecrets));
       if (response.request().isNavigationRequest() && response.frame() === page.mainFrame()) documentResponses.set(page, response);
     });
     page.on("console", (message) => {
       const type = message.type();
       if (type === "error" || type === "warning") pendingConsole.push({ level: type, text: stripOrigins(consoleText(message.text(), message.location().url), spec) });
+      pendingSecrets.push(...secretsInText("console", message.text()));
     });
-    page.on("pageerror", (error) => pendingConsole.push({ level: "error", text: stripOrigins(error.message, spec) }));
+    page.on("pageerror", (error) => {
+      pendingConsole.push({ level: "error", text: stripOrigins(error.message, spec) });
+      pendingSecrets.push(...secretsInText("console", error.message));
+    });
     // Requests in flight right now. waitForLoadState("networkidle") resolves at once when the page reached
     // idle earlier in its life, so it does not wait for requests a page starts later: the course shell's icons
     // (Iconify, requested from its API on first use) arrive after the heading, and a capture taken before them
@@ -425,6 +449,7 @@ export async function captureJourney(browser: Browser, spec: SideSpec, journey: 
     await quiet(() => inFlight.size, 500, 5_000);
     pendingNetwork = [];
     pendingConsole = [];
+    pendingSecrets = [];
     pendingRealtime = emptyRealtime();
   };
 
@@ -453,17 +478,22 @@ export async function captureJourney(browser: Browser, spec: SideSpec, journey: 
       // client-side route change the last document response is a different
       // page's, so the page gets none rather than a stale set.
       const isDocument = documentResponse !== undefined && documentResponse.url() === page.url();
+      const rawAria = await page.locator("body").ariaSnapshot();
+      const headers = isDocument ? { ...documentResponse!.headers() } : {};
+      const secrets = distinctSecrets([...pendingSecrets, ...secretsInText("aria", rawAria), ...Object.values(headers).flatMap((v) => secretsInText("header", v))]);
+      pendingSecrets = [];
       const capture: PageCapture = {
         pageKey,
         path: stripOrigins(page.url(), spec).replace("{{origin}}", ""),
-        aria: stripOrigins(await page.locator("body").ariaSnapshot(), spec),
-        headers: isDocument ? { ...documentResponse!.headers() } : {},
+        aria: stripOrigins(rawAria, spec),
+        headers,
         network,
         console: consoleEntries,
         axe: opts.axe ? await axeOn(page) : [],
         focus: [],
         timing: isDocument ? timingOf(documentResponse) : timingOf(undefined),
-        realtime
+        realtime,
+        secrets
       };
       if (opts.screenshots) {
         // The course shell loads its typeface from Google Fonts with display=swap, so until the font

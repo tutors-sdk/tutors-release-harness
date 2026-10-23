@@ -11,7 +11,7 @@ import type { SecretFinding } from "./types.ts";
 const SECRET_NAME = /(^|[_-])(PASS(WORD|WD)?|SECRET|TOKEN|API[_-]?KEY|ACCESS[_-]?KEY|SECRET[_-]?KEY|PRIVATE[_-]?KEY|AUTH[_-]?KEY|CREDENTIALS?)([_-]|$)/i;
 
 /** Values that are a secret whatever they are called. */
-const SECRET_VALUES: readonly [RegExp, string][] = [
+export const SECRET_VALUES: readonly [RegExp, string][] = [
   [/AKIA[0-9A-Z]{16}/, "an AWS access key id"],
   [/\bgh[pousr]_[A-Za-z0-9]{36,}/, "a GitHub token"],
   [/\bgithub_pat_[A-Za-z0-9_]{22,}/, "a GitHub token"],

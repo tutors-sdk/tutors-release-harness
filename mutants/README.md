@@ -5,7 +5,7 @@ production reader image plus one planted fault, listed in `mutants.yaml` with
 the artefact the report must attribute it to.
 
 ```bash
-pnpm harness mutants --base 16.2.0          # builds sixteen images, runs A/A then sixteen A/B runs
+pnpm harness mutants --base 16.2.0          # builds seventeen images, runs A/A then seventeen A/B runs
 ```
 
 The self-test first runs noise mode on the base (so the harness has the right
@@ -24,13 +24,13 @@ edge — a dropped header, a 500 on a route, injected HTML, a delay. Nothing
 else about the image changes, so a mutant is a fair stand-in for a release
 that shipped that regression.
 
-Eleven mutants are edge faults (`kind: edge`, the default), all built this way:
+Twelve mutants are edge faults (`kind: edge`, the default), all built this way:
 `dropped-header`, `route-500`, `console-error`, `dom-note`, `missing-alt`,
 `slow-ssr`, `anon-write` (every page records a learning event for anonymous readers,
 caught by the `persistence` collector), `focus-order` (navigator links leave
 the tab order, caught by the `focus` collector), since 1.26.0 `slow-ssr-mild`
 (the timing tolerance's mutant), since 1.27.0 `extra-chunk` (asset-graph's) and since
-1.28.0 `replay-header` (the replay set's), all below. All eleven are in `mutants.yaml`
+1.28.0 `replay-header` (the replay set's) and since 1.52.0 `secret-in-body` (secrets-in-response's), all below. All twelve are in `mutants.yaml`
 and are built and run; none is waiting on anything.
 
 ## Image-level mutants (R5)
@@ -101,6 +101,14 @@ journey opens a note except the replay set (`traffic/replay/urls.ts`), and the s
 the reference set out. So no blocking engine sees the fault, the run passes, and only the `replay`
 finding catches it. That shows the replay set adds breadth the other journeys do not have.
 
+## Secrets in responses' mutant (since 1.52.0)
+
+`secret-in-body` puts the reader's own `PRIVATE_AUTH_SECRET` (a value the harness stack sets, not a real secret) into an
+inline `<script type="application/json">` at the end of every server-rendered page: what a server `load` that returns a
+private setting does. Nothing a person sees changes, and the collector redacts nothing it does not recognise, so only
+the raw scan finds it: `secrets-in-response` reports `<page>/body/PRIVATE_AUTH_SECRET` new on b. It is informing, so the
+run need not FAIL; the day it blocks, the mutant must FAIL the run.
+
 ## Which test kills which mutant
 
 Every mutant is killed by the same test: the self-test itself, `harness mutants` (`src/mutants.ts`),
@@ -130,6 +138,7 @@ What the unit tests do hold, per mutant (`tests/mutant-build.test.ts` unless nam
 | `slow-ssr-mild` | `timing-tolerance` | listed with its artefact; has a `wrap.mjs` case (`tests/contract.test.ts`) |
 | `extra-chunk` | `asset-graph` | listed with its artefact; has a `wrap.mjs` case (`tests/contract.test.ts`) |
 | `replay-header` | `replay` | listed with its artefact; has a `wrap.mjs` case (`tests/contract.test.ts`) |
+| `secret-in-body` | `secrets-in-response` | listed with its artefact; has a `wrap.mjs` case; the scanner finds a canary in a body, and the engine reports it new on b (`tests/secrets-in-response.test.ts`) |
 
 `tests/mutant-build.test.ts` fails when a mutant in `mutants.yaml` is missing from this table, or
 its artefacts here differ.

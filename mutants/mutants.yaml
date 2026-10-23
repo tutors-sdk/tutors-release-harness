@@ -1,4 +1,4 @@
-# The harness's own negative fixtures: sixteen planted regressions the release
+# The harness's own negative fixtures: seventeen planted regressions the release
 # gate must catch, each attributed to the right artefact. `harness mutants`
 # builds each one from the base reader image, runs release mode (base vs
 # mutant) and asserts the verdict is FAIL with at least one unclaimed hunk of
@@ -101,3 +101,9 @@ mutants:
   - name: replay-header
     plants: the X-Content-Type-Options header is no longer sent on /note/ pages
     expect: [replay]
+
+  # Since 1.52.0: secrets in responses (src/compare/secrets-in-response.ts), informing, caught when it reports the
+  # stack's own server-only secret in a page b served, which the self-test's A/A did not have.
+  - name: secret-in-body
+    plants: every server-rendered page serves the reader's PRIVATE_AUTH_SECRET in an inline JSON script
+    expect: [secrets-in-response]
