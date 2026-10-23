@@ -9,7 +9,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { ASSET_PATH, assetGraph, foldAssetChurn, isAssetChurn, isHeaderChurn, isNetworkChurn } from "../src/compare/asset-graph.ts";
 import { compareCaptures } from "../src/compare/index.ts";
-import { ENGINE_LEVELS, type EngineLevels } from "../src/compare/levels.ts";
+import { ENGINE_LEVELS, applyLevels, type EngineLevels } from "../src/compare/levels.ts";
 import { DEFAULT_MASKS_FILE, loadMasks, normalise } from "../src/normalise/masks.ts";
 import { compareFromCaptures } from "../src/run.ts";
 import type { Hunk, NetworkEntry, SideCapture } from "../src/types.ts";
@@ -93,5 +93,32 @@ describe("informing, then blocking", () => {
     expect(folded).toHaveLength(3);
     for (const h of folded) expect(h).toMatchObject({ severity: "info", summary: expect.stringMatching(/\(folded into asset-graph\)$/) });
     expect(run.verdict).not.toBe("fail");
+  });
+});
+
+describe("first-load JavaScript (1.53.0)", () => {
+  const KB = 1024;
+  const loads = (name: "a" | "b", js: (number | undefined)[], over: Partial<ReturnType<typeof page>> = {}) => {
+    const p = page();
+    return capture(name, { journeys: [journey({ pages: [{ ...p, ...over, network: [...p.network, ...js.map((b, i) => asset(`chunks/c${i}.js`, b)), asset("assets/0.css", 900 * KB)] }] })] });
+  };
+  const first = (a: SideCapture, b: SideCapture) => assetGraph(a, b, []).filter((h) => h.scope.endsWith("/first-load-js"));
+
+  it("A/A: the same JavaScript on both sides is no threshold hunk", () => {
+    expect(first(loads("a", [300 * KB, 200 * KB]), loads("b", [300 * KB, 200 * KB]))).toEqual([]);
+  });
+
+  it("planted: 10% and 50 KB more on a document load is a hunk on that page, informing", () => {
+    const got = first(loads("a", [300 * KB, 200 * KB]), loads("b", [300 * KB, 260 * KB]));
+    expect(got).toMatchObject([{ artefact: "asset-graph", scope: "reader/first-load-js", path: "/course/localhost:8080", severity: "fail", summary: "reader: first-load JavaScript grew 500 KB → 560 KB (+12%) on reader:course, over the threshold of 10% and 50 KB" }]);
+    expect(applyLevels(got, new Date("2026-10-23T00:00:00Z"))[0]).toMatchObject({ severity: "info", level: "informing" });
+  });
+
+  it("must not flag: under either threshold, CSS, a client-side route change, or a response that did not say its size", () => {
+    expect(first(loads("a", [300 * KB, 200 * KB]), loads("b", [300 * KB, 240 * KB]))).toEqual([]); // +8%, 40 KB
+    expect(first(loads("a", [100 * KB]), loads("b", [140 * KB]))).toEqual([]); // +40%, but 40 KB
+    expect(first(loads("a", [300 * KB, 200 * KB], { timing: { ttfbMs: -1, responseEndMs: -1 } }), loads("b", [300 * KB, 300 * KB], { timing: { ttfbMs: -1, responseEndMs: -1 } }))).toEqual([]);
+    expect(first(loads("a", [300 * KB, 200 * KB]), loads("b", [300 * KB, undefined, 300 * KB]))).toEqual([]);
+    expect(first(loads("a", [300 * KB]), loads("b", [250 * KB]))).toEqual([]); // shrinking is never a finding
   });
 });

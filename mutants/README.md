@@ -91,7 +91,7 @@ check that sees the slowdown. Like `slow-ssr` it needs five runs.
 which the wrapper serves (`export {};`, with a `content-length`). That is a re-chunked build in
 miniature, and it must be attributed to `asset-graph` (`src/compare/asset-graph.ts`): the app's
 immutable requests moved. `network` also FAILs the run, because a new request is a new request.
-The point is that asset-graph reports it. Asset-graph is informing until 2.0. At 2.0 it folds
+Since 1.53.0 the planted chunk weighs 1 MiB, so the app's `<app>/first-load-js` threshold hunk reports it too. The point is that asset-graph reports it. Asset-graph is informing until 2.0. At 2.0 it folds
 that network hunk into its own, and the mutant must then FAIL the run on `asset-graph`.
 
 ## The replay set's mutant (since 1.28.0)
