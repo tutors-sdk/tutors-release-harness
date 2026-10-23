@@ -336,6 +336,12 @@ export interface UpgradeResult {
   durationMs: number;
 }
 
+/** Since 1.51.0: one side's clock probe, as the report keeps it. */
+export interface ClockReading {
+  verdict: "honours" | "ignores" | "indistinguishable" | "no-evidence";
+  samples: { where: string; text: string; clock: "frozen" | "wall-clock" }[];
+}
+
 // ---- comparison ----------------------------------------------------------------
 
 /** A single observable difference between the two sides. */
@@ -451,6 +457,12 @@ export interface RunReport {
    * `/version`) against the recorded candidate's commit. Informational: never changes the verdict and is never a hunk.
    */
   productionBuild?: ProductionBuild;
+  /**
+   * Since contract 1.51.0, every mode but post-deploy: does each side honour HARNESS_NOW? The clock probe's verdict
+   * per side (src/clock-probe.ts) and up to five of the instants it classified. Informational: never a hunk, never
+   * read by the verdict; `ignores` adds a line to reasons and advice to the `dom` hunks it explains.
+   */
+  clock?: { a: ClockReading; b: ClockReading };
   /**
    * Since contract 1.20.0. The unclaimed differences folded into causes (src/report/causes.ts), computed from
    * `compare.unclaimed` after the verdict when the report is written. Informational: never read by a verdict or the Gate.

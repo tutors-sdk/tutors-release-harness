@@ -12,9 +12,10 @@
  * probe reads the other headers that carry a server-stamped date
  * (`last-modified`, `expires`) and the text of every page.
  *
- * Pure: no I/O, no clock of its own. Not wired into the report yet.
+ * Pure: no I/O, no clock of its own. Since 1.51.0 every comparison runs it on both sides ({@link clockReading}): an
+ * `ignores` is a line in the reasons and advice on the `dom` hunk it explains; `no-evidence` says nothing.
  */
-import type { SideCapture } from "./types.ts";
+import type { Hunk, Mode, RunReport, SideCapture } from "./types.ts";
 
 export type ClockVerdict =
   /** Every server-stamped instant found is the frozen one. */
@@ -107,4 +108,55 @@ export function probeClock(capture: SideCapture, frozenNow: string, opts: { tole
   const frozenSeen = samples.some((s) => s.clock === "frozen");
   const verdict: ClockVerdict = wallClock ? "ignores" : frozenSeen ? "honours" : ambiguous ? "indistinguishable" : "no-evidence";
   return { verdict, frozenNow, samples: samples.filter((s) => s.clock !== "other") };
+}
+
+/** How many samples a side keeps in `report.json`: enough to point at the page, not every instant on it. */
+const KEPT_SAMPLES = 5;
+
+/**
+ * Since 1.51.0: the probe on both sides of a comparison, as the report carries it. Post-deploy mode is skipped: its
+ * live side is production, which never has HARNESS_NOW, so `ignores` there is expected and says nothing new
+ * (docs/harness-now.md, point 5). A side whose capture or frozen instant is not a date is skipped, never thrown.
+ */
+export function clockReading(a: SideCapture, b: SideCapture, mode: Mode, frozenNow: string): RunReport["clock"] {
+  if (mode === "post-deploy") return undefined;
+  const one = (side: SideCapture) => {
+    try {
+      const p = probeClock(side, frozenNow);
+      return { verdict: p.verdict, samples: p.samples.slice(0, KEPT_SAMPLES).flatMap(({ where, text, clock }) => (clock === "other" ? [] : [{ where, text, clock }])) };
+    } catch {
+      return undefined;
+    }
+  };
+  const ra = one(a);
+  const rb = one(b);
+  return ra && rb ? { a: ra, b: rb } : undefined;
+}
+
+/** One reason per side that ignores HARNESS_NOW, naming the first wall-clock instant and where it was seen. */
+export function clockReasons(clock: RunReport["clock"], frozenNow: string): string[] {
+  if (!clock) return [];
+  return (["a", "b"] as const).flatMap((side) => {
+    const r = clock[side];
+    if (r.verdict !== "ignores") return [];
+    const first = r.samples.find((s) => s.clock === "wall-clock")!;
+    const more = r.samples.filter((s) => s.clock === "wall-clock").length - 1;
+    return [`side ${side} ignores HARNESS_NOW: "${first.text}" at ${first.where} is the real time of the capture, not the frozen ${frozenNow}${more > 0 ? ` (and ${more} more)` : ""}; a difference it causes is the app's clock, not a change (docs/harness-now.md)`];
+  });
+}
+
+/**
+ * Advice on each `dom` hunk a wall-clock instant explains: the hunk's page is where the instant was seen, and the
+ * instant is in the hunk's lines. Returns the same hunk objects when nothing is explained.
+ */
+export function attributeClock(hunks: Hunk[], clock: RunReport["clock"], frozenNow: string): Hunk[] {
+  if (!clock) return hunks;
+  const seen = (["a", "b"] as const).flatMap((side) => clock[side].samples.filter((s) => s.clock === "wall-clock").map((s) => ({ side, ...s })));
+  if (!seen.length) return hunks;
+  return hunks.map((h) => {
+    if (h.artefact !== "dom" || !h.detail) return h;
+    const hit = seen.find((s) => s.where === `${h.scope} aria` || s.where.endsWith(`/${h.scope} aria`) ? h.detail!.includes(s.text) : false);
+    if (!hit) return h;
+    return { ...h, advice: [...(h.advice ?? []), `"${hit.text}" is side ${hit.side}'s real clock, not the frozen ${frozenNow}: the app stamped it on the server and ignores HARNESS_NOW (docs/harness-now.md). Have it read now() from the shared helper, or mask the stamp with that reason.`] };
+  });
 }

@@ -89,15 +89,14 @@ not a clock). Verdicts:
 | `no-evidence` | nothing in the capture carries a server-stamped instant. Today's honest answer for most apps: not a pass |
 | `indistinguishable` | the frozen instant is within the tolerance of the capture, so the clocks cannot be told apart (run with `--now` set to a different day) |
 
-It is pure and tested (`tests/clock-probe.test.ts`). **Deferred: it is not
-wired into anything.** No run, report, command or workflow calls `probeClock`;
-only its test imports it (checked at contract 1.5.0). The reason is that wiring
-it changes what a report says, which is a contract decision (a new
-informational artefact or a `reasons` line) for the maintainer, and until an
-app serves a server-stamped instant its answer is almost always `no-evidence`,
-which would add a line to every report without telling anyone anything. It
-stays in `ENGINE_PATHS` so that wiring it later bumps the harness version. The
-intended use is attribution. Nightly A/A already turns a wall-clock stamp into
+It is pure and tested (`tests/clock-probe.test.ts`). **Wired since 1.51.0**
+(harness hardening plan, tranche 1, E2): every comparison except post-deploy
+runs it on both raw captures and keeps the verdict per side, with up to five
+instants, as `clock` in `report.json`. `no-evidence`, today's usual answer, adds
+nothing a reader sees. `ignores` adds a line to the reasons and a line of advice
+to each `dom` hunk on the page where the wall-clock instant was seen whose lines
+hold it. Post-deploy is skipped: its live side is production, which never has
+`HARNESS_NOW` (point 5 above). The use is attribution. Nightly A/A already turns a wall-clock stamp into
 a `dom` hunk when a boundary falls between the sides; the probe says *why*
 ("`live` ignores `HARNESS_NOW`: `2026-09-21` on a page frozen at
 `2026-09-16`") before a mask is written. It also fails safe: it can only ever
