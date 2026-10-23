@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.49.4`
+Contract version: `1.50.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -377,7 +377,7 @@ both sides is visible, which no diff can show.
 
 | Artefact | Scopes | A finding when b's image | Reads |
 | --- | --- | --- | --- |
-| `image-hardening` | `<app>/user`, `<app>/healthcheck`, `<app>/env/<NAME>`, `<app>/history/<NAME>` | runs as root; declares no `HEALTHCHECK` (unset, empty or `NONE`); has an environment variable, or a build argument or command in its layer history, that looks like a secret | the image config the manifest engine collects (`docker image inspect`), and `docker image history --no-trunc` |
+| `image-hardening` | `<app>/user`, `<app>/healthcheck`, `<app>/env/<NAME>`, `<app>/history/<NAME>`, since 1.50.0 `<app>/floating-base`, `<app>/unrecorded-base` | runs as root; declares no `HEALTHCHECK` (unset, empty or `NONE`); has an environment variable, or a build argument or command in its layer history, that looks like a secret; since 1.50.0, its `org.opencontainers.image.base.name` label names the base by a tag, not `@sha256:<digest>` (`floating-base`), or the image has no such label (`unrecorded-base`); `base.digest` alone is not a pin, because a build resolves a tag to a digest too | the image config the manifest engine collects (`docker image inspect`), and `docker image history --no-trunc` |
 | `build-provenance` | `<app>/slsa`, `<app>/builder`, `<app>/unverified` (since 1.25.0) | carries no SLSA provenance verified under the publishing identity; or one whose builder and workflow do not name `image-build.yml`; or (since 1.25.0) was not pulled and signature-verified in this run at all (`local`, `built-from-ref`, `pulled-unverified`), so it cannot carry any | `cosign verify-attestation --type slsaprovenance1`, then `slsaprovenance`, on the digest, with the same identity and issuer as its signature and SBOM attestation (`HARNESS_COSIGN_IDENTITY`, `HARNESS_COSIGN_ISSUER`) |
 | `vuln-ceiling` | `<app>/<advisory id>` | has a critical or high advisory with a fix available, whether or not production has it | the vulnerability scan already run on b (`vulns`) |
 
@@ -2105,6 +2105,12 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.50.0 (minor; production-readiness tranche 1, D4: a base image not pinned by digest is a hardening finding)
+
+The release note is [releases/1.50.0.md](releases/1.50.0.md). `image-hardening` gains two scopes, `<app>/floating-base`
+(the `org.opencontainers.image.base.name` label names a tag, not a digest) and `<app>/unrecorded-base` (no such label),
+and its `<app>/summary` says which base it read. The family stays informing: no verdict, Gate, score or exit code moves.
 
 ### 1.49.4 (patch; a base image that moved on a rebuild is not pinned on the newest PR)
 

@@ -9,9 +9,12 @@ import { hunkId } from "./pages.ts";
  * same Gate, claimable the same way (artefact and scope), and each check has a level (src/compare/levels.ts): all three
  * ship **informing**, so a finding is reported and never gates.
  *
- *   image-hardening   <app>/user, <app>/healthcheck, <app>/env/<NAME>, <app>/history/<NAME>
+ *   image-hardening   <app>/user, <app>/healthcheck, <app>/env/<NAME>, <app>/history/<NAME>, <app>/floating-base,
+ *                     <app>/unrecorded-base
  *                     b's image config, as the manifest engine collects it: runs as root, declares no HEALTHCHECK, or
- *                     carries something secret-shaped in its environment or its layer history (src/image-static/secrets.ts)
+ *                     carries something secret-shaped in its environment or its layer history (src/image-static/secrets.ts);
+ *                     since 1.50.0, a base image named by a tag and not a digest, or not recorded at all, so that a base
+ *                     that moved upstream reads as a rebuild nobody declared (the 1.49.4 lesson)
  *   build-provenance  <app>/slsa, <app>/builder, <app>/unverified
  *                     the SLSA provenance cosign verified on b's digest, under the publishing workflow's identity: none,
  *                     or one whose builder is not the monorepo's image-build.yml; since 1.25.0, an image the run did not
@@ -45,8 +48,27 @@ export function hardening(m: ImageManifest): Outcome {
   if (m.healthcheck === null) findings.push({ key: "healthcheck", text: "declares no HEALTHCHECK" });
   for (const f of m.secretEnv) findings.push({ key: `env/${f.name}`, text: `environment variable ${f.name} looks like a secret: ${f.why}` });
   for (const f of m.secretHistory ?? []) findings.push({ key: `history/${f.name}`, text: `layer history entry ${f.entry ?? "?"} holds ${f.name}, which looks like a secret: ${f.why}` });
+  const base = basePin(m);
+  if (base.finding) findings.push(base.finding);
   const history = m.secretHistory === null || m.secretHistory === undefined ? "layer history not read" : `${m.secretHistory.length} in the layer history`;
-  return { findings, checked: `USER ${m.user === "" ? "unset" : m.user}, ${m.healthcheck === null ? "no HEALTHCHECK" : `HEALTHCHECK ${m.healthcheck}`}, ${m.secretEnv.length} secret-looking environment variable(s), ${history}` };
+  return { findings, checked: `USER ${m.user === "" ? "unset" : m.user}, ${m.healthcheck === null ? "no HEALTHCHECK" : `HEALTHCHECK ${m.healthcheck}`}, ${m.secretEnv.length} secret-looking environment variable(s), ${history}, ${base.checked}` };
+}
+
+/** A reference that names its image by digest: `name@sha256:<64 hex>`. */
+const BY_DIGEST = /@sha256:[0-9a-f]{64}$/;
+
+/**
+ * Since 1.50.0: whether the image says which base it was built FROM, pinned by digest. The base is read from the
+ * `org.opencontainers.image.base.name` label (BuildKit writes it, and a Dockerfile can set it with the ARG its FROM
+ * uses); `base.digest` alone is not a pin, because a build resolves a tag to a digest too. A tag can move between two
+ * builds of the same commit (Docker Hub moved node:22-bookworm-slim between two builds of main on 22 Oct), and a move
+ * then reads as a rebuild no PR declared; a base named by digest moves only in a PR.
+ */
+export function basePin(m: Pick<ImageManifest, "baseName" | "baseDigest">): { finding?: { key: string; text: string }; checked: string } {
+  const resolved = m.baseDigest ? `, resolved to ${m.baseDigest.replace(/^sha256:/, "").slice(0, 12)} on this build` : "";
+  if (!m.baseName) return { finding: { key: "unrecorded-base", text: `records no base image (no org.opencontainers.image.base.name label${m.baseDigest ? ", only a base.digest" : ""}), so a base that moved upstream reads as a rebuild no PR declared` }, checked: "base not recorded" };
+  if (!BY_DIGEST.test(m.baseName)) return { finding: { key: "floating-base", text: `is built FROM ${m.baseName}, a tag and not a digest${resolved}: the tag can move between two builds of the same commit` }, checked: `base ${m.baseName}` };
+  return { checked: `base pinned by digest (${m.baseName.replace(/@sha256:([0-9a-f]{12})[0-9a-f]+$/, "@sha256:$1…")})` };
 }
 
 export function provenance(p: BuildProvenanceData, digest: string | undefined): Outcome {
