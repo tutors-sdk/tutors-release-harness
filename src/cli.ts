@@ -176,7 +176,8 @@ const USAGE = `tutors-release-harness
       A pushed candidate to a report, asking nothing: resolve (the baseline, images ensure), noise (the local store's A/A
       when clean and at most 7 days old, else an A/A of the baseline, 3 runs), changes (harness changes in the monorepo
       checkout: changes.json, fed to the score's change risk; skipped without a checkout), release (3 runs,
-      k6 20x30s, claims, rules), rehearse (migration, upgrade), score (confidence.json, as harness confidence), report,
+      k6 20x30s, claims, rules), rehearse (migration, upgrade), score (confidence.json, as harness confidence; since
+      1.56.0 it finds the monorepo's quality record and the newest post-deploy run when not given), report,
       led by the Gate, then the RCS and its band, then the reviewer's glance (since 1.12.0). --baseline prod or none reads
       release/deployed.json in the monorepo checkout (--monorepo or HARNESS_MONOREPO_DIR), else HARNESS_PRODUCTION_TAG, else
       exit 2; --claims defaults to release/claims.yaml there. A stage that stops the line (images missing, a dirty A/A,
@@ -197,14 +198,16 @@ const USAGE = `tutors-release-harness
       novelty x exposure; --scoreboard, default HARNESS_HOME/scoreboard/releases.jsonl, is the history). Since 1.18.0
       --test-signal also reads the monorepo's quality record (quality/<sha>.json) as it is, one with no packages being
       not measured, and --mutants <mutants.jsonl> joins the newest weekly mutants self-test as harnessMutants. Not stable.
-  harness changes --a <tag> --b <tag> [--monorepo dir] [--history 6] [--changelog f] [--json] [--out file]
+  harness changes --a <tag> --b <tag> [--monorepo dir] [--history 6] [--changelog f] [--claims f] [--json] [--out file]
       What changed between two tags of the monorepo (git log A..B in the checkout: --monorepo or HARNESS_MONOREPO_DIR;
       16.2.2 finds v16.2.2), one risk line per PR: churn per app against its median over the last --history releases,
       hotspots (files changed in 3 of them), files with 3+ authors, orphan changes (CHANGELOG.md, or --changelog, the
       output of pnpm release:changelog --json), test lines per production line, approving reviews (GitHub, with
       GITHUB_TOKEN or GH_TOKEN), major dependency bumps. Change risk is 100 minus the sum of the PRs' deductions. A
-      signal it cannot read is "not measured", never clean. --out writes changes.json. Advisory: exit 0 whatever it
-      found, 2 for what it cannot read. Not stable.
+      signal it cannot read is "not measured", never clean. --out writes changes.json. Since 1.56.0 changes.json carries
+      the score's traceability input (each feat or fix PR's EARS file or cited Rule; with --claims, whether a claim names
+      a PR that declared a change), read by harness confidence from --change-risk when no --traceability is given.
+      Advisory: exit 0 whatever it found, 2 for what it cannot read. Not stable.
   harness scoreboard append --run <harness release dir | confidence.json> [--file f] [--mutants f] [--tag T] [--run-url u] [--json]
   harness scoreboard trends [--file f] [--mutants f] [--noise-history f] [--site dir] [--json]
   harness scoreboard mutants --run <harness mutants --out dir | mutants.json> [--file f] [--run-url u] [--json]

@@ -138,6 +138,25 @@
         "evidence": { "const": "changes.json" }
       }
     },
+    "traceability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entries", "evidence"],
+      "description": "Since 1.56.0: what `harness confidence` reads as --traceability when it is given this changes.json as --change-risk and no --traceability. One entry per feat or fix PR (by its conventional title); `ears` is the first tests/bdd/features/**.feature it changed, else the Rule ids its title cites, else null; `claimed` only for a PR that declared an observable change; `untracedClaims` are claims naming a PR not between the tags.",
+      "properties": {
+        "entries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["entry", "kind", "ears"],
+            "properties": { "entry": { "type": "string" }, "kind": { "enum": ["feature", "fix"] }, "ears": { "type": ["string", "null"] }, "claimed": { "type": "boolean" }, "evidence": { "type": "string" } }
+          }
+        },
+        "untracedClaims": { "type": "array", "items": { "type": "string" } },
+        "evidence": { "enum": ["changes.json and claims.yaml", "changes.json (no claims)"] }
+      }
+    },
     "harness": { "type": "object", "additionalProperties": false, "required": ["version", "contractVersion"], "properties": { "version": { "type": "string" }, "contractVersion": { "type": "string" } } }
   }
 }

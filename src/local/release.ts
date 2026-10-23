@@ -20,6 +20,7 @@ import { registerLine } from "../why/register.ts";
 import type { WhyContext } from "../why/trace.ts";
 import { LEAD_CSS, gateLineHtml, scoreLeadHtml, scoreLeadMarkdown } from "../report/lead.ts";
 import { formatElapsed } from "./compare.ts";
+import { qualityRecord, realQualityGit, type QualityGit } from "./quality.ts";
 import { readStatus, type StatusReport } from "./noise-store.ts";
 import {
   LATEST_NOISE,
@@ -28,6 +29,7 @@ import {
   executePlan,
   planGate,
   readGateEntry,
+  runDirs,
   stampedDir,
   writeGateSummary,
   type Executor,
@@ -241,7 +243,7 @@ export function planRelease(o: ReleaseOptions, noise: NoiseDecision): PlannedSta
     { stage: "resolve", title: `the baseline ${b} (${o.baseline.how}); pull and verify, or build, both sides`, steps: [step("ensure")!] },
     noise.action === "run" ? { stage: "noise", title: noise.why, steps: [aa] } : { stage: "noise", title: noise.why, steps: [], skip: noise.why },
     o.monorepo
-      ? { stage: "changes", title: `what changed between ${b} and ${o.candidate}: per-PR risk lines`, steps: [{ id: "changes", title: `harness changes ${b}..${o.candidate}`, argv: ["changes", "--a", b, "--b", o.candidate, "--monorepo", o.monorepo, "--out", CHANGES_OUT], stream: "changes", gatesStream: false, informational: true }] }
+      ? { stage: "changes", title: `what changed between ${b} and ${o.candidate}: per-PR risk lines`, steps: [{ id: "changes", title: `harness changes ${b}..${o.candidate}`, argv: ["changes", "--a", b, "--b", o.candidate, "--monorepo", o.monorepo, ...(o.claims ? ["--claims", o.claims] : []), "--out", CHANGES_OUT], stream: "changes", gatesStream: false, informational: true }] }
       : { stage: "changes", title: "what changed between the two tags", steps: [], skip: NO_MONOREPO },
     {
       stage: "release",
@@ -388,6 +390,11 @@ export interface SeamInput {
   score?: ScoreExtras;
   /** changes.json, when the changes stage wrote one: the score reads it as --change-risk unless one was given. */
   changes?: string;
+  /**
+   * Since 1.56.0 (harness hardening plan, E1), found when not given: the monorepo's quality record for the candidate
+   * (--test-signal) and the newest post-deploy run in the output root (--post-deploy), each with what was found or why not.
+   */
+  found?: { testSignal?: string; postDeploy?: string; notes: string[] };
   /** releases.jsonl: the glance's novelty reads the releases before this one. */
   scoreboard?: string;
 }
@@ -421,9 +428,12 @@ export function scoreStage(i: SeamInput): SeamResult {
   const upgrade = runDir("upgrade");
   // An explicit --change-risk wins; else the changes stage's changes.json.
   const changeRisk = i.score?.changeRisk ?? i.changes;
-  const { confidence: c } = scoreAndWrite({ outDir: i.dir, gate: i.gate, release, ...(migration ? { migration } : {}), ...(upgrade ? { upgrade } : {}), ...i.score, ...(changeRisk ? { changeRisk } : {}), candidate: i.candidate, baseline: i.baseline.tag, ...(i.scoreboard ? { scoreboard: i.scoreboard } : {}) });
+  // Given inputs win; else what was found (E1). Traceability comes with changes.json since 1.56.0 (harness changes --claims).
+  const found = { ...(i.found?.testSignal ? { testSignal: i.found.testSignal } : {}), ...(i.found?.postDeploy ? { postDeploy: i.found.postDeploy } : {}) };
+  const { confidence: c } = scoreAndWrite({ outDir: i.dir, gate: i.gate, release, ...(migration ? { migration } : {}), ...(upgrade ? { upgrade } : {}), ...found, ...i.score, ...(changeRisk ? { changeRisk } : {}), candidate: i.candidate, baseline: i.baseline.tag, ...(i.scoreboard ? { scoreboard: i.scoreboard } : {}) });
   const measured = c.dimensions.filter((d) => d.status === "measured").length;
-  return { state: "done", note: `${c.rcs === null ? `no RCS (Gate ${c.gate})` : `RCS ${c.rcs} ${c.band}`}; ${measured} of ${c.dimensions.length} dimensions measured; glance: ${c.glance.length} to mark; confidence.json`, markdown: renderDeductionsMarkdown(c), confidence: c };
+  const notes = i.found?.notes.length ? `; ${i.found.notes.join("; ")}` : "";
+  return { state: "done", note: `${c.rcs === null ? `no RCS (Gate ${c.gate})` : `RCS ${c.rcs} ${c.band}`}; ${measured} of ${c.dimensions.length} dimensions measured${notes}; glance: ${c.glance.length} to mark; confidence.json`, markdown: renderDeductionsMarkdown(c), confidence: c };
 }
 
 /**
@@ -525,6 +535,8 @@ export interface ReleaseDeps {
   interrupted: () => boolean;
   /** Open report.html (`--open`). */
   open?: (file: string) => void;
+  /** git in the monorepo checkout, for its quality record (default: the real git); tests pass a fake. */
+  qualityGit?: QualityGit;
 }
 
 export interface ReleaseRun extends ReleaseOptions {
@@ -561,6 +573,34 @@ export function noiseReview(runDir: string | undefined): string[] {
   } catch {
     return [];
   }
+}
+
+/**
+ * E1 (since 1.56.0): the score's inputs a release already has, when they were not given. The quality record from the
+ * monorepo checkout's `quality` branch, as --test-signal; the newest post-deploy run under the output root (what
+ * `harness local watch` writes), as --post-deploy. Neither found is a note, and its dimension stays not measured.
+ */
+export function findScoreInputs(r: Pick<ReleaseRun, "candidate" | "monorepo" | "outRoot" | "score">, dir: string, deps: Pick<ReleaseDeps, "qualityGit">): NonNullable<SeamInput["found"]> {
+  const notes: string[] = [];
+  let testSignal: string | undefined;
+  if (!r.score?.testSignal) {
+    if (!r.monorepo) notes.push("test signal: no monorepo checkout for its quality record");
+    else {
+      try {
+        const q = qualityRecord(deps.qualityGit ?? realQualityGit(r.monorepo), r.candidate, dir);
+        if ("file" in q) testSignal = q.file;
+        notes.push(`test signal: ${"file" in q ? q.note : q.reason}`);
+      } catch (e) {
+        notes.push(`test signal: the quality record could not be read (${e instanceof Error ? e.message : String(e)})`);
+      }
+    }
+  }
+  let postDeploy: string | undefined;
+  if (!r.score?.postDeploy) {
+    postDeploy = runDirs(r.outRoot, "post-deploy").find((d) => existsSync(join(d, "report.json")));
+    notes.push(postDeploy ? `post-deploy: ${relative(dir, postDeploy).replaceAll("\\", "/")}` : "post-deploy: no post-deploy run under the output root (harness local watch writes one)");
+  }
+  return { ...(testSignal ? { testSignal } : {}), ...(postDeploy ? { postDeploy } : {}), notes };
 }
 
 export function runRelease(r: ReleaseRun, deps: ReleaseDeps): ReleaseOutcome {
@@ -702,7 +742,7 @@ export function runRelease(r: ReleaseRun, deps: ReleaseDeps): ReleaseOutcome {
   // score: confidence.json (C0) and the glance (C3), a seam for the 5 Whys (C4). It runs whatever happened above, and never fails.
   if (!interrupted) {
     progress.start("score");
-    seams.score = runSeam(scoreStage, seamInput(gate));
+    seams.score = runSeam(scoreStage, { ...seamInput(gate), found: findScoreInputs(r, dir, deps) });
     progress.end("score", seams.score.state, seams.score.note);
   }
   const conf = seams.score?.confidence;

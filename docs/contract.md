@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.55.0`
+Contract version: `1.56.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -1123,10 +1123,10 @@ number).
 | Noise health (`noise-health`) | 15 | the A/A the release run consulted (`report.noise`) and `masksApplied`: no A/A (−60), dirty or degraded (−40), older than 2 days (−10) or 7 (−40) when the release ran, each mask that fired nothing (−5, at most 20) | no A/A (none or `--noise skip`), a dirty or degraded one, or one older than 7 days |
 | Statistical margin (`statistical-margin`) | 10 | the timing and load hunks' p-values: 0.05-0.10 (−20), 0.10-0.20 (−10), moved but could not be judged (−10, at most 30); no k6 (−20); k6 failures or 5xx on the candidate (−30) | a p-value in 0.05-0.10, or a k6 failure rate above 0 |
 | Rehearsals (`rehearsals`) | 10 | the migration and upgrade reports: skipped (−50 each), FAIL (−50), WARN (−20), failed requests during the rollout (−50) | either rehearsal skipped |
-| Test signal (`test-signal`) | 15 | `--test-signal`: a changed package below 80% mutation score (−30 each), each harness mutant missed (−25) | a mutation score below 60%, or a harness mutant missed |
-| Requirements traceability (`traceability`) | 10 | `--traceability`: an entry with no EARS file (−20), with no claim (−10), a claim tracing to no entry (−10) | a `feature` entry with no EARS file |
+| Test signal (`test-signal`) | 15 | `--test-signal` (since 1.56.0 `harness release` and `release.yml` find the monorepo's quality record for the candidate when none is given): a changed package below 80% mutation score (−30 each), each harness mutant missed (−25) | a mutation score below 60%, or a harness mutant missed |
+| Requirements traceability (`traceability`) | 10 | `--traceability` (since 1.56.0 also the `traceability` block of the changes.json given as `--change-risk`, [below](#changesjson-the-change-signals)): an entry with no EARS file (−20), with no claim (−10), a claim tracing to no entry (−10) | a `feature` entry with no EARS file |
 | Change risk (`change-risk`) | 15 | `--change-risk` (a `changes.json`, or the changes stage of `harness release`): the deductions `harness changes` made, summed, as [`changes.json`](#changesjson-the-change-signals) lists them (since 1.10.0; the plan's table: −5 per app above 2× its churn median, −10 a hotspot touched by a first contribution and −3 by anyone else, −5 per file with 3+ authors at most −15, −10 per orphan change, −10 per PR below 0.2 test lines per production line, −5 per major bump) | a PR with no approving review, or a commit straight to main (no points of its own) |
-| Post-deploy history (`post-deploy`) | 5 | `--post-deploy`: the last release's post-deploy run FAILED (−100), WARNED (−20) | it FAILED (a rollback issue) |
+| Post-deploy history (`post-deploy`) | 5 | `--post-deploy` (since 1.56.0 `harness release` takes the newest post-deploy run under its output root, `release.yml` the newest kept `post-deploy-report` artifact, when none is given): the last release's post-deploy run FAILED (−100), WARNED (−20) | it FAILED (a rollback issue) |
 
 **Every point lost is a deduction** `{ points, why, evidence, floor? }`: `why` names the hunk,
 claim, PR, file or run, and `evidence` is where to look, relative to `confidence.json`: a
@@ -1271,6 +1271,24 @@ not a release).
 | tests | test lines ÷ production lines per package (`apps/<x>`, `packages/jsr/<x>`, `packages/svelte/<x>`); tests outside a package (the root `tests/`) count for the packages the same PR changed | −10 per PR below 0.2 on any package it changed | never |
 | reviews | at least one `APPROVED` review, from `GET /repos/{repo}/pulls/{n}/reviews` with `GITHUB_TOKEN` (else `GH_TOKEN`) | floor, no points, per PR without one and per commit straight to main (known without a token) | no token, or an origin that is not GitHub; a PR GitHub cannot answer for is `reviewed: null` and named |
 | dependencies | the direct dependencies of each importer in `pnpm-lock.yaml`, `A` against `B` | −5 per major bump (for 0.x, a minor), on the PR that moved it; new ones listed | a side has no `pnpm-lock.yaml` |
+
+**The traceability block** (since 1.56.0; harness hardening plan, E1). `traceability` is the
+score's Requirements traceability input, built from `prs` and, with `--claims <claims.yaml>`, the
+release's claims (`src/score/traceability.ts`):
+
+- `entries`: one per feat or fix PR, by its conventional title (`feat(scope)!:`, `fix:`); chores,
+  docs, CI, refactors, dependency bumps and `release` lines owe no Rule. `ears` is the first
+  `tests/bdd/features/**.feature` the PR changed, else the Rule ids its title cites
+  (`Rule 0573 (cited in the title)`), else `null`. `claimed` is set only for a PR that declared an
+  observable change (its CHANGELOG hint): whether a claim names it, by `#<number>` in its reason or by
+  a Rule id the claim carries (`rule`) or its reason cites that the PR's title also cites.
+- `untracedClaims`: claims whose reason names PRs (`#<number>`) none of which is between the tags.
+- `evidence`: `changes.json and claims.yaml`, or `changes.json (no claims)`.
+
+`harness confidence` reads it as `--traceability` when it is given this changes.json as
+`--change-risk` and no `--traceability` (an explicit one wins, and may itself be a changes.json).
+So `harness release`, `release.yml`'s scoreboard job and `main-preview.yml` measure traceability
+whenever they have changes.json; they pass the claims they already fetched.
 
 **Every deduction** is `{ points, why, evidence, floor?, rule, pr, commit?, file?, author? }`:
 `why` names the PR (or commit) and the file, and never the author; `evidence` is the file in
@@ -2182,6 +2200,18 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.56.0 (minor; production-readiness tranche 1, E1: all eight score dimensions measured)
+
+The release note is [releases/1.56.0.md](releases/1.56.0.md). A release is now scored on all eight dimensions when
+their inputs exist, not four. `changes.json` gains a `traceability` block (`changes.schema.json`), built by
+`harness changes` (new: `--claims <claims.yaml>`), which `harness confidence` reads as `--traceability` from
+`--change-risk` when none is given. `harness release` passes its claims to the changes stage, and its score stage finds
+the monorepo's quality record for the candidate (the checkout's `quality` branch) as `--test-signal` and the newest
+post-deploy run under its output root as `--post-deploy`, each named in the stage's note. `release.yml`'s scoreboard
+job does the same from the claims URL, the `quality` branch and the newest `post-deploy-report` artifact
+(`actions: read` on that job); `main-preview.yml` passes main's claims to `harness changes`. The score is advisory:
+no verdict, Gate or exit code moves. A missing input stays not measured, with its reason.
 
 ### 1.55.0 (minor; production-readiness tranche 1, D1: the header contract)
 

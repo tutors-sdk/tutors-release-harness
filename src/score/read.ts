@@ -60,8 +60,10 @@ export function parseTestSignal(raw: unknown, file: string): TestSignal {
   return { ...(signal as TestSignal), ...(record ? { commit: o.commit as string } : {}) };
 }
 
-export function parseTraceability(raw: unknown, file: string): Traceability {
+/** A traceability file, or a changes.json (since 1.56.0: its `traceability` block, which `harness changes` builds). */
+export function parseTraceability(given: unknown, file: string): Traceability {
   const f = "--traceability";
+  const raw = isObj(given) && isObj(given.traceability) ? given.traceability : given;
   if (!isObj(raw) || !Array.isArray(raw.entries)) return bad(f, file, 'expected { "entries": [...] }');
   const kinds = ["feature", "fix", "other"];
   if (!raw.entries.every((e) => isObj(e) && typeof e.entry === "string" && (e.kind === undefined || kinds.includes(e.kind as string)) && (e.ears === undefined || e.ears === null || typeof e.ears === "string") && (e.claimed === undefined || typeof e.claimed === "boolean") && optStr(e.evidence)))
@@ -90,6 +92,15 @@ export function parseChangeRisk(raw: unknown, file: string): ChangeRisk {
   // changes.json names itself as "changes.json"; the score names the file it read, relative to confidence.json.
   const { evidence: _named, ...rest } = o;
   return (whole ? rest : o) as unknown as ChangeRisk;
+}
+
+function carriesTraceability(file: string): boolean {
+  try {
+    const raw = JSON.parse(readFileSync(file, "utf8")) as unknown;
+    return isObj(raw) && isObj(raw.traceability);
+  } catch {
+    return false;
+  }
 }
 
 /** Where each input is. Run directories may be the directory or its report.json; the rest are files. */
@@ -140,8 +151,9 @@ export function scoreInputs(s: ScoreSources): ScoreInputs {
   const file = <T>(where: string | undefined, flag: string, parse: (raw: unknown, f: string) => T): Located<T> | undefined => (where ? { data: parse(json(resolve(where), flag), where), where: rel(s.outDir, resolve(where)) } : undefined);
   const given = file(s.testSignal, "--test-signal", parseTestSignal);
   const testSignal = given && s.mutants ? { ...given, data: withHarnessMutants(given.data, readMutantsFile(s.mutants), release?.data.ranAt) } : given;
-  const traceability = file(s.traceability, "--traceability", parseTraceability);
   const changeRisk = file(s.changeRisk, "--change-risk", parseChangeRisk);
+  // No --traceability: a changes.json given as --change-risk carries one since 1.56.0 (harness hardening plan, E1).
+  const traceability = file(s.traceability ?? (s.changeRisk && carriesTraceability(resolve(s.changeRisk)) ? s.changeRisk : undefined), "--traceability", parseTraceability);
   const reports = { ...(release ? { release: join(release.where, "report.json").replaceAll("\\", "/") } : {}), ...(migration ? { migration: join(migration.where, "report.json").replaceAll("\\", "/") } : {}), ...(upgrade ? { upgrade: join(upgrade.where, "report.json").replaceAll("\\", "/") } : {}), ...(postDeploy ? { postDeploy: join(postDeploy.where, "report.json").replaceAll("\\", "/") } : {}) };
   const inputs = { ...(testSignal ? { testSignal: testSignal.where } : {}), ...(traceability ? { traceability: traceability.where } : {}), ...(changeRisk ? { changeRisk: changeRisk.where } : {}) };
   const candidate = s.candidate ?? tagOf(release?.data.sides?.b?.reader);

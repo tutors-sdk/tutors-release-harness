@@ -265,7 +265,7 @@ export function confidenceCommand(v: Values, log: (m: string) => void = (m) => c
 // ---- harness changes ----------------------------------------------------------------------------------
 
 /**
- * `harness changes --a <tag> --b <tag> [--monorepo dir] [--history 6] [--changelog f] [--json] [--out file]`: the change
+ * `harness changes --a <tag> --b <tag> [--monorepo dir] [--history 6] [--changelog f] [--claims f] [--json] [--out file]`: the change
  * signals between two tags of the monorepo and the change risk they add up to. Exit 0 whatever it found; 2 for what it
  * cannot read (no checkout, a tag the monorepo lacks, an unusable --changelog).
  */
@@ -273,7 +273,7 @@ export async function changesCommand(v: Values, deps: ChangesDeps & { log?: (m: 
   const log = deps.log ?? ((m: string) => console.log(m));
   const a = str(v, "a");
   const b = str(v, "b");
-  if (!a || !b) throw new UsageError("changes needs --a <older tag> --b <newer tag> [--monorepo dir] [--history 6] [--changelog f] [--json] [--out file]");
+  if (!a || !b) throw new UsageError("changes needs --a <older tag> --b <newer tag> [--monorepo dir] [--history 6] [--changelog f] [--claims f] [--json] [--out file]");
   const env = deps.env ?? process.env;
   const monorepo = str(v, "monorepo") ?? env.HARNESS_MONOREPO_DIR?.trim();
   if (!monorepo) throw new UsageError("changes reads git in the monorepo checkout: pass --monorepo <dir> or set HARNESS_MONOREPO_DIR");
@@ -281,7 +281,7 @@ export async function changesCommand(v: Values, deps: ChangesDeps & { log?: (m: 
   const harness = (({ version, contractVersion }) => ({ version, contractVersion }))(harnessInfo());
   let result: Awaited<ReturnType<typeof runChanges>>;
   try {
-    result = await runChanges({ a, b, monorepo, history, ...(str(v, "changelog") ? { changelog: str(v, "changelog")! } : {}), ...(str(v, "out") ? { out: str(v, "out")! } : {}), harness }, { ...deps, env });
+    result = await runChanges({ a, b, monorepo, history, ...(str(v, "changelog") ? { changelog: str(v, "changelog")! } : {}), ...(str(v, "claims") ? { claims: str(v, "claims")! } : {}), ...(str(v, "out") ? { out: str(v, "out")! } : {}), harness }, { ...deps, env });
   } catch (e) {
     if (e instanceof ChangesInputError) throw new UsageError(e.message);
     throw e;

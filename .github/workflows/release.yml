@@ -422,6 +422,8 @@ jobs:
     permissions:
       # Pushes this repository's `scoreboard` branch and nothing else.
       contents: write
+      # Reads the newest post-deploy run's report artifact (since 1.56.0, the post-deploy dimension).
+      actions: read
     concurrency:
       group: scoreboard-branch
       cancel-in-progress: false
@@ -464,12 +466,53 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
           path: mono
+      # Since 1.56.0 (harness hardening plan, E1): the release's claims, so changes.json's traceability block can say
+      # which declared PRs a claim names. None (no claims_url, or a 404) still builds it, saying no claims were read.
+      - name: The release's claims, for traceability
+        if: env.CLAIMS_URL != ''
+        continue-on-error: true
+        run: |
+          curl -fsSL "$CLAIMS_URL" -o claims.yaml || { rm -f claims.yaml; echo "the claims could not be fetched: traceability is built without them"; }
       - name: What changed between the two tags
         continue-on-error: true
         working-directory: harness
         env:
           GH_TOKEN: ${{ github.token }}
-        run: pnpm harness changes --a "$PRODUCTION" --b "$CANDIDATE" --monorepo ../mono --out ../changes.json
+        run: |
+          claims=()
+          if [ -f ../claims.yaml ]; then claims=(--claims ../claims.yaml); fi
+          pnpm harness changes --a "$PRODUCTION" --b "$CANDIDATE" --monorepo ../mono "${claims[@]}" --out ../changes.json
+      # Since 1.56.0 (E1): Test signal from the monorepo's quality record (its Nightly's mutation scores, pushed to its
+      # `quality` branch as quality/<sha>.json; public, read-only) for the candidate's commit or the newest before it, as
+      # main-preview.yml reads it. None: Test signal stays not measured, saying so.
+      - name: The monorepo's quality record
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sha="$(git -C mono rev-parse --verify --quiet "refs/tags/v${CANDIDATE}^{commit}" || git -C mono rev-parse --verify --quiet "refs/tags/${CANDIDATE}^{commit}" || true)"
+          if [ -z "$sha" ]; then echo "the monorepo has no tag v${CANDIDATE}: Test signal stays not measured"; exit 0; fi
+          kept="$(gh api "repos/tutors-sdk/tutors-mono-repo/contents/quality?ref=quality" --jq '.[].name' 2>/dev/null || true)"
+          if [ -z "$kept" ]; then echo "the monorepo has no quality branch yet: Test signal stays not measured"; exit 0; fi
+          for commit in $(git -C mono rev-list --first-parent --max-count=60 "$sha"); do
+            if grep -qx "${commit}.json" <<< "$kept"; then
+              curl -fsSL --retry 2 "https://raw.githubusercontent.com/tutors-sdk/tutors-mono-repo/quality/quality/${commit}.json" -o quality.json
+              echo "quality record for ${commit}$([ "$commit" = "$sha" ] && echo ", the candidate's commit" || echo ", the newest before v${CANDIDATE}")"
+              exit 0
+            fi
+          done
+          echo "no quality record for ${sha} or the 60 commits before it: Test signal stays not measured"
+      # Since 1.56.0 (E1): post-deploy history from the newest completed post-deploy.yml run that kept its report (the
+      # post-deploy-report artifact, 14 days). None: post-deploy stays not measured, saying so.
+      - name: The newest post-deploy report
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for id in $(gh run list --repo "$GITHUB_REPOSITORY" --workflow post-deploy.yml --status completed --limit 5 --json databaseId --jq '.[].databaseId'); do
+            if gh run download "$id" --repo "$GITHUB_REPOSITORY" --name post-deploy-report --dir reports/post-deploy 2>/dev/null; then echo "post-deploy report from run ${id}"; exit 0; fi
+          done
+          echo "no post-deploy run in the last five kept a report: post-deploy stays not measured"
       - name: Score the run and append its line
         env:
           GH_TOKEN: ${{ github.token }}
@@ -485,6 +528,9 @@ jobs:
           if [ -n "$migration" ]; then score+=(--migration "$PWD/$(dirname "$migration")"); fi
           if [ -n "$upgrade" ]; then score+=(--upgrade "$PWD/$(dirname "$upgrade")"); fi
           if [ -f changes.json ]; then score+=(--change-risk "$PWD/changes.json"); fi
+          if [ -f quality.json ]; then score+=(--test-signal "$PWD/quality.json"); fi
+          post_deploy="$(find reports/post-deploy -path '*-post-deploy/report.json' 2>/dev/null | sort | tail -1)"
+          if [ -n "$post_deploy" ]; then score+=(--post-deploy "$PWD/$(dirname "$post_deploy")"); fi
           remote="https://github.com/${GITHUB_REPOSITORY}.git"
           auth="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
           if git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth}" ls-remote --exit-code --heads "$remote" refs/heads/scoreboard > /dev/null 2>&1; then

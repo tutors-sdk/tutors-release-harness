@@ -404,7 +404,7 @@ describe("the score stage (C0): confidence.json, and never an exit code", () => 
     expect(c.run.reports.release).toMatch(/^\.\.\/.*-release\/report\.json$/);
     expect(c.run.reports.migration).toMatch(/-migration\/report\.json$/);
     expect(c.dimensions.filter((d) => d.status === "not measured").map((d) => d.id)).toEqual(["test-signal", "traceability", "change-risk", "post-deploy"]);
-    expect(r.status.stages.find((s) => s.stage === "score")!.note).toBe("RCS 100 Green; 4 of 8 dimensions measured; glance: 0 to mark; confidence.json");
+    expect(r.status.stages.find((s) => s.stage === "score")!.note).toBe("RCS 100 Green; 4 of 8 dimensions measured; test signal: no monorepo checkout for its quality record; post-deploy: no post-deploy run under the output root (harness local watch writes one); glance: 0 to mark; confidence.json");
     expect(r.outcome.files.confidence).toBe(join(r.outcome.dir, "confidence.json"));
   });
 
@@ -477,7 +477,7 @@ describe("the command", () => {
     expect(said.join("\n")).toContain(`--claims ${join(mono, "release", "claims.yaml")}`);
     expect(said.join("\n")).toContain("beside 16.2.2");
     // the checkout that named the baseline is the one harness changes reads
-    expect(said.join("\n")).toContain(`harness changes --a 16.2.2 --b 16.3.0-rc.1 --monorepo ${mono} --out`);
+    expect(said.join("\n")).toContain(`harness changes --a 16.2.2 --b 16.3.0-rc.1 --monorepo ${mono} --claims ${join(mono, "release", "claims.yaml")} --out`);
   });
 
   it("runs, holds the lock, opens with --open, and says posting to a PR is not built when GITHUB_TOKEN is set", () => {
@@ -519,7 +519,8 @@ describe("the changes stage (C1): harness changes in the monorepo checkout, fed 
     expect(r.status.stages.find((s) => s.stage === "changes")).toMatchObject({ state: "done", note: "change risk 32: 4 of 5 line(s) lost points, floor breached; changes.json" });
     const cr = conf(r).dimensions.find((d) => d.id === "change-risk")!;
     expect(cr).toMatchObject({ status: "measured", score: 32, floorBreached: true, evidence: ["changes.json"] });
-    expect(conf(r).run.inputs).toEqual({ changeRisk: "changes.json" });
+    // since 1.56.0 (E1) changes.json carries the traceability block too, so traceability is measured from it
+    expect(conf(r).run.inputs).toEqual({ changeRisk: "changes.json", traceability: "changes.json" });
     // the Gate, the RCS, the dimensions, then the per-PR table, then the steps
     const md = r.md;
     expect(md.indexOf("#### Change risk per PR")).toBeGreaterThan(md.indexOf("| dimension | weight | score |"));
