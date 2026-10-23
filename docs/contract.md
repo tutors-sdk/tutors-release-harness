@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.51.0`
+Contract version: `1.52.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -149,10 +149,10 @@ written). Source of truth: `RunReport` in `src/types.ts`.
 `artefact` is one of `dom`, `screenshot`, `network`, `console`, `headers`,
 `axe`, `focus`, `metrics`, `logs`, `timing`, `persistence`, `bus`, `migration`,
 `upgrade`, `image-manifest`, `sbom`, `vulns`, `runtime`, `startup`, `image-hardening`,
-`build-provenance`, `vuln-ceiling`, `timing-tolerance`, `asset-graph`, `replay`, `slo`, `realtime`. `bus` and `image-manifest` to `startup` are since 1.2.0;
+`build-provenance`, `vuln-ceiling`, `timing-tolerance`, `asset-graph`, `replay`, `slo`, `realtime`, `secrets-in-response`. `bus` and `image-manifest` to `startup` are since 1.2.0;
 `image-hardening` to `vuln-ceiling`, the policy family, since 1.22.0 (see [The policy family](#the-policy-family));
 `timing-tolerance` since 1.26.0 (see [The timing tolerance](#the-timing-tolerance)); `asset-graph` since
-1.27.0 (see [Asset-graph folding](#asset-graph-folding)); `replay` since 1.28.0 (see [The replay set](#the-replay-set)); `slo` since 1.34.0 (see [Service level objectives](#service-level-objectives)); `realtime` since 1.36.0 (see [Realtime cost](#realtime-cost)) (see [Static image artefacts](#static-image-artefacts)
+1.27.0 (see [Asset-graph folding](#asset-graph-folding)); `replay` since 1.28.0 (see [The replay set](#the-replay-set)); `slo` since 1.34.0 (see [Service level objectives](#service-level-objectives)); `realtime` since 1.36.0 (see [Realtime cost](#realtime-cost)); `secrets-in-response` since 1.52.0 (see [Secrets in responses](#secrets-in-responses)) (see [Static image artefacts](#static-image-artefacts)
 and [Container runtime artefacts](#container-runtime-artefacts)); a consumer
 must tolerate an artefact name it does not know. `severity` is `fail` (gates unless claimed) or `info` (reported,
 never gates). `scope` and `path` are what a claim's glob is matched against.
@@ -363,7 +363,7 @@ Every diff engine is **blocking**, so a run decides exactly what it decided befo
 new engine or check ships informing, with the date it starts to block when there is one, and is
 watched on the readiness page before it may stop a release: since 1.22.0 the three checks of
 [the policy family](#the-policy-family) are informing, with no date set, since 1.26.0
-[the timing tolerance](#the-timing-tolerance), since 1.27.0 [asset-graph folding](#asset-graph-folding), since 1.28.0 [the replay set](#the-replay-set), since 1.34.0 [service level objectives](#service-level-objectives), and since 1.36.0 [the Realtime cost](#realtime-cost). An engine missing from
+[the timing tolerance](#the-timing-tolerance), since 1.27.0 [asset-graph folding](#asset-graph-folding), since 1.28.0 [the replay set](#the-replay-set), since 1.34.0 [service level objectives](#service-level-objectives), since 1.36.0 [the Realtime cost](#realtime-cost), and since 1.52.0 [secrets in responses](#secrets-in-responses). An engine missing from
 the table is blocking: no check escapes the Gate by being left out.
 
 ### The policy family
@@ -566,6 +566,33 @@ policy family, the socket rule judges b alone, so an A/A of an image that opens 
 **informing**, with no date ([Engine levels](#engine-levels)): every finding is reported and none
 gates, and the readiness page's soak watches it. It has no planted mutant yet, so it is not eligible to
 block.
+
+### Secrets in responses
+
+Since 1.52.0 (harness hardening plan, D3) the `secrets-in-response` engine
+(`src/compare/secrets-in-response.ts`) reports a secret in what b sent the browser. The collector
+redacts secret-shaped text before it keeps any ([redaction](#output-directory) keeps a JWT or a key
+out of every capture and report), which keeps reports safe and would hide a leak, so the browser
+collector scans the **raw** text first (`src/collectors/secrets.ts`): the accessibility tree, the
+document's response headers, every response URL, every console message and page error, and the body
+of every HTML document and JSON response. Each page capture keeps `secrets: [{ source, name, why }]`,
+never a value; a capture recorded before 1.52.0 has none, and the engine says nothing about it.
+
+A finding is a **canary**, the value of any `PRIVATE_*` variable `compose.harness.yaml` sets (the
+stack's own server-only secrets, not real ones), or a **pattern**: a value that is a secret whatever it
+is called (AWS, GitHub, GitLab, Slack, npm, Stripe, a private key; the list image-hardening uses), and a
+JWT only when its payload's `role` is `service_role` or `supabase_admin`. A signed-in student's session
+token is meant to reach their browser; a service key never is.
+
+| Scope | A finding when |
+| --- | --- |
+| `<page key>/<source>/<name>` | b's page holds it; `source` is `aria`, `header`, `url`, `console` or `body`, `name` the variable (`PRIVATE_AUTH_SECRET`) or the pattern (`GitHub token`, `service_role JWT`). Ends "(production too)" or "(new on b)" |
+| `summary` (info) | nothing found on b, and how many page captures were scanned |
+
+Like the policy family it judges b alone. It is **informing**, with no date
+([Engine levels](#engine-levels)), and its mutant is `secret-in-body` (a page that serves the
+reader's `PRIVATE_AUTH_SECRET` in an inline JSON script): it may block once the soak has seen that
+mutant caught.
 
 ## Verdicts and exit codes
 
@@ -898,7 +925,7 @@ claims:
     digests: { reader: "sha256:…" }                     # since 1.25.1, optional: the images it was written against, by app
 ```
 
-- `artefact`: one of the twenty-seven artefact names above, or `*`.
+- `artefact`: one of the twenty-eight artefact names above, or `*`.
 - `scope`: matched with picomatch (`dot: true`, case-insensitive) against the
   hunk's `scope` **or** its `path`.
 - `reason`: at least 8 characters, and must not start with `see pr`,
@@ -2105,6 +2132,14 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.52.0 (minor; production-readiness tranche 1, D3: secrets in responses)
+
+The release note is [releases/1.52.0.md](releases/1.52.0.md). A new artefact, `secrets-in-response`
+(twenty-eight artefact names; `report.schema.json`'s artefact enum gains it), **informing** with no date, and its
+mutant `secret-in-body` (seventeen mutants). The browser collector scans the raw text the browser received, before
+redaction, and each page capture keeps `secrets` (names and reasons, never values). See
+[Secrets in responses](#secrets-in-responses). No verdict, Gate, score or exit code moves.
 
 ### 1.51.0 (minor; production-readiness tranche 1, E2: the clock probe is wired)
 

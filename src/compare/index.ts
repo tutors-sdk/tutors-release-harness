@@ -10,6 +10,7 @@ import { assetGraph } from "./asset-graph.ts";
 import { replay, withoutReplay } from "./replay.ts";
 import { timingTolerance } from "./tolerance.ts";
 import { slo } from "./slo.ts";
+import { secretsInResponse } from "./secrets-in-response.ts";
 import type { SloFile } from "../slo/schema.ts";
 
 /** Run every diff engine over two normalised captures. Deterministic: same inputs, same hunks in the same order. */
@@ -35,6 +36,8 @@ export function compareCaptures(sideA: SideCapture, sideB: SideCapture, config: 
   hunks.push(...replay(sideA, sideB));
   // Since 1.34.0: service level objectives, with --slo (informing until 2.0).
   hunks.push(...slo(a, b, sloFile));
+  // Since 1.52.0: secrets in what b sent the browser, on b alone (informing).
+  hunks.push(...secretsInResponse(a, b));
   return hunks;
 }
 

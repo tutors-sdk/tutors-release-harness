@@ -12,7 +12,7 @@ import type { Digests } from "./digests.ts";
 export type SideName = "a" | "b";
 
 /** Every kind of thing the harness captures or rehearses. Claims and masks name these. */
-export const ARTEFACTS = ["dom", "screenshot", "network", "console", "headers", "axe", "focus", "metrics", "logs", "timing", "persistence", "bus", "migration", "upgrade", /* R5 static image artefacts */ "image-manifest", "sbom", "vulns", /* R5 runtime artefacts */ "runtime", "startup", /* 1.22.0: the policy family, on the candidate alone */ "image-hardening", "build-provenance", "vuln-ceiling", /* 1.26.0: the timing tolerance */ "timing-tolerance", /* 1.27.0: asset-graph folding */ "asset-graph", /* 1.28.0: the replay set */ "replay", /* 1.34.0: service level objectives */ "slo", /* 1.36.0: the reader's Realtime cost per page view */ "realtime"] as const;
+export const ARTEFACTS = ["dom", "screenshot", "network", "console", "headers", "axe", "focus", "metrics", "logs", "timing", "persistence", "bus", "migration", "upgrade", /* R5 static image artefacts */ "image-manifest", "sbom", "vulns", /* R5 runtime artefacts */ "runtime", "startup", /* 1.22.0: the policy family, on the candidate alone */ "image-hardening", "build-provenance", "vuln-ceiling", /* 1.26.0: the timing tolerance */ "timing-tolerance", /* 1.27.0: asset-graph folding */ "asset-graph", /* 1.28.0: the replay set */ "replay", /* 1.34.0: service level objectives */ "slo", /* 1.36.0: the reader's Realtime cost per page view */ "realtime", /* 1.52.0: secrets in what b sent the browser */ "secrets-in-response"] as const;
 export type Artefact = (typeof ARTEFACTS)[number];
 
 export const MODES = ["noise", "release", "any-two", "upgrade", "migration", "post-deploy"] as const;
@@ -132,6 +132,15 @@ export interface NetworkEntry {
   bytes?: number;
 }
 
+/** Since 1.52.0: a secret-shaped value in what the browser received. Never the value itself. */
+export interface ResponseSecret {
+  /** Where it was: the accessibility tree, a document response header, a response URL, a console message, a response body. */
+  source: "aria" | "header" | "url" | "console" | "body";
+  /** The stack variable whose value it is (`PRIVATE_AUTH_SECRET`), or what it is (`GitHub token`, `service_role JWT`). */
+  name: string;
+  why: string;
+}
+
 export interface ConsoleEntry {
   level: "error" | "warning";
   text: string;
@@ -182,6 +191,11 @@ export interface PageCapture {
   timing: Timing;
   /** Since 1.36.0: the page's Supabase Realtime cost. Absent in a capture recorded before 1.36.0. */
   realtime?: RealtimeCost;
+  /**
+   * Since 1.52.0: what in the raw text the browser received for this page is a secret (src/collectors/secrets.ts), by
+   * name and why, never the value; scanned before redaction. Empty: scanned, nothing found. Absent: recorded before 1.52.0.
+   */
+  secrets?: ResponseSecret[];
 }
 
 /**

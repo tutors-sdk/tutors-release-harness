@@ -24,7 +24,7 @@ child.on("exit", (code) => process.exit(code ?? 1));
 for (const signal of ["SIGTERM", "SIGINT"]) process.on(signal, () => child.kill(signal));
 
 const isHtml = (headers) => /text\/html/.test(headers["content-type"] ?? "");
-const REWRITING = ["console-error", "dom-note", "missing-alt", "anon-write", "focus-order", "extra-chunk"];
+const REWRITING = ["console-error", "dom-note", "missing-alt", "anon-write", "focus-order", "extra-chunk", "secret-in-body"];
 // extra-chunk (since 1.27.0, asset-graph's mutant): one more hashed JS chunk on every page, served by this wrapper.
 const PLANTED_CHUNK = "/_app/immutable/chunks/harness-planted.js";
 
@@ -53,6 +53,10 @@ function mutateHtml(html) {
     case "extra-chunk":
       // A re-chunked build: every page loads one more module under /_app/immutable/. It does nothing.
       return html.replace("</body>", `<script type="module" src="${PLANTED_CHUNK}"></script></body>`);
+    case "secret-in-body":
+      // secret-in-body (since 1.52.0, secrets-in-response's mutant): a server load that hands a private setting to the
+      // page, serialised where no one sees it but every browser receives it.
+      return html.replace("</body>", `<script type="application/json" id="harness-mutant-leak">${JSON.stringify({ authSecret: process.env.PRIVATE_AUTH_SECRET ?? "" })}</script></body>`);
     default:
       return html;
   }
