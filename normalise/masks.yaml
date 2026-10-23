@@ -159,6 +159,26 @@ masks:
       artefact. Blind spot: a release whose own code starts calling the Compute Pressure API on a page that
       forbids it is invisible on the console artefact.
 
+  - id: course-media-http2-reset
+    artefact: console
+    pattern: '^Failed to load resource: net::ERR_HTTP2_PROTOCOL_ERROR: \{\{course\}\}/[^?#\s]+\.(?:mov|mp4|m4v|webm|ogv|mp3|m4a|oga|ogg|wav)$'
+    drop: true
+    reason: >-
+      Chromium streams a course video or audio file in byte ranges and cancels the ranges it no longer wants when
+      the page settles or moves on; over HTTP/2 to the reference course on Netlify (reference-course.netlify.app)
+      a cancelled or reset stream is sometimes logged as "Failed to load resource: net::ERR_HTTP2_PROTOCOL_ERROR"
+      for the file. Whether a stream is cut while the page is watched is the transport's timing, not the release's:
+      the A/A of 2026-10-23 (noise report 2026-10-23T02-01-40Z, run 39884229709, 17.0.0 on both sides, same
+      digests) logged it for {{course}}/topic-07-reference/note-1/img/video.mov on reference:note on side b only,
+      its only difference, after four clean A/A runs (2026-10-19 to 2026-10-22). The release does not serve the course: the reader only puts the
+      video element on the page, and the fixture course the forecast judges is plain HTTP/1.1 on localhost, where
+      this error cannot occur. The console engine compares a page's messages as a set, so the entry is dropped.
+      Only this one transport error, only on media files under the course origin, is dropped: a 404 or 500 on the
+      same file (the "server responded with a status of" message), any other net:: error, the same error on the
+      reader's own origin or another host, and every other console message still compare; the media request
+      itself still compares on the network artefact (media-range-status). Blind spot: a course host that starts
+      failing media streams over HTTP/2 is invisible on the console artefact.
+
   - id: hashed-assets
     artefact: [network, headers]
     pattern: "(/_app/immutable/[a-z]+/(?:[A-Za-z0-9_-]+\\.)?)[A-Za-z0-9_-]{8}(\\.(?:js|css|woff2?|json))"
