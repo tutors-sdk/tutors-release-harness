@@ -27,6 +27,8 @@ const isHtml = (headers) => /text\/html/.test(headers["content-type"] ?? "");
 const REWRITING = ["console-error", "dom-note", "missing-alt", "anon-write", "focus-order", "extra-chunk", "secret-in-body"];
 // extra-chunk (since 1.27.0, asset-graph's mutant): one more hashed JS chunk on every page, served by this wrapper.
 const PLANTED_CHUNK = "/_app/immutable/chunks/harness-planted.js";
+// Since 1.53.0 the chunk weighs 1 MiB (a comment), so asset-graph's first-load-js threshold (10% and 50 KB) fires too.
+const PLANTED_CHUNK_BODY = `export {};\n/*${"x".repeat(1024 * 1024)}*/\n`;
 
 function mutateHtml(html) {
   switch (MUTANT) {
@@ -65,7 +67,7 @@ function mutateHtml(html) {
 http
   .createServer((req, res) => {
     if (MUTANT === "extra-chunk" && (req.url ?? "").split("?")[0] === PLANTED_CHUNK) {
-      const body = "export {};\n";
+      const body = PLANTED_CHUNK_BODY;
       res.writeHead(200, { "content-type": "text/javascript", "content-length": String(Buffer.byteLength(body)), "cache-control": "public, max-age=31536000, immutable" });
       return res.end(body);
     }

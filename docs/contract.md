@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.52.0`
+Contract version: `1.53.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -507,6 +507,15 @@ its claim. At 2.0 it becomes blocking. Each failing churn hunk then becomes info
 `<app>` covers a re-chunking. Its planted mutant is `extra-chunk` (every page loads one more chunk).
 The capture's network entries gain `bytes` (the response's `content-length`, when sent). No engine
 diffs it.
+
+Since 1.53.0 (harness hardening plan, E4) it has a threshold too: `<app>/first-load-js`, when a page
+b loads as a document (run 1, a page both sides reached) asks for at least 10% **and** at least 50 KB
+more JavaScript under `/_app/immutable/` than a's same page, by the responses' `content-length`, as
+the image-size rule does with 10% and 5 MB. The hunk names the page that grew most. A page with any
+JS response that did not say its size, and a client-side route change, are left out. Informing, like
+the rest of the check; `extra-chunk`'s planted chunk weighs 1 MiB so it crosses the threshold too.
+The monorepo's `tests/performance/bundle-budgets.json` is not read: its ceilings are gzip totals of
+a whole build, which a page's first load is not, and the monorepo's own PR check gates on them.
 
 ### The replay set
 
@@ -2132,6 +2141,13 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.53.0 (minor; production-readiness tranche 1, E4: a threshold on first-load JavaScript)
+
+The release note is [releases/1.53.0.md](releases/1.53.0.md). `asset-graph` gains the scope `<app>/first-load-js`: a
+page b loads as a document asks for at least 10% and 50 KB more JavaScript under `/_app/immutable/` than a's
+(see [Asset-graph folding](#asset-graph-folding)). Still **informing**. The `extra-chunk` mutant's chunk weighs 1 MiB.
+No verdict, Gate, score or exit code moves.
 
 ### 1.52.0 (minor; production-readiness tranche 1, D3: secrets in responses)
 
