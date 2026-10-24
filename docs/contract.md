@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.56.0`
+Contract version: `1.57.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -2200,6 +2200,16 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.57.0 (minor; production-readiness tranche 1, B5: mutants for the silent engines)
+
+The release note is [releases/1.57.0.md](releases/1.57.0.md). Seven mutants (twenty-four in all, nineteen edge faults),
+one for each engine that had none: `screenshot-shift` (`screenshot`), `metric-dropped` (`metrics`), `log-level-flood`
+(`logs`), `writes-outside-tmp` (`runtime`), `slow-boot` (`startup`), `slo-5xx-burst` (`slo`) and `realtime-chatty`
+(`realtime`). `bus` waits until there is a bus. A mutant in `mutants.yaml` may set `startupRestarts`, the startup
+restarts per app for its run alone (`slow-boot`: 5); the self-test runs none otherwise. `mutants/wrap.mjs` drops
+`transfer-encoding` from a body it rewrites. No verdict, Gate, score or exit code moves; the weekly self-test and the
+readiness page count seven more mutants.
 
 ### 1.56.0 (minor; production-readiness tranche 1, E1: all eight score dimensions measured)
 

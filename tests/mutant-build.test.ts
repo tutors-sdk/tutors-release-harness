@@ -40,7 +40,7 @@ function docker(layersAfter: string[], opts: { failBuild?: boolean } = {}) {
 }
 
 describe("mutants.yaml", () => {
-  it("lists seventeen mutants: the eight edge faults, the two that change what the image is, one per policy check, then the timing tolerance's, asset-graph's, the replay set's and secrets-in-response's", () => {
+  it("lists twenty-four mutants: the eight edge faults, the two that change what the image is, one per policy check, then the timing tolerance's, asset-graph's, the replay set's, secrets-in-response's and one for each engine that had none (B5)", () => {
     const mutants = loadMutants();
     expect(mutants.map((m) => `${m.name}:${m.kind}:${m.expect.join("+")}`)).toEqual([
       "dropped-header:edge:headers",
@@ -59,9 +59,18 @@ describe("mutants.yaml", () => {
       "slow-ssr-mild:edge:timing-tolerance",
       "extra-chunk:edge:asset-graph",
       "replay-header:edge:replay",
-      "secret-in-body:edge:secrets-in-response"
+      "secret-in-body:edge:secrets-in-response",
+      "screenshot-shift:edge:screenshot",
+      "metric-dropped:edge:metrics",
+      "log-level-flood:edge:logs",
+      "writes-outside-tmp:edge:runtime",
+      "slow-boot:edge:startup",
+      "slo-5xx-burst:edge:slo",
+      "realtime-chatty:edge:realtime"
     ]);
-    expect(mutants).toHaveLength(17);
+    expect(mutants).toHaveLength(24);
+    // Only slow-boot pays for startup restarts, on its own run.
+    expect(mutants.filter((m) => m.startupRestarts).map((m) => `${m.name}:${m.startupRestarts}`)).toEqual(["slow-boot:5"]);
     for (const m of mutants) expect(MUTANT_KINDS).toContain(m.kind);
   });
 

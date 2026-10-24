@@ -51,14 +51,14 @@ describe("apps", () => {
 describe("mutants", () => {
   const mutants = (parse(read("mutants/mutants.yaml")) as { mutants: { name: string; kind?: string }[] }).mutants;
 
-  it("seventeen in mutants.yaml, twelve of them edge faults, and the README names every one and does not say any is unbuilt", () => {
-    expect(mutants).toHaveLength(17);
+  it("twenty-four in mutants.yaml, nineteen of them edge faults, and the README names every one and does not say any is unbuilt", () => {
+    expect(mutants).toHaveLength(24);
     const edge = mutants.filter((m) => (m.kind ?? "edge") === "edge").map((m) => m.name);
-    expect(edge).toHaveLength(12);
+    expect(edge).toHaveLength(19);
     const readme = read("mutants/README.md");
     for (const name of edge) expect(readme, name).toContain(name);
     expect(readme).not.toMatch(/need source access|belong in the monorepo|needs? (the )?(persistence|a keyboard-order) collector/);
     for (const m of mutants) expect(readme, m.name).toContain(m.name);
-    expect(readme).toContain("builds seventeen images");
+    expect(readme).toContain("builds twenty-four images");
   });
 });
