@@ -86,6 +86,11 @@ x-auth-env: &auth-env
   PRIVATE_AUTH_GITHUB_ID: harness-client-id
   PRIVATE_AUTH_GITHUB_SECRET: harness-client-secret
   PUBLIC_SUPABASE_ANON_KEY: harness-anon-key
+  # Since 1.57.1: the reader writes content locks from its server with the service key (mono-repo #519, Rules
+  # 0630-0632) and answers 503 without one; the monorepo's own e2e stack sets one too (tests/e2e-stack/compose.yaml).
+  # A reader that predates the route ignores it. Not a real key: the persistence stub takes any, and as a PRIVATE_* value it is also a canary
+  # the secrets-in-response engine looks for in what the browser is sent.
+  PRIVATE_SUPABASE_SERVICE_ROLE_KEY: harness-service-role-key-not-a-real-key
   NODE_EXTRA_CA_CERTS: /harness/ca.pem
   # Kit 3 images have no runtime ORIGIN and take the protocol from the edge in front of them
   # (reader-auth-edge-*, fixtures/edge/forwarded.mjs). Kit 2 images read ORIGIN and ignore this.
@@ -94,6 +99,9 @@ x-auth-env: &auth-env
 x-auth-hosts: &auth-hosts
   - "github.com:172.29.0.10"
   - "api.github.com:172.29.0.10"
+  # Since 1.57.1: the Rule journeys' course as a Netlify site, answered by the identity stub from the course server
+  # (the reader's server reads a course's educators there before it saves a content lock).
+  - "harness-rules.netlify.app:172.29.0.10"
   - "persistence-a.harness.test:host-gateway"
   - "persistence-b.harness.test:host-gateway"
 
@@ -131,6 +139,7 @@ services:
     environment:
       PORT: "443"
       HARNESS_ROLE: ${HARNESS_ROLE:-student}
+      COURSE_ORIGIN: http://course:8081
     # Binding 443 as UID 1001 inside the container.
     sysctls:
       net.ipv4.ip_unprivileged_port_start: 0

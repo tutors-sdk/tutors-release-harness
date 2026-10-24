@@ -125,7 +125,7 @@ describe("the Rule journeys", () => {
     expect(enrollment).toMatch(/whitelist:\n\s+- harness-enrolled\n/);
     const tutors = JSON.parse(readFileSync(resolve(ROOT, "fixtures/course-server/rules-course/tutors.json"), "utf8"));
     expect(tutors).toMatchObject({ title: "Harness Rules Course", properties: { auth: 1, private: 1, llm: 2 }, enrollment: { whitelist: ["harness-enrolled"] } });
-    const onRules = ruleJourneys.filter((j) => j.course === "rules");
+    const onRules = ruleJourneys.filter((j) => j.course === "rules" || j.course === "site");
     expect(onRules.map((j) => j.rules![0]).sort()).toEqual(["0584", "0585", "0586", "0587", "0588", "0592"]);
     expect(tutors.enrollment.educators).toEqual(["harness-lecturer"]);
     for (const j of onRules) expect(j.role ?? "student", j.name).toBe(j.name === "rule-0586-private-course" ? "student" : "enrolled");
@@ -140,7 +140,7 @@ describe("the Rule journeys", () => {
 
   it("act as the lecturer in a second browser opened once, and as the student in the journey's own", async () => {
     const j = ruleJourneys.find((x) => x.name === "rule-0588-content-lock")!;
-    expect(j).toMatchObject({ role: "enrolled", course: "rules", rules: ["0588", "0052", "0053", "0054"] });
+    expect(j).toMatchObject({ role: "enrolled", course: "site", rules: ["0588", "0052", "0053", "0054"] });
     const asked: string[] = [];
     const own = { tag: "student" };
     const lecturer = { tag: "lecturer" };
@@ -150,6 +150,19 @@ describe("the Rule journeys", () => {
     await expect(j.run(fake(own) as never, { reader: "http://r", catalogue: "http://c", live: "http://l", courseId: "c", rulesCourseId: "localhost:8081", readerAuth: "http://ra" }, async () => {}, { as: async (role) => (asked.push(role), fake(lecturer) as never) })).rejects.toThrow(/lecturer signs in/);
     expect(asked).toEqual(["lecturer"]);
     expect(seen[0]).toBe("lecturer");
+  });
+
+  it("open a @course-site journey's course by its Netlify id, which the reader's server can check (mono-repo #519), and a @course-rules one by the course server's", async () => {
+    const urls = { reader: "http://r", catalogue: "http://c", live: "http://l", courseId: "c", rulesCourseId: "localhost:8081", readerAuth: "http://ra" };
+    const opened = async (name: string) => {
+      const gone: string[] = [];
+      const page = new Proxy({}, { get: (_t, k) => (k === "then" ? undefined : k === "goto" ? async (url: string) => { gone.push(url); throw new Error("stop"); } : () => { throw new Error("stop"); }) });
+      const j = ruleJourneys.find((x) => x.name === name)!;
+      await j.run(page as never, urls, async () => {}, { as: async () => page as never }).catch(() => undefined);
+      return gone[0] ?? "";
+    };
+    expect(await opened("rule-0588-content-lock")).toBe("http://ra/auth/harness-rules");
+    expect(await opened(ruleJourneys.find((x) => x.course === "rules" && x.name !== "rule-0586-private-course")!.name)).toBe("http://ra/auth/localhost:8081");
   });
 
   it("run a step against a side that serves no Rule journeys' course as a failure that says so", async () => {

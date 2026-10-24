@@ -266,7 +266,7 @@ Only what the code and documents establish.
 | `pull-requests`, `checks`, `statuses`, `deployments` | never held by the harness | | forbidden; a test enforces it. The monorepo's `release-harness-report.yml` holds `pull-requests: write` on its own one job (`release-harness-report.yml:77`) to post the verdict comment |
 | cosign signing key | none: signatures are keyless (GitHub OIDC), and the harness only **verifies**, against `HARNESS_COSIGN_IDENTITY` and `HARNESS_COSIGN_ISSUER` | `src/images.ts` | no key material in this repository |
 | Repository variables | GitHub, on the harness repository | the workflows | `HARNESS_IMAGE_PREFIX`, `HARNESS_COSIGN_IDENTITY`, `HARNESS_PRODUCTION_TAG`, `HARNESS_PRODUCTION_URLS`. Configuration, not secrets |
-| Values that look like secrets in the stacks | `compose.harness.yaml`, `src/substrate/kind.ts` | the apps under test | `PRIVATE_AUTH_SECRET: harness-only-not-a-real-secret-...`, `harness-client-id`, `harness-client-secret`, `harness-anon-key`: fixed fakes that exist only inside a stack |
+| Values that look like secrets in the stacks | `compose.harness.yaml`, `src/substrate/kind.ts` | the apps under test | `PRIVATE_AUTH_SECRET: harness-only-not-a-real-secret-...`, `harness-client-id`, `harness-client-secret`, `harness-anon-key`, `harness-service-role-key-not-a-real-key`: fixed fakes that exist only inside a stack |
 | Test CA and server certificate | `fixtures/identity/certs/`, committed on purpose | the identity stub, `NODE_EXTRA_CA_CERTS` in the signed-in readers | private keys "protect nothing"; trusted only inside the stack |
 
 `HARNESS_PRODUCTION_TAG` is written by the monorepo: `deploy.yml` sets it on the

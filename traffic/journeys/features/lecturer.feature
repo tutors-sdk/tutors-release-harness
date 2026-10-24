@@ -6,7 +6,7 @@
 @harness @lecturer
 Feature: Lecturer journeys the harness drives on both sides
 
-  @rule-0588 @ears-event-driven @journey-content-lock @role-enrolled @course-rules
+  @rule-0588 @ears-event-driven @journey-content-lock @role-enrolled @course-site
   Rule: When the harness runs the content lock journey, it shall lock a topic from Educator Control as the stub lecturer, open the course as the enrolled stub student before and after the lecturer shows locked content to students, and compare the lecturer's course page and the student's on both sides.
 
     Scenario: A lock hides a topic from the student until the lecturer shows it greyed out (exercises Rules 0052, 0053, 0054)

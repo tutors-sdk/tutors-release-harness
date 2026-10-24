@@ -76,7 +76,10 @@ Rule: When the harness runs the presence journey, it shall ...
   `rule-<id>-<slug>`), and optionally `@role-<role>`: who the identity stub signs in as (`student` by default,
   `enrolled`, `lecturer`, `owner`, `admin`), and `@course-rules` (since 1.44.0): read the Rule journeys' course, not
   the fixture course. Its whitelist lists the `enrolled` role only, so a journey there signs in `@role-enrolled` unless it
-  proves the turning away.
+  proves the turning away. `@course-site` (since 1.57.1) reads the same course by its Netlify site id, `harness-rules`,
+  as a production course is named: use it when the reader's server checks the course (it fetches
+  `https://<id>.netlify.app/tutors.json` for the educators before it saves a content lock, mono-repo #519, and refuses
+  an id with a port). The browser and the signed-in reader's server are both answered from the course server.
 - **Two people in one journey** (since 1.45.0): every "the student ..." step can be said of "the lecturer ..."
   instead. The lecturer gets a browser of their own on the same side, signed in through the identity stub as the
   `lecturer` role (the enrollment list names them as an educator), opened the first time a step names them; "the
