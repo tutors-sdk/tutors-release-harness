@@ -13,6 +13,7 @@ import { parseToolingChangelog, type ToolingChangelog } from "./changelog.ts";
 import { ChangesInputError, collect, type Git } from "./facts.ts";
 import { githubBodies, githubReviews, readBodies, readTitles, readReviews, tokenFrom, type BodySource, type FetchLike, type ReviewSource } from "./github.ts";
 import { renderChangesBoard } from "./render.ts";
+import { claimTexts, buildTraceability, type ClaimText } from "../score/traceability.ts";
 import { computeChanges, type Changes } from "./signals.ts";
 
 export const CHANGES_DEFAULTS = { history: 6 } as const;
@@ -34,6 +35,8 @@ export interface ChangesOptions {
   /** `pnpm release:changelog --json` output, when given. */
   changelog?: string;
   out?: string;
+  /** The release's claims.yaml, when given (since 1.56.0): the traceability block names the PRs a claim traces to. */
+  claims?: string;
   harness?: { version: string; contractVersion: string };
 }
 
@@ -61,6 +64,15 @@ function tooling(file: string): ToolingChangelog {
 }
 
 /** Collect, ask GitHub for the reviews (or say why not), compute; write changes.json when --out is given. */
+function readClaims(file: string): ClaimText[] {
+  if (!existsSync(file)) throw new ChangesInputError(`--claims: ${file} does not exist`);
+  try {
+    return claimTexts(readFileSync(file, "utf8"));
+  } catch (e) {
+    throw new ChangesInputError(`--claims: ${file} is not YAML: ${e instanceof Error ? e.message : String(e)}`);
+  }
+}
+
 export async function runChanges(o: ChangesOptions, deps: ChangesDeps = {}): Promise<{ changes: Changes; file?: string }> {
   const dir = resolve(o.monorepo);
   if (!deps.git && !existsSync(join(dir, ".git"))) throw new ChangesInputError(`--monorepo: ${dir} is not a git checkout of the monorepo`);
@@ -80,7 +92,8 @@ export async function runChanges(o: ChangesOptions, deps: ChangesDeps = {}): Pro
   const bodySource = deps.bodies ?? (token && facts.repo && !deps.reviews ? githubBodies({ token, repo: facts.repo, fetch: deps.fetch ?? (globalThis.fetch as unknown as FetchLike) }) : undefined);
   const bodies = await readBodies(bodySource, prs);
   const titles = await readTitles(bodySource, prs);
-  const changes = computeChanges(facts, { reviews, bodies, titles, ...(o.changelog ? { tooling: tooling(resolve(o.changelog)) } : {}), ...(o.harness ? { harness: o.harness } : {}) });
+  const computed = computeChanges(facts, { reviews, bodies, titles, ...(o.changelog ? { tooling: tooling(resolve(o.changelog)) } : {}), ...(o.harness ? { harness: o.harness } : {}) });
+  const changes: Changes = { ...computed, traceability: buildTraceability(computed, o.claims ? readClaims(resolve(o.claims)) : [], o.claims ? "changes.json and claims.yaml" : "changes.json (no claims)") };
   if (!o.out) return { changes };
   const file = resolve(o.out);
   mkdirSync(dirname(file), { recursive: true });

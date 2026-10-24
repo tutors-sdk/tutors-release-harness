@@ -447,13 +447,18 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           PRODUCTION: ${{ needs.resolve.outputs.production }}
           SHA: ${{ needs.resolve.outputs.sha }}
+          CLAIMS_URL: ${{ needs.resolve.outputs.claims_url }}
         run: |
           report="$(find ../reports -path '*-release/report.json' 2>/dev/null | head -1)"
           if [ -z "$report" ]; then echo "no release report: nothing to put changes beside"; exit 0; fi
           changelog=""
           if jq -e '.version == 1 and (.entries | type == "array")' ../changelog.json >/dev/null 2>&1; then changelog=../changelog.json
           else echo "no changelog from pnpm release:changelog: orphan diffs stay as CHANGELOG.md has them"; fi
-          pnpm harness changes --a "$PRODUCTION" --b "$SHA" --monorepo ../mono ${changelog:+--changelog "$changelog"} --out "$(dirname "$report")/changes.json"
+          # Since 1.56.0 (E1): main's claims so far, for changes.json's traceability block, which the score reads.
+          claims=""
+          if [ -n "$CLAIMS_URL" ] && curl -fsSL "$CLAIMS_URL" -o ../trace-claims.yaml; then claims=../trace-claims.yaml
+          else echo "main's claims could not be fetched: traceability is built without them"; fi
+          pnpm harness changes --a "$PRODUCTION" --b "$SHA" --monorepo ../mono ${changelog:+--changelog "$changelog"} ${claims:+--claims "$claims"} --out "$(dirname "$report")/changes.json"
       # Since 1.18.0: the monorepo's quality record (its Nightly's mutation scores and job results, pushed to its `quality`
       # branch as quality/<sha>.json; public, read-only) for the commit judged, or the newest commit before it that has one:
       # the Nightly starts at 03:00 UTC and this run can finish first. Kept beside the run as quality.json, where the quality

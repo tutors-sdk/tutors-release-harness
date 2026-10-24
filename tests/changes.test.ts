@@ -401,7 +401,9 @@ describe("the score reads changes.json as its change risk", () => {
   it("the deductions as harness changes made them, summed; the floor; the gaps; the evidence named as the file read", () => {
     const dir = tmp("score");
     const file = join(dir, "changes.json");
-    writeFileSync(file, JSON.stringify(c));
+    // A changes.json from before 1.56.0, with no traceability block (tests/traceability.test.ts reads one with it).
+    const { traceability: _since156, ...before } = c;
+    writeFileSync(file, JSON.stringify(before));
     const i = scoreInputs({ outDir: dir, changeRisk: file, gate: "PASS" });
     const conf = confidence(i);
     const d = conf.dimensions.find((x) => x.id === "change-risk")!;

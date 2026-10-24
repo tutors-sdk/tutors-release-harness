@@ -185,7 +185,7 @@ describe("main-preview.yml: the forecast is scored as a candidate is (since 1.13
     const changes = run("publish", "What changed between production and main");
     expect(changes["continue-on-error"]).toBe(true);
     expect(changes.if).toBe("needs.resolve.outputs.sha != ''");
-    expect(changes.run).toContain('pnpm harness changes --a "$PRODUCTION" --b "$SHA" --monorepo ../mono ${changelog:+--changelog "$changelog"} --out "$(dirname "$report")/changes.json"');
+    expect(changes.run).toContain('pnpm harness changes --a "$PRODUCTION" --b "$SHA" --monorepo ../mono ${changelog:+--changelog "$changelog"} ${claims:+--claims "$claims"} --out "$(dirname "$report")/changes.json"');
     // since 1.20.4: the monorepo's changelog of the range, built from the full-history checkout in a step of its own that
     // holds no token, and given to changes only when it is version 1
     const changelog = run("publish", "The monorepo's changelog of that range");

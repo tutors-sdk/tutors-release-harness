@@ -23,6 +23,7 @@
  */
 import { createHash } from "node:crypto";
 import { RULES } from "../score/weights.ts";
+import type { Traceability } from "../score/confidence.ts";
 import { declarationOf, type Declaration } from "./declares.ts";
 import { PRODUCT_SECTIONS, parseChangelog, sectionOf, type ChangelogEntry, type ToolingChangelog } from "./changelog.ts";
 import type { ChangeFacts, FileChange, Person, Unit } from "./facts.ts";
@@ -135,6 +136,8 @@ export interface Changes {
   signals: Signals;
   notMeasured: { signal: string; reason: string }[];
   changeRisk: ChangeRiskBlock;
+  /** Since 1.56.0: the score's traceability input, built from `prs` and the claims (src/score/traceability.ts). */
+  traceability?: Traceability;
   harness?: { version: string; contractVersion: string };
 }
 
