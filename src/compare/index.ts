@@ -11,10 +11,11 @@ import { replay, withoutReplay } from "./replay.ts";
 import { timingTolerance } from "./tolerance.ts";
 import { slo } from "./slo.ts";
 import { secretsInResponse } from "./secrets-in-response.ts";
+import { headersPolicy, type HeaderContract } from "./headers-policy.ts";
 import type { SloFile } from "../slo/schema.ts";
 
 /** Run every diff engine over two normalised captures. Deterministic: same inputs, same hunks in the same order. */
-export function compareCaptures(sideA: SideCapture, sideB: SideCapture, config: EngineConfig, captureDir?: string, sloFile?: SloFile): Hunk[] {
+export function compareCaptures(sideA: SideCapture, sideB: SideCapture, config: EngineConfig, captureDir?: string, sloFile?: SloFile, headerContract?: HeaderContract): Hunk[] {
   resetHunkIds();
   // Since 1.28.0: the replay set's pages are compared by `replay` alone (status, headers, network), never by the others.
   const a = withoutReplay(sideA);
@@ -38,6 +39,8 @@ export function compareCaptures(sideA: SideCapture, sideB: SideCapture, config: 
   hunks.push(...slo(a, b, sloFile));
   // Since 1.52.0: secrets in what b sent the browser, on b alone (informing).
   hunks.push(...secretsInResponse(a, b));
+  // Since 1.55.0: the monorepo's header contract, with --header-contract, on b alone (informing).
+  hunks.push(...headersPolicy(a, b, headerContract));
   return hunks;
 }
 

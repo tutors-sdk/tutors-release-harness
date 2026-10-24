@@ -669,6 +669,7 @@ export function buildPlan(task: string | undefined, v: Values, env: NodeJS.Proce
         ...(str(v, "rules") ? { rules: isUrl(str(v, "rules")!) ? str(v, "rules")! : resolve(str(v, "rules")!) } : {}),
         ...(str(v, "vex") ? { vex: resolve(str(v, "vex")!) } : {}),
         ...(str(v, "slo") ? { slo: resolve(str(v, "slo")!) } : {}),
+        ...(str(v, "header-contract") ? { headerContract: resolve(str(v, "header-contract")!) } : {}),
         ...(flag(v, "a2") ? { a2: true } : {}),
         ...(str(v, "runs") ? { runs: integer(v, "runs", WORKFLOW_DEFAULTS.runs, 1) } : {}),
         ...(str(v, "migrations-a") ? { migrationsA: str(v, "migrations-a")! } : {}),
@@ -936,6 +937,9 @@ export function releaseCommand(v: Values, deps: ReleaseCommandDeps = {}): number
   // Since 1.34.0: the SLO file beside them the same way: --slo, else release/slo.yaml in the checkout, when there is one.
   const monorepoSlo = monorepo ? resolve(monorepo, "release", SLO_FILE) : undefined;
   const slo = str(v, "slo") ? resolve(str(v, "slo")!) : monorepoSlo && existsSync(monorepoSlo) ? monorepoSlo : undefined;
+  // Since 1.55.0: the header contract the same way: --header-contract, else tests/security/header-contract.json in the checkout.
+  const monorepoHeaders = monorepo ? resolve(monorepo, "tests", "security", "header-contract.json") : undefined;
+  const headerContract = str(v, "header-contract") ? resolve(str(v, "header-contract")!) : monorepoHeaders && existsSync(monorepoHeaders) ? monorepoHeaders : undefined;
   const rulesArg = str(v, "rules");
   const rules = rulesArg ? (isUrl(rulesArg) ? rulesArg : resolve(rulesArg)) : undefined;
   const fast = flag(v, "fast");
@@ -947,7 +951,7 @@ export function releaseCommand(v: Values, deps: ReleaseCommandDeps = {}): number
   // The scoreboard line goes to the local store unless --scoreboard names a file: never into the repository checkout unasked.
   const scoreboard = { file: str(v, "scoreboard") ? resolve(str(v, "scoreboard")!) : defaultScoreboardFile(home), noiseHistory: join(noiseDir(home), "noise-history.json") };
   const kaizen = deps.kaizen ?? join(ROOT, KAIZEN_DIR);
-  const options = { candidate, baseline, fast, ...(claims ? { claims } : {}), ...(rules ? { rules } : {}), ...(vex ? { vex } : {}), ...(slo ? { slo } : {}), ...(out ? { out } : {}), ...(Object.keys(extras).length ? { score: extras } : {}), ...(monorepo ? { monorepo: resolve(monorepo) } : {}), scoreboard, kaizen };
+  const options = { candidate, baseline, fast, ...(claims ? { claims } : {}), ...(rules ? { rules } : {}), ...(vex ? { vex } : {}), ...(slo ? { slo } : {}), ...(headerContract ? { headerContract } : {}), ...(out ? { out } : {}), ...(Object.keys(extras).length ? { score: extras } : {}), ...(monorepo ? { monorepo: resolve(monorepo) } : {}), scoreboard, kaizen };
   if (flag(v, "dry-run")) {
     say(renderReleasePlan({ candidate, baseline, fast, stages: planRelease(options, noise), env: planEnv, scoreboard: scoreboard.file, kaizen }));
     return 0;
@@ -971,6 +975,7 @@ export function releaseCommand(v: Values, deps: ReleaseCommandDeps = {}): number
     if (claims) say(`claims: ${claims}`);
     if (vex) say(`OpenVEX: ${vex}`);
     if (slo) say(`SLOs: ${slo}`);
+    if (headerContract) say(`header contract: ${headerContract}`);
     const outcome = runRelease(
       { ...options, outRoot: out ?? outRoot(), noise },
       {

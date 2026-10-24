@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.54.0`
+Contract version: `1.55.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -149,10 +149,10 @@ written). Source of truth: `RunReport` in `src/types.ts`.
 `artefact` is one of `dom`, `screenshot`, `network`, `console`, `headers`,
 `axe`, `focus`, `metrics`, `logs`, `timing`, `persistence`, `bus`, `migration`,
 `upgrade`, `image-manifest`, `sbom`, `vulns`, `runtime`, `startup`, `image-hardening`,
-`build-provenance`, `vuln-ceiling`, `timing-tolerance`, `asset-graph`, `replay`, `slo`, `realtime`, `secrets-in-response`. `bus` and `image-manifest` to `startup` are since 1.2.0;
+`build-provenance`, `vuln-ceiling`, `timing-tolerance`, `asset-graph`, `replay`, `slo`, `realtime`, `secrets-in-response`, `headers-policy`. `bus` and `image-manifest` to `startup` are since 1.2.0;
 `image-hardening` to `vuln-ceiling`, the policy family, since 1.22.0 (see [The policy family](#the-policy-family));
 `timing-tolerance` since 1.26.0 (see [The timing tolerance](#the-timing-tolerance)); `asset-graph` since
-1.27.0 (see [Asset-graph folding](#asset-graph-folding)); `replay` since 1.28.0 (see [The replay set](#the-replay-set)); `slo` since 1.34.0 (see [Service level objectives](#service-level-objectives)); `realtime` since 1.36.0 (see [Realtime cost](#realtime-cost)); `secrets-in-response` since 1.52.0 (see [Secrets in responses](#secrets-in-responses)) (see [Static image artefacts](#static-image-artefacts)
+1.27.0 (see [Asset-graph folding](#asset-graph-folding)); `replay` since 1.28.0 (see [The replay set](#the-replay-set)); `slo` since 1.34.0 (see [Service level objectives](#service-level-objectives)); `realtime` since 1.36.0 (see [Realtime cost](#realtime-cost)); `secrets-in-response` since 1.52.0 (see [Secrets in responses](#secrets-in-responses)); `headers-policy` since 1.55.0 (see [The header contract](#the-header-contract)) (see [Static image artefacts](#static-image-artefacts)
 and [Container runtime artefacts](#container-runtime-artefacts)); a consumer
 must tolerate an artefact name it does not know. `severity` is `fail` (gates unless claimed) or `info` (reported,
 never gates). `scope` and `path` are what a claim's glob is matched against.
@@ -363,7 +363,7 @@ Every diff engine is **blocking**, so a run decides exactly what it decided befo
 new engine or check ships informing, with the date it starts to block when there is one, and is
 watched on the readiness page before it may stop a release: since 1.22.0 the three checks of
 [the policy family](#the-policy-family) are informing, with no date set, since 1.26.0
-[the timing tolerance](#the-timing-tolerance), since 1.27.0 [asset-graph folding](#asset-graph-folding), since 1.28.0 [the replay set](#the-replay-set), since 1.34.0 [service level objectives](#service-level-objectives), since 1.36.0 [the Realtime cost](#realtime-cost), and since 1.52.0 [secrets in responses](#secrets-in-responses). An engine missing from
+[the timing tolerance](#the-timing-tolerance), since 1.27.0 [asset-graph folding](#asset-graph-folding), since 1.28.0 [the replay set](#the-replay-set), since 1.34.0 [service level objectives](#service-level-objectives), since 1.36.0 [the Realtime cost](#realtime-cost), since 1.52.0 [secrets in responses](#secrets-in-responses), and since 1.55.0 [the header contract](#the-header-contract). An engine missing from
 the table is blocking: no check escapes the Gate by being left out.
 
 ### The policy family
@@ -602,6 +602,32 @@ Like the policy family it judges b alone. It is **informing**, with no date
 ([Engine levels](#engine-levels)), and its mutant is `secret-in-body` (a page that serves the
 reader's `PRIVATE_AUTH_SECRET` in an inline JSON script): it may block once the soak has seen that
 mutant caught.
+
+### The header contract
+
+Since 1.55.0 (harness hardening plan, D1) the `headers-policy` engine
+(`src/compare/headers-policy.ts`) judges the response headers b sends against the monorepo's own
+contract, `tests/security/header-contract.json`, given with `--header-contract <file>`. `headers`
+fails when a header changes between the sides and says nothing when both lack it; this check says
+what b must send whatever a sends. The file is the monorepo's format: `headers` maps a header name to
+exactly one of `equals` (compared ignoring case and surrounding space) or `matches` (a regular
+expression, ignoring case), with an optional `reason`; `apps` is the monorepo's own probe list and is
+not read. An invalid file is exit 2 before any stack starts. Without the flag nothing is judged.
+
+Every document b served (a page with response headers; a client-side route change has none) is
+judged, and its app read from the page key (`reader-auth:` and `reference:` pages are the reader's):
+
+| Scope | A finding when |
+| --- | --- |
+| `<app>/<header>` (lower case) | a document of the app does not send the header, or sends a value other than the contract asks |
+| `<app>/cookie/<name>` | the document sets a session cookie (its name contains `session`) without `HttpOnly` or without `SameSite` |
+| `<app>/summary` (info) | every document of the app holds the contract |
+
+Each finding names the first page that showed it and ends "(production too)" or "(new on b)", from
+a's documents of the same app. A cookie's `Secure` flag is not judged: the harness stacks are served
+over plain HTTP. The check is **informing**, with no date ([Engine levels](#engine-levels)); it may
+block once the monorepo sends a CSP (its hardening Stage 1.2) and a `dropped-csp` mutant is caught.
+`main-preview.yml` passes the contract from the monorepo checkout it already makes for the Rules.
 
 ## Verdicts and exit codes
 
@@ -949,7 +975,7 @@ claims:
     digests: { reader: "sha256:…" }                     # since 1.25.1, optional: the images it was written against, by app
 ```
 
-- `artefact`: one of the twenty-eight artefact names above, or `*`.
+- `artefact`: one of the twenty-nine artefact names above, or `*`.
 - `scope`: matched with picomatch (`dot: true`, case-insensitive) against the
   hunk's `scope` **or** its `path`.
 - `reason`: at least 8 characters, and must not start with `see pr`,
@@ -1752,8 +1778,8 @@ confidence`), nor `harness guard scoreboard` (since 1.11.0; `guard all` runs it 
 
 | Command | Stable flags |
 | --- | --- |
-| `harness run` | `--mode` (required), `--a`, `--b` (required except in post-deploy), `--claims <file>`, `--rules <path\|url>` (since 1.3.0: the Rules a claim may name, see [The rules file](#the-rules-file)), `--vex <file>` (since 1.23.0: the release's OpenVEX file, handed to the scanner, see [OpenVEX](#openvex-exceptions-the-scanner-reads)), `--slo <file>` (since 1.34.0: the release's service level objectives, see [Service level objectives](#service-level-objectives)), `--a2` (since 1.24.0, not stable: side a2, see [In-run noise](#in-run-noise-side-a2)), `--noise <file\|dir\|skip\|none>` (omitted: the latest status in the local store, see [`noise-status.json`](#noise-statusjson-and-the-7-day-rule)), `--runs <n>`, `--set <fixture,auth,reference,replay,rules>` (`replay` since 1.28.0, `rules` since 1.43.0), `--journey <name>` (repeatable), `--load <rate>x<duration>`, `--out <dir>`, `--image-prefix <prefix or {app} template>`, `--allow-unsigned`, `--require-verified` (noise mode: write the status `degraded` unless every image on both sides was pulled and verified in this run), `--override-reason <text>` and `--override-by <who>` (see [Overriding a FAIL](#overriding-a-fail)), `--a-digests <digests>` and `--b-digests <digests>` (since 1.3.0: pin a side's images, see [Image digests](#image-digests-and-the-release-record)); post-deploy: `--recorded <release run dir>`, `--production reader=URL,catalogue=URL,live=URL[,time=URL]`, and since 1.3.0 `--deployed <tag>`, `--deployed-digests <digests>` and `--release-record <file\|dir>` (see [Checking a deployment](#checking-a-deployment)) |
-| `harness compare` | `--dir <run dir>` (required), `--mode` (required), `--claims`, `--rules`, `--slo` (since 1.34.0), `--noise` |
+| `harness run` | `--mode` (required), `--a`, `--b` (required except in post-deploy), `--claims <file>`, `--rules <path\|url>` (since 1.3.0: the Rules a claim may name, see [The rules file](#the-rules-file)), `--vex <file>` (since 1.23.0: the release's OpenVEX file, handed to the scanner, see [OpenVEX](#openvex-exceptions-the-scanner-reads)), `--slo <file>` (since 1.34.0: the release's service level objectives, see [Service level objectives](#service-level-objectives)), `--header-contract <file>` (since 1.55.0: the monorepo's `tests/security/header-contract.json`, see [The header contract](#the-header-contract)), `--a2` (since 1.24.0, not stable: side a2, see [In-run noise](#in-run-noise-side-a2)), `--noise <file\|dir\|skip\|none>` (omitted: the latest status in the local store, see [`noise-status.json`](#noise-statusjson-and-the-7-day-rule)), `--runs <n>`, `--set <fixture,auth,reference,replay,rules>` (`replay` since 1.28.0, `rules` since 1.43.0), `--journey <name>` (repeatable), `--load <rate>x<duration>`, `--out <dir>`, `--image-prefix <prefix or {app} template>`, `--allow-unsigned`, `--require-verified` (noise mode: write the status `degraded` unless every image on both sides was pulled and verified in this run), `--override-reason <text>` and `--override-by <who>` (see [Overriding a FAIL](#overriding-a-fail)), `--a-digests <digests>` and `--b-digests <digests>` (since 1.3.0: pin a side's images, see [Image digests](#image-digests-and-the-release-record)); post-deploy: `--recorded <release run dir>`, `--production reader=URL,catalogue=URL,live=URL[,time=URL]`, and since 1.3.0 `--deployed <tag>`, `--deployed-digests <digests>` and `--release-record <file\|dir>` (see [Checking a deployment](#checking-a-deployment)) |
+| `harness compare` | `--dir <run dir>` (required), `--mode` (required), `--claims`, `--rules`, `--slo` (since 1.34.0), `--header-contract` (since 1.55.0), `--noise` |
 | `harness images ensure` | `--a`, `--b` (required), `--a-digests`, `--b-digests` (since 1.3.0: pull by digest, verify on it, refuse a tag that has moved; a pinned image is never built), `--ref-a`, `--ref-b` (monorepo git refs to build from when the pull fails), `--image-prefix`, `--allow-unsigned`, `--image-cache <dir>` (since 1.2.0: refreshed from images pulled and verified in this run; used, as provenance `cached`, only when the registry cannot be reached, and never for a tag the registry says does not exist). With `GITHUB_OUTPUT` set it writes `image_cache=none\|used\|refreshed` |
 | `harness mutants` | `--base <tag or reader image>` (required), `--out`, `--image-prefix`, `--allow-unsigned` |
 | `harness version` | `--json` |
@@ -2156,6 +2182,15 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.55.0 (minor; production-readiness tranche 1, D1: the header contract)
+
+The release note is [releases/1.55.0.md](releases/1.55.0.md). A new artefact, `headers-policy` (twenty-nine artefact
+names; `report.schema.json`'s artefact enum gains it), **informing** with no date, and a stable flag,
+`--header-contract <file>` on `harness run`, `harness compare`, `harness local gate` and `harness local release` (which
+also finds `tests/security/header-contract.json` in the monorepo checkout). `release.yml` and `main-preview.yml` fetch
+the monorepo's contract at the claims' ref. See [The header contract](#the-header-contract). No verdict, Gate, score
+or exit code moves.
 
 ### 1.54.0 (minor; production-readiness tranche 1, A2: which kind of build serves production)
 

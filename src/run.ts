@@ -37,6 +37,7 @@ import { parseNoiseStatus } from "./noise.ts";
 import { collectImageStatic, staticPolicyFromEnv } from "./image-static/collect.ts"; // R5
 import { loadOpenVex } from "./image-static/vex.ts";
 import { loadSlo, type SloFile } from "./slo/schema.ts";
+import { loadHeaderContract, type HeaderContract } from "./compare/headers-policy.ts";
 import { a2Hunks, inRunNoise } from "./compare/in-run-noise.ts";
 import { imageArtefactsSection, imageStaticReasons } from "./image-static/report.ts"; // R5
 
@@ -59,6 +60,8 @@ export interface RunOptions {
   vexFile?: string;
   /** Since 1.34.0: the release's service level objectives (`--slo`, release/slo.yaml beside the claims), judged by `slo`. */
   sloFile?: string;
+  /** Since 1.55.0: the monorepo's tests/security/header-contract.json, judged on b by headers-policy (informing). */
+  headerContractFile?: string;
   /** Since 1.3.0: the release's rules.json, a path or an http(s) URL (`--rules`). A claim's `rule` must be in it. */
   rules?: string;
   masksFile: string;
@@ -149,6 +152,8 @@ interface CompareInput {
   claims: Claim[];
   /** Since 1.34.0: the objectives the `slo` engine judges b against (src/compare/slo.ts); absent, it judges nothing. */
   slo?: SloFile;
+  /** Since 1.55.0 (`--header-contract`): the response headers b must send, judged by headers-policy. */
+  headerContract?: HeaderContract;
   masksFile: string;
   noise?: string;
   noiseMaxAgeDays: number;
@@ -195,7 +200,7 @@ export function compareFromCaptures(input: CompareInput): RunOutcome {
   // Since 1.27.0: asset-graph folding; it changes nothing until asset-graph is blocking (src/compare/asset-graph.ts).
   // Since 1.51.0: does each side honour HARNESS_NOW? Read from the raw captures; an `ignores` explains the dom hunks it caused.
   const clock = clockReading(input.a, input.b, input.mode, input.now);
-  const hunks = attributeClock(foldAssetChurn(applyLevels([...compareCaptures(na.capture, nb.capture, masks, input.captureDir, input.slo), ...(input.extraHunks ?? [])], ranAt, levelTable), ranAt, levelTable), clock, input.now);
+  const hunks = attributeClock(foldAssetChurn(applyLevels([...compareCaptures(na.capture, nb.capture, masks, input.captureDir, input.slo, input.headerContract), ...(input.extraHunks ?? [])], ranAt, levelTable), ranAt, levelTable), clock, input.now);
   // Since 1.25.1: claims with a lifetime. Informing: an expired claim still covers, and is reported (src/claims/lifetime.ts).
   const lifeCtx = lifetimeContext(ranAt, input.a, input.b);
   const compare = matchClaims(hunks, claimsInForce(input.claims, lifeCtx));
@@ -332,13 +337,14 @@ export async function run(opts: RunOptions): Promise<RunOutcome> {
   const vex = opts.vexFile ? { path: opts.vexFile, info: loadOpenVex(opts.vexFile) } : undefined;
   // Since 1.34.0: the release's SLO file (--slo), checked now the same way.
   const sloFile = opts.sloFile ? loadSlo(opts.sloFile) : undefined;
+  const headerContract = opts.headerContractFile ? loadHeaderContract(opts.headerContractFile) : undefined;
   // The directory is named now and made once the run has something to put in it (`makeOutDir`): a run that cannot judge (an image
   // that is not there, or is not verified: exit 2) leaves nothing behind, not an empty directory.
   const outDir = resolve(opts.outDir, timestampDir(opts.mode));
   const makeOutDir = () => mkdirSync(outDir, { recursive: true });
   opts.log(`harness ${HARNESS_VERSION} · mode ${opts.mode} · substrate ${opts.substrate} · clock ${opts.now} · ${opts.runs} run(s) · out ${outDir}`);
 
-  const common = { substrate: opts.substrate, captureDir: outDir, claims, ...(sloFile ? { slo: sloFile } : {}), masksFile: opts.masksFile, noiseMaxAgeDays: opts.noiseMaxAgeDays, claimMaxHunks: opts.claimMaxHunks, requireVerified: opts.requireVerified, ...(opts.override ? { override: opts.override } : {}), now: opts.now, runs: opts.runs, log: opts.log, ...(opts.noise ? { noise: opts.noise } : {}) };
+  const common = { substrate: opts.substrate, captureDir: outDir, claims, ...(sloFile ? { slo: sloFile } : {}), ...(headerContract ? { headerContract } : {}), masksFile: opts.masksFile, noiseMaxAgeDays: opts.noiseMaxAgeDays, claimMaxHunks: opts.claimMaxHunks, requireVerified: opts.requireVerified, ...(opts.override ? { override: opts.override } : {}), now: opts.now, runs: opts.runs, log: opts.log, ...(opts.noise ? { noise: opts.noise } : {}) };
 
   // ---- migration: no stacks, a throwaway Postgres and two sets of migrations.
   if (opts.mode === "migration") {
@@ -393,6 +399,7 @@ export async function run(opts: RunOptions): Promise<RunOutcome> {
   // R5: what the images are (manifest, SBOM, vulnerabilities), read from the images before anything runs.
   const staticPolicy = { ...staticPolicyFromEnv(process.env, trust.policy), ...(vex ? { vex } : {}), ...opts.static };
   if (vex) opts.log(`  OpenVEX: ${vex.info.source}, ${vex.info.statements} statement(s), ${vex.info.excepts} that take an advisory out of the scan, on both sides`);
+  if (headerContract) opts.log(`  header contract: ${headerContract.source}, ${headerContract.headers.length} header(s), judged on b (informing)`);
   if (sloFile) opts.log(`  SLOs: ${sloFile.source}, ${sloFile.objectives.length} objective(s) over ${sloFile.window}, judged on b (informing)`);
   opts.log("collecting static image artefacts (manifest, SBOM, vulnerabilities)…");
   a.imageStatic = collectImageStatic(a.images, a.provenance, { exec: realExec, policy: staticPolicy, log: opts.log });
