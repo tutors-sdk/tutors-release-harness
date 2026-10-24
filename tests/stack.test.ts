@@ -59,6 +59,13 @@ describe("compose.harness.yaml", () => {
     }
   });
 
+  it("the signed-in reader has a service key on both sides, so a content lock is written, not refused with 503 (mono-repo #519)", () => {
+    for (const side of ["a", "b"]) {
+      const env = compose.services[`reader-auth-${side}`]!.environment as Record<string, unknown>;
+      expect(env.PRIVATE_SUPABASE_SERVICE_ROLE_KEY, side).toBe("harness-service-role-key-not-a-real-key");
+    }
+  });
+
   it("the two sides differ only in image, ports and the URLs that name the side", () => {
     for (const app of apps) {
       const a = compose.services[`${app}-a`]!;

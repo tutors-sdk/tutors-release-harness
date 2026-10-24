@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Journey } from "./journeys.ts";
 import { parseFeature, type GherkinFeature, type GherkinRule } from "./gherkin.ts";
-import { fixture } from "./fixture.ts";
+import { fixture, TIME_COURSE_ID } from "./fixture.ts";
 import { bind, type World } from "./steps.ts";
 
 /**
@@ -17,12 +17,15 @@ import { bind, type World } from "./steps.ts";
  *   @role-<role>      who the identity stub signs in as: student (default), enrolled, lecturer, owner, admin
  *   @course-rules     since 1.44.0: read the Rule journeys' course (fixtures/course-server/rules-course: signed in, private,
  *                     a quiz, a notebook, a calendar), not the fixture course
+ *   @course-site      since 1.57.1: the same course, named by its Netlify site id `harness-rules` as a production course is,
+ *                     for a journey the reader's server checks: it fetches https://<id>.netlify.app/tutors.json to find
+ *                     the course's educators (mono-repo #519, content locks) and refuses an id with a port
  * The scenario's name ends "(exercises Rules 0011, 0250-0258, ...)": the monorepo Rules the scenario drives, each id or
  * range as the monorepo numbers them, then optionally `; <a note>` (since 1.44.0). Every step must match a sentence in traffic/journeys/steps.ts.
  */
 export const FEATURES_DIR = join(import.meta.dirname, "features");
 const ROLES = ["student", "enrolled", "lecturer", "owner", "admin"];
-const COURSES = ["fixture", "rules"];
+const COURSES = ["fixture", "rules", "site"];
 /** The Rule journeys' course's title (fixtures/course-server/rules-course-build/build.ts). */
 export const RULES_COURSE_TITLE = "Harness Rules Course";
 
@@ -74,14 +77,16 @@ export function journeyOf(feature: GherkinFeature, rule: GherkinRule): Journey {
     ...(course !== "fixture" ? { course } : {}),
     rules: [rule.id, ...exercisedBy(rule.scenario.name).filter((r) => r !== rule.id)],
     async run(page, urls, onPage, actors) {
-      const id = course === "rules" ? urls.rulesCourseId : urls.courseId;
+      // A `site` journey names the course server's Rule course by its Netlify id; the browser and the reader's server are
+      // both answered from the course server (src/collectors/browser.ts routeCourseSite, fixtures/identity).
+      const id = course === "fixture" ? urls.courseId : course === "site" && urls.rulesCourseId ? TIME_COURSE_ID : urls.rulesCourseId;
       if (!id) throw new Error(`this side serves no ${course} course (external side?)`);
       const world: World = {
         page,
         urls,
         onPage,
         rule: rule.id,
-        course: { id, title: course === "rules" ? RULES_COURSE_TITLE : fixture.title },
+        course: { id, title: course === "fixture" ? fixture.title : RULES_COURSE_TITLE },
         async act(who) {
           if (who === "student") world.page = page;
           else if (!actors) throw new Error("this run cannot open a second browser");

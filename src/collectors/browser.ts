@@ -326,13 +326,18 @@ async function routeIdentity(context: BrowserContext, role?: string) {
  * journeys therefore name the Rule journeys' course by its plain id, `harness-rules`, and that one site is answered
  * from the course server, the same file on both sides. A course id with a port (`localhost:8081`) makes no valid
  * netlify.app URL, so the time app could never read its PIN. Every other netlify.app request goes on as before.
+ *
+ * Since 1.57.1 the whole site is answered, not only its tutors.json: a `@course-site` Rule journey opens the course in
+ * the reader as `harness-rules` (the content lock journey, whose lock the reader's server checks against that site), and
+ * the reader then loads the course's pages and images from the same origin.
  */
-async function routeCoursePin(context: BrowserContext, spec: SideSpec) {
+async function routeCourseSite(context: BrowserContext, spec: SideSpec) {
   const served = spec.urls.rulesCourseId;
   if (!served) return;
-  await context.route(`https://${TIME_COURSE_ID}.netlify.app/tutors.json`, async (route) => {
+  await context.route(new RegExp(`^https://${TIME_COURSE_ID}\\.netlify\\.app/`), async (route) => {
+    const original = new URL(route.request().url());
     try {
-      await route.fulfill({ response: await route.fetch({ url: `http://${served}/tutors.json` }) });
+      await route.fulfill({ response: await route.fetch({ url: `http://${served}${original.pathname}${original.search}` }) });
     } catch (error) {
       await route.fulfill({ status: 502, body: `course server unreachable at ${served}: ${error instanceof Error ? error.message : error}` });
     }
@@ -373,7 +378,7 @@ export async function captureJourney(browser: Browser, spec: SideSpec, journey: 
     contexts.push(context);
     context.setDefaultTimeout(ACTION_TIMEOUT_MS);
     if (journey.target === "readerAuth") await routeIdentity(context, role);
-    if (journey.set === "rules") await routeCoursePin(context, spec);
+    if (journey.set === "rules") await routeCourseSite(context, spec);
     // Google Fonts, Iconify and jsDelivr are answered from one recorded copy, the same bytes on both sides, at once
     // (src/collectors/third-party-cache.ts): an icon or the typeface can no longer arrive on one side only before a shot.
     await routeThirdParty(context);
