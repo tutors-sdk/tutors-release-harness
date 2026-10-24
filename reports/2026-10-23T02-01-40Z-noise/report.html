@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Harness noise warn</title>
+<style>
+  :root { color-scheme: light dark; --pass:#2f7a4f; --warn:#8a6119; --fail:#a12a2a; --rule:#8884; }
+  body { margin:0; padding:24px 16px; font:15px/1.5 system-ui, sans-serif; max-width: 64rem; margin-inline:auto; }
+  h1 { font-size:1.4rem; margin:0 0 4px; }
+  .verdict { display:inline-block; padding:2px 10px; border-radius:4px; color:#fff; font-weight:600; text-transform:uppercase; letter-spacing:.05em; }
+  .verdict.pass { background:var(--pass);} .verdict.warn { background:var(--warn);} .verdict.fail { background:var(--fail);}
+  table { border-collapse:collapse; width:100%; margin:12px 0 24px; font-size:14px; }
+  th, td { text-align:left; vertical-align:top; padding:6px 8px; border-bottom:1px solid var(--rule); }
+  th { font-size:12px; text-transform:uppercase; letter-spacing:.06em; opacity:.7; }
+  tr.info td { opacity:.75; }
+  tr.fail td:last-child strong { color:var(--fail); }
+  table.provenance td { font-size:13px; word-break:break-all; }
+  .loud { border-left:4px solid var(--warn); padding:6px 10px; font-weight:600; }
+  code, pre { font-family: ui-monospace, Menlo, Consolas, monospace; font-size:13px; }
+  pre { white-space:pre-wrap; margin:6px 0 0; padding:8px; background:#8881; border-radius:4px; }
+  details summary { cursor:pointer; font-size:13px; opacity:.8; }
+  ul { padding-left:1.2rem; }
+  td code, td a, td pre { overflow-wrap:anywhere; }
+  .causes small { opacity:.8; }
+  @media (max-width: 640px) {
+    .causes thead { display:none; }
+    .causes table, .causes tbody, .causes tr, .causes td { display:block; }
+    .causes tr { border-bottom:1px solid var(--rule); padding:6px 0; }
+    .causes td { border:0; padding:2px 0; }
+    .causes td[data-label]::before { content:attr(data-label) ": "; font-size:12px; opacity:.7; }
+    table.informing thead, table.policy thead { display:none; }
+    table.informing, table.informing tbody, table.informing tr, table.informing td, table.policy, table.policy tbody, table.policy tr, table.policy td { display:block; overflow:visible; }
+    table.informing tr, table.policy tr { border-bottom:1px solid var(--rule); padding:6px 0; }
+    table.informing td, table.policy td { border:0; padding:2px 0; overflow-wrap:anywhere; }
+    table.informing td[data-label]::before, table.policy td[data-label]::before { content:attr(data-label) ": "; font-size:12px; opacity:.7; }
+  }
+  @media (max-width:640px){table{display:block;overflow-x:auto;max-width:100%}p,li,dd,summary,h1,h2,h3,h4{overflow-wrap:anywhere}}
+  .level { white-space:nowrap; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; padding:1px 8px; border-radius:4px; border:1px solid currentColor; opacity:.8; vertical-align:middle; }
+  table.informing td:first-child code { font-style:italic; }
+  footer { font-size:12px; opacity:.7; border-top:1px solid var(--rule); padding-top:12px; }
+</style>
+</head>
+<body>
+<h1>Tutors release harness — <code>noise</code> <span class="verdict warn">warn</span></h1>
+<p><small>2026-10-23T02:01:40.258Z · clock 2026-09-16T09:05:00.000Z · 5 run(s) per side · harness 1.49.2</small></p>
+
+
+<ul><li>A/A produced 1 diff(s): the normaliser needs a mask for each, or the stack is not deterministic; the harness is advisory until this is 0</li></ul>
+<section class="causes">
+<h2 id="causes">1 unclaimed difference, 1 cause</h2>
+<p>The unclaimed differences folded by kind across apps, pages and packages: a number, a hash or a package name does not make a new cause. Read beside the verdict; it never changes it.</p>
+<table><thead><tr><th>cause</th><th>differences</th><th>apps</th><th>pages</th><th>example</th></tr></thead><tbody>
+<tr id="cause-c963a3b3"><td><code>console</code> new console message on b</td><td data-label="differences">1</td><td data-label="apps">reader</td><td data-label="pages">1<br><small><code>reference:note</code></small></td><td data-label="example"><a href="#hunk-console:reference:note:1">reference:note: new console message on b</a></td></tr>
+</tbody></table>
+
+
+</section>
+
+<table>
+<thead><tr><th></th><th>a</th><th>b</th></tr></thead>
+<tbody><tr><td>reader</td><td><code>quay.io/tutors-sdk/tutors-reader:17.0.0</code></td><td><code>quay.io/tutors-sdk/tutors-reader:17.0.0</code></td></tr><tr><td>catalogue</td><td><code>quay.io/tutors-sdk/tutors-catalogue:17.0.0</code></td><td><code>quay.io/tutors-sdk/tutors-catalogue:17.0.0</code></td></tr><tr><td>live</td><td><code>quay.io/tutors-sdk/tutors-live:17.0.0</code></td><td><code>quay.io/tutors-sdk/tutors-live:17.0.0</code></td></tr><tr><td>time</td><td><code>quay.io/tutors-sdk/tutors-time:17.0.0</code></td><td><code>quay.io/tutors-sdk/tutors-time:17.0.0</code></td></tr></tbody>
+</table>
+<table class="provenance">
+<thead><tr><th>provenance</th><th>a — pulled+verified</th><th>b — pulled+verified</th></tr></thead>
+<tbody><tr><td>reader</td><td>digest <code>sha256:15e3aa22476d608db97e05917b1990ade0a7871e7ec6e113da5fec741b427233</code><br>revision <code>432d46864626</code><br>version <code>17.0.0-rc.1</code></td><td>digest <code>sha256:15e3aa22476d608db97e05917b1990ade0a7871e7ec6e113da5fec741b427233</code><br>revision <code>432d46864626</code><br>version <code>17.0.0-rc.1</code></td></tr><tr><td>catalogue</td><td>digest <code>sha256:e9f2764654cb074d7dd4412ca163bf4c2666870444d5520361d5425bda4cec0b</code><br>revision <code>432d46864626</code><br>version <code>17.0.0-rc.1</code></td><td>digest <code>sha256:e9f2764654cb074d7dd4412ca163bf4c2666870444d5520361d5425bda4cec0b</code><br>revision <code>432d46864626</code><br>version <code>17.0.0-rc.1</code></td></tr><tr><td>live</td><td>digest <code>sha256:52740e55cfa7e7db3b2944137caada4e876990b937f1034c0c5e79796054f8a0</code><br>revision <code>432d46864626</code><br>version <code>17.0.0-rc.1</code></td><td>digest <code>sha256:52740e55cfa7e7db3b2944137caada4e876990b937f1034c0c5e79796054f8a0</code><br>revision <code>432d46864626</code><br>version <code>17.0.0-rc.1</code></td></tr><tr><td>time</td><td>digest <code>sha256:d0a9f4a2f4624038ecea3629d1a536567756d458410bee43b45e060d738d195d</code><br>revision <code>432d46864626</code><br>version <code>17.0.0-rc.1</code></td><td>digest <code>sha256:d0a9f4a2f4624038ecea3629d1a536567756d458410bee43b45e060d738d195d</code><br>revision <code>432d46864626</code><br>version <code>17.0.0-rc.1</code></td></tr></tbody>
+</table>
+
+
+<h2>Image artefacts</h2><p><small>Collected from the images, not the running apps. A cell that says NOT COLLECTED was not compared.</small></p><table><thead><tr><th>app</th><th>artefact</th><th>a</th><th>b</th></tr></thead><tbody><tr><td>reader</td><td>manifest</td><td>10 layers, 309.2 MB, USER 1001, ports 3000/tcp (docker image inspect)</td><td>10 layers, 309.2 MB, USER 1001, ports 3000/tcp (docker image inspect)</td></tr><tr><td>reader</td><td>sbom</td><td>134 distinct package(s) (cosign attestation (signature verified))</td><td>134 distinct package(s) (cosign attestation (signature verified))</td></tr><tr><td>reader</td><td>vulns</td><td>94 advisories, db built 2026-10-22T18:51:21Z schema v6.1.10 (grype 0.119.0)</td><td>94 advisories, db built 2026-10-22T18:51:21Z schema v6.1.10 (grype 0.119.0)</td></tr><tr><td>catalogue</td><td>manifest</td><td>10 layers, 274.2 MB, USER 1001, ports 3000/tcp (docker image inspect)</td><td>10 layers, 274.2 MB, USER 1001, ports 3000/tcp (docker image inspect)</td></tr><tr><td>catalogue</td><td>sbom</td><td>134 distinct package(s) (cosign attestation (signature verified))</td><td>134 distinct package(s) (cosign attestation (signature verified))</td></tr><tr><td>catalogue</td><td>vulns</td><td>94 advisories, db built 2026-10-22T18:51:21Z schema v6.1.10 (grype 0.119.0)</td><td>94 advisories, db built 2026-10-22T18:51:21Z schema v6.1.10 (grype 0.119.0)</td></tr><tr><td>live</td><td>manifest</td><td>10 layers, 274.5 MB, USER 1001, ports 3000/tcp (docker image inspect)</td><td>10 layers, 274.5 MB, USER 1001, ports 3000/tcp (docker image inspect)</td></tr><tr><td>live</td><td>sbom</td><td>134 distinct package(s) (cosign attestation (signature verified))</td><td>134 distinct package(s) (cosign attestation (signature verified))</td></tr><tr><td>live</td><td>vulns</td><td>94 advisories, db built 2026-10-22T18:51:21Z schema v6.1.10 (grype 0.119.0)</td><td>94 advisories, db built 2026-10-22T18:51:21Z schema v6.1.10 (grype 0.119.0)</td></tr><tr><td>time</td><td>manifest</td><td>10 layers, 285.2 MB, USER 1001, ports 3000/tcp (docker image inspect)</td><td>10 layers, 285.2 MB, USER 1001, ports 3000/tcp (docker image inspect)</td></tr><tr><td>time</td><td>sbom</td><td>143 distinct package(s) (cosign attestation (signature verified))</td><td>143 distinct package(s) (cosign attestation (signature verified))</td></tr><tr><td>time</td><td>vulns</td><td>94 advisories, db built 2026-10-22T18:51:21Z schema v6.1.10 (grype 0.119.0)</td><td>94 advisories, db built 2026-10-22T18:51:21Z schema v6.1.10 (grype 0.119.0)</td></tr></tbody></table>
+
+
+
+<h2 id="load">Load (k6, 20 req/s for 30s)</h2><table><thead><tr><th>side</th><th>requests</th><th>failed</th><th>5xx</th><th>p50</th><th>p95</th></tr></thead><tbody><tr><td>a</td><td>600</td><td>0</td><td>0</td><td>0.99 ms</td><td>1.71 ms</td></tr><tr><td>b</td><td>600</td><td>0</td><td>0</td><td>0.91 ms</td><td>1.48 ms</td></tr></tbody></table>
+
+<h2 id="differences">Differences (28; 1 unclaimed)</h2>
+<table><thead><tr><th>artefact</th><th>scope</th><th>what changed</th><th>claimed by</th></tr></thead><tbody><tr id="hunk-console:reference:note:1" class="fail"><td><code>console</code></td><td><code>reference:note</code><br><small>/note/reference-course/topic-07-reference/note-1</small></td><td>reference:note: new console message on b<details><summary>detail</summary><pre>error: Failed to load resource: net::ERR_HTTP2_PROTOCOL_ERROR: {{course}}/topic-07-reference/note-1/img/video.mov</pre></details></td><td><strong>unclaimed</strong></td></tr>
+<tr id="hunk-realtime:reader-auth:rule-0592-stroke-saved/websocket:2" class="info"><td><code>realtime</code></td><td><code>reader-auth:rule-0592-stroke-saved/websocket</code><br><small>/whiteboard/localhost:8081/unit-1/topic-01/whiteboard-01</small></td><td>reader-auth:rule-0592-stroke-saved: a reader page opened a Realtime websocket on b (1 socket(s), 6 data frame(s) sent); readers must be publish-only (production too)</td><td><em>informing</em> <a href="#informing">(reported, never gates)</a></td></tr>
+<tr id="hunk-runtime:runtime/summary:3" class="info"><td><code>runtime</code></td><td><code>runtime/summary</code></td><td>container posture collected for catalogue, live, reader, reader-auth, time on both sides (compose)<details><summary>detail</summary><pre>catalogue: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+           b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+live: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+reader: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+        b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+reader-auth: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+             b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+time: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter
+      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter</pre></details></td><td><em>informational</em></td></tr>
+<tr id="hunk-startup:startup/summary:4" class="info"><td><code>startup</code></td><td><code>startup/summary</code></td><td>startup time collected on both sides (compose, 5 restart(s) per app)<details><summary>detail</summary><pre>catalogue: first healthy / 415 → 392 ms, ready 2308 → 2312 ms (median, a → b, n=5/5)
+live: first healthy / 377 → 393 ms, ready 2328 → 2297 ms (median, a → b, n=5/5)
+reader: first healthy / 425 → 406 ms, ready 2296 → 2288 ms (median, a → b, n=5/5)
+time: first healthy / 296 → 408 ms, ready 2292 → 2320 ms (median, a → b, n=5/5)</pre></details></td><td><em>informational</em></td></tr>
+<tr id="hunk-image-hardening:reader/healthcheck:5" class="info"><td><code>image-hardening</code></td><td><code>reader/healthcheck</code></td><td>reader: declares no HEALTHCHECK (production too)</td><td><em>informing</em> <a href="#informing">(reported, never gates)</a></td></tr>
+<tr id="hunk-image-hardening:catalogue/healthcheck:6" class="info"><td><code>image-hardening</code></td><td><code>catalogue/healthcheck</code></td><td>catalogue: declares no HEALTHCHECK (production too)</td><td><em>informing</em> <a href="#informing">(reported, never gates)</a></td></tr>
+<tr id="hunk-image-hardening:live/healthcheck:7" class="info"><td><code>image-hardening</code></td><td><code>live/healthcheck</code></td><td>live: declares no HEALTHCHECK (production too)</td><td><em>informing</em> <a href="#informing">(reported, never gates)</a></td></tr>
+<tr id="hunk-image-hardening:time/healthcheck:8" class="info"><td><code>image-hardening</code></td><td><code>time/healthcheck</code></td><td>time: declares no HEALTHCHECK (production too)</td><td><em>informing</em> <a href="#informing">(reported, never gates)</a></td></tr>
+<tr id="hunk-build-provenance:reader/slsa:9" class="info"><td><code>build-provenance</code></td><td><code>reader/slsa</code></td><td>reader: carries no SLSA provenance verified under the publishing identity on 15e3aa22476d (production too)</td><td><em>informing</em> <a href="#informing">(reported, never gates)</a></td></tr>
+<tr id="hunk-build-provenance:catalogue/slsa:10" class="info"><td><code>build-provenance</code></td><td><code>catalogue/slsa</code></td><td>catalogue: carries no SLSA provenance verified under the publishing identity on e9f2764654cb (production too)</td><td><em>informing</em> <a href="#informing">(reported, never gates)</a></td></tr>
+<tr id="hunk-build-provenance:live/slsa:11" class="info"><td><code>build-provenance</code></td><td><code>live/slsa</code></td><td>live: carries no SLSA provenance verified under the publishing identity on 52740e55cfa7 (production too)</td><td><em>informing</em> <a href="#informing">(reported, never gates)</a></td></tr>
+<tr id="hunk-build-provenance:time/slsa:12" class="info"><td><code>build-provenance</code></td><td><code>time/slsa</code></td><td>time: carries no SLSA provenance verified under the publishing identity on d0a9f4a2f462 (production too)</td><td><em>informing</em> <a href="#informing">(reported, never gates)</a></td></tr>
+<tr id="hunk-vuln-ceiling:reader/summary:13" class="info"><td><code>vuln-ceiling</code></td><td><code>reader/summary</code></td><td>reader: vuln-ceiling holds on b: 94 advisories scanned, 20 critical or high, none with a fix available</td><td><em>informational</em></td></tr>
+<tr id="hunk-vuln-ceiling:catalogue/summary:14" class="info"><td><code>vuln-ceiling</code></td><td><code>catalogue/summary</code></td><td>catalogue: vuln-ceiling holds on b: 94 advisories scanned, 20 critical or high, none with a fix available</td><td><em>informational</em></td></tr>
+<tr id="hunk-vuln-ceiling:live/summary:15" class="info"><td><code>vuln-ceiling</code></td><td><code>live/summary</code></td><td>live: vuln-ceiling holds on b: 94 advisories scanned, 20 critical or high, none with a fix available</td><td><em>informational</em></td></tr>
+<tr id="hunk-vuln-ceiling:time/summary:16" class="info"><td><code>vuln-ceiling</code></td><td><code>time/summary</code></td><td>time: vuln-ceiling holds on b: 94 advisories scanned, 20 critical or high, none with a fix available</td><td><em>informational</em></td></tr>
+<tr id="hunk-replay:GET_/_app/immutable/chunks/__hash__.js:17" class="info"><td><code>replay</code></td><td><code>replay:talk-01 GET /_app/immutable/chunks/{{hash}}.js</code><br><small>/talk/localhost:8080/unit-1/topic-01/talk-01</small></td><td>replay:talk-01: GET /_app/immutable/chunks/{{hash}}.js requested 39× on a, 36× on b</td><td><em>informing</em> <a href="#informing">(reported, never gates)</a></td></tr>
+<tr id="hunk-replay:GET_/_app/immutable/chunks/__hash__.js:18" class="info"><td><code>replay</code></td><td><code>replay:note-01 GET /_app/immutable/chunks/{{hash}}.js</code><br><small>/note/localhost:8080/unit-1/topic-01/note-01</small></td><td>replay:note-01: GET /_app/immutable/chunks/{{hash}}.js requested 38× on a, 40× on b</td><td><em>informing</em> <a href="#informing">(reported, never gates)</a></td></tr>
+<tr id="hunk-slo:reader-availability:19" class="info"><td><code>slo</code></td><td><code>reader-availability</code></td><td>reader-availability: 100.0% of 62 reader requests not 5xx on b (its /metrics across the journeys), objective 99.90% (harness floor): holds</td><td><em>informational</em></td></tr>
+<tr id="hunk-slo:reader-availability/load:20" class="info"><td><code>slo</code></td><td><code>reader-availability/load</code></td><td>reader-availability: 100.0% of 600 reader requests not 5xx on b (the k6 load leg), objective 99.90% (harness floor): holds</td><td><em>informational</em></td></tr>
+<tr id="hunk-slo:reader-latency:21" class="info"><td><code>slo</code></td><td><code>reader-latency</code></td><td>reader-latency: 100.0% of 62 reader requests under 1s on b (its /metrics across the journeys), objective 99.0% (harness floor): holds</td><td><em>informational</em></td></tr>
+<tr id="hunk-slo:reader-latency/load:22" class="info"><td><code>slo</code></td><td><code>reader-latency/load</code></td><td>reader-latency: 100.0% of 600 reader requests under 1s on b (the k6 load leg), objective 99.0% (harness floor): holds</td><td><em>informational</em></td></tr>
+<tr id="hunk-slo:catalogue-availability/not-evaluated:23" class="info"><td><code>slo</code></td><td><code>catalogue-availability/not-evaluated</code></td><td>catalogue-availability: not evaluated on b: 5 request(s) from its /metrics across the journeys, fewer than 20</td><td><em>informational</em></td></tr>
+<tr id="hunk-slo:catalogue-latency/not-evaluated:24" class="info"><td><code>slo</code></td><td><code>catalogue-latency/not-evaluated</code></td><td>catalogue-latency: not evaluated on b: 5 request(s) from its /metrics across the journeys, fewer than 20</td><td><em>informational</em></td></tr>
+<tr id="hunk-slo:live-availability/not-evaluated:25" class="info"><td><code>slo</code></td><td><code>live-availability/not-evaluated</code></td><td>live-availability: not evaluated on b: 5 request(s) from its /metrics across the journeys, fewer than 20</td><td><em>informational</em></td></tr>
+<tr id="hunk-slo:live-latency/not-evaluated:26" class="info"><td><code>slo</code></td><td><code>live-latency/not-evaluated</code></td><td>live-latency: not evaluated on b: 5 request(s) from its /metrics across the journeys, fewer than 20</td><td><em>informational</em></td></tr>
+<tr id="hunk-slo:time-availability/not-evaluated:27" class="info"><td><code>slo</code></td><td><code>time-availability/not-evaluated</code></td><td>time-availability: not evaluated on b: its /metrics across the journeys carries no availability SLI for time</td><td><em>informational</em></td></tr>
+<tr id="hunk-slo:time-latency/not-evaluated:28" class="info"><td><code>slo</code></td><td><code>time-latency/not-evaluated</code></td><td>time-latency: not evaluated on b: its /metrics across the journeys carries no latency SLI for time</td><td><em>informational</em></td></tr></tbody></table>
+
+<h2 id="policy">Policy: what b must be <span class="level">informing</span></h2>
+<p>Checks on the candidate alone, whatever production is: image hardening (root user, no healthcheck, a secret in the environment or the layer history), build provenance (SLSA provenance from image-build.yml) and the vulnerability ceiling (a critical or high advisory with a fix available). Informing: reported, never gates; a claim can still cover a finding. Hover a cell for what was checked.</p>
+<table class="policy"><thead><tr><th>app</th><th>image-hardening</th><th>build-provenance</th><th>vuln-ceiling</th></tr></thead><tbody><tr><td><code>reader</code></td><td data-label="image-hardening"><a href="#informing">1 finding</a> <small>(1 on production too)</small></td><td data-label="build-provenance"><a href="#informing">1 finding</a> <small>(1 on production too)</small></td><td data-label="vuln-ceiling" title="reader: vuln-ceiling holds on b: 94 advisories scanned, 20 critical or high, none with a fix available">holds</td></tr><tr><td><code>catalogue</code></td><td data-label="image-hardening"><a href="#informing">1 finding</a> <small>(1 on production too)</small></td><td data-label="build-provenance"><a href="#informing">1 finding</a> <small>(1 on production too)</small></td><td data-label="vuln-ceiling" title="catalogue: vuln-ceiling holds on b: 94 advisories scanned, 20 critical or high, none with a fix available">holds</td></tr><tr><td><code>live</code></td><td data-label="image-hardening"><a href="#informing">1 finding</a> <small>(1 on production too)</small></td><td data-label="build-provenance"><a href="#informing">1 finding</a> <small>(1 on production too)</small></td><td data-label="vuln-ceiling" title="live: vuln-ceiling holds on b: 94 advisories scanned, 20 critical or high, none with a fix available">holds</td></tr><tr><td><code>time</code></td><td data-label="image-hardening"><a href="#informing">1 finding</a> <small>(1 on production too)</small></td><td data-label="build-provenance"><a href="#informing">1 finding</a> <small>(1 on production too)</small></td><td data-label="vuln-ceiling" title="time: vuln-ceiling holds on b: 94 advisories scanned, 20 critical or high, none with a fix available">holds</td></tr></tbody></table>
+
+<h2 id="informing">Informing (11; 11 unclaimed) <span class="level">reported, never gates</span></h2>
+<p>18 of 27 engines are blocking; informing (reported, never gates): timing (no date set to block; load/errors still blocks), image-hardening (no date set to block), build-provenance (no date set to block), vuln-ceiling (no date set to block), timing-tolerance (no date set to block), asset-graph (no date set to block), replay (no date set to block), slo (no date set to block), realtime (no date set to block). An informing engine's findings are listed here and never change the verdict, the Gate or the exit code; a claim can still cover one.</p>
+<table class="informing"><thead><tr><th>engine</th><th>scope</th><th>what it found</th><th>level</th><th>claimed by</th></tr></thead><tbody><tr id="informing-realtime:reader-auth:rule-0592-stroke-saved/websocket:2"><td data-label="engine"><code>realtime</code></td><td data-label="scope"><code>reader-auth:rule-0592-stroke-saved/websocket</code></td><td data-label="found">reader-auth:rule-0592-stroke-saved: a reader page opened a Realtime websocket on b (1 socket(s), 6 data frame(s) sent); readers must be publish-only (production too)</td><td data-label="level">no date set</td><td data-label="claimed by"><em>unclaimed</em></td></tr>
+<tr id="informing-image-hardening:reader/healthcheck:5"><td data-label="engine"><code>image-hardening</code></td><td data-label="scope"><code>reader/healthcheck</code></td><td data-label="found">reader: declares no HEALTHCHECK (production too)</td><td data-label="level">no date set</td><td data-label="claimed by"><em>unclaimed</em></td></tr>
+<tr id="informing-image-hardening:catalogue/healthcheck:6"><td data-label="engine"><code>image-hardening</code></td><td data-label="scope"><code>catalogue/healthcheck</code></td><td data-label="found">catalogue: declares no HEALTHCHECK (production too)</td><td data-label="level">no date set</td><td data-label="claimed by"><em>unclaimed</em></td></tr>
+<tr id="informing-image-hardening:live/healthcheck:7"><td data-label="engine"><code>image-hardening</code></td><td data-label="scope"><code>live/healthcheck</code></td><td data-label="found">live: declares no HEALTHCHECK (production too)</td><td data-label="level">no date set</td><td data-label="claimed by"><em>unclaimed</em></td></tr>
+<tr id="informing-image-hardening:time/healthcheck:8"><td data-label="engine"><code>image-hardening</code></td><td data-label="scope"><code>time/healthcheck</code></td><td data-label="found">time: declares no HEALTHCHECK (production too)</td><td data-label="level">no date set</td><td data-label="claimed by"><em>unclaimed</em></td></tr>
+<tr id="informing-build-provenance:reader/slsa:9"><td data-label="engine"><code>build-provenance</code></td><td data-label="scope"><code>reader/slsa</code></td><td data-label="found">reader: carries no SLSA provenance verified under the publishing identity on 15e3aa22476d (production too)</td><td data-label="level">no date set</td><td data-label="claimed by"><em>unclaimed</em></td></tr>
+<tr id="informing-build-provenance:catalogue/slsa:10"><td data-label="engine"><code>build-provenance</code></td><td data-label="scope"><code>catalogue/slsa</code></td><td data-label="found">catalogue: carries no SLSA provenance verified under the publishing identity on e9f2764654cb (production too)</td><td data-label="level">no date set</td><td data-label="claimed by"><em>unclaimed</em></td></tr>
+<tr id="informing-build-provenance:live/slsa:11"><td data-label="engine"><code>build-provenance</code></td><td data-label="scope"><code>live/slsa</code></td><td data-label="found">live: carries no SLSA provenance verified under the publishing identity on 52740e55cfa7 (production too)</td><td data-label="level">no date set</td><td data-label="claimed by"><em>unclaimed</em></td></tr>
+<tr id="informing-build-provenance:time/slsa:12"><td data-label="engine"><code>build-provenance</code></td><td data-label="scope"><code>time/slsa</code></td><td data-label="found">time: carries no SLSA provenance verified under the publishing identity on d0a9f4a2f462 (production too)</td><td data-label="level">no date set</td><td data-label="claimed by"><em>unclaimed</em></td></tr>
+<tr id="informing-replay:GET_/_app/immutable/chunks/__hash__.js:17"><td data-label="engine"><code>replay</code></td><td data-label="scope"><code>replay:talk-01 GET /_app/immutable/chunks/{{hash}}.js</code></td><td data-label="found">replay:talk-01: GET /_app/immutable/chunks/{{hash}}.js requested 39× on a, 36× on b</td><td data-label="level">no date set</td><td data-label="claimed by"><em>unclaimed</em></td></tr>
+<tr id="informing-replay:GET_/_app/immutable/chunks/__hash__.js:18"><td data-label="engine"><code>replay</code></td><td data-label="scope"><code>replay:note-01 GET /_app/immutable/chunks/{{hash}}.js</code></td><td data-label="found">replay:note-01: GET /_app/immutable/chunks/{{hash}}.js requested 38× on a, 40× on b</td><td data-label="level">no date set</td><td data-label="claimed by"><em>unclaimed</em></td></tr></tbody></table>
+
+
+
+
+
+
+
+<h2 id="masks">Masks</h2>
+<p>Fired: <code>response-date</code>×272, <code>request-id</code>×272, <code>etag</code>×272, <code>metrics-process</code>×602, <code>metrics-timing-histograms</code>×12, <code>third-party-requests</code>×6824, <code>persistence-stub-requests</code>×2600, <code>oauth-callback-state</code>×110, <code>media-range-status</code>×45, <code>chromium-compute-pressure-policy</code>×1, <code>hashed-assets</code>×20123, <code>footer-tutors-version</code>×846, <code>transport-length</code>×272, <code>transport-connection</code>×272, <code>transport-keepalive</code>×272.<br>
+Silent this run: <code>realtime-rest-fallback-warning</code>, <code>transport-encoding</code>, <code>transport-transfer</code> — a mask that never fires is a mask to delete.</p>
+
+<footer>Every masked field is listed in <code>normalise/masks.yaml</code> with a reason. A mask is a blind spot you chose.<br>harness 1.49.2 · 5734ec4a78ab · contract 1.49.2</footer>
+</body>
+</html>
