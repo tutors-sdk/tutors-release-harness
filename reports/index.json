@@ -2,6 +2,89 @@
   "schemaVersion": 1,
   "runs": [
     {
+      "id": "2026-10-27T02-29-51Z-release",
+      "mode": "release",
+      "ranAt": "2026-10-27T02:29:51.926Z",
+      "verdict": "fail",
+      "reasons": [
+        "143 unclaimed diff(s)"
+      ],
+      "sides": {
+        "a": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:17.0.0",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:17.0.0",
+          "live": "quay.io/tutors-sdk/tutors-live:17.0.0",
+          "time": "quay.io/tutors-sdk/tutors-time:17.0.0"
+        },
+        "b": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:sha-eef3a27",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:sha-eef3a27",
+          "live": "quay.io/tutors-sdk/tutors-live:sha-eef3a27",
+          "time": "quay.io/tutors-sdk/tutors-time:sha-eef3a27"
+        }
+      },
+      "harnessVersion": "1.57.1",
+      "runUrl": "https://github.com/tutors-sdk/tutors-release-harness/actions/runs/40435695838",
+      "score": {
+        "score": 37,
+        "grade": "D",
+        "normalness": "normal",
+        "manual": 5
+      },
+      "confidence": {
+        "gate": "FAIL",
+        "rcs": null,
+        "band": null,
+        "note": "No RCS: Gate FAIL. The Gate wins: no number talks a FAIL back on. The dimensions are shown for the 5 Whys, not for a decision.",
+        "glance": 3,
+        "scoredBy": "1.57.1"
+      },
+      "changes": {
+        "score": 0,
+        "prs": 35,
+        "risky": 27,
+        "floorBreached": false,
+        "range": "v17.0.0..eef3a27815e743c059e0fd74ed5a1efb149c7ff5"
+      },
+      "delta": {
+        "baseline": "17.0.0",
+        "against": {
+          "id": "2026-10-24T21-55-12Z-release",
+          "ranAt": "2026-10-24T21:55:12.430Z",
+          "candidate": "sha-180700e",
+          "harnessVersion": "1.57.1"
+        },
+        "new": 17,
+        "gone": 0,
+        "byArtefact": {
+          "sbom": {
+            "new": 16,
+            "gone": 0
+          },
+          "screenshot": {
+            "new": 1,
+            "gone": 0
+          }
+        }
+      },
+      "files": [
+        "2026-10-27T02-29-51Z-release/migration/report.json",
+        "2026-10-27T02-29-51Z-release/migration/report.md",
+        "2026-10-27T02-29-51Z-release/migration/report.html",
+        "2026-10-27T02-29-51Z-release/upgrade/report.json",
+        "2026-10-27T02-29-51Z-release/upgrade/report.md",
+        "2026-10-27T02-29-51Z-release/upgrade/report.html",
+        "2026-10-27T02-29-51Z-release/report.json",
+        "2026-10-27T02-29-51Z-release/report.md",
+        "2026-10-27T02-29-51Z-release/report.html",
+        "2026-10-27T02-29-51Z-release/confidence.json",
+        "2026-10-27T02-29-51Z-release/changes.json",
+        "2026-10-27T02-29-51Z-release/quality.json",
+        "2026-10-27T02-29-51Z-release/scorecard.json",
+        "2026-10-27T02-29-51Z-release/scorecard.md"
+      ]
+    },
+    {
       "id": "2026-10-24T21-55-12Z-release",
       "mode": "release",
       "ranAt": "2026-10-24T21:55:12.430Z",
