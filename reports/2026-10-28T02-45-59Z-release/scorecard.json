@@ -1,0 +1,368 @@
+{
+  "schemaVersion": 1,
+  "mode": "release",
+  "ranAt": "2026-10-28T02:45:59.373Z",
+  "verdict": "fail",
+  "score": 25,
+  "grade": "D",
+  "deductions": [
+    {
+      "points": 60,
+      "why": "166 diff(s) no claim covers"
+    },
+    {
+      "points": 15,
+      "why": "10 claim(s) that matched nothing: the changelog promises what the release does not show"
+    }
+  ],
+  "normalness": {
+    "state": "normal",
+    "source": "noise-status",
+    "hunks": 0,
+    "ranAt": "2026-10-28T01:54:59.302Z"
+  },
+  "rules": [
+    {
+      "rule": null,
+      "hunks": 166,
+      "artefacts": [
+        "dom",
+        "network",
+        "console",
+        "metrics",
+        "logs",
+        "focus",
+        "persistence",
+        "image-manifest",
+        "sbom"
+      ],
+      "scopes": [
+        "student-signs-in",
+        "rule-0588-content-lock",
+        "rule-0589-live",
+        "rule-0590-time-calendar",
+        "rule-0591-time-labs",
+        "rule-0582-signed-in-lab",
+        "rule-0583-presence",
+        "rule-0584-quiz-notebook-talk",
+        "rule-0585-preferences",
+        "rule-0587-calendar-llm",
+        "rule-0592-whiteboard",
+        "/",
+        "/course/localhost:8080",
+        "/topic/localhost:8080/unit-1/topic-01",
+        "/lab/localhost:8080/unit-1/topic-01/book-lab-01",
+        "/lab/localhost:8080/unit-1/topic-01/book-lab-01/Step-01",
+        "/search/localhost:8080",
+        "/search/localhost:8080?q=reference+material",
+        "/course/reference-course",
+        "/topic/reference-course/topic-07-reference",
+        "/lab/reference-course/topic-07-reference/book-a",
+        "/note/reference-course/topic-07-reference/note-1",
+        "time/http_request_duration_seconds_count",
+        "time/http_requests_total",
+        "time/app",
+        "time/duration_ms",
+        "time/environment",
+        "time/event",
+        "time/hostname",
+        "time/level",
+        "time/loadError",
+        "time/message",
+        "time/method",
+        "time/path",
+        "time/pid",
+        "time/requestId",
+        "time/route",
+        "time/slow",
+        "time/status",
+        "time/timestamp",
+        "time/request-id",
+        "reader-auth/info",
+        "reader-auth/warn",
+        "student-signs-in/app_errors",
+        "student-signs-in/tutors-connect-courses",
+        "student-signs-in/tutors-connect-latest",
+        "student-signs-in/record_page_view",
+        "rule-0588-content-lock/app_errors",
+        "rule-0588-content-lock/tutors-connect-courses",
+        "rule-0588-content-lock/tutors-connect-profiles",
+        "rule-0588-content-lock/tutors-connect-users",
+        "rule-0588-content-lock/tutors_content_locks",
+        "rule-0588-content-lock/record_page_view",
+        "rule-0589-live/app_errors",
+        "rule-0589-live/tutors-connect-courses",
+        "rule-0589-live/tutors-connect-latest",
+        "rule-0589-live/tutors-connect-profiles",
+        "rule-0589-live/tutors-connect-users",
+        "rule-0589-live/record_page_view",
+        "rule-0590-time-calendar/app_errors",
+        "rule-0591-time-labs/app_errors",
+        "rule-0582-signed-in-lab/app_errors",
+        "rule-0582-signed-in-lab/tutors-connect-courses",
+        "rule-0582-signed-in-lab/tutors-connect-latest",
+        "rule-0582-signed-in-lab/record_page_view",
+        "rule-0583-presence/tutors-connect-users",
+        "rule-0583-presence/app_errors",
+        "rule-0583-presence/tutors-connect-courses",
+        "rule-0583-presence/tutors-connect-latest",
+        "rule-0583-presence/record_page_view",
+        "rule-0584-quiz-notebook-talk/app_errors",
+        "rule-0584-quiz-notebook-talk/tutors-connect-courses",
+        "rule-0584-quiz-notebook-talk/record_page_view",
+        "rule-0585-preferences/app_errors",
+        "rule-0585-preferences/tutors-connect-courses",
+        "rule-0585-preferences/tutors-connect-profiles",
+        "rule-0585-preferences/tutors-connect-users",
+        "rule-0585-preferences/record_page_view",
+        "rule-0586-private-course/app_errors",
+        "rule-0586-private-course/tutors-connect-courses",
+        "rule-0586-private-course/tutors-connect-profiles",
+        "rule-0586-private-course/record_page_view",
+        "rule-0587-calendar-llm/app_errors",
+        "rule-0587-calendar-llm/tutors-connect-courses",
+        "rule-0587-calendar-llm/record_page_view",
+        "rule-0592-whiteboard/app_errors",
+        "rule-0592-whiteboard/tutors-connect-courses",
+        "rule-0592-whiteboard/whiteboard_scenes",
+        "rule-0592-whiteboard/record_page_view",
+        "reader/base",
+        "reader/@supabase/auth-js",
+        "reader/@supabase/functions-js",
+        "reader/@supabase/phoenix",
+        "reader/@supabase/postgrest-js",
+        "reader/@supabase/realtime-js",
+        "reader/@supabase/storage-js",
+        "reader/@supabase/supabase-js",
+        "reader/dompurify",
+        "reader/entities",
+        "reader/iceberg-js",
+        "reader/node",
+        "reader/tslib",
+        "reader/tzdata",
+        "reader/undici",
+        "catalogue/base",
+        "catalogue/dompurify",
+        "catalogue/entities",
+        "catalogue/node",
+        "catalogue/tzdata",
+        "catalogue/undici",
+        "live/base",
+        "live/dompurify",
+        "live/entities",
+        "live/node",
+        "live/tzdata",
+        "live/undici",
+        "time/base",
+        "time/@supabase/auth-js",
+        "time/@supabase/functions-js",
+        "time/@supabase/phoenix",
+        "time/@supabase/postgrest-js",
+        "time/@supabase/realtime-js",
+        "time/@supabase/storage-js",
+        "time/@supabase/supabase-js",
+        "time/dompurify",
+        "time/entities",
+        "time/iceberg-js",
+        "time/node",
+        "time/tslib",
+        "time/tzdata",
+        "time/undici"
+      ],
+      "prs": [],
+      "status": "unclaimed"
+    },
+    {
+      "rule": "0330",
+      "title": "When a student opens a learning object, the reader shall send the learning event to the reader's server without publishing it over Realtime from the browser.",
+      "hunks": 8,
+      "artefacts": [
+        "network"
+      ],
+      "scopes": [
+        "/",
+        "/course/localhost:8080",
+        "/search/localhost:8080",
+        "/auth/localhost:8080",
+        "/course/reference-course",
+        "/note/reference-course/topic-07-reference/note-1"
+      ],
+      "prs": [],
+      "status": "covered"
+    },
+    {
+      "rule": "0331",
+      "title": "When the reader's server receives a learning event, the reader shall publish it only to the activity feeds a live dashboard has watched in the last 90 seconds.",
+      "hunks": 4,
+      "artefacts": [
+        "persistence"
+      ],
+      "scopes": [
+        "student-signs-in/realtime_claim_live_publish",
+        "rule-0589-live/realtime_claim_live_publish",
+        "rule-0582-signed-in-lab/realtime_claim_live_publish",
+        "rule-0583-presence/realtime_claim_live_publish"
+      ],
+      "prs": [],
+      "status": "covered"
+    },
+    {
+      "rule": null,
+      "title": "CHANGELOG Unreleased: app_errors is no longer readable with the anon key; the table has never existed on tutors-prod, so no deployed version reads it (migration)",
+      "hunks": 0,
+      "artefacts": [
+        "migration"
+      ],
+      "scopes": [
+        "app_errors:anon_select_app_errors"
+      ],
+      "prs": [],
+      "status": "stale"
+    },
+    {
+      "rule": null,
+      "title": "CHANGELOG Unreleased (Time): the dashboard loads time data from the reader",
+      "hunks": 0,
+      "artefacts": [
+        "network"
+      ],
+      "scopes": [
+        "time:*"
+      ],
+      "prs": [],
+      "status": "stale"
+    },
+    {
+      "rule": null,
+      "title": "CHANGELOG Unreleased (Time): signed-out viewers see a sign-in link",
+      "hunks": 0,
+      "artefacts": [
+        "dom"
+      ],
+      "scopes": [
+        "time:*"
+      ],
+      "prs": [],
+      "status": "stale"
+    },
+    {
+      "rule": null,
+      "title": "CHANGELOG Unreleased (Time): signed-out viewers see a sign-in link",
+      "hunks": 0,
+      "artefacts": [
+        "screenshot"
+      ],
+      "scopes": [
+        "time:*"
+      ],
+      "prs": [],
+      "status": "stale"
+    },
+    {
+      "rule": "0068",
+      "title": "While a student is signed in, the reader shall save the student's edits to a whiteboard learning object in a room that only that student's session can read or overwrite.",
+      "hunks": 0,
+      "artefacts": [
+        "dom"
+      ],
+      "scopes": [
+        "reader:whiteboard*"
+      ],
+      "prs": [],
+      "status": "stale"
+    },
+    {
+      "rule": "0070",
+      "title": "When a visitor opens the catalogue, the catalogue shall show the number of students without reading any student's profile.",
+      "hunks": 0,
+      "artefacts": [
+        "network"
+      ],
+      "scopes": [
+        "catalogue:*"
+      ],
+      "prs": [],
+      "status": "stale"
+    },
+    {
+      "rule": "0072",
+      "title": "The reader shall store a signed-in student's learning records, calendar, sentiment, online status and shared presence under the GitHub login of the session, whatever student id the request names.",
+      "hunks": 0,
+      "artefacts": [
+        "network"
+      ],
+      "scopes": [
+        "reader:*"
+      ],
+      "prs": [],
+      "status": "stale"
+    },
+    {
+      "rule": "0334",
+      "title": "While it shows a course or the platform feed, the live dashboard shall report itself as a watcher of that feed every 60 seconds.",
+      "hunks": 0,
+      "artefacts": [
+        "persistence"
+      ],
+      "scopes": [
+        "*/realtime_watch"
+      ],
+      "prs": [],
+      "status": "stale"
+    }
+  ],
+  "manual": [
+    {
+      "scope": "/",
+      "path": "/",
+      "artefacts": [
+        "dom",
+        "network",
+        "console",
+        "focus"
+      ],
+      "hunks": 26,
+      "why": "moved and no claim covers it"
+    },
+    {
+      "scope": "/course/localhost:8080",
+      "path": "/course/localhost:8080",
+      "artefacts": [
+        "dom",
+        "focus"
+      ],
+      "hunks": 2,
+      "why": "moved and no claim covers it"
+    },
+    {
+      "scope": "/course/reference-course",
+      "path": "/course/reference-course",
+      "artefacts": [
+        "dom",
+        "focus"
+      ],
+      "hunks": 2,
+      "why": "moved and no claim covers it"
+    },
+    {
+      "scope": "/lab/localhost:8080/unit-1/topic-01/book-lab-01",
+      "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01",
+      "artefacts": [
+        "dom",
+        "focus"
+      ],
+      "hunks": 2,
+      "why": "moved and no claim covers it"
+    },
+    {
+      "scope": "/lab/localhost:8080/unit-1/topic-01/book-lab-01/Step-01",
+      "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01/Step-01",
+      "artefacts": [
+        "dom",
+        "focus"
+      ],
+      "hunks": 2,
+      "why": "moved and no claim covers it"
+    }
+  ]
+}
