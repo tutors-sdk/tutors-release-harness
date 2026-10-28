@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.57.0`
+Contract version: `1.59.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -1524,7 +1524,7 @@ Gate and the kept verdict differ (a FAIL kept as WARN because the A/A did not co
 numbers and hashes folded. It is a lead to read: **it never changes the Gate, the score, a verdict or an exit code**, with one
 exception since 1.42.0, **PASS, explained**: a
 Main to RC forecast whose only reason to fail is unclaimed differences, every one of them declared by the PR that
-made it (`src/changes/explain.ts` `declaredPass`), shows its Gate as PASS, the explanation as the note of the
+made it (`src/changes/explain.ts` `declaredPass`), or since 1.59.0 pinned on it by its code, shows its Gate as PASS, the explanation as the note of the
 kept `confidence.json`, in the index entry's `confidence`, the report's lead and `a3.json`'s `score`. The run's own
 `report.json` keeps its FAIL. A release candidate still needs every claim.
 
@@ -2200,6 +2200,17 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.59.0 (minor; explained by code, hint mismatches a warning)
+
+The release note is [releases/1.59.0.md](releases/1.59.0.md). A minor. A difference whose row one PR leads (its files
+match more than any other PR merged that night) is **pinned** on that PR (`contributed.rows[].pinned`) and counts toward
+PASS, explained the same as one its CHANGELOG line declares; a new request is pinned on the one PR whose files hold the
+SvelteKit endpoint it reaches (`src/changes/attribute.ts` `byRoute`), and a difference the history cannot place is
+adopted by the one PR that made the same kind of difference that run (`adopted`). A pinned PR whose title or CHANGELOG
+hint leaves out an artefact its code moved is listed in `a3.json` `gap.mismatches` and in the A3's "Hint mismatches"
+warning: never a failure. A group no PR leads, a rebuilt image and anything no PR can be held to still fail.
+`report.json`'s verdict, a release candidate's Gate and every exit code are unchanged.
 
 ### 1.57.0 (minor; production-readiness tranche 1, B5: mutants for the silent engines)
 

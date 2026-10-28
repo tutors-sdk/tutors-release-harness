@@ -324,6 +324,21 @@ describe("the page", () => {
     expect(html).toContain('id="gap"');
   });
 
+  // Since 1.59.0 (Leigh, 28 Oct 2026: "have a warning section on the A3 that says title / PR description mismatches so
+  // we have an alert. To me functionally pinning it to a code change is exactly what we want").
+  it("warns about a PR whose hint leaves out what its code moved, and shows no warning when every hint is right", () => {
+    const a = buildA3(inputs(github));
+    expect(a.gap).toBeDefined();
+    const pr = { pr: 327, sha: "d350404", title: "feat(data-api): <seam>", url: "https://github.com/tutors-sdk/tutors-mono-repo/pull/327", files: 4, direct: 4 };
+    const warned = renderA3({ ...a, gap: { ...a.gap!, mismatches: [{ pr, says: "(logs, sbom)", missing: [{ artefact: "network", hunks: 60 }, { artefact: "console", hunks: 48 }] }] } });
+    expect(warned).toContain('id="hint-mismatches"');
+    expect(warned).toContain("<code>(logs, sbom)</code>");
+    expect(warned).toContain("network (60), console (48)");
+    expect(warned).toContain("feat(data-api): &lt;seam&gt;");
+    expect(warned.indexOf('id="hint-mismatches"')).toBeGreaterThan(warned.indexOf('id="gap"'));
+    expect(renderA3({ ...a, gap: { ...a.gap!, mismatches: [] } })).not.toContain('id="hint-mismatches"');
+  });
+
   it("links only to https or inside the site, and escapes what a 5 Whys says", () => {
     expect(safeHref("https://github.com/x")).toBe("https://github.com/x");
     expect(safeHref("main-preview/reports/x/report.html#hunk-a")).toBe("main-preview/reports/x/report.html#hunk-a");

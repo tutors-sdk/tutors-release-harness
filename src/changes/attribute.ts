@@ -20,6 +20,7 @@
  * The attribution is a lead to read, never a verdict: it names who to ask, and nothing that judges reads it.
  */
 import picomatch from "picomatch";
+import type { Hunk } from "../types.ts";
 import type { Cause } from "../report/causes.ts";
 import type { Declaration } from "./declares.ts";
 import type { Changes, PrRisk } from "./signals.ts";
@@ -130,6 +131,31 @@ export function byPath(c: Pick<Cause, "artefact" | "apps">, prs: PrRisk[]): Attr
     .filter((x) => x.one + x.two > 0)
     .sort((x, y) => y.one - x.one || y.two - x.two || x.i - y.i)
     .map((x) => named(x.p, x.one + x.two, x.one));
+}
+
+const REQUEST = /\b(?:GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS) (\/[^\s?#]*)/;
+const ENDPOINT = /^apps\/[^/]+\/src\/routes((?:\/[^/]+)*)\/\+server\.[jt]s$/;
+
+/** A SvelteKit endpoint's route as a pattern: `[id]` one segment, `[...rest]` any, `[[opt]]` maybe, `(group)` none. */
+function routePattern(route: string): RegExp {
+  const parts = route.split("/").filter((p) => p && !/^\(.+\)$/.test(p));
+  const re = parts.map((p) => (/^\[\.\.\..+\]$/.test(p) ? "/.+" : /^\[\[.+\]\]$/.test(p) ? "(?:/[^/]+)?" : `/${p.split(/(\[[^\]]+\])/).map((x) => (/^\[.+\]$/.test(x) ? "[^/]+" : x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))).join("")}`)).join("");
+  return new RegExp(`^${re || "/"}$`);
+}
+
+/**
+ * Since 1.59.0: the PRs whose files hold the endpoint a new request reaches, `POST /api/courses/visit` and
+ * `apps/reader/src/routes/api/courses/visit/+server.ts`. A request no PR's endpoint answers, or one any page could
+ * make (not a network difference), matches none.
+ */
+export function byRoute(h: Pick<Hunk, "artefact" | "summary">, prs: PrRisk[]): PrRisk[] {
+  if (h.artefact !== "network") return [];
+  const path = REQUEST.exec(h.summary)?.[1]?.replace(/\/+$/, "") || undefined;
+  if (!path) return [];
+  return prs.filter((p) => (p.files ?? []).some((f) => {
+    const m = ENDPOINT.exec(f);
+    return !!m && routePattern(m[1] ?? "").test(path);
+  }));
 }
 
 /** A PR by its number, a direct commit by its sha. */

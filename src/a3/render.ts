@@ -8,7 +8,7 @@
  * Pages and printed on an A3 sheet alike. Light and dark follow the reader's setting. Every chart has its numbers in a
  * table too, and every bar and box says its value on hover.
  */
-import { leads, missedWords, prWords, unexplainedWords, type Explanation } from "../changes/explain.ts";
+import { leads, missedWords, prWords, unexplainedWords, type Explanation, type HintMismatch } from "../changes/explain.ts";
 import { ruleTouchedWords } from "../report/rules-touched.ts";
 import { declaredWords } from "../changes/declares.ts";
 import { REPO, duration, type A3, type Decisions, type FiveWhys, type Pareto, type Rca, type Score, type ValueStream } from "./model.ts";
@@ -453,6 +453,7 @@ footer{font-size:12px;color:var(--ink2);border-top:1px solid var(--rule);margin-
 @media (max-width:520px){.phead,.bars li{grid-template-columns:minmax(0,9rem) minmax(30px,1fr) 2.6rem 2.4rem}}
 .comparing{font-size:1.05rem;margin:.2rem 0 .8rem}
 .gap .ledger{font-size:1.05rem;margin:.2rem 0 .5rem}
+.mismatch h3{font-size:13px;margin:14px 0 4px} .mismatch h3 .hint{font-weight:400;font-size:12px;color:var(--ink2)} .mismatch .warn{background:var(--warn);color:#fff;border-radius:3px;padding:0 5px;margin-right:4px;font-size:11px}
 .gap tr.grp th{text-align:left}
 .gap tr.grp.ok th{color:var(--pass)} .gap tr.grp.no th{color:var(--fail)}
 ${QUALITY_CSS}
@@ -461,6 +462,15 @@ ${QUALITY_CSS}
 
 /** Rows of the gap table shown before "and N more". */
 export const GAP_ROWS = 12;
+
+/** Since 1.59.0: the PRs whose title or CHANGELOG line leaves out what their code moved, as a warning. */
+function mismatchHtml(ms: HintMismatch[] | undefined): string {
+  if (!ms?.length) return "";
+  const rows = ms.map((m) => `<tr><td>${link(`${m.pr.pr !== null ? `#${m.pr.pr}` : m.pr.sha.slice(0, 7)} ${m.pr.title}`, m.pr.url)}</td><td>${m.says ? `<code>${esc(m.says)}</code>` : `<span class="muted">no hint</span>`}</td><td>${m.missing.map((a) => `${esc(a.artefact)} (${a.hunks})`).join(", ")}</td></tr>`).join("");
+  return `<div class="mismatch" id="hint-mismatches"><h3><span class="warn">Warning</span> Hint mismatches <span class="hint">the PR's title or CHANGELOG line does not name what its code moved: never a failure, the code already said who</span></h3>
+<div class="scroll"><table><thead><tr><th>PR</th><th>Its hint says</th><th>Its code also moved (differences)</th></tr></thead><tbody>${rows}</tbody></table></div>
+<p class="src">Add the missing artefacts to the PR's title, which the harness reads live, so the release's changelog says what changed.</p></div>`;
+}
 
 /** Since 1.37.0: every failing difference of the subject run in one row: claimed, contributed by a PR, or unexplained. */
 function gapHtml(a: A3): string {
@@ -489,8 +499,8 @@ function gapHtml(a: A3): string {
           more(e.declared.rows, "PRs")
         ]
       : []),
-    head("Contributed by a PR: first seen the night it merged", e.contributed.hunks, "lead"),
-    ...e.contributed.rows.slice(0, GAP_ROWS).map((r) => `<tr><td>${prLinks(r.prs)}${r.missed?.length ? `<br><span class="src">${esc(missedWords(r))}: fix the line, or claim it</span>` : ""}</td><td class="num">${r.hunks}</td><td class="num">${share(r.hunks)}</td><td>${causes(r.causes)}</td><td class="num">${r.firstSeen.map((f) => esc(day(f.ranAt))).join(", ")}</td></tr>`),
+    head("Contributed by a PR: first seen the night it merged, or its endpoint is in the PR", e.contributed.hunks, "lead"),
+    ...e.contributed.rows.slice(0, GAP_ROWS).map((r) => `<tr><td>${prLinks(r.prs)}${r.pinned ? `<br><span class="src ok">pinned by its code: explained, nothing owed on main${r.adopted ? `; ${r.adopted} first measured elsewhere, matched by kind or endpoint` : ""}</span>` : ""}${r.missed?.length ? `<br><span class="src">${esc(missedWords(r))}: fix the line, or claim it</span>` : ""}</td><td class="num">${r.hunks}</td><td class="num">${share(r.hunks)}</td><td>${causes(r.causes)}</td><td class="num">${r.firstSeen.map((f) => esc(day(f.ranAt))).join(", ")}</td></tr>`),
     more(e.contributed.rows, "PR groups"),
     head("Unexplained: the record cannot say who", e.unexplained.hunks, "no"),
     ...e.unexplained.rows.map((r) => `<tr><td>${esc(unexplainedWords(r))}${r.suspects?.length ? `<br><span class="src">files point at ${esc(r.suspects.map((p) => (p.pr !== null ? `#${p.pr}` : p.sha.slice(0, 7))).join(", "))}</span>` : ""}</td><td class="num">${r.hunks}</td><td class="num">${share(r.hunks)}</td><td>${causes(r.causes)}</td><td></td></tr>`)
@@ -498,7 +508,8 @@ function gapHtml(a: A3): string {
   return `<section class="blk wide gap" id="gap"><h2>The gap, explained <span class="hint">every difference ${esc(g.comparing)} found, in one row each</span></h2>
 <p class="ledger"><strong>${esc(g.sentence)}</strong></p>${g.verdictNote ? `<p class="src">${esc(g.verdictNote)}</p>` : ""}
 <div class="scroll"><table><thead><tr><th>Explained by</th><th>Differences</th><th>Share</th><th>What changed (kinds)</th><th>First seen</th></tr></thead><tbody>${rows}</tbody></table></div>${e.rules?.length ? `\n<p class="src">The behaviour behind these Rules moved: ${e.rules.map((r) => esc(ruleTouchedWords(r))).join("; ")}.</p>` : ""}
-<p class="src">A PR is named when the difference first appeared in the forecast after it merged and its files touch what changed; several PRs merged the same night stay one row ("one of"), never split by guesswork. A PR whose CHANGELOG line names the artefact that moved, as CONTRIBUTING.md asks (<code>(axe, dom)</code>), declared it: nothing is owed on main, and the release author claims it from that line. Read from ${e.history.runs} earlier forecasts beside the same production${e.history.first ? `, ${esc(day(e.history.first))} to ${esc(day(e.history.last ?? ""))}` : ""}.</p></section>`;
+${mismatchHtml(g.mismatches)}
+<p class="src">A PR is named when the difference first appeared in the forecast after it merged and its files touch what changed; several PRs merged the same night stay one row ("one of"), never split by guesswork. A PR whose CHANGELOG line names the artefact that moved, as CONTRIBUTING.md asks (<code>(axe, dom)</code>), declared it: nothing is owed on main, and the release author claims it from that line. Since 1.59.0 a row one PR leads is pinned by its code and explained the same way, whatever the line says; a new request is pinned on the PR whose files hold its endpoint. Read from ${e.history.runs} earlier forecasts beside the same production${e.history.first ? `, ${esc(day(e.history.first))} to ${esc(day(e.history.last ?? ""))}` : ""}.</p></section>`;
 }
 
 /**

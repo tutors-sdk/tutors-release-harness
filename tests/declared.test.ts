@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { attribute } from "../src/changes/attribute.ts";
 import { changelogLineOf, declarationOf, hintOf } from "../src/changes/declares.ts";
-import { explainGap, ledgerSentence, type LedgerRun } from "../src/changes/explain.ts";
+import { explainGap, hintMismatches, ledgerSentence, mismatchWords, type LedgerRun } from "../src/changes/explain.ts";
 import { githubBodies, readBodies, readTitles } from "../src/changes/github.ts";
 import type { Changes, PrRisk } from "../src/changes/signals.ts";
 import { gateWhy } from "../src/a3/model.ts";
@@ -92,11 +92,20 @@ describe("a difference its PR declared", () => {
     expect(ledgerSentence(e)).toBe("6 differences: #505 declared 4 in its CHANGELOG line; #505 contributed 2 (#505's CHANGELOG line says (axe, dom); focus moved); 0 unexplained.");
   });
 
-  it("says the forecast fails only on what nobody declared, and passes the rest to the release author", () => {
+  it("since 1.59.0 holds #505 to the focus its code moved and its line missed: the forecast fails only for want of claims", () => {
     const e = explainGap(now, [before]);
+    expect(e.contributed.rows).toMatchObject([{ prs: [{ pr: 505 }], pinned: true }]);
     const why = gateWhy({ verdict: "fail", reasons: [], report: now.report, stream: "main-preview" }, e)!;
-    expect(why).toMatch(/^FAIL because 2 differences have no claim and no PR declared them \(#505's CHANGELOG line says \(axe, dom\); focus moved\)\. The other 4 are declared/);
-    expect(why).toMatch(/nothing is owed on main/);
+    expect(why).toBe("FAIL only because 6 differences are not claimed yet, and each is pinned on the PR that made it (#505: 4 declared, #505: 2 by its code): nothing is owed on main, and the release author claims them when the release is cut.");
+  });
+
+  it("says the forecast fails on what no PR can be held to: two PRs whose files match alike stay one group", () => {
+    const twin = pr(506, a11y.files);
+    const e = explainGap(run(17, report(today), changes(pr(505, a11y.files), twin)), [before]);
+    expect(e.contributed.rows).toMatchObject([{ prs: [{ pr: 505 }, { pr: 506 }], hunks: 6 }]);
+    expect(e.contributed.rows[0]!.pinned).toBeUndefined();
+    const why = gateWhy({ verdict: "fail", reasons: [], report: now.report, stream: "main-preview" }, e)!;
+    expect(why).toMatch(/^FAIL because 6 differences have no claim and no fix/);
   });
 
   it("says a forecast whose every difference is declared fails only for want of the claims the release will carry", () => {
@@ -177,10 +186,18 @@ describe("PASS, explained (since 1.42.0)", () => {
     );
   });
 
-  it("keeps the FAIL when one difference is not declared, on a release candidate, or for any other reason", async () => {
+  it("since 1.59.0 passes what the PR's code pins on it too, with the hint it missed as a warning", async () => {
     const { declaredPass } = await import("../src/changes/explain.ts");
     const partly = run(17, failing(report(today)), changes(nightly, a11y));
-    expect(declaredPass(partly.report, explainGap(partly, [before]))).toBeUndefined();
+    expect(declaredPass(partly.report, explainGap(partly, [before]))).toBe(
+      "PASS, explained: all 6 differences no claim covers yet are pinned on the PR that made them, declared in its CHANGELOG line (#505: 4) or traced by its code (#505: 2). Nothing is owed on main; the release author pastes the claims when the release is cut. Warning: 1 PR's hint leaves out what its code moved (#505 says (axe, dom); its code also moved focus (2)); fix the title so the release's changelog says so."
+    );
+  });
+
+  it("keeps the FAIL when a difference has no PR to pin it on, on a release candidate, or for any other reason", async () => {
+    const { declaredPass } = await import("../src/changes/explain.ts");
+    const group = run(17, failing(report(today)), changes(pr(505, a11y.files), pr(506, a11y.files)));
+    expect(declaredPass(group.report, explainGap(group, [before]))).toBeUndefined();
     const rc = run(17, failing(report(today, "17.1.0-rc.1")), changes(nightly, fixed));
     expect(declaredPass(rc.report, explainGap(rc, [before]))).toBeUndefined();
     const other = run(17, { ...failing(report(today)), reasons: ["6 unclaimed diff(s)", "migration rehearsal failed"] } as RunReport, changes(nightly, fixed));
@@ -200,6 +217,41 @@ describe("PASS, explained (since 1.42.0)", () => {
     const scored = (c: Changes) => ({ confidence: { gate: "FAIL", note: "No RCS" }, changes: c }) as never;
     const r = { ...failing(report(today)), ranAt: "2026-10-17T09:40:00Z" } as RunReport;
     expect(passExplained(scored(changes(nightly, fixed)), r, "d17", index, root).confidence).toMatchObject({ gate: "PASS", note: expect.stringMatching(/^PASS, explained/) });
-    expect(passExplained(scored(changes(nightly, a11y)), r, "d17", index, root).confidence.gate).toBe("FAIL");
+    expect(passExplained(scored(changes(pr(505, a11y.files), pr(506, a11y.files))), r, "d17", index, root).confidence.gate).toBe("FAIL");
+  });
+});
+
+describe("pinned by its code (since 1.59.0)", () => {
+  // The time app's page reaches the reader's routes: no PR touched apps/time, so only the endpoint can say who.
+  const visit = (path: string, method = "POST"): Hunk => ({ id: `network:time:${method}:${path}`, artefact: "network", scope: "time:course", severity: "fail", summary: `time:course: new request on b: ${method} ${path}` });
+  // 28 Oct: #327 added the reader's data routes and named only (logs, sbom) in its title.
+  const seam = { ...pr(327, ["apps/reader/src/routes/api/courses/visit/+server.ts", "apps/reader/src/routes/api/time/[course]/+server.ts", "apps/reader/src/routes/api/(data)/me/+server.ts"]), declares: { artefacts: ["logs", "sbom"], entry: "seam", source: "title" } } as unknown as PrRisk;
+  const locks = pr(518, ["apps/reader/src/routes/api/locks/+server.ts"]);
+
+  it("finds the PR whose files hold the endpoint a request reaches", async () => {
+    const { byRoute } = await import("../src/changes/attribute.ts");
+    expect(byRoute(visit("/api/courses/visit"), [seam, locks]).map((p) => p.pr)).toEqual([327]);
+    expect(byRoute(visit("/api/time/harness-rules", "GET"), [seam, locks]).map((p) => p.pr)).toEqual([327]);
+    expect(byRoute(visit("/api/me/", "PATCH"), [seam, locks]).map((p) => p.pr)).toEqual([327]);
+    expect(byRoute(visit("/api/locks"), [seam, locks]).map((p) => p.pr)).toEqual([518]);
+    expect(byRoute(visit("/api/nowhere"), [seam, locks])).toEqual([]);
+    expect(byRoute({ ...visit("/api/locks"), artefact: "console" }, [seam, locks])).toEqual([]);
+  });
+
+  it("pins a request the history cannot place on the PR holding its endpoint, and warns that its hint missed network", () => {
+    const hunks = [visit("/api/courses/visit"), visit("/api/locks")];
+    const e = explainGap(run(28, report(hunks), changes(seam, locks)), []);
+    expect(e.unexplained.hunks).toBe(0);
+    expect(e.contributed.rows.every((r) => r.pinned)).toBe(true);
+    expect(e.contributed.rows.map((r) => r.prs[0]!.pr).sort()).toEqual([327, 518]);
+    // #518 has no hint at all; #327's says what it does name.
+    expect(hintMismatches(e).map(mismatchWords)).toEqual(expect.arrayContaining([expect.stringMatching(/^#327 says \(logs, sbom\); its code also moved network \(1\)$/), expect.stringMatching(/^#518 has no hint; its code also moved network \(1\)$/)]));
+  });
+
+  it("leaves a request no endpoint answers with the group merged that night, pinned on none of them", () => {
+    const e = explainGap(run(28, report([visit("/api/nowhere")]), changes(seam, locks)), []);
+    expect(e.contributed.rows).toMatchObject([{ prs: [{ pr: 327 }, { pr: 518 }], hunks: 1 }]);
+    expect(e.contributed.rows[0]!.pinned).toBeUndefined();
+    expect(hintMismatches(e)).toEqual([]);
   });
 });
