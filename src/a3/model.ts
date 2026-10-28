@@ -12,7 +12,7 @@
  * Pure: src/a3/read.ts reads the files, src/a3/github.ts asks GitHub, src/a3/render.ts draws the page.
  */
 import { coverageWords } from "../readiness/claims.ts";
-import { declaredPass, explainGap, ledgerSentence, missedWords, prWords, type Explanation, type LedgerRun } from "../changes/explain.ts";
+import { declaredPass, explainGap, hintMismatches, ledgerSentence, missedWords, pinnedHunks, prWords, type Explanation, type HintMismatch, type LedgerRun } from "../changes/explain.ts";
 import type { Changes } from "../changes/signals.ts";
 import { decidingClaims, decisionsOf } from "../claims/decisions.ts";
 import { claimLabel } from "../claims/rules.ts";
@@ -262,6 +262,8 @@ export interface Gap {
   /** The ledger in one sentence. */
   sentence: string;
   explanation: Explanation;
+  /** Since 1.59.0: PRs whose title or CHANGELOG line leaves out what their code moved: a warning, never a failure. */
+  mismatches?: HintMismatch[];
 }
 
 export interface A3 {
@@ -393,6 +395,16 @@ export function gateWhy(run: Pick<KeptRun, "verdict" | "reasons" | "report"> & {
   const names = (hs: Hunk[]) => hs.slice(0, 3).map((h) => `${h.summary} (${h.artefact})`).join("; ") + (hs.length > 3 ? `; and ${hs.length - 3} more` : "");
   // Since 1.41.0: what a PR declared in its CHANGELOG line is not owed on main; the release author claims it from that line.
   const declared = e?.declared?.hunks ?? 0;
+  // Since 1.59.0: nor is what a PR's code pins on it.
+  const pinned = e ? pinnedHunks(e) : 0;
+  if (run.verdict === "fail" && unclaimed.length && pinned) {
+    const forecast = run.stream === "main-preview";
+    const then = forecast ? "nothing is owed on main, and the release author claims them when the release is cut" : "claim each in release/claims.yaml";
+    const held = declared + pinned;
+    const by = [...(e!.declared?.rows ?? []).map((r) => `${prWords([r.pr])}: ${r.hunks} declared`), ...e!.contributed.rows.filter((r) => r.pinned).map((r) => `${prWords([r.prs[0]!])}: ${r.hunks} by its code`)].join(", ");
+    if (held >= unclaimed.length) return `FAIL only because ${plural(held, "difference")} ${held === 1 ? "is" : "are"} not claimed yet, and each is pinned on the PR that made it (${by}): ${then}.`;
+    return `FAIL because ${unclaimed.length - held === 1 ? "1 difference has" : `${unclaimed.length - held} differences have`} no claim and no PR its code or its CHANGELOG line pins it on. The other ${held} ${held === 1 ? "is" : "are"} pinned on the PR that made ${held === 1 ? "it" : "them"} (${by}): ${then}. A Rule that claims the rest, or a fix on main, turns this to PASS; the gap below says where each came from.`;
+  }
   if (run.verdict === "fail" && unclaimed.length && declared) {
     const by = e!.declared!.rows.map((r) => `${prWords([r.pr])}: ${r.hunks}`).join(", ");
     const forecast = run.stream === "main-preview";
@@ -833,7 +845,8 @@ export function gapOf(runs: KeptRun[], subject: KeptRun | undefined, gate?: stri
   const explanation = explainGap(ledgerRun(subject), runs.filter((r) => r.stream === "main-preview" && r.report?.compare).map(ledgerRun));
   const kept = subject.verdict.toUpperCase();
   const verdictNote = gate && kept && gate !== kept ? `The Gate says ${gate} on what was found; the run was kept as ${kept}: ${subject.reasons[0] ?? "see the report"}.` : undefined;
-  return { comparing, ...(verdictNote ? { verdictNote } : {}), sentence: ledgerSentence(explanation), explanation };
+  const mismatches = hintMismatches(explanation);
+  return { comparing, ...(verdictNote ? { verdictNote } : {}), sentence: ledgerSentence(explanation), explanation, ...(mismatches.length ? { mismatches } : {}) };
 }
 
 export function buildA3(i: A3Inputs): A3 {
