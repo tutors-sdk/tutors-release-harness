@@ -80,6 +80,9 @@ Rule: When the harness runs the presence journey, it shall ...
   as a production course is named: use it when the reader's server checks the course (it fetches
   `https://<id>.netlify.app/tutors.json` for the educators before it saves a content lock, mono-repo #519, and refuses
   an id with a port). The browser and the signed-in reader's server are both answered from the course server.
+  Since 1.58.0 every Rule journey names its course by a site id, because mono-repo #327's data routes refuse an id
+  with a port: `@course-rules` reads `harness-rules` as `@course-site` does, and the fixture course is
+  `harness-fixture`.
 - **Two people in one journey** (since 1.45.0): every "the student ..." step can be said of "the lecturer ..."
   instead. The lecturer gets a browser of their own on the same side, signed in through the identity stub as the
   `lecturer` role (the enrollment list names them as an educator), opened the first time a step names them; "the

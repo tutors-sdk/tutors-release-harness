@@ -1,6 +1,6 @@
 import type { Page } from "playwright";
 import type { StackUrls } from "../../src/types.ts";
-import { fixture } from "./fixture.ts";
+import { fixture, signedInCourseId } from "./fixture.ts";
 import { reference } from "./reference.ts";
 import { REPLAY_URLS } from "../replay/urls.ts";
 import { VISIBLE, labSteps, pageHeading, signInFromAuthPage, stepLink } from "./ui.ts";
@@ -191,12 +191,14 @@ export const studentSignsIn: Journey = {
   async run(page, urls, onPage) {
     const base = urls.readerAuth;
     if (!base) throw new Error("this side has no signed-in reader (external side?)");
-    await page.goto(`${base}/auth/${urls.courseId}`);
-    await signInFromAuthPage(page, urls.courseId, fixture.title, () => onPage("reader-auth:sign-in"));
+    // Since 1.58.0 by its Netlify site id, which the reader's data routes accept (traffic/journeys/fixture.ts).
+    const course = signedInCourseId(urls);
+    await page.goto(`${base}/auth/${course}`);
+    await signInFromAuthPage(page, course, fixture.title, () => onPage("reader-auth:sign-in"));
     await onPage("reader-auth:course");
 
     await page.getByRole("link", { name: new RegExp(`^${fixture.topicTitle}\\b`) }).click();
-    await page.waitForURL(new RegExp(`/topic/${urls.courseId}/${fixture.topicPath}$`));
+    await page.waitForURL(new RegExp(`/topic/${course}/${fixture.topicPath}$`));
     await pageHeading(page, fixture.topicTitle).waitFor(VISIBLE);
     await onPage("reader-auth:topic");
   }

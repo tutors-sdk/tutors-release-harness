@@ -111,6 +111,9 @@ step(/^the persistence stub holds the seed "([a-z0-9-]+)"$/, 'the persistence st
   const seed = Object.fromEntries(Object.entries(JSON.parse(readFileSync(join(SEEDS_DIR, `${name}.json`), "utf8")) as Record<string, unknown>).filter(([table]) => !table.startsWith("_")));
   // The stub's address as the containers see it, rewritten for the harness's own process (src/persistence/supabase-rest.ts).
   const stub = w.urls.persistence.replace(/persistence-[ab]\.harness\.test/, "localhost");
+  // Since 1.58.0 a time journey signs in first: its last writes (the reconnect's PUT /api/me on main) settle before the
+  // rows go in, so none of them lands in a seeded table, and what the sign-in requested is not the next page's.
+  await w.forget();
   const response = await fetch(`${stub}/_harness/seed`, { method: "POST", body: JSON.stringify(seed) });
   if (!response.ok) throw new Error(`POST ${stub}/_harness/seed -> ${response.status}`);
 });

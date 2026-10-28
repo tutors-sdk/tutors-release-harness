@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { AxeBuilder } from "@axe-core/playwright";
 import { chromium, type Browser, type BrowserContext, type Page, type Request, type Response } from "playwright";
 import type { Journey } from "../../traffic/journeys/journeys.ts";
-import { TIME_COURSE_ID } from "../../traffic/journeys/fixture.ts";
+import { FIXTURE_SITE_ID, TIME_COURSE_ID } from "../../traffic/journeys/fixture.ts";
 import { reference } from "../../traffic/journeys/reference.ts";
 import { redactSecrets } from "../normalise/redact.ts";
 import { IDENTITY_URL } from "../stack.ts";
@@ -329,19 +329,31 @@ async function routeIdentity(context: BrowserContext, role?: string) {
  *
  * Since 1.57.1 the whole site is answered, not only its tutors.json: a `@course-site` Rule journey opens the course in
  * the reader as `harness-rules` (the content lock journey, whose lock the reader's server checks against that site), and
- * the reader then loads the course's pages and images from the same origin.
+ * the reader then loads the course's pages and images from the same origin. Since 1.58.0 the fixture course is answered
+ * as `harness-fixture` too, for every signed-in journey (`courseSites`).
  */
 async function routeCourseSite(context: BrowserContext, spec: SideSpec) {
+  for (const [site, served] of courseSites(spec)) {
+    await context.route(new RegExp(`^https://${site}\\.netlify\\.app/`), async (route) => {
+      const original = new URL(route.request().url());
+      try {
+        await route.fulfill({ response: await route.fetch({ url: `http://${served}${original.pathname}${original.search}` }) });
+      } catch (error) {
+        await route.fulfill({ status: 502, body: `course server unreachable at ${served}: ${error instanceof Error ? error.message : error}` });
+      }
+    });
+  }
+}
+
+/**
+ * Since 1.58.0: the Netlify sites the browser is answered for, each with the course server that serves it: the Rule
+ * journeys' course as `harness-rules` and the fixture course as `harness-fixture` (traffic/journeys/fixture.ts), the
+ * second because since mono-repo #327 a signed-in journey names every course by a site id. None on an external side.
+ * Exported for its test.
+ */
+export function courseSites(spec: SideSpec): [string, string][] {
   const served = spec.urls.rulesCourseId;
-  if (!served) return;
-  await context.route(new RegExp(`^https://${TIME_COURSE_ID}\\.netlify\\.app/`), async (route) => {
-    const original = new URL(route.request().url());
-    try {
-      await route.fulfill({ response: await route.fetch({ url: `http://${served}${original.pathname}${original.search}` }) });
-    } catch (error) {
-      await route.fulfill({ status: 502, body: `course server unreachable at ${served}: ${error instanceof Error ? error.message : error}` });
-    }
-  });
+  return served ? [[TIME_COURSE_ID, served], [FIXTURE_SITE_ID, spec.urls.courseId]] : [];
 }
 
 /**
@@ -378,7 +390,8 @@ export async function captureJourney(browser: Browser, spec: SideSpec, journey: 
     contexts.push(context);
     context.setDefaultTimeout(ACTION_TIMEOUT_MS);
     if (journey.target === "readerAuth") await routeIdentity(context, role);
-    if (journey.set === "rules") await routeCourseSite(context, spec);
+    // Since 1.58.0 every signed-in journey, not only the Rule journeys: they all name their course by a Netlify site id.
+    if (journey.target === "readerAuth") await routeCourseSite(context, spec);
     // Google Fonts, Iconify and jsDelivr are answered from one recorded copy, the same bytes on both sides, at once
     // (src/collectors/third-party-cache.ts): an icon or the typeface can no longer arrive on one side only before a shot.
     await routeThirdParty(context);

@@ -17,6 +17,8 @@
 //   GET  https://harness-rules.netlify.app/<path>   -> the Rule journeys' course from COURSE_ORIGIN (since 1.57.1): the
 //        reader's server reads a course's educators from its Netlify site's tutors.json before it saves a content
 //        lock (mono-repo #519), so the containers resolve that site here too
+//   GET  https://harness-fixture.netlify.app/<path> -> the fixture course from FIXTURE_COURSE_ORIGIN (since 1.58.0): since
+//        mono-repo #327 the reader's server reads a course's title there when a student visits it
 //
 // Deterministic by construction: no ids, no timestamps, no Date header.
 import { readFileSync } from "node:fs";
@@ -28,8 +30,17 @@ const here = dirname(fileURLToPath(import.meta.url));
 const certs = process.env.CERTS_DIR ?? join(here, "certs");
 const port = Number(process.env.PORT ?? 443);
 const defaultRole = process.env.HARNESS_ROLE ?? "student";
-/** The one Netlify site the stub answers for (traffic/journeys/fixture.ts TIME_COURSE_ID). */
+/** The Rule journeys' Netlify site (traffic/journeys/fixture.ts TIME_COURSE_ID). */
 export const COURSE_SITE = "harness-rules.netlify.app";
+/** Since 1.58.0: the fixture course's Netlify site (traffic/journeys/fixture.ts FIXTURE_SITE_ID). */
+export const FIXTURE_SITE = "harness-fixture.netlify.app";
+
+/** The course server behind a Netlify site the stub answers for, read when asked so a test can set it; else undefined. */
+function siteOrigin(host) {
+  if (host === COURSE_SITE) return process.env.COURSE_ORIGIN;
+  if (host === FIXTURE_SITE) return process.env.FIXTURE_COURSE_ORIGIN;
+  return undefined;
+}
 
 /** Fixed users per role. Ids are stable so anything keyed by them is comparable across sides. */
 export const USERS = {
@@ -65,8 +76,8 @@ export function handler(req, res) {
   if (url.pathname === "/healthz") return json(200, { status: "ok" });
 
   const host = (req.headers.host ?? "").replace(/:\d+$/, "");
-  if (host === COURSE_SITE) {
-    const courseOrigin = process.env.COURSE_ORIGIN;
+  if (host === COURSE_SITE || host === FIXTURE_SITE) {
+    const courseOrigin = siteOrigin(host);
     if (!courseOrigin) return json(404, { message: "Not Found" });
     return fetch(`${courseOrigin}${url.pathname}${url.search}`)
       .then(async (r) => {

@@ -33,7 +33,7 @@ so what a signed-in user's journey *writes* is captured (see
 ## Certificates
 
 `certs/` holds a self-signed CA and a server certificate for `github.com`,
-`api.github.com`, `identity.harness.test`, `harness-rules.netlify.app` (since 1.57.1) and `localhost`, valid ten years,
+`api.github.com`, `identity.harness.test`, `harness-rules.netlify.app` (since 1.57.1), `harness-fixture.netlify.app` (since 1.58.0) and `localhost`, valid ten years,
 generated with `openssl` and committed on purpose: they are test fixtures,
 trusted only inside this stack's containers via `NODE_EXTRA_CA_CERTS`, and the
 private keys protect nothing. Regenerate with:
@@ -42,7 +42,7 @@ private keys protect nothing. Regenerate with:
 cd fixtures/identity/certs
 openssl req -x509 -newkey rsa:2048 -nodes -days 3650 -subj "/CN=tutors-release-harness test CA" -keyout ca.key -out ca.pem
 openssl req -newkey rsa:2048 -nodes -subj "/CN=github.com" -keyout server.key -out server.csr
-printf "subjectAltName=DNS:github.com,DNS:api.github.com,DNS:identity.harness.test,DNS:harness-rules.netlify.app,DNS:localhost\nbasicConstraints=CA:FALSE\n" > ext.cnf
+printf "subjectAltName=DNS:github.com,DNS:api.github.com,DNS:identity.harness.test,DNS:harness-rules.netlify.app,DNS:harness-fixture.netlify.app,DNS:localhost\nbasicConstraints=CA:FALSE\n" > ext.cnf
 openssl x509 -req -in server.csr -CA ca.pem -CAkey ca.key -CAcreateserial -days 3650 -extfile ext.cnf -out server.pem
 rm server.csr ext.cnf ca.srl
 ```

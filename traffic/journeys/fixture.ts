@@ -27,3 +27,17 @@ export const fixture = {
  * (src/collectors/browser.ts); the seeds name the course by it (fixtures/persistence/seeds).
  */
 export const TIME_COURSE_ID = "harness-rules";
+
+/**
+ * Since 1.58.0: the fixture course as a Netlify site id, for the journeys that sign in. Since mono-repo #327 the reader's
+ * data routes (`/api/analytics`, `/api/courses/visit`, ...) refuse a course id with a port (`localhost:8080`, 400), and
+ * `/api/courses/visit` reads the course's title from `https://<id>.netlify.app/tutors.json`. A production course id is a
+ * Netlify site, so the signed-in journeys name the fixture course as one, answered from the course server in the browser
+ * (src/collectors/browser.ts) and in the reader's server (fixtures/identity). Anonymous journeys keep `localhost:8080`.
+ */
+export const FIXTURE_SITE_ID = "harness-fixture";
+
+/** The fixture course's id for a signed-in journey: its Netlify site id on the harness's own stack, else the side's own. */
+export function signedInCourseId(urls: { courseId: string; rulesCourseId?: string }): string {
+  return urls.rulesCourseId ? FIXTURE_SITE_ID : urls.courseId;
+}
