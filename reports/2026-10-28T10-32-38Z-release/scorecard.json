@@ -1,0 +1,383 @@
+{
+  "schemaVersion": 1,
+  "mode": "release",
+  "ranAt": "2026-10-28T10:32:38.087Z",
+  "verdict": "fail",
+  "score": 22,
+  "grade": "D",
+  "deductions": [
+    {
+      "points": 60,
+      "why": "336 diff(s) no claim covers"
+    },
+    {
+      "points": 15,
+      "why": "8 claim(s) that matched nothing: the changelog promises what the release does not show"
+    },
+    {
+      "points": 3,
+      "why": "1 claim(s) covering many diffs at once"
+    }
+  ],
+  "normalness": {
+    "state": "normal",
+    "source": "noise-status",
+    "hunks": 0,
+    "ranAt": "2026-10-28T01:54:59.302Z"
+  },
+  "rules": [
+    {
+      "rule": null,
+      "hunks": 336,
+      "artefacts": [
+        "dom",
+        "screenshot",
+        "network",
+        "console",
+        "metrics",
+        "logs",
+        "focus",
+        "persistence",
+        "image-manifest",
+        "sbom"
+      ],
+      "scopes": [
+        "/",
+        "/course/localhost:8080",
+        "/topic/localhost:8080/unit-1/topic-01",
+        "/lab/localhost:8080/unit-1/topic-01/book-lab-01",
+        "/lab/localhost:8080/unit-1/topic-01/book-lab-01/Step-01",
+        "/search/localhost:8080",
+        "/search/localhost:8080?q=reference+material",
+        "/course/harness-fixture",
+        "/topic/harness-fixture/unit-1/topic-01",
+        "/course/reference-course",
+        "/topic/reference-course/topic-07-reference",
+        "/lab/reference-course/topic-07-reference/book-a",
+        "/note/reference-course/topic-07-reference/note-1",
+        "/course/harness-rules",
+        "/harness-rules/medians",
+        "/harness-rules/calendar/byweek",
+        "/harness-rules/calendar/byday",
+        "/harness-rules/lab/bylab",
+        "/harness-rules/lab/bystep",
+        "/harness-rules/lab/learning-records",
+        "/harness-rules/harness-quiet",
+        "/lab/harness-fixture/unit-1/topic-01/book-lab-01",
+        "/lab/harness-fixture/unit-1/topic-01/book-lab-01/Step-01",
+        "/lab/harness-fixture/unit-1/topic-01/book-lab-01/Setup",
+        "/talk/harness-rules/unit-1/topic-01/talk-01",
+        "/notebook/harness-rules/unit-1/topic-01/notebook-01",
+        "/quiz/harness-rules/unit-1/topic-01/quiz-01",
+        "/llm/harness-rules",
+        "/whiteboard/harness-rules/unit-1/topic-01/whiteboard-01",
+        "time/http_request_duration_seconds_count",
+        "time/http_requests_total",
+        "time/app",
+        "time/duration_ms",
+        "time/environment",
+        "time/event",
+        "time/hostname",
+        "time/level",
+        "time/loadError",
+        "time/message",
+        "time/method",
+        "time/path",
+        "time/pid",
+        "time/requestId",
+        "time/route",
+        "time/slow",
+        "time/status",
+        "time/timestamp",
+        "time/request-id",
+        "reader-auth/courseId",
+        "reader-auth/role",
+        "reader-auth/info",
+        "reader-auth/warn",
+        "student-signs-in/record_page_view",
+        "rule-0588-content-lock/app_errors",
+        "rule-0588-content-lock/record_page_view",
+        "rule-0589-live/app_errors",
+        "rule-0589-live/record_page_view",
+        "rule-0590-time-calendar/app_errors",
+        "rule-0590-time-calendar/record_page_view",
+        "rule-0591-time-labs/app_errors",
+        "rule-0591-time-labs/record_page_view",
+        "rule-0582-signed-in-lab/app_errors",
+        "rule-0582-signed-in-lab/record_page_view",
+        "rule-0583-presence/record_page_view",
+        "rule-0584-quiz-notebook-talk/app_errors",
+        "rule-0584-quiz-notebook-talk/record_page_view",
+        "rule-0585-preferences/app_errors",
+        "rule-0585-preferences/record_page_view",
+        "rule-0586-private-course/app_errors",
+        "rule-0586-private-course/tutors-connect-courses",
+        "rule-0586-private-course/tutors-connect-profiles",
+        "rule-0586-private-course/record_page_view",
+        "rule-0587-calendar-llm/record_page_view",
+        "rule-0592-whiteboard/app_errors",
+        "rule-0592-whiteboard/record_page_view",
+        "reader/base",
+        "reader/@supabase/auth-js",
+        "reader/@supabase/functions-js",
+        "reader/@supabase/phoenix",
+        "reader/@supabase/postgrest-js",
+        "reader/@supabase/realtime-js",
+        "reader/@supabase/storage-js",
+        "reader/@supabase/supabase-js",
+        "reader/dompurify",
+        "reader/entities",
+        "reader/iceberg-js",
+        "reader/node",
+        "reader/tslib",
+        "reader/tzdata",
+        "reader/undici",
+        "catalogue/base",
+        "catalogue/dompurify",
+        "catalogue/entities",
+        "catalogue/node",
+        "catalogue/tzdata",
+        "catalogue/undici",
+        "live/base",
+        "live/dompurify",
+        "live/entities",
+        "live/node",
+        "live/tzdata",
+        "live/undici",
+        "time/base",
+        "time/@supabase/auth-js",
+        "time/@supabase/functions-js",
+        "time/@supabase/phoenix",
+        "time/@supabase/postgrest-js",
+        "time/@supabase/realtime-js",
+        "time/@supabase/storage-js",
+        "time/@supabase/supabase-js",
+        "time/dompurify",
+        "time/entities",
+        "time/iceberg-js",
+        "time/node",
+        "time/tslib",
+        "time/tzdata",
+        "time/undici"
+      ],
+      "prs": [],
+      "status": "unclaimed"
+    },
+    {
+      "rule": "0330",
+      "title": "When a student opens a learning object, the reader shall send the learning event to the reader's server without publishing it over Realtime from the browser.",
+      "hunks": 34,
+      "artefacts": [
+        "network"
+      ],
+      "scopes": [
+        "/",
+        "/course/localhost:8080",
+        "/search/localhost:8080",
+        "/auth/harness-fixture",
+        "/course/harness-fixture",
+        "/topic/harness-fixture/unit-1/topic-01",
+        "/course/reference-course",
+        "/note/reference-course/topic-07-reference/note-1",
+        "/course/harness-rules",
+        "/harness-rules/medians",
+        "/harness-rules/calendar/byweek",
+        "/harness-rules/calendar/byday",
+        "/harness-rules/lab/bylab",
+        "/harness-rules/lab/bystep",
+        "/harness-rules/lab/learning-records",
+        "/harness-rules/harness-quiet",
+        "/lab/harness-fixture/unit-1/topic-01/book-lab-01",
+        "/lab/harness-fixture/unit-1/topic-01/book-lab-01/Step-01",
+        "/lab/harness-fixture/unit-1/topic-01/book-lab-01/Setup",
+        "/talk/harness-rules/unit-1/topic-01/talk-01",
+        "/whiteboard/harness-rules/unit-1/topic-01/whiteboard-01"
+      ],
+      "prs": [],
+      "status": "covered"
+    },
+    {
+      "rule": "0331",
+      "title": "When the reader's server receives a learning event, the reader shall publish it only to the activity feeds a live dashboard has watched in the last 90 seconds.",
+      "hunks": 4,
+      "artefacts": [
+        "persistence"
+      ],
+      "scopes": [
+        "student-signs-in/realtime_claim_live_publish",
+        "rule-0589-live/realtime_claim_live_publish",
+        "rule-0582-signed-in-lab/realtime_claim_live_publish",
+        "rule-0583-presence/realtime_claim_live_publish"
+      ],
+      "prs": [],
+      "status": "covered"
+    },
+    {
+      "rule": "0334",
+      "title": "While it shows a course or the platform feed, the live dashboard shall report itself as a watcher of that feed every 60 seconds.",
+      "hunks": 1,
+      "artefacts": [
+        "persistence"
+      ],
+      "scopes": [
+        "rule-0589-live/realtime_watch"
+      ],
+      "prs": [],
+      "status": "covered"
+    },
+    {
+      "rule": null,
+      "title": "CHANGELOG Unreleased: app_errors is no longer readable with the anon key; the table has never existed on tutors-prod, so no deployed version reads it (migration)",
+      "hunks": 0,
+      "artefacts": [
+        "migration"
+      ],
+      "scopes": [
+        "app_errors:anon_select_app_errors"
+      ],
+      "prs": [],
+      "status": "stale"
+    },
+    {
+      "rule": null,
+      "title": "CHANGELOG Unreleased (Time): the dashboard loads time data from the reader",
+      "hunks": 0,
+      "artefacts": [
+        "network"
+      ],
+      "scopes": [
+        "time:*"
+      ],
+      "prs": [],
+      "status": "stale"
+    },
+    {
+      "rule": null,
+      "title": "CHANGELOG Unreleased (Time): signed-out viewers see a sign-in link",
+      "hunks": 0,
+      "artefacts": [
+        "dom"
+      ],
+      "scopes": [
+        "time:*"
+      ],
+      "prs": [],
+      "status": "stale"
+    },
+    {
+      "rule": null,
+      "title": "CHANGELOG Unreleased (Time): signed-out viewers see a sign-in link",
+      "hunks": 0,
+      "artefacts": [
+        "screenshot"
+      ],
+      "scopes": [
+        "time:*"
+      ],
+      "prs": [],
+      "status": "stale"
+    },
+    {
+      "rule": "0068",
+      "title": "While a student is signed in, the reader shall save the student's edits to a whiteboard learning object in a room that only that student's session can read or overwrite.",
+      "hunks": 0,
+      "artefacts": [
+        "dom"
+      ],
+      "scopes": [
+        "reader:whiteboard*"
+      ],
+      "prs": [],
+      "status": "stale"
+    },
+    {
+      "rule": "0070",
+      "title": "When a visitor opens the catalogue, the catalogue shall show the number of students without reading any student's profile.",
+      "hunks": 0,
+      "artefacts": [
+        "network"
+      ],
+      "scopes": [
+        "catalogue:*"
+      ],
+      "prs": [],
+      "status": "stale"
+    },
+    {
+      "rule": "0072",
+      "title": "The reader shall store a signed-in student's learning records, calendar, sentiment, online status and shared presence under the GitHub login of the session, whatever student id the request names.",
+      "hunks": 0,
+      "artefacts": [
+        "network"
+      ],
+      "scopes": [
+        "reader:*"
+      ],
+      "prs": [],
+      "status": "stale"
+    }
+  ],
+  "manual": [
+    {
+      "scope": "/course/harness-rules",
+      "path": "/course/harness-rules",
+      "artefacts": [
+        "dom",
+        "network",
+        "console",
+        "focus"
+      ],
+      "hunks": 56,
+      "why": "moved and no claim covers it"
+    },
+    {
+      "scope": "/",
+      "path": "/",
+      "artefacts": [
+        "dom",
+        "network",
+        "console",
+        "focus"
+      ],
+      "hunks": 41,
+      "why": "moved and no claim covers it"
+    },
+    {
+      "scope": "/course/harness-fixture",
+      "path": "/course/harness-fixture",
+      "artefacts": [
+        "dom",
+        "network",
+        "console",
+        "focus"
+      ],
+      "hunks": 34,
+      "why": "moved and no claim covers it"
+    },
+    {
+      "scope": "/whiteboard/harness-rules/unit-1/topic-01/whiteboard-01",
+      "path": "/whiteboard/harness-rules/unit-1/topic-01/whiteboard-01",
+      "artefacts": [
+        "dom",
+        "network",
+        "console",
+        "focus"
+      ],
+      "hunks": 12,
+      "why": "moved and no claim covers it"
+    },
+    {
+      "scope": "/harness-rules/lab/bylab",
+      "path": "/harness-rules/lab/bylab",
+      "artefacts": [
+        "dom",
+        "screenshot",
+        "network",
+        "console",
+        "focus"
+      ],
+      "hunks": 11,
+      "why": "moved and no claim covers it"
+    }
+  ]
+}

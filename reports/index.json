@@ -2,6 +2,86 @@
   "schemaVersion": 1,
   "runs": [
     {
+      "id": "2026-10-28T10-32-38Z-release",
+      "mode": "release",
+      "ranAt": "2026-10-28T10:32:38.087Z",
+      "verdict": "fail",
+      "reasons": [
+        "336 unclaimed diff(s)",
+        "8 claim(s) matched nothing and should be removed from the changelog"
+      ],
+      "sides": {
+        "a": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:17.0.0",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:17.0.0",
+          "live": "quay.io/tutors-sdk/tutors-live:17.0.0",
+          "time": "quay.io/tutors-sdk/tutors-time:17.0.0"
+        },
+        "b": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:sha-d350404",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:sha-d350404",
+          "live": "quay.io/tutors-sdk/tutors-live:sha-d350404",
+          "time": "quay.io/tutors-sdk/tutors-time:sha-d350404"
+        }
+      },
+      "harnessVersion": "1.59.0",
+      "runUrl": "https://github.com/tutors-sdk/tutors-release-harness/actions/runs/40668940704",
+      "score": {
+        "score": 22,
+        "grade": "D",
+        "normalness": "normal",
+        "manual": 5
+      },
+      "confidence": {
+        "gate": "FAIL",
+        "rcs": null,
+        "band": null,
+        "note": "No RCS: Gate FAIL. The Gate wins: no number talks a FAIL back on. The dimensions are shown for the 5 Whys, not for a decision.",
+        "glance": 7,
+        "scoredBy": "1.59.0"
+      },
+      "changes": {
+        "score": 0,
+        "prs": 41,
+        "risky": 33,
+        "floorBreached": false,
+        "range": "v17.0.0..d3504043ef2d56a06dd96e376394758415987fec"
+      },
+      "delta": {
+        "baseline": "17.0.0",
+        "against": {
+          "id": "2026-10-28T09-20-37Z-release",
+          "ranAt": "2026-10-28T09:20:37.179Z",
+          "candidate": "sha-d350404",
+          "harnessVersion": "1.58.0"
+        },
+        "new": 4,
+        "gone": 0,
+        "byArtefact": {
+          "console": {
+            "new": 4,
+            "gone": 0
+          }
+        }
+      },
+      "files": [
+        "2026-10-28T10-32-38Z-release/migration/report.json",
+        "2026-10-28T10-32-38Z-release/migration/report.md",
+        "2026-10-28T10-32-38Z-release/migration/report.html",
+        "2026-10-28T10-32-38Z-release/upgrade/report.json",
+        "2026-10-28T10-32-38Z-release/upgrade/report.md",
+        "2026-10-28T10-32-38Z-release/upgrade/report.html",
+        "2026-10-28T10-32-38Z-release/report.json",
+        "2026-10-28T10-32-38Z-release/report.md",
+        "2026-10-28T10-32-38Z-release/report.html",
+        "2026-10-28T10-32-38Z-release/confidence.json",
+        "2026-10-28T10-32-38Z-release/changes.json",
+        "2026-10-28T10-32-38Z-release/quality.json",
+        "2026-10-28T10-32-38Z-release/scorecard.json",
+        "2026-10-28T10-32-38Z-release/scorecard.md"
+      ]
+    },
+    {
       "id": "2026-10-28T09-20-37Z-release",
       "mode": "release",
       "ranAt": "2026-10-28T09:20:37.179Z",

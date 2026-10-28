@@ -1,0 +1,4476 @@
+{
+  "schemaVersion": 1,
+  "a": "17.0.0",
+  "b": "d3504043ef2d56a06dd96e376394758415987fec",
+  "refs": {
+    "a": "v17.0.0",
+    "b": "d3504043ef2d56a06dd96e376394758415987fec"
+  },
+  "version": "d3504043ef2d56a06dd96e376394758415987fec",
+  "repo": "tutors-sdk/tutors-mono-repo",
+  "history": {
+    "asked": 6,
+    "releases": [
+      {
+        "from": "v16.2.2",
+        "to": "v17.0.0"
+      },
+      {
+        "from": "v16.2.1",
+        "to": "v16.2.2"
+      },
+      {
+        "from": "v16.2.0",
+        "to": "v16.2.1"
+      },
+      {
+        "from": "v16.1.8",
+        "to": "v16.2.0"
+      },
+      {
+        "from": "v16.1.6",
+        "to": "v16.1.8"
+      },
+      {
+        "from": "v16.1.5",
+        "to": "v16.1.6"
+      }
+    ]
+  },
+  "score": 0,
+  "lost": 388,
+  "floorBreached": false,
+  "prs": [
+    {
+      "pr": 476,
+      "sha": "90152846e9fea43cfe37ec0489a038ce9f2bfa8f",
+      "title": "Give each whiteboard room a Realtime budget",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/476",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        "apps/reader/static/excalidraw-editor.html",
+        "guides/WHITEBOARD.md",
+        "tests/bdd/features/shared/realtime-usage.feature",
+        "tests/bdd/steps/shared/realtime-usage.steps.ts",
+        "tests/bdd/support/whiteboard-editor.ts"
+      ],
+      "churn": 377,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 285,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": true,
+      "points": 10,
+      "deductions": [
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #476 changed Reader, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/476/files#diff-f9cfd30e49727585d340eb245e9e85897abbbba627faf3c588167b9ed13bf276",
+          "file": "apps/reader/static/excalidraw-editor.html",
+          "pr": 476,
+          "author": "Claude"
+        }
+      ]
+    },
+    {
+      "pr": 478,
+      "sha": "7c4028ade19fde26ea11b236e2b16dff572f1a5e",
+      "title": "Route every Realtime channel through a budgeted port",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/478",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        ".dependency-cruiser.cjs",
+        "ARCHITECTURE.md",
+        "CHANGELOG.md",
+        "CONTRIBUTING.md",
+        "README.md",
+        "apps/reader/static/excalidraw-editor.html",
+        "deno.json",
+        "etc/realtime.api.md",
+        "packages/jsr/realtime/deno.json",
+        "packages/jsr/realtime/package.json",
+        "packages/jsr/realtime/src/index.ts",
+        "packages/svelte/community/package.json",
+        "packages/svelte/community/src/services/live.svelte.ts",
+        "packages/svelte/community/src/services/presence.svelte.ts",
+        "packages/svelte/community/src/services/realtime.ts",
+        "packages/svelte/community/src/types.svelte.ts",
+        "packages/svelte/community/src/utils/supabase-client.ts",
+        "packages/svelte/connect/src/services/connect.svelte.ts",
+        "packages/svelte/realtime-supabase/package.json",
+        "packages/svelte/realtime-supabase/src/index.ts",
+        "pnpm-lock.yaml",
+        "release/README.md",
+        "release/claims.yaml",
+        "scripts/api-surface.ts",
+        "scripts/checks/release-claims.ts",
+        "scripts/release-claims-draft.ts",
+        "tests/architecture/dependency-rules.test.ts",
+        "tests/architecture/fixtures/workspace/packages/jsr/realtime/src/broker.ts",
+        "tests/architecture/realtime-boundary.test.ts",
+        "tests/bdd/features/shared/realtime-gateway.feature",
+        "tests/bdd/features/shared/realtime-usage.feature",
+        "tests/bdd/steps/shared/realtime-gateway.steps.ts",
+        "tests/bdd/steps/shared/realtime-usage.steps.ts",
+        "tests/bdd/support/connect.ts",
+        "tests/bdd/support/supabase-recorder.ts",
+        "tests/bdd/support/whiteboard-editor.ts",
+        "tests/conformance/release-claims.test.ts",
+        "tests/suite-health/coverage-floors.json",
+        "tests/unit/community/health-check.test.ts",
+        "tests/unit/community/presence-broadcast.test.ts",
+        "vitest.aliases.ts"
+      ],
+      "churn": 1349,
+      "hotspotsTouched": [
+        "packages/svelte/connect/src/services/connect.svelte.ts"
+      ],
+      "testDelta": {
+        "production": 446,
+        "tests": 650,
+        "ratio": 1.46,
+        "packages": [
+          {
+            "package": "packages/jsr/realtime",
+            "production": 280,
+            "tests": 650,
+            "ratio": 2.32
+          },
+          {
+            "package": "packages/svelte/community",
+            "production": 131,
+            "tests": 650,
+            "ratio": 4.96
+          },
+          {
+            "package": "packages/svelte/connect",
+            "production": 1,
+            "tests": 650,
+            "ratio": 650
+          },
+          {
+            "package": "packages/svelte/realtime-supabase",
+            "production": 34,
+            "tests": 650,
+            "ratio": 19.12
+          }
+        ]
+      },
+      "reviewed": true,
+      "points": 13,
+      "deductions": [
+        {
+          "points": 3,
+          "rule": "hotspot",
+          "why": "PR #478 touches hotspot packages/svelte/connect/src/services/connect.svelte.ts (3 of the last 6 releases)",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/478/files#diff-fd4035ac7c862123cdae65175cc120073c7245aa50e8aab37b76da2aaefd542b",
+          "file": "packages/svelte/connect/src/services/connect.svelte.ts",
+          "pr": 478,
+          "author": "Claude"
+        },
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #478 changed Reader, Shared Packages, Infrastructure, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/478/files#diff-f9cfd30e49727585d340eb245e9e85897abbbba627faf3c588167b9ed13bf276",
+          "file": "apps/reader/static/excalidraw-editor.html",
+          "pr": 478,
+          "author": "Claude"
+        }
+      ]
+    },
+    {
+      "pr": 480,
+      "sha": "9bf447dee21d5d88653e92ba52ae7a603412ab42",
+      "title": "Tutors Time: read only the chosen days of a course's calendar",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/480",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        "packages/jsr/time/src/services/course-time.ts",
+        "supabase/migrations/20261015_calendar_course_day_index.sql",
+        "tests/bdd/features/student/learning-progress.feature",
+        "tests/bdd/steps/student/learning-progress.steps.ts",
+        "tests/bdd/support/supabase-recorder.ts",
+        "tests/suite-health/coverage-floors.json"
+      ],
+      "churn": 92,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 20,
+        "tests": 66,
+        "ratio": 3.3,
+        "packages": [
+          {
+            "package": "packages/jsr/time",
+            "production": 20,
+            "tests": 66,
+            "ratio": 3.3
+          }
+        ]
+      },
+      "reviewed": true,
+      "points": 10,
+      "deductions": [
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #480 changed Shared Packages, Infrastructure, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/480/files#diff-058494e42758c8229a1aa355997e6c7f3996785e11ea8dffba79c3870e22bce2",
+          "file": "packages/jsr/time/src/services/course-time.ts",
+          "pr": 480,
+          "author": "Claude"
+        }
+      ]
+    },
+    {
+      "pr": 481,
+      "sha": "3613ee3644e9aa2a10c9fa8f0b404d0cd3e372f0",
+      "title": "Tutors Live: publish from the reader's server within a daily Realtime budget",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/481",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        "ARCHITECTURE.md",
+        "apps/reader/src/routes/api/live/activity/+server.ts",
+        "packages/svelte/community/src/services/live-activity.ts",
+        "packages/svelte/community/src/services/live-feed.ts",
+        "packages/svelte/community/src/services/live.svelte.ts",
+        "packages/svelte/community/src/services/presence.svelte.ts",
+        "packages/svelte/community/src/utils/supabase-client.ts",
+        "supabase/migrations/20261016_realtime_live_budget.sql",
+        "tests/bdd/features/shared/live-activity-budget.feature",
+        "tests/bdd/features/shared/realtime-usage.feature",
+        "tests/bdd/features/student/live-presence.feature",
+        "tests/bdd/steps/shared/authentication.steps.ts",
+        "tests/bdd/steps/shared/live-activity-budget.steps.ts",
+        "tests/bdd/steps/shared/realtime-usage.steps.ts",
+        "tests/bdd/steps/student/learning-progress.steps.ts",
+        "tests/bdd/steps/student/live-presence.steps.ts",
+        "tests/bdd/support/connect.ts",
+        "tests/bdd/support/supabase-recorder.ts",
+        "tests/security/mutating-routes.txt",
+        "tests/suite-health/coverage-floors.json",
+        "tests/unit/community/error-transport.test.ts",
+        "tests/unit/community/presence-broadcast.test.ts",
+        "tests/unit/community/presence-live-report.test.ts"
+      ],
+      "churn": 1421,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 281,
+        "tests": 950,
+        "ratio": 3.38,
+        "packages": [
+          {
+            "package": "apps/reader",
+            "production": 16,
+            "tests": 950,
+            "ratio": 59.38
+          },
+          {
+            "package": "packages/svelte/community",
+            "production": 265,
+            "tests": 950,
+            "ratio": 3.58
+          }
+        ]
+      },
+      "reviewed": true,
+      "points": 10,
+      "deductions": [
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #481 changed Reader, Infrastructure, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/481/files#diff-e4fcc76d91071866c7d54b16b300e500d67b42190747baa90741fe8de58a8179",
+          "file": "apps/reader/src/routes/api/live/activity/+server.ts",
+          "pr": 481,
+          "author": "Claude"
+        }
+      ],
+      "declares": {
+        "artefacts": [
+          "network"
+        ],
+        "entry": "Tutors Live activity is published by the reader's server, only to watched feeds, within a daily Realtime budget",
+        "source": "body"
+      }
+    },
+    {
+      "pr": 483,
+      "sha": "1279669f9afe1db619edf837270137b2c6c0ba54",
+      "title": "Release 17.0.0 to main and pin production to it",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/483",
+      "direct": false,
+      "release": false,
+      "author": "Eamonn de Leastar",
+      "firstContribution": false,
+      "files": [
+        "CHANGELOG.md",
+        "apps/catalogue/package.json",
+        "apps/live/package.json",
+        "apps/reader/package.json",
+        "apps/time/package.json",
+        "deploy/k8s/overlays/catalogue/kustomization.yaml",
+        "deploy/k8s/overlays/live/kustomization.yaml",
+        "deploy/k8s/overlays/reader/kustomization.yaml",
+        "deploy/k8s/overlays/time/kustomization.yaml",
+        "package.json",
+        "release/claims.yaml",
+        "release/deployed.json",
+        "tests/generator/claims.yaml"
+      ],
+      "churn": 424,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 20,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": true,
+      "points": 10,
+      "deductions": [
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #483 changed Infrastructure, Reader, Live, Catalogue, Time, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/483/files#diff-c19c016987c6b7d3f8a014d7e4df17402c3557f0741538318a2b573727ddfff4",
+          "file": "apps/catalogue/package.json",
+          "pr": 483,
+          "author": "Eamonn de Leastar"
+        }
+      ]
+    },
+    {
+      "pr": 484,
+      "sha": "ecc56f74aea1618b564f0e27ffa9150737b714f4",
+      "title": "ci(deploy): open the pin pull request when a release tag's images are published",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/484",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        ".github/workflows/deploy-pin-pr.yml",
+        ".github/workflows/image-build.yml",
+        "guides/Release-Strategy.md",
+        "release/SOP.md",
+        "tests/conformance/deploy-pins.test.ts"
+      ],
+      "churn": 247,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 40,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": true,
+      "points": 10,
+      "deductions": [
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #484 changed Infrastructure, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/484/files#diff-a36c2b23480830b1d23bfca9ee3e98f172b1bee39d034c06780f9790dcd8c3f4",
+          "file": ".github/workflows/image-build.yml",
+          "pr": 484,
+          "author": "Claude"
+        }
+      ]
+    },
+    {
+      "pr": 485,
+      "sha": "dc6613589c3aed964fe258272e23e58482f536e8",
+      "title": "fix(deps): clear the three advisories failing the dependency audit",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/485",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        "pnpm-lock.yaml",
+        "pnpm-workspace.yaml",
+        "tests/security/audit-allowlist.json"
+      ],
+      "churn": 79,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 9,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": true,
+      "points": 0,
+      "deductions": []
+    },
+    {
+      "pr": 487,
+      "sha": "d3d72277634afc7370a4432eb3fdd64d57e5bf9a",
+      "title": "fix(community): show an empty catalogue without Supabase instead of logging errors",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/487",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        "packages/svelte/community/src/services/catalogue.ts",
+        "tests/bdd/features/student/course-discovery.feature",
+        "tests/bdd/steps/student/course-discovery.steps.ts"
+      ],
+      "churn": 67,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 15,
+        "tests": 52,
+        "ratio": 3.47,
+        "packages": [
+          {
+            "package": "packages/svelte/community",
+            "production": 15,
+            "tests": 52,
+            "ratio": 3.47
+          }
+        ]
+      },
+      "reviewed": true,
+      "points": 10,
+      "deductions": [
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #487 changed Reader, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/487/files#diff-13d8ab5e67e09ca92971e77ee1fcbb71b39dd5a018144bf33a3bbabd5b3da020",
+          "file": "packages/svelte/community/src/services/catalogue.ts",
+          "pr": 487,
+          "author": "Claude"
+        }
+      ]
+    },
+    {
+      "pr": 493,
+      "sha": "c867ee87107a603c3d1ea34be9ff70beab119ee2",
+      "title": "Claim main's Live budget differences and archive 17.0.0's claims",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/493",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        "release/claims.yaml",
+        "release/claims/17.0.0.yaml"
+      ],
+      "churn": 497,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 0,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": true,
+      "points": 0,
+      "deductions": []
+    },
+    {
+      "pr": 504,
+      "sha": "84ffbb680a286eb1a65ece555570e526e6c993f5",
+      "title": "fix(nightly): make the three red Nightly jobs pass for real",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/504",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        ".dockerignore",
+        ".github/workflows/nightly.yml",
+        "Dockerfile",
+        "guides/testing/MUTATION-TESTING.md",
+        "guides/testing/TESTING.md",
+        "package.json",
+        "patches/@stryker-mutator__vitest-runner@10.0.0.patch",
+        "pnpm-lock.yaml",
+        "pnpm-workspace.yaml",
+        "stryker.nightly.config.json",
+        "tests/bdd/steps/developer/test-quality-ratchets.steps.ts",
+        "tests/e2e-stack/fixture-course/build.ts",
+        "tests/e2e-stack/journeys/journeys.ts",
+        "tests/mutation/mutation-floors.json",
+        "tests/mutation/nightly-mutation-floors.json",
+        "tests/unit/community/catalogue-service.test.ts",
+        "tests/unit/community/catalogue-without-supabase.test.ts",
+        "tests/unit/runes/runes.test.ts"
+      ],
+      "churn": 357,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 293,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": true,
+      "points": 10,
+      "deductions": [
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #504 changed Infrastructure, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/504/files#diff-dd2c0eb6ea5cfc6c4bd4eac30934e2d5746747af48fef6da689e85b752f39557",
+          "file": "Dockerfile",
+          "pr": 504,
+          "author": "Claude"
+        }
+      ],
+      "declares": {
+        "artefacts": [],
+        "entry": "none",
+        "source": "body"
+      }
+    },
+    {
+      "pr": 505,
+      "sha": "83d4ccf7f5ca2440bbc94224e40c5bfef3e410d9",
+      "title": "fix(a11y): button names contain their visible text",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/505",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        "apps/reader/tests/e2e/accessibility.spec.ts",
+        "apps/reader/tests/e2e/course-tools.spec.ts",
+        "apps/reader/tests/e2e/preferences-and-themes.spec.ts",
+        "apps/reader/tests/e2e/search.spec.ts",
+        "apps/reader/tests/e2e/shell-and-navigation.spec.ts",
+        "apps/reader/tests/e2e/support.ts",
+        "packages/svelte/ui-navigators/src/LayoutMenu.svelte",
+        "packages/svelte/ui-navigators/src/buttons/SearchButton.svelte",
+        "packages/svelte/utils/i18n/src/messages/de.ts",
+        "packages/svelte/utils/i18n/src/messages/en.ts",
+        "packages/svelte/utils/i18n/src/messages/es.ts",
+        "packages/svelte/utils/i18n/src/messages/fr.ts",
+        "packages/svelte/utils/i18n/src/messages/ga.ts",
+        "packages/svelte/utils/i18n/src/messages/it.ts",
+        "tests/bdd/features/ui/shell-and-navigation.feature"
+      ],
+      "churn": 47,
+      "hotspotsTouched": [
+        "packages/svelte/utils/i18n/src/messages/fr.ts",
+        "packages/svelte/utils/i18n/src/messages/es.ts",
+        "packages/svelte/utils/i18n/src/messages/de.ts",
+        "packages/svelte/utils/i18n/src/messages/it.ts"
+      ],
+      "testDelta": {
+        "production": 17,
+        "tests": 30,
+        "ratio": 1.76,
+        "packages": [
+          {
+            "package": "packages/svelte/ui-navigators",
+            "production": 11,
+            "tests": 2,
+            "ratio": 0.18
+          },
+          {
+            "package": "packages/svelte/utils",
+            "production": 6,
+            "tests": 2,
+            "ratio": 0.33
+          }
+        ]
+      },
+      "reviewed": true,
+      "points": 23,
+      "deductions": [
+        {
+          "points": 3,
+          "rule": "hotspot",
+          "why": "PR #505 touches 4 hotspots packages/svelte/utils/i18n/src/messages/fr.ts (3 of the last 6 releases), packages/svelte/utils/i18n/src/messages/es.ts (3 of the last 6 releases), packages/svelte/utils/i18n/src/messages/de.ts (3 of the last 6 releases) and 1 more",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/505/files#diff-6b04260c901911736eca0c9f57d6921cf6ec7c4c4308d209b08bfb4774bc8741",
+          "file": "packages/svelte/utils/i18n/src/messages/fr.ts",
+          "pr": 505,
+          "author": "Claude"
+        },
+        {
+          "points": 10,
+          "rule": "tests",
+          "why": "PR #505 changed 11 production lines in packages/svelte/ui-navigators with 2 test lines (0.18): below 0.2",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/505/files#diff-d4a40094af72b0eb12eea04ebee4e682bfc581553326bf472d1c2f849c7c623b",
+          "file": "packages/svelte/ui-navigators/src/buttons/SearchButton.svelte",
+          "pr": 505,
+          "author": "Claude"
+        },
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #505 changed Reader, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/505/files#diff-4be7739a1047b396bc6d3e9502bee98cfdd9bde50bfcb576e9df02edfd063dd3",
+          "file": "apps/reader/tests/e2e/accessibility.spec.ts",
+          "pr": 505,
+          "author": "Claude"
+        }
+      ],
+      "declares": {
+        "artefacts": [
+          "dom",
+          "focus"
+        ],
+        "entry": "Screen readers announce the Preferences button as \"Preferences\", and the search and close buttons announce their keyboard shortcuts",
+        "source": "body"
+      }
+    },
+    {
+      "pr": 500,
+      "sha": "05c390901d4b19eb6f6a00526c310b9a18a3051f",
+      "title": "fix(deploy): immutable Cache-Control on /_app/immutable/* for Netlify",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/500",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        "apps/catalogue/netlify.toml",
+        "apps/live/netlify.toml",
+        "apps/reader/netlify.toml",
+        "apps/time/netlify.toml",
+        "tests/conformance/netlify-headers.test.ts"
+      ],
+      "churn": 30,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 22,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": true,
+      "points": 10,
+      "deductions": [
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #500 changed Reader, Live, Catalogue, Time, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/500/files#diff-c5f7478f9ea43955917de963b542918dbd3c74bd2e710935fd2606ee0ce67ecd",
+          "file": "apps/catalogue/netlify.toml",
+          "pr": 500,
+          "author": "Claude"
+        }
+      ]
+    },
+    {
+      "pr": 501,
+      "sha": "a22cc9adf34f2b1ccef57dcfd59e7546e38e86db",
+      "title": "feat(image): declare a HEALTHCHECK and expose request SLIs from start (image-hardening, image-manifest, metrics)",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/501",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        "Dockerfile",
+        "deploy/README.md",
+        "packages/svelte/utils/metrics/src/metrics.ts",
+        "tests/bdd/features/developer/runtime-image.feature",
+        "tests/bdd/features/developer/service-level-objectives.feature",
+        "tests/bdd/steps/developer/runtime-image.steps.ts",
+        "tests/bdd/steps/developer/service-level-objectives.steps.ts"
+      ],
+      "churn": 256,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 19,
+        "tests": 222,
+        "ratio": 11.68,
+        "packages": [
+          {
+            "package": "packages/svelte/utils",
+            "production": 19,
+            "tests": 222,
+            "ratio": 11.68
+          }
+        ]
+      },
+      "reviewed": true,
+      "points": 10,
+      "deductions": [
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #501 changed Infrastructure, Reader, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/501/files#diff-dd2c0eb6ea5cfc6c4bd4eac30934e2d5746747af48fef6da689e85b752f39557",
+          "file": "Dockerfile",
+          "pr": 501,
+          "author": "Claude"
+        }
+      ],
+      "declares": {
+        "artefacts": [
+          "image-hardening",
+          "image-manifest",
+          "metrics"
+        ],
+        "entry": "feat(image): declare a HEALTHCHECK and expose request SLIs from start",
+        "source": "title"
+      }
+    },
+    {
+      "pr": 502,
+      "sha": "8534430cb0681d2f21383b56e7227bfbf35bfd2c",
+      "title": "ci(image): attest SLSA v1 build provenance to every published image (build-provenance)",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/502",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        ".github/workflows/image-build.yml",
+        "deploy/README.md",
+        "tests/conformance/image-provenance.test.ts"
+      ],
+      "churn": 205,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 109,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": true,
+      "points": 10,
+      "deductions": [
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #502 changed Infrastructure, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/502/files#diff-a36c2b23480830b1d23bfca9ee3e98f172b1bee39d034c06780f9790dcd8c3f4",
+          "file": ".github/workflows/image-build.yml",
+          "pr": 502,
+          "author": "Claude"
+        }
+      ],
+      "declares": {
+        "artefacts": [
+          "build-provenance"
+        ],
+        "entry": "ci(image): attest SLSA v1 build provenance to every published image",
+        "source": "title"
+      }
+    },
+    {
+      "pr": 513,
+      "sha": "048df85a58c731dd881c5b5cb67773cc45198b24",
+      "title": "Bump the \"dependencies\" group with 2 updates across multiple ecosystems",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/513",
+      "direct": false,
+      "release": false,
+      "author": "dependabot[bot]",
+      "firstContribution": false,
+      "files": [
+        ".github/workflows/deploy-pin-pr.yml",
+        ".github/workflows/scorecard.yml",
+        "package.json",
+        "pnpm-lock.yaml"
+      ],
+      "churn": 237,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 0,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": true,
+      "points": 0,
+      "deductions": []
+    },
+    {
+      "pr": 514,
+      "sha": "2bff81a779424d44aab12c4e4074a75c4457eac8",
+      "title": "feat(reader): export enrollment drafts from course visitors (dom, network, headers)",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/514",
+      "direct": false,
+      "release": false,
+      "author": "Jordan Harrison",
+      "firstContribution": false,
+      "files": [
+        "apps/reader/src/routes/api/courses/[courseid]/enrollment/+server.ts",
+        "apps/reader/tests/e2e/enrollment-export.spec.ts",
+        "guides/RBAC.md",
+        "packages/svelte/ui-navigators/src/buttons/EducatorControlButton.svelte",
+        "packages/svelte/utils/i18n/src/messages/de.ts",
+        "packages/svelte/utils/i18n/src/messages/en.ts",
+        "packages/svelte/utils/i18n/src/messages/es.ts",
+        "packages/svelte/utils/i18n/src/messages/fr.ts",
+        "packages/svelte/utils/i18n/src/messages/ga.ts",
+        "packages/svelte/utils/i18n/src/messages/it.ts",
+        "tests/architecture/known-knip.txt",
+        "tests/bdd/features/instructor/enrollment-export.feature",
+        "tests/bdd/features/ui/course-tools.feature",
+        "tests/bdd/steps/instructor/enrollment-export.steps.ts",
+        "tests/bdd/support/supabase-recorder.ts"
+      ],
+      "churn": 651,
+      "hotspotsTouched": [
+        "packages/svelte/utils/i18n/src/messages/fr.ts",
+        "packages/svelte/utils/i18n/src/messages/es.ts",
+        "packages/svelte/utils/i18n/src/messages/de.ts",
+        "packages/svelte/utils/i18n/src/messages/it.ts"
+      ],
+      "testDelta": {
+        "production": 181,
+        "tests": 462,
+        "ratio": 2.55,
+        "packages": [
+          {
+            "package": "apps/reader",
+            "production": 119,
+            "tests": 462,
+            "ratio": 3.88
+          },
+          {
+            "package": "packages/svelte/ui-navigators",
+            "production": 32,
+            "tests": 379,
+            "ratio": 11.84
+          },
+          {
+            "package": "packages/svelte/utils",
+            "production": 30,
+            "tests": 379,
+            "ratio": 12.63
+          }
+        ]
+      },
+      "reviewed": true,
+      "points": 13,
+      "deductions": [
+        {
+          "points": 3,
+          "rule": "hotspot",
+          "why": "PR #514 touches 4 hotspots packages/svelte/utils/i18n/src/messages/fr.ts (3 of the last 6 releases), packages/svelte/utils/i18n/src/messages/es.ts (3 of the last 6 releases), packages/svelte/utils/i18n/src/messages/de.ts (3 of the last 6 releases) and 1 more",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/514/files#diff-6b04260c901911736eca0c9f57d6921cf6ec7c4c4308d209b08bfb4774bc8741",
+          "file": "packages/svelte/utils/i18n/src/messages/fr.ts",
+          "pr": 514,
+          "author": "Jordan Harrison"
+        },
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #514 changed Reader, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/514/files#diff-13bc0a33f184cb8d792a48300081d13e799b31f2a6adebb9b06a5609f0068def",
+          "file": "apps/reader/src/routes/api/courses/[courseid]/enrollment/+server.ts",
+          "pr": 514,
+          "author": "Jordan Harrison"
+        }
+      ],
+      "declares": {
+        "artefacts": [
+          "dom",
+          "network",
+          "headers"
+        ],
+        "entry": "feat(reader): export enrollment drafts from course visitors",
+        "source": "title"
+      }
+    },
+    {
+      "pr": 506,
+      "sha": "4cd3fafbe51e03552b8e4446ea73af393c63dae3",
+      "title": "fix(reader): link a local course's LLM downloads over http (dom)",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/506",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        "apps/reader/src/routes/(course-reader)/llm/[courseid]/+page.ts",
+        "apps/reader/src/routes/(course-reader)/llm/[courseid]/llms.ts",
+        "tests/bdd/features/course/llm-exports.feature",
+        "tests/bdd/steps/course/llm-exports.steps.ts"
+      ],
+      "churn": 72,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 33,
+        "tests": 39,
+        "ratio": 1.18,
+        "packages": [
+          {
+            "package": "apps/reader",
+            "production": 33,
+            "tests": 39,
+            "ratio": 1.18
+          }
+        ]
+      },
+      "reviewed": true,
+      "points": 10,
+      "deductions": [
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #506 changed Reader, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/506/files#diff-7eefe5446d7d2d9f6a5a3758cefc8ac0ac9a1927189261d6f36b902293bf0588",
+          "file": "apps/reader/src/routes/(course-reader)/llm/[courseid]/+page.ts",
+          "pr": 506,
+          "author": "Claude"
+        }
+      ],
+      "declares": {
+        "artefacts": [
+          "dom"
+        ],
+        "entry": "fix(reader): link a local course's LLM downloads over http",
+        "source": "title"
+      }
+    },
+    {
+      "pr": 508,
+      "sha": "4653d1a3d4249d485c95b21bd6503f87e1d01cea",
+      "title": "fix(time): read the course PIN from where the course is served (found by the release harness)",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/508",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        "packages/jsr/time/src/services/course-time.ts",
+        "tests/bdd/features/time/course-pin.feature",
+        "tests/bdd/steps/time/course-pin.steps.ts"
+      ],
+      "churn": 91,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 20,
+        "tests": 71,
+        "ratio": 3.55,
+        "packages": [
+          {
+            "package": "packages/jsr/time",
+            "production": 20,
+            "tests": 71,
+            "ratio": 3.55
+          }
+        ]
+      },
+      "reviewed": true,
+      "points": 10,
+      "deductions": [
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #508 changed Shared Packages, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/508/files#diff-058494e42758c8229a1aa355997e6c7f3996785e11ea8dffba79c3870e22bce2",
+          "file": "packages/jsr/time/src/services/course-time.ts",
+          "pr": 508,
+          "author": "Claude"
+        }
+      ]
+    },
+    {
+      "pr": 510,
+      "sha": "4ab42624fcc21f856ca433a0923f0380164e8f2a",
+      "title": "fix(reader): keep a private course out of Recently accessed for someone it turns away (found by the release harness)",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/510",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        "packages/svelte/connect/src/services/connect.svelte.ts",
+        "tests/bdd/features/instructor/whitelist-management.feature",
+        "tests/bdd/steps/instructor/whitelist-management.steps.ts"
+      ],
+      "churn": 86,
+      "hotspotsTouched": [
+        "packages/svelte/connect/src/services/connect.svelte.ts"
+      ],
+      "testDelta": {
+        "production": 30,
+        "tests": 56,
+        "ratio": 1.87,
+        "packages": [
+          {
+            "package": "packages/svelte/connect",
+            "production": 30,
+            "tests": 56,
+            "ratio": 1.87
+          }
+        ]
+      },
+      "reviewed": true,
+      "points": 13,
+      "deductions": [
+        {
+          "points": 3,
+          "rule": "hotspot",
+          "why": "PR #510 touches hotspot packages/svelte/connect/src/services/connect.svelte.ts (3 of the last 6 releases)",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/510/files#diff-fd4035ac7c862123cdae65175cc120073c7245aa50e8aab37b76da2aaefd542b",
+          "file": "packages/svelte/connect/src/services/connect.svelte.ts",
+          "pr": 510,
+          "author": "Claude"
+        },
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #510 changed Reader, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/510/files#diff-fd4035ac7c862123cdae65175cc120073c7245aa50e8aab37b76da2aaefd542b",
+          "file": "packages/svelte/connect/src/services/connect.svelte.ts",
+          "pr": 510,
+          "author": "Claude"
+        }
+      ],
+      "declares": {
+        "artefacts": [
+          "dom",
+          "persistence"
+        ],
+        "entry": "Reader: a private course no longer appears under Recently accessed on My courses for a student its whitelist turns away",
+        "source": "body"
+      }
+    },
+    {
+      "pr": 507,
+      "sha": "71e90672cac886f9b4354a602f04ad4473dcaeb5",
+      "title": "fix(time): reuse one Supabase client per url and key (console, network)",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/507",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        "packages/jsr/time/src/services/supabase.ts",
+        "tests/bdd/features/time/lab-analytics.feature",
+        "tests/bdd/steps/time/lab-analytics.steps.ts"
+      ],
+      "churn": 84,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 9,
+        "tests": 75,
+        "ratio": 8.33,
+        "packages": [
+          {
+            "package": "packages/jsr/time",
+            "production": 9,
+            "tests": 75,
+            "ratio": 8.33
+          }
+        ]
+      },
+      "reviewed": true,
+      "points": 10,
+      "deductions": [
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #507 changed Shared Packages, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/507/files#diff-5b11ac08ac0f8f58902608d1c44c6ee5c2bc78063e10e0e32fa3e757c51ccaa7",
+          "file": "packages/jsr/time/src/services/supabase.ts",
+          "pr": 507,
+          "author": "Claude"
+        }
+      ],
+      "declares": {
+        "artefacts": [
+          "console",
+          "network"
+        ],
+        "entry": "fix(time): reuse one Supabase client per url and key",
+        "source": "title"
+      }
+    },
+    {
+      "pr": 491,
+      "sha": "b529390cb8e054b071a6111f6abb8a762d32f643",
+      "title": "feat(dev): EARS dashboard, one page for every Rule and the format",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/491",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        ".github/workflows/ci.yml",
+        ".gitignore",
+        "README.md",
+        "guides/README.md",
+        "guides/testing/EARS-METHODOLOGY.md",
+        "package.json",
+        "scripts/ears-dashboard.ts",
+        "tests/bdd/features/developer/ears-dashboard.feature",
+        "tests/bdd/steps/developer/ears-dashboard.steps.ts"
+      ],
+      "churn": 1138,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 327,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": true,
+      "points": 0,
+      "deductions": [],
+      "declares": {
+        "artefacts": [],
+        "entry": "none",
+        "source": "body"
+      }
+    },
+    {
+      "pr": 512,
+      "sha": "ed7874a174d9abeef50aa5e88c1366e46abf4f68",
+      "title": "chore(release): claim the Live budget RPCs on every harness journey",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/512",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        "release/claims.yaml"
+      ],
+      "churn": 8,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 0,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": true,
+      "points": 0,
+      "deductions": [],
+      "declares": {
+        "artefacts": [],
+        "entry": "none",
+        "source": "body"
+      }
+    },
+    {
+      "pr": 511,
+      "sha": "328f80b7e326df1e9ae37c5c22be7c77472b355e",
+      "title": "fix(time): key labs by their full path, found by the release harness (dom)",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/511",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        "apps/time/src/lib/components/MediansView.svelte",
+        "apps/time/src/lib/components/labs/GridLabModel.ts",
+        "etc/tutors-time-lib.api.md",
+        "packages/jsr/time/src/services/base-lab-model.ts",
+        "packages/jsr/time/src/utils/lab-utils.ts",
+        "packages/svelte/ui-components/src/time/Tables.svelte",
+        "tests/bdd/features/instructor/analytics-lab.feature",
+        "tests/bdd/steps/instructor/analytics-lab.steps.ts",
+        "tests/bdd/steps/time/lab-analytics.steps.ts",
+        "tests/bdd/support/time.ts",
+        "tests/contract/__snapshots__/time-lib-api.test.ts.snap",
+        "tests/unit/time/base-lab-model-mutations.test.ts",
+        "tests/unit/time/base-lab-model.test.ts",
+        "tests/unit/time/lab-utils.test.ts"
+      ],
+      "churn": 230,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 70,
+        "tests": 150,
+        "ratio": 2.14,
+        "packages": [
+          {
+            "package": "apps/time",
+            "production": 29,
+            "tests": 150,
+            "ratio": 5.17
+          },
+          {
+            "package": "packages/jsr/time",
+            "production": 37,
+            "tests": 150,
+            "ratio": 4.05
+          },
+          {
+            "package": "packages/svelte/ui-components",
+            "production": 4,
+            "tests": 150,
+            "ratio": 37.5
+          }
+        ]
+      },
+      "reviewed": true,
+      "points": 10,
+      "deductions": [
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #511 changed Time, Reader, Shared Packages, Infrastructure, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/511/files#diff-89be349f0f1b3e21c15df9cf0ed382f7aefd1707b11ba8e0ca717547553a53fb",
+          "file": "apps/time/src/lib/components/MediansView.svelte",
+          "pr": 511,
+          "author": "Claude"
+        }
+      ],
+      "declares": {
+        "artefacts": [
+          "dom"
+        ],
+        "entry": "fix(time): key labs by their full path, found by the release harness",
+        "source": "title"
+      }
+    },
+    {
+      "pr": 509,
+      "sha": "68d1e616ca652f8577c085d5d5b82ae826a83e88",
+      "title": "fix(time): lay heat maps out the same on every load (screenshot)",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/509",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        "packages/svelte/ui-components/src/time/Heatmap.svelte",
+        "packages/svelte/ui-components/src/time/heatmap-layout.ts",
+        "tests/bdd/features/instructor/analytics-calendar.feature",
+        "tests/bdd/steps/instructor/analytics-calendar.steps.ts"
+      ],
+      "churn": 84,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 14,
+        "tests": 70,
+        "ratio": 5,
+        "packages": [
+          {
+            "package": "packages/svelte/ui-components",
+            "production": 14,
+            "tests": 70,
+            "ratio": 5
+          }
+        ]
+      },
+      "reviewed": true,
+      "points": 10,
+      "deductions": [
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #509 changed Reader, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/509/files#diff-d585d9ff35154e35a9681cefa655ae71605ca24958d3f758d9d5e7fea85751c2",
+          "file": "packages/svelte/ui-components/src/time/Heatmap.svelte",
+          "pr": 509,
+          "author": "Claude"
+        }
+      ],
+      "declares": {
+        "artefacts": [
+          "screenshot"
+        ],
+        "entry": "fix(time): lay heat maps out the same on every load",
+        "source": "title"
+      }
+    },
+    {
+      "pr": 518,
+      "sha": "31e4851536bed3561080461ba9e8c2bd822686fb",
+      "title": "fix(reader): [bug] check the educator on the server before a content lock changes (persistence)",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/518",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        ".env.example",
+        "apps/reader/package.json",
+        "apps/reader/src/lib/server/educator.ts",
+        "apps/reader/src/lib/server/supabase-service.ts",
+        "apps/reader/src/routes/api/courses/[courseid]/enrollment/+server.ts",
+        "apps/reader/src/routes/api/courses/[courseid]/locks/+server.ts",
+        "deploy/README.md",
+        "deploy/k8s/overlays/reader/secrets.yaml.example",
+        "guides/RBAC.md",
+        "packages/svelte/app-config/src/env.js",
+        "packages/svelte/utils/rbac/src/index.ts",
+        "packages/svelte/utils/rbac/src/lock-store.ts",
+        "packages/svelte/utils/rbac/src/rbac-service.svelte.ts",
+        "pnpm-lock.yaml",
+        "tests/bdd/features/instructor/content-lock-changes.feature",
+        "tests/bdd/steps/instructor/content-lock-changes.steps.ts",
+        "tests/security/mutating-routes.txt",
+        "tests/suite-health/coverage-floors.json",
+        "tests/support/private-env-stub.ts",
+        "tests/unit/rbac/lock-matching.test.ts",
+        "tests/unit/rbac/lock-tree.integration.test.ts"
+      ],
+      "churn": 484,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 245,
+        "tests": 225,
+        "ratio": 0.92,
+        "packages": [
+          {
+            "package": "apps/reader",
+            "production": 155,
+            "tests": 225,
+            "ratio": 1.45
+          },
+          {
+            "package": "packages/svelte/app-config",
+            "production": 1,
+            "tests": 225,
+            "ratio": 225
+          },
+          {
+            "package": "packages/svelte/utils",
+            "production": 89,
+            "tests": 225,
+            "ratio": 2.53
+          }
+        ]
+      },
+      "reviewed": true,
+      "points": 10,
+      "deductions": [
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #518 changed Reader, Infrastructure, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/518/files#diff-97f47dfbbef70b6e2647599895724dd6f2ea689bb666f485238bff0bfb08cb8d",
+          "file": "apps/reader/package.json",
+          "pr": 518,
+          "author": "Claude"
+        }
+      ],
+      "declares": {
+        "artefacts": [
+          "persistence",
+          "sbom",
+          "logs"
+        ],
+        "entry": "fix(reader): [bug] check the educator on the server before a content lock changes",
+        "source": "title"
+      }
+    },
+    {
+      "pr": 519,
+      "sha": "a31e5effdb4f36eac11748a40010331ef9bd6d04",
+      "title": "fix(reader): [bug] make the Moodle sync educator-only in the reader (persistence)",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/519",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        ".env.example",
+        "apps/reader/src/lib/server/moodle/assignments-service.ts",
+        "apps/reader/src/lib/server/moodle/assignments-sync-service.ts",
+        "apps/reader/src/lib/server/moodle/moodle-client.ts",
+        "apps/reader/src/lib/server/moodle/submissions-repository.ts",
+        "apps/reader/src/routes/api/courses/[courseid]/moodle-sync/+server.ts",
+        "apps/time/README.md",
+        "apps/time/package.json",
+        "apps/time/src/lib/components/CourseIdDialog.svelte",
+        "apps/time/src/lib/components/tables/AssignmentsTable.svelte",
+        "apps/time/src/lib/server/api/moodle.ts",
+        "apps/time/src/lib/server/db/submissionsRepository.ts",
+        "apps/time/src/lib/server/services/AssignmentsService.ts",
+        "apps/time/src/lib/server/services/AssignmentsSyncService.ts",
+        "apps/time/src/routes/+page.svelte",
+        "apps/time/src/routes/api/sync/+server.ts",
+        "deploy/README.md",
+        "deploy/k8s/overlays/reader/kustomization.yaml",
+        "deploy/k8s/overlays/reader/secrets.yaml.example",
+        "deploy/k8s/overlays/time/kustomization.yaml",
+        "deploy/k8s/overlays/time/secrets.yaml.example",
+        "deploy/staging/.env.example",
+        "guides/RBAC.md",
+        "guides/testing/TESTING.md",
+        "packages/svelte/ui-navigators/src/buttons/EducatorControlButton.svelte",
+        "packages/svelte/utils/i18n/src/messages/de.ts",
+        "packages/svelte/utils/i18n/src/messages/en.ts",
+        "packages/svelte/utils/i18n/src/messages/es.ts",
+        "packages/svelte/utils/i18n/src/messages/fr.ts",
+        "packages/svelte/utils/i18n/src/messages/ga.ts",
+        "packages/svelte/utils/i18n/src/messages/it.ts",
+        "pnpm-lock.yaml",
+        "scripts/checks/security.ts",
+        "tests/architecture/known-knip.txt",
+        "tests/bdd/features/instructor/moodle-sync.feature",
+        "tests/bdd/steps/instructor/moodle-sync.steps.ts",
+        "tests/bdd/support/supabase-recorder.ts",
+        "tests/conformance/package-imports.test.ts",
+        "tests/security/mutating-routes.txt",
+        "tests/suite-health/coverage-floors.json"
+      ],
+      "churn": 1438,
+      "hotspotsTouched": [
+        "packages/svelte/utils/i18n/src/messages/fr.ts",
+        "packages/svelte/utils/i18n/src/messages/es.ts",
+        "packages/svelte/utils/i18n/src/messages/de.ts",
+        "packages/svelte/utils/i18n/src/messages/it.ts"
+      ],
+      "testDelta": {
+        "production": 1166,
+        "tests": 222,
+        "ratio": 0.19,
+        "packages": [
+          {
+            "package": "apps/reader",
+            "production": 498,
+            "tests": 222,
+            "ratio": 0.45
+          },
+          {
+            "package": "apps/time",
+            "production": 528,
+            "tests": 222,
+            "ratio": 0.42
+          },
+          {
+            "package": "packages/svelte/ui-navigators",
+            "production": 44,
+            "tests": 222,
+            "ratio": 5.05
+          },
+          {
+            "package": "packages/svelte/utils",
+            "production": 96,
+            "tests": 222,
+            "ratio": 2.31
+          }
+        ]
+      },
+      "reviewed": true,
+      "points": 18,
+      "deductions": [
+        {
+          "points": 3,
+          "rule": "hotspot",
+          "why": "PR #519 touches 4 hotspots packages/svelte/utils/i18n/src/messages/fr.ts (3 of the last 6 releases), packages/svelte/utils/i18n/src/messages/es.ts (3 of the last 6 releases), packages/svelte/utils/i18n/src/messages/de.ts (3 of the last 6 releases) and 1 more",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/519/files#diff-6b04260c901911736eca0c9f57d6921cf6ec7c4c4308d209b08bfb4774bc8741",
+          "file": "packages/svelte/utils/i18n/src/messages/fr.ts",
+          "pr": 519,
+          "author": "Claude"
+        },
+        {
+          "points": 5,
+          "rule": "churn",
+          "why": "time churn 721 lines, above 2× its median of 14 over the last 6 releases; PR #519 is the largest part (533 lines)",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/519/files#diff-8b7f790b5271e1164ee6cf94a7cfe8769a79823cd718721e7a17e34b5ca22800",
+          "file": "apps/time/src/lib/server/api/moodle.ts",
+          "pr": 519,
+          "author": "Claude"
+        },
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #519 changed Reader, Time, Infrastructure, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/519/files#diff-40c77f2136c77d652b67d1cdf92b44089e2e0ebfbfb2cff443a6ff2119d6457f",
+          "file": "apps/reader/src/lib/server/moodle/assignments-service.ts",
+          "pr": 519,
+          "author": "Claude"
+        }
+      ],
+      "declares": {
+        "artefacts": [
+          "persistence",
+          "sbom",
+          "logs"
+        ],
+        "entry": "fix(reader): [bug] make the Moodle sync educator-only in the reader",
+        "source": "title"
+      }
+    },
+    {
+      "pr": 520,
+      "sha": "0d09d4626bb818465b46c0d7f73111467c798baa",
+      "title": "test: signed-in, resilience and authorisation journeys, message contracts, migrations on Postgres, mutation on PRs (dom, network)",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/520",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        ".github/workflows/ci.yml",
+        ".gitignore",
+        "apps/catalogue/playwright.config.ts",
+        "apps/live/playwright.config.ts",
+        "apps/reader/playwright.config.ts",
+        "apps/reader/src/hooks.client.ts",
+        "apps/reader/src/lib/server/supabase-service.ts",
+        "apps/reader/src/routes/(auth)/auth/SigninWithGithub.svelte",
+        "apps/reader/tests/e2e/shell-and-navigation.spec.ts",
+        "guides/testing/TESTING-OVERVIEW.md",
+        "guides/testing/TESTING.md",
+        "guides/testing/journey.md",
+        "knip.json",
+        "package.json",
+        "packages/jsr/time/src/services/supabase.ts",
+        "packages/svelte/community/src/utils/health-check.ts",
+        "packages/svelte/community/src/utils/supabase-client.ts",
+        "packages/svelte/course/src/course/index.ts",
+        "packages/svelte/course/src/course/services/course.svelte.ts",
+        "packages/svelte/ui-primitives/src/components/ErrorPage.svelte",
+        "packages/svelte/utils/i18n/src/messages/de.ts",
+        "packages/svelte/utils/i18n/src/messages/en.ts",
+        "packages/svelte/utils/i18n/src/messages/es.ts",
+        "packages/svelte/utils/i18n/src/messages/fr.ts",
+        "packages/svelte/utils/i18n/src/messages/ga.ts",
+        "packages/svelte/utils/i18n/src/messages/it.ts",
+        "packages/svelte/utils/logger/src/index.ts",
+        "packages/svelte/utils/logger/src/outbound.ts",
+        "playwright.e2e-stack.config.ts",
+        "pnpm-lock.yaml",
+        "scripts/checks/authorisation.ts",
+        "scripts/checks/data-schema.ts",
+        "scripts/checks/ears-audit.ts",
+        "scripts/checks/mutation-pr.ts",
+        "scripts/checks/security.ts",
+        "scripts/checks/suite-health.ts",
+        "tests/TESTING.md",
+        "tests/architecture/known-knip.txt",
+        "tests/bdd/features/developer/authorisation-matrix.feature",
+        "tests/bdd/features/developer/data-migrations.feature",
+        "tests/bdd/features/developer/message-contracts.feature",
+        "tests/bdd/features/developer/test-quality-ratchets.feature",
+        "tests/bdd/features/journeys/authorisation.feature",
+        "tests/bdd/features/journeys/resilience.feature",
+        "tests/bdd/features/journeys/signed-in.feature",
+        "tests/bdd/steps/developer/authorisation-matrix.steps.ts",
+        "tests/bdd/steps/developer/data-migrations.steps.ts",
+        "tests/bdd/steps/developer/message-contracts.steps.ts",
+        "tests/bdd/steps/developer/test-quality-ratchets.steps.ts",
+        "tests/bdd/support/whiteboard-editor.ts",
+        "tests/contract/messages/contracts.ts",
+        "tests/contract/messages/negative/cursor-update.no-user-id.json",
+        "tests/contract/messages/negative/lo-event.no-course-id.json",
+        "tests/contract/messages/negative/lo-event.private-as-text.json",
+        "tests/contract/messages/negative/presence.no-color.json",
+        "tests/contract/messages/negative/scene-update.element-without-version.json",
+        "tests/contract/messages/recorded/cursor-update.v1.json",
+        "tests/contract/messages/recorded/lo-event.v1.json",
+        "tests/contract/messages/recorded/presence.v1.json",
+        "tests/contract/messages/recorded/scene-update.v1.json",
+        "tests/contract/messages/versions/cursor-update.v1.json",
+        "tests/contract/messages/versions/lo-event.v1.json",
+        "tests/contract/messages/versions/presence.v1.json",
+        "tests/contract/messages/versions/scene-update.v1.json",
+        "tests/contract/realtime/whiteboard-protocol.contract.test.ts",
+        "tests/contract/support/schema-generators.ts",
+        "tests/contract/support/schema-snapshots.ts",
+        "tests/contract/support/schemas.ts",
+        "tests/data/schema/known-gaps.txt",
+        "tests/data/schema/seed.sql",
+        "tests/data/schema/supabase-baseline.sql",
+        "tests/data/schema/supabase-legacy-tables.sql",
+        "tests/e2e-stack/Caddyfile.signed-in",
+        "tests/e2e-stack/README.md",
+        "tests/e2e-stack/authorisation/known-gaps.txt",
+        "tests/e2e-stack/authorisation/matrix.json",
+        "tests/e2e-stack/compose.yaml",
+        "tests/e2e-stack/fixture-course/build-signed-in.ts",
+        "tests/e2e-stack/fixture-course/serve.mjs",
+        "tests/e2e-stack/fixtures/identity/certs/ca.key",
+        "tests/e2e-stack/fixtures/identity/certs/ca.pem",
+        "tests/e2e-stack/fixtures/identity/certs/server.key",
+        "tests/e2e-stack/fixtures/identity/certs/server.pem",
+        "tests/e2e-stack/fixtures/identity/stub.mjs",
+        "tests/e2e-stack/fixtures/persistence/seeds/time-course.json",
+        "tests/e2e-stack/fixtures/persistence/stub.mjs",
+        "tests/e2e-stack/journeys/authorisation.journey.spec.ts",
+        "tests/e2e-stack/journeys/resilience.journey.spec.ts",
+        "tests/e2e-stack/journeys/signed-in.journey.spec.ts",
+        "tests/e2e-stack/journeys/signed-in.ts",
+        "tests/mutation/nightly-mutation-floors.json",
+        "tests/mutation/schema-snapshot.test.ts",
+        "tests/suite-health/coverage-floors.json",
+        "tests/suite-health/time-budgets.json",
+        "tests/unit/apps/error-hooks.test.ts",
+        "tests/unit/community/health-check.test.ts",
+        "tests/unit/course/course-service-not-found.test.ts",
+        "tests/unit/resilience/outbound-timeouts.test.ts",
+        "tests/unit/time/supabase.test.ts"
+      ],
+      "churn": 5082,
+      "hotspotsTouched": [
+        "packages/svelte/utils/i18n/src/messages/fr.ts",
+        "packages/svelte/utils/i18n/src/messages/es.ts",
+        "packages/svelte/utils/i18n/src/messages/de.ts",
+        "packages/svelte/utils/i18n/src/messages/it.ts"
+      ],
+      "testDelta": {
+        "production": 138,
+        "tests": 4141,
+        "ratio": 30.01,
+        "packages": [
+          {
+            "package": "apps/catalogue",
+            "production": 5,
+            "tests": 4136,
+            "ratio": 827.2
+          },
+          {
+            "package": "apps/live",
+            "production": 5,
+            "tests": 4136,
+            "ratio": 827.2
+          },
+          {
+            "package": "apps/reader",
+            "production": 18,
+            "tests": 4141,
+            "ratio": 230.06
+          },
+          {
+            "package": "packages/jsr/time",
+            "production": 19,
+            "tests": 4136,
+            "ratio": 217.68
+          },
+          {
+            "package": "packages/svelte/community",
+            "production": 28,
+            "tests": 4136,
+            "ratio": 147.71
+          },
+          {
+            "package": "packages/svelte/course",
+            "production": 31,
+            "tests": 4136,
+            "ratio": 133.42
+          },
+          {
+            "package": "packages/svelte/ui-primitives",
+            "production": 4,
+            "tests": 4136,
+            "ratio": 1034
+          },
+          {
+            "package": "packages/svelte/utils",
+            "production": 28,
+            "tests": 4136,
+            "ratio": 147.71
+          }
+        ]
+      },
+      "reviewed": true,
+      "points": 13,
+      "deductions": [
+        {
+          "points": 3,
+          "rule": "hotspot",
+          "why": "PR #520 touches 4 hotspots packages/svelte/utils/i18n/src/messages/fr.ts (3 of the last 6 releases), packages/svelte/utils/i18n/src/messages/es.ts (3 of the last 6 releases), packages/svelte/utils/i18n/src/messages/de.ts (3 of the last 6 releases) and 1 more",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/520/files#diff-6b04260c901911736eca0c9f57d6921cf6ec7c4c4308d209b08bfb4774bc8741",
+          "file": "packages/svelte/utils/i18n/src/messages/fr.ts",
+          "pr": 520,
+          "author": "Claude"
+        },
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #520 changed Reader, Live, Catalogue, Shared Packages, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/520/files#diff-98f22a8fb8b7ad0d757eac9bc6007fc2108d28a4346433c4ccddce39c1ec079f",
+          "file": "apps/catalogue/playwright.config.ts",
+          "pr": 520,
+          "author": "Claude"
+        }
+      ],
+      "declares": {
+        "artefacts": [
+          "dom",
+          "network"
+        ],
+        "entry": "test: signed-in, resilience and authorisation journeys, message contracts, migrations on Postgres, mutation on PRs",
+        "source": "title"
+      }
+    },
+    {
+      "pr": 539,
+      "sha": "260bdc4ef10d8a40785dce838cb99a92cd9b7cde",
+      "title": "ci: check the CHANGELOG hint against the diff and add what it left out",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/539",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        ".github/PULL_REQUEST_TEMPLATE.md",
+        ".github/workflows/changelog-hint.yml",
+        "CONTRIBUTING.md",
+        "package.json",
+        "scripts/checks/changelog-hint.ts",
+        "tests/bdd/features/developer/changelog-hint.feature",
+        "tests/bdd/steps/developer/changelog-hint.steps.ts"
+      ],
+      "churn": 587,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 251,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": true,
+      "points": 0,
+      "deductions": [],
+      "declares": {
+        "artefacts": [],
+        "entry": "none",
+        "source": "body"
+      }
+    },
+    {
+      "pr": 516,
+      "sha": "180700e171ab642aa5eeefbf34b4c35e2be958d9",
+      "title": "docs: bring docs in line with main after SvelteKit 3",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/516",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        ".devcontainer/post-create.sh",
+        ".devcontainer/post-start.sh",
+        "ARCHITECTURE.md",
+        "CONTRIBUTING.md",
+        "README.md",
+        "apps/catalogue/README.md",
+        "apps/live/README.md",
+        "apps/time/README.md",
+        "deploy/README.md",
+        "guides/testing/EARS-METHODOLOGY.md",
+        "guides/testing/TESTING.md",
+        "tests/completeness/known-gaps.txt"
+      ],
+      "churn": 94,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 10,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": true,
+      "points": 10,
+      "deductions": [
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #516 changed Live, Catalogue, Time, Infrastructure, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/516/files#diff-9c75df02d09573d64deea0a822ba5807d540ccad75393b98b2feeae95f98f449",
+          "file": "apps/catalogue/README.md",
+          "pr": 516,
+          "author": "Claude"
+        }
+      ]
+    },
+    {
+      "pr": 425,
+      "sha": "024ecef115916f2ee28440c72b2deab97a883862",
+      "title": "fix(gen): leave folders of no kind out of tutors.json at any depth",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/425",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        "CHANGELOG.md",
+        "packages/jsr/gen/src/services/course-builder.ts",
+        "packages/jsr/gen/src/services/resource-builder.ts",
+        "tests/bdd/features/generator/course-json.feature",
+        "tests/bdd/steps/generator/course-json.steps.ts",
+        "tests/generator/claims.yaml",
+        "tests/generator/corpus/synthetic-course/topic-01-typical/old-ideas/readme.md",
+        "tests/generator/corpus/synthetic-course/topic-01-typical/unit-2/scratch/readme.md",
+        "tests/mutation/mutation-floors.json",
+        "tests/mutation/nightly-mutation-floors.json",
+        "tests/unit/gen/course-builder-mutations.test.ts"
+      ],
+      "churn": 101,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 14,
+        "tests": 86,
+        "ratio": 6.14,
+        "packages": [
+          {
+            "package": "packages/jsr/gen",
+            "production": 14,
+            "tests": 86,
+            "ratio": 6.14
+          }
+        ]
+      },
+      "reviewed": true,
+      "points": 10,
+      "deductions": [
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #425 changed Shared Packages, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/425/files#diff-ec67d57817841e44513dccfa91d1cb28eceb4c1ba442961cdb893247c05ff218",
+          "file": "packages/jsr/gen/src/services/course-builder.ts",
+          "pr": 425,
+          "author": "Claude"
+        }
+      ]
+    },
+    {
+      "pr": 546,
+      "sha": "91d63f69dd2c2d2cf50e1830ebcac051f5c5d41a",
+      "title": "ci: run the E2E journeys nightly, not on every pull request (none)",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/546",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        ".github/workflows/ci.yml",
+        ".github/workflows/nightly.yml",
+        "guides/specifications/responsive-layout.md",
+        "guides/testing/TESTING-OVERVIEW.md",
+        "guides/testing/TESTING.md",
+        "tests/bdd/features/journeys/authorisation.feature",
+        "tests/bdd/features/journeys/signed-in.feature",
+        "tests/e2e-stack/README.md"
+      ],
+      "churn": 172,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 10,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": true,
+      "points": 0,
+      "deductions": []
+    },
+    {
+      "pr": 547,
+      "sha": "abd9f6a122470819b4a9abb00655411cb75e8428",
+      "title": "fix(deps): patch dompurify, undici, markdown-it, vite and happy-dom advisories (sbom)",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/547",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        "package.json",
+        "pnpm-lock.yaml",
+        "pnpm-workspace.yaml"
+      ],
+      "churn": 531,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 0,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": true,
+      "points": 0,
+      "deductions": [],
+      "declares": {
+        "artefacts": [
+          "sbom"
+        ],
+        "entry": "fix(deps): patch dompurify, undici, markdown-it, vite and happy-dom advisories",
+        "source": "title"
+      }
+    },
+    {
+      "pr": 548,
+      "sha": "1b5f52d3bb60682cfbfd2fa2840be7c4beef1766",
+      "title": "feat(quiz): fenced code blocks in quiz questions and options (dom)",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/548",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        "packages/svelte/quiz/README.md",
+        "packages/svelte/quiz/src/services/quiz-content.ts",
+        "packages/svelte/quiz/src/services/quiz-parser.ts",
+        "packages/svelte/ui-components/src/quiz/QuizQuestion.svelte",
+        "packages/svelte/ui-components/src/quiz/quiz-text.ts",
+        "pnpm-lock.yaml",
+        "pnpm-workspace.yaml",
+        "tests/bdd/features/student/quiz-code-blocks.feature",
+        "tests/bdd/steps/student/quiz-code-blocks.steps.ts",
+        "tests/fixtures/quiz-code-blocks/js-question.md",
+        "tests/fixtures/quiz-code-blocks/one-line-question.md",
+        "tests/fixtures/quiz-code-blocks/python-options.md",
+        "tests/fixtures/quiz-code-blocks/three-backtick-quiz.md",
+        "tests/fixtures/quiz-code-blocks/yaml-question.md",
+        "tests/mutation/nightly-mutation-floors.json",
+        "tests/security/audit-allowlist.json",
+        "tests/suite-health/coverage-floors.json",
+        "tests/unit/quiz/quiz-content.test.ts",
+        "tests/unit/quiz/quiz-parser.test.ts",
+        "tests/unit/quiz/quiz-text.test.ts"
+      ],
+      "churn": 774,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 213,
+        "tests": 406,
+        "ratio": 1.91,
+        "packages": [
+          {
+            "package": "packages/svelte/quiz",
+            "production": 165,
+            "tests": 406,
+            "ratio": 2.46
+          },
+          {
+            "package": "packages/svelte/ui-components",
+            "production": 48,
+            "tests": 406,
+            "ratio": 8.46
+          }
+        ]
+      },
+      "reviewed": true,
+      "points": 10,
+      "deductions": [
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #548 changed Reader, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/548/files#diff-22d70ca7e354eea60e156d8536e28c645b1beef66a935ecd4e9770fa168f8364",
+          "file": "packages/svelte/quiz/README.md",
+          "pr": 548,
+          "author": "Claude"
+        }
+      ],
+      "declares": {
+        "artefacts": [
+          "dom"
+        ],
+        "entry": "feat(quiz): fenced code blocks in quiz questions and options",
+        "source": "title"
+      }
+    },
+    {
+      "pr": 489,
+      "sha": "7742e859f3a1ca0998b75ed4d674333d505e07be",
+      "title": "Close the prose and code gaps from #488 that main can fix today",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/489",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        "ARCHITECTURE.md",
+        "README.md",
+        "guides/specifications/README.md",
+        "guides/specifications/search-content.md",
+        "guides/testing/TESTING.md",
+        "packages/svelte/ui-components/src/learning-objects/layout/LoContextPanel.svelte",
+        "packages/svelte/ui-navigators/src/CourseContext.svelte",
+        "packages/svelte/ui-navigators/src/CourseNavigation.svelte",
+        "packages/svelte/ui-navigators/src/LoContextTree.svelte",
+        "packages/svelte/ui-primitives/package.json",
+        "packages/svelte/ui-primitives/src/components/LoContextTree.svelte",
+        "packages/svelte/ui-primitives/src/components/LoContextTreeView.svelte",
+        "pnpm-lock.yaml",
+        "tests/architecture/known-violations.txt",
+        "tests/bdd/features/student/search-content.feature",
+        "tests/bdd/steps/student/search-content.steps.ts"
+      ],
+      "churn": 182,
+      "hotspotsTouched": [
+        "packages/svelte/ui-primitives/src/components/LoContextTreeView.svelte"
+      ],
+      "testDelta": {
+        "production": 92,
+        "tests": 46,
+        "ratio": 0.5,
+        "packages": [
+          {
+            "package": "packages/svelte/ui-components",
+            "production": 2,
+            "tests": 46,
+            "ratio": 23
+          },
+          {
+            "package": "packages/svelte/ui-navigators",
+            "production": 45,
+            "tests": 46,
+            "ratio": 1.02
+          },
+          {
+            "package": "packages/svelte/ui-primitives",
+            "production": 45,
+            "tests": 46,
+            "ratio": 1.02
+          }
+        ]
+      },
+      "reviewed": true,
+      "points": 13,
+      "deductions": [
+        {
+          "points": 3,
+          "rule": "hotspot",
+          "why": "PR #489 touches hotspot packages/svelte/ui-primitives/src/components/LoContextTreeView.svelte (3 of the last 6 releases)",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/489/files#diff-3805a328d2572205ef2f52b7b2b8eb8164c3c1dc10b3c867d195122994548757",
+          "file": "packages/svelte/ui-primitives/src/components/LoContextTreeView.svelte",
+          "pr": 489,
+          "author": "Claude"
+        },
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #489 changed Reader, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/489/files#diff-8af0bde393b8123c01d17adc2011a612037eadcac15e56cf825b51b5b3c9654b",
+          "file": "packages/svelte/ui-components/src/learning-objects/layout/LoContextPanel.svelte",
+          "pr": 489,
+          "author": "Claude"
+        }
+      ],
+      "declares": {
+        "artefacts": [],
+        "entry": "none",
+        "source": "body"
+      }
+    },
+    {
+      "pr": 517,
+      "sha": "eef3a27815e743c059e0fd74ed5a1efb149c7ff5",
+      "title": "docs(comments): header comments on the production request path",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/517",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        "apps/catalogue/src/hooks.client.ts",
+        "apps/catalogue/src/hooks.server.ts",
+        "apps/catalogue/src/routes/healthz/live/+server.ts",
+        "apps/catalogue/src/routes/metrics/+server.ts",
+        "apps/live/src/hooks.client.ts",
+        "apps/live/src/hooks.server.ts",
+        "apps/live/src/routes/healthz/live/+server.ts",
+        "apps/live/src/routes/metrics/+server.ts",
+        "apps/reader/src/hooks.client.ts",
+        "apps/reader/src/hooks.server.ts",
+        "apps/reader/src/routes/+layout.server.ts",
+        "apps/reader/src/routes/api/courses/[courseid]/enrollment/+server.ts",
+        "apps/reader/src/routes/healthz/live/+server.ts",
+        "apps/reader/src/routes/metrics/+server.ts",
+        "apps/time/src/hooks.client.ts",
+        "apps/time/src/hooks.server.ts",
+        "apps/time/src/routes/healthz/live/+server.ts",
+        "apps/time/src/routes/metrics/+server.ts",
+        "deploy/k8s/base/configmap.yaml",
+        "deploy/k8s/base/pdb.yaml",
+        "deploy/k8s/base/service.yaml",
+        "packages/svelte/community/src/services/live.svelte.ts",
+        "packages/svelte/community/src/utils/error-transport.ts",
+        "packages/svelte/community/src/utils/health-check.ts",
+        "packages/svelte/identity-sveltekit/src/better-auth.server.ts",
+        "packages/svelte/identity-sveltekit/src/client.ts",
+        "packages/svelte/identity-sveltekit/src/index.server.ts",
+        "packages/svelte/utils/logger/src/index.ts",
+        "packages/svelte/utils/metrics/src/index.ts",
+        "packages/svelte/utils/rbac/src/index.ts",
+        "packages/svelte/utils/rbac/src/lock-store.ts",
+        "packages/svelte/utils/runtime/src/index.ts"
+      ],
+      "churn": 166,
+      "hotspotsTouched": [
+        "apps/reader/src/hooks.server.ts",
+        "packages/svelte/community/src/utils/error-transport.ts",
+        "apps/time/src/hooks.server.ts"
+      ],
+      "testDelta": {
+        "production": 155,
+        "tests": 0,
+        "ratio": 0,
+        "packages": [
+          {
+            "package": "apps/catalogue",
+            "production": 21,
+            "tests": 0,
+            "ratio": 0
+          },
+          {
+            "package": "apps/live",
+            "production": 21,
+            "tests": 0,
+            "ratio": 0
+          },
+          {
+            "package": "apps/reader",
+            "production": 36,
+            "tests": 0,
+            "ratio": 0
+          },
+          {
+            "package": "apps/time",
+            "production": 22,
+            "tests": 0,
+            "ratio": 0
+          },
+          {
+            "package": "packages/svelte/community",
+            "production": 16,
+            "tests": 0,
+            "ratio": 0
+          },
+          {
+            "package": "packages/svelte/identity-sveltekit",
+            "production": 16,
+            "tests": 0,
+            "ratio": 0
+          },
+          {
+            "package": "packages/svelte/utils",
+            "production": 23,
+            "tests": 0,
+            "ratio": 0
+          }
+        ]
+      },
+      "reviewed": true,
+      "points": 33,
+      "deductions": [
+        {
+          "points": 3,
+          "rule": "hotspot",
+          "why": "PR #517 touches 3 hotspots apps/reader/src/hooks.server.ts (3 of the last 6 releases), packages/svelte/community/src/utils/error-transport.ts (3 of the last 6 releases), apps/time/src/hooks.server.ts (3 of the last 6 releases)",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/517/files#diff-d6d421ccc99e28b6214f7df730798547515a524700fe6758ff2aaa6b7cdd8856",
+          "file": "apps/reader/src/hooks.server.ts",
+          "pr": 517,
+          "author": "Claude"
+        },
+        {
+          "points": 10,
+          "rule": "tests",
+          "why": "PR #517 changed 21 production lines in apps/catalogue with 0 test lines (0.00); 21 production lines in apps/live with 0 test lines (0.00); 36 production lines in apps/reader with 0 test lines (0.00); 22 production lines in apps/time with 0 test lines (0.00); 16 production lines in packages/svelte/community with 0 test lines (0.00); 16 production lines in packages/svelte/identity-sveltekit with 0 test lines (0.00); 23 production lines in packages/svelte/utils with 0 test lines (0.00): below 0.2",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/517/files#diff-d6d421ccc99e28b6214f7df730798547515a524700fe6758ff2aaa6b7cdd8856",
+          "file": "apps/reader/src/hooks.server.ts",
+          "pr": 517,
+          "author": "Claude"
+        },
+        {
+          "points": 5,
+          "rule": "churn",
+          "why": "catalogue churn 38 lines, above 2× its median of 7.5 over the last 6 releases; PR #517 is the largest part (21 lines)",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/517/files#diff-681a6274b9d04d85e52f7f862f2dc5bcff947154b547367bdf9eaf0e3ab2b849",
+          "file": "apps/catalogue/src/hooks.server.ts",
+          "pr": 517,
+          "author": "Claude"
+        },
+        {
+          "points": 5,
+          "rule": "churn",
+          "why": "live churn 35 lines, above 2× its median of 3.5 over the last 6 releases; PR #517 is the largest part (21 lines)",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/517/files#diff-e53bd4734255e1d22ae9cadb161045e24b80541b0a23ffa3dfd06daddf4af5ac",
+          "file": "apps/live/src/hooks.server.ts",
+          "pr": 517,
+          "author": "Claude"
+        },
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #517 changed Reader, Live, Catalogue, Time, Infrastructure but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/517/files#diff-d6a0a4bcd386b6be385bc1065b14c63cdcb15c76c5de9b6842895eb698fad6e3",
+          "file": "apps/catalogue/src/hooks.client.ts",
+          "pr": 517,
+          "author": "Claude"
+        }
+      ]
+    },
+    {
+      "pr": 544,
+      "sha": "fe7dcb34b38120b81a11f3ff71ef1ccb3bd0ebd7",
+      "title": "fix(ci): turn the Nightly green again (sbom)",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/544",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        "packages/jsr/time/src/utils/lab-utils.ts",
+        "tests/mutation/mutation-floors.json",
+        "tests/mutation/nightly-mutation-floors.json",
+        "tests/unit/time/lab-utils.test.ts"
+      ],
+      "churn": 25,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 2,
+        "tests": 23,
+        "ratio": 11.5,
+        "packages": [
+          {
+            "package": "packages/jsr/time",
+            "production": 2,
+            "tests": 23,
+            "ratio": 11.5
+          }
+        ]
+      },
+      "reviewed": true,
+      "points": 10,
+      "deductions": [
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #544 changed Shared Packages, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/544/files#diff-0bcef4d9c5db361fff96288f24ab1cca984e6349ac9a1c237b8742d40ce8e64d",
+          "file": "packages/jsr/time/src/utils/lab-utils.ts",
+          "pr": 544,
+          "author": "Claude"
+        }
+      ],
+      "declares": {
+        "artefacts": [
+          "sbom"
+        ],
+        "entry": "fix(ci): turn the Nightly green again",
+        "source": "title"
+      }
+    },
+    {
+      "pr": 541,
+      "sha": "e1f8c40564545788dffb9c3ec5af9f0c6f04b395",
+      "title": "build(image): pin the Node base image by digest, moved by Dependabot (image-manifest)",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/541",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        ".github/dependabot.yml",
+        "Dockerfile",
+        "deploy/README.md",
+        "docs/LOCAL-CONTAINERS.md",
+        "tests/bdd/features/developer/runtime-image.feature",
+        "tests/bdd/steps/developer/runtime-image.steps.ts"
+      ],
+      "churn": 107,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 65,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": true,
+      "points": 10,
+      "deductions": [
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #541 changed Infrastructure, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/541/files#diff-dd2c0eb6ea5cfc6c4bd4eac30934e2d5746747af48fef6da689e85b752f39557",
+          "file": "Dockerfile",
+          "pr": 541,
+          "author": "Claude"
+        }
+      ],
+      "declares": {
+        "artefacts": [
+          "image-manifest"
+        ],
+        "entry": "build(image): pin the Node base image by digest, moved by Dependabot",
+        "source": "title"
+      }
+    },
+    {
+      "pr": 542,
+      "sha": "7f2b47587d14428e1e803be419521db5f41b7e45",
+      "title": "ci: production hardening 0.4/1.1, pin the toolchain and time out every job (none)",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/542",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        ".dvmrc",
+        ".github/workflows/changelog-hint.yml",
+        ".github/workflows/ci.yml",
+        ".github/workflows/codeql.yml",
+        ".github/workflows/deploy-pin-pr.yml",
+        ".github/workflows/deploy.yml",
+        ".github/workflows/image-build.yml",
+        ".github/workflows/nightly.yml",
+        ".github/workflows/rc-validation.yml",
+        ".github/workflows/release-claims.yml",
+        ".github/workflows/release-dispatch.yml",
+        ".github/workflows/release-harness-report.yml",
+        ".github/workflows/release-testing.yml",
+        ".github/workflows/scorecard.yml",
+        ".github/workflows/zizmor.yml",
+        ".nvmrc",
+        "package.json"
+      ],
+      "churn": 121,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 0,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": true,
+      "points": 10,
+      "deductions": [
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #542 changed Infrastructure, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/542/files#diff-28802fbf11c83a2eee09623fb192785e7ca92a3f40602a517c011b947a1822d3",
+          "file": ".github/workflows/deploy.yml",
+          "pr": 542,
+          "author": "Claude"
+        }
+      ]
+    },
+    {
+      "pr": 327,
+      "sha": "a9032d0429ef30a99ffff7be916a20deb596844e",
+      "title": "feat(data-api): make the browser-to-data seam explicit and enforce it (logs, sbom)",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/327",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        ".dependency-cruiser.cjs",
+        ".env.example",
+        ".github/CODEOWNERS",
+        "CHANGELOG.md",
+        "README.md",
+        "apps/catalogue/src/routes/+page.ts",
+        "apps/reader/README.md",
+        "apps/reader/package.json",
+        "apps/reader/playwright.config.ts",
+        "apps/reader/src/hooks.client.ts",
+        "apps/reader/src/lib/server/api/access.ts",
+        "apps/reader/src/lib/server/api/authorization.ts",
+        "apps/reader/src/lib/server/api/http.ts",
+        "apps/reader/src/lib/server/api/service-client.ts",
+        "apps/reader/src/lib/server/api/store.ts",
+        "apps/reader/src/lib/server/api/time-data.ts",
+        "apps/reader/src/lib/server/api/validate.ts",
+        "apps/reader/src/routes/api/analytics/+server.ts",
+        "apps/reader/src/routes/api/courses/visit/+server.ts",
+        "apps/reader/src/routes/api/live/activity/+server.ts",
+        "apps/reader/src/routes/api/locks/+server.ts",
+        "apps/reader/src/routes/api/me/+server.ts",
+        "apps/reader/src/routes/api/presence/+server.ts",
+        "apps/reader/src/routes/api/profile/+server.ts",
+        "apps/reader/src/routes/api/time/[courseId]/+server.ts",
+        "apps/reader/src/routes/api/whiteboard/+server.ts",
+        "apps/reader/tests/e2e/content-locks.spec.ts",
+        "apps/reader/tests/e2e/oauth-preload.mjs",
+        "apps/reader/vite.config.ts",
+        "apps/time/src/hooks.client.ts",
+        "apps/time/src/lib/components/tables/AssignmentsTable.svelte",
+        "apps/time/src/lib/enrichCourseUserFields.ts",
+        "apps/time/src/lib/time-source.ts",
+        "apps/time/src/routes/+layout.ts",
+        "apps/time/src/routes/[courseid]/(calendar-lab)/+layout.svelte",
+        "apps/time/src/routes/[courseid]/(calendar-lab)/+layout.ts",
+        "apps/time/src/routes/[courseid]/[studentid]/+page.ts",
+        "deploy/README.md",
+        "deploy/k8s/overlays/reader/kustomization.yaml",
+        "deploy/k8s/overlays/reader/secrets.yaml.example",
+        "deploy/k8s/overlays/time/kustomization.yaml",
+        "deploy/staging/.env.example",
+        "docs/DATA-INVENTORY.md",
+        "etc/tutors-time-lib.api.md",
+        "guides/MIGRATIONS.md",
+        "guides/SERVER-WRITES.md",
+        "guides/WHITEBOARD.md",
+        "packages/jsr/time/src/index.ts",
+        "packages/jsr/time/src/services/course-time.ts",
+        "packages/jsr/time/src/services/source.ts",
+        "packages/jsr/time/src/services/tutors-time.ts",
+        "packages/jsr/time/src/types/tutors-time-types.ts",
+        "packages/svelte/app-config/src/env.js",
+        "packages/svelte/community/package.json",
+        "packages/svelte/community/src/services/analytics.svelte.ts",
+        "packages/svelte/community/src/services/catalogue.ts",
+        "packages/svelte/community/src/services/live-activity.server.ts",
+        "packages/svelte/community/src/services/live-activity.ts",
+        "packages/svelte/community/src/types.svelte.ts",
+        "packages/svelte/community/src/utils/supabase-client.ts",
+        "packages/svelte/connect/package.json",
+        "packages/svelte/connect/src/services/supabaseProfile.svelte.ts",
+        "packages/svelte/connect/src/utils/allCourseAccess.ts",
+        "packages/svelte/data-api/package.json",
+        "packages/svelte/data-api/src/client.ts",
+        "packages/svelte/data-api/src/contract.ts",
+        "packages/svelte/data-api/src/index.ts",
+        "packages/svelte/identity-sveltekit/src/index.server.ts",
+        "packages/svelte/ui-components/package.json",
+        "packages/svelte/ui-components/src/learning-objects/content/whiteboard/WhiteboardViewer.svelte",
+        "packages/svelte/utils/rbac/package.json",
+        "packages/svelte/utils/rbac/sql/003_whiteboard_scenes.sql",
+        "packages/svelte/utils/rbac/src/lock-store.ts",
+        "pnpm-lock.yaml",
+        "release/claims.yaml",
+        "scripts/checks/browser-data-access.ts",
+        "scripts/checks/migrations.ts",
+        "supabase/contracts/README.md",
+        "supabase/contracts/revoke_anon_student_data.sql",
+        "supabase/migrations/20261017000000_create_whiteboard_scenes.sql",
+        "supabase/migrations/20261017000100_restrict_app_errors_reads.sql",
+        "supabase/migrations/20261017000200_create_get_student_count.sql",
+        "tests/architecture/browser-data-access.test.ts",
+        "tests/architecture/dependency-rules.test.ts",
+        "tests/architecture/fixtures/workspace/external/@supabase/supabase-js/index.ts",
+        "tests/architecture/fixtures/workspace/external/supabase.ts",
+        "tests/architecture/fixtures/workspace/packages/svelte/community/src/utils/supabase-client.ts",
+        "tests/architecture/fixtures/workspace/packages/svelte/connect/src/direct-db.ts",
+        "tests/architecture/known-knip.txt",
+        "tests/bdd/features/shared/server-data-access.feature",
+        "tests/bdd/steps/developer/message-contracts.steps.ts",
+        "tests/bdd/steps/instructor/student-engagement.steps.ts",
+        "tests/bdd/steps/instructor/whitelist-management.steps.ts",
+        "tests/bdd/steps/live/presence-tracking.steps.ts",
+        "tests/bdd/steps/shared/authentication.steps.ts",
+        "tests/bdd/steps/shared/live-activity-budget.steps.ts",
+        "tests/bdd/steps/shared/realtime-usage.steps.ts",
+        "tests/bdd/steps/shared/server-data-access.steps.ts",
+        "tests/bdd/steps/student/learning-progress.steps.ts",
+        "tests/bdd/steps/student/live-presence.steps.ts",
+        "tests/bdd/support/connect.ts",
+        "tests/bdd/support/migrations.ts",
+        "tests/bdd/support/reader-api.ts",
+        "tests/bdd/support/supabase-recorder.ts",
+        "tests/conformance/migrations.test.ts",
+        "tests/conformance/shipped-contract-migrations.txt",
+        "tests/contract/__snapshots__/time-lib-api.test.ts.snap",
+        "tests/contract/messages/contracts.ts",
+        "tests/data/schema/known-gaps.txt",
+        "tests/e2e-stack/README.md",
+        "tests/e2e-stack/authorisation/matrix.json",
+        "tests/e2e-stack/compose.yaml",
+        "tests/e2e-stack/fixtures/identity/certs/server.pem",
+        "tests/e2e-stack/fixtures/identity/stub.mjs",
+        "tests/e2e-stack/journeys/authorisation.journey.spec.ts",
+        "tests/e2e-stack/journeys/signed-in.journey.spec.ts",
+        "tests/e2e-stack/journeys/signed-in.ts",
+        "tests/fixtures/reader-session/built.mjs",
+        "tests/mutation/nightly-mutation-floors.json",
+        "tests/security/mutating-routes.txt",
+        "tests/suite-health/coverage-floors.json",
+        "tests/support/private-env-stub.ts",
+        "tests/support/public-env-stub.ts",
+        "tests/unit/apps/error-hooks.test.ts",
+        "tests/unit/community/analytics-service.test.ts",
+        "tests/unit/community/catalogue-service.test.ts",
+        "tests/unit/community/catalogue-without-supabase.test.ts",
+        "tests/unit/community/data-api-transport.test.ts",
+        "tests/unit/community/learning-record-increments.test.ts",
+        "tests/unit/community/live-activity.test.ts",
+        "tests/unit/community/status-write.test.ts",
+        "tests/unit/connect/all-course-access.test.ts",
+        "tests/unit/identity/better-auth-adapter.test.ts",
+        "tests/unit/identity/reader-oauth-fixture.test.ts",
+        "tests/unit/rbac/lock-write.test.ts",
+        "tests/unit/reader/api-validate.test.ts",
+        "tests/unit/reader/atomic-analytics.test.ts",
+        "tests/unit/reader/learning-record-increments.test.ts",
+        "tests/unit/time/reader-time-source.test.ts",
+        "tests/unit/time/tutors-time-display.test.ts"
+      ],
+      "churn": 5720,
+      "hotspotsTouched": [
+        "packages/svelte/ui-components/src/learning-objects/content/whiteboard/WhiteboardViewer.svelte"
+      ],
+      "testDelta": {
+        "production": 2499,
+        "tests": 2436,
+        "ratio": 0.97,
+        "packages": [
+          {
+            "package": "apps/catalogue",
+            "production": 3,
+            "tests": 2423,
+            "ratio": 807.67
+          },
+          {
+            "package": "apps/reader",
+            "production": 995,
+            "tests": 2436,
+            "ratio": 2.45
+          },
+          {
+            "package": "apps/time",
+            "production": 133,
+            "tests": 2423,
+            "ratio": 18.22
+          },
+          {
+            "package": "packages/jsr/time",
+            "production": 352,
+            "tests": 2423,
+            "ratio": 6.88
+          },
+          {
+            "package": "packages/svelte/app-config",
+            "production": 4,
+            "tests": 2423,
+            "ratio": 605.75
+          },
+          {
+            "package": "packages/svelte/community",
+            "production": 715,
+            "tests": 2423,
+            "ratio": 3.39
+          },
+          {
+            "package": "packages/svelte/connect",
+            "production": 59,
+            "tests": 2423,
+            "ratio": 41.07
+          },
+          {
+            "package": "packages/svelte/data-api",
+            "production": 145,
+            "tests": 2423,
+            "ratio": 16.71
+          },
+          {
+            "package": "packages/svelte/identity-sveltekit",
+            "production": 7,
+            "tests": 2423,
+            "ratio": 346.14
+          },
+          {
+            "package": "packages/svelte/ui-components",
+            "production": 52,
+            "tests": 2423,
+            "ratio": 46.6
+          },
+          {
+            "package": "packages/svelte/utils",
+            "production": 34,
+            "tests": 2423,
+            "ratio": 71.26
+          }
+        ]
+      },
+      "reviewed": true,
+      "points": 8,
+      "deductions": [
+        {
+          "points": 3,
+          "rule": "hotspot",
+          "why": "PR #327 touches hotspot packages/svelte/ui-components/src/learning-objects/content/whiteboard/WhiteboardViewer.svelte (3 of the last 6 releases)",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/327/files#diff-df9fd1dd4556d3b501ea96a8bfc85aeae703e79866841d36fa27aab651c128d6",
+          "file": "packages/svelte/ui-components/src/learning-objects/content/whiteboard/WhiteboardViewer.svelte",
+          "pr": 327,
+          "author": "Claude"
+        },
+        {
+          "points": 5,
+          "rule": "churn",
+          "why": "reader churn 2029 lines, above 2× its median of 101.5 over the last 6 releases; PR #327 is the largest part (1011 lines)",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/327/files#diff-563197f9fa115e0d3f0f9a0f1f7b8a5eade03512f09d31538aa93f1512f13431",
+          "file": "apps/reader/src/lib/server/api/store.ts",
+          "pr": 327,
+          "author": "Claude"
+        }
+      ],
+      "declares": {
+        "artefacts": [
+          "network",
+          "persistence",
+          "console",
+          "logs",
+          "sbom"
+        ],
+        "entry": "feat(data-api): make the browser-to-data seam explicit and enforce it",
+        "source": "title"
+      }
+    },
+    {
+      "pr": 328,
+      "sha": "56163d261bd5a0c87badf1a641176a3619e22674",
+      "title": "fix(whiteboard): give personal rooms their own namespace and keep them off Realtime",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/328",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        "CHANGELOG.md",
+        "apps/reader/src/lib/server/api/store.ts",
+        "apps/reader/static/excalidraw-editor.html",
+        "docs/DATA-INVENTORY.md",
+        "guides/SERVER-WRITES.md",
+        "guides/WHITEBOARD.md",
+        "packages/svelte/ui-components/src/learning-objects/content/whiteboard/WhiteboardViewer.svelte",
+        "tests/bdd/features/shared/server-data-access.feature",
+        "tests/bdd/steps/shared/server-data-access.steps.ts",
+        "tests/bdd/support/whiteboard-editor.ts",
+        "tests/unit/reader/api-validate.test.ts",
+        "tests/unit/reader/personal-whiteboard.test.ts"
+      ],
+      "churn": 80,
+      "hotspotsTouched": [
+        "packages/svelte/ui-components/src/learning-objects/content/whiteboard/WhiteboardViewer.svelte"
+      ],
+      "testDelta": {
+        "production": 7,
+        "tests": 47,
+        "ratio": 6.71,
+        "packages": [
+          {
+            "package": "apps/reader",
+            "production": 3,
+            "tests": 47,
+            "ratio": 15.67
+          },
+          {
+            "package": "packages/svelte/ui-components",
+            "production": 4,
+            "tests": 47,
+            "ratio": 11.75
+          }
+        ]
+      },
+      "reviewed": true,
+      "points": 3,
+      "deductions": [
+        {
+          "points": 3,
+          "rule": "hotspot",
+          "why": "PR #328 touches hotspot packages/svelte/ui-components/src/learning-objects/content/whiteboard/WhiteboardViewer.svelte (3 of the last 6 releases)",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/328/files#diff-df9fd1dd4556d3b501ea96a8bfc85aeae703e79866841d36fa27aab651c128d6",
+          "file": "packages/svelte/ui-components/src/learning-objects/content/whiteboard/WhiteboardViewer.svelte",
+          "pr": 328,
+          "author": "Claude"
+        }
+      ]
+    },
+    {
+      "pr": 515,
+      "sha": "d3504043ef2d56a06dd96e376394758415987fec",
+      "title": "fix(logger): stop logging /metrics scrapes and keep every server line JSON (logs)",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/515",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        "deploy/README.md",
+        "packages/jsr/model/src/utils/course-utils.ts",
+        "packages/jsr/time/src/services/course-time.ts",
+        "packages/svelte/utils/logger/src/request-logger.ts",
+        "tests/unit/model/course-utils-mutations.test.ts",
+        "tests/unit/utils/request-logger.test.ts"
+      ],
+      "churn": 58,
+      "hotspotsTouched": [
+        "packages/svelte/utils/logger/src/request-logger.ts"
+      ],
+      "testDelta": {
+        "production": 13,
+        "tests": 37,
+        "ratio": 2.85,
+        "packages": [
+          {
+            "package": "packages/jsr/model",
+            "production": 3,
+            "tests": 37,
+            "ratio": 12.33
+          },
+          {
+            "package": "packages/jsr/time",
+            "production": 2,
+            "tests": 37,
+            "ratio": 18.5
+          },
+          {
+            "package": "packages/svelte/utils",
+            "production": 8,
+            "tests": 37,
+            "ratio": 4.63
+          }
+        ]
+      },
+      "reviewed": true,
+      "points": 13,
+      "deductions": [
+        {
+          "points": 3,
+          "rule": "hotspot",
+          "why": "PR #515 touches hotspot packages/svelte/utils/logger/src/request-logger.ts (3 of the last 6 releases)",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/515/files#diff-056fa8b9ee956a1c1e1a40989edcd3bbcf0e8c4db55f12b6ca848b246953c63e",
+          "file": "packages/svelte/utils/logger/src/request-logger.ts",
+          "pr": 515,
+          "author": "Claude"
+        },
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #515 changed Shared Packages, Reader, Infrastructure, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/515/files#diff-0db16276644fc4f21eae05d761a230f6438feca8b7c0a92427c9d3b3ea85726a",
+          "file": "deploy/README.md",
+          "pr": 515,
+          "author": "Claude"
+        }
+      ],
+      "declares": {
+        "artefacts": [
+          "logs"
+        ],
+        "entry": "fix(logger): stop logging /metrics scrapes and keep every server line JSON",
+        "source": "title"
+      }
+    }
+  ],
+  "signals": {
+    "churn": {
+      "status": "measured",
+      "apps": [
+        {
+          "app": "reader",
+          "churn": 2029,
+          "median": 101.5,
+          "above": true,
+          "history": [
+            3795,
+            2,
+            109,
+            94,
+            119,
+            40
+          ]
+        },
+        {
+          "app": "catalogue",
+          "churn": 38,
+          "median": 7.5,
+          "above": true,
+          "history": [
+            206,
+            2,
+            11,
+            73,
+            2,
+            4
+          ]
+        },
+        {
+          "app": "live",
+          "churn": 35,
+          "median": 3.5,
+          "above": true,
+          "history": [
+            308,
+            2,
+            3,
+            73,
+            2,
+            4
+          ]
+        },
+        {
+          "app": "time",
+          "churn": 721,
+          "median": 14,
+          "above": true,
+          "history": [
+            2177,
+            2,
+            15,
+            107,
+            13,
+            6
+          ]
+        }
+      ]
+    },
+    "hotspots": {
+      "status": "measured",
+      "files": [
+        {
+          "path": "packages/svelte/utils/i18n/src/messages/fr.ts",
+          "releases": 3,
+          "weight": 407
+        },
+        {
+          "path": "packages/svelte/utils/i18n/src/messages/es.ts",
+          "releases": 3,
+          "weight": 387
+        },
+        {
+          "path": "packages/svelte/utils/i18n/src/messages/de.ts",
+          "releases": 3,
+          "weight": 373
+        },
+        {
+          "path": "packages/svelte/utils/i18n/src/messages/it.ts",
+          "releases": 3,
+          "weight": 323
+        },
+        {
+          "path": "packages/svelte/ui-components/src/learning-objects/content/whiteboard/WhiteboardViewer.svelte",
+          "releases": 3,
+          "weight": 254
+        },
+        {
+          "path": "packages/svelte/utils/logger/src/request-logger.ts",
+          "releases": 3,
+          "weight": 216
+        },
+        {
+          "path": "packages/svelte/ui-primitives/src/components/LoContextTreeView.svelte",
+          "releases": 3,
+          "weight": 184
+        },
+        {
+          "path": "apps/reader/src/hooks.server.ts",
+          "releases": 3,
+          "weight": 175
+        },
+        {
+          "path": "packages/svelte/connect/src/services/connect.svelte.ts",
+          "releases": 3,
+          "weight": 107
+        },
+        {
+          "path": "apps/reader/src/routes/(course-reader)/+layout.svelte",
+          "releases": 3,
+          "weight": 91
+        },
+        {
+          "path": "packages/svelte/community/src/utils/error-transport.ts",
+          "releases": 3,
+          "weight": 58
+        },
+        {
+          "path": "packages/jsr/model/src/utils/markdown-utils.ts",
+          "releases": 3,
+          "weight": 51
+        },
+        {
+          "path": "packages/svelte/ui-components/src/learning-objects/content/talk/TalkMarp.svelte",
+          "releases": 3,
+          "weight": 49
+        },
+        {
+          "path": "apps/time/src/hooks.server.ts",
+          "releases": 3,
+          "weight": 48
+        },
+        {
+          "path": "packages/svelte/course/src/course/services/lo-tree.ts",
+          "releases": 3,
+          "weight": 23
+        }
+      ],
+      "touched": [
+        {
+          "path": "packages/svelte/connect/src/services/connect.svelte.ts",
+          "prs": [
+            478,
+            510
+          ]
+        },
+        {
+          "path": "packages/svelte/utils/i18n/src/messages/fr.ts",
+          "prs": [
+            505,
+            514,
+            519,
+            520
+          ]
+        },
+        {
+          "path": "packages/svelte/utils/i18n/src/messages/es.ts",
+          "prs": [
+            505,
+            514,
+            519,
+            520
+          ]
+        },
+        {
+          "path": "packages/svelte/utils/i18n/src/messages/de.ts",
+          "prs": [
+            505,
+            514,
+            519,
+            520
+          ]
+        },
+        {
+          "path": "packages/svelte/utils/i18n/src/messages/it.ts",
+          "prs": [
+            505,
+            514,
+            519,
+            520
+          ]
+        },
+        {
+          "path": "packages/svelte/ui-primitives/src/components/LoContextTreeView.svelte",
+          "prs": [
+            489
+          ]
+        },
+        {
+          "path": "apps/reader/src/hooks.server.ts",
+          "prs": [
+            517
+          ]
+        },
+        {
+          "path": "packages/svelte/community/src/utils/error-transport.ts",
+          "prs": [
+            517
+          ]
+        },
+        {
+          "path": "apps/time/src/hooks.server.ts",
+          "prs": [
+            517
+          ]
+        },
+        {
+          "path": "packages/svelte/ui-components/src/learning-objects/content/whiteboard/WhiteboardViewer.svelte",
+          "prs": [
+            327,
+            328
+          ]
+        },
+        {
+          "path": "packages/svelte/utils/logger/src/request-logger.ts",
+          "prs": [
+            515
+          ]
+        }
+      ]
+    },
+    "ownership": {
+      "files": []
+    },
+    "orphans": {
+      "diffs": {
+        "status": "measured",
+        "source": "pnpm release:changelog --json",
+        "items": [
+          {
+            "pr": 476,
+            "sha": "9015284",
+            "title": "Give each whiteboard room a Realtime budget",
+            "sections": [
+              "Reader",
+              "Development"
+            ]
+          },
+          {
+            "pr": 478,
+            "sha": "7c4028a",
+            "title": "Route every Realtime channel through a budgeted port",
+            "sections": [
+              "Reader",
+              "Shared Packages",
+              "Infrastructure",
+              "Development"
+            ]
+          },
+          {
+            "pr": 480,
+            "sha": "9bf447d",
+            "title": "Tutors Time: read only the chosen days of a course's calendar",
+            "sections": [
+              "Shared Packages",
+              "Infrastructure",
+              "Development"
+            ]
+          },
+          {
+            "pr": 481,
+            "sha": "3613ee3",
+            "title": "Tutors Live: publish from the reader's server within a daily Realtime budget",
+            "sections": [
+              "Reader",
+              "Infrastructure",
+              "Development"
+            ]
+          },
+          {
+            "pr": 483,
+            "sha": "1279669",
+            "title": "Release 17.0.0 to main and pin production to it",
+            "sections": [
+              "Infrastructure",
+              "Reader",
+              "Live",
+              "Catalogue",
+              "Time",
+              "Development"
+            ]
+          },
+          {
+            "pr": 484,
+            "sha": "ecc56f7",
+            "title": "Open the pin pull request when a release tag's images are published",
+            "sections": [
+              "Infrastructure",
+              "Development"
+            ]
+          },
+          {
+            "pr": 487,
+            "sha": "d3d7227",
+            "title": "Show an empty catalogue without Supabase instead of logging errors",
+            "sections": [
+              "Reader",
+              "Development"
+            ]
+          },
+          {
+            "pr": 504,
+            "sha": "84ffbb6",
+            "title": "Make the three red Nightly jobs pass for real",
+            "sections": [
+              "Infrastructure",
+              "Development"
+            ]
+          },
+          {
+            "pr": 505,
+            "sha": "83d4ccf",
+            "title": "Button names contain their visible text",
+            "sections": [
+              "Reader",
+              "Development"
+            ]
+          },
+          {
+            "pr": 500,
+            "sha": "05c3909",
+            "title": "Immutable Cache-Control on /_app/immutable/* for Netlify",
+            "sections": [
+              "Reader",
+              "Live",
+              "Catalogue",
+              "Time",
+              "Development"
+            ]
+          },
+          {
+            "pr": 501,
+            "sha": "a22cc9a",
+            "title": "Declare a HEALTHCHECK and expose request SLIs from start",
+            "sections": [
+              "Infrastructure",
+              "Reader",
+              "Development"
+            ]
+          },
+          {
+            "pr": 502,
+            "sha": "8534430",
+            "title": "Attest SLSA v1 build provenance to every published image",
+            "sections": [
+              "Infrastructure",
+              "Development"
+            ]
+          },
+          {
+            "pr": 514,
+            "sha": "2bff81a",
+            "title": "Export enrollment drafts from course visitors",
+            "sections": [
+              "Reader",
+              "Development"
+            ]
+          },
+          {
+            "pr": 506,
+            "sha": "4cd3faf",
+            "title": "Link a local course's LLM downloads over http",
+            "sections": [
+              "Reader",
+              "Development"
+            ]
+          },
+          {
+            "pr": 508,
+            "sha": "4653d1a",
+            "title": "Read the course PIN from where the course is served (found by the release harness)",
+            "sections": [
+              "Shared Packages",
+              "Development"
+            ]
+          },
+          {
+            "pr": 510,
+            "sha": "4ab4262",
+            "title": "Keep a private course out of Recently accessed for someone it turns away (found by the release harness)",
+            "sections": [
+              "Reader",
+              "Development"
+            ]
+          },
+          {
+            "pr": 507,
+            "sha": "71e9067",
+            "title": "Reuse one Supabase client per url and key",
+            "sections": [
+              "Shared Packages",
+              "Development"
+            ]
+          },
+          {
+            "pr": 511,
+            "sha": "328f80b",
+            "title": "Key labs by their full path, found by the release harness",
+            "sections": [
+              "Time",
+              "Reader",
+              "Shared Packages",
+              "Infrastructure",
+              "Development"
+            ]
+          },
+          {
+            "pr": 509,
+            "sha": "68d1e61",
+            "title": "Lay heat maps out the same on every load",
+            "sections": [
+              "Reader",
+              "Development"
+            ]
+          },
+          {
+            "pr": 518,
+            "sha": "31e4851",
+            "title": "[bug] check the educator on the server before a content lock changes",
+            "sections": [
+              "Reader",
+              "Infrastructure",
+              "Development"
+            ]
+          },
+          {
+            "pr": 519,
+            "sha": "a31e5ef",
+            "title": "[bug] make the Moodle sync educator-only in the reader",
+            "sections": [
+              "Reader",
+              "Time",
+              "Infrastructure",
+              "Development"
+            ]
+          },
+          {
+            "pr": 520,
+            "sha": "0d09d46",
+            "title": "Signed-in, resilience and authorisation journeys, message contracts, migrations on Postgres, mutation on PRs",
+            "sections": [
+              "Reader",
+              "Live",
+              "Catalogue",
+              "Shared Packages",
+              "Development"
+            ]
+          },
+          {
+            "pr": 516,
+            "sha": "180700e",
+            "title": "Bring docs in line with main after SvelteKit 3",
+            "sections": [
+              "Live",
+              "Catalogue",
+              "Time",
+              "Infrastructure",
+              "Development"
+            ]
+          },
+          {
+            "pr": 425,
+            "sha": "024ecef",
+            "title": "Leave folders of no kind out of tutors.json at any depth",
+            "sections": [
+              "Shared Packages",
+              "Development"
+            ]
+          },
+          {
+            "pr": 548,
+            "sha": "1b5f52d",
+            "title": "Fenced code blocks in quiz questions and options",
+            "sections": [
+              "Reader",
+              "Development"
+            ]
+          },
+          {
+            "pr": 489,
+            "sha": "7742e85",
+            "title": "Close the prose and code gaps from #488 that main can fix today",
+            "sections": [
+              "Reader",
+              "Development"
+            ]
+          },
+          {
+            "pr": 517,
+            "sha": "eef3a27",
+            "title": "Header comments on the production request path",
+            "sections": [
+              "Reader",
+              "Live",
+              "Catalogue",
+              "Time",
+              "Infrastructure"
+            ]
+          },
+          {
+            "pr": 544,
+            "sha": "fe7dcb3",
+            "title": "Turn the Nightly green again",
+            "sections": [
+              "Shared Packages",
+              "Development"
+            ]
+          },
+          {
+            "pr": 541,
+            "sha": "e1f8c40",
+            "title": "Pin the Node base image by digest, moved by Dependabot",
+            "sections": [
+              "Infrastructure",
+              "Development"
+            ]
+          },
+          {
+            "pr": 542,
+            "sha": "7f2b475",
+            "title": "Production hardening 0.4/1.1, pin the toolchain and time out every job (none)",
+            "sections": [
+              "Infrastructure",
+              "Development"
+            ]
+          },
+          {
+            "pr": 515,
+            "sha": "d350404",
+            "title": "Stop logging /metrics scrapes and keep every server line JSON",
+            "sections": [
+              "Shared Packages",
+              "Reader",
+              "Infrastructure",
+              "Development"
+            ]
+          }
+        ]
+      },
+      "entries": {
+        "status": "not measured",
+        "reason": "CHANGELOG.md at d3504043ef2d56a06dd96e376394758415987fec has no \"### vd3504043ef2d56a06dd96e376394758415987fec\" entries under a product section"
+      }
+    },
+    "tests": {
+      "packages": [
+        {
+          "package": "apps/catalogue",
+          "production": 29,
+          "tests": 6559,
+          "ratio": 226.17,
+          "below": false
+        },
+        {
+          "package": "apps/live",
+          "production": 26,
+          "tests": 4136,
+          "ratio": 159.08,
+          "below": false
+        },
+        {
+          "package": "apps/reader",
+          "production": 1873,
+          "tests": 8522,
+          "ratio": 4.55,
+          "below": false
+        },
+        {
+          "package": "apps/time",
+          "production": 712,
+          "tests": 2795,
+          "ratio": 3.93,
+          "below": false
+        },
+        {
+          "package": "packages/jsr/gen",
+          "production": 14,
+          "tests": 86,
+          "ratio": 6.14,
+          "below": false
+        },
+        {
+          "package": "packages/jsr/model",
+          "production": 3,
+          "tests": 37,
+          "ratio": 12.33,
+          "below": false
+        },
+        {
+          "package": "packages/jsr/realtime",
+          "production": 280,
+          "tests": 650,
+          "ratio": 2.32,
+          "below": false
+        },
+        {
+          "package": "packages/jsr/time",
+          "production": 461,
+          "tests": 6981,
+          "ratio": 15.14,
+          "below": false
+        },
+        {
+          "package": "packages/svelte/app-config",
+          "production": 5,
+          "tests": 2648,
+          "ratio": 529.6,
+          "below": false
+        },
+        {
+          "package": "packages/svelte/community",
+          "production": 1170,
+          "tests": 8211,
+          "ratio": 7.02,
+          "below": false
+        },
+        {
+          "package": "packages/svelte/connect",
+          "production": 90,
+          "tests": 3129,
+          "ratio": 34.77,
+          "below": false
+        },
+        {
+          "package": "packages/svelte/course",
+          "production": 31,
+          "tests": 4136,
+          "ratio": 133.42,
+          "below": false
+        },
+        {
+          "package": "packages/svelte/data-api",
+          "production": 145,
+          "tests": 2423,
+          "ratio": 16.71,
+          "below": false
+        },
+        {
+          "package": "packages/svelte/identity-sveltekit",
+          "production": 23,
+          "tests": 2423,
+          "ratio": 105.35,
+          "below": false
+        },
+        {
+          "package": "packages/svelte/quiz",
+          "production": 165,
+          "tests": 406,
+          "ratio": 2.46,
+          "below": false
+        },
+        {
+          "package": "packages/svelte/realtime-supabase",
+          "production": 34,
+          "tests": 650,
+          "ratio": 19.12,
+          "below": false
+        },
+        {
+          "package": "packages/svelte/ui-components",
+          "production": 124,
+          "tests": 3142,
+          "ratio": 25.34,
+          "below": false
+        },
+        {
+          "package": "packages/svelte/ui-navigators",
+          "production": 132,
+          "tests": 649,
+          "ratio": 4.92,
+          "below": false
+        },
+        {
+          "package": "packages/svelte/ui-primitives",
+          "production": 49,
+          "tests": 4182,
+          "ratio": 85.35,
+          "below": false
+        },
+        {
+          "package": "packages/svelte/utils",
+          "production": 333,
+          "tests": 7646,
+          "ratio": 22.96,
+          "below": false
+        }
+      ]
+    },
+    "reviews": {
+      "status": "measured",
+      "reviewed": [
+        476,
+        478,
+        480,
+        481,
+        483,
+        484,
+        485,
+        487,
+        493,
+        504,
+        505,
+        500,
+        501,
+        502,
+        513,
+        514,
+        506,
+        508,
+        510,
+        507,
+        491,
+        512,
+        511,
+        509,
+        518,
+        519,
+        520,
+        539,
+        516,
+        425,
+        546,
+        547,
+        548,
+        489,
+        517,
+        544,
+        541,
+        542,
+        327,
+        328,
+        515
+      ],
+      "unreviewed": [],
+      "unknown": [],
+      "problems": [],
+      "direct": []
+    },
+    "dependencies": {
+      "status": "measured",
+      "majorBumps": [
+        {
+          "kind": "major",
+          "name": "happy-dom",
+          "importer": ".",
+          "from": "20.14.0",
+          "to": "21.0.4",
+          "pr": null
+        }
+      ],
+      "newPackages": [
+        {
+          "kind": "new",
+          "name": "@electric-sql/pglite",
+          "importer": ".",
+          "to": "0.5.8",
+          "pr": 520
+        },
+        {
+          "kind": "new",
+          "name": "@supabase/supabase-js",
+          "importer": "apps/reader",
+          "to": "2.117.2",
+          "pr": 518
+        },
+        {
+          "kind": "new",
+          "name": "@supabase/supabase-js",
+          "importer": "packages/svelte/realtime-supabase",
+          "to": "2.117.2",
+          "pr": 478
+        }
+      ]
+    }
+  },
+  "notMeasured": [
+    {
+      "signal": "orphan entries (a changelog entry with no diff)",
+      "reason": "CHANGELOG.md at d3504043ef2d56a06dd96e376394758415987fec has no \"### vd3504043ef2d56a06dd96e376394758415987fec\" entries under a product section"
+    }
+  ],
+  "changeRisk": {
+    "score": 0,
+    "prs": [
+      {
+        "number": 476,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/476",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 478,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/478",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": [
+          "packages/svelte/connect/src/services/connect.svelte.ts"
+        ]
+      },
+      {
+        "number": 480,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/480",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 481,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/481",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 483,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/483",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 484,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/484",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 485,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/485",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 487,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/487",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 493,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/493",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 504,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/504",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 505,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/505",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": [
+          "packages/svelte/utils/i18n/src/messages/fr.ts",
+          "packages/svelte/utils/i18n/src/messages/es.ts",
+          "packages/svelte/utils/i18n/src/messages/de.ts",
+          "packages/svelte/utils/i18n/src/messages/it.ts"
+        ]
+      },
+      {
+        "number": 500,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/500",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 501,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/501",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 502,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/502",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 513,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/513",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 514,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/514",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": [
+          "packages/svelte/utils/i18n/src/messages/fr.ts",
+          "packages/svelte/utils/i18n/src/messages/es.ts",
+          "packages/svelte/utils/i18n/src/messages/de.ts",
+          "packages/svelte/utils/i18n/src/messages/it.ts"
+        ]
+      },
+      {
+        "number": 506,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/506",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 508,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/508",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 510,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/510",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": [
+          "packages/svelte/connect/src/services/connect.svelte.ts"
+        ]
+      },
+      {
+        "number": 507,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/507",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 491,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/491",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 512,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/512",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 511,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/511",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 509,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/509",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 518,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/518",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 519,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/519",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": [
+          "packages/svelte/utils/i18n/src/messages/fr.ts",
+          "packages/svelte/utils/i18n/src/messages/es.ts",
+          "packages/svelte/utils/i18n/src/messages/de.ts",
+          "packages/svelte/utils/i18n/src/messages/it.ts"
+        ]
+      },
+      {
+        "number": 520,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/520",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": [
+          "packages/svelte/utils/i18n/src/messages/fr.ts",
+          "packages/svelte/utils/i18n/src/messages/es.ts",
+          "packages/svelte/utils/i18n/src/messages/de.ts",
+          "packages/svelte/utils/i18n/src/messages/it.ts"
+        ]
+      },
+      {
+        "number": 539,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/539",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 516,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/516",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 425,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/425",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 546,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/546",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 547,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/547",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 548,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/548",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 489,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/489",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": [
+          "packages/svelte/ui-primitives/src/components/LoContextTreeView.svelte"
+        ]
+      },
+      {
+        "number": 517,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/517",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": [
+          "apps/reader/src/hooks.server.ts",
+          "packages/svelte/community/src/utils/error-transport.ts",
+          "apps/time/src/hooks.server.ts"
+        ]
+      },
+      {
+        "number": 544,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/544",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 541,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/541",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 542,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/542",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 327,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/327",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": [
+          "packages/svelte/ui-components/src/learning-objects/content/whiteboard/WhiteboardViewer.svelte"
+        ]
+      },
+      {
+        "number": 328,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/328",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": [
+          "packages/svelte/ui-components/src/learning-objects/content/whiteboard/WhiteboardViewer.svelte"
+        ]
+      },
+      {
+        "number": 515,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/515",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": [
+          "packages/svelte/utils/logger/src/request-logger.ts"
+        ]
+      }
+    ],
+    "direct": [],
+    "deductions": [
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #476 changed Reader, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/476/files#diff-f9cfd30e49727585d340eb245e9e85897abbbba627faf3c588167b9ed13bf276",
+        "file": "apps/reader/static/excalidraw-editor.html",
+        "pr": 476,
+        "author": "Claude"
+      },
+      {
+        "points": 3,
+        "rule": "hotspot",
+        "why": "PR #478 touches hotspot packages/svelte/connect/src/services/connect.svelte.ts (3 of the last 6 releases)",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/478/files#diff-fd4035ac7c862123cdae65175cc120073c7245aa50e8aab37b76da2aaefd542b",
+        "file": "packages/svelte/connect/src/services/connect.svelte.ts",
+        "pr": 478,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #478 changed Reader, Shared Packages, Infrastructure, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/478/files#diff-f9cfd30e49727585d340eb245e9e85897abbbba627faf3c588167b9ed13bf276",
+        "file": "apps/reader/static/excalidraw-editor.html",
+        "pr": 478,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #480 changed Shared Packages, Infrastructure, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/480/files#diff-058494e42758c8229a1aa355997e6c7f3996785e11ea8dffba79c3870e22bce2",
+        "file": "packages/jsr/time/src/services/course-time.ts",
+        "pr": 480,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #481 changed Reader, Infrastructure, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/481/files#diff-e4fcc76d91071866c7d54b16b300e500d67b42190747baa90741fe8de58a8179",
+        "file": "apps/reader/src/routes/api/live/activity/+server.ts",
+        "pr": 481,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #483 changed Infrastructure, Reader, Live, Catalogue, Time, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/483/files#diff-c19c016987c6b7d3f8a014d7e4df17402c3557f0741538318a2b573727ddfff4",
+        "file": "apps/catalogue/package.json",
+        "pr": 483,
+        "author": "Eamonn de Leastar"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #484 changed Infrastructure, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/484/files#diff-a36c2b23480830b1d23bfca9ee3e98f172b1bee39d034c06780f9790dcd8c3f4",
+        "file": ".github/workflows/image-build.yml",
+        "pr": 484,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #487 changed Reader, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/487/files#diff-13d8ab5e67e09ca92971e77ee1fcbb71b39dd5a018144bf33a3bbabd5b3da020",
+        "file": "packages/svelte/community/src/services/catalogue.ts",
+        "pr": 487,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #504 changed Infrastructure, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/504/files#diff-dd2c0eb6ea5cfc6c4bd4eac30934e2d5746747af48fef6da689e85b752f39557",
+        "file": "Dockerfile",
+        "pr": 504,
+        "author": "Claude"
+      },
+      {
+        "points": 3,
+        "rule": "hotspot",
+        "why": "PR #505 touches 4 hotspots packages/svelte/utils/i18n/src/messages/fr.ts (3 of the last 6 releases), packages/svelte/utils/i18n/src/messages/es.ts (3 of the last 6 releases), packages/svelte/utils/i18n/src/messages/de.ts (3 of the last 6 releases) and 1 more",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/505/files#diff-6b04260c901911736eca0c9f57d6921cf6ec7c4c4308d209b08bfb4774bc8741",
+        "file": "packages/svelte/utils/i18n/src/messages/fr.ts",
+        "pr": 505,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "tests",
+        "why": "PR #505 changed 11 production lines in packages/svelte/ui-navigators with 2 test lines (0.18): below 0.2",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/505/files#diff-d4a40094af72b0eb12eea04ebee4e682bfc581553326bf472d1c2f849c7c623b",
+        "file": "packages/svelte/ui-navigators/src/buttons/SearchButton.svelte",
+        "pr": 505,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #505 changed Reader, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/505/files#diff-4be7739a1047b396bc6d3e9502bee98cfdd9bde50bfcb576e9df02edfd063dd3",
+        "file": "apps/reader/tests/e2e/accessibility.spec.ts",
+        "pr": 505,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #500 changed Reader, Live, Catalogue, Time, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/500/files#diff-c5f7478f9ea43955917de963b542918dbd3c74bd2e710935fd2606ee0ce67ecd",
+        "file": "apps/catalogue/netlify.toml",
+        "pr": 500,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #501 changed Infrastructure, Reader, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/501/files#diff-dd2c0eb6ea5cfc6c4bd4eac30934e2d5746747af48fef6da689e85b752f39557",
+        "file": "Dockerfile",
+        "pr": 501,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #502 changed Infrastructure, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/502/files#diff-a36c2b23480830b1d23bfca9ee3e98f172b1bee39d034c06780f9790dcd8c3f4",
+        "file": ".github/workflows/image-build.yml",
+        "pr": 502,
+        "author": "Claude"
+      },
+      {
+        "points": 3,
+        "rule": "hotspot",
+        "why": "PR #514 touches 4 hotspots packages/svelte/utils/i18n/src/messages/fr.ts (3 of the last 6 releases), packages/svelte/utils/i18n/src/messages/es.ts (3 of the last 6 releases), packages/svelte/utils/i18n/src/messages/de.ts (3 of the last 6 releases) and 1 more",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/514/files#diff-6b04260c901911736eca0c9f57d6921cf6ec7c4c4308d209b08bfb4774bc8741",
+        "file": "packages/svelte/utils/i18n/src/messages/fr.ts",
+        "pr": 514,
+        "author": "Jordan Harrison"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #514 changed Reader, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/514/files#diff-13bc0a33f184cb8d792a48300081d13e799b31f2a6adebb9b06a5609f0068def",
+        "file": "apps/reader/src/routes/api/courses/[courseid]/enrollment/+server.ts",
+        "pr": 514,
+        "author": "Jordan Harrison"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #506 changed Reader, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/506/files#diff-7eefe5446d7d2d9f6a5a3758cefc8ac0ac9a1927189261d6f36b902293bf0588",
+        "file": "apps/reader/src/routes/(course-reader)/llm/[courseid]/+page.ts",
+        "pr": 506,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #508 changed Shared Packages, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/508/files#diff-058494e42758c8229a1aa355997e6c7f3996785e11ea8dffba79c3870e22bce2",
+        "file": "packages/jsr/time/src/services/course-time.ts",
+        "pr": 508,
+        "author": "Claude"
+      },
+      {
+        "points": 3,
+        "rule": "hotspot",
+        "why": "PR #510 touches hotspot packages/svelte/connect/src/services/connect.svelte.ts (3 of the last 6 releases)",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/510/files#diff-fd4035ac7c862123cdae65175cc120073c7245aa50e8aab37b76da2aaefd542b",
+        "file": "packages/svelte/connect/src/services/connect.svelte.ts",
+        "pr": 510,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #510 changed Reader, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/510/files#diff-fd4035ac7c862123cdae65175cc120073c7245aa50e8aab37b76da2aaefd542b",
+        "file": "packages/svelte/connect/src/services/connect.svelte.ts",
+        "pr": 510,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #507 changed Shared Packages, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/507/files#diff-5b11ac08ac0f8f58902608d1c44c6ee5c2bc78063e10e0e32fa3e757c51ccaa7",
+        "file": "packages/jsr/time/src/services/supabase.ts",
+        "pr": 507,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #511 changed Time, Reader, Shared Packages, Infrastructure, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/511/files#diff-89be349f0f1b3e21c15df9cf0ed382f7aefd1707b11ba8e0ca717547553a53fb",
+        "file": "apps/time/src/lib/components/MediansView.svelte",
+        "pr": 511,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #509 changed Reader, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/509/files#diff-d585d9ff35154e35a9681cefa655ae71605ca24958d3f758d9d5e7fea85751c2",
+        "file": "packages/svelte/ui-components/src/time/Heatmap.svelte",
+        "pr": 509,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #518 changed Reader, Infrastructure, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/518/files#diff-97f47dfbbef70b6e2647599895724dd6f2ea689bb666f485238bff0bfb08cb8d",
+        "file": "apps/reader/package.json",
+        "pr": 518,
+        "author": "Claude"
+      },
+      {
+        "points": 3,
+        "rule": "hotspot",
+        "why": "PR #519 touches 4 hotspots packages/svelte/utils/i18n/src/messages/fr.ts (3 of the last 6 releases), packages/svelte/utils/i18n/src/messages/es.ts (3 of the last 6 releases), packages/svelte/utils/i18n/src/messages/de.ts (3 of the last 6 releases) and 1 more",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/519/files#diff-6b04260c901911736eca0c9f57d6921cf6ec7c4c4308d209b08bfb4774bc8741",
+        "file": "packages/svelte/utils/i18n/src/messages/fr.ts",
+        "pr": 519,
+        "author": "Claude"
+      },
+      {
+        "points": 5,
+        "rule": "churn",
+        "why": "time churn 721 lines, above 2× its median of 14 over the last 6 releases; PR #519 is the largest part (533 lines)",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/519/files#diff-8b7f790b5271e1164ee6cf94a7cfe8769a79823cd718721e7a17e34b5ca22800",
+        "file": "apps/time/src/lib/server/api/moodle.ts",
+        "pr": 519,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #519 changed Reader, Time, Infrastructure, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/519/files#diff-40c77f2136c77d652b67d1cdf92b44089e2e0ebfbfb2cff443a6ff2119d6457f",
+        "file": "apps/reader/src/lib/server/moodle/assignments-service.ts",
+        "pr": 519,
+        "author": "Claude"
+      },
+      {
+        "points": 3,
+        "rule": "hotspot",
+        "why": "PR #520 touches 4 hotspots packages/svelte/utils/i18n/src/messages/fr.ts (3 of the last 6 releases), packages/svelte/utils/i18n/src/messages/es.ts (3 of the last 6 releases), packages/svelte/utils/i18n/src/messages/de.ts (3 of the last 6 releases) and 1 more",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/520/files#diff-6b04260c901911736eca0c9f57d6921cf6ec7c4c4308d209b08bfb4774bc8741",
+        "file": "packages/svelte/utils/i18n/src/messages/fr.ts",
+        "pr": 520,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #520 changed Reader, Live, Catalogue, Shared Packages, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/520/files#diff-98f22a8fb8b7ad0d757eac9bc6007fc2108d28a4346433c4ccddce39c1ec079f",
+        "file": "apps/catalogue/playwright.config.ts",
+        "pr": 520,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #516 changed Live, Catalogue, Time, Infrastructure, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/516/files#diff-9c75df02d09573d64deea0a822ba5807d540ccad75393b98b2feeae95f98f449",
+        "file": "apps/catalogue/README.md",
+        "pr": 516,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #425 changed Shared Packages, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/425/files#diff-ec67d57817841e44513dccfa91d1cb28eceb4c1ba442961cdb893247c05ff218",
+        "file": "packages/jsr/gen/src/services/course-builder.ts",
+        "pr": 425,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #548 changed Reader, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/548/files#diff-22d70ca7e354eea60e156d8536e28c645b1beef66a935ecd4e9770fa168f8364",
+        "file": "packages/svelte/quiz/README.md",
+        "pr": 548,
+        "author": "Claude"
+      },
+      {
+        "points": 3,
+        "rule": "hotspot",
+        "why": "PR #489 touches hotspot packages/svelte/ui-primitives/src/components/LoContextTreeView.svelte (3 of the last 6 releases)",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/489/files#diff-3805a328d2572205ef2f52b7b2b8eb8164c3c1dc10b3c867d195122994548757",
+        "file": "packages/svelte/ui-primitives/src/components/LoContextTreeView.svelte",
+        "pr": 489,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #489 changed Reader, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/489/files#diff-8af0bde393b8123c01d17adc2011a612037eadcac15e56cf825b51b5b3c9654b",
+        "file": "packages/svelte/ui-components/src/learning-objects/layout/LoContextPanel.svelte",
+        "pr": 489,
+        "author": "Claude"
+      },
+      {
+        "points": 3,
+        "rule": "hotspot",
+        "why": "PR #517 touches 3 hotspots apps/reader/src/hooks.server.ts (3 of the last 6 releases), packages/svelte/community/src/utils/error-transport.ts (3 of the last 6 releases), apps/time/src/hooks.server.ts (3 of the last 6 releases)",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/517/files#diff-d6d421ccc99e28b6214f7df730798547515a524700fe6758ff2aaa6b7cdd8856",
+        "file": "apps/reader/src/hooks.server.ts",
+        "pr": 517,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "tests",
+        "why": "PR #517 changed 21 production lines in apps/catalogue with 0 test lines (0.00); 21 production lines in apps/live with 0 test lines (0.00); 36 production lines in apps/reader with 0 test lines (0.00); 22 production lines in apps/time with 0 test lines (0.00); 16 production lines in packages/svelte/community with 0 test lines (0.00); 16 production lines in packages/svelte/identity-sveltekit with 0 test lines (0.00); 23 production lines in packages/svelte/utils with 0 test lines (0.00): below 0.2",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/517/files#diff-d6d421ccc99e28b6214f7df730798547515a524700fe6758ff2aaa6b7cdd8856",
+        "file": "apps/reader/src/hooks.server.ts",
+        "pr": 517,
+        "author": "Claude"
+      },
+      {
+        "points": 5,
+        "rule": "churn",
+        "why": "catalogue churn 38 lines, above 2× its median of 7.5 over the last 6 releases; PR #517 is the largest part (21 lines)",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/517/files#diff-681a6274b9d04d85e52f7f862f2dc5bcff947154b547367bdf9eaf0e3ab2b849",
+        "file": "apps/catalogue/src/hooks.server.ts",
+        "pr": 517,
+        "author": "Claude"
+      },
+      {
+        "points": 5,
+        "rule": "churn",
+        "why": "live churn 35 lines, above 2× its median of 3.5 over the last 6 releases; PR #517 is the largest part (21 lines)",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/517/files#diff-e53bd4734255e1d22ae9cadb161045e24b80541b0a23ffa3dfd06daddf4af5ac",
+        "file": "apps/live/src/hooks.server.ts",
+        "pr": 517,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #517 changed Reader, Live, Catalogue, Time, Infrastructure but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/517/files#diff-d6a0a4bcd386b6be385bc1065b14c63cdcb15c76c5de9b6842895eb698fad6e3",
+        "file": "apps/catalogue/src/hooks.client.ts",
+        "pr": 517,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #544 changed Shared Packages, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/544/files#diff-0bcef4d9c5db361fff96288f24ab1cca984e6349ac9a1c237b8742d40ce8e64d",
+        "file": "packages/jsr/time/src/utils/lab-utils.ts",
+        "pr": 544,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #541 changed Infrastructure, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/541/files#diff-dd2c0eb6ea5cfc6c4bd4eac30934e2d5746747af48fef6da689e85b752f39557",
+        "file": "Dockerfile",
+        "pr": 541,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #542 changed Infrastructure, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/542/files#diff-28802fbf11c83a2eee09623fb192785e7ca92a3f40602a517c011b947a1822d3",
+        "file": ".github/workflows/deploy.yml",
+        "pr": 542,
+        "author": "Claude"
+      },
+      {
+        "points": 3,
+        "rule": "hotspot",
+        "why": "PR #327 touches hotspot packages/svelte/ui-components/src/learning-objects/content/whiteboard/WhiteboardViewer.svelte (3 of the last 6 releases)",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/327/files#diff-df9fd1dd4556d3b501ea96a8bfc85aeae703e79866841d36fa27aab651c128d6",
+        "file": "packages/svelte/ui-components/src/learning-objects/content/whiteboard/WhiteboardViewer.svelte",
+        "pr": 327,
+        "author": "Claude"
+      },
+      {
+        "points": 5,
+        "rule": "churn",
+        "why": "reader churn 2029 lines, above 2× its median of 101.5 over the last 6 releases; PR #327 is the largest part (1011 lines)",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/327/files#diff-563197f9fa115e0d3f0f9a0f1f7b8a5eade03512f09d31538aa93f1512f13431",
+        "file": "apps/reader/src/lib/server/api/store.ts",
+        "pr": 327,
+        "author": "Claude"
+      },
+      {
+        "points": 3,
+        "rule": "hotspot",
+        "why": "PR #328 touches hotspot packages/svelte/ui-components/src/learning-objects/content/whiteboard/WhiteboardViewer.svelte (3 of the last 6 releases)",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/328/files#diff-df9fd1dd4556d3b501ea96a8bfc85aeae703e79866841d36fa27aab651c128d6",
+        "file": "packages/svelte/ui-components/src/learning-objects/content/whiteboard/WhiteboardViewer.svelte",
+        "pr": 328,
+        "author": "Claude"
+      },
+      {
+        "points": 3,
+        "rule": "hotspot",
+        "why": "PR #515 touches hotspot packages/svelte/utils/logger/src/request-logger.ts (3 of the last 6 releases)",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/515/files#diff-056fa8b9ee956a1c1e1a40989edcd3bbcf0e8c4db55f12b6ca848b246953c63e",
+        "file": "packages/svelte/utils/logger/src/request-logger.ts",
+        "pr": 515,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #515 changed Shared Packages, Reader, Infrastructure, Development but no changelog entry under vd3504043ef2d56a06dd96e376394758415987fec names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/515/files#diff-0db16276644fc4f21eae05d761a230f6438feca8b7c0a92427c9d3b3ea85726a",
+        "file": "deploy/README.md",
+        "pr": 515,
+        "author": "Claude"
+      },
+      {
+        "points": 5,
+        "rule": "dependency",
+        "why": "the release moves happy-dom 20.14.0 → 21.0.4 in the root: a major bump, ground the journeys may not cover",
+        "evidence": "pnpm-lock.yaml",
+        "file": "pnpm-lock.yaml",
+        "pr": null
+      }
+    ],
+    "gaps": [
+      "orphan entries (a changelog entry with no diff): CHANGELOG.md at d3504043ef2d56a06dd96e376394758415987fec has no \"### vd3504043ef2d56a06dd96e376394758415987fec\" entries under a product section"
+    ],
+    "orphans": 31,
+    "evidence": "changes.json"
+  },
+  "harness": {
+    "version": "1.59.0",
+    "contractVersion": "1.59.0"
+  },
+  "traceability": {
+    "entries": [
+      {
+        "entry": "#485 fix(deps): clear the three advisories failing the dependency audit",
+        "kind": "fix",
+        "ears": null,
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/485"
+      },
+      {
+        "entry": "#487 fix(community): show an empty catalogue without Supabase instead of logging errors",
+        "kind": "fix",
+        "ears": "tests/bdd/features/student/course-discovery.feature",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/487"
+      },
+      {
+        "entry": "#504 fix(nightly): make the three red Nightly jobs pass for real",
+        "kind": "fix",
+        "ears": null,
+        "claimed": false,
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/504"
+      },
+      {
+        "entry": "#505 fix(a11y): button names contain their visible text",
+        "kind": "fix",
+        "ears": "tests/bdd/features/ui/shell-and-navigation.feature",
+        "claimed": false,
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/505"
+      },
+      {
+        "entry": "#500 fix(deploy): immutable Cache-Control on /_app/immutable/* for Netlify",
+        "kind": "fix",
+        "ears": null,
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/500"
+      },
+      {
+        "entry": "#501 feat(image): declare a HEALTHCHECK and expose request SLIs from start (image-hardening, image-manifest, metrics)",
+        "kind": "feature",
+        "ears": "tests/bdd/features/developer/runtime-image.feature",
+        "claimed": false,
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/501"
+      },
+      {
+        "entry": "#514 feat(reader): export enrollment drafts from course visitors (dom, network, headers)",
+        "kind": "feature",
+        "ears": "tests/bdd/features/instructor/enrollment-export.feature",
+        "claimed": false,
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/514"
+      },
+      {
+        "entry": "#506 fix(reader): link a local course's LLM downloads over http (dom)",
+        "kind": "fix",
+        "ears": "tests/bdd/features/course/llm-exports.feature",
+        "claimed": false,
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/506"
+      },
+      {
+        "entry": "#508 fix(time): read the course PIN from where the course is served (found by the release harness)",
+        "kind": "fix",
+        "ears": "tests/bdd/features/time/course-pin.feature",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/508"
+      },
+      {
+        "entry": "#510 fix(reader): keep a private course out of Recently accessed for someone it turns away (found by the release harness)",
+        "kind": "fix",
+        "ears": "tests/bdd/features/instructor/whitelist-management.feature",
+        "claimed": false,
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/510"
+      },
+      {
+        "entry": "#507 fix(time): reuse one Supabase client per url and key (console, network)",
+        "kind": "fix",
+        "ears": "tests/bdd/features/time/lab-analytics.feature",
+        "claimed": false,
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/507"
+      },
+      {
+        "entry": "#491 feat(dev): EARS dashboard, one page for every Rule and the format",
+        "kind": "feature",
+        "ears": "tests/bdd/features/developer/ears-dashboard.feature",
+        "claimed": false,
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/491"
+      },
+      {
+        "entry": "#511 fix(time): key labs by their full path, found by the release harness (dom)",
+        "kind": "fix",
+        "ears": "tests/bdd/features/instructor/analytics-lab.feature",
+        "claimed": false,
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/511"
+      },
+      {
+        "entry": "#509 fix(time): lay heat maps out the same on every load (screenshot)",
+        "kind": "fix",
+        "ears": "tests/bdd/features/instructor/analytics-calendar.feature",
+        "claimed": false,
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/509"
+      },
+      {
+        "entry": "#518 fix(reader): [bug] check the educator on the server before a content lock changes (persistence)",
+        "kind": "fix",
+        "ears": "tests/bdd/features/instructor/content-lock-changes.feature",
+        "claimed": false,
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/518"
+      },
+      {
+        "entry": "#519 fix(reader): [bug] make the Moodle sync educator-only in the reader (persistence)",
+        "kind": "fix",
+        "ears": "tests/bdd/features/instructor/moodle-sync.feature",
+        "claimed": false,
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/519"
+      },
+      {
+        "entry": "#425 fix(gen): leave folders of no kind out of tutors.json at any depth",
+        "kind": "fix",
+        "ears": "tests/bdd/features/generator/course-json.feature",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/425"
+      },
+      {
+        "entry": "#547 fix(deps): patch dompurify, undici, markdown-it, vite and happy-dom advisories (sbom)",
+        "kind": "fix",
+        "ears": null,
+        "claimed": false,
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/547"
+      },
+      {
+        "entry": "#548 feat(quiz): fenced code blocks in quiz questions and options (dom)",
+        "kind": "feature",
+        "ears": "tests/bdd/features/student/quiz-code-blocks.feature",
+        "claimed": false,
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/548"
+      },
+      {
+        "entry": "#544 fix(ci): turn the Nightly green again (sbom)",
+        "kind": "fix",
+        "ears": null,
+        "claimed": false,
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/544"
+      },
+      {
+        "entry": "#327 feat(data-api): make the browser-to-data seam explicit and enforce it (logs, sbom)",
+        "kind": "feature",
+        "ears": "tests/bdd/features/shared/server-data-access.feature",
+        "claimed": false,
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/327"
+      },
+      {
+        "entry": "#328 fix(whiteboard): give personal rooms their own namespace and keep them off Realtime",
+        "kind": "fix",
+        "ears": "tests/bdd/features/shared/server-data-access.feature",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/328"
+      },
+      {
+        "entry": "#515 fix(logger): stop logging /metrics scrapes and keep every server line JSON (logs)",
+        "kind": "fix",
+        "ears": null,
+        "claimed": false,
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/515"
+      }
+    ],
+    "evidence": "changes.json and claims.yaml"
+  }
+}
