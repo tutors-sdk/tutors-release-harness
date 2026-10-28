@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Journey } from "./journeys.ts";
 import { parseFeature, type GherkinFeature, type GherkinRule } from "./gherkin.ts";
-import { fixture, TIME_COURSE_ID } from "./fixture.ts";
+import { fixture, signedInCourseId, TIME_COURSE_ID } from "./fixture.ts";
 import { bind, type World } from "./steps.ts";
 
 /**
@@ -19,7 +19,9 @@ import { bind, type World } from "./steps.ts";
  *                     a quiz, a notebook, a calendar), not the fixture course
  *   @course-site      since 1.57.1: the same course, named by its Netlify site id `harness-rules` as a production course is,
  *                     for a journey the reader's server checks: it fetches https://<id>.netlify.app/tutors.json to find
- *                     the course's educators (mono-repo #519, content locks) and refuses an id with a port
+ *                     the course's educators (mono-repo #519, content locks) and refuses an id with a port. Since 1.58.0
+ *                     `@course-rules` names it so too, and the fixture course is `harness-fixture`: since mono-repo #327
+ *                     every data route the signed-in reader calls refuses an id with a port
  * The scenario's name ends "(exercises Rules 0011, 0250-0258, ...)": the monorepo Rules the scenario drives, each id or
  * range as the monorepo numbers them, then optionally `; <a note>` (since 1.44.0). Every step must match a sentence in traffic/journeys/steps.ts.
  */
@@ -77,9 +79,11 @@ export function journeyOf(feature: GherkinFeature, rule: GherkinRule): Journey {
     ...(course !== "fixture" ? { course } : {}),
     rules: [rule.id, ...exercisedBy(rule.scenario.name).filter((r) => r !== rule.id)],
     async run(page, urls, onPage, actors) {
-      // A `site` journey names the course server's Rule course by its Netlify id; the browser and the reader's server are
-      // both answered from the course server (src/collectors/browser.ts routeCourseSite, fixtures/identity).
-      const id = course === "fixture" ? urls.courseId : course === "site" && urls.rulesCourseId ? TIME_COURSE_ID : urls.rulesCourseId;
+      // Since 1.58.0 every Rule journey names its course by a Netlify site id (mono-repo #327's data routes refuse an id
+      // with a port): the fixture course as harness-fixture, the Rule course as harness-rules, for `rules` and `site`
+      // alike. The browser and the reader's server are both answered from the course server (src/collectors/browser.ts
+      // routeCourseSite, fixtures/identity).
+      const id = course === "fixture" ? signedInCourseId(urls) : urls.rulesCourseId ? TIME_COURSE_ID : undefined;
       if (!id) throw new Error(`this side serves no ${course} course (external side?)`);
       const world: World = {
         page,

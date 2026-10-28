@@ -41,6 +41,21 @@ export function escapeRegExp(text: string): string {
 }
 
 /**
+ * Since 1.58.0: which response is the reconnect's online status read. Up to 17.0.0 the browser reads it from Supabase
+ * (`/rest/v1/tutors-connect-users?select=online_status`); since mono-repo #327 it asks the reader, `GET /api/me`, once
+ * for the sentiment and then once for the online status (connect.svelte.ts `reconnect`), so the second one is the read.
+ * One predicate per sign-in: it counts. Exported for its test.
+ */
+export function onlineStatusRead(): (r: { url(): string; request(): { method(): string } }) => boolean {
+  let meReads = 0;
+  return (r) => {
+    const url = new URL(r.url());
+    if (url.pathname.endsWith("/rest/v1/tutors-connect-users") && /\bonline_status\b/.test(url.searchParams.get("select") ?? "")) return true;
+    return url.pathname === "/api/me" && r.request().method() === "GET" && ++meReads === 2;
+  };
+}
+
+/**
  * From the reader's sign-in page (`/auth/<course>`), sign in with GitHub (the identity stub) and wait until the course has
  * rendered and the reader has reconnected the student. `atButton` runs once the button is showing, before it is pressed.
  *
@@ -49,7 +64,7 @@ export function escapeRegExp(text: string): string {
  * "Activity" group) and routes back to the course. The heading is visible before that, so a capture taken on the heading
  * alone sometimes saw the page before the reconnect and sometimes after (an A/A diff on the sidebar, and a "Couldn't
  * load preload assets" warning when the journey clicked on during that route). The online status read is the
- * reconnect's last await, so it is waited for.
+ * reconnect's last await, so it is waited for (`onlineStatusRead`).
  */
 export async function signInFromAuthPage(page: Page, courseId: string, courseTitle: string, atButton?: () => Promise<void>, lands: "course" | "turned-away" = "course"): Promise<void> {
   const origin = new URL(page.url()).origin;
@@ -58,7 +73,7 @@ export async function signInFromAuthPage(page: Page, courseId: string, courseTit
   if (atButton) await atButton();
   for (let attempt = 1; ; attempt++) {
     await paceSignIn(origin);
-    const reconnected = page.waitForResponse((r) => /\/rest\/v1\/tutors-connect-users\?select=online_status\b/.test(r.url()), { timeout: 30_000 });
+    const reconnected = page.waitForResponse(onlineStatusRead(), { timeout: 30_000 });
     // Awaited below. If a step before that fails (a mutant that breaks the course), the page closes and
     // this rejects with nobody listening, which would crash the run instead of failing the journey.
     reconnected.catch(() => undefined);

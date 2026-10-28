@@ -126,9 +126,11 @@ describe("the Rule journeys", () => {
     const tutors = JSON.parse(readFileSync(resolve(ROOT, "fixtures/course-server/rules-course/tutors.json"), "utf8"));
     expect(tutors).toMatchObject({ title: "Harness Rules Course", properties: { auth: 1, private: 1, llm: 2 }, enrollment: { whitelist: ["harness-enrolled"] } });
     const onRules = ruleJourneys.filter((j) => j.course === "rules" || j.course === "site");
-    expect(onRules.map((j) => j.rules![0]).sort()).toEqual(["0584", "0585", "0586", "0587", "0588", "0592"]);
+    // Since 1.58.0 the time journeys (0590, 0591) sign the lecturer in to the Rule course before they open the time app.
+    expect(onRules.map((j) => j.rules![0]).sort()).toEqual(["0584", "0585", "0586", "0587", "0588", "0590", "0591", "0592"]);
     expect(tutors.enrollment.educators).toEqual(["harness-lecturer"]);
-    for (const j of onRules) expect(j.role ?? "student", j.name).toBe(j.name === "rule-0586-private-course" ? "student" : "enrolled");
+    const roleOf = (name: string) => (name === "rule-0586-private-course" ? "student" : /^rule-059[01]-/.test(name) ? "lecturer" : "enrolled");
+    for (const j of onRules) expect(j.role ?? "student", j.name).toBe(roleOf(j.name));
   });
 
   it("say a student's step of the lecturer too, run in the lecturer's browser; a step that names nobody keeps whoever acted last", () => {
@@ -152,7 +154,7 @@ describe("the Rule journeys", () => {
     expect(seen[0]).toBe("lecturer");
   });
 
-  it("open a @course-site journey's course by its Netlify id, which the reader's server can check (mono-repo #519), and a @course-rules one by the course server's", async () => {
+  it("open every course by its Netlify id, which the reader's data routes accept (mono-repo #519, #327): @course-site and @course-rules as harness-rules, the fixture course as harness-fixture", async () => {
     const urls = { reader: "http://r", catalogue: "http://c", live: "http://l", courseId: "c", rulesCourseId: "localhost:8081", readerAuth: "http://ra" };
     const opened = async (name: string) => {
       const gone: string[] = [];
@@ -162,7 +164,8 @@ describe("the Rule journeys", () => {
       return gone[0] ?? "";
     };
     expect(await opened("rule-0588-content-lock")).toBe("http://ra/auth/harness-rules");
-    expect(await opened(ruleJourneys.find((x) => x.course === "rules" && x.name !== "rule-0586-private-course")!.name)).toBe("http://ra/auth/localhost:8081");
+    expect(await opened(ruleJourneys.find((x) => x.course === "rules" && x.name !== "rule-0586-private-course")!.name)).toBe("http://ra/auth/harness-rules");
+    expect(await opened("rule-0582-signed-in-lab")).toBe("http://ra/auth/harness-fixture");
   });
 
   it("run a step against a side that serves no Rule journeys' course as a failure that says so", async () => {

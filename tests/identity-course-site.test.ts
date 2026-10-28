@@ -1,7 +1,7 @@
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { COURSE_SITE, handler } from "../fixtures/identity/stub.mjs";
+import { COURSE_SITE, FIXTURE_SITE, handler } from "../fixtures/identity/stub.mjs";
 
 /** Drive the stub's handler with a fake request and read back what it answered. */
 async function ask(host: string, path: string): Promise<{ status: number; type?: string | undefined; body: string }> {
@@ -42,6 +42,17 @@ describe("the identity stub answers the Rule journeys' course as its Netlify sit
     expect(got).toMatchObject({ status: 200, type: "application/json" });
     expect(JSON.parse(got.body)).toEqual({ enrollment: { educators: ["harness-lecturer"] } });
     expect((await ask("harness-rules.netlify.app:443", "/missing.json")).status).toBe(404);
+  });
+
+  it("serves the fixture course as harness-fixture from its own course server (since 1.58.0, mono-repo #327)", async () => {
+    expect(FIXTURE_SITE).toBe("harness-fixture.netlify.app");
+    expect((await ask(FIXTURE_SITE, "/tutors.json")).status).toBe(404);
+    process.env.FIXTURE_COURSE_ORIGIN = process.env.COURSE_ORIGIN;
+    try {
+      expect((await ask(FIXTURE_SITE, "/tutors.json")).status).toBe(200);
+    } finally {
+      delete process.env.FIXTURE_COURSE_ORIGIN;
+    }
   });
 
   it("keeps answering as GitHub for every other host", async () => {

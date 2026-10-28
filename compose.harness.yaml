@@ -102,6 +102,9 @@ x-auth-hosts: &auth-hosts
   # Since 1.57.1: the Rule journeys' course as a Netlify site, answered by the identity stub from the course server
   # (the reader's server reads a course's educators there before it saves a content lock).
   - "harness-rules.netlify.app:172.29.0.10"
+  # Since 1.58.0: the fixture course as a Netlify site too (mono-repo #327: the reader's data routes refuse an id with a
+  # port, and a visit reads the course's title from its site).
+  - "harness-fixture.netlify.app:172.29.0.10"
   - "persistence-a.harness.test:host-gateway"
   - "persistence-b.harness.test:host-gateway"
 
@@ -140,6 +143,7 @@ services:
       PORT: "443"
       HARNESS_ROLE: ${HARNESS_ROLE:-student}
       COURSE_ORIGIN: http://course:8081
+      FIXTURE_COURSE_ORIGIN: http://course:8080
     # Binding 443 as UID 1001 inside the container.
     sysctls:
       net.ipv4.ip_unprivileged_port_start: 0
@@ -222,6 +226,9 @@ services:
     environment:
       <<: *auth-env
       ORIGIN: http://localhost:${READER_AUTH_PORT_A:-3103}
+      # Since 1.58.0: the time app's browser reads /api/time from here with the session cookie (mono-repo #327); a reader
+      # before it ignores this.
+      PRIVATE_API_ALLOWED_ORIGINS: http://localhost:${TIME_AUTH_PORT_A:-3106}
       PUBLIC_SUPABASE_URL: http://persistence-a.harness.test:${PERSISTENCE_PORT_A:-8090}
     depends_on:
       course:
@@ -282,6 +289,9 @@ services:
       PUBLIC_SUPABASE_ANON_KEY: harness-anon-key
       PUBLIC_SUPABASE_URL: http://persistence-a.harness.test:${PERSISTENCE_PORT_A:-8090}
       ORIGIN: http://localhost:${TIME_AUTH_PORT_A:-3106}
+      # Since 1.58.0: main's time app reads its data from the signed-in reader, where the lecturer signs in (mono-repo #327);
+      # 17.0.0 reads the persistence stub and ignores this.
+      PUBLIC_READER_URL: http://localhost:${READER_AUTH_PORT_A:-3103}
     depends_on:
       course:
         condition: service_healthy
@@ -349,6 +359,9 @@ services:
     environment:
       <<: *auth-env
       ORIGIN: http://localhost:${READER_AUTH_PORT_B:-3203}
+      # Since 1.58.0: the time app's browser reads /api/time from here with the session cookie (mono-repo #327); a reader
+      # before it ignores this.
+      PRIVATE_API_ALLOWED_ORIGINS: http://localhost:${TIME_AUTH_PORT_B:-3206}
       PUBLIC_SUPABASE_URL: http://persistence-b.harness.test:${PERSISTENCE_PORT_B:-8091}
     depends_on:
       course:
@@ -409,6 +422,9 @@ services:
       PUBLIC_SUPABASE_ANON_KEY: harness-anon-key
       PUBLIC_SUPABASE_URL: http://persistence-b.harness.test:${PERSISTENCE_PORT_B:-8091}
       ORIGIN: http://localhost:${TIME_AUTH_PORT_B:-3206}
+      # Since 1.58.0: main's time app reads its data from the signed-in reader, where the lecturer signs in (mono-repo #327);
+      # 17.0.0 reads the persistence stub and ignores this.
+      PUBLIC_READER_URL: http://localhost:${READER_AUTH_PORT_B:-3203}
     depends_on:
       course:
         condition: service_healthy

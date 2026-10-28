@@ -72,7 +72,7 @@ describe("compose.harness.yaml", () => {
       const b = compose.services[`${app}-b`]!;
       const strip = (s: Record<string, unknown>) => {
         const { image: _i, ports: _p, environment, depends_on: _d, ...rest } = s;
-        const { ORIGIN: _o, PUBLIC_SUPABASE_URL: _s, HARNESS_PERSISTENCE_URL: _h, ...env } = environment as Record<string, unknown>;
+        const { ORIGIN: _o, PUBLIC_SUPABASE_URL: _s, HARNESS_PERSISTENCE_URL: _h, PRIVATE_API_ALLOWED_ORIGINS: _ao, PUBLIC_READER_URL: _ru, ...env } = environment as Record<string, unknown>;
         return { ...rest, environment: env };
       };
       expect(strip(a), app).toEqual(strip(b));

@@ -50,11 +50,15 @@ Feature: Lecturer journeys the harness drives on both sides
       Then the page shows the link "Harness Student"
       And the page is captured as "students"
 
-  @rule-0590 @ears-event-driven @journey-time-calendar @role-lecturer
+  @rule-0590 @ears-event-driven @journey-time-calendar @role-lecturer @course-site
   Rule: When the harness runs the time calendar journey, it shall seed two students' calendar days for the Rule journeys' course, open the time app's medians and its calendar by week and by day as the stub lecturer, and compare the tables on both sides.
 
     Scenario: The time app's calendar views compute the same totals and medians from the same days (exercises Rule 0319; analytics-calendar.feature)
-      Given the persistence stub holds the seed "time-course"
+      # Since 1.58.0: main's time app reads its data from the reader with the reader's session (mono-repo #327), so the
+      # lecturer signs in there first, as the monorepo's own journey does; up to 17.0.0 it reads the stub and the
+      # sign-in changes nothing it shows. The seed comes after, so the sign-in's own writes are not among its rows.
+      Given the lecturer signs in from the course
+      And the persistence stub holds the seed "time-course"
       When the lecturer opens the time app at "medians"
       And the lecturer types "4321" in the textbox "PIN code"
       And the lecturer presses the button "Verify"
@@ -74,11 +78,15 @@ Feature: Lecturer journeys the harness drives on both sides
       And the page shows the row starting "Harness Student"
       And the page is captured as "calendar-byday"
 
-  @rule-0591 @ears-event-driven @journey-time-labs @role-lecturer
+  @rule-0591 @ears-event-driven @journey-time-labs @role-lecturer @course-site
   Rule: When the harness runs the time labs journey, it shall seed three students' lab records for the Rule journeys' course, open the time app's labs by lab and by step, its learning records and the least engaged student's page as the stub lecturer, and compare them on both sides.
 
     Scenario: The time app's lab views rank the same students the same way (exercises Rule 0319; analytics-lab.feature, lab-analytics.feature)
-      Given the persistence stub holds the seed "time-course"
+      # Since 1.58.0: main's time app reads its data from the reader with the reader's session (mono-repo #327), so the
+      # lecturer signs in there first, as the monorepo's own journey does; up to 17.0.0 it reads the stub and the
+      # sign-in changes nothing it shows. The seed comes after, so the sign-in's own writes are not among its rows.
+      Given the lecturer signs in from the course
+      And the persistence stub holds the seed "time-course"
       When the lecturer opens the time app at "lab/bylab"
       And the lecturer types "4321" in the textbox "PIN code"
       And the lecturer presses the button "Verify"
