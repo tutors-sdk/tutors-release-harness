@@ -65,7 +65,7 @@ describe("the plans", () => {
       "noise status",
       "images ensure --a 16.2.0 --b 16.3.0-rc.1",
       "run --mode release --a 16.2.0 --b 16.3.0-rc.1 --runs 3 --load 20x30s --claims /r/claims.yaml",
-      "run --mode migration --a v16.2.0 --b v16.3.0-rc.1",
+      "run --mode migration --a v16.2.0 --b v16.3.0-rc.1 --claims /r/claims.yaml",
       "run --mode upgrade --a 16.2.0 --b 16.3.0-rc.1 --set fixture --journey anonymous-student-reads-course"
     ]);
   });

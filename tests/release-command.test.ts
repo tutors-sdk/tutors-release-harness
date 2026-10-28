@@ -113,7 +113,7 @@ describe("the plan", () => {
       noise: ["run --mode noise --a 16.2.2 --b 16.2.2 --runs 3 --load 20x30s --require-verified"],
       changes: [],
       release: [`run --mode release --a 16.2.2 --b 16.3.0-rc.1 --runs 3 --load 20x30s --claims /m/release/claims.yaml --rules /m/rules.json --noise ${LATEST_NOISE}`],
-      rehearse: ["run --mode migration --a v16.2.2 --b v16.3.0-rc.1", "run --mode upgrade --a 16.2.2 --b 16.3.0-rc.1 --set fixture --journey anonymous-student-reads-course"],
+      rehearse: ["run --mode migration --a v16.2.2 --b v16.3.0-rc.1 --claims /m/release/claims.yaml --rules /m/rules.json", "run --mode upgrade --a 16.2.2 --b 16.3.0-rc.1 --set fixture --journey anonymous-student-reads-course"],
       score: [],
       report: []
     });

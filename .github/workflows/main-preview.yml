@@ -286,6 +286,7 @@ jobs:
       PRODUCTION: ${{ needs.resolve.outputs.production }}
       CANDIDATE: ${{ needs.resolve.outputs.candidate }}
       SHA: ${{ needs.resolve.outputs.sha }}
+      CLAIMS_URL: ${{ needs.resolve.outputs.claims_url }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -296,10 +297,31 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # Since 1.59.1: main's claims, as the release run reads them, so a migration claim covers its migration here (on
+      # 28 Oct the claim on app_errors:anon_select_app_errors was stale in the release run and the rehearsal failed on it).
+      - name: Fetch main's claims
+        run: curl -fsSL "$CLAIMS_URL" -o claims.yaml
+      - name: Check out the monorepo at that commit, for its Rules
+        if: env.SHA != ''
+        continue-on-error: true
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: tutors-sdk/tutors-mono-repo
+          ref: ${{ env.SHA }}
+          path: monorepo
+          persist-credentials: false
+      - name: Main's Rules
+        if: env.SHA != ''
+        continue-on-error: true
+        working-directory: monorepo
+        run: |
+          pnpm install --frozen-lockfile --ignore-scripts --filter .
+          pnpm --silent release:rules --ref "$SHA" --out ../rules.json
       - name: Migration mode
         run: |
           set +e
-          pnpm harness run --mode migration --a "v$PRODUCTION" --b "${SHA:-v$CANDIDATE}"
+          rules=""; if [ -s rules.json ]; then rules=rules.json; fi
+          pnpm harness run --mode migration --a "v$PRODUCTION" --b "${SHA:-v$CANDIDATE}" --claims claims.yaml ${rules:+--rules "$rules"}
           code=$?
           set -e
           if [ "$code" -gt 1 ]; then exit "$code"; fi

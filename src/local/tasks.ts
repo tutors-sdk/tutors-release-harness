@@ -137,7 +137,7 @@ export function planGate(o: GateOptions): Plan {
     });
   }
   if (want("migration")) {
-    steps.push({ id: "migration", title: "migration rehearsal", argv: ["run", "--mode", "migration", "--a", o.migrationsA ?? `v${o.production}`, "--b", o.migrationsB ?? `v${o.candidate}`, ...override], stream: "migration", gatesStream: false });
+    steps.push({ id: "migration", title: "migration rehearsal", argv: ["run", "--mode", "migration", "--a", o.migrationsA ?? `v${o.production}`, "--b", o.migrationsB ?? `v${o.candidate}`, ...(o.claims ? ["--claims", o.claims] : []), ...(o.rules ? ["--rules", o.rules] : []), ...override], stream: "migration", gatesStream: false });
   }
   if (want("upgrade")) {
     steps.push({ id: "upgrade", title: "upgrade rehearsal: rollout under load", argv: ["run", "--mode", "upgrade", "--a", o.production, "--b", o.candidate, "--set", "fixture", "--journey", WORKFLOW_DEFAULTS.upgradeJourney, ...pins, ...override], stream: "upgrade", gatesStream: false });

@@ -29,7 +29,7 @@ import { deploymentReason, findReleaseRecord, judgeDeployment, releaseRecordOf, 
 import { ROOT, a2Spec, externalSide, imagesFor, sideSpec, stackDown, stackUp } from "./stack.ts";
 import { kindDown, kindSide, kindUp } from "./substrate/kind.ts";
 import { overrideLine, recordOverride, type OverrideRequest } from "./override.ts";
-import type { Claim, Deployment, Hunk, Mode, NoiseStatus, ProductionBuild, RunReport, SideCapture, SideSpec, Substrate } from "./types.ts";
+import type { Claim, CompareResult, Deployment, Hunk, Mode, NoiseStatus, ProductionBuild, RunReport, SideCapture, SideSpec, Substrate } from "./types.ts";
 
 import { HARNESS_VERSION, SCHEMA_VERSION, harnessInfo } from "./version.ts";
 import { DEFAULT_RESTARTS } from "./runtime/startup.ts";
@@ -177,6 +177,22 @@ interface CompareInput {
   log: (m: string) => void;
 }
 
+/** Since 1.59.1: the artefact only a rehearsal produces, by its mode. */
+const REHEARSAL: Partial<Record<Mode, string>> = { migration: "migration", upgrade: "upgrade" };
+
+/**
+ * Since 1.59.1: a claim is stale only in a run that could have matched it. The release's one claims file holds the
+ * migration and upgrade claims too, and each is judged by its own rehearsal: the 28 Oct forecast called the claim on
+ * `app_errors:anon_select_app_errors` stale in the release run, which never sees a migration, while the migration
+ * rehearsal, run without the claims, failed on that very policy.
+ */
+export function judgedHere(mode: Mode, compare: CompareResult): CompareResult {
+  const own = REHEARSAL[mode];
+  const rehearsed = new Set(Object.values(REHEARSAL));
+  const could = (artefact: string) => artefact === "*" || (own ? artefact === own : !rehearsed.has(artefact));
+  return { ...compare, staleClaims: compare.staleClaims.filter((c) => could(c.artefact)) };
+}
+
 /**
  * Compare two captures (from disk or just taken): normalise, diff, match
  * claims, gate, write the reports. Used by `run`, `harness compare` and the tests.
@@ -203,7 +219,7 @@ export function compareFromCaptures(input: CompareInput): RunOutcome {
   const hunks = attributeClock(foldAssetChurn(applyLevels([...compareCaptures(na.capture, nb.capture, masks, input.captureDir, input.slo, input.headerContract), ...(input.extraHunks ?? [])], ranAt, levelTable), ranAt, levelTable), clock, input.now);
   // Since 1.25.1: claims with a lifetime. Informing: an expired claim still covers, and is reported (src/claims/lifetime.ts).
   const lifeCtx = lifetimeContext(ranAt, input.a, input.b);
-  const compare = matchClaims(hunks, claimsInForce(input.claims, lifeCtx));
+  const compare = judgedHere(input.mode, matchClaims(hunks, claimsInForce(input.claims, lifeCtx)));
   const lifetimes = claimLifetimes(input.claims, compare.matches, lifeCtx);
   const noise = readNoise(input.noise, input.log);
   const blind = blindJourneys(input.a, input.b);
