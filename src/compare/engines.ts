@@ -268,6 +268,14 @@ export const logs: Engine = (a, b, ctx) => {
     const la = a.logs[app];
     const lb = b.logs[app];
     if (!la || !lb) continue;
+    // Since 1.60.0: an app that wrote no JSON line at all on one side is one difference, not one per field, level and
+    // the request-id ratio. On 29 Oct the anonymous time app, which no journey visits since mono-repo #327, made 17.
+    const silent = la.jsonLines > 0 && lb.jsonLines === 0 && lb.lines === 0 ? "b" : lb.jsonLines > 0 && la.jsonLines === 0 && la.lines === 0 ? "a" : undefined;
+    if (silent) {
+      const [quiet, loud] = silent === "b" ? ["b", la] : ["a", lb];
+      hunks.push({ id: hunkId("logs", app), artefact: "logs", scope: `${app}/silent`, severity: "fail", summary: `${app}: wrote no log line on ${quiet} (${loud.jsonLines} on ${quiet === "b" ? "a" : "b"}): nothing reached it, or it stopped logging` });
+      continue;
+    }
     const keysA = new Set(la.keys);
     const keysB = new Set(lb.keys);
     for (const k of la.keys) if (!keysB.has(k)) hunks.push({ id: hunkId("logs", app), artefact: "logs", scope: `${app}/${k}`, severity: "fail", summary: `${app}: log field gone on b: ${k}` });

@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.59.0`
+Contract version: `1.60.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -2200,6 +2200,14 @@ change to this contract.
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
 ## Changes
+
+### 1.60.0 (minor; the signed-in apps' logs, a silent app is one difference)
+
+The release note is [releases/1.60.0.md](releases/1.60.0.md). A minor. Under compose a capture reads the logs of the
+signed-in live and time apps too: `logs` in `capture.json` gains `live-auth` and `time-auth`, and `logs` hunks the
+scopes `live-auth/<field or level>` and `time-auth/<field or level>`. An app that wrote no line at all on one side while
+the other wrote JSON lines is one hunk, `<app>/silent`, instead of one per field, per level and the request-id ratio.
+`report.json`'s verdict, a release candidate's Gate and every exit code are unchanged.
 
 ### 1.59.0 (minor; explained by code, hint mismatches a warning)
 

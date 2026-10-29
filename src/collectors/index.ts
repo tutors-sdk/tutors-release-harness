@@ -2,7 +2,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Journey } from "../../traffic/journeys/journeys.ts";
 import { APPS } from "../image-ref.ts";
-import { serviceLogs, serviceName } from "../stack.ts";
+import { LOG_APPS, serviceLogs, serviceName } from "../stack.ts";
 import { harnessInfo } from "../version.ts";
 import type { JourneyCapture, LogSummary, MetricsSnapshot, SideCapture, SideSpec, Substrate } from "../types.ts";
 import { captureJourney, launchBrowser } from "./browser.ts";
@@ -92,7 +92,7 @@ export async function captureSide(spec: SideSpec, journeys: Journey[], opts: Cap
 
   const logs: Record<string, LogSummary> = {};
   if (opts.logsFrom && !spec.external) {
-    for (const app of [...APPS, "reader-auth"] as const) {
+    for (const app of LOG_APPS) {
       try {
         logs[app] = summariseLogs(serviceLogs(serviceName(spec.name, app), startedAt, opts.logsFrom.a, opts.logsFrom.b, opts.now));
       } catch (e) {
