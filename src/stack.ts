@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
-import { dockerRef, type App } from "./image-ref.ts";
+import { APPS, dockerRef, type App } from "./image-ref.ts";
 import { composeProject, orExit } from "./project.ts";
 import { ROOT } from "./root.ts";
 import type { SideName, SideSpec, StackUrls } from "./types.ts";
@@ -165,7 +165,16 @@ export function serviceLogs(service: string, since: string, a: SideSpec, b: Side
   return compose(["logs", "--no-color", "--no-log-prefix", "--since", since, service], composeEnv(a, b, now), { capture: true });
 }
 
-export function serviceName(side: SideName, app: App | "reader-auth"): string {
+/**
+ * The services whose logs a compose capture reads: the anonymous apps and every signed-in one. Since 1.60.0 the
+ * signed-in live and time apps too: since mono-repo #327 the time journeys (Rules 0590, 0591) open the time app only
+ * signed in, so the anonymous time app sees nothing but the harness's own /healthz and /metrics, which its request
+ * logger skips (mono-repo #515). On 29 Oct every log field of `time` was "gone on b" for that reason alone.
+ */
+export const LOG_APPS = [...APPS, "reader-auth", "live-auth", "time-auth"] as const;
+export type LogApp = (typeof LOG_APPS)[number];
+
+export function serviceName(side: SideName, app: App | LogApp): string {
   return `${app}-${side}`;
 }
 

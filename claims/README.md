@@ -68,7 +68,7 @@ At 2.0 they block: an expired claim covers nothing and is stale. A claim without
 | headers | `<page key>/<header name>` | the page's route; a claim on `reader:lab-step` alone also matches |
 | network | `<METHOD> <route>`, e.g. `GET /course/localhost:8080` | the page's route |
 | metrics | `<app>/<series>` | — |
-| logs | `<app>/<field or level>` | — |
+| logs | `<app>/<field or level>`, `<app>/silent` (since 1.60.0); app `reader`, `catalogue`, `live`, `time`, `reader-auth`, and since 1.60.0 `live-auth`, `time-auth` | — |
 | dom (journey failed) | the journey name | — |
 | bus | `<journey>/<topic>` (docs/bus.md) | — |
 | runtime | `<app>/<field>` (`user`, `privileged`, `read-only-rootfs`, `cap-add`, `uid`, ...), `<app>/writes-outside-tmp`, `<app>/not-collected` | — |

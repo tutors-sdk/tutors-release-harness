@@ -138,6 +138,19 @@ describe("engines catch one planted change each", () => {
     expect(hunks.map((h) => h.scope)).toEqual(["reader/requestId", "reader/request-id"]);
   });
 
+  it("logs: since 1.60.0 an app that wrote nothing on one side is one hunk, not one per field and level", () => {
+    const silent = { lines: 0, jsonLines: 0, byLevel: {}, keys: [], requestIdRatio: 0 };
+    const b = capture("b");
+    b.logs.reader = silent;
+    expect(diff(capture("a"), b)).toEqual([expect.objectContaining({ artefact: "logs", scope: "reader/silent", summary: "reader: wrote no log line on b (30 on a): nothing reached it, or it stopped logging" })]);
+    const a = capture("a");
+    a.logs.reader = silent;
+    expect(diff(a, capture("b")).map((h) => h.summary)).toEqual(["reader: wrote no log line on a (30 on b): nothing reached it, or it stopped logging"]);
+    // Lines that are not JSON are a different difference, said as such.
+    b.logs.reader = { ...silent, lines: 12 };
+    expect(diff(capture("a"), b).map((h) => h.scope)).toContain("reader/json");
+  });
+
   it("journey outcome: a journey that fails only on b is a failing hunk", () => {
     const b = capture("b");
     b.journeys[0]!.error = "Timeout waiting for heading";

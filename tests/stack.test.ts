@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { parse } from "yaml";
 import { describe, expect, it } from "vitest";
 import { APPS } from "../src/image-ref.ts";
-import { COMPOSE_FILE, externalSide, imagesFor, sideSpec, urlsFor } from "../src/stack.ts";
+import { COMPOSE_FILE, LOG_APPS, externalSide, imagesFor, serviceName, sideSpec, urlsFor } from "../src/stack.ts";
 import { kindSide, manifestsFor } from "../src/substrate/kind.ts";
 
 describe("image references", () => {
@@ -46,6 +46,11 @@ describe("compose.harness.yaml", () => {
   it("has both sides for every app, a persistence stub per side, and the shared fixtures", () => {
     const expected = [...apps.flatMap((app) => [`${app}-a`, `${app}-b`]), ...["reader", "catalogue", "live", "time"].map((app) => `${app}-a2`), "persistence-a", "persistence-b", "reader-auth-edge-a", "reader-auth-edge-b", "live-auth-a", "live-auth-b", "time-auth-a", "time-auth-b", "course", "identity", "edge"].sort();
     expect(Object.keys(compose.services).sort()).toEqual(expected);
+  });
+
+  it("since 1.60.0 reads the logs of every app a journey signs in to, each a service on both sides", () => {
+    expect(LOG_APPS).toEqual([...APPS, "reader-auth", "live-auth", "time-auth"]);
+    for (const app of LOG_APPS) for (const side of ["a", "b"] as const) expect(compose.services[serviceName(side, app)], serviceName(side, app)).toBeDefined();
   });
 
   it("the browser reaches the signed-in reader through an edge that says it used http (Kit 3 has no runtime ORIGIN)", () => {

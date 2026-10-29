@@ -656,7 +656,7 @@ export interface ContainerPosture {
 export interface RuntimeCapture {
   collected: true;
   substrate: Substrate;
-  /** By app (`reader`, `catalogue`, `live`, `time`, and `reader-auth` under compose). */
+  /** By app (`reader`, `catalogue`, `live`, `time`, and under compose `reader-auth`, since 1.60.0 `live-auth` and `time-auth`). */
   containers: Record<string, ContainerPosture | NotCollected>;
 }
 
