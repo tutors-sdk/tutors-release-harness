@@ -1,0 +1,2556 @@
+{
+  "schemaVersion": 1,
+  "harness": {
+    "version": "1.57.1",
+    "gitSha": "b2c7295c4a4a139a88b2cd07611ae2963390f9b2",
+    "contractVersion": "1.57.0"
+  },
+  "harnessVersion": "1.57.1",
+  "mode": "noise",
+  "substrate": "compose",
+  "ranAt": "2026-10-27T01:57:55.534Z",
+  "now": "2026-09-16T09:05:00.000Z",
+  "runs": 5,
+  "sides": {
+    "a": {
+      "reader": "quay.io/tutors-sdk/tutors-reader:17.0.0",
+      "catalogue": "quay.io/tutors-sdk/tutors-catalogue:17.0.0",
+      "live": "quay.io/tutors-sdk/tutors-live:17.0.0",
+      "time": "quay.io/tutors-sdk/tutors-time:17.0.0"
+    },
+    "b": {
+      "reader": "quay.io/tutors-sdk/tutors-reader:17.0.0",
+      "catalogue": "quay.io/tutors-sdk/tutors-catalogue:17.0.0",
+      "live": "quay.io/tutors-sdk/tutors-live:17.0.0",
+      "time": "quay.io/tutors-sdk/tutors-time:17.0.0"
+    }
+  },
+  "provenance": {
+    "a": {
+      "summary": "pulled+verified",
+      "images": {
+        "reader": {
+          "ref": "quay.io/tutors-sdk/tutors-reader:17.0.0",
+          "id": "sha256:abdbbf48bdaa8867cf970bf780df734196bdbb25c3f1ce6e358b1a0c5b4d36a7",
+          "digest": "sha256:15e3aa22476d608db97e05917b1990ade0a7871e7ec6e113da5fec741b427233",
+          "revision": "432d46864626ce14e07eb7715e0408c643ca906a",
+          "version": "17.0.0-rc.1",
+          "created": "2026-10-14T11:22:23.868Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "catalogue": {
+          "ref": "quay.io/tutors-sdk/tutors-catalogue:17.0.0",
+          "id": "sha256:b3e0c40b6430ecd6ac154972584252a179abb99412e1b1deeaa0a6c2e64966e3",
+          "digest": "sha256:e9f2764654cb074d7dd4412ca163bf4c2666870444d5520361d5425bda4cec0b",
+          "revision": "432d46864626ce14e07eb7715e0408c643ca906a",
+          "version": "17.0.0-rc.1",
+          "created": "2026-10-14T11:22:20.481Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "live": {
+          "ref": "quay.io/tutors-sdk/tutors-live:17.0.0",
+          "id": "sha256:a5ac0ab5beba43906f3b94f74531fa8588d82c8efa38eb07070969981181bf80",
+          "digest": "sha256:52740e55cfa7e7db3b2944137caada4e876990b937f1034c0c5e79796054f8a0",
+          "revision": "432d46864626ce14e07eb7715e0408c643ca906a",
+          "version": "17.0.0-rc.1",
+          "created": "2026-10-14T11:22:19.078Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "time": {
+          "ref": "quay.io/tutors-sdk/tutors-time:17.0.0",
+          "id": "sha256:abd5fc2e4e4a8b7e35bd54c9fe8ec9fbc3e07fc797e6fe27c67b7a66108f4708",
+          "digest": "sha256:d0a9f4a2f4624038ecea3629d1a536567756d458410bee43b45e060d738d195d",
+          "revision": "432d46864626ce14e07eb7715e0408c643ca906a",
+          "version": "17.0.0-rc.1",
+          "created": "2026-10-14T11:22:24.942Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        }
+      }
+    },
+    "b": {
+      "summary": "pulled+verified",
+      "images": {
+        "reader": {
+          "ref": "quay.io/tutors-sdk/tutors-reader:17.0.0",
+          "id": "sha256:abdbbf48bdaa8867cf970bf780df734196bdbb25c3f1ce6e358b1a0c5b4d36a7",
+          "digest": "sha256:15e3aa22476d608db97e05917b1990ade0a7871e7ec6e113da5fec741b427233",
+          "revision": "432d46864626ce14e07eb7715e0408c643ca906a",
+          "version": "17.0.0-rc.1",
+          "created": "2026-10-14T11:22:23.868Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "catalogue": {
+          "ref": "quay.io/tutors-sdk/tutors-catalogue:17.0.0",
+          "id": "sha256:b3e0c40b6430ecd6ac154972584252a179abb99412e1b1deeaa0a6c2e64966e3",
+          "digest": "sha256:e9f2764654cb074d7dd4412ca163bf4c2666870444d5520361d5425bda4cec0b",
+          "revision": "432d46864626ce14e07eb7715e0408c643ca906a",
+          "version": "17.0.0-rc.1",
+          "created": "2026-10-14T11:22:20.481Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "live": {
+          "ref": "quay.io/tutors-sdk/tutors-live:17.0.0",
+          "id": "sha256:a5ac0ab5beba43906f3b94f74531fa8588d82c8efa38eb07070969981181bf80",
+          "digest": "sha256:52740e55cfa7e7db3b2944137caada4e876990b937f1034c0c5e79796054f8a0",
+          "revision": "432d46864626ce14e07eb7715e0408c643ca906a",
+          "version": "17.0.0-rc.1",
+          "created": "2026-10-14T11:22:19.078Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "time": {
+          "ref": "quay.io/tutors-sdk/tutors-time:17.0.0",
+          "id": "sha256:abd5fc2e4e4a8b7e35bd54c9fe8ec9fbc3e07fc797e6fe27c67b7a66108f4708",
+          "digest": "sha256:d0a9f4a2f4624038ecea3629d1a536567756d458410bee43b45e060d738d195d",
+          "revision": "432d46864626ce14e07eb7715e0408c643ca906a",
+          "version": "17.0.0-rc.1",
+          "created": "2026-10-14T11:22:24.942Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        }
+      }
+    }
+  },
+  "verdict": "pass",
+  "reasons": [
+    "A/A is clean: the harness may gate releases"
+  ],
+  "compare": {
+    "hunks": [
+      {
+        "id": "realtime:reader-auth:rule-0592-stroke-saved/websocket:1",
+        "artefact": "realtime",
+        "scope": "reader-auth:rule-0592-stroke-saved/websocket",
+        "path": "/whiteboard/localhost:8081/unit-1/topic-01/whiteboard-01",
+        "severity": "info",
+        "summary": "reader-auth:rule-0592-stroke-saved: a reader page opened a Realtime websocket on b (1 socket(s), 6 data frame(s) sent); readers must be publish-only (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "runtime:runtime/summary:2",
+        "artefact": "runtime",
+        "scope": "runtime/summary",
+        "severity": "info",
+        "summary": "container posture collected for catalogue, live, reader, reader-auth, time on both sides (compose)",
+        "detail": "catalogue: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n           b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nlive: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n        b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader-auth: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n             b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\ntime: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter"
+      },
+      {
+        "id": "startup:startup/summary:3",
+        "artefact": "startup",
+        "scope": "startup/summary",
+        "severity": "info",
+        "summary": "startup time collected on both sides (compose, 5 restart(s) per app)",
+        "detail": "catalogue: first healthy / 520 → 521 ms, ready 2420 → 2406 ms (median, a → b, n=5/5)\nlive: first healthy / 519 → 465 ms, ready 2401 → 2414 ms (median, a → b, n=5/5)\nreader: first healthy / 647 → 663 ms, ready 2385 → 2425 ms (median, a → b, n=5/5)\ntime: first healthy / 495 → 480 ms, ready 2354 → 2338 ms (median, a → b, n=5/5)"
+      },
+      {
+        "id": "image-hardening:reader/healthcheck:4",
+        "artefact": "image-hardening",
+        "scope": "reader/healthcheck",
+        "severity": "info",
+        "summary": "reader: declares no HEALTHCHECK (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "image-hardening:reader/unrecorded-base:5",
+        "artefact": "image-hardening",
+        "scope": "reader/unrecorded-base",
+        "severity": "info",
+        "summary": "reader: records no base image (no org.opencontainers.image.base.name label), so a base that moved upstream reads as a rebuild no PR declared (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "image-hardening:catalogue/healthcheck:6",
+        "artefact": "image-hardening",
+        "scope": "catalogue/healthcheck",
+        "severity": "info",
+        "summary": "catalogue: declares no HEALTHCHECK (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "image-hardening:catalogue/unrecorded-base:7",
+        "artefact": "image-hardening",
+        "scope": "catalogue/unrecorded-base",
+        "severity": "info",
+        "summary": "catalogue: records no base image (no org.opencontainers.image.base.name label), so a base that moved upstream reads as a rebuild no PR declared (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "image-hardening:live/healthcheck:8",
+        "artefact": "image-hardening",
+        "scope": "live/healthcheck",
+        "severity": "info",
+        "summary": "live: declares no HEALTHCHECK (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "image-hardening:live/unrecorded-base:9",
+        "artefact": "image-hardening",
+        "scope": "live/unrecorded-base",
+        "severity": "info",
+        "summary": "live: records no base image (no org.opencontainers.image.base.name label), so a base that moved upstream reads as a rebuild no PR declared (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "image-hardening:time/healthcheck:10",
+        "artefact": "image-hardening",
+        "scope": "time/healthcheck",
+        "severity": "info",
+        "summary": "time: declares no HEALTHCHECK (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "image-hardening:time/unrecorded-base:11",
+        "artefact": "image-hardening",
+        "scope": "time/unrecorded-base",
+        "severity": "info",
+        "summary": "time: records no base image (no org.opencontainers.image.base.name label), so a base that moved upstream reads as a rebuild no PR declared (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "build-provenance:reader/slsa:12",
+        "artefact": "build-provenance",
+        "scope": "reader/slsa",
+        "severity": "info",
+        "summary": "reader: carries no SLSA provenance verified under the publishing identity on 15e3aa22476d (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "build-provenance:catalogue/slsa:13",
+        "artefact": "build-provenance",
+        "scope": "catalogue/slsa",
+        "severity": "info",
+        "summary": "catalogue: carries no SLSA provenance verified under the publishing identity on e9f2764654cb (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "build-provenance:live/slsa:14",
+        "artefact": "build-provenance",
+        "scope": "live/slsa",
+        "severity": "info",
+        "summary": "live: carries no SLSA provenance verified under the publishing identity on 52740e55cfa7 (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "build-provenance:time/slsa:15",
+        "artefact": "build-provenance",
+        "scope": "time/slsa",
+        "severity": "info",
+        "summary": "time: carries no SLSA provenance verified under the publishing identity on d0a9f4a2f462 (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "vuln-ceiling:reader/GHSA-cg2g-xh64-v4q7:16",
+        "artefact": "vuln-ceiling",
+        "scope": "reader/GHSA-cg2g-xh64-v4q7",
+        "severity": "info",
+        "summary": "reader: GHSA-cg2g-xh64-v4q7 (Critical) in dompurify@3.4.16 has a fix: 3.4.17 (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "vuln-ceiling:reader/GHSA-mrv2-3pqr-j5jr:17",
+        "artefact": "vuln-ceiling",
+        "scope": "reader/GHSA-mrv2-3pqr-j5jr",
+        "severity": "info",
+        "summary": "reader: GHSA-mrv2-3pqr-j5jr (High) in dompurify@3.4.16 has a fix: 3.4.17 (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "vuln-ceiling:reader/GHSA-xjj6-f33q-929c:18",
+        "artefact": "vuln-ceiling",
+        "scope": "reader/GHSA-xjj6-f33q-929c",
+        "severity": "info",
+        "summary": "reader: GHSA-xjj6-f33q-929c (High) in undici@8.11.2 has a fix: 8.12.2 (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "vuln-ceiling:catalogue/GHSA-cg2g-xh64-v4q7:19",
+        "artefact": "vuln-ceiling",
+        "scope": "catalogue/GHSA-cg2g-xh64-v4q7",
+        "severity": "info",
+        "summary": "catalogue: GHSA-cg2g-xh64-v4q7 (Critical) in dompurify@3.4.16 has a fix: 3.4.17 (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "vuln-ceiling:catalogue/GHSA-mrv2-3pqr-j5jr:20",
+        "artefact": "vuln-ceiling",
+        "scope": "catalogue/GHSA-mrv2-3pqr-j5jr",
+        "severity": "info",
+        "summary": "catalogue: GHSA-mrv2-3pqr-j5jr (High) in dompurify@3.4.16 has a fix: 3.4.17 (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "vuln-ceiling:catalogue/GHSA-xjj6-f33q-929c:21",
+        "artefact": "vuln-ceiling",
+        "scope": "catalogue/GHSA-xjj6-f33q-929c",
+        "severity": "info",
+        "summary": "catalogue: GHSA-xjj6-f33q-929c (High) in undici@8.11.2 has a fix: 8.12.2 (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "vuln-ceiling:live/GHSA-cg2g-xh64-v4q7:22",
+        "artefact": "vuln-ceiling",
+        "scope": "live/GHSA-cg2g-xh64-v4q7",
+        "severity": "info",
+        "summary": "live: GHSA-cg2g-xh64-v4q7 (Critical) in dompurify@3.4.16 has a fix: 3.4.17 (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "vuln-ceiling:live/GHSA-mrv2-3pqr-j5jr:23",
+        "artefact": "vuln-ceiling",
+        "scope": "live/GHSA-mrv2-3pqr-j5jr",
+        "severity": "info",
+        "summary": "live: GHSA-mrv2-3pqr-j5jr (High) in dompurify@3.4.16 has a fix: 3.4.17 (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "vuln-ceiling:live/GHSA-xjj6-f33q-929c:24",
+        "artefact": "vuln-ceiling",
+        "scope": "live/GHSA-xjj6-f33q-929c",
+        "severity": "info",
+        "summary": "live: GHSA-xjj6-f33q-929c (High) in undici@8.11.2 has a fix: 8.12.2 (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "vuln-ceiling:time/GHSA-cg2g-xh64-v4q7:25",
+        "artefact": "vuln-ceiling",
+        "scope": "time/GHSA-cg2g-xh64-v4q7",
+        "severity": "info",
+        "summary": "time: GHSA-cg2g-xh64-v4q7 (Critical) in dompurify@3.4.16 has a fix: 3.4.17 (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "vuln-ceiling:time/GHSA-mrv2-3pqr-j5jr:26",
+        "artefact": "vuln-ceiling",
+        "scope": "time/GHSA-mrv2-3pqr-j5jr",
+        "severity": "info",
+        "summary": "time: GHSA-mrv2-3pqr-j5jr (High) in dompurify@3.4.16 has a fix: 3.4.17 (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "vuln-ceiling:time/GHSA-xjj6-f33q-929c:27",
+        "artefact": "vuln-ceiling",
+        "scope": "time/GHSA-xjj6-f33q-929c",
+        "severity": "info",
+        "summary": "time: GHSA-xjj6-f33q-929c (High) in undici@8.11.2 has a fix: 8.12.2 (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET_/_app/immutable/chunks/__hash__.js:28",
+        "artefact": "replay",
+        "scope": "replay:topic-02 GET /_app/immutable/chunks/{{hash}}.js",
+        "path": "/topic/localhost:8080/unit-1/topic-02",
+        "severity": "info",
+        "summary": "replay:topic-02: GET /_app/immutable/chunks/{{hash}}.js requested 41× on a, 42× on b",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET___course__/tutors.json:29",
+        "artefact": "replay",
+        "scope": "replay:topic-02 GET {{course}}/tutors.json",
+        "path": "/topic/localhost:8080/unit-1/topic-02",
+        "severity": "info",
+        "summary": "replay:topic-02: new request on b: GET {{course}}/tutors.json",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET_/_app/immutable/assets/1.__hash__.css:30",
+        "artefact": "replay",
+        "scope": "replay:topic-02 GET /_app/immutable/assets/1.{{hash}}.css",
+        "path": "/topic/localhost:8080/unit-1/topic-02",
+        "severity": "info",
+        "summary": "replay:topic-02: new request on b: GET /_app/immutable/assets/1.{{hash}}.css",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET_/_app/immutable/nodes/1.__hash__.js:31",
+        "artefact": "replay",
+        "scope": "replay:topic-02 GET /_app/immutable/nodes/1.{{hash}}.js",
+        "path": "/topic/localhost:8080/unit-1/topic-02",
+        "severity": "info",
+        "summary": "replay:topic-02: new request on b: GET /_app/immutable/nodes/1.{{hash}}.js",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET_/topic/localhost:8080/unit-1/topic-02/__data.json_x-sveltekit-invalidated_100:32",
+        "artefact": "replay",
+        "scope": "replay:topic-02 GET /topic/localhost:8080/unit-1/topic-02/__data.json?x-sveltekit-invalidated=100",
+        "path": "/topic/localhost:8080/unit-1/topic-02",
+        "severity": "info",
+        "summary": "replay:topic-02: new request on b: GET /topic/localhost:8080/unit-1/topic-02/__data.json?x-sveltekit-invalidated=100",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET___course__/tutors.json:33",
+        "artefact": "replay",
+        "scope": "replay:talk-01 GET {{course}}/tutors.json",
+        "path": "/talk/localhost:8080/unit-1/topic-01/talk-01",
+        "severity": "info",
+        "summary": "replay:talk-01: request no longer made on b: GET {{course}}/tutors.json",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET_/_app/immutable/assets/1.__hash__.css:34",
+        "artefact": "replay",
+        "scope": "replay:talk-01 GET /_app/immutable/assets/1.{{hash}}.css",
+        "path": "/talk/localhost:8080/unit-1/topic-01/talk-01",
+        "severity": "info",
+        "summary": "replay:talk-01: request no longer made on b: GET /_app/immutable/assets/1.{{hash}}.css",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET_/_app/immutable/chunks/__hash__.js:35",
+        "artefact": "replay",
+        "scope": "replay:talk-01 GET /_app/immutable/chunks/{{hash}}.js",
+        "path": "/talk/localhost:8080/unit-1/topic-01/talk-01",
+        "severity": "info",
+        "summary": "replay:talk-01: GET /_app/immutable/chunks/{{hash}}.js requested 40× on a, 35× on b",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET_/_app/immutable/nodes/1.__hash__.js:36",
+        "artefact": "replay",
+        "scope": "replay:talk-01 GET /_app/immutable/nodes/1.{{hash}}.js",
+        "path": "/talk/localhost:8080/unit-1/topic-01/talk-01",
+        "severity": "info",
+        "summary": "replay:talk-01: request no longer made on b: GET /_app/immutable/nodes/1.{{hash}}.js",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET_/talk/localhost:8080/unit-1/topic-01/talk-01/__data.json_x-sveltekit-invalidated_100:37",
+        "artefact": "replay",
+        "scope": "replay:talk-01 GET /talk/localhost:8080/unit-1/topic-01/talk-01/__data.json?x-sveltekit-invalidated=100",
+        "path": "/talk/localhost:8080/unit-1/topic-01/talk-01",
+        "severity": "info",
+        "summary": "replay:talk-01: request no longer made on b: GET /talk/localhost:8080/unit-1/topic-01/talk-01/__data.json?x-sveltekit-invalidated=100",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET_/topic/localhost:8080/unit-1/topic-02/__data.json_x-sveltekit-invalidated_100:38",
+        "artefact": "replay",
+        "scope": "replay:talk-01 GET /topic/localhost:8080/unit-1/topic-02/__data.json?x-sveltekit-invalidated=100",
+        "path": "/talk/localhost:8080/unit-1/topic-01/talk-01",
+        "severity": "info",
+        "summary": "replay:talk-01: request no longer made on b: GET /topic/localhost:8080/unit-1/topic-02/__data.json?x-sveltekit-invalidated=100",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET___course__/tutors.json:39",
+        "artefact": "replay",
+        "scope": "replay:note-01 GET {{course}}/tutors.json",
+        "path": "/note/localhost:8080/unit-1/topic-01/note-01",
+        "severity": "info",
+        "summary": "replay:note-01: GET {{course}}/tutors.json requested 1× on a, 2× on b",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET_/_app/immutable/assets/1.__hash__.css:40",
+        "artefact": "replay",
+        "scope": "replay:note-01 GET /_app/immutable/assets/1.{{hash}}.css",
+        "path": "/note/localhost:8080/unit-1/topic-01/note-01",
+        "severity": "info",
+        "summary": "replay:note-01: GET /_app/immutable/assets/1.{{hash}}.css requested 1× on a, 2× on b",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET_/_app/immutable/chunks/__hash__.js:41",
+        "artefact": "replay",
+        "scope": "replay:note-01 GET /_app/immutable/chunks/{{hash}}.js",
+        "path": "/note/localhost:8080/unit-1/topic-01/note-01",
+        "severity": "info",
+        "summary": "replay:note-01: GET /_app/immutable/chunks/{{hash}}.js requested 38× on a, 39× on b",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET_/_app/immutable/nodes/1.__hash__.js:42",
+        "artefact": "replay",
+        "scope": "replay:note-01 GET /_app/immutable/nodes/1.{{hash}}.js",
+        "path": "/note/localhost:8080/unit-1/topic-01/note-01",
+        "severity": "info",
+        "summary": "replay:note-01: GET /_app/immutable/nodes/1.{{hash}}.js requested 1× on a, 2× on b",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET_/talk/localhost:8080/unit-1/topic-01/talk-01/__data.json_x-sveltekit-invalidated_100:43",
+        "artefact": "replay",
+        "scope": "replay:note-01 GET /talk/localhost:8080/unit-1/topic-01/talk-01/__data.json?x-sveltekit-invalidated=100",
+        "path": "/note/localhost:8080/unit-1/topic-01/note-01",
+        "severity": "info",
+        "summary": "replay:note-01: new request on b: GET /talk/localhost:8080/unit-1/topic-01/talk-01/__data.json?x-sveltekit-invalidated=100",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET_/_app/immutable/chunks/__hash__.js:44",
+        "artefact": "replay",
+        "scope": "replay:lab-02-step-03 GET /_app/immutable/chunks/{{hash}}.js",
+        "path": "/lab/localhost:8080/unit-1/topic-02/book-lab-01/Step-03",
+        "severity": "info",
+        "summary": "replay:lab-02-step-03: GET /_app/immutable/chunks/{{hash}}.js requested 37× on a, 38× on b",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET___course__/tutors.json:45",
+        "artefact": "replay",
+        "scope": "replay:lab-02-step-03 GET {{course}}/tutors.json",
+        "path": "/lab/localhost:8080/unit-1/topic-02/book-lab-01/Step-03",
+        "severity": "info",
+        "summary": "replay:lab-02-step-03: new request on b: GET {{course}}/tutors.json",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET_/_app/immutable/assets/1.__hash__.css:46",
+        "artefact": "replay",
+        "scope": "replay:lab-02-step-03 GET /_app/immutable/assets/1.{{hash}}.css",
+        "path": "/lab/localhost:8080/unit-1/topic-02/book-lab-01/Step-03",
+        "severity": "info",
+        "summary": "replay:lab-02-step-03: new request on b: GET /_app/immutable/assets/1.{{hash}}.css",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET_/_app/immutable/nodes/1.__hash__.js:47",
+        "artefact": "replay",
+        "scope": "replay:lab-02-step-03 GET /_app/immutable/nodes/1.{{hash}}.js",
+        "path": "/lab/localhost:8080/unit-1/topic-02/book-lab-01/Step-03",
+        "severity": "info",
+        "summary": "replay:lab-02-step-03: new request on b: GET /_app/immutable/nodes/1.{{hash}}.js",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET_/lab/localhost:8080/unit-1/topic-02/book-lab-01/Step-03/__data.json_x-sveltekit-invalidated_100:48",
+        "artefact": "replay",
+        "scope": "replay:lab-02-step-03 GET /lab/localhost:8080/unit-1/topic-02/book-lab-01/Step-03/__data.json?x-sveltekit-invalidated=100",
+        "path": "/lab/localhost:8080/unit-1/topic-02/book-lab-01/Step-03",
+        "severity": "info",
+        "summary": "replay:lab-02-step-03: new request on b: GET /lab/localhost:8080/unit-1/topic-02/book-lab-01/Step-03/__data.json?x-sveltekit-invalidated=100",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET___course__/tutors.json:49",
+        "artefact": "replay",
+        "scope": "replay:missing-topic GET {{course}}/tutors.json",
+        "path": "/topic/localhost:8080/unit-1/no-such-topic",
+        "severity": "info",
+        "summary": "replay:missing-topic: GET {{course}}/tutors.json requested 2× on a, 1× on b",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET_/_app/immutable/assets/1.__hash__.css:50",
+        "artefact": "replay",
+        "scope": "replay:missing-topic GET /_app/immutable/assets/1.{{hash}}.css",
+        "path": "/topic/localhost:8080/unit-1/no-such-topic",
+        "severity": "info",
+        "summary": "replay:missing-topic: GET /_app/immutable/assets/1.{{hash}}.css requested 2× on a, 1× on b",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET_/_app/immutable/chunks/__hash__.js:51",
+        "artefact": "replay",
+        "scope": "replay:missing-topic GET /_app/immutable/chunks/{{hash}}.js",
+        "path": "/topic/localhost:8080/unit-1/no-such-topic",
+        "severity": "info",
+        "summary": "replay:missing-topic: GET /_app/immutable/chunks/{{hash}}.js requested 43× on a, 42× on b",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET_/_app/immutable/nodes/1.__hash__.js:52",
+        "artefact": "replay",
+        "scope": "replay:missing-topic GET /_app/immutable/nodes/1.{{hash}}.js",
+        "path": "/topic/localhost:8080/unit-1/no-such-topic",
+        "severity": "info",
+        "summary": "replay:missing-topic: GET /_app/immutable/nodes/1.{{hash}}.js requested 2× on a, 1× on b",
+        "level": "informing"
+      },
+      {
+        "id": "replay:GET_/lab/localhost:8080/unit-1/topic-02/book-lab-01/Step-03/__data.json_x-sveltekit-invalidated_100:53",
+        "artefact": "replay",
+        "scope": "replay:missing-topic GET /lab/localhost:8080/unit-1/topic-02/book-lab-01/Step-03/__data.json?x-sveltekit-invalidated=100",
+        "path": "/topic/localhost:8080/unit-1/no-such-topic",
+        "severity": "info",
+        "summary": "replay:missing-topic: request no longer made on b: GET /lab/localhost:8080/unit-1/topic-02/book-lab-01/Step-03/__data.json?x-sveltekit-invalidated=100",
+        "level": "informing"
+      },
+      {
+        "id": "slo:reader-availability:54",
+        "artefact": "slo",
+        "scope": "reader-availability",
+        "severity": "info",
+        "summary": "reader-availability: 100.0% of 62 reader requests not 5xx on b (its /metrics across the journeys), objective 99.90% (harness floor): holds"
+      },
+      {
+        "id": "slo:reader-availability/load:55",
+        "artefact": "slo",
+        "scope": "reader-availability/load",
+        "severity": "info",
+        "summary": "reader-availability: 100.0% of 601 reader requests not 5xx on b (the k6 load leg), objective 99.90% (harness floor): holds"
+      },
+      {
+        "id": "slo:reader-latency:56",
+        "artefact": "slo",
+        "scope": "reader-latency",
+        "severity": "info",
+        "summary": "reader-latency: 100.0% of 62 reader requests under 1s on b (its /metrics across the journeys), objective 99.0% (harness floor): holds"
+      },
+      {
+        "id": "slo:reader-latency/load:57",
+        "artefact": "slo",
+        "scope": "reader-latency/load",
+        "severity": "info",
+        "summary": "reader-latency: 100.0% of 601 reader requests under 1s on b (the k6 load leg), objective 99.0% (harness floor): holds"
+      },
+      {
+        "id": "slo:catalogue-availability/not-evaluated:58",
+        "artefact": "slo",
+        "scope": "catalogue-availability/not-evaluated",
+        "severity": "info",
+        "summary": "catalogue-availability: not evaluated on b: 5 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "slo:catalogue-latency/not-evaluated:59",
+        "artefact": "slo",
+        "scope": "catalogue-latency/not-evaluated",
+        "severity": "info",
+        "summary": "catalogue-latency: not evaluated on b: 5 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "slo:live-availability/not-evaluated:60",
+        "artefact": "slo",
+        "scope": "live-availability/not-evaluated",
+        "severity": "info",
+        "summary": "live-availability: not evaluated on b: 5 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "slo:live-latency/not-evaluated:61",
+        "artefact": "slo",
+        "scope": "live-latency/not-evaluated",
+        "severity": "info",
+        "summary": "live-latency: not evaluated on b: 5 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "slo:time-availability/not-evaluated:62",
+        "artefact": "slo",
+        "scope": "time-availability/not-evaluated",
+        "severity": "info",
+        "summary": "time-availability: not evaluated on b: its /metrics across the journeys carries no availability SLI for time"
+      },
+      {
+        "id": "slo:time-latency/not-evaluated:63",
+        "artefact": "slo",
+        "scope": "time-latency/not-evaluated",
+        "severity": "info",
+        "summary": "time-latency: not evaluated on b: its /metrics across the journeys carries no latency SLI for time"
+      },
+      {
+        "id": "secrets-in-response:reader-auth:course/body/PRIVATE_AUTH_GITHUB_ID:64",
+        "artefact": "secrets-in-response",
+        "scope": "reader-auth:course/body/PRIVATE_AUTH_GITHUB_ID",
+        "severity": "info",
+        "summary": "reader-auth:course: the a response body holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+        "path": "/course/localhost:8080",
+        "level": "informing"
+      },
+      {
+        "id": "secrets-in-response:reader-auth:course/url/PRIVATE_AUTH_GITHUB_ID:65",
+        "artefact": "secrets-in-response",
+        "scope": "reader-auth:course/url/PRIVATE_AUTH_GITHUB_ID",
+        "severity": "info",
+        "summary": "reader-auth:course: the a response URL holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+        "path": "/course/localhost:8080",
+        "level": "informing"
+      },
+      {
+        "id": "secrets-in-response:reader-auth:rule-0588-lecturer-locked/url/PRIVATE_AUTH_GITHUB_ID:66",
+        "artefact": "secrets-in-response",
+        "scope": "reader-auth:rule-0588-lecturer-locked/url/PRIVATE_AUTH_GITHUB_ID",
+        "severity": "info",
+        "summary": "reader-auth:rule-0588-lecturer-locked: the a response URL holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+        "path": "/course/harness-rules",
+        "level": "informing"
+      },
+      {
+        "id": "secrets-in-response:reader-auth:rule-0588-student-hidden/url/PRIVATE_AUTH_GITHUB_ID:67",
+        "artefact": "secrets-in-response",
+        "scope": "reader-auth:rule-0588-student-hidden/url/PRIVATE_AUTH_GITHUB_ID",
+        "severity": "info",
+        "summary": "reader-auth:rule-0588-student-hidden: the a response URL holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+        "path": "/course/harness-rules",
+        "level": "informing"
+      },
+      {
+        "id": "secrets-in-response:live-auth:rule-0589-courses/body/PRIVATE_AUTH_GITHUB_ID:68",
+        "artefact": "secrets-in-response",
+        "scope": "live-auth:rule-0589-courses/body/PRIVATE_AUTH_GITHUB_ID",
+        "severity": "info",
+        "summary": "live-auth:rule-0589-courses: the a response body holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+        "path": "/",
+        "level": "informing"
+      },
+      {
+        "id": "secrets-in-response:live-auth:rule-0589-courses/url/PRIVATE_AUTH_GITHUB_ID:69",
+        "artefact": "secrets-in-response",
+        "scope": "live-auth:rule-0589-courses/url/PRIVATE_AUTH_GITHUB_ID",
+        "severity": "info",
+        "summary": "live-auth:rule-0589-courses: the a response URL holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+        "path": "/",
+        "level": "informing"
+      },
+      {
+        "id": "secrets-in-response:reader-auth:rule-0582-course/url/PRIVATE_AUTH_GITHUB_ID:70",
+        "artefact": "secrets-in-response",
+        "scope": "reader-auth:rule-0582-course/url/PRIVATE_AUTH_GITHUB_ID",
+        "severity": "info",
+        "summary": "reader-auth:rule-0582-course: the a response URL holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+        "path": "/course/localhost:8080",
+        "level": "informing"
+      },
+      {
+        "id": "secrets-in-response:reader-auth:rule-0583-profile-menu/url/PRIVATE_AUTH_GITHUB_ID:71",
+        "artefact": "secrets-in-response",
+        "scope": "reader-auth:rule-0583-profile-menu/url/PRIVATE_AUTH_GITHUB_ID",
+        "severity": "info",
+        "summary": "reader-auth:rule-0583-profile-menu: the a response URL holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+        "path": "/course/localhost:8080",
+        "level": "informing"
+      },
+      {
+        "id": "secrets-in-response:reader-auth:rule-0584-talk-slide-2/body/PRIVATE_AUTH_GITHUB_ID:72",
+        "artefact": "secrets-in-response",
+        "scope": "reader-auth:rule-0584-talk-slide-2/body/PRIVATE_AUTH_GITHUB_ID",
+        "severity": "info",
+        "summary": "reader-auth:rule-0584-talk-slide-2: the a response body holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+        "path": "/talk/localhost:8081/unit-1/topic-01/talk-01",
+        "level": "informing"
+      },
+      {
+        "id": "secrets-in-response:reader-auth:rule-0584-talk-slide-2/url/PRIVATE_AUTH_GITHUB_ID:73",
+        "artefact": "secrets-in-response",
+        "scope": "reader-auth:rule-0584-talk-slide-2/url/PRIVATE_AUTH_GITHUB_ID",
+        "severity": "info",
+        "summary": "reader-auth:rule-0584-talk-slide-2: the a response URL holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+        "path": "/talk/localhost:8081/unit-1/topic-01/talk-01",
+        "level": "informing"
+      },
+      {
+        "id": "secrets-in-response:reader-auth:rule-0585-course-dark/body/PRIVATE_AUTH_GITHUB_ID:74",
+        "artefact": "secrets-in-response",
+        "scope": "reader-auth:rule-0585-course-dark/body/PRIVATE_AUTH_GITHUB_ID",
+        "severity": "info",
+        "summary": "reader-auth:rule-0585-course-dark: the a response body holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+        "path": "/course/localhost:8081",
+        "level": "informing"
+      },
+      {
+        "id": "secrets-in-response:reader-auth:rule-0585-course-dark/url/PRIVATE_AUTH_GITHUB_ID:75",
+        "artefact": "secrets-in-response",
+        "scope": "reader-auth:rule-0585-course-dark/url/PRIVATE_AUTH_GITHUB_ID",
+        "severity": "info",
+        "summary": "reader-auth:rule-0585-course-dark: the a response URL holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+        "path": "/course/localhost:8081",
+        "level": "informing"
+      },
+      {
+        "id": "secrets-in-response:reader-auth:rule-0586-turned-away/url/PRIVATE_AUTH_GITHUB_ID:76",
+        "artefact": "secrets-in-response",
+        "scope": "reader-auth:rule-0586-turned-away/url/PRIVATE_AUTH_GITHUB_ID",
+        "severity": "info",
+        "summary": "reader-auth:rule-0586-turned-away: the a response URL holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+        "path": "/",
+        "level": "informing"
+      },
+      {
+        "id": "secrets-in-response:reader-auth:rule-0587-calendar-assessments/url/PRIVATE_AUTH_GITHUB_ID:77",
+        "artefact": "secrets-in-response",
+        "scope": "reader-auth:rule-0587-calendar-assessments/url/PRIVATE_AUTH_GITHUB_ID",
+        "severity": "info",
+        "summary": "reader-auth:rule-0587-calendar-assessments: the a response URL holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+        "path": "/course/localhost:8081",
+        "level": "informing"
+      },
+      {
+        "id": "secrets-in-response:reader-auth:rule-0592-stroke-saved/body/PRIVATE_AUTH_GITHUB_ID:78",
+        "artefact": "secrets-in-response",
+        "scope": "reader-auth:rule-0592-stroke-saved/body/PRIVATE_AUTH_GITHUB_ID",
+        "severity": "info",
+        "summary": "reader-auth:rule-0592-stroke-saved: the a response body holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+        "path": "/whiteboard/localhost:8081/unit-1/topic-01/whiteboard-01",
+        "level": "informing"
+      },
+      {
+        "id": "secrets-in-response:reader-auth:rule-0592-stroke-saved/url/PRIVATE_AUTH_GITHUB_ID:79",
+        "artefact": "secrets-in-response",
+        "scope": "reader-auth:rule-0592-stroke-saved/url/PRIVATE_AUTH_GITHUB_ID",
+        "severity": "info",
+        "summary": "reader-auth:rule-0592-stroke-saved: the a response URL holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+        "path": "/whiteboard/localhost:8081/unit-1/topic-01/whiteboard-01",
+        "level": "informing"
+      },
+      {
+        "id": "secrets-in-response:reader-auth:rule-0588-student-hidden/body/PRIVATE_AUTH_GITHUB_ID:80",
+        "artefact": "secrets-in-response",
+        "scope": "reader-auth:rule-0588-student-hidden/body/PRIVATE_AUTH_GITHUB_ID",
+        "severity": "info",
+        "summary": "reader-auth:rule-0588-student-hidden: the a response body holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+        "path": "/course/harness-rules",
+        "level": "informing"
+      },
+      {
+        "id": "secrets-in-response:reader-auth:rule-0582-course/body/PRIVATE_AUTH_GITHUB_ID:81",
+        "artefact": "secrets-in-response",
+        "scope": "reader-auth:rule-0582-course/body/PRIVATE_AUTH_GITHUB_ID",
+        "severity": "info",
+        "summary": "reader-auth:rule-0582-course: the a response body holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+        "path": "/course/localhost:8080",
+        "level": "informing"
+      },
+      {
+        "id": "secrets-in-response:reader-auth:rule-0583-profile-menu/body/PRIVATE_AUTH_GITHUB_ID:82",
+        "artefact": "secrets-in-response",
+        "scope": "reader-auth:rule-0583-profile-menu/body/PRIVATE_AUTH_GITHUB_ID",
+        "severity": "info",
+        "summary": "reader-auth:rule-0583-profile-menu: the a response body holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+        "path": "/course/localhost:8080",
+        "level": "informing"
+      },
+      {
+        "id": "secrets-in-response:reader-auth:rule-0586-turned-away/body/PRIVATE_AUTH_GITHUB_ID:83",
+        "artefact": "secrets-in-response",
+        "scope": "reader-auth:rule-0586-turned-away/body/PRIVATE_AUTH_GITHUB_ID",
+        "severity": "info",
+        "summary": "reader-auth:rule-0586-turned-away: the a response body holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+        "path": "/",
+        "level": "informing"
+      },
+      {
+        "id": "secrets-in-response:reader-auth:rule-0587-calendar-assessments/body/PRIVATE_AUTH_GITHUB_ID:84",
+        "artefact": "secrets-in-response",
+        "scope": "reader-auth:rule-0587-calendar-assessments/body/PRIVATE_AUTH_GITHUB_ID",
+        "severity": "info",
+        "summary": "reader-auth:rule-0587-calendar-assessments: the a response body holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+        "path": "/course/localhost:8081",
+        "level": "informing"
+      },
+      {
+        "id": "secrets-in-response:reader-auth:rule-0588-lecturer-locked/body/PRIVATE_AUTH_GITHUB_ID:85",
+        "artefact": "secrets-in-response",
+        "scope": "reader-auth:rule-0588-lecturer-locked/body/PRIVATE_AUTH_GITHUB_ID",
+        "severity": "info",
+        "summary": "reader-auth:rule-0588-lecturer-locked: the a response body holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+        "path": "/course/harness-rules",
+        "level": "informing"
+      }
+    ],
+    "matches": [
+      {
+        "hunk": {
+          "id": "realtime:reader-auth:rule-0592-stroke-saved/websocket:1",
+          "artefact": "realtime",
+          "scope": "reader-auth:rule-0592-stroke-saved/websocket",
+          "path": "/whiteboard/localhost:8081/unit-1/topic-01/whiteboard-01",
+          "severity": "info",
+          "summary": "reader-auth:rule-0592-stroke-saved: a reader page opened a Realtime websocket on b (1 socket(s), 6 data frame(s) sent); readers must be publish-only (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "runtime:runtime/summary:2",
+          "artefact": "runtime",
+          "scope": "runtime/summary",
+          "severity": "info",
+          "summary": "container posture collected for catalogue, live, reader, reader-auth, time on both sides (compose)",
+          "detail": "catalogue: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n           b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nlive: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n        b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader-auth: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n             b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\ntime: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter"
+        }
+      },
+      {
+        "hunk": {
+          "id": "startup:startup/summary:3",
+          "artefact": "startup",
+          "scope": "startup/summary",
+          "severity": "info",
+          "summary": "startup time collected on both sides (compose, 5 restart(s) per app)",
+          "detail": "catalogue: first healthy / 520 → 521 ms, ready 2420 → 2406 ms (median, a → b, n=5/5)\nlive: first healthy / 519 → 465 ms, ready 2401 → 2414 ms (median, a → b, n=5/5)\nreader: first healthy / 647 → 663 ms, ready 2385 → 2425 ms (median, a → b, n=5/5)\ntime: first healthy / 495 → 480 ms, ready 2354 → 2338 ms (median, a → b, n=5/5)"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-hardening:reader/healthcheck:4",
+          "artefact": "image-hardening",
+          "scope": "reader/healthcheck",
+          "severity": "info",
+          "summary": "reader: declares no HEALTHCHECK (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-hardening:reader/unrecorded-base:5",
+          "artefact": "image-hardening",
+          "scope": "reader/unrecorded-base",
+          "severity": "info",
+          "summary": "reader: records no base image (no org.opencontainers.image.base.name label), so a base that moved upstream reads as a rebuild no PR declared (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-hardening:catalogue/healthcheck:6",
+          "artefact": "image-hardening",
+          "scope": "catalogue/healthcheck",
+          "severity": "info",
+          "summary": "catalogue: declares no HEALTHCHECK (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-hardening:catalogue/unrecorded-base:7",
+          "artefact": "image-hardening",
+          "scope": "catalogue/unrecorded-base",
+          "severity": "info",
+          "summary": "catalogue: records no base image (no org.opencontainers.image.base.name label), so a base that moved upstream reads as a rebuild no PR declared (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-hardening:live/healthcheck:8",
+          "artefact": "image-hardening",
+          "scope": "live/healthcheck",
+          "severity": "info",
+          "summary": "live: declares no HEALTHCHECK (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-hardening:live/unrecorded-base:9",
+          "artefact": "image-hardening",
+          "scope": "live/unrecorded-base",
+          "severity": "info",
+          "summary": "live: records no base image (no org.opencontainers.image.base.name label), so a base that moved upstream reads as a rebuild no PR declared (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-hardening:time/healthcheck:10",
+          "artefact": "image-hardening",
+          "scope": "time/healthcheck",
+          "severity": "info",
+          "summary": "time: declares no HEALTHCHECK (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-hardening:time/unrecorded-base:11",
+          "artefact": "image-hardening",
+          "scope": "time/unrecorded-base",
+          "severity": "info",
+          "summary": "time: records no base image (no org.opencontainers.image.base.name label), so a base that moved upstream reads as a rebuild no PR declared (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "build-provenance:reader/slsa:12",
+          "artefact": "build-provenance",
+          "scope": "reader/slsa",
+          "severity": "info",
+          "summary": "reader: carries no SLSA provenance verified under the publishing identity on 15e3aa22476d (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "build-provenance:catalogue/slsa:13",
+          "artefact": "build-provenance",
+          "scope": "catalogue/slsa",
+          "severity": "info",
+          "summary": "catalogue: carries no SLSA provenance verified under the publishing identity on e9f2764654cb (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "build-provenance:live/slsa:14",
+          "artefact": "build-provenance",
+          "scope": "live/slsa",
+          "severity": "info",
+          "summary": "live: carries no SLSA provenance verified under the publishing identity on 52740e55cfa7 (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "build-provenance:time/slsa:15",
+          "artefact": "build-provenance",
+          "scope": "time/slsa",
+          "severity": "info",
+          "summary": "time: carries no SLSA provenance verified under the publishing identity on d0a9f4a2f462 (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vuln-ceiling:reader/GHSA-cg2g-xh64-v4q7:16",
+          "artefact": "vuln-ceiling",
+          "scope": "reader/GHSA-cg2g-xh64-v4q7",
+          "severity": "info",
+          "summary": "reader: GHSA-cg2g-xh64-v4q7 (Critical) in dompurify@3.4.16 has a fix: 3.4.17 (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vuln-ceiling:reader/GHSA-mrv2-3pqr-j5jr:17",
+          "artefact": "vuln-ceiling",
+          "scope": "reader/GHSA-mrv2-3pqr-j5jr",
+          "severity": "info",
+          "summary": "reader: GHSA-mrv2-3pqr-j5jr (High) in dompurify@3.4.16 has a fix: 3.4.17 (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vuln-ceiling:reader/GHSA-xjj6-f33q-929c:18",
+          "artefact": "vuln-ceiling",
+          "scope": "reader/GHSA-xjj6-f33q-929c",
+          "severity": "info",
+          "summary": "reader: GHSA-xjj6-f33q-929c (High) in undici@8.11.2 has a fix: 8.12.2 (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vuln-ceiling:catalogue/GHSA-cg2g-xh64-v4q7:19",
+          "artefact": "vuln-ceiling",
+          "scope": "catalogue/GHSA-cg2g-xh64-v4q7",
+          "severity": "info",
+          "summary": "catalogue: GHSA-cg2g-xh64-v4q7 (Critical) in dompurify@3.4.16 has a fix: 3.4.17 (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vuln-ceiling:catalogue/GHSA-mrv2-3pqr-j5jr:20",
+          "artefact": "vuln-ceiling",
+          "scope": "catalogue/GHSA-mrv2-3pqr-j5jr",
+          "severity": "info",
+          "summary": "catalogue: GHSA-mrv2-3pqr-j5jr (High) in dompurify@3.4.16 has a fix: 3.4.17 (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vuln-ceiling:catalogue/GHSA-xjj6-f33q-929c:21",
+          "artefact": "vuln-ceiling",
+          "scope": "catalogue/GHSA-xjj6-f33q-929c",
+          "severity": "info",
+          "summary": "catalogue: GHSA-xjj6-f33q-929c (High) in undici@8.11.2 has a fix: 8.12.2 (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vuln-ceiling:live/GHSA-cg2g-xh64-v4q7:22",
+          "artefact": "vuln-ceiling",
+          "scope": "live/GHSA-cg2g-xh64-v4q7",
+          "severity": "info",
+          "summary": "live: GHSA-cg2g-xh64-v4q7 (Critical) in dompurify@3.4.16 has a fix: 3.4.17 (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vuln-ceiling:live/GHSA-mrv2-3pqr-j5jr:23",
+          "artefact": "vuln-ceiling",
+          "scope": "live/GHSA-mrv2-3pqr-j5jr",
+          "severity": "info",
+          "summary": "live: GHSA-mrv2-3pqr-j5jr (High) in dompurify@3.4.16 has a fix: 3.4.17 (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vuln-ceiling:live/GHSA-xjj6-f33q-929c:24",
+          "artefact": "vuln-ceiling",
+          "scope": "live/GHSA-xjj6-f33q-929c",
+          "severity": "info",
+          "summary": "live: GHSA-xjj6-f33q-929c (High) in undici@8.11.2 has a fix: 8.12.2 (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vuln-ceiling:time/GHSA-cg2g-xh64-v4q7:25",
+          "artefact": "vuln-ceiling",
+          "scope": "time/GHSA-cg2g-xh64-v4q7",
+          "severity": "info",
+          "summary": "time: GHSA-cg2g-xh64-v4q7 (Critical) in dompurify@3.4.16 has a fix: 3.4.17 (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vuln-ceiling:time/GHSA-mrv2-3pqr-j5jr:26",
+          "artefact": "vuln-ceiling",
+          "scope": "time/GHSA-mrv2-3pqr-j5jr",
+          "severity": "info",
+          "summary": "time: GHSA-mrv2-3pqr-j5jr (High) in dompurify@3.4.16 has a fix: 3.4.17 (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vuln-ceiling:time/GHSA-xjj6-f33q-929c:27",
+          "artefact": "vuln-ceiling",
+          "scope": "time/GHSA-xjj6-f33q-929c",
+          "severity": "info",
+          "summary": "time: GHSA-xjj6-f33q-929c (High) in undici@8.11.2 has a fix: 8.12.2 (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET_/_app/immutable/chunks/__hash__.js:28",
+          "artefact": "replay",
+          "scope": "replay:topic-02 GET /_app/immutable/chunks/{{hash}}.js",
+          "path": "/topic/localhost:8080/unit-1/topic-02",
+          "severity": "info",
+          "summary": "replay:topic-02: GET /_app/immutable/chunks/{{hash}}.js requested 41× on a, 42× on b",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET___course__/tutors.json:29",
+          "artefact": "replay",
+          "scope": "replay:topic-02 GET {{course}}/tutors.json",
+          "path": "/topic/localhost:8080/unit-1/topic-02",
+          "severity": "info",
+          "summary": "replay:topic-02: new request on b: GET {{course}}/tutors.json",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET_/_app/immutable/assets/1.__hash__.css:30",
+          "artefact": "replay",
+          "scope": "replay:topic-02 GET /_app/immutable/assets/1.{{hash}}.css",
+          "path": "/topic/localhost:8080/unit-1/topic-02",
+          "severity": "info",
+          "summary": "replay:topic-02: new request on b: GET /_app/immutable/assets/1.{{hash}}.css",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET_/_app/immutable/nodes/1.__hash__.js:31",
+          "artefact": "replay",
+          "scope": "replay:topic-02 GET /_app/immutable/nodes/1.{{hash}}.js",
+          "path": "/topic/localhost:8080/unit-1/topic-02",
+          "severity": "info",
+          "summary": "replay:topic-02: new request on b: GET /_app/immutable/nodes/1.{{hash}}.js",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET_/topic/localhost:8080/unit-1/topic-02/__data.json_x-sveltekit-invalidated_100:32",
+          "artefact": "replay",
+          "scope": "replay:topic-02 GET /topic/localhost:8080/unit-1/topic-02/__data.json?x-sveltekit-invalidated=100",
+          "path": "/topic/localhost:8080/unit-1/topic-02",
+          "severity": "info",
+          "summary": "replay:topic-02: new request on b: GET /topic/localhost:8080/unit-1/topic-02/__data.json?x-sveltekit-invalidated=100",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET___course__/tutors.json:33",
+          "artefact": "replay",
+          "scope": "replay:talk-01 GET {{course}}/tutors.json",
+          "path": "/talk/localhost:8080/unit-1/topic-01/talk-01",
+          "severity": "info",
+          "summary": "replay:talk-01: request no longer made on b: GET {{course}}/tutors.json",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET_/_app/immutable/assets/1.__hash__.css:34",
+          "artefact": "replay",
+          "scope": "replay:talk-01 GET /_app/immutable/assets/1.{{hash}}.css",
+          "path": "/talk/localhost:8080/unit-1/topic-01/talk-01",
+          "severity": "info",
+          "summary": "replay:talk-01: request no longer made on b: GET /_app/immutable/assets/1.{{hash}}.css",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET_/_app/immutable/chunks/__hash__.js:35",
+          "artefact": "replay",
+          "scope": "replay:talk-01 GET /_app/immutable/chunks/{{hash}}.js",
+          "path": "/talk/localhost:8080/unit-1/topic-01/talk-01",
+          "severity": "info",
+          "summary": "replay:talk-01: GET /_app/immutable/chunks/{{hash}}.js requested 40× on a, 35× on b",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET_/_app/immutable/nodes/1.__hash__.js:36",
+          "artefact": "replay",
+          "scope": "replay:talk-01 GET /_app/immutable/nodes/1.{{hash}}.js",
+          "path": "/talk/localhost:8080/unit-1/topic-01/talk-01",
+          "severity": "info",
+          "summary": "replay:talk-01: request no longer made on b: GET /_app/immutable/nodes/1.{{hash}}.js",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET_/talk/localhost:8080/unit-1/topic-01/talk-01/__data.json_x-sveltekit-invalidated_100:37",
+          "artefact": "replay",
+          "scope": "replay:talk-01 GET /talk/localhost:8080/unit-1/topic-01/talk-01/__data.json?x-sveltekit-invalidated=100",
+          "path": "/talk/localhost:8080/unit-1/topic-01/talk-01",
+          "severity": "info",
+          "summary": "replay:talk-01: request no longer made on b: GET /talk/localhost:8080/unit-1/topic-01/talk-01/__data.json?x-sveltekit-invalidated=100",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET_/topic/localhost:8080/unit-1/topic-02/__data.json_x-sveltekit-invalidated_100:38",
+          "artefact": "replay",
+          "scope": "replay:talk-01 GET /topic/localhost:8080/unit-1/topic-02/__data.json?x-sveltekit-invalidated=100",
+          "path": "/talk/localhost:8080/unit-1/topic-01/talk-01",
+          "severity": "info",
+          "summary": "replay:talk-01: request no longer made on b: GET /topic/localhost:8080/unit-1/topic-02/__data.json?x-sveltekit-invalidated=100",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET___course__/tutors.json:39",
+          "artefact": "replay",
+          "scope": "replay:note-01 GET {{course}}/tutors.json",
+          "path": "/note/localhost:8080/unit-1/topic-01/note-01",
+          "severity": "info",
+          "summary": "replay:note-01: GET {{course}}/tutors.json requested 1× on a, 2× on b",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET_/_app/immutable/assets/1.__hash__.css:40",
+          "artefact": "replay",
+          "scope": "replay:note-01 GET /_app/immutable/assets/1.{{hash}}.css",
+          "path": "/note/localhost:8080/unit-1/topic-01/note-01",
+          "severity": "info",
+          "summary": "replay:note-01: GET /_app/immutable/assets/1.{{hash}}.css requested 1× on a, 2× on b",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET_/_app/immutable/chunks/__hash__.js:41",
+          "artefact": "replay",
+          "scope": "replay:note-01 GET /_app/immutable/chunks/{{hash}}.js",
+          "path": "/note/localhost:8080/unit-1/topic-01/note-01",
+          "severity": "info",
+          "summary": "replay:note-01: GET /_app/immutable/chunks/{{hash}}.js requested 38× on a, 39× on b",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET_/_app/immutable/nodes/1.__hash__.js:42",
+          "artefact": "replay",
+          "scope": "replay:note-01 GET /_app/immutable/nodes/1.{{hash}}.js",
+          "path": "/note/localhost:8080/unit-1/topic-01/note-01",
+          "severity": "info",
+          "summary": "replay:note-01: GET /_app/immutable/nodes/1.{{hash}}.js requested 1× on a, 2× on b",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET_/talk/localhost:8080/unit-1/topic-01/talk-01/__data.json_x-sveltekit-invalidated_100:43",
+          "artefact": "replay",
+          "scope": "replay:note-01 GET /talk/localhost:8080/unit-1/topic-01/talk-01/__data.json?x-sveltekit-invalidated=100",
+          "path": "/note/localhost:8080/unit-1/topic-01/note-01",
+          "severity": "info",
+          "summary": "replay:note-01: new request on b: GET /talk/localhost:8080/unit-1/topic-01/talk-01/__data.json?x-sveltekit-invalidated=100",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET_/_app/immutable/chunks/__hash__.js:44",
+          "artefact": "replay",
+          "scope": "replay:lab-02-step-03 GET /_app/immutable/chunks/{{hash}}.js",
+          "path": "/lab/localhost:8080/unit-1/topic-02/book-lab-01/Step-03",
+          "severity": "info",
+          "summary": "replay:lab-02-step-03: GET /_app/immutable/chunks/{{hash}}.js requested 37× on a, 38× on b",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET___course__/tutors.json:45",
+          "artefact": "replay",
+          "scope": "replay:lab-02-step-03 GET {{course}}/tutors.json",
+          "path": "/lab/localhost:8080/unit-1/topic-02/book-lab-01/Step-03",
+          "severity": "info",
+          "summary": "replay:lab-02-step-03: new request on b: GET {{course}}/tutors.json",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET_/_app/immutable/assets/1.__hash__.css:46",
+          "artefact": "replay",
+          "scope": "replay:lab-02-step-03 GET /_app/immutable/assets/1.{{hash}}.css",
+          "path": "/lab/localhost:8080/unit-1/topic-02/book-lab-01/Step-03",
+          "severity": "info",
+          "summary": "replay:lab-02-step-03: new request on b: GET /_app/immutable/assets/1.{{hash}}.css",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET_/_app/immutable/nodes/1.__hash__.js:47",
+          "artefact": "replay",
+          "scope": "replay:lab-02-step-03 GET /_app/immutable/nodes/1.{{hash}}.js",
+          "path": "/lab/localhost:8080/unit-1/topic-02/book-lab-01/Step-03",
+          "severity": "info",
+          "summary": "replay:lab-02-step-03: new request on b: GET /_app/immutable/nodes/1.{{hash}}.js",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET_/lab/localhost:8080/unit-1/topic-02/book-lab-01/Step-03/__data.json_x-sveltekit-invalidated_100:48",
+          "artefact": "replay",
+          "scope": "replay:lab-02-step-03 GET /lab/localhost:8080/unit-1/topic-02/book-lab-01/Step-03/__data.json?x-sveltekit-invalidated=100",
+          "path": "/lab/localhost:8080/unit-1/topic-02/book-lab-01/Step-03",
+          "severity": "info",
+          "summary": "replay:lab-02-step-03: new request on b: GET /lab/localhost:8080/unit-1/topic-02/book-lab-01/Step-03/__data.json?x-sveltekit-invalidated=100",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET___course__/tutors.json:49",
+          "artefact": "replay",
+          "scope": "replay:missing-topic GET {{course}}/tutors.json",
+          "path": "/topic/localhost:8080/unit-1/no-such-topic",
+          "severity": "info",
+          "summary": "replay:missing-topic: GET {{course}}/tutors.json requested 2× on a, 1× on b",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET_/_app/immutable/assets/1.__hash__.css:50",
+          "artefact": "replay",
+          "scope": "replay:missing-topic GET /_app/immutable/assets/1.{{hash}}.css",
+          "path": "/topic/localhost:8080/unit-1/no-such-topic",
+          "severity": "info",
+          "summary": "replay:missing-topic: GET /_app/immutable/assets/1.{{hash}}.css requested 2× on a, 1× on b",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET_/_app/immutable/chunks/__hash__.js:51",
+          "artefact": "replay",
+          "scope": "replay:missing-topic GET /_app/immutable/chunks/{{hash}}.js",
+          "path": "/topic/localhost:8080/unit-1/no-such-topic",
+          "severity": "info",
+          "summary": "replay:missing-topic: GET /_app/immutable/chunks/{{hash}}.js requested 43× on a, 42× on b",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET_/_app/immutable/nodes/1.__hash__.js:52",
+          "artefact": "replay",
+          "scope": "replay:missing-topic GET /_app/immutable/nodes/1.{{hash}}.js",
+          "path": "/topic/localhost:8080/unit-1/no-such-topic",
+          "severity": "info",
+          "summary": "replay:missing-topic: GET /_app/immutable/nodes/1.{{hash}}.js requested 2× on a, 1× on b",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "replay:GET_/lab/localhost:8080/unit-1/topic-02/book-lab-01/Step-03/__data.json_x-sveltekit-invalidated_100:53",
+          "artefact": "replay",
+          "scope": "replay:missing-topic GET /lab/localhost:8080/unit-1/topic-02/book-lab-01/Step-03/__data.json?x-sveltekit-invalidated=100",
+          "path": "/topic/localhost:8080/unit-1/no-such-topic",
+          "severity": "info",
+          "summary": "replay:missing-topic: request no longer made on b: GET /lab/localhost:8080/unit-1/topic-02/book-lab-01/Step-03/__data.json?x-sveltekit-invalidated=100",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:reader-availability:54",
+          "artefact": "slo",
+          "scope": "reader-availability",
+          "severity": "info",
+          "summary": "reader-availability: 100.0% of 62 reader requests not 5xx on b (its /metrics across the journeys), objective 99.90% (harness floor): holds"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:reader-availability/load:55",
+          "artefact": "slo",
+          "scope": "reader-availability/load",
+          "severity": "info",
+          "summary": "reader-availability: 100.0% of 601 reader requests not 5xx on b (the k6 load leg), objective 99.90% (harness floor): holds"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:reader-latency:56",
+          "artefact": "slo",
+          "scope": "reader-latency",
+          "severity": "info",
+          "summary": "reader-latency: 100.0% of 62 reader requests under 1s on b (its /metrics across the journeys), objective 99.0% (harness floor): holds"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:reader-latency/load:57",
+          "artefact": "slo",
+          "scope": "reader-latency/load",
+          "severity": "info",
+          "summary": "reader-latency: 100.0% of 601 reader requests under 1s on b (the k6 load leg), objective 99.0% (harness floor): holds"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:catalogue-availability/not-evaluated:58",
+          "artefact": "slo",
+          "scope": "catalogue-availability/not-evaluated",
+          "severity": "info",
+          "summary": "catalogue-availability: not evaluated on b: 5 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:catalogue-latency/not-evaluated:59",
+          "artefact": "slo",
+          "scope": "catalogue-latency/not-evaluated",
+          "severity": "info",
+          "summary": "catalogue-latency: not evaluated on b: 5 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:live-availability/not-evaluated:60",
+          "artefact": "slo",
+          "scope": "live-availability/not-evaluated",
+          "severity": "info",
+          "summary": "live-availability: not evaluated on b: 5 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:live-latency/not-evaluated:61",
+          "artefact": "slo",
+          "scope": "live-latency/not-evaluated",
+          "severity": "info",
+          "summary": "live-latency: not evaluated on b: 5 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:time-availability/not-evaluated:62",
+          "artefact": "slo",
+          "scope": "time-availability/not-evaluated",
+          "severity": "info",
+          "summary": "time-availability: not evaluated on b: its /metrics across the journeys carries no availability SLI for time"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:time-latency/not-evaluated:63",
+          "artefact": "slo",
+          "scope": "time-latency/not-evaluated",
+          "severity": "info",
+          "summary": "time-latency: not evaluated on b: its /metrics across the journeys carries no latency SLI for time"
+        }
+      },
+      {
+        "hunk": {
+          "id": "secrets-in-response:reader-auth:course/body/PRIVATE_AUTH_GITHUB_ID:64",
+          "artefact": "secrets-in-response",
+          "scope": "reader-auth:course/body/PRIVATE_AUTH_GITHUB_ID",
+          "severity": "info",
+          "summary": "reader-auth:course: the a response body holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+          "path": "/course/localhost:8080",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "secrets-in-response:reader-auth:course/url/PRIVATE_AUTH_GITHUB_ID:65",
+          "artefact": "secrets-in-response",
+          "scope": "reader-auth:course/url/PRIVATE_AUTH_GITHUB_ID",
+          "severity": "info",
+          "summary": "reader-auth:course: the a response URL holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+          "path": "/course/localhost:8080",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "secrets-in-response:reader-auth:rule-0588-lecturer-locked/url/PRIVATE_AUTH_GITHUB_ID:66",
+          "artefact": "secrets-in-response",
+          "scope": "reader-auth:rule-0588-lecturer-locked/url/PRIVATE_AUTH_GITHUB_ID",
+          "severity": "info",
+          "summary": "reader-auth:rule-0588-lecturer-locked: the a response URL holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+          "path": "/course/harness-rules",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "secrets-in-response:reader-auth:rule-0588-student-hidden/url/PRIVATE_AUTH_GITHUB_ID:67",
+          "artefact": "secrets-in-response",
+          "scope": "reader-auth:rule-0588-student-hidden/url/PRIVATE_AUTH_GITHUB_ID",
+          "severity": "info",
+          "summary": "reader-auth:rule-0588-student-hidden: the a response URL holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+          "path": "/course/harness-rules",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "secrets-in-response:live-auth:rule-0589-courses/body/PRIVATE_AUTH_GITHUB_ID:68",
+          "artefact": "secrets-in-response",
+          "scope": "live-auth:rule-0589-courses/body/PRIVATE_AUTH_GITHUB_ID",
+          "severity": "info",
+          "summary": "live-auth:rule-0589-courses: the a response body holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+          "path": "/",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "secrets-in-response:live-auth:rule-0589-courses/url/PRIVATE_AUTH_GITHUB_ID:69",
+          "artefact": "secrets-in-response",
+          "scope": "live-auth:rule-0589-courses/url/PRIVATE_AUTH_GITHUB_ID",
+          "severity": "info",
+          "summary": "live-auth:rule-0589-courses: the a response URL holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+          "path": "/",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "secrets-in-response:reader-auth:rule-0582-course/url/PRIVATE_AUTH_GITHUB_ID:70",
+          "artefact": "secrets-in-response",
+          "scope": "reader-auth:rule-0582-course/url/PRIVATE_AUTH_GITHUB_ID",
+          "severity": "info",
+          "summary": "reader-auth:rule-0582-course: the a response URL holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+          "path": "/course/localhost:8080",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "secrets-in-response:reader-auth:rule-0583-profile-menu/url/PRIVATE_AUTH_GITHUB_ID:71",
+          "artefact": "secrets-in-response",
+          "scope": "reader-auth:rule-0583-profile-menu/url/PRIVATE_AUTH_GITHUB_ID",
+          "severity": "info",
+          "summary": "reader-auth:rule-0583-profile-menu: the a response URL holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+          "path": "/course/localhost:8080",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "secrets-in-response:reader-auth:rule-0584-talk-slide-2/body/PRIVATE_AUTH_GITHUB_ID:72",
+          "artefact": "secrets-in-response",
+          "scope": "reader-auth:rule-0584-talk-slide-2/body/PRIVATE_AUTH_GITHUB_ID",
+          "severity": "info",
+          "summary": "reader-auth:rule-0584-talk-slide-2: the a response body holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+          "path": "/talk/localhost:8081/unit-1/topic-01/talk-01",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "secrets-in-response:reader-auth:rule-0584-talk-slide-2/url/PRIVATE_AUTH_GITHUB_ID:73",
+          "artefact": "secrets-in-response",
+          "scope": "reader-auth:rule-0584-talk-slide-2/url/PRIVATE_AUTH_GITHUB_ID",
+          "severity": "info",
+          "summary": "reader-auth:rule-0584-talk-slide-2: the a response URL holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+          "path": "/talk/localhost:8081/unit-1/topic-01/talk-01",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "secrets-in-response:reader-auth:rule-0585-course-dark/body/PRIVATE_AUTH_GITHUB_ID:74",
+          "artefact": "secrets-in-response",
+          "scope": "reader-auth:rule-0585-course-dark/body/PRIVATE_AUTH_GITHUB_ID",
+          "severity": "info",
+          "summary": "reader-auth:rule-0585-course-dark: the a response body holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+          "path": "/course/localhost:8081",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "secrets-in-response:reader-auth:rule-0585-course-dark/url/PRIVATE_AUTH_GITHUB_ID:75",
+          "artefact": "secrets-in-response",
+          "scope": "reader-auth:rule-0585-course-dark/url/PRIVATE_AUTH_GITHUB_ID",
+          "severity": "info",
+          "summary": "reader-auth:rule-0585-course-dark: the a response URL holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+          "path": "/course/localhost:8081",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "secrets-in-response:reader-auth:rule-0586-turned-away/url/PRIVATE_AUTH_GITHUB_ID:76",
+          "artefact": "secrets-in-response",
+          "scope": "reader-auth:rule-0586-turned-away/url/PRIVATE_AUTH_GITHUB_ID",
+          "severity": "info",
+          "summary": "reader-auth:rule-0586-turned-away: the a response URL holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+          "path": "/",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "secrets-in-response:reader-auth:rule-0587-calendar-assessments/url/PRIVATE_AUTH_GITHUB_ID:77",
+          "artefact": "secrets-in-response",
+          "scope": "reader-auth:rule-0587-calendar-assessments/url/PRIVATE_AUTH_GITHUB_ID",
+          "severity": "info",
+          "summary": "reader-auth:rule-0587-calendar-assessments: the a response URL holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+          "path": "/course/localhost:8081",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "secrets-in-response:reader-auth:rule-0592-stroke-saved/body/PRIVATE_AUTH_GITHUB_ID:78",
+          "artefact": "secrets-in-response",
+          "scope": "reader-auth:rule-0592-stroke-saved/body/PRIVATE_AUTH_GITHUB_ID",
+          "severity": "info",
+          "summary": "reader-auth:rule-0592-stroke-saved: the a response body holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+          "path": "/whiteboard/localhost:8081/unit-1/topic-01/whiteboard-01",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "secrets-in-response:reader-auth:rule-0592-stroke-saved/url/PRIVATE_AUTH_GITHUB_ID:79",
+          "artefact": "secrets-in-response",
+          "scope": "reader-auth:rule-0592-stroke-saved/url/PRIVATE_AUTH_GITHUB_ID",
+          "severity": "info",
+          "summary": "reader-auth:rule-0592-stroke-saved: the a response URL holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+          "path": "/whiteboard/localhost:8081/unit-1/topic-01/whiteboard-01",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "secrets-in-response:reader-auth:rule-0588-student-hidden/body/PRIVATE_AUTH_GITHUB_ID:80",
+          "artefact": "secrets-in-response",
+          "scope": "reader-auth:rule-0588-student-hidden/body/PRIVATE_AUTH_GITHUB_ID",
+          "severity": "info",
+          "summary": "reader-auth:rule-0588-student-hidden: the a response body holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+          "path": "/course/harness-rules",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "secrets-in-response:reader-auth:rule-0582-course/body/PRIVATE_AUTH_GITHUB_ID:81",
+          "artefact": "secrets-in-response",
+          "scope": "reader-auth:rule-0582-course/body/PRIVATE_AUTH_GITHUB_ID",
+          "severity": "info",
+          "summary": "reader-auth:rule-0582-course: the a response body holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+          "path": "/course/localhost:8080",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "secrets-in-response:reader-auth:rule-0583-profile-menu/body/PRIVATE_AUTH_GITHUB_ID:82",
+          "artefact": "secrets-in-response",
+          "scope": "reader-auth:rule-0583-profile-menu/body/PRIVATE_AUTH_GITHUB_ID",
+          "severity": "info",
+          "summary": "reader-auth:rule-0583-profile-menu: the a response body holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+          "path": "/course/localhost:8080",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "secrets-in-response:reader-auth:rule-0586-turned-away/body/PRIVATE_AUTH_GITHUB_ID:83",
+          "artefact": "secrets-in-response",
+          "scope": "reader-auth:rule-0586-turned-away/body/PRIVATE_AUTH_GITHUB_ID",
+          "severity": "info",
+          "summary": "reader-auth:rule-0586-turned-away: the a response body holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+          "path": "/",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "secrets-in-response:reader-auth:rule-0587-calendar-assessments/body/PRIVATE_AUTH_GITHUB_ID:84",
+          "artefact": "secrets-in-response",
+          "scope": "reader-auth:rule-0587-calendar-assessments/body/PRIVATE_AUTH_GITHUB_ID",
+          "severity": "info",
+          "summary": "reader-auth:rule-0587-calendar-assessments: the a response body holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+          "path": "/course/localhost:8081",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "secrets-in-response:reader-auth:rule-0588-lecturer-locked/body/PRIVATE_AUTH_GITHUB_ID:85",
+          "artefact": "secrets-in-response",
+          "scope": "reader-auth:rule-0588-lecturer-locked/body/PRIVATE_AUTH_GITHUB_ID",
+          "severity": "info",
+          "summary": "reader-auth:rule-0588-lecturer-locked: the a response body holds PRIVATE_AUTH_GITHUB_ID: the value of PRIVATE_AUTH_GITHUB_ID, which the stack sets as a server-only secret (production too)",
+          "path": "/course/harness-rules",
+          "level": "informing"
+        }
+      }
+    ],
+    "unclaimed": [],
+    "staleClaims": [],
+    "broadUnapproved": []
+  },
+  "masksApplied": {
+    "response-date": 272,
+    "request-id": 272,
+    "etag": 272,
+    "metrics-process": 599,
+    "metrics-timing-histograms": 12,
+    "third-party-requests": 6818,
+    "persistence-stub-requests": 2600,
+    "realtime-rest-fallback-warning": 0,
+    "oauth-callback-state": 110,
+    "media-range-status": 42,
+    "chromium-compute-pressure-policy": 1,
+    "course-media-http2-reset": 0,
+    "hashed-assets": 20121,
+    "footer-tutors-version": 840,
+    "transport-length": 272,
+    "transport-connection": 272,
+    "transport-encoding": 0,
+    "transport-transfer": 0,
+    "transport-keepalive": 272
+  },
+  "load": {
+    "a": {
+      "requests": 601,
+      "failed": 0,
+      "serverErrors": 0,
+      "p50": 1.54,
+      "p95": 2.56,
+      "p99": 3.49,
+      "rate": 20,
+      "duration": "30s"
+    },
+    "b": {
+      "requests": 601,
+      "failed": 0,
+      "serverErrors": 0,
+      "p50": 1.43,
+      "p95": 2.5,
+      "p99": 3.93,
+      "rate": 20,
+      "duration": "30s"
+    }
+  },
+  "imageArtefacts": {
+    "a": {
+      "reader": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 309.2 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "134 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "100 advisories, db built 2026-10-26T06:38:44Z schema v6.1.10"
+        }
+      },
+      "catalogue": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 274.2 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "134 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "100 advisories, db built 2026-10-26T06:38:44Z schema v6.1.10"
+        }
+      },
+      "live": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 274.5 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "134 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "100 advisories, db built 2026-10-26T06:38:44Z schema v6.1.10"
+        }
+      },
+      "time": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 285.2 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "143 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "100 advisories, db built 2026-10-26T06:38:44Z schema v6.1.10"
+        }
+      }
+    },
+    "b": {
+      "reader": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 309.2 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "134 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "100 advisories, db built 2026-10-26T06:38:44Z schema v6.1.10"
+        }
+      },
+      "catalogue": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 274.2 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "134 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "100 advisories, db built 2026-10-26T06:38:44Z schema v6.1.10"
+        }
+      },
+      "live": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 274.5 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "134 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "100 advisories, db built 2026-10-26T06:38:44Z schema v6.1.10"
+        }
+      },
+      "time": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 285.2 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "143 distinct package(s)"
+        },
+        "vulns": {
+          "collected": true,
+          "source": "grype 0.119.0",
+          "summary": "100 advisories, db built 2026-10-26T06:38:44Z schema v6.1.10"
+        }
+      }
+    }
+  },
+  "clock": {
+    "a": {
+      "verdict": "honours",
+      "samples": [
+        {
+          "where": "rule-0586-private-course/reader-auth:rule-0586-turned-away aria",
+          "text": "2026-09-16 09:05:00",
+          "clock": "frozen"
+        },
+        {
+          "where": "rule-0586-private-course/reader-auth:rule-0586-turned-away-again aria",
+          "text": "2026-09-16 09:05:00",
+          "clock": "frozen"
+        },
+        {
+          "where": "rule-0586-private-course/reader-auth:rule-0586-turned-away aria",
+          "text": "2026-09-16 09:05:00",
+          "clock": "frozen"
+        },
+        {
+          "where": "rule-0586-private-course/reader-auth:rule-0586-turned-away-again aria",
+          "text": "2026-09-16 09:05:00",
+          "clock": "frozen"
+        },
+        {
+          "where": "rule-0586-private-course/reader-auth:rule-0586-turned-away aria",
+          "text": "2026-09-16 09:05:00",
+          "clock": "frozen"
+        }
+      ]
+    },
+    "b": {
+      "verdict": "honours",
+      "samples": [
+        {
+          "where": "rule-0586-private-course/reader-auth:rule-0586-turned-away aria",
+          "text": "2026-09-16 09:05:00",
+          "clock": "frozen"
+        },
+        {
+          "where": "rule-0586-private-course/reader-auth:rule-0586-turned-away-again aria",
+          "text": "2026-09-16 09:05:00",
+          "clock": "frozen"
+        },
+        {
+          "where": "rule-0586-private-course/reader-auth:rule-0586-turned-away aria",
+          "text": "2026-09-16 09:05:00",
+          "clock": "frozen"
+        },
+        {
+          "where": "rule-0586-private-course/reader-auth:rule-0586-turned-away-again aria",
+          "text": "2026-09-16 09:05:00",
+          "clock": "frozen"
+        },
+        {
+          "where": "rule-0586-private-course/reader-auth:rule-0586-turned-away aria",
+          "text": "2026-09-16 09:05:00",
+          "clock": "frozen"
+        }
+      ]
+    }
+  },
+  "levels": {
+    "dom": {
+      "level": "blocking"
+    },
+    "screenshot": {
+      "level": "blocking"
+    },
+    "network": {
+      "level": "blocking"
+    },
+    "console": {
+      "level": "blocking"
+    },
+    "headers": {
+      "level": "blocking"
+    },
+    "axe": {
+      "level": "blocking"
+    },
+    "focus": {
+      "level": "blocking"
+    },
+    "metrics": {
+      "level": "blocking"
+    },
+    "logs": {
+      "level": "blocking"
+    },
+    "timing": {
+      "level": "informing"
+    },
+    "persistence": {
+      "level": "blocking"
+    },
+    "bus": {
+      "level": "blocking"
+    },
+    "migration": {
+      "level": "blocking"
+    },
+    "upgrade": {
+      "level": "blocking"
+    },
+    "image-manifest": {
+      "level": "blocking"
+    },
+    "sbom": {
+      "level": "blocking"
+    },
+    "vulns": {
+      "level": "blocking"
+    },
+    "runtime": {
+      "level": "blocking"
+    },
+    "startup": {
+      "level": "blocking"
+    },
+    "image-hardening": {
+      "level": "informing"
+    },
+    "build-provenance": {
+      "level": "informing"
+    },
+    "vuln-ceiling": {
+      "level": "informing"
+    },
+    "timing-tolerance": {
+      "level": "informing"
+    },
+    "asset-graph": {
+      "level": "informing"
+    },
+    "replay": {
+      "level": "informing"
+    },
+    "slo": {
+      "level": "informing"
+    },
+    "realtime": {
+      "level": "informing"
+    },
+    "secrets-in-response": {
+      "level": "informing"
+    },
+    "headers-policy": {
+      "level": "informing"
+    }
+  },
+  "timingControl": {
+    "journeys": [
+      {
+        "journey": "anonymous-student-reads-course",
+        "a": [
+          11533,
+          4915,
+          4945,
+          5063,
+          4855
+        ],
+        "b": [
+          11469,
+          4878,
+          4868,
+          4702,
+          5211
+        ],
+        "limits": {
+          "n": 5,
+          "centre": 6262.2,
+          "mrBar": 1743.5,
+          "ucl": 10899.91,
+          "lcl": 1624.49,
+          "provisional": true
+        },
+        "above": 1,
+        "below": 0
+      },
+      {
+        "journey": "anonymous-student-searches",
+        "a": [
+          5953,
+          2725,
+          2719,
+          2766,
+          2720
+        ],
+        "b": [
+          5465,
+          2773,
+          2856,
+          2704,
+          2696
+        ],
+        "limits": {
+          "n": 5,
+          "centre": 3376.6,
+          "mrBar": 831.75,
+          "ucl": 5589.06,
+          "lcl": 1164.15,
+          "provisional": true
+        },
+        "above": 0,
+        "below": 0
+      },
+      {
+        "journey": "catalogue-loads",
+        "a": [
+          2655,
+          1433,
+          1595,
+          1408,
+          1448
+        ],
+        "b": [
+          2706,
+          1414,
+          1443,
+          1593,
+          1477
+        ],
+        "limits": {
+          "n": 5,
+          "centre": 1707.8,
+          "mrBar": 402.75,
+          "ucl": 2779.12,
+          "lcl": 636.48,
+          "provisional": true
+        },
+        "above": 0,
+        "below": 0
+      },
+      {
+        "journey": "live-loads",
+        "a": [
+          3411,
+          1461,
+          1366,
+          1692,
+          1646
+        ],
+        "b": [
+          2702,
+          1506,
+          1594,
+          1521,
+          1402
+        ],
+        "limits": {
+          "n": 5,
+          "centre": 1915.2,
+          "mrBar": 604.25,
+          "ucl": 3522.51,
+          "lcl": 307.9,
+          "provisional": true
+        },
+        "above": 0,
+        "below": 0
+      },
+      {
+        "journey": "reference-course-reads",
+        "a": [
+          14351,
+          7525,
+          6918,
+          7225,
+          7652
+        ],
+        "b": [
+          13342,
+          7135,
+          7063,
+          6688,
+          7345
+        ],
+        "limits": {
+          "n": 5,
+          "centre": 8734.2,
+          "mrBar": 2041.75,
+          "ucl": 14165.26,
+          "lcl": 3303.15,
+          "provisional": true
+        },
+        "above": 0,
+        "below": 0
+      },
+      {
+        "journey": "replay-course-urls",
+        "a": [
+          7880
+        ],
+        "b": [
+          23397
+        ],
+        "above": 0,
+        "below": 0
+      },
+      {
+        "journey": "rule-0582-signed-in-lab",
+        "a": [
+          9792,
+          4856,
+          4850,
+          4741,
+          4680
+        ],
+        "b": [
+          9638,
+          4813,
+          4844,
+          4651,
+          4695
+        ],
+        "limits": {
+          "n": 5,
+          "centre": 5783.8,
+          "mrBar": 1278,
+          "ucl": 9183.28,
+          "lcl": 2384.32,
+          "provisional": true
+        },
+        "above": 1,
+        "below": 0
+      },
+      {
+        "journey": "rule-0583-presence",
+        "a": [
+          6239,
+          3684,
+          3913,
+          3888,
+          3665
+        ],
+        "b": [
+          6006,
+          3737,
+          3839,
+          3879,
+          3917
+        ],
+        "limits": {
+          "n": 5,
+          "centre": 4277.8,
+          "mrBar": 758,
+          "ucl": 6294.08,
+          "lcl": 2261.52,
+          "provisional": true
+        },
+        "above": 0,
+        "below": 0
+      },
+      {
+        "journey": "rule-0584-quiz-notebook-talk",
+        "a": [
+          13947,
+          13240,
+          13527,
+          13167,
+          13274
+        ],
+        "b": [
+          14895,
+          13576,
+          13167,
+          13340,
+          13251
+        ],
+        "limits": {
+          "n": 5,
+          "centre": 13431,
+          "mrBar": 365.25,
+          "ucl": 14402.57,
+          "lcl": 12459.44,
+          "provisional": true
+        },
+        "above": 1,
+        "below": 0
+      },
+      {
+        "journey": "rule-0585-preferences",
+        "a": [
+          8457,
+          5505,
+          6189,
+          5845,
+          5608
+        ],
+        "b": [
+          8106,
+          5594,
+          5936,
+          5660,
+          5776
+        ],
+        "limits": {
+          "n": 5,
+          "centre": 6320.8,
+          "mrBar": 1054.25,
+          "ucl": 9125.11,
+          "lcl": 3516.5,
+          "provisional": true
+        },
+        "above": 0,
+        "below": 0
+      },
+      {
+        "journey": "rule-0586-private-course",
+        "a": [
+          10864,
+          10717,
+          10494,
+          10290,
+          10731
+        ],
+        "b": [
+          10472,
+          10928,
+          10044,
+          10581,
+          10499
+        ],
+        "limits": {
+          "n": 5,
+          "centre": 10619.2,
+          "mrBar": 253.75,
+          "ucl": 11294.18,
+          "lcl": 9944.23,
+          "provisional": true
+        },
+        "above": 0,
+        "below": 0
+      },
+      {
+        "journey": "rule-0587-calendar-llm",
+        "a": [
+          6345,
+          3906,
+          3919,
+          3796,
+          3986
+        ],
+        "b": [
+          6295,
+          4022,
+          3832,
+          3938,
+          4048
+        ],
+        "limits": {
+          "n": 5,
+          "centre": 4390.4,
+          "mrBar": 691.25,
+          "ucl": 6229.13,
+          "lcl": 2551.67,
+          "provisional": true
+        },
+        "above": 1,
+        "below": 0
+      },
+      {
+        "journey": "rule-0588-content-lock",
+        "a": [
+          11754,
+          16508,
+          16544,
+          16623,
+          16600
+        ],
+        "b": [
+          11826,
+          16449,
+          16568,
+          17233,
+          16681
+        ],
+        "limits": {
+          "n": 5,
+          "centre": 15605.8,
+          "mrBar": 1223,
+          "ucl": 18858.98,
+          "lcl": 12352.62,
+          "provisional": true
+        },
+        "above": 0,
+        "below": 1
+      },
+      {
+        "journey": "rule-0589-live",
+        "a": [
+          12957,
+          5937,
+          5969,
+          5732,
+          5854
+        ],
+        "b": [
+          12740,
+          5821,
+          5539,
+          5651,
+          5960
+        ],
+        "limits": {
+          "n": 5,
+          "centre": 7289.8,
+          "mrBar": 1852.75,
+          "ucl": 12218.12,
+          "lcl": 2361.48,
+          "provisional": true
+        },
+        "above": 1,
+        "below": 0
+      },
+      {
+        "journey": "rule-0590-time-calendar",
+        "a": [
+          12830,
+          6962,
+          6482,
+          6796,
+          6863
+        ],
+        "b": [
+          12696,
+          6507,
+          6615,
+          6212,
+          7054
+        ],
+        "limits": {
+          "n": 5,
+          "centre": 7986.6,
+          "mrBar": 1682.25,
+          "ucl": 12461.39,
+          "lcl": 3511.82,
+          "provisional": true
+        },
+        "above": 1,
+        "below": 0
+      },
+      {
+        "journey": "rule-0591-time-labs",
+        "a": [
+          15269,
+          8315,
+          7370,
+          7849,
+          8066
+        ],
+        "b": [
+          15047,
+          7923,
+          8067,
+          7715,
+          8280
+        ],
+        "limits": {
+          "n": 5,
+          "centre": 9373.8,
+          "mrBar": 2148.75,
+          "ucl": 15089.47,
+          "lcl": 3658.12,
+          "provisional": true
+        },
+        "above": 0,
+        "below": 0
+      },
+      {
+        "journey": "rule-0592-whiteboard",
+        "a": [
+          14159,
+          14388,
+          14136,
+          14190,
+          14264
+        ],
+        "b": [
+          13736,
+          14776,
+          14094,
+          14219,
+          13836
+        ],
+        "limits": {
+          "n": 5,
+          "centre": 14227.4,
+          "mrBar": 152.25,
+          "ucl": 14632.39,
+          "lcl": 13822.42,
+          "provisional": true
+        },
+        "above": 1,
+        "below": 1
+      },
+      {
+        "journey": "student-signs-in",
+        "a": [
+          9474,
+          4273,
+          4065,
+          3773,
+          3916
+        ],
+        "b": [
+          7585,
+          3879,
+          3771,
+          3820,
+          3952
+        ],
+        "limits": {
+          "n": 5,
+          "centre": 5100.2,
+          "mrBar": 1461,
+          "ucl": 8986.46,
+          "lcl": 1213.94,
+          "provisional": true
+        },
+        "above": 0,
+        "below": 0
+      }
+    ]
+  },
+  "causes": {
+    "unclaimed": 0,
+    "causes": [],
+    "together": []
+  }
+}
