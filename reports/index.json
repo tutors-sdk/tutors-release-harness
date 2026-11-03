@@ -2,6 +2,48 @@
   "schemaVersion": 1,
   "runs": [
     {
+      "id": "2026-11-03T12-18-35Z-release",
+      "mode": "release",
+      "ranAt": "2026-11-03T12:18:35.239Z",
+      "verdict": "fail",
+      "reasons": [
+        "199 unclaimed diff(s)"
+      ],
+      "sides": {
+        "a": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:17.0.0@sha256:15e3aa22476d608db97e05917b1990ade0a7871e7ec6e113da5fec741b427233",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:17.0.0@sha256:e9f2764654cb074d7dd4412ca163bf4c2666870444d5520361d5425bda4cec0b",
+          "live": "quay.io/tutors-sdk/tutors-live:17.0.0@sha256:52740e55cfa7e7db3b2944137caada4e876990b937f1034c0c5e79796054f8a0",
+          "time": "quay.io/tutors-sdk/tutors-time:17.0.0@sha256:d0a9f4a2f4624038ecea3629d1a536567756d458410bee43b45e060d738d195d"
+        },
+        "b": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:17.1.0-rc.1@sha256:84aa66d82a6482006b0c92ed6db363ca244c5afea3d5673806560371e062f5c3",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:17.1.0-rc.1@sha256:ecd47ce9b7cc160b8a913a31309e3b2aa637933988569d6aaedab3ae5fe78361",
+          "live": "quay.io/tutors-sdk/tutors-live:17.1.0-rc.1@sha256:ca80e0e78a9b225b297ce4ccee1825204cd8fd501f3784829680ac4c0e49a6f9",
+          "time": "quay.io/tutors-sdk/tutors-time:17.1.0-rc.1@sha256:786e81c15a7a9537d71845df7e46efe49e3706df3c27656ee7d8072ada164b90"
+        }
+      },
+      "harnessVersion": "1.60.0",
+      "runUrl": "https://github.com/tutors-sdk/tutors-release-harness/actions/runs/41630434105",
+      "score": {
+        "score": 34,
+        "grade": "D",
+        "normalness": "normal",
+        "manual": 5
+      },
+      "delta": {
+        "baseline": "17.0.0",
+        "against": null
+      },
+      "files": [
+        "2026-11-03T12-18-35Z-release/report.json",
+        "2026-11-03T12-18-35Z-release/report.md",
+        "2026-11-03T12-18-35Z-release/report.html",
+        "2026-11-03T12-18-35Z-release/scorecard.json",
+        "2026-11-03T12-18-35Z-release/scorecard.md"
+      ]
+    },
+    {
       "id": "2026-10-15T12-02-12Z-release",
       "mode": "release",
       "ranAt": "2026-10-15T12:02:12.207Z",
