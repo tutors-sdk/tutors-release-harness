@@ -1,0 +1,3694 @@
+{
+  "schemaVersion": 1,
+  "harness": {
+    "version": "1.60.0",
+    "gitSha": "5678e03ccebbfde651e2fd03c9df12e96c30ecff",
+    "contractVersion": "1.60.0"
+  },
+  "harnessVersion": "1.60.0",
+  "mode": "upgrade",
+  "substrate": "compose",
+  "ranAt": "2026-11-03T11:27:15.500Z",
+  "now": "2026-09-16T09:05:00.000Z",
+  "runs": 1,
+  "sides": {
+    "a": {
+      "reader": "quay.io/tutors-sdk/tutors-reader:17.0.0",
+      "catalogue": "quay.io/tutors-sdk/tutors-catalogue:17.0.0",
+      "live": "quay.io/tutors-sdk/tutors-live:17.0.0",
+      "time": "quay.io/tutors-sdk/tutors-time:17.0.0"
+    },
+    "b": {
+      "reader": "quay.io/tutors-sdk/tutors-reader:sha-e53e434",
+      "catalogue": "quay.io/tutors-sdk/tutors-catalogue:sha-e53e434",
+      "live": "quay.io/tutors-sdk/tutors-live:sha-e53e434",
+      "time": "quay.io/tutors-sdk/tutors-time:sha-e53e434"
+    }
+  },
+  "provenance": {
+    "a": {
+      "summary": "pulled+verified",
+      "images": {
+        "reader": {
+          "ref": "quay.io/tutors-sdk/tutors-reader:17.0.0",
+          "id": "sha256:abdbbf48bdaa8867cf970bf780df734196bdbb25c3f1ce6e358b1a0c5b4d36a7",
+          "digest": "sha256:15e3aa22476d608db97e05917b1990ade0a7871e7ec6e113da5fec741b427233",
+          "revision": "432d46864626ce14e07eb7715e0408c643ca906a",
+          "version": "17.0.0-rc.1",
+          "created": "2026-10-14T11:22:23.868Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "catalogue": {
+          "ref": "quay.io/tutors-sdk/tutors-catalogue:17.0.0",
+          "id": "sha256:b3e0c40b6430ecd6ac154972584252a179abb99412e1b1deeaa0a6c2e64966e3",
+          "digest": "sha256:e9f2764654cb074d7dd4412ca163bf4c2666870444d5520361d5425bda4cec0b",
+          "revision": "432d46864626ce14e07eb7715e0408c643ca906a",
+          "version": "17.0.0-rc.1",
+          "created": "2026-10-14T11:22:20.481Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "live": {
+          "ref": "quay.io/tutors-sdk/tutors-live:17.0.0",
+          "id": "sha256:a5ac0ab5beba43906f3b94f74531fa8588d82c8efa38eb07070969981181bf80",
+          "digest": "sha256:52740e55cfa7e7db3b2944137caada4e876990b937f1034c0c5e79796054f8a0",
+          "revision": "432d46864626ce14e07eb7715e0408c643ca906a",
+          "version": "17.0.0-rc.1",
+          "created": "2026-10-14T11:22:19.078Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "time": {
+          "ref": "quay.io/tutors-sdk/tutors-time:17.0.0",
+          "id": "sha256:abd5fc2e4e4a8b7e35bd54c9fe8ec9fbc3e07fc797e6fe27c67b7a66108f4708",
+          "digest": "sha256:d0a9f4a2f4624038ecea3629d1a536567756d458410bee43b45e060d738d195d",
+          "revision": "432d46864626ce14e07eb7715e0408c643ca906a",
+          "version": "17.0.0-rc.1",
+          "created": "2026-10-14T11:22:24.942Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        }
+      }
+    },
+    "b": {
+      "summary": "pulled+verified",
+      "images": {
+        "reader": {
+          "ref": "quay.io/tutors-sdk/tutors-reader:sha-e53e434",
+          "id": "sha256:986f5504ab6fc609aca1b84233759094acba0ce504cece0abe679da1ef970fca",
+          "digest": "sha256:aada5d8b96836fc4d5dcdd04a795e2891c64fc4bdd94b96a900b01900249963d",
+          "revision": "e53e434e1ab1615d6136afae32507985490c0988",
+          "version": "sha-e53e434",
+          "created": "2026-11-03T09:08:27.911Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "catalogue": {
+          "ref": "quay.io/tutors-sdk/tutors-catalogue:sha-e53e434",
+          "id": "sha256:7525672bd758aade1dea4db57656e9c32daa4a1a468678d837ef8aff12483339",
+          "digest": "sha256:6e54a57b20519cc6ab9ba8bea85040e3b245e32606a0c8b5eabd35d9174b65eb",
+          "revision": "e53e434e1ab1615d6136afae32507985490c0988",
+          "version": "sha-e53e434",
+          "created": "2026-11-03T09:08:22.285Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "live": {
+          "ref": "quay.io/tutors-sdk/tutors-live:sha-e53e434",
+          "id": "sha256:48a9f7a681445b7de52eb4ef4d2d83d9b371abbb09a546ea8c66f3824b37916f",
+          "digest": "sha256:b97f2c914ef3097abb7a4b5c80fa67f82668faa994444c3b54b61da8255490ec",
+          "revision": "e53e434e1ab1615d6136afae32507985490c0988",
+          "version": "sha-e53e434",
+          "created": "2026-11-03T09:08:23.107Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "time": {
+          "ref": "quay.io/tutors-sdk/tutors-time:sha-e53e434",
+          "id": "sha256:f3b3ca93f92dd996ef688451f6d560f7d38daf24a4f1a30c3936a26601949d6b",
+          "digest": "sha256:46eab007efe49890873c1cbbcb82283f5e0ff494c6cab338920fe8584139f71f",
+          "revision": "e53e434e1ab1615d6136afae32507985490c0988",
+          "version": "sha-e53e434",
+          "created": "2026-11-03T09:08:18.244Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        }
+      }
+    }
+  },
+  "verdict": "pass",
+  "reasons": [
+    "the candidate rolled in under load with no failed request",
+    "87 difference(s) between a and b outside the rollout, judged by release mode",
+    "NOT COLLECTED: vulns of reader, catalogue, live, time on side a: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)",
+    "NOT COLLECTED: vulns of reader, catalogue, live, time on side b: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+  ],
+  "compare": {
+    "hunks": [
+      {
+        "id": "dom:reader:home:1",
+        "artefact": "dom",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "fail",
+        "summary": "reader:home: semantic DOM differs (+1 −1 lines at line 10)",
+        "detail": "     - link \"My courses\":\n       - /url: /\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+      },
+      {
+        "id": "dom:reader:course:2",
+        "artefact": "dom",
+        "scope": "reader:course",
+        "path": "/course/localhost:8080",
+        "severity": "fail",
+        "summary": "reader:course: semantic DOM differs (+1 −1 lines at line 9)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+      },
+      {
+        "id": "dom:reader:topic:3",
+        "artefact": "dom",
+        "scope": "reader:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader:topic: semantic DOM differs (+1 −1 lines at line 8)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+      },
+      {
+        "id": "dom:reader:lab-step:4",
+        "artefact": "dom",
+        "scope": "reader:lab-step",
+        "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01",
+        "severity": "fail",
+        "summary": "reader:lab-step: semantic DOM differs (+1 −1 lines at line 8)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+      },
+      {
+        "id": "dom:reader:lab-step-2:5",
+        "artefact": "dom",
+        "scope": "reader:lab-step-2",
+        "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01/Step-01",
+        "severity": "fail",
+        "summary": "reader:lab-step-2: semantic DOM differs (+1 −1 lines at line 8)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+      },
+      {
+        "id": "network:GET_/_app/immutable/chunks/__hash__.js:6",
+        "artefact": "network",
+        "scope": "GET /_app/immutable/chunks/{{hash}}.js",
+        "path": "/",
+        "severity": "fail",
+        "summary": "reader:home: GET /_app/immutable/chunks/{{hash}}.js requested 33× on a, 36× on b"
+      },
+      {
+        "id": "network:GET_/_app/immutable/chunks/__hash__.js:7",
+        "artefact": "network",
+        "scope": "GET /_app/immutable/chunks/{{hash}}.js",
+        "path": "/course/localhost:8080",
+        "severity": "fail",
+        "summary": "reader:course: GET /_app/immutable/chunks/{{hash}}.js requested 42× on a, 45× on b"
+      },
+      {
+        "id": "console:reader:home:8",
+        "artefact": "console",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "info",
+        "summary": "reader:home: console message gone on b",
+        "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/0P-xupRO.js"
+      },
+      {
+        "id": "console:reader:home:9",
+        "artefact": "console",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "info",
+        "summary": "reader:home: console message gone on b",
+        "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/BX-Lm7VD.js"
+      },
+      {
+        "id": "console:reader:home:10",
+        "artefact": "console",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "info",
+        "summary": "reader:home: console message gone on b",
+        "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/BYSyyp1W.js"
+      },
+      {
+        "id": "console:reader:home:11",
+        "artefact": "console",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "info",
+        "summary": "reader:home: console message gone on b",
+        "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/C51z6sK9.js"
+      },
+      {
+        "id": "console:reader:home:12",
+        "artefact": "console",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "info",
+        "summary": "reader:home: console message gone on b",
+        "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/CgpYk-je.js"
+      },
+      {
+        "id": "console:reader:home:13",
+        "artefact": "console",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "info",
+        "summary": "reader:home: console message gone on b",
+        "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/CHM5LGf4.js"
+      },
+      {
+        "id": "console:reader:home:14",
+        "artefact": "console",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "info",
+        "summary": "reader:home: console message gone on b",
+        "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/CMgVEFcD.js"
+      },
+      {
+        "id": "console:reader:home:15",
+        "artefact": "console",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "info",
+        "summary": "reader:home: console message gone on b",
+        "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/CUVQK9vU.js"
+      },
+      {
+        "id": "console:reader:home:16",
+        "artefact": "console",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "info",
+        "summary": "reader:home: console message gone on b",
+        "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/DLaH4-us.js"
+      },
+      {
+        "id": "console:reader:home:17",
+        "artefact": "console",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "info",
+        "summary": "reader:home: console message gone on b",
+        "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/Dm6D4AV9.js"
+      },
+      {
+        "id": "console:reader:home:18",
+        "artefact": "console",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "info",
+        "summary": "reader:home: console message gone on b",
+        "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/DR59q2aC.js"
+      },
+      {
+        "id": "console:reader:home:19",
+        "artefact": "console",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "info",
+        "summary": "reader:home: console message gone on b",
+        "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/lbxuABTT.js"
+      },
+      {
+        "id": "console:reader:home:20",
+        "artefact": "console",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "info",
+        "summary": "reader:home: console message gone on b",
+        "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/OfAfEQVA.js"
+      },
+      {
+        "id": "console:reader:home:21",
+        "artefact": "console",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "info",
+        "summary": "reader:home: console message gone on b",
+        "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/sFyimd9e.js"
+      },
+      {
+        "id": "console:reader:home:22",
+        "artefact": "console",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "info",
+        "summary": "reader:home: console message gone on b",
+        "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/VN-OVIGe.js"
+      },
+      {
+        "id": "console:reader:home:23",
+        "artefact": "console",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "info",
+        "summary": "reader:home: console message gone on b",
+        "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/wC3VQYkj.js"
+      },
+      {
+        "id": "console:reader:home:24",
+        "artefact": "console",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "info",
+        "summary": "reader:home: console message gone on b",
+        "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/nodes/0.CfKCyKlg.js"
+      },
+      {
+        "id": "console:reader:home:25",
+        "artefact": "console",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "info",
+        "summary": "reader:home: console message gone on b",
+        "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/nodes/23.DJ8AbipA.js"
+      },
+      {
+        "id": "console:reader:home:26",
+        "artefact": "console",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "info",
+        "summary": "reader:home: console message gone on b",
+        "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/nodes/4.CkqRQ8nE.js"
+      },
+      {
+        "id": "console:reader:home:27",
+        "artefact": "console",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "info",
+        "summary": "reader:home: console message gone on b",
+        "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: https://www.setu.ie/img/logos/setu-logo.svg"
+      },
+      {
+        "id": "metrics:http_request_duration_seconds_count:28",
+        "artefact": "metrics",
+        "scope": "catalogue/http_request_duration_seconds_count",
+        "severity": "fail",
+        "summary": "catalogue: new series on b: http_request_duration_seconds_count"
+      },
+      {
+        "id": "metrics:http_requests_total:29",
+        "artefact": "metrics",
+        "scope": "catalogue/http_requests_total",
+        "severity": "fail",
+        "summary": "catalogue: new series on b: http_requests_total"
+      },
+      {
+        "id": "metrics:http_request_duration_seconds_count:30",
+        "artefact": "metrics",
+        "scope": "live/http_request_duration_seconds_count",
+        "severity": "fail",
+        "summary": "live: new series on b: http_request_duration_seconds_count"
+      },
+      {
+        "id": "metrics:http_requests_total:31",
+        "artefact": "metrics",
+        "scope": "live/http_requests_total",
+        "severity": "fail",
+        "summary": "live: new series on b: http_requests_total"
+      },
+      {
+        "id": "metrics:http_request_duration_seconds_count:32",
+        "artefact": "metrics",
+        "scope": "time/http_request_duration_seconds_count",
+        "severity": "fail",
+        "summary": "time: new series on b: http_request_duration_seconds_count"
+      },
+      {
+        "id": "metrics:http_requests_total:33",
+        "artefact": "metrics",
+        "scope": "time/http_requests_total",
+        "severity": "fail",
+        "summary": "time: new series on b: http_requests_total"
+      },
+      {
+        "id": "logs:catalogue:34",
+        "artefact": "logs",
+        "scope": "catalogue/silent",
+        "severity": "fail",
+        "summary": "catalogue: wrote no log line on b (2 on a): nothing reached it, or it stopped logging"
+      },
+      {
+        "id": "logs:live:35",
+        "artefact": "logs",
+        "scope": "live/silent",
+        "severity": "fail",
+        "summary": "live: wrote no log line on b (2 on a): nothing reached it, or it stopped logging"
+      },
+      {
+        "id": "logs:time:36",
+        "artefact": "logs",
+        "scope": "time/silent",
+        "severity": "fail",
+        "summary": "time: wrote no log line on b (2 on a): nothing reached it, or it stopped logging"
+      },
+      {
+        "id": "focus:reader:home:37",
+        "artefact": "focus",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "fail",
+        "summary": "reader:home: keyboard order changed (12 stops on a, 12 on b)",
+        "detail": " a \"My courses\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n button \"Anonymous Tutors Profile\""
+      },
+      {
+        "id": "focus:reader:course:38",
+        "artefact": "focus",
+        "scope": "reader:course",
+        "path": "/course/localhost:8080",
+        "severity": "fail",
+        "summary": "reader:course: keyboard order changed (12 stops on a, 12 on b)",
+        "detail": " button \"Search this course\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n button \"Anonymous Tutors Profile\""
+      },
+      {
+        "id": "focus:reader:topic:39",
+        "artefact": "focus",
+        "scope": "reader:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader:topic: keyboard order changed (12 stops on a, 12 on b)",
+        "detail": " button \"Search this course\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n button \"Anonymous Tutors Profile\""
+      },
+      {
+        "id": "focus:reader:lab-step:40",
+        "artefact": "focus",
+        "scope": "reader:lab-step",
+        "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01",
+        "severity": "fail",
+        "summary": "reader:lab-step: keyboard order changed (12 stops on a, 12 on b)",
+        "detail": " button \"Search this course\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n button \"Anonymous Tutors Profile\""
+      },
+      {
+        "id": "focus:reader:lab-step-2:41",
+        "artefact": "focus",
+        "scope": "reader:lab-step-2",
+        "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01/Step-01",
+        "severity": "fail",
+        "summary": "reader:lab-step-2: keyboard order changed (12 stops on a, 12 on b)",
+        "detail": " button \"Search this course\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n button \"Anonymous Tutors Profile\""
+      },
+      {
+        "id": "image-manifest:reader/base:42",
+        "artefact": "image-manifest",
+        "scope": "reader/base",
+        "severity": "fail",
+        "summary": "reader: built FROM a different base image (lowest layer e58989146fce → 44a87794b739)",
+        "detail": "base.digest label: a=unrecorded b=unrecorded\nlowest layer:      a=sha256:e58989146fcec76699871403b9897b5c014af1ccd85f5a9300a215e7975525d7 b=sha256:44a87794b739d471ec360bec56cc0ceac640d06bbf579ee7d9061a0b88d09818"
+      },
+      {
+        "id": "image-manifest:reader/layers:43",
+        "artefact": "image-manifest",
+        "scope": "reader/layers",
+        "severity": "fail",
+        "summary": "reader: 10 layer(s) on a, 9 on b"
+      },
+      {
+        "id": "image-manifest:reader/label/org.opencontainers.image.description:44",
+        "artefact": "image-manifest",
+        "scope": "reader/label/org.opencontainers.image.description",
+        "severity": "fail",
+        "summary": "reader: label org.opencontainers.image.description \"\" → \"The Tutors educational platform - an open-source course reader and learning management system built with Svelte 5, SvelteKit, and TypeScript.\""
+      },
+      {
+        "id": "sbom:reader/_asamuzakjp/dom-selector:45",
+        "artefact": "sbom",
+        "scope": "reader/@asamuzakjp/dom-selector",
+        "severity": "fail",
+        "summary": "reader: package bumped: @asamuzakjp/dom-selector 9.2.4 → 10.0.5"
+      },
+      {
+        "id": "sbom:reader/_supabase/auth-js:46",
+        "artefact": "sbom",
+        "scope": "reader/@supabase/auth-js",
+        "severity": "fail",
+        "summary": "reader: package added: @supabase/auth-js@2.118.0"
+      },
+      {
+        "id": "sbom:reader/_supabase/functions-js:47",
+        "artefact": "sbom",
+        "scope": "reader/@supabase/functions-js",
+        "severity": "fail",
+        "summary": "reader: package added: @supabase/functions-js@2.118.0"
+      },
+      {
+        "id": "sbom:reader/_supabase/phoenix:48",
+        "artefact": "sbom",
+        "scope": "reader/@supabase/phoenix",
+        "severity": "fail",
+        "summary": "reader: package added: @supabase/phoenix@0.4.5"
+      },
+      {
+        "id": "sbom:reader/_supabase/postgrest-js:49",
+        "artefact": "sbom",
+        "scope": "reader/@supabase/postgrest-js",
+        "severity": "fail",
+        "summary": "reader: package added: @supabase/postgrest-js@2.118.0"
+      },
+      {
+        "id": "sbom:reader/_supabase/realtime-js:50",
+        "artefact": "sbom",
+        "scope": "reader/@supabase/realtime-js",
+        "severity": "fail",
+        "summary": "reader: package added: @supabase/realtime-js@2.118.0"
+      },
+      {
+        "id": "sbom:reader/_supabase/storage-js:51",
+        "artefact": "sbom",
+        "scope": "reader/@supabase/storage-js",
+        "severity": "fail",
+        "summary": "reader: package added: @supabase/storage-js@2.118.0"
+      },
+      {
+        "id": "sbom:reader/_supabase/supabase-js:52",
+        "artefact": "sbom",
+        "scope": "reader/@supabase/supabase-js",
+        "severity": "fail",
+        "summary": "reader: package added: @supabase/supabase-js@2.118.0"
+      },
+      {
+        "id": "sbom:reader/dompurify:53",
+        "artefact": "sbom",
+        "scope": "reader/dompurify",
+        "severity": "fail",
+        "summary": "reader: package bumped: dompurify 3.4.16 → 3.4.17"
+      },
+      {
+        "id": "sbom:reader/entities:54",
+        "artefact": "sbom",
+        "scope": "reader/entities",
+        "severity": "fail",
+        "summary": "reader: package bumped: entities 8.0.0 → 8.1.0"
+      },
+      {
+        "id": "sbom:reader/iceberg-js:55",
+        "artefact": "sbom",
+        "scope": "reader/iceberg-js",
+        "severity": "fail",
+        "summary": "reader: package added: iceberg-js@0.8.1"
+      },
+      {
+        "id": "sbom:reader/isomorphic-dompurify:56",
+        "artefact": "sbom",
+        "scope": "reader/isomorphic-dompurify",
+        "severity": "fail",
+        "summary": "reader: package bumped: isomorphic-dompurify 4.5.0 → 4.6.0"
+      },
+      {
+        "id": "sbom:reader/jsdom:57",
+        "artefact": "sbom",
+        "scope": "reader/jsdom",
+        "severity": "fail",
+        "summary": "reader: package bumped: jsdom 30.1.2 → 30.1.3"
+      },
+      {
+        "id": "sbom:reader/libatomic1:58",
+        "artefact": "sbom",
+        "scope": "reader/libatomic1",
+        "severity": "fail",
+        "summary": "reader: package added: libatomic1@12.2.0-14+deb12u1"
+      },
+      {
+        "id": "sbom:reader/node:59",
+        "artefact": "sbom",
+        "scope": "reader/node",
+        "severity": "fail",
+        "summary": "reader: package bumped: node 22.23.3 → 26.13.0"
+      },
+      {
+        "id": "sbom:reader/tslib:60",
+        "artefact": "sbom",
+        "scope": "reader/tslib",
+        "severity": "fail",
+        "summary": "reader: package added: tslib@2.8.1"
+      },
+      {
+        "id": "sbom:reader/tzdata:61",
+        "artefact": "sbom",
+        "scope": "reader/tzdata",
+        "severity": "fail",
+        "summary": "reader: package bumped: tzdata 2026c-0+deb12u1 → 2026f-0+deb12u1"
+      },
+      {
+        "id": "sbom:reader/undici:62",
+        "artefact": "sbom",
+        "scope": "reader/undici",
+        "severity": "fail",
+        "summary": "reader: package bumped: undici 8.11.2 → 8.12.3"
+      },
+      {
+        "id": "vulns:reader/not-collected:63",
+        "artefact": "vulns",
+        "scope": "reader/not-collected",
+        "severity": "info",
+        "summary": "NOT COLLECTED: vulns of reader on both sides: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)",
+        "detail": "a: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)\nb: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+      },
+      {
+        "id": "image-manifest:catalogue/base:64",
+        "artefact": "image-manifest",
+        "scope": "catalogue/base",
+        "severity": "fail",
+        "summary": "catalogue: built FROM a different base image (lowest layer e58989146fce → 44a87794b739)",
+        "detail": "base.digest label: a=unrecorded b=unrecorded\nlowest layer:      a=sha256:e58989146fcec76699871403b9897b5c014af1ccd85f5a9300a215e7975525d7 b=sha256:44a87794b739d471ec360bec56cc0ceac640d06bbf579ee7d9061a0b88d09818"
+      },
+      {
+        "id": "image-manifest:catalogue/layers:65",
+        "artefact": "image-manifest",
+        "scope": "catalogue/layers",
+        "severity": "fail",
+        "summary": "catalogue: 10 layer(s) on a, 9 on b"
+      },
+      {
+        "id": "image-manifest:catalogue/label/org.opencontainers.image.description:66",
+        "artefact": "image-manifest",
+        "scope": "catalogue/label/org.opencontainers.image.description",
+        "severity": "fail",
+        "summary": "catalogue: label org.opencontainers.image.description \"\" → \"The Tutors educational platform - an open-source course reader and learning management system built with Svelte 5, SvelteKit, and TypeScript.\""
+      },
+      {
+        "id": "sbom:catalogue/_asamuzakjp/dom-selector:67",
+        "artefact": "sbom",
+        "scope": "catalogue/@asamuzakjp/dom-selector",
+        "severity": "fail",
+        "summary": "catalogue: package bumped: @asamuzakjp/dom-selector 9.2.4 → 10.0.5"
+      },
+      {
+        "id": "sbom:catalogue/dompurify:68",
+        "artefact": "sbom",
+        "scope": "catalogue/dompurify",
+        "severity": "fail",
+        "summary": "catalogue: package bumped: dompurify 3.4.16 → 3.4.17"
+      },
+      {
+        "id": "sbom:catalogue/entities:69",
+        "artefact": "sbom",
+        "scope": "catalogue/entities",
+        "severity": "fail",
+        "summary": "catalogue: package bumped: entities 8.0.0 → 8.1.0"
+      },
+      {
+        "id": "sbom:catalogue/isomorphic-dompurify:70",
+        "artefact": "sbom",
+        "scope": "catalogue/isomorphic-dompurify",
+        "severity": "fail",
+        "summary": "catalogue: package bumped: isomorphic-dompurify 4.5.0 → 4.6.0"
+      },
+      {
+        "id": "sbom:catalogue/jsdom:71",
+        "artefact": "sbom",
+        "scope": "catalogue/jsdom",
+        "severity": "fail",
+        "summary": "catalogue: package bumped: jsdom 30.1.2 → 30.1.3"
+      },
+      {
+        "id": "sbom:catalogue/libatomic1:72",
+        "artefact": "sbom",
+        "scope": "catalogue/libatomic1",
+        "severity": "fail",
+        "summary": "catalogue: package added: libatomic1@12.2.0-14+deb12u1"
+      },
+      {
+        "id": "sbom:catalogue/node:73",
+        "artefact": "sbom",
+        "scope": "catalogue/node",
+        "severity": "fail",
+        "summary": "catalogue: package bumped: node 22.23.3 → 26.13.0"
+      },
+      {
+        "id": "sbom:catalogue/tzdata:74",
+        "artefact": "sbom",
+        "scope": "catalogue/tzdata",
+        "severity": "fail",
+        "summary": "catalogue: package bumped: tzdata 2026c-0+deb12u1 → 2026f-0+deb12u1"
+      },
+      {
+        "id": "sbom:catalogue/undici:75",
+        "artefact": "sbom",
+        "scope": "catalogue/undici",
+        "severity": "fail",
+        "summary": "catalogue: package bumped: undici 8.11.2 → 8.12.3"
+      },
+      {
+        "id": "vulns:catalogue/not-collected:76",
+        "artefact": "vulns",
+        "scope": "catalogue/not-collected",
+        "severity": "info",
+        "summary": "NOT COLLECTED: vulns of catalogue on both sides: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)",
+        "detail": "a: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)\nb: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+      },
+      {
+        "id": "image-manifest:live/base:77",
+        "artefact": "image-manifest",
+        "scope": "live/base",
+        "severity": "fail",
+        "summary": "live: built FROM a different base image (lowest layer e58989146fce → 44a87794b739)",
+        "detail": "base.digest label: a=unrecorded b=unrecorded\nlowest layer:      a=sha256:e58989146fcec76699871403b9897b5c014af1ccd85f5a9300a215e7975525d7 b=sha256:44a87794b739d471ec360bec56cc0ceac640d06bbf579ee7d9061a0b88d09818"
+      },
+      {
+        "id": "image-manifest:live/layers:78",
+        "artefact": "image-manifest",
+        "scope": "live/layers",
+        "severity": "fail",
+        "summary": "live: 10 layer(s) on a, 9 on b"
+      },
+      {
+        "id": "image-manifest:live/label/org.opencontainers.image.description:79",
+        "artefact": "image-manifest",
+        "scope": "live/label/org.opencontainers.image.description",
+        "severity": "fail",
+        "summary": "live: label org.opencontainers.image.description \"\" → \"The Tutors educational platform - an open-source course reader and learning management system built with Svelte 5, SvelteKit, and TypeScript.\""
+      },
+      {
+        "id": "sbom:live/_asamuzakjp/dom-selector:80",
+        "artefact": "sbom",
+        "scope": "live/@asamuzakjp/dom-selector",
+        "severity": "fail",
+        "summary": "live: package bumped: @asamuzakjp/dom-selector 9.2.4 → 10.0.5"
+      },
+      {
+        "id": "sbom:live/dompurify:81",
+        "artefact": "sbom",
+        "scope": "live/dompurify",
+        "severity": "fail",
+        "summary": "live: package bumped: dompurify 3.4.16 → 3.4.17"
+      },
+      {
+        "id": "sbom:live/entities:82",
+        "artefact": "sbom",
+        "scope": "live/entities",
+        "severity": "fail",
+        "summary": "live: package bumped: entities 8.0.0 → 8.1.0"
+      },
+      {
+        "id": "sbom:live/isomorphic-dompurify:83",
+        "artefact": "sbom",
+        "scope": "live/isomorphic-dompurify",
+        "severity": "fail",
+        "summary": "live: package bumped: isomorphic-dompurify 4.5.0 → 4.6.0"
+      },
+      {
+        "id": "sbom:live/jsdom:84",
+        "artefact": "sbom",
+        "scope": "live/jsdom",
+        "severity": "fail",
+        "summary": "live: package bumped: jsdom 30.1.2 → 30.1.3"
+      },
+      {
+        "id": "sbom:live/libatomic1:85",
+        "artefact": "sbom",
+        "scope": "live/libatomic1",
+        "severity": "fail",
+        "summary": "live: package added: libatomic1@12.2.0-14+deb12u1"
+      },
+      {
+        "id": "sbom:live/node:86",
+        "artefact": "sbom",
+        "scope": "live/node",
+        "severity": "fail",
+        "summary": "live: package bumped: node 22.23.3 → 26.13.0"
+      },
+      {
+        "id": "sbom:live/tzdata:87",
+        "artefact": "sbom",
+        "scope": "live/tzdata",
+        "severity": "fail",
+        "summary": "live: package bumped: tzdata 2026c-0+deb12u1 → 2026f-0+deb12u1"
+      },
+      {
+        "id": "sbom:live/undici:88",
+        "artefact": "sbom",
+        "scope": "live/undici",
+        "severity": "fail",
+        "summary": "live: package bumped: undici 8.11.2 → 8.12.3"
+      },
+      {
+        "id": "vulns:live/not-collected:89",
+        "artefact": "vulns",
+        "scope": "live/not-collected",
+        "severity": "info",
+        "summary": "NOT COLLECTED: vulns of live on both sides: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)",
+        "detail": "a: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)\nb: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+      },
+      {
+        "id": "image-manifest:time/base:90",
+        "artefact": "image-manifest",
+        "scope": "time/base",
+        "severity": "fail",
+        "summary": "time: built FROM a different base image (lowest layer e58989146fce → 44a87794b739)",
+        "detail": "base.digest label: a=unrecorded b=unrecorded\nlowest layer:      a=sha256:e58989146fcec76699871403b9897b5c014af1ccd85f5a9300a215e7975525d7 b=sha256:44a87794b739d471ec360bec56cc0ceac640d06bbf579ee7d9061a0b88d09818"
+      },
+      {
+        "id": "image-manifest:time/layers:91",
+        "artefact": "image-manifest",
+        "scope": "time/layers",
+        "severity": "fail",
+        "summary": "time: 10 layer(s) on a, 9 on b"
+      },
+      {
+        "id": "image-manifest:time/label/org.opencontainers.image.description:92",
+        "artefact": "image-manifest",
+        "scope": "time/label/org.opencontainers.image.description",
+        "severity": "fail",
+        "summary": "time: label org.opencontainers.image.description \"\" → \"The Tutors educational platform - an open-source course reader and learning management system built with Svelte 5, SvelteKit, and TypeScript.\""
+      },
+      {
+        "id": "sbom:time/_asamuzakjp/dom-selector:93",
+        "artefact": "sbom",
+        "scope": "time/@asamuzakjp/dom-selector",
+        "severity": "fail",
+        "summary": "time: package bumped: @asamuzakjp/dom-selector 9.2.4 → 10.0.5"
+      },
+      {
+        "id": "sbom:time/_supabase/auth-js:94",
+        "artefact": "sbom",
+        "scope": "time/@supabase/auth-js",
+        "severity": "fail",
+        "summary": "time: package removed: @supabase/auth-js@2.117.2"
+      },
+      {
+        "id": "sbom:time/_supabase/functions-js:95",
+        "artefact": "sbom",
+        "scope": "time/@supabase/functions-js",
+        "severity": "fail",
+        "summary": "time: package removed: @supabase/functions-js@2.117.2"
+      },
+      {
+        "id": "sbom:time/_supabase/phoenix:96",
+        "artefact": "sbom",
+        "scope": "time/@supabase/phoenix",
+        "severity": "fail",
+        "summary": "time: package removed: @supabase/phoenix@0.4.5"
+      },
+      {
+        "id": "sbom:time/_supabase/postgrest-js:97",
+        "artefact": "sbom",
+        "scope": "time/@supabase/postgrest-js",
+        "severity": "fail",
+        "summary": "time: package removed: @supabase/postgrest-js@2.117.2"
+      },
+      {
+        "id": "sbom:time/_supabase/realtime-js:98",
+        "artefact": "sbom",
+        "scope": "time/@supabase/realtime-js",
+        "severity": "fail",
+        "summary": "time: package removed: @supabase/realtime-js@2.117.2"
+      },
+      {
+        "id": "sbom:time/_supabase/storage-js:99",
+        "artefact": "sbom",
+        "scope": "time/@supabase/storage-js",
+        "severity": "fail",
+        "summary": "time: package removed: @supabase/storage-js@2.117.2"
+      },
+      {
+        "id": "sbom:time/_supabase/supabase-js:100",
+        "artefact": "sbom",
+        "scope": "time/@supabase/supabase-js",
+        "severity": "fail",
+        "summary": "time: package removed: @supabase/supabase-js@2.117.2"
+      },
+      {
+        "id": "sbom:time/dompurify:101",
+        "artefact": "sbom",
+        "scope": "time/dompurify",
+        "severity": "fail",
+        "summary": "time: package bumped: dompurify 3.4.16 → 3.4.17"
+      },
+      {
+        "id": "sbom:time/entities:102",
+        "artefact": "sbom",
+        "scope": "time/entities",
+        "severity": "fail",
+        "summary": "time: package bumped: entities 8.0.0 → 8.1.0"
+      },
+      {
+        "id": "sbom:time/iceberg-js:103",
+        "artefact": "sbom",
+        "scope": "time/iceberg-js",
+        "severity": "fail",
+        "summary": "time: package removed: iceberg-js@0.8.1"
+      },
+      {
+        "id": "sbom:time/isomorphic-dompurify:104",
+        "artefact": "sbom",
+        "scope": "time/isomorphic-dompurify",
+        "severity": "fail",
+        "summary": "time: package bumped: isomorphic-dompurify 4.5.0 → 4.6.0"
+      },
+      {
+        "id": "sbom:time/jsdom:105",
+        "artefact": "sbom",
+        "scope": "time/jsdom",
+        "severity": "fail",
+        "summary": "time: package bumped: jsdom 30.1.2 → 30.1.3"
+      },
+      {
+        "id": "sbom:time/libatomic1:106",
+        "artefact": "sbom",
+        "scope": "time/libatomic1",
+        "severity": "fail",
+        "summary": "time: package added: libatomic1@12.2.0-14+deb12u1"
+      },
+      {
+        "id": "sbom:time/node:107",
+        "artefact": "sbom",
+        "scope": "time/node",
+        "severity": "fail",
+        "summary": "time: package bumped: node 22.23.3 → 26.13.0"
+      },
+      {
+        "id": "sbom:time/tslib:108",
+        "artefact": "sbom",
+        "scope": "time/tslib",
+        "severity": "fail",
+        "summary": "time: package removed: tslib@2.8.1"
+      },
+      {
+        "id": "sbom:time/tzdata:109",
+        "artefact": "sbom",
+        "scope": "time/tzdata",
+        "severity": "fail",
+        "summary": "time: package bumped: tzdata 2026c-0+deb12u1 → 2026f-0+deb12u1"
+      },
+      {
+        "id": "sbom:time/undici:110",
+        "artefact": "sbom",
+        "scope": "time/undici",
+        "severity": "fail",
+        "summary": "time: package bumped: undici 8.11.2 → 8.12.3"
+      },
+      {
+        "id": "vulns:time/not-collected:111",
+        "artefact": "vulns",
+        "scope": "time/not-collected",
+        "severity": "info",
+        "summary": "NOT COLLECTED: vulns of time on both sides: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)",
+        "detail": "a: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)\nb: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+      },
+      {
+        "id": "runtime:runtime/summary:112",
+        "artefact": "runtime",
+        "scope": "runtime/summary",
+        "severity": "info",
+        "summary": "container posture collected for catalogue, live, reader, reader-auth, time on both sides (compose)",
+        "detail": "catalogue: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n           b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nlive: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n        b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader-auth: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n             b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\ntime: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter"
+      },
+      {
+        "id": "startup:startup/not-collected:113",
+        "artefact": "startup",
+        "scope": "startup/not-collected",
+        "severity": "info",
+        "summary": "NOT COLLECTED: startup time on side a: switched off with --startup-restarts 0"
+      },
+      {
+        "id": "startup:startup/not-collected:114",
+        "artefact": "startup",
+        "scope": "startup/not-collected",
+        "severity": "info",
+        "summary": "NOT COLLECTED: startup time on side b: switched off with --startup-restarts 0"
+      },
+      {
+        "id": "image-hardening:reader/unrecorded-base:115",
+        "artefact": "image-hardening",
+        "scope": "reader/unrecorded-base",
+        "severity": "info",
+        "summary": "reader: records no base image (no org.opencontainers.image.base.name label), so a base that moved upstream reads as a rebuild no PR declared (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "image-hardening:catalogue/unrecorded-base:116",
+        "artefact": "image-hardening",
+        "scope": "catalogue/unrecorded-base",
+        "severity": "info",
+        "summary": "catalogue: records no base image (no org.opencontainers.image.base.name label), so a base that moved upstream reads as a rebuild no PR declared (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "image-hardening:live/unrecorded-base:117",
+        "artefact": "image-hardening",
+        "scope": "live/unrecorded-base",
+        "severity": "info",
+        "summary": "live: records no base image (no org.opencontainers.image.base.name label), so a base that moved upstream reads as a rebuild no PR declared (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "image-hardening:time/unrecorded-base:118",
+        "artefact": "image-hardening",
+        "scope": "time/unrecorded-base",
+        "severity": "info",
+        "summary": "time: records no base image (no org.opencontainers.image.base.name label), so a base that moved upstream reads as a rebuild no PR declared (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "build-provenance:reader/summary:119",
+        "artefact": "build-provenance",
+        "scope": "reader/summary",
+        "severity": "info",
+        "summary": "reader: build-provenance holds on b: SLSA provenance v1 by .github/workflows/image-build.yml@refs/heads/main"
+      },
+      {
+        "id": "build-provenance:catalogue/summary:120",
+        "artefact": "build-provenance",
+        "scope": "catalogue/summary",
+        "severity": "info",
+        "summary": "catalogue: build-provenance holds on b: SLSA provenance v1 by .github/workflows/image-build.yml@refs/heads/main"
+      },
+      {
+        "id": "build-provenance:live/summary:121",
+        "artefact": "build-provenance",
+        "scope": "live/summary",
+        "severity": "info",
+        "summary": "live: build-provenance holds on b: SLSA provenance v1 by .github/workflows/image-build.yml@refs/heads/main"
+      },
+      {
+        "id": "build-provenance:time/summary:122",
+        "artefact": "build-provenance",
+        "scope": "time/summary",
+        "severity": "info",
+        "summary": "time: build-provenance holds on b: SLSA provenance v1 by .github/workflows/image-build.yml@refs/heads/main"
+      },
+      {
+        "id": "vuln-ceiling:reader/not-evaluated:123",
+        "artefact": "vuln-ceiling",
+        "scope": "reader/not-evaluated",
+        "severity": "info",
+        "summary": "reader: vuln-ceiling could not be evaluated on b: no vulnerability scan: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+      },
+      {
+        "id": "vuln-ceiling:catalogue/not-evaluated:124",
+        "artefact": "vuln-ceiling",
+        "scope": "catalogue/not-evaluated",
+        "severity": "info",
+        "summary": "catalogue: vuln-ceiling could not be evaluated on b: no vulnerability scan: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+      },
+      {
+        "id": "vuln-ceiling:live/not-evaluated:125",
+        "artefact": "vuln-ceiling",
+        "scope": "live/not-evaluated",
+        "severity": "info",
+        "summary": "live: vuln-ceiling could not be evaluated on b: no vulnerability scan: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+      },
+      {
+        "id": "vuln-ceiling:time/not-evaluated:126",
+        "artefact": "vuln-ceiling",
+        "scope": "time/not-evaluated",
+        "severity": "info",
+        "summary": "time: vuln-ceiling could not be evaluated on b: no vulnerability scan: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+      },
+      {
+        "id": "asset-graph:reader:127",
+        "artefact": "asset-graph",
+        "scope": "reader",
+        "severity": "info",
+        "summary": "reader: the asset graph changed: 111 → 117 immutable requests (JS 92 → 98, CSS 19 → 19), 1.1 MB → 1.1 MB; 2 network and 0 headers difference(s) are this churn",
+        "level": "informing"
+      },
+      {
+        "id": "slo:reader-availability/not-evaluated:128",
+        "artefact": "slo",
+        "scope": "reader-availability/not-evaluated",
+        "severity": "info",
+        "summary": "reader-availability: not evaluated on b: 4 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "slo:reader-latency/not-evaluated:129",
+        "artefact": "slo",
+        "scope": "reader-latency/not-evaluated",
+        "severity": "info",
+        "summary": "reader-latency: not evaluated on b: 4 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "slo:catalogue-availability/not-evaluated:130",
+        "artefact": "slo",
+        "scope": "catalogue-availability/not-evaluated",
+        "severity": "info",
+        "summary": "catalogue-availability: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "slo:catalogue-latency/not-evaluated:131",
+        "artefact": "slo",
+        "scope": "catalogue-latency/not-evaluated",
+        "severity": "info",
+        "summary": "catalogue-latency: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "slo:live-availability/not-evaluated:132",
+        "artefact": "slo",
+        "scope": "live-availability/not-evaluated",
+        "severity": "info",
+        "summary": "live-availability: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "slo:live-latency/not-evaluated:133",
+        "artefact": "slo",
+        "scope": "live-latency/not-evaluated",
+        "severity": "info",
+        "summary": "live-latency: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "slo:time-availability/not-evaluated:134",
+        "artefact": "slo",
+        "scope": "time-availability/not-evaluated",
+        "severity": "info",
+        "summary": "time-availability: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "slo:time-latency/not-evaluated:135",
+        "artefact": "slo",
+        "scope": "time-latency/not-evaluated",
+        "severity": "info",
+        "summary": "time-latency: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "secrets-in-response:summary:136",
+        "artefact": "secrets-in-response",
+        "scope": "summary",
+        "severity": "info",
+        "summary": "secrets-in-response holds on b: no secret-shaped value in the accessibility tree, document headers, response URLs, console or HTML and JSON bodies of 5 page capture(s)"
+      },
+      {
+        "id": "upgrade:rollout:1",
+        "artefact": "upgrade",
+        "scope": "rollout",
+        "severity": "info",
+        "summary": "901 requests through the rollout, none failed; switched at 17.2s"
+      }
+    ],
+    "matches": [
+      {
+        "hunk": {
+          "id": "dom:reader:home:1",
+          "artefact": "dom",
+          "scope": "reader:home",
+          "path": "/",
+          "severity": "fail",
+          "summary": "reader:home: semantic DOM differs (+1 −1 lines at line 10)",
+          "detail": "     - link \"My courses\":\n       - /url: /\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reader:course:2",
+          "artefact": "dom",
+          "scope": "reader:course",
+          "path": "/course/localhost:8080",
+          "severity": "fail",
+          "summary": "reader:course: semantic DOM differs (+1 −1 lines at line 9)",
+          "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reader:topic:3",
+          "artefact": "dom",
+          "scope": "reader:topic",
+          "path": "/topic/localhost:8080/unit-1/topic-01",
+          "severity": "fail",
+          "summary": "reader:topic: semantic DOM differs (+1 −1 lines at line 8)",
+          "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reader:lab-step:4",
+          "artefact": "dom",
+          "scope": "reader:lab-step",
+          "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01",
+          "severity": "fail",
+          "summary": "reader:lab-step: semantic DOM differs (+1 −1 lines at line 8)",
+          "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+        }
+      },
+      {
+        "hunk": {
+          "id": "dom:reader:lab-step-2:5",
+          "artefact": "dom",
+          "scope": "reader:lab-step-2",
+          "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01/Step-01",
+          "severity": "fail",
+          "summary": "reader:lab-step-2: semantic DOM differs (+1 −1 lines at line 8)",
+          "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+        }
+      },
+      {
+        "hunk": {
+          "id": "network:GET_/_app/immutable/chunks/__hash__.js:6",
+          "artefact": "network",
+          "scope": "GET /_app/immutable/chunks/{{hash}}.js",
+          "path": "/",
+          "severity": "fail",
+          "summary": "reader:home: GET /_app/immutable/chunks/{{hash}}.js requested 33× on a, 36× on b"
+        }
+      },
+      {
+        "hunk": {
+          "id": "network:GET_/_app/immutable/chunks/__hash__.js:7",
+          "artefact": "network",
+          "scope": "GET /_app/immutable/chunks/{{hash}}.js",
+          "path": "/course/localhost:8080",
+          "severity": "fail",
+          "summary": "reader:course: GET /_app/immutable/chunks/{{hash}}.js requested 42× on a, 45× on b"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader:home:8",
+          "artefact": "console",
+          "scope": "reader:home",
+          "path": "/",
+          "severity": "info",
+          "summary": "reader:home: console message gone on b",
+          "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/0P-xupRO.js"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader:home:9",
+          "artefact": "console",
+          "scope": "reader:home",
+          "path": "/",
+          "severity": "info",
+          "summary": "reader:home: console message gone on b",
+          "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/BX-Lm7VD.js"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader:home:10",
+          "artefact": "console",
+          "scope": "reader:home",
+          "path": "/",
+          "severity": "info",
+          "summary": "reader:home: console message gone on b",
+          "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/BYSyyp1W.js"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader:home:11",
+          "artefact": "console",
+          "scope": "reader:home",
+          "path": "/",
+          "severity": "info",
+          "summary": "reader:home: console message gone on b",
+          "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/C51z6sK9.js"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader:home:12",
+          "artefact": "console",
+          "scope": "reader:home",
+          "path": "/",
+          "severity": "info",
+          "summary": "reader:home: console message gone on b",
+          "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/CgpYk-je.js"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader:home:13",
+          "artefact": "console",
+          "scope": "reader:home",
+          "path": "/",
+          "severity": "info",
+          "summary": "reader:home: console message gone on b",
+          "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/CHM5LGf4.js"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader:home:14",
+          "artefact": "console",
+          "scope": "reader:home",
+          "path": "/",
+          "severity": "info",
+          "summary": "reader:home: console message gone on b",
+          "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/CMgVEFcD.js"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader:home:15",
+          "artefact": "console",
+          "scope": "reader:home",
+          "path": "/",
+          "severity": "info",
+          "summary": "reader:home: console message gone on b",
+          "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/CUVQK9vU.js"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader:home:16",
+          "artefact": "console",
+          "scope": "reader:home",
+          "path": "/",
+          "severity": "info",
+          "summary": "reader:home: console message gone on b",
+          "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/DLaH4-us.js"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader:home:17",
+          "artefact": "console",
+          "scope": "reader:home",
+          "path": "/",
+          "severity": "info",
+          "summary": "reader:home: console message gone on b",
+          "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/Dm6D4AV9.js"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader:home:18",
+          "artefact": "console",
+          "scope": "reader:home",
+          "path": "/",
+          "severity": "info",
+          "summary": "reader:home: console message gone on b",
+          "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/DR59q2aC.js"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader:home:19",
+          "artefact": "console",
+          "scope": "reader:home",
+          "path": "/",
+          "severity": "info",
+          "summary": "reader:home: console message gone on b",
+          "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/lbxuABTT.js"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader:home:20",
+          "artefact": "console",
+          "scope": "reader:home",
+          "path": "/",
+          "severity": "info",
+          "summary": "reader:home: console message gone on b",
+          "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/OfAfEQVA.js"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader:home:21",
+          "artefact": "console",
+          "scope": "reader:home",
+          "path": "/",
+          "severity": "info",
+          "summary": "reader:home: console message gone on b",
+          "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/sFyimd9e.js"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader:home:22",
+          "artefact": "console",
+          "scope": "reader:home",
+          "path": "/",
+          "severity": "info",
+          "summary": "reader:home: console message gone on b",
+          "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/VN-OVIGe.js"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader:home:23",
+          "artefact": "console",
+          "scope": "reader:home",
+          "path": "/",
+          "severity": "info",
+          "summary": "reader:home: console message gone on b",
+          "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/wC3VQYkj.js"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader:home:24",
+          "artefact": "console",
+          "scope": "reader:home",
+          "path": "/",
+          "severity": "info",
+          "summary": "reader:home: console message gone on b",
+          "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/nodes/0.CfKCyKlg.js"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader:home:25",
+          "artefact": "console",
+          "scope": "reader:home",
+          "path": "/",
+          "severity": "info",
+          "summary": "reader:home: console message gone on b",
+          "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/nodes/23.DJ8AbipA.js"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader:home:26",
+          "artefact": "console",
+          "scope": "reader:home",
+          "path": "/",
+          "severity": "info",
+          "summary": "reader:home: console message gone on b",
+          "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/nodes/4.CkqRQ8nE.js"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader:home:27",
+          "artefact": "console",
+          "scope": "reader:home",
+          "path": "/",
+          "severity": "info",
+          "summary": "reader:home: console message gone on b",
+          "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: https://www.setu.ie/img/logos/setu-logo.svg"
+        }
+      },
+      {
+        "hunk": {
+          "id": "metrics:http_request_duration_seconds_count:28",
+          "artefact": "metrics",
+          "scope": "catalogue/http_request_duration_seconds_count",
+          "severity": "fail",
+          "summary": "catalogue: new series on b: http_request_duration_seconds_count"
+        }
+      },
+      {
+        "hunk": {
+          "id": "metrics:http_requests_total:29",
+          "artefact": "metrics",
+          "scope": "catalogue/http_requests_total",
+          "severity": "fail",
+          "summary": "catalogue: new series on b: http_requests_total"
+        }
+      },
+      {
+        "hunk": {
+          "id": "metrics:http_request_duration_seconds_count:30",
+          "artefact": "metrics",
+          "scope": "live/http_request_duration_seconds_count",
+          "severity": "fail",
+          "summary": "live: new series on b: http_request_duration_seconds_count"
+        }
+      },
+      {
+        "hunk": {
+          "id": "metrics:http_requests_total:31",
+          "artefact": "metrics",
+          "scope": "live/http_requests_total",
+          "severity": "fail",
+          "summary": "live: new series on b: http_requests_total"
+        }
+      },
+      {
+        "hunk": {
+          "id": "metrics:http_request_duration_seconds_count:32",
+          "artefact": "metrics",
+          "scope": "time/http_request_duration_seconds_count",
+          "severity": "fail",
+          "summary": "time: new series on b: http_request_duration_seconds_count"
+        }
+      },
+      {
+        "hunk": {
+          "id": "metrics:http_requests_total:33",
+          "artefact": "metrics",
+          "scope": "time/http_requests_total",
+          "severity": "fail",
+          "summary": "time: new series on b: http_requests_total"
+        }
+      },
+      {
+        "hunk": {
+          "id": "logs:catalogue:34",
+          "artefact": "logs",
+          "scope": "catalogue/silent",
+          "severity": "fail",
+          "summary": "catalogue: wrote no log line on b (2 on a): nothing reached it, or it stopped logging"
+        }
+      },
+      {
+        "hunk": {
+          "id": "logs:live:35",
+          "artefact": "logs",
+          "scope": "live/silent",
+          "severity": "fail",
+          "summary": "live: wrote no log line on b (2 on a): nothing reached it, or it stopped logging"
+        }
+      },
+      {
+        "hunk": {
+          "id": "logs:time:36",
+          "artefact": "logs",
+          "scope": "time/silent",
+          "severity": "fail",
+          "summary": "time: wrote no log line on b (2 on a): nothing reached it, or it stopped logging"
+        }
+      },
+      {
+        "hunk": {
+          "id": "focus:reader:home:37",
+          "artefact": "focus",
+          "scope": "reader:home",
+          "path": "/",
+          "severity": "fail",
+          "summary": "reader:home: keyboard order changed (12 stops on a, 12 on b)",
+          "detail": " a \"My courses\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n button \"Anonymous Tutors Profile\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "focus:reader:course:38",
+          "artefact": "focus",
+          "scope": "reader:course",
+          "path": "/course/localhost:8080",
+          "severity": "fail",
+          "summary": "reader:course: keyboard order changed (12 stops on a, 12 on b)",
+          "detail": " button \"Search this course\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n button \"Anonymous Tutors Profile\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "focus:reader:topic:39",
+          "artefact": "focus",
+          "scope": "reader:topic",
+          "path": "/topic/localhost:8080/unit-1/topic-01",
+          "severity": "fail",
+          "summary": "reader:topic: keyboard order changed (12 stops on a, 12 on b)",
+          "detail": " button \"Search this course\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n button \"Anonymous Tutors Profile\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "focus:reader:lab-step:40",
+          "artefact": "focus",
+          "scope": "reader:lab-step",
+          "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01",
+          "severity": "fail",
+          "summary": "reader:lab-step: keyboard order changed (12 stops on a, 12 on b)",
+          "detail": " button \"Search this course\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n button \"Anonymous Tutors Profile\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "focus:reader:lab-step-2:41",
+          "artefact": "focus",
+          "scope": "reader:lab-step-2",
+          "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01/Step-01",
+          "severity": "fail",
+          "summary": "reader:lab-step-2: keyboard order changed (12 stops on a, 12 on b)",
+          "detail": " button \"Search this course\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n button \"Anonymous Tutors Profile\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-manifest:reader/base:42",
+          "artefact": "image-manifest",
+          "scope": "reader/base",
+          "severity": "fail",
+          "summary": "reader: built FROM a different base image (lowest layer e58989146fce → 44a87794b739)",
+          "detail": "base.digest label: a=unrecorded b=unrecorded\nlowest layer:      a=sha256:e58989146fcec76699871403b9897b5c014af1ccd85f5a9300a215e7975525d7 b=sha256:44a87794b739d471ec360bec56cc0ceac640d06bbf579ee7d9061a0b88d09818"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-manifest:reader/layers:43",
+          "artefact": "image-manifest",
+          "scope": "reader/layers",
+          "severity": "fail",
+          "summary": "reader: 10 layer(s) on a, 9 on b"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-manifest:reader/label/org.opencontainers.image.description:44",
+          "artefact": "image-manifest",
+          "scope": "reader/label/org.opencontainers.image.description",
+          "severity": "fail",
+          "summary": "reader: label org.opencontainers.image.description \"\" → \"The Tutors educational platform - an open-source course reader and learning management system built with Svelte 5, SvelteKit, and TypeScript.\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:reader/_asamuzakjp/dom-selector:45",
+          "artefact": "sbom",
+          "scope": "reader/@asamuzakjp/dom-selector",
+          "severity": "fail",
+          "summary": "reader: package bumped: @asamuzakjp/dom-selector 9.2.4 → 10.0.5"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:reader/_supabase/auth-js:46",
+          "artefact": "sbom",
+          "scope": "reader/@supabase/auth-js",
+          "severity": "fail",
+          "summary": "reader: package added: @supabase/auth-js@2.118.0"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:reader/_supabase/functions-js:47",
+          "artefact": "sbom",
+          "scope": "reader/@supabase/functions-js",
+          "severity": "fail",
+          "summary": "reader: package added: @supabase/functions-js@2.118.0"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:reader/_supabase/phoenix:48",
+          "artefact": "sbom",
+          "scope": "reader/@supabase/phoenix",
+          "severity": "fail",
+          "summary": "reader: package added: @supabase/phoenix@0.4.5"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:reader/_supabase/postgrest-js:49",
+          "artefact": "sbom",
+          "scope": "reader/@supabase/postgrest-js",
+          "severity": "fail",
+          "summary": "reader: package added: @supabase/postgrest-js@2.118.0"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:reader/_supabase/realtime-js:50",
+          "artefact": "sbom",
+          "scope": "reader/@supabase/realtime-js",
+          "severity": "fail",
+          "summary": "reader: package added: @supabase/realtime-js@2.118.0"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:reader/_supabase/storage-js:51",
+          "artefact": "sbom",
+          "scope": "reader/@supabase/storage-js",
+          "severity": "fail",
+          "summary": "reader: package added: @supabase/storage-js@2.118.0"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:reader/_supabase/supabase-js:52",
+          "artefact": "sbom",
+          "scope": "reader/@supabase/supabase-js",
+          "severity": "fail",
+          "summary": "reader: package added: @supabase/supabase-js@2.118.0"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:reader/dompurify:53",
+          "artefact": "sbom",
+          "scope": "reader/dompurify",
+          "severity": "fail",
+          "summary": "reader: package bumped: dompurify 3.4.16 → 3.4.17"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:reader/entities:54",
+          "artefact": "sbom",
+          "scope": "reader/entities",
+          "severity": "fail",
+          "summary": "reader: package bumped: entities 8.0.0 → 8.1.0"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:reader/iceberg-js:55",
+          "artefact": "sbom",
+          "scope": "reader/iceberg-js",
+          "severity": "fail",
+          "summary": "reader: package added: iceberg-js@0.8.1"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:reader/isomorphic-dompurify:56",
+          "artefact": "sbom",
+          "scope": "reader/isomorphic-dompurify",
+          "severity": "fail",
+          "summary": "reader: package bumped: isomorphic-dompurify 4.5.0 → 4.6.0"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:reader/jsdom:57",
+          "artefact": "sbom",
+          "scope": "reader/jsdom",
+          "severity": "fail",
+          "summary": "reader: package bumped: jsdom 30.1.2 → 30.1.3"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:reader/libatomic1:58",
+          "artefact": "sbom",
+          "scope": "reader/libatomic1",
+          "severity": "fail",
+          "summary": "reader: package added: libatomic1@12.2.0-14+deb12u1"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:reader/node:59",
+          "artefact": "sbom",
+          "scope": "reader/node",
+          "severity": "fail",
+          "summary": "reader: package bumped: node 22.23.3 → 26.13.0"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:reader/tslib:60",
+          "artefact": "sbom",
+          "scope": "reader/tslib",
+          "severity": "fail",
+          "summary": "reader: package added: tslib@2.8.1"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:reader/tzdata:61",
+          "artefact": "sbom",
+          "scope": "reader/tzdata",
+          "severity": "fail",
+          "summary": "reader: package bumped: tzdata 2026c-0+deb12u1 → 2026f-0+deb12u1"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:reader/undici:62",
+          "artefact": "sbom",
+          "scope": "reader/undici",
+          "severity": "fail",
+          "summary": "reader: package bumped: undici 8.11.2 → 8.12.3"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:reader/not-collected:63",
+          "artefact": "vulns",
+          "scope": "reader/not-collected",
+          "severity": "info",
+          "summary": "NOT COLLECTED: vulns of reader on both sides: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)",
+          "detail": "a: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)\nb: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-manifest:catalogue/base:64",
+          "artefact": "image-manifest",
+          "scope": "catalogue/base",
+          "severity": "fail",
+          "summary": "catalogue: built FROM a different base image (lowest layer e58989146fce → 44a87794b739)",
+          "detail": "base.digest label: a=unrecorded b=unrecorded\nlowest layer:      a=sha256:e58989146fcec76699871403b9897b5c014af1ccd85f5a9300a215e7975525d7 b=sha256:44a87794b739d471ec360bec56cc0ceac640d06bbf579ee7d9061a0b88d09818"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-manifest:catalogue/layers:65",
+          "artefact": "image-manifest",
+          "scope": "catalogue/layers",
+          "severity": "fail",
+          "summary": "catalogue: 10 layer(s) on a, 9 on b"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-manifest:catalogue/label/org.opencontainers.image.description:66",
+          "artefact": "image-manifest",
+          "scope": "catalogue/label/org.opencontainers.image.description",
+          "severity": "fail",
+          "summary": "catalogue: label org.opencontainers.image.description \"\" → \"The Tutors educational platform - an open-source course reader and learning management system built with Svelte 5, SvelteKit, and TypeScript.\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:catalogue/_asamuzakjp/dom-selector:67",
+          "artefact": "sbom",
+          "scope": "catalogue/@asamuzakjp/dom-selector",
+          "severity": "fail",
+          "summary": "catalogue: package bumped: @asamuzakjp/dom-selector 9.2.4 → 10.0.5"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:catalogue/dompurify:68",
+          "artefact": "sbom",
+          "scope": "catalogue/dompurify",
+          "severity": "fail",
+          "summary": "catalogue: package bumped: dompurify 3.4.16 → 3.4.17"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:catalogue/entities:69",
+          "artefact": "sbom",
+          "scope": "catalogue/entities",
+          "severity": "fail",
+          "summary": "catalogue: package bumped: entities 8.0.0 → 8.1.0"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:catalogue/isomorphic-dompurify:70",
+          "artefact": "sbom",
+          "scope": "catalogue/isomorphic-dompurify",
+          "severity": "fail",
+          "summary": "catalogue: package bumped: isomorphic-dompurify 4.5.0 → 4.6.0"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:catalogue/jsdom:71",
+          "artefact": "sbom",
+          "scope": "catalogue/jsdom",
+          "severity": "fail",
+          "summary": "catalogue: package bumped: jsdom 30.1.2 → 30.1.3"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:catalogue/libatomic1:72",
+          "artefact": "sbom",
+          "scope": "catalogue/libatomic1",
+          "severity": "fail",
+          "summary": "catalogue: package added: libatomic1@12.2.0-14+deb12u1"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:catalogue/node:73",
+          "artefact": "sbom",
+          "scope": "catalogue/node",
+          "severity": "fail",
+          "summary": "catalogue: package bumped: node 22.23.3 → 26.13.0"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:catalogue/tzdata:74",
+          "artefact": "sbom",
+          "scope": "catalogue/tzdata",
+          "severity": "fail",
+          "summary": "catalogue: package bumped: tzdata 2026c-0+deb12u1 → 2026f-0+deb12u1"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:catalogue/undici:75",
+          "artefact": "sbom",
+          "scope": "catalogue/undici",
+          "severity": "fail",
+          "summary": "catalogue: package bumped: undici 8.11.2 → 8.12.3"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:catalogue/not-collected:76",
+          "artefact": "vulns",
+          "scope": "catalogue/not-collected",
+          "severity": "info",
+          "summary": "NOT COLLECTED: vulns of catalogue on both sides: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)",
+          "detail": "a: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)\nb: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-manifest:live/base:77",
+          "artefact": "image-manifest",
+          "scope": "live/base",
+          "severity": "fail",
+          "summary": "live: built FROM a different base image (lowest layer e58989146fce → 44a87794b739)",
+          "detail": "base.digest label: a=unrecorded b=unrecorded\nlowest layer:      a=sha256:e58989146fcec76699871403b9897b5c014af1ccd85f5a9300a215e7975525d7 b=sha256:44a87794b739d471ec360bec56cc0ceac640d06bbf579ee7d9061a0b88d09818"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-manifest:live/layers:78",
+          "artefact": "image-manifest",
+          "scope": "live/layers",
+          "severity": "fail",
+          "summary": "live: 10 layer(s) on a, 9 on b"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-manifest:live/label/org.opencontainers.image.description:79",
+          "artefact": "image-manifest",
+          "scope": "live/label/org.opencontainers.image.description",
+          "severity": "fail",
+          "summary": "live: label org.opencontainers.image.description \"\" → \"The Tutors educational platform - an open-source course reader and learning management system built with Svelte 5, SvelteKit, and TypeScript.\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:live/_asamuzakjp/dom-selector:80",
+          "artefact": "sbom",
+          "scope": "live/@asamuzakjp/dom-selector",
+          "severity": "fail",
+          "summary": "live: package bumped: @asamuzakjp/dom-selector 9.2.4 → 10.0.5"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:live/dompurify:81",
+          "artefact": "sbom",
+          "scope": "live/dompurify",
+          "severity": "fail",
+          "summary": "live: package bumped: dompurify 3.4.16 → 3.4.17"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:live/entities:82",
+          "artefact": "sbom",
+          "scope": "live/entities",
+          "severity": "fail",
+          "summary": "live: package bumped: entities 8.0.0 → 8.1.0"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:live/isomorphic-dompurify:83",
+          "artefact": "sbom",
+          "scope": "live/isomorphic-dompurify",
+          "severity": "fail",
+          "summary": "live: package bumped: isomorphic-dompurify 4.5.0 → 4.6.0"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:live/jsdom:84",
+          "artefact": "sbom",
+          "scope": "live/jsdom",
+          "severity": "fail",
+          "summary": "live: package bumped: jsdom 30.1.2 → 30.1.3"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:live/libatomic1:85",
+          "artefact": "sbom",
+          "scope": "live/libatomic1",
+          "severity": "fail",
+          "summary": "live: package added: libatomic1@12.2.0-14+deb12u1"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:live/node:86",
+          "artefact": "sbom",
+          "scope": "live/node",
+          "severity": "fail",
+          "summary": "live: package bumped: node 22.23.3 → 26.13.0"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:live/tzdata:87",
+          "artefact": "sbom",
+          "scope": "live/tzdata",
+          "severity": "fail",
+          "summary": "live: package bumped: tzdata 2026c-0+deb12u1 → 2026f-0+deb12u1"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:live/undici:88",
+          "artefact": "sbom",
+          "scope": "live/undici",
+          "severity": "fail",
+          "summary": "live: package bumped: undici 8.11.2 → 8.12.3"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:live/not-collected:89",
+          "artefact": "vulns",
+          "scope": "live/not-collected",
+          "severity": "info",
+          "summary": "NOT COLLECTED: vulns of live on both sides: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)",
+          "detail": "a: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)\nb: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-manifest:time/base:90",
+          "artefact": "image-manifest",
+          "scope": "time/base",
+          "severity": "fail",
+          "summary": "time: built FROM a different base image (lowest layer e58989146fce → 44a87794b739)",
+          "detail": "base.digest label: a=unrecorded b=unrecorded\nlowest layer:      a=sha256:e58989146fcec76699871403b9897b5c014af1ccd85f5a9300a215e7975525d7 b=sha256:44a87794b739d471ec360bec56cc0ceac640d06bbf579ee7d9061a0b88d09818"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-manifest:time/layers:91",
+          "artefact": "image-manifest",
+          "scope": "time/layers",
+          "severity": "fail",
+          "summary": "time: 10 layer(s) on a, 9 on b"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-manifest:time/label/org.opencontainers.image.description:92",
+          "artefact": "image-manifest",
+          "scope": "time/label/org.opencontainers.image.description",
+          "severity": "fail",
+          "summary": "time: label org.opencontainers.image.description \"\" → \"The Tutors educational platform - an open-source course reader and learning management system built with Svelte 5, SvelteKit, and TypeScript.\""
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:time/_asamuzakjp/dom-selector:93",
+          "artefact": "sbom",
+          "scope": "time/@asamuzakjp/dom-selector",
+          "severity": "fail",
+          "summary": "time: package bumped: @asamuzakjp/dom-selector 9.2.4 → 10.0.5"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:time/_supabase/auth-js:94",
+          "artefact": "sbom",
+          "scope": "time/@supabase/auth-js",
+          "severity": "fail",
+          "summary": "time: package removed: @supabase/auth-js@2.117.2"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:time/_supabase/functions-js:95",
+          "artefact": "sbom",
+          "scope": "time/@supabase/functions-js",
+          "severity": "fail",
+          "summary": "time: package removed: @supabase/functions-js@2.117.2"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:time/_supabase/phoenix:96",
+          "artefact": "sbom",
+          "scope": "time/@supabase/phoenix",
+          "severity": "fail",
+          "summary": "time: package removed: @supabase/phoenix@0.4.5"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:time/_supabase/postgrest-js:97",
+          "artefact": "sbom",
+          "scope": "time/@supabase/postgrest-js",
+          "severity": "fail",
+          "summary": "time: package removed: @supabase/postgrest-js@2.117.2"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:time/_supabase/realtime-js:98",
+          "artefact": "sbom",
+          "scope": "time/@supabase/realtime-js",
+          "severity": "fail",
+          "summary": "time: package removed: @supabase/realtime-js@2.117.2"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:time/_supabase/storage-js:99",
+          "artefact": "sbom",
+          "scope": "time/@supabase/storage-js",
+          "severity": "fail",
+          "summary": "time: package removed: @supabase/storage-js@2.117.2"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:time/_supabase/supabase-js:100",
+          "artefact": "sbom",
+          "scope": "time/@supabase/supabase-js",
+          "severity": "fail",
+          "summary": "time: package removed: @supabase/supabase-js@2.117.2"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:time/dompurify:101",
+          "artefact": "sbom",
+          "scope": "time/dompurify",
+          "severity": "fail",
+          "summary": "time: package bumped: dompurify 3.4.16 → 3.4.17"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:time/entities:102",
+          "artefact": "sbom",
+          "scope": "time/entities",
+          "severity": "fail",
+          "summary": "time: package bumped: entities 8.0.0 → 8.1.0"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:time/iceberg-js:103",
+          "artefact": "sbom",
+          "scope": "time/iceberg-js",
+          "severity": "fail",
+          "summary": "time: package removed: iceberg-js@0.8.1"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:time/isomorphic-dompurify:104",
+          "artefact": "sbom",
+          "scope": "time/isomorphic-dompurify",
+          "severity": "fail",
+          "summary": "time: package bumped: isomorphic-dompurify 4.5.0 → 4.6.0"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:time/jsdom:105",
+          "artefact": "sbom",
+          "scope": "time/jsdom",
+          "severity": "fail",
+          "summary": "time: package bumped: jsdom 30.1.2 → 30.1.3"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:time/libatomic1:106",
+          "artefact": "sbom",
+          "scope": "time/libatomic1",
+          "severity": "fail",
+          "summary": "time: package added: libatomic1@12.2.0-14+deb12u1"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:time/node:107",
+          "artefact": "sbom",
+          "scope": "time/node",
+          "severity": "fail",
+          "summary": "time: package bumped: node 22.23.3 → 26.13.0"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:time/tslib:108",
+          "artefact": "sbom",
+          "scope": "time/tslib",
+          "severity": "fail",
+          "summary": "time: package removed: tslib@2.8.1"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:time/tzdata:109",
+          "artefact": "sbom",
+          "scope": "time/tzdata",
+          "severity": "fail",
+          "summary": "time: package bumped: tzdata 2026c-0+deb12u1 → 2026f-0+deb12u1"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:time/undici:110",
+          "artefact": "sbom",
+          "scope": "time/undici",
+          "severity": "fail",
+          "summary": "time: package bumped: undici 8.11.2 → 8.12.3"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:time/not-collected:111",
+          "artefact": "vulns",
+          "scope": "time/not-collected",
+          "severity": "info",
+          "summary": "NOT COLLECTED: vulns of time on both sides: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)",
+          "detail": "a: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)\nb: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      {
+        "hunk": {
+          "id": "runtime:runtime/summary:112",
+          "artefact": "runtime",
+          "scope": "runtime/summary",
+          "severity": "info",
+          "summary": "container posture collected for catalogue, live, reader, reader-auth, time on both sides (compose)",
+          "detail": "catalogue: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n           b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nlive: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n        b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader-auth: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n             b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\ntime: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter"
+        }
+      },
+      {
+        "hunk": {
+          "id": "startup:startup/not-collected:113",
+          "artefact": "startup",
+          "scope": "startup/not-collected",
+          "severity": "info",
+          "summary": "NOT COLLECTED: startup time on side a: switched off with --startup-restarts 0"
+        }
+      },
+      {
+        "hunk": {
+          "id": "startup:startup/not-collected:114",
+          "artefact": "startup",
+          "scope": "startup/not-collected",
+          "severity": "info",
+          "summary": "NOT COLLECTED: startup time on side b: switched off with --startup-restarts 0"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-hardening:reader/unrecorded-base:115",
+          "artefact": "image-hardening",
+          "scope": "reader/unrecorded-base",
+          "severity": "info",
+          "summary": "reader: records no base image (no org.opencontainers.image.base.name label), so a base that moved upstream reads as a rebuild no PR declared (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-hardening:catalogue/unrecorded-base:116",
+          "artefact": "image-hardening",
+          "scope": "catalogue/unrecorded-base",
+          "severity": "info",
+          "summary": "catalogue: records no base image (no org.opencontainers.image.base.name label), so a base that moved upstream reads as a rebuild no PR declared (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-hardening:live/unrecorded-base:117",
+          "artefact": "image-hardening",
+          "scope": "live/unrecorded-base",
+          "severity": "info",
+          "summary": "live: records no base image (no org.opencontainers.image.base.name label), so a base that moved upstream reads as a rebuild no PR declared (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-hardening:time/unrecorded-base:118",
+          "artefact": "image-hardening",
+          "scope": "time/unrecorded-base",
+          "severity": "info",
+          "summary": "time: records no base image (no org.opencontainers.image.base.name label), so a base that moved upstream reads as a rebuild no PR declared (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "build-provenance:reader/summary:119",
+          "artefact": "build-provenance",
+          "scope": "reader/summary",
+          "severity": "info",
+          "summary": "reader: build-provenance holds on b: SLSA provenance v1 by .github/workflows/image-build.yml@refs/heads/main"
+        }
+      },
+      {
+        "hunk": {
+          "id": "build-provenance:catalogue/summary:120",
+          "artefact": "build-provenance",
+          "scope": "catalogue/summary",
+          "severity": "info",
+          "summary": "catalogue: build-provenance holds on b: SLSA provenance v1 by .github/workflows/image-build.yml@refs/heads/main"
+        }
+      },
+      {
+        "hunk": {
+          "id": "build-provenance:live/summary:121",
+          "artefact": "build-provenance",
+          "scope": "live/summary",
+          "severity": "info",
+          "summary": "live: build-provenance holds on b: SLSA provenance v1 by .github/workflows/image-build.yml@refs/heads/main"
+        }
+      },
+      {
+        "hunk": {
+          "id": "build-provenance:time/summary:122",
+          "artefact": "build-provenance",
+          "scope": "time/summary",
+          "severity": "info",
+          "summary": "time: build-provenance holds on b: SLSA provenance v1 by .github/workflows/image-build.yml@refs/heads/main"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vuln-ceiling:reader/not-evaluated:123",
+          "artefact": "vuln-ceiling",
+          "scope": "reader/not-evaluated",
+          "severity": "info",
+          "summary": "reader: vuln-ceiling could not be evaluated on b: no vulnerability scan: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vuln-ceiling:catalogue/not-evaluated:124",
+          "artefact": "vuln-ceiling",
+          "scope": "catalogue/not-evaluated",
+          "severity": "info",
+          "summary": "catalogue: vuln-ceiling could not be evaluated on b: no vulnerability scan: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vuln-ceiling:live/not-evaluated:125",
+          "artefact": "vuln-ceiling",
+          "scope": "live/not-evaluated",
+          "severity": "info",
+          "summary": "live: vuln-ceiling could not be evaluated on b: no vulnerability scan: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vuln-ceiling:time/not-evaluated:126",
+          "artefact": "vuln-ceiling",
+          "scope": "time/not-evaluated",
+          "severity": "info",
+          "summary": "time: vuln-ceiling could not be evaluated on b: no vulnerability scan: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      {
+        "hunk": {
+          "id": "asset-graph:reader:127",
+          "artefact": "asset-graph",
+          "scope": "reader",
+          "severity": "info",
+          "summary": "reader: the asset graph changed: 111 → 117 immutable requests (JS 92 → 98, CSS 19 → 19), 1.1 MB → 1.1 MB; 2 network and 0 headers difference(s) are this churn",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:reader-availability/not-evaluated:128",
+          "artefact": "slo",
+          "scope": "reader-availability/not-evaluated",
+          "severity": "info",
+          "summary": "reader-availability: not evaluated on b: 4 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:reader-latency/not-evaluated:129",
+          "artefact": "slo",
+          "scope": "reader-latency/not-evaluated",
+          "severity": "info",
+          "summary": "reader-latency: not evaluated on b: 4 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:catalogue-availability/not-evaluated:130",
+          "artefact": "slo",
+          "scope": "catalogue-availability/not-evaluated",
+          "severity": "info",
+          "summary": "catalogue-availability: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:catalogue-latency/not-evaluated:131",
+          "artefact": "slo",
+          "scope": "catalogue-latency/not-evaluated",
+          "severity": "info",
+          "summary": "catalogue-latency: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:live-availability/not-evaluated:132",
+          "artefact": "slo",
+          "scope": "live-availability/not-evaluated",
+          "severity": "info",
+          "summary": "live-availability: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:live-latency/not-evaluated:133",
+          "artefact": "slo",
+          "scope": "live-latency/not-evaluated",
+          "severity": "info",
+          "summary": "live-latency: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:time-availability/not-evaluated:134",
+          "artefact": "slo",
+          "scope": "time-availability/not-evaluated",
+          "severity": "info",
+          "summary": "time-availability: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:time-latency/not-evaluated:135",
+          "artefact": "slo",
+          "scope": "time-latency/not-evaluated",
+          "severity": "info",
+          "summary": "time-latency: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "secrets-in-response:summary:136",
+          "artefact": "secrets-in-response",
+          "scope": "summary",
+          "severity": "info",
+          "summary": "secrets-in-response holds on b: no secret-shaped value in the accessibility tree, document headers, response URLs, console or HTML and JSON bodies of 5 page capture(s)"
+        }
+      },
+      {
+        "hunk": {
+          "id": "upgrade:rollout:1",
+          "artefact": "upgrade",
+          "scope": "rollout",
+          "severity": "info",
+          "summary": "901 requests through the rollout, none failed; switched at 17.2s"
+        }
+      }
+    ],
+    "unclaimed": [
+      {
+        "id": "dom:reader:home:1",
+        "artefact": "dom",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "fail",
+        "summary": "reader:home: semantic DOM differs (+1 −1 lines at line 10)",
+        "detail": "     - link \"My courses\":\n       - /url: /\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+      },
+      {
+        "id": "dom:reader:course:2",
+        "artefact": "dom",
+        "scope": "reader:course",
+        "path": "/course/localhost:8080",
+        "severity": "fail",
+        "summary": "reader:course: semantic DOM differs (+1 −1 lines at line 9)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+      },
+      {
+        "id": "dom:reader:topic:3",
+        "artefact": "dom",
+        "scope": "reader:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader:topic: semantic DOM differs (+1 −1 lines at line 8)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+      },
+      {
+        "id": "dom:reader:lab-step:4",
+        "artefact": "dom",
+        "scope": "reader:lab-step",
+        "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01",
+        "severity": "fail",
+        "summary": "reader:lab-step: semantic DOM differs (+1 −1 lines at line 8)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+      },
+      {
+        "id": "dom:reader:lab-step-2:5",
+        "artefact": "dom",
+        "scope": "reader:lab-step-2",
+        "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01/Step-01",
+        "severity": "fail",
+        "summary": "reader:lab-step-2: semantic DOM differs (+1 −1 lines at line 8)",
+        "detail": "     - text: Tutors CI\n     - button \"Search this course\": Search\n-    - button \"Open Theme Menu\": Preferences\n+    - button \"Preferences\"\n     - button \"Anonymous Tutors Profile\"\n - complementary \"Course navigation\":"
+      },
+      {
+        "id": "network:GET_/_app/immutable/chunks/__hash__.js:6",
+        "artefact": "network",
+        "scope": "GET /_app/immutable/chunks/{{hash}}.js",
+        "path": "/",
+        "severity": "fail",
+        "summary": "reader:home: GET /_app/immutable/chunks/{{hash}}.js requested 33× on a, 36× on b"
+      },
+      {
+        "id": "network:GET_/_app/immutable/chunks/__hash__.js:7",
+        "artefact": "network",
+        "scope": "GET /_app/immutable/chunks/{{hash}}.js",
+        "path": "/course/localhost:8080",
+        "severity": "fail",
+        "summary": "reader:course: GET /_app/immutable/chunks/{{hash}}.js requested 42× on a, 45× on b"
+      },
+      {
+        "id": "metrics:http_request_duration_seconds_count:28",
+        "artefact": "metrics",
+        "scope": "catalogue/http_request_duration_seconds_count",
+        "severity": "fail",
+        "summary": "catalogue: new series on b: http_request_duration_seconds_count"
+      },
+      {
+        "id": "metrics:http_requests_total:29",
+        "artefact": "metrics",
+        "scope": "catalogue/http_requests_total",
+        "severity": "fail",
+        "summary": "catalogue: new series on b: http_requests_total"
+      },
+      {
+        "id": "metrics:http_request_duration_seconds_count:30",
+        "artefact": "metrics",
+        "scope": "live/http_request_duration_seconds_count",
+        "severity": "fail",
+        "summary": "live: new series on b: http_request_duration_seconds_count"
+      },
+      {
+        "id": "metrics:http_requests_total:31",
+        "artefact": "metrics",
+        "scope": "live/http_requests_total",
+        "severity": "fail",
+        "summary": "live: new series on b: http_requests_total"
+      },
+      {
+        "id": "metrics:http_request_duration_seconds_count:32",
+        "artefact": "metrics",
+        "scope": "time/http_request_duration_seconds_count",
+        "severity": "fail",
+        "summary": "time: new series on b: http_request_duration_seconds_count"
+      },
+      {
+        "id": "metrics:http_requests_total:33",
+        "artefact": "metrics",
+        "scope": "time/http_requests_total",
+        "severity": "fail",
+        "summary": "time: new series on b: http_requests_total"
+      },
+      {
+        "id": "logs:catalogue:34",
+        "artefact": "logs",
+        "scope": "catalogue/silent",
+        "severity": "fail",
+        "summary": "catalogue: wrote no log line on b (2 on a): nothing reached it, or it stopped logging"
+      },
+      {
+        "id": "logs:live:35",
+        "artefact": "logs",
+        "scope": "live/silent",
+        "severity": "fail",
+        "summary": "live: wrote no log line on b (2 on a): nothing reached it, or it stopped logging"
+      },
+      {
+        "id": "logs:time:36",
+        "artefact": "logs",
+        "scope": "time/silent",
+        "severity": "fail",
+        "summary": "time: wrote no log line on b (2 on a): nothing reached it, or it stopped logging"
+      },
+      {
+        "id": "focus:reader:home:37",
+        "artefact": "focus",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "fail",
+        "summary": "reader:home: keyboard order changed (12 stops on a, 12 on b)",
+        "detail": " a \"My courses\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n button \"Anonymous Tutors Profile\""
+      },
+      {
+        "id": "focus:reader:course:38",
+        "artefact": "focus",
+        "scope": "reader:course",
+        "path": "/course/localhost:8080",
+        "severity": "fail",
+        "summary": "reader:course: keyboard order changed (12 stops on a, 12 on b)",
+        "detail": " button \"Search this course\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n button \"Anonymous Tutors Profile\""
+      },
+      {
+        "id": "focus:reader:topic:39",
+        "artefact": "focus",
+        "scope": "reader:topic",
+        "path": "/topic/localhost:8080/unit-1/topic-01",
+        "severity": "fail",
+        "summary": "reader:topic: keyboard order changed (12 stops on a, 12 on b)",
+        "detail": " button \"Search this course\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n button \"Anonymous Tutors Profile\""
+      },
+      {
+        "id": "focus:reader:lab-step:40",
+        "artefact": "focus",
+        "scope": "reader:lab-step",
+        "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01",
+        "severity": "fail",
+        "summary": "reader:lab-step: keyboard order changed (12 stops on a, 12 on b)",
+        "detail": " button \"Search this course\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n button \"Anonymous Tutors Profile\""
+      },
+      {
+        "id": "focus:reader:lab-step-2:41",
+        "artefact": "focus",
+        "scope": "reader:lab-step-2",
+        "path": "/lab/localhost:8080/unit-1/topic-01/book-lab-01/Step-01",
+        "severity": "fail",
+        "summary": "reader:lab-step-2: keyboard order changed (12 stops on a, 12 on b)",
+        "detail": " button \"Search this course\"\n-button \"Open Theme Menu\"\n+button \"Preferences\"\n button \"Anonymous Tutors Profile\""
+      },
+      {
+        "id": "image-manifest:reader/base:42",
+        "artefact": "image-manifest",
+        "scope": "reader/base",
+        "severity": "fail",
+        "summary": "reader: built FROM a different base image (lowest layer e58989146fce → 44a87794b739)",
+        "detail": "base.digest label: a=unrecorded b=unrecorded\nlowest layer:      a=sha256:e58989146fcec76699871403b9897b5c014af1ccd85f5a9300a215e7975525d7 b=sha256:44a87794b739d471ec360bec56cc0ceac640d06bbf579ee7d9061a0b88d09818"
+      },
+      {
+        "id": "image-manifest:reader/layers:43",
+        "artefact": "image-manifest",
+        "scope": "reader/layers",
+        "severity": "fail",
+        "summary": "reader: 10 layer(s) on a, 9 on b"
+      },
+      {
+        "id": "image-manifest:reader/label/org.opencontainers.image.description:44",
+        "artefact": "image-manifest",
+        "scope": "reader/label/org.opencontainers.image.description",
+        "severity": "fail",
+        "summary": "reader: label org.opencontainers.image.description \"\" → \"The Tutors educational platform - an open-source course reader and learning management system built with Svelte 5, SvelteKit, and TypeScript.\""
+      },
+      {
+        "id": "sbom:reader/_asamuzakjp/dom-selector:45",
+        "artefact": "sbom",
+        "scope": "reader/@asamuzakjp/dom-selector",
+        "severity": "fail",
+        "summary": "reader: package bumped: @asamuzakjp/dom-selector 9.2.4 → 10.0.5"
+      },
+      {
+        "id": "sbom:reader/_supabase/auth-js:46",
+        "artefact": "sbom",
+        "scope": "reader/@supabase/auth-js",
+        "severity": "fail",
+        "summary": "reader: package added: @supabase/auth-js@2.118.0"
+      },
+      {
+        "id": "sbom:reader/_supabase/functions-js:47",
+        "artefact": "sbom",
+        "scope": "reader/@supabase/functions-js",
+        "severity": "fail",
+        "summary": "reader: package added: @supabase/functions-js@2.118.0"
+      },
+      {
+        "id": "sbom:reader/_supabase/phoenix:48",
+        "artefact": "sbom",
+        "scope": "reader/@supabase/phoenix",
+        "severity": "fail",
+        "summary": "reader: package added: @supabase/phoenix@0.4.5"
+      },
+      {
+        "id": "sbom:reader/_supabase/postgrest-js:49",
+        "artefact": "sbom",
+        "scope": "reader/@supabase/postgrest-js",
+        "severity": "fail",
+        "summary": "reader: package added: @supabase/postgrest-js@2.118.0"
+      },
+      {
+        "id": "sbom:reader/_supabase/realtime-js:50",
+        "artefact": "sbom",
+        "scope": "reader/@supabase/realtime-js",
+        "severity": "fail",
+        "summary": "reader: package added: @supabase/realtime-js@2.118.0"
+      },
+      {
+        "id": "sbom:reader/_supabase/storage-js:51",
+        "artefact": "sbom",
+        "scope": "reader/@supabase/storage-js",
+        "severity": "fail",
+        "summary": "reader: package added: @supabase/storage-js@2.118.0"
+      },
+      {
+        "id": "sbom:reader/_supabase/supabase-js:52",
+        "artefact": "sbom",
+        "scope": "reader/@supabase/supabase-js",
+        "severity": "fail",
+        "summary": "reader: package added: @supabase/supabase-js@2.118.0"
+      },
+      {
+        "id": "sbom:reader/dompurify:53",
+        "artefact": "sbom",
+        "scope": "reader/dompurify",
+        "severity": "fail",
+        "summary": "reader: package bumped: dompurify 3.4.16 → 3.4.17"
+      },
+      {
+        "id": "sbom:reader/entities:54",
+        "artefact": "sbom",
+        "scope": "reader/entities",
+        "severity": "fail",
+        "summary": "reader: package bumped: entities 8.0.0 → 8.1.0"
+      },
+      {
+        "id": "sbom:reader/iceberg-js:55",
+        "artefact": "sbom",
+        "scope": "reader/iceberg-js",
+        "severity": "fail",
+        "summary": "reader: package added: iceberg-js@0.8.1"
+      },
+      {
+        "id": "sbom:reader/isomorphic-dompurify:56",
+        "artefact": "sbom",
+        "scope": "reader/isomorphic-dompurify",
+        "severity": "fail",
+        "summary": "reader: package bumped: isomorphic-dompurify 4.5.0 → 4.6.0"
+      },
+      {
+        "id": "sbom:reader/jsdom:57",
+        "artefact": "sbom",
+        "scope": "reader/jsdom",
+        "severity": "fail",
+        "summary": "reader: package bumped: jsdom 30.1.2 → 30.1.3"
+      },
+      {
+        "id": "sbom:reader/libatomic1:58",
+        "artefact": "sbom",
+        "scope": "reader/libatomic1",
+        "severity": "fail",
+        "summary": "reader: package added: libatomic1@12.2.0-14+deb12u1"
+      },
+      {
+        "id": "sbom:reader/node:59",
+        "artefact": "sbom",
+        "scope": "reader/node",
+        "severity": "fail",
+        "summary": "reader: package bumped: node 22.23.3 → 26.13.0"
+      },
+      {
+        "id": "sbom:reader/tslib:60",
+        "artefact": "sbom",
+        "scope": "reader/tslib",
+        "severity": "fail",
+        "summary": "reader: package added: tslib@2.8.1"
+      },
+      {
+        "id": "sbom:reader/tzdata:61",
+        "artefact": "sbom",
+        "scope": "reader/tzdata",
+        "severity": "fail",
+        "summary": "reader: package bumped: tzdata 2026c-0+deb12u1 → 2026f-0+deb12u1"
+      },
+      {
+        "id": "sbom:reader/undici:62",
+        "artefact": "sbom",
+        "scope": "reader/undici",
+        "severity": "fail",
+        "summary": "reader: package bumped: undici 8.11.2 → 8.12.3"
+      },
+      {
+        "id": "image-manifest:catalogue/base:64",
+        "artefact": "image-manifest",
+        "scope": "catalogue/base",
+        "severity": "fail",
+        "summary": "catalogue: built FROM a different base image (lowest layer e58989146fce → 44a87794b739)",
+        "detail": "base.digest label: a=unrecorded b=unrecorded\nlowest layer:      a=sha256:e58989146fcec76699871403b9897b5c014af1ccd85f5a9300a215e7975525d7 b=sha256:44a87794b739d471ec360bec56cc0ceac640d06bbf579ee7d9061a0b88d09818"
+      },
+      {
+        "id": "image-manifest:catalogue/layers:65",
+        "artefact": "image-manifest",
+        "scope": "catalogue/layers",
+        "severity": "fail",
+        "summary": "catalogue: 10 layer(s) on a, 9 on b"
+      },
+      {
+        "id": "image-manifest:catalogue/label/org.opencontainers.image.description:66",
+        "artefact": "image-manifest",
+        "scope": "catalogue/label/org.opencontainers.image.description",
+        "severity": "fail",
+        "summary": "catalogue: label org.opencontainers.image.description \"\" → \"The Tutors educational platform - an open-source course reader and learning management system built with Svelte 5, SvelteKit, and TypeScript.\""
+      },
+      {
+        "id": "sbom:catalogue/_asamuzakjp/dom-selector:67",
+        "artefact": "sbom",
+        "scope": "catalogue/@asamuzakjp/dom-selector",
+        "severity": "fail",
+        "summary": "catalogue: package bumped: @asamuzakjp/dom-selector 9.2.4 → 10.0.5"
+      },
+      {
+        "id": "sbom:catalogue/dompurify:68",
+        "artefact": "sbom",
+        "scope": "catalogue/dompurify",
+        "severity": "fail",
+        "summary": "catalogue: package bumped: dompurify 3.4.16 → 3.4.17"
+      },
+      {
+        "id": "sbom:catalogue/entities:69",
+        "artefact": "sbom",
+        "scope": "catalogue/entities",
+        "severity": "fail",
+        "summary": "catalogue: package bumped: entities 8.0.0 → 8.1.0"
+      },
+      {
+        "id": "sbom:catalogue/isomorphic-dompurify:70",
+        "artefact": "sbom",
+        "scope": "catalogue/isomorphic-dompurify",
+        "severity": "fail",
+        "summary": "catalogue: package bumped: isomorphic-dompurify 4.5.0 → 4.6.0"
+      },
+      {
+        "id": "sbom:catalogue/jsdom:71",
+        "artefact": "sbom",
+        "scope": "catalogue/jsdom",
+        "severity": "fail",
+        "summary": "catalogue: package bumped: jsdom 30.1.2 → 30.1.3"
+      },
+      {
+        "id": "sbom:catalogue/libatomic1:72",
+        "artefact": "sbom",
+        "scope": "catalogue/libatomic1",
+        "severity": "fail",
+        "summary": "catalogue: package added: libatomic1@12.2.0-14+deb12u1"
+      },
+      {
+        "id": "sbom:catalogue/node:73",
+        "artefact": "sbom",
+        "scope": "catalogue/node",
+        "severity": "fail",
+        "summary": "catalogue: package bumped: node 22.23.3 → 26.13.0"
+      },
+      {
+        "id": "sbom:catalogue/tzdata:74",
+        "artefact": "sbom",
+        "scope": "catalogue/tzdata",
+        "severity": "fail",
+        "summary": "catalogue: package bumped: tzdata 2026c-0+deb12u1 → 2026f-0+deb12u1"
+      },
+      {
+        "id": "sbom:catalogue/undici:75",
+        "artefact": "sbom",
+        "scope": "catalogue/undici",
+        "severity": "fail",
+        "summary": "catalogue: package bumped: undici 8.11.2 → 8.12.3"
+      },
+      {
+        "id": "image-manifest:live/base:77",
+        "artefact": "image-manifest",
+        "scope": "live/base",
+        "severity": "fail",
+        "summary": "live: built FROM a different base image (lowest layer e58989146fce → 44a87794b739)",
+        "detail": "base.digest label: a=unrecorded b=unrecorded\nlowest layer:      a=sha256:e58989146fcec76699871403b9897b5c014af1ccd85f5a9300a215e7975525d7 b=sha256:44a87794b739d471ec360bec56cc0ceac640d06bbf579ee7d9061a0b88d09818"
+      },
+      {
+        "id": "image-manifest:live/layers:78",
+        "artefact": "image-manifest",
+        "scope": "live/layers",
+        "severity": "fail",
+        "summary": "live: 10 layer(s) on a, 9 on b"
+      },
+      {
+        "id": "image-manifest:live/label/org.opencontainers.image.description:79",
+        "artefact": "image-manifest",
+        "scope": "live/label/org.opencontainers.image.description",
+        "severity": "fail",
+        "summary": "live: label org.opencontainers.image.description \"\" → \"The Tutors educational platform - an open-source course reader and learning management system built with Svelte 5, SvelteKit, and TypeScript.\""
+      },
+      {
+        "id": "sbom:live/_asamuzakjp/dom-selector:80",
+        "artefact": "sbom",
+        "scope": "live/@asamuzakjp/dom-selector",
+        "severity": "fail",
+        "summary": "live: package bumped: @asamuzakjp/dom-selector 9.2.4 → 10.0.5"
+      },
+      {
+        "id": "sbom:live/dompurify:81",
+        "artefact": "sbom",
+        "scope": "live/dompurify",
+        "severity": "fail",
+        "summary": "live: package bumped: dompurify 3.4.16 → 3.4.17"
+      },
+      {
+        "id": "sbom:live/entities:82",
+        "artefact": "sbom",
+        "scope": "live/entities",
+        "severity": "fail",
+        "summary": "live: package bumped: entities 8.0.0 → 8.1.0"
+      },
+      {
+        "id": "sbom:live/isomorphic-dompurify:83",
+        "artefact": "sbom",
+        "scope": "live/isomorphic-dompurify",
+        "severity": "fail",
+        "summary": "live: package bumped: isomorphic-dompurify 4.5.0 → 4.6.0"
+      },
+      {
+        "id": "sbom:live/jsdom:84",
+        "artefact": "sbom",
+        "scope": "live/jsdom",
+        "severity": "fail",
+        "summary": "live: package bumped: jsdom 30.1.2 → 30.1.3"
+      },
+      {
+        "id": "sbom:live/libatomic1:85",
+        "artefact": "sbom",
+        "scope": "live/libatomic1",
+        "severity": "fail",
+        "summary": "live: package added: libatomic1@12.2.0-14+deb12u1"
+      },
+      {
+        "id": "sbom:live/node:86",
+        "artefact": "sbom",
+        "scope": "live/node",
+        "severity": "fail",
+        "summary": "live: package bumped: node 22.23.3 → 26.13.0"
+      },
+      {
+        "id": "sbom:live/tzdata:87",
+        "artefact": "sbom",
+        "scope": "live/tzdata",
+        "severity": "fail",
+        "summary": "live: package bumped: tzdata 2026c-0+deb12u1 → 2026f-0+deb12u1"
+      },
+      {
+        "id": "sbom:live/undici:88",
+        "artefact": "sbom",
+        "scope": "live/undici",
+        "severity": "fail",
+        "summary": "live: package bumped: undici 8.11.2 → 8.12.3"
+      },
+      {
+        "id": "image-manifest:time/base:90",
+        "artefact": "image-manifest",
+        "scope": "time/base",
+        "severity": "fail",
+        "summary": "time: built FROM a different base image (lowest layer e58989146fce → 44a87794b739)",
+        "detail": "base.digest label: a=unrecorded b=unrecorded\nlowest layer:      a=sha256:e58989146fcec76699871403b9897b5c014af1ccd85f5a9300a215e7975525d7 b=sha256:44a87794b739d471ec360bec56cc0ceac640d06bbf579ee7d9061a0b88d09818"
+      },
+      {
+        "id": "image-manifest:time/layers:91",
+        "artefact": "image-manifest",
+        "scope": "time/layers",
+        "severity": "fail",
+        "summary": "time: 10 layer(s) on a, 9 on b"
+      },
+      {
+        "id": "image-manifest:time/label/org.opencontainers.image.description:92",
+        "artefact": "image-manifest",
+        "scope": "time/label/org.opencontainers.image.description",
+        "severity": "fail",
+        "summary": "time: label org.opencontainers.image.description \"\" → \"The Tutors educational platform - an open-source course reader and learning management system built with Svelte 5, SvelteKit, and TypeScript.\""
+      },
+      {
+        "id": "sbom:time/_asamuzakjp/dom-selector:93",
+        "artefact": "sbom",
+        "scope": "time/@asamuzakjp/dom-selector",
+        "severity": "fail",
+        "summary": "time: package bumped: @asamuzakjp/dom-selector 9.2.4 → 10.0.5"
+      },
+      {
+        "id": "sbom:time/_supabase/auth-js:94",
+        "artefact": "sbom",
+        "scope": "time/@supabase/auth-js",
+        "severity": "fail",
+        "summary": "time: package removed: @supabase/auth-js@2.117.2"
+      },
+      {
+        "id": "sbom:time/_supabase/functions-js:95",
+        "artefact": "sbom",
+        "scope": "time/@supabase/functions-js",
+        "severity": "fail",
+        "summary": "time: package removed: @supabase/functions-js@2.117.2"
+      },
+      {
+        "id": "sbom:time/_supabase/phoenix:96",
+        "artefact": "sbom",
+        "scope": "time/@supabase/phoenix",
+        "severity": "fail",
+        "summary": "time: package removed: @supabase/phoenix@0.4.5"
+      },
+      {
+        "id": "sbom:time/_supabase/postgrest-js:97",
+        "artefact": "sbom",
+        "scope": "time/@supabase/postgrest-js",
+        "severity": "fail",
+        "summary": "time: package removed: @supabase/postgrest-js@2.117.2"
+      },
+      {
+        "id": "sbom:time/_supabase/realtime-js:98",
+        "artefact": "sbom",
+        "scope": "time/@supabase/realtime-js",
+        "severity": "fail",
+        "summary": "time: package removed: @supabase/realtime-js@2.117.2"
+      },
+      {
+        "id": "sbom:time/_supabase/storage-js:99",
+        "artefact": "sbom",
+        "scope": "time/@supabase/storage-js",
+        "severity": "fail",
+        "summary": "time: package removed: @supabase/storage-js@2.117.2"
+      },
+      {
+        "id": "sbom:time/_supabase/supabase-js:100",
+        "artefact": "sbom",
+        "scope": "time/@supabase/supabase-js",
+        "severity": "fail",
+        "summary": "time: package removed: @supabase/supabase-js@2.117.2"
+      },
+      {
+        "id": "sbom:time/dompurify:101",
+        "artefact": "sbom",
+        "scope": "time/dompurify",
+        "severity": "fail",
+        "summary": "time: package bumped: dompurify 3.4.16 → 3.4.17"
+      },
+      {
+        "id": "sbom:time/entities:102",
+        "artefact": "sbom",
+        "scope": "time/entities",
+        "severity": "fail",
+        "summary": "time: package bumped: entities 8.0.0 → 8.1.0"
+      },
+      {
+        "id": "sbom:time/iceberg-js:103",
+        "artefact": "sbom",
+        "scope": "time/iceberg-js",
+        "severity": "fail",
+        "summary": "time: package removed: iceberg-js@0.8.1"
+      },
+      {
+        "id": "sbom:time/isomorphic-dompurify:104",
+        "artefact": "sbom",
+        "scope": "time/isomorphic-dompurify",
+        "severity": "fail",
+        "summary": "time: package bumped: isomorphic-dompurify 4.5.0 → 4.6.0"
+      },
+      {
+        "id": "sbom:time/jsdom:105",
+        "artefact": "sbom",
+        "scope": "time/jsdom",
+        "severity": "fail",
+        "summary": "time: package bumped: jsdom 30.1.2 → 30.1.3"
+      },
+      {
+        "id": "sbom:time/libatomic1:106",
+        "artefact": "sbom",
+        "scope": "time/libatomic1",
+        "severity": "fail",
+        "summary": "time: package added: libatomic1@12.2.0-14+deb12u1"
+      },
+      {
+        "id": "sbom:time/node:107",
+        "artefact": "sbom",
+        "scope": "time/node",
+        "severity": "fail",
+        "summary": "time: package bumped: node 22.23.3 → 26.13.0"
+      },
+      {
+        "id": "sbom:time/tslib:108",
+        "artefact": "sbom",
+        "scope": "time/tslib",
+        "severity": "fail",
+        "summary": "time: package removed: tslib@2.8.1"
+      },
+      {
+        "id": "sbom:time/tzdata:109",
+        "artefact": "sbom",
+        "scope": "time/tzdata",
+        "severity": "fail",
+        "summary": "time: package bumped: tzdata 2026c-0+deb12u1 → 2026f-0+deb12u1"
+      },
+      {
+        "id": "sbom:time/undici:110",
+        "artefact": "sbom",
+        "scope": "time/undici",
+        "severity": "fail",
+        "summary": "time: package bumped: undici 8.11.2 → 8.12.3"
+      }
+    ],
+    "staleClaims": [],
+    "broadUnapproved": []
+  },
+  "masksApplied": {
+    "response-date": 4,
+    "request-id": 4,
+    "etag": 4,
+    "metrics-process": 599,
+    "metrics-timing-histograms": 18,
+    "third-party-requests": 61,
+    "persistence-stub-requests": 0,
+    "realtime-rest-fallback-warning": 0,
+    "oauth-callback-state": 0,
+    "media-range-status": 0,
+    "chromium-compute-pressure-policy": 0,
+    "course-media-http2-reset": 0,
+    "hashed-assets": 228,
+    "footer-tutors-version": 20,
+    "transport-length": 4,
+    "transport-connection": 4,
+    "transport-encoding": 0,
+    "transport-transfer": 0,
+    "transport-keepalive": 4
+  },
+  "upgrade": {
+    "substrate": "compose",
+    "requests": 901,
+    "failed": 0,
+    "serverErrors": 0,
+    "byUpstream": {
+      "a": {
+        "requests": 300,
+        "failed": 0,
+        "serverErrors": 0,
+        "p95": 4.8
+      },
+      "b": {
+        "requests": 601,
+        "failed": 0,
+        "serverErrors": 0,
+        "p95": 3.4
+      }
+    },
+    "switchedAt": 17179,
+    "durationMs": 47369
+  },
+  "imageArtefacts": {
+    "a": {
+      "reader": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 309.2 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "134 distinct package(s)"
+        },
+        "vulns": {
+          "collected": false,
+          "reason": "grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      "catalogue": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 274.2 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "134 distinct package(s)"
+        },
+        "vulns": {
+          "collected": false,
+          "reason": "grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      "live": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 274.5 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "134 distinct package(s)"
+        },
+        "vulns": {
+          "collected": false,
+          "reason": "grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      "time": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "10 layers, 285.2 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "143 distinct package(s)"
+        },
+        "vulns": {
+          "collected": false,
+          "reason": "grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      }
+    },
+    "b": {
+      "reader": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "9 layers, 329.5 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "144 distinct package(s)"
+        },
+        "vulns": {
+          "collected": false,
+          "reason": "grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      "catalogue": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "9 layers, 288.7 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "135 distinct package(s)"
+        },
+        "vulns": {
+          "collected": false,
+          "reason": "grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      "live": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "9 layers, 289.0 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "135 distinct package(s)"
+        },
+        "vulns": {
+          "collected": false,
+          "reason": "grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      "time": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "9 layers, 293.8 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "135 distinct package(s)"
+        },
+        "vulns": {
+          "collected": false,
+          "reason": "grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      }
+    }
+  },
+  "clock": {
+    "a": {
+      "verdict": "no-evidence",
+      "samples": []
+    },
+    "b": {
+      "verdict": "no-evidence",
+      "samples": []
+    }
+  },
+  "levels": {
+    "dom": {
+      "level": "blocking"
+    },
+    "screenshot": {
+      "level": "blocking"
+    },
+    "network": {
+      "level": "blocking"
+    },
+    "console": {
+      "level": "blocking"
+    },
+    "headers": {
+      "level": "blocking"
+    },
+    "axe": {
+      "level": "blocking"
+    },
+    "focus": {
+      "level": "blocking"
+    },
+    "metrics": {
+      "level": "blocking"
+    },
+    "logs": {
+      "level": "blocking"
+    },
+    "timing": {
+      "level": "informing"
+    },
+    "persistence": {
+      "level": "blocking"
+    },
+    "bus": {
+      "level": "blocking"
+    },
+    "migration": {
+      "level": "blocking"
+    },
+    "upgrade": {
+      "level": "blocking"
+    },
+    "image-manifest": {
+      "level": "blocking"
+    },
+    "sbom": {
+      "level": "blocking"
+    },
+    "vulns": {
+      "level": "blocking"
+    },
+    "runtime": {
+      "level": "blocking"
+    },
+    "startup": {
+      "level": "blocking"
+    },
+    "image-hardening": {
+      "level": "informing"
+    },
+    "build-provenance": {
+      "level": "informing"
+    },
+    "vuln-ceiling": {
+      "level": "informing"
+    },
+    "timing-tolerance": {
+      "level": "informing"
+    },
+    "asset-graph": {
+      "level": "informing"
+    },
+    "replay": {
+      "level": "informing"
+    },
+    "slo": {
+      "level": "informing"
+    },
+    "realtime": {
+      "level": "informing"
+    },
+    "secrets-in-response": {
+      "level": "informing"
+    },
+    "headers-policy": {
+      "level": "informing"
+    }
+  },
+  "timingControl": {
+    "journeys": [
+      {
+        "journey": "anonymous-student-reads-course",
+        "a": [
+          8618
+        ],
+        "b": [
+          8863
+        ],
+        "above": 0,
+        "below": 0
+      }
+    ]
+  },
+  "causes": {
+    "unclaimed": 87,
+    "causes": [
+      {
+        "id": "2bc87b7a",
+        "key": "sbom: package bumped",
+        "artefact": "sbom",
+        "kind": "package bumped",
+        "hunks": 32,
+        "apps": [
+          "reader",
+          "catalogue",
+          "live",
+          "time"
+        ],
+        "pages": [],
+        "items": [
+          "@asamuzakjp/dom-selector",
+          "dompurify",
+          "entities",
+          "isomorphic-dompurify",
+          "jsdom",
+          "node",
+          "tzdata",
+          "undici"
+        ],
+        "example": {
+          "id": "sbom:reader/_asamuzakjp/dom-selector:45",
+          "scope": "reader/@asamuzakjp/dom-selector",
+          "summary": "reader: package bumped: @asamuzakjp/dom-selector 9.2.4 → 10.0.5"
+        }
+      },
+      {
+        "id": "bedb38b7",
+        "key": "sbom: package added",
+        "artefact": "sbom",
+        "kind": "package added",
+        "hunks": 13,
+        "apps": [
+          "reader",
+          "catalogue",
+          "live",
+          "time"
+        ],
+        "pages": [],
+        "items": [
+          "@supabase/auth-js",
+          "@supabase/functions-js",
+          "@supabase/phoenix",
+          "@supabase/postgrest-js",
+          "@supabase/realtime-js",
+          "@supabase/storage-js",
+          "@supabase/supabase-js",
+          "iceberg-js",
+          "libatomic1",
+          "tslib"
+        ],
+        "example": {
+          "id": "sbom:reader/_supabase/auth-js:46",
+          "scope": "reader/@supabase/auth-js",
+          "summary": "reader: package added: @supabase/auth-js@2.118.0"
+        }
+      },
+      {
+        "id": "3eff5a88",
+        "key": "sbom: package removed",
+        "artefact": "sbom",
+        "kind": "package removed",
+        "hunks": 9,
+        "apps": [
+          "time"
+        ],
+        "pages": [],
+        "items": [
+          "@supabase/auth-js",
+          "@supabase/functions-js",
+          "@supabase/phoenix",
+          "@supabase/postgrest-js",
+          "@supabase/realtime-js",
+          "@supabase/storage-js",
+          "@supabase/supabase-js",
+          "iceberg-js",
+          "tslib"
+        ],
+        "example": {
+          "id": "sbom:time/_supabase/auth-js:94",
+          "scope": "time/@supabase/auth-js",
+          "summary": "time: package removed: @supabase/auth-js@2.117.2"
+        }
+      },
+      {
+        "id": "c20ba75a",
+        "key": "metrics: new series on b",
+        "artefact": "metrics",
+        "kind": "new series on b",
+        "hunks": 6,
+        "apps": [
+          "catalogue",
+          "live",
+          "time"
+        ],
+        "pages": [],
+        "items": [
+          "http_request_duration_seconds_count",
+          "http_requests_total"
+        ],
+        "example": {
+          "id": "metrics:http_request_duration_seconds_count:28",
+          "scope": "catalogue/http_request_duration_seconds_count",
+          "summary": "catalogue: new series on b: http_request_duration_seconds_count"
+        }
+      },
+      {
+        "id": "a36188a9",
+        "key": "dom: semantic DOM differs (+# −# lines at line #)",
+        "artefact": "dom",
+        "kind": "semantic DOM differs (+# −# lines at line #)",
+        "hunks": 5,
+        "apps": [
+          "reader"
+        ],
+        "pages": [
+          "reader:course",
+          "reader:home",
+          "reader:lab-step",
+          "reader:lab-step-2",
+          "reader:topic"
+        ],
+        "items": [],
+        "example": {
+          "id": "dom:reader:home:1",
+          "scope": "reader:home",
+          "summary": "reader:home: semantic DOM differs (+1 −1 lines at line 10)"
+        }
+      },
+      {
+        "id": "6109393d",
+        "key": "focus: keyboard order changed (# stops on a, # on b)",
+        "artefact": "focus",
+        "kind": "keyboard order changed (# stops on a, # on b)",
+        "hunks": 5,
+        "apps": [
+          "reader"
+        ],
+        "pages": [
+          "reader:course",
+          "reader:home",
+          "reader:lab-step",
+          "reader:lab-step-2",
+          "reader:topic"
+        ],
+        "items": [],
+        "example": {
+          "id": "focus:reader:home:37",
+          "scope": "reader:home",
+          "summary": "reader:home: keyboard order changed (12 stops on a, 12 on b)"
+        }
+      },
+      {
+        "id": "8c00bd60",
+        "key": "image-manifest: # layer(s) on a, # on b",
+        "artefact": "image-manifest",
+        "kind": "# layer(s) on a, # on b",
+        "hunks": 4,
+        "apps": [
+          "reader",
+          "catalogue",
+          "live",
+          "time"
+        ],
+        "pages": [],
+        "items": [],
+        "example": {
+          "id": "image-manifest:reader/layers:43",
+          "scope": "reader/layers",
+          "summary": "reader: 10 layer(s) on a, 9 on b"
+        }
+      },
+      {
+        "id": "e6eb1252",
+        "key": "image-manifest: built FROM a different base image (lowest layer e#fce → #a#b#)",
+        "artefact": "image-manifest",
+        "kind": "built FROM a different base image (lowest layer e#fce → #a#b#)",
+        "hunks": 4,
+        "apps": [
+          "reader",
+          "catalogue",
+          "live",
+          "time"
+        ],
+        "pages": [],
+        "items": [],
+        "example": {
+          "id": "image-manifest:reader/base:42",
+          "scope": "reader/base",
+          "summary": "reader: built FROM a different base image (lowest layer e58989146fce → 44a87794b739)"
+        }
+      },
+      {
+        "id": "96215661",
+        "key": "image-manifest: label org.opencontainers.image.description \"\" → \"The Tutors educational platform - an open-source course reader and learning management system built with Svelte #, SvelteKit, and TypeScript.\"",
+        "artefact": "image-manifest",
+        "kind": "label org.opencontainers.image.description \"\" → \"The Tutors educational platform - an open-source course reader and learning management system built with Svelte #, SvelteKit, and TypeScript.\"",
+        "hunks": 4,
+        "apps": [
+          "reader",
+          "catalogue",
+          "live",
+          "time"
+        ],
+        "pages": [],
+        "items": [],
+        "example": {
+          "id": "image-manifest:reader/label/org.opencontainers.image.description:44",
+          "scope": "reader/label/org.opencontainers.image.description",
+          "summary": "reader: label org.opencontainers.image.description \"\" → \"The Tutors educational platform - an open-source course reader and learning management system built with Svelte 5, SvelteKit, and TypeScript.\""
+        }
+      },
+      {
+        "id": "453a99b6",
+        "key": "logs: wrote no log line on b (# on a): nothing reached it, or it stopped logging",
+        "artefact": "logs",
+        "kind": "wrote no log line on b (# on a): nothing reached it, or it stopped logging",
+        "hunks": 3,
+        "apps": [
+          "catalogue",
+          "live",
+          "time"
+        ],
+        "pages": [],
+        "items": [],
+        "example": {
+          "id": "logs:catalogue:34",
+          "scope": "catalogue/silent",
+          "summary": "catalogue: wrote no log line on b (2 on a): nothing reached it, or it stopped logging"
+        }
+      },
+      {
+        "id": "9b37aef5",
+        "key": "network: GET {{asset}} requested #× on a, #× on b",
+        "artefact": "network",
+        "kind": "GET {{asset}} requested #× on a, #× on b",
+        "hunks": 2,
+        "apps": [
+          "reader"
+        ],
+        "pages": [
+          "reader:course",
+          "reader:home"
+        ],
+        "items": [
+          "GET /_app/immutable/chunks/{{hash}}.js"
+        ],
+        "example": {
+          "id": "network:GET_/_app/immutable/chunks/__hash__.js:6",
+          "scope": "GET /_app/immutable/chunks/{{hash}}.js",
+          "summary": "reader:home: GET /_app/immutable/chunks/{{hash}}.js requested 33× on a, 36× on b"
+        }
+      }
+    ],
+    "together": [
+      {
+        "artefacts": [
+          "dom",
+          "focus"
+        ],
+        "pages": [
+          "reader:lab-step",
+          "reader:lab-step-2",
+          "reader:topic"
+        ],
+        "hunks": 6
+      },
+      {
+        "artefacts": [
+          "dom",
+          "focus",
+          "network"
+        ],
+        "pages": [
+          "reader:course",
+          "reader:home"
+        ],
+        "hunks": 6
+      }
+    ]
+  }
+}
