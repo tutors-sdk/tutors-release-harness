@@ -41,7 +41,7 @@ function token(value: string): string {
 const shortCommit = (commit: string) => (/^[0-9a-f]{40}$/i.test(commit) ? commit.slice(0, 12) : token(commit));
 
 /** Two spellings of one commit: equal ignoring case, or one an abbreviation (7 or more characters) of the other. */
-function sameCommit(x: string, y: string): boolean {
+export function sameCommit(x: string, y: string): boolean {
   const [a, b] = [x.toLowerCase(), y.toLowerCase()];
   if (a === b) return true;
   const [shorter, longer] = a.length < b.length ? [a, b] : [b, a];
@@ -167,8 +167,11 @@ const field = (doc: unknown, key: string): string | undefined => {
   return typeof value === "string" ? value.slice(0, MAX_VALUE) : typeof value === "number" && Number.isFinite(value) ? String(value) : undefined;
 };
 
-/** Ask production's reader which build it serves and judge it against the recorded commit. Never throws. */
-export async function readProductionBuild(readerUrl: string, recordedRevision: string | undefined, opts: { timeoutMs?: number } = {}): Promise<ProductionBuild> {
+/**
+ * Ask production's reader what it serves: `/_app/version.json` and `/version`, without judging. Never throws; a field
+ * is absent when its request did not answer. Since 1.61.0 `harness production resolve` reads the same answers.
+ */
+export async function askProduction(readerUrl: string, opts: { timeoutMs?: number } = {}): Promise<Omit<ProductionAnswers, "recordedRevision">> {
   const base = readerUrl.replace(/\/+$/, "");
   const timeoutMs = opts.timeoutMs ?? PRODUCTION_BUILD_TIMEOUT_MS;
   const [app, version] = await Promise.all([getJson(`${base}/_app/version.json`, timeoutMs), getJson(`${base}/version`, timeoutMs)]);
@@ -178,5 +181,11 @@ export async function readProductionBuild(readerUrl: string, recordedRevision: s
   const versionBuiltAt = field(version.doc, "builtAt");
   const digest = field(version.doc, "digest") ?? field(version.doc, "imageDigest");
   const headers = { ...app.headers, ...version.headers };
-  return judgeProductionBuild({ url: base, ...(recordedRevision ? { recordedRevision } : {}), ...(buildName !== undefined ? { buildName } : {}), ...(revision !== undefined ? { revision } : {}), ...(buildId !== undefined ? { buildId } : {}), ...(versionBuiltAt !== undefined ? { versionBuiltAt } : {}), ...(digest !== undefined ? { digest } : {}), headers });
+  return { url: base, ...(buildName !== undefined ? { buildName } : {}), ...(revision !== undefined ? { revision } : {}), ...(buildId !== undefined ? { buildId } : {}), ...(versionBuiltAt !== undefined ? { versionBuiltAt } : {}), ...(digest !== undefined ? { digest } : {}), headers };
+}
+
+/** Ask production's reader which build it serves and judge it against the recorded commit. Never throws. */
+export async function readProductionBuild(readerUrl: string, recordedRevision: string | undefined, opts: { timeoutMs?: number } = {}): Promise<ProductionBuild> {
+  const answers = await askProduction(readerUrl, opts);
+  return judgeProductionBuild({ ...answers, ...(recordedRevision ? { recordedRevision } : {}) });
 }

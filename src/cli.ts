@@ -21,6 +21,7 @@ import { harnessInfo } from "./version.ts";
 import { helpFor, parseArgsErrorText } from "./local/usage.ts";
 import { RequirementError, requirements } from "./not-collected.ts";
 import { previewResolve } from "./ci/main-preview.ts";
+import { productionResolve } from "./ci/live-production.ts";
 import { UsageError, changesCommand, confidenceCommand, doctorCommand, glanceCommand, guardCommand, localCommand, noiseCommand, overrideCommand, pruneCommand, recordAppliedOverride, releaseCommand, reportsCommand, scoreboardCommand, scorecardCommand, vulnDbCommand, whyCommand, a3Command, readinessCommand } from "./local/cli.ts";
 import { defaultNoise } from "./local/noise-store.ts";
 import { courseCommand, CourseUsageError } from "./course/command.ts";
@@ -141,8 +142,14 @@ const USAGE = `tutors-release-harness
   harness scorecard --report <run dir | report.json> [--rules rules.json] [--json]
       A 0-100 score with every deduction, the A/A normalness, EARS Rule -> diffs -> PRs, and at most five pages to test
       by hand. PRs come from a Rule's "prs" in rules.json and "PR #n" in claim reasons. Never changes a verdict. Not stable.
+  harness production resolve [--pinned <tag>] [--production reader=URL,...] [--tag <tag>]
+      Which tag production runs, asked of production's reader (/version revision, else the /_app/version.json build
+      name) and matched to the monorepo's release tags (final before rc), then to main's recent commits (sha-<short>).
+      Falls back to --pinned (HARNESS_PRODUCTION_TAG) when production cannot be matched; --tag is used as given. A
+      disagreement with the pin is a warning. Writes tag, source, commit, drift to $GITHUB_OUTPUT. Exit 0. Not stable.
   harness preview resolve [--a <production>] [--b <candidate>] [--force]
-      Main to RC: what main-preview.yml judges. Production is the reader overlay's newTag on the monorepo's main, the
+      Main to RC: what main-preview.yml judges. Production is what production's reader serves (as production resolve;
+      since 1.61.0), else the reader overlay's newTag on the monorepo's main, the
       candidate sha-<short> of main's newest commit with signed images; a pair this harness version already judged (on the
       main-preview branch) is skipped unless --force. Writes production, candidate, sha, claims_url, skip to
       $GITHUB_OUTPUT. Exit 2 when it cannot decide. Not stable.
@@ -404,6 +411,7 @@ async function main(argv: string[]): Promise<number> {
       "keep-days": { type: "string" },
       "image-cache-days": { type: "string" },
       candidate: { type: "string" },
+      pinned: { type: "string" },
       baseline: { type: "string" },
       monorepo: { type: "string" },
       run: { type: "string" },
@@ -654,6 +662,9 @@ async function main(argv: string[]): Promise<number> {
       return reportsCommand(positionals[0], values);
     case "scorecard":
       return scorecardCommand(values);
+    case "production":
+      if (positionals[0] !== "resolve") fail("production resolve [--pinned <tag>] [--production reader=URL,...] [--tag <tag>]");
+      return productionResolve(values);
     case "preview":
       if (positionals[0] !== "resolve") fail("preview resolve [--a <production>] [--b <candidate>] [--force]");
       return previewResolve(values);
