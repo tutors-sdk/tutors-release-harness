@@ -1,0 +1,412 @@
+{
+  "schemaVersion": 1,
+  "a": "17.1.0",
+  "b": "b146cca3900e27a2be21e99e873e731dfa6f9df8",
+  "refs": {
+    "a": "v17.1.0",
+    "b": "b146cca3900e27a2be21e99e873e731dfa6f9df8"
+  },
+  "version": "b146cca3900e27a2be21e99e873e731dfa6f9df8",
+  "repo": "tutors-sdk/tutors-mono-repo",
+  "history": {
+    "asked": 6,
+    "releases": [
+      {
+        "from": "v17.0.0",
+        "to": "v17.1.0"
+      },
+      {
+        "from": "v16.2.2",
+        "to": "v17.0.0"
+      },
+      {
+        "from": "v16.2.1",
+        "to": "v16.2.2"
+      },
+      {
+        "from": "v16.2.0",
+        "to": "v16.2.1"
+      },
+      {
+        "from": "v16.1.8",
+        "to": "v16.2.0"
+      },
+      {
+        "from": "v16.1.6",
+        "to": "v16.1.8"
+      }
+    ]
+  },
+  "score": 100,
+  "lost": 0,
+  "floorBreached": false,
+  "prs": [],
+  "signals": {
+    "churn": {
+      "status": "measured",
+      "apps": [
+        {
+          "app": "reader",
+          "churn": 0,
+          "median": 114,
+          "above": false,
+          "history": [
+            2135,
+            3795,
+            2,
+            109,
+            94,
+            119
+          ]
+        },
+        {
+          "app": "catalogue",
+          "churn": 0,
+          "median": 35.5,
+          "above": false,
+          "history": [
+            60,
+            206,
+            2,
+            11,
+            73,
+            2
+          ]
+        },
+        {
+          "app": "live",
+          "churn": 0,
+          "median": 26.5,
+          "above": false,
+          "history": [
+            50,
+            308,
+            2,
+            3,
+            73,
+            2
+          ]
+        },
+        {
+          "app": "time",
+          "churn": 0,
+          "median": 61,
+          "above": false,
+          "history": [
+            1088,
+            2177,
+            2,
+            15,
+            107,
+            13
+          ]
+        }
+      ]
+    },
+    "hotspots": {
+      "status": "measured",
+      "files": [
+        {
+          "path": "packages/svelte/utils/i18n/src/messages/fr.ts",
+          "releases": 4,
+          "weight": 450
+        },
+        {
+          "path": "packages/svelte/utils/i18n/src/messages/es.ts",
+          "releases": 4,
+          "weight": 430
+        },
+        {
+          "path": "packages/svelte/utils/i18n/src/messages/de.ts",
+          "releases": 4,
+          "weight": 416
+        },
+        {
+          "path": "packages/svelte/utils/i18n/src/messages/it.ts",
+          "releases": 4,
+          "weight": 366
+        },
+        {
+          "path": "packages/svelte/ui-components/src/learning-objects/content/whiteboard/WhiteboardViewer.svelte",
+          "releases": 4,
+          "weight": 310
+        },
+        {
+          "path": "packages/svelte/utils/logger/src/request-logger.ts",
+          "releases": 4,
+          "weight": 224
+        },
+        {
+          "path": "apps/reader/src/hooks.server.ts",
+          "releases": 4,
+          "weight": 183
+        },
+        {
+          "path": "packages/svelte/course/src/course/services/lo-tree.ts",
+          "releases": 4,
+          "weight": 109
+        },
+        {
+          "path": "packages/svelte/community/src/utils/error-transport.ts",
+          "releases": 4,
+          "weight": 82
+        },
+        {
+          "path": "packages/svelte/ui-components/src/learning-objects/content/talk/TalkMarp.svelte",
+          "releases": 4,
+          "weight": 73
+        },
+        {
+          "path": "apps/time/src/hooks.server.ts",
+          "releases": 4,
+          "weight": 54
+        },
+        {
+          "path": "packages/svelte/community/src/utils/supabase-client.ts",
+          "releases": 3,
+          "weight": 544
+        },
+        {
+          "path": "packages/svelte/utils/i18n/src/messages/en.ts",
+          "releases": 3,
+          "weight": 342
+        },
+        {
+          "path": "packages/svelte/utils/i18n/src/messages/ga.ts",
+          "releases": 3,
+          "weight": 320
+        },
+        {
+          "path": "packages/svelte/ui-components/src/quiz/QuizQuestion.svelte",
+          "releases": 3,
+          "weight": 298
+        },
+        {
+          "path": "apps/time/src/lib/server/api/moodle.ts",
+          "releases": 3,
+          "weight": 266
+        },
+        {
+          "path": "packages/svelte/community/src/services/presence.svelte.ts",
+          "releases": 3,
+          "weight": 229
+        },
+        {
+          "path": "packages/svelte/ui-primitives/src/components/LoContextTreeView.svelte",
+          "releases": 3,
+          "weight": 159
+        },
+        {
+          "path": "packages/svelte/connect/src/services/connect.svelte.ts",
+          "releases": 3,
+          "weight": 135
+        },
+        {
+          "path": "apps/time/src/lib/server/db/submissionsRepository.ts",
+          "releases": 3,
+          "weight": 132
+        },
+        {
+          "path": "packages/svelte/course/src/course/services/course.svelte.ts",
+          "releases": 3,
+          "weight": 130
+        },
+        {
+          "path": "packages/svelte/community/src/services/live.svelte.ts",
+          "releases": 3,
+          "weight": 93
+        },
+        {
+          "path": "apps/time/src/lib/components/tables/AssignmentsTable.svelte",
+          "releases": 3,
+          "weight": 82
+        },
+        {
+          "path": "apps/time/src/routes/+page.svelte",
+          "releases": 3,
+          "weight": 75
+        },
+        {
+          "path": "apps/reader/src/routes/(course-reader)/+layout.svelte",
+          "releases": 3,
+          "weight": 74
+        },
+        {
+          "path": "apps/time/src/lib/components/tables/LearningRecordsTable.svelte",
+          "releases": 3,
+          "weight": 62
+        },
+        {
+          "path": "packages/jsr/model/src/utils/markdown-utils.ts",
+          "releases": 3,
+          "weight": 51
+        },
+        {
+          "path": "apps/time/src/lib/server/services/AssignmentsSyncService.ts",
+          "releases": 3,
+          "weight": 50
+        },
+        {
+          "path": "apps/time/src/lib/components/tables/CalendarTable.svelte",
+          "releases": 3,
+          "weight": 48
+        },
+        {
+          "path": "packages/svelte/utils/logger/src/index.ts",
+          "releases": 3,
+          "weight": 47
+        },
+        {
+          "path": "apps/reader/src/hooks.client.ts",
+          "releases": 3,
+          "weight": 46
+        },
+        {
+          "path": "packages/jsr/model/src/utils/course-utils.ts",
+          "releases": 3,
+          "weight": 43
+        },
+        {
+          "path": "apps/catalogue/src/hooks.server.ts",
+          "releases": 3,
+          "weight": 41
+        },
+        {
+          "path": "apps/live/src/hooks.server.ts",
+          "releases": 3,
+          "weight": 41
+        },
+        {
+          "path": "packages/jsr/create/src/cli.ts",
+          "releases": 3,
+          "weight": 37
+        },
+        {
+          "path": "packages/jsr/tutors-lite/main.ts",
+          "releases": 3,
+          "weight": 37
+        },
+        {
+          "path": "apps/time/src/hooks.client.ts",
+          "releases": 3,
+          "weight": 35
+        },
+        {
+          "path": "apps/time/src/routes/[courseid]/(calendar-lab)/+layout.ts",
+          "releases": 3,
+          "weight": 32
+        },
+        {
+          "path": "apps/time/src/lib/enrichCourseUserFields.ts",
+          "releases": 3,
+          "weight": 27
+        },
+        {
+          "path": "apps/time/src/routes/[courseid]/[studentid]/+page.ts",
+          "releases": 3,
+          "weight": 24
+        },
+        {
+          "path": "packages/jsr/gen/src/services/course-builder.ts",
+          "releases": 3,
+          "weight": 21
+        },
+        {
+          "path": "apps/reader/src/app.css",
+          "releases": 3,
+          "weight": 15
+        },
+        {
+          "path": "packages/svelte/course/src/markdown/services/markdown.svelte.ts",
+          "releases": 3,
+          "weight": 15
+        },
+        {
+          "path": "apps/catalogue/src/hooks.client.ts",
+          "releases": 3,
+          "weight": 14
+        },
+        {
+          "path": "apps/live/src/hooks.client.ts",
+          "releases": 3,
+          "weight": 14
+        },
+        {
+          "path": "apps/catalogue/src/app.css",
+          "releases": 3,
+          "weight": 11
+        },
+        {
+          "path": "apps/live/src/app.css",
+          "releases": 3,
+          "weight": 11
+        }
+      ],
+      "touched": []
+    },
+    "ownership": {
+      "files": []
+    },
+    "orphans": {
+      "diffs": {
+        "status": "measured",
+        "source": "pnpm release:changelog --json",
+        "items": []
+      },
+      "entries": {
+        "status": "not measured",
+        "reason": "CHANGELOG.md at b146cca3900e27a2be21e99e873e731dfa6f9df8 has no \"### vb146cca3900e27a2be21e99e873e731dfa6f9df8\" entries under a product section"
+      }
+    },
+    "tests": {
+      "packages": []
+    },
+    "reviews": {
+      "status": "measured",
+      "reviewed": [],
+      "unreviewed": [],
+      "unknown": [],
+      "problems": [],
+      "direct": []
+    },
+    "dependencies": {
+      "status": "measured",
+      "majorBumps": [],
+      "newPackages": []
+    }
+  },
+  "notMeasured": [
+    {
+      "signal": "orphan entries (a changelog entry with no diff)",
+      "reason": "CHANGELOG.md at b146cca3900e27a2be21e99e873e731dfa6f9df8 has no \"### vb146cca3900e27a2be21e99e873e731dfa6f9df8\" entries under a product section"
+    }
+  ],
+  "changeRisk": {
+    "score": 100,
+    "prs": [],
+    "direct": [],
+    "deductions": [],
+    "gaps": [
+      "orphan entries (a changelog entry with no diff): CHANGELOG.md at b146cca3900e27a2be21e99e873e731dfa6f9df8 has no \"### vb146cca3900e27a2be21e99e873e731dfa6f9df8\" entries under a product section"
+    ],
+    "orphans": 0,
+    "evidence": "changes.json"
+  },
+  "harness": {
+    "version": "1.61.0",
+    "contractVersion": "1.61.0"
+  },
+  "traceability": {
+    "entries": [],
+    "untracedClaims": [
+      "6 (logs reader-auth/{courseId,role}) names #320, not between 17.1.0 and b146cca3900e27a2be21e99e873e731dfa6f9df8",
+      "7 (image-manifest */base) names #541, not between 17.1.0 and b146cca3900e27a2be21e99e873e731dfa6f9df8",
+      "8 (sbom */node) names #541, not between 17.1.0 and b146cca3900e27a2be21e99e873e731dfa6f9df8",
+      "9 (network POST /api/live/activity) names #481, not between 17.1.0 and b146cca3900e27a2be21e99e873e731dfa6f9df8",
+      "10 (persistence */realtime_claim_live_publish) names #481, not between 17.1.0 and b146cca3900e27a2be21e99e873e731dfa6f9df8",
+      "11 (persistence */realtime_watch) names #481, not between 17.1.0 and b146cca3900e27a2be21e99e873e731dfa6f9df8",
+      "12 (network GET /_app/immutable/chunks/\\{\\{hash\\}\\}.js) names #478, #481, not between 17.1.0 and b146cca3900e27a2be21e99e873e731dfa6f9df8"
+    ],
+    "evidence": "changes.json and claims.yaml"
+  }
+}

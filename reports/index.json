@@ -2,6 +2,74 @@
   "schemaVersion": 1,
   "runs": [
     {
+      "id": "2026-11-04T10-47-41Z-release",
+      "mode": "release",
+      "ranAt": "2026-11-04T10:47:41.834Z",
+      "verdict": "pass",
+      "reasons": [
+        "every difference is claimed",
+        "11 claim(s) matched nothing and should be removed from the changelog",
+        "journey \"rule-0587-calendar-llm\" failed on both sides, so this run saw nothing of its pages"
+      ],
+      "sides": {
+        "a": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:17.1.0",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:17.1.0",
+          "live": "quay.io/tutors-sdk/tutors-live:17.1.0",
+          "time": "quay.io/tutors-sdk/tutors-time:17.1.0"
+        },
+        "b": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:sha-b146cca",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:sha-b146cca",
+          "live": "quay.io/tutors-sdk/tutors-live:sha-b146cca",
+          "time": "quay.io/tutors-sdk/tutors-time:sha-b146cca"
+        }
+      },
+      "harnessVersion": "1.61.0",
+      "runUrl": "https://github.com/tutors-sdk/tutors-release-harness/actions/runs/41813110127",
+      "score": {
+        "score": 75,
+        "grade": "B",
+        "normalness": "degraded",
+        "manual": 0
+      },
+      "confidence": {
+        "gate": "PASS",
+        "rcs": 55,
+        "band": "Red",
+        "meaning": "hold, open a 5 Whys, do not re-run hoping for a better number",
+        "glance": 1,
+        "scoredBy": "1.61.0"
+      },
+      "changes": {
+        "score": 100,
+        "prs": 0,
+        "risky": 0,
+        "floorBreached": false,
+        "range": "v17.1.0..b146cca3900e27a2be21e99e873e731dfa6f9df8"
+      },
+      "delta": {
+        "baseline": "17.1.0",
+        "against": null
+      },
+      "files": [
+        "2026-11-04T10-47-41Z-release/migration/report.json",
+        "2026-11-04T10-47-41Z-release/migration/report.md",
+        "2026-11-04T10-47-41Z-release/migration/report.html",
+        "2026-11-04T10-47-41Z-release/upgrade/report.json",
+        "2026-11-04T10-47-41Z-release/upgrade/report.md",
+        "2026-11-04T10-47-41Z-release/upgrade/report.html",
+        "2026-11-04T10-47-41Z-release/report.json",
+        "2026-11-04T10-47-41Z-release/report.md",
+        "2026-11-04T10-47-41Z-release/report.html",
+        "2026-11-04T10-47-41Z-release/confidence.json",
+        "2026-11-04T10-47-41Z-release/changes.json",
+        "2026-11-04T10-47-41Z-release/quality.json",
+        "2026-11-04T10-47-41Z-release/scorecard.json",
+        "2026-11-04T10-47-41Z-release/scorecard.md"
+      ]
+    },
+    {
       "id": "2026-11-03T12-53-33Z-release",
       "mode": "release",
       "ranAt": "2026-11-03T12:53:33.384Z",
