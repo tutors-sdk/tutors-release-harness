@@ -1,6 +1,6 @@
 {
   "$comment": "What the harness's workflows accept from outside and publish, machine-readable. tests/contract.test.ts fails when this and .github/workflows disagree.",
-  "contractVersion": "1.60.0",
+  "contractVersion": "1.61.0",
   "repositoryDispatch": {
     "release-candidate": {
       "workflow": "release.yml",
@@ -30,7 +30,7 @@
     "HARNESS_PRODUCTION_TAG": { "default": "main", "usedBy": ["ci.yml", "nightly-noise.yml", "weekly-mutants.yml"] },
     "HARNESS_PRODUCTION_URLS": {
       "default": "reader=https://tutors.dev,catalogue=https://catalogue.tutors.dev,live=https://live.tutors.dev",
-      "usedBy": ["post-deploy.yml"]
+      "usedBy": ["main-preview.yml", "nightly-noise.yml", "post-deploy.yml"]
     }
   },
   "artifacts": {

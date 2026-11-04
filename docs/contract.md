@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.60.0`
+Contract version: `1.61.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -1886,8 +1886,8 @@ see [Overriding a FAIL](#overriding-a-fail)); `nightly-noise.yml` and
 | --- | --- | --- |
 | `HARNESS_IMAGE_PREFIX` | `quay.io/tutors-sdk/tutors-{app}` (since 1.1.0; was `tutors`) | where bare tags are resolved: a prefix or an `{app}` template. When the registry lacks the tag the workflows still build from the monorepo ref, as before, and the report says `built-from-ref` |
 | `HARNESS_COSIGN_IDENTITY` | `^https://github.com/tutors-sdk/tutors-mono-repo/\.github/workflows/image-build\.yml@` (since 1.1.0) | who must have signed a pulled image: the monorepo's `image-build.yml` workflow. Set it only if the signing workflow is another |
-| `HARNESS_PRODUCTION_TAG` | `main` | the tag nightly noise, weekly mutants and CI's smoke run use; the deploy updates it |
-| `HARNESS_PRODUCTION_URLS` | `reader=https://tutors.dev,catalogue=https://catalogue.tutors.dev,live=https://live.tutors.dev` | the live deployment post-deploy mode reads; `time=<URL>` may be added (since 1.3.0), and is optional |
+| `HARNESS_PRODUCTION_TAG` | `main` | the tag weekly mutants and CI's smoke run use; the deploy updates it. Since 1.61.0 nightly noise uses it only when production's reader cannot be matched to an image (`harness production resolve`) |
+| `HARNESS_PRODUCTION_URLS` | `reader=https://tutors.dev,catalogue=https://catalogue.tutors.dev,live=https://live.tutors.dev` | the live deployment post-deploy mode reads; `time=<URL>` may be added (since 1.3.0), and is optional. Since 1.61.0 nightly noise and Main to RC ask its reader which tag production runs |
 
 Every job that runs `harness images ensure` first installs cosign ≥ 3 with
 `sigstore/cosign-installer`; the images are public, so no registry credentials
@@ -2086,8 +2086,10 @@ one, nor one on another branch) (and by hand, `workflow_dispatch` with optional 
 and it cannot be mistaken for a judged candidate, because it never writes the
 `release-records` branch that post-deploy reads.
 
-- **Side a** is production as the monorepo's `release-dispatch.yml` reads it: the
-  first `newTag` of `deploy/k8s/overlays/reader/kustomization.yaml` on main.
+- **Side a** is, since 1.61.0, what production's reader serves (see
+  [Production as it is served](#production-as-it-is-served)); when it cannot be matched, production as the
+  monorepo's `release-dispatch.yml` reads it: the first `newTag` of
+  `deploy/k8s/overlays/reader/kustomization.yaml` on main.
 - **Side b** is `sha-<short>` of the newest commit on main whose `image-build.yml`
   push run succeeded, so its four images are signed and attested. (`:main` is
   pushed before it is signed; a run that picks it up in that window cannot verify it.)
@@ -2199,7 +2201,34 @@ change to this contract.
 
 Releases are git tags `v<harness version>` on `main`, created by `tags.yml` on the first commit that carries each version.
 
+### Production as it is served
+
+Since 1.61.0. `harness production resolve [--pinned <tag>] [--production reader=URL,...] [--tag <tag>]` answers
+"which images is production running?" by asking production, not the pin. The pin (`HARNESS_PRODUCTION_TAG`, the
+overlay's `newTag`) moves only when a final `vX.Y.Z` tag's `pnpm deploy:pin` pull request merges, and tutors.dev is
+deployed by hand on Netlify, outside it: on 3 November 2026 production was moved to `b146cca` (17.1.0-rc.1, no final
+tag) and that night's A/A still measured 17.0.0.
+
+1. The reader is asked: `/version`'s `revision`, else the `/_app/version.json` build name, which is the first 16 hex
+   characters of sha256(commit) for a build given `GIT_SHA` or Netlify's `COMMIT_REF`.
+2. The commit is looked up among the monorepo's release tags (a final `X.Y.Z` before its rcs, newer first), then
+   among the newest 100 commits on main (`sha-<short>`, the tag `image-build.yml` gives every push to main).
+3. The tag found is production. When none is found, or the reader does not answer, the pin is; when there is no pin
+   either, `main`. `--tag` (a workflow's `tag` input) is used as given.
+
+A tag found that is not the pin is **drift**: a `::warning` on the run and a line in its summary, and the run judges the
+tag found. A reader that names a commit none of these match is drift too, and the run judges the pin. It writes `tag`,
+`source` (`live`, `pin` or `input`), `commit` and `drift` to `$GITHUB_OUTPUT` and always exits 0. `nightly-noise.yml`
+runs it in a `production` job before the A/A, and Main to RC through `harness preview resolve`.
+
 ## Changes
+
+### 1.61.0 (minor; production is what production serves)
+
+The release note is [releases/1.61.0.md](releases/1.61.0.md). A minor: a new command, `harness production resolve`, and
+the flag `--pinned`. The nightly A/A and Main to RC judge the tag production's reader serves, and the pin is the
+fallback ([Production as it is served](#production-as-it-is-served)). `report.json`, a release candidate's Gate and
+every exit code are unchanged.
 
 ### 1.60.0 (minor; the signed-in apps' logs, a silent app is one difference)
 

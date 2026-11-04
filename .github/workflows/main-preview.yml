@@ -2,7 +2,7 @@
 # release candidate today. A forecast, not a gate: nothing is tagged, recorded or
 # deployed, and a FAIL does not fail the run.
 #
-#   side a   production: the reader overlay's newTag on the monorepo's main, the
+#   side a   production: what production's reader serves (since 1.61.0), else the reader overlay's newTag on the monorepo's main, the
 #            same tag release-dispatch.yml would put on side a
 #   side b   sha-<short> of the newest commit on main whose image-build.yml push
 #            run succeeded (so its images are signed; the :main tag is pushed
@@ -98,6 +98,8 @@ jobs:
         id: resolve
         env:
           GH_TOKEN: ${{ github.token }}
+          # Since 1.61.0 production is what production's reader serves (src/ci/live-production.ts), the overlay the fallback.
+          PRODUCTION_URLS: ${{ vars.HARNESS_PRODUCTION_URLS || 'reader=https://tutors.dev,catalogue=https://catalogue.tutors.dev,live=https://live.tutors.dev' }}
           PRODUCTION: ${{ inputs.production }}
           CANDIDATE: ${{ inputs.candidate }}
           FORCE: ${{ inputs.force }}
