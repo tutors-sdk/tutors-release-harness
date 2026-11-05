@@ -2,6 +2,88 @@
   "schemaVersion": 1,
   "runs": [
     {
+      "id": "2026-11-05T02-44-52Z-release",
+      "mode": "release",
+      "ranAt": "2026-11-05T02:44:52.544Z",
+      "verdict": "warn",
+      "reasons": [
+        "advisory only: the last A/A run (2026-11-05T02:04:24.650Z) was degraded and does not count: journey \"rule-0587-calendar-llm\" failed on both sides, so this run saw nothing of its pages",
+        "8 unclaimed diff(s)",
+        "11 claim(s) matched nothing and should be removed from the changelog",
+        "journey \"rule-0587-calendar-llm\" failed on both sides, so this run saw nothing of its pages"
+      ],
+      "sides": {
+        "a": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:17.1.0",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:17.1.0",
+          "live": "quay.io/tutors-sdk/tutors-live:17.1.0",
+          "time": "quay.io/tutors-sdk/tutors-time:17.1.0"
+        },
+        "b": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:sha-f58895d",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:sha-f58895d",
+          "live": "quay.io/tutors-sdk/tutors-live:sha-f58895d",
+          "time": "quay.io/tutors-sdk/tutors-time:sha-f58895d"
+        }
+      },
+      "harnessVersion": "1.61.0",
+      "runUrl": "https://github.com/tutors-sdk/tutors-release-harness/actions/runs/41952823874",
+      "score": {
+        "score": 15,
+        "grade": "D",
+        "normalness": "degraded",
+        "manual": 5
+      },
+      "confidence": {
+        "gate": "WARN",
+        "rcs": 49,
+        "band": "Red",
+        "meaning": "hold, open a 5 Whys, do not re-run hoping for a better number",
+        "glance": 0,
+        "scoredBy": "1.61.0"
+      },
+      "changes": {
+        "score": 77,
+        "prs": 3,
+        "risky": 2,
+        "floorBreached": false,
+        "range": "v17.1.0..f58895d0712a5282c447560f2331ea8ba989ae70"
+      },
+      "delta": {
+        "baseline": "17.1.0",
+        "against": {
+          "id": "2026-11-04T10-47-41Z-release",
+          "ranAt": "2026-11-04T10:47:41.834Z",
+          "candidate": "sha-b146cca",
+          "harnessVersion": "1.61.0"
+        },
+        "new": 8,
+        "gone": 0,
+        "byArtefact": {
+          "sbom": {
+            "new": 8,
+            "gone": 0
+          }
+        }
+      },
+      "files": [
+        "2026-11-05T02-44-52Z-release/migration/report.json",
+        "2026-11-05T02-44-52Z-release/migration/report.md",
+        "2026-11-05T02-44-52Z-release/migration/report.html",
+        "2026-11-05T02-44-52Z-release/upgrade/report.json",
+        "2026-11-05T02-44-52Z-release/upgrade/report.md",
+        "2026-11-05T02-44-52Z-release/upgrade/report.html",
+        "2026-11-05T02-44-52Z-release/report.json",
+        "2026-11-05T02-44-52Z-release/report.md",
+        "2026-11-05T02-44-52Z-release/report.html",
+        "2026-11-05T02-44-52Z-release/confidence.json",
+        "2026-11-05T02-44-52Z-release/changes.json",
+        "2026-11-05T02-44-52Z-release/quality.json",
+        "2026-11-05T02-44-52Z-release/scorecard.json",
+        "2026-11-05T02-44-52Z-release/scorecard.md"
+      ]
+    },
+    {
       "id": "2026-11-04T10-47-41Z-release",
       "mode": "release",
       "ranAt": "2026-11-04T10:47:41.834Z",
