@@ -211,6 +211,13 @@ step(/^the student presses the (button|link) starting "([^"]+)"$/, 'the student 
   await w.page.getByRole(role, { name: new RegExp(`^${escapeRegExp(start)}`) }).filter({ visible: true }).first().click();
 });
 
+// Mono-repo #545 (30 Oct 2026, in 17.1.0) names the calendar trigger by the week written on it, then the tip:
+// "Calendar This week · Week 3, View Calendar for this course". 17.0.0 named it "View Calendar for this course".
+step(/^the student presses the (button|link) containing "([^"]+)"$/, 'the student presses the button containing "View Calendar for this course": a name that holds the words anywhere, such as a tip after the text shown (since 1.61.1)', async (w, role, part) => {
+  if (!isRole(role!)) throw new Error(`not a role: ${role}`);
+  await w.page.getByRole(role, { name: part!, exact: false }).filter({ visible: true }).first().click();
+});
+
 // 17.0.0 names the Preferences menu's button "Open Theme Menu"; mono-repo #505 (after 17.0.0) renamed it "Preferences".
 const PREFERENCES_BUTTON = /^(Preferences|Open Theme Menu)$/;
 

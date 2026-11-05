@@ -120,6 +120,7 @@ Rule: When the harness runs the presence journey, it shall ...
 - the student moves to the step "Step 1": its link in the lab's step navigation
 - the student presses the button "Profile menu" (also link, tab, menuitem): exact accessible name
 - the student presses the button starting "View Online": a name that ends in a count or a state
+- the student presses the button containing "View Calendar for this course": a name that holds the words anywhere, such as a tip after the text shown (since 1.61.1)
 - the student opens the Preferences menu: its header button (named "Preferences", or "Open Theme Menu" up to 17.0.0), then the dialog "Preferences"
 - the student chooses "const" in the group "1. Which keyword declares a constant?": a radio button by its label
 - the student selects "Assessments" in the combobox "Show": an option of a select by its label

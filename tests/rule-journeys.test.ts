@@ -108,6 +108,7 @@ describe("the Rule journeys", () => {
 
   it("bind each step's quoted words as its arguments", () => {
     expect(bind('the student presses the button starting "View Online"')?.args).toEqual(["button", "View Online"]);
+    expect(bind('the student presses the button containing "View Calendar for this course"')?.args).toEqual(["button", "View Calendar for this course"]);
     expect(bind('the dialog "View Online" shows the link "Harness Student"')?.args).toEqual(["View Online", "link", "Harness Student"]);
     expect(bind("the student flies")).toBeUndefined();
   });

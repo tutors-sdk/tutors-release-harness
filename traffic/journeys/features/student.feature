@@ -105,7 +105,7 @@ Feature: Student journeys the harness drives on both sides
 
     Scenario: A student filters the calendar and finds the course for LLMs (exercises Rules 0042, 0284)
       Given the student signs in from the course
-      When the student presses the button starting "View Calendar"
+      When the student presses the button containing "View Calendar for this course"
       Then the page shows the dialog "Harness Rules Course Calendar · 2026"
       And the table "Harness Rules Course Calendar" has 5 rows
       When the student selects "Assessments" in the combobox "Show"
