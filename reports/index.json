@@ -2,6 +2,81 @@
   "schemaVersion": 1,
   "runs": [
     {
+      "id": "2026-11-09T10-10-49Z-release",
+      "mode": "release",
+      "ranAt": "2026-11-09T10:10:49.131Z",
+      "verdict": "fail",
+      "reasons": [
+        "8 unclaimed diff(s)",
+        "11 claim(s) matched nothing and should be removed from the changelog"
+      ],
+      "sides": {
+        "a": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:17.1.0",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:17.1.0",
+          "live": "quay.io/tutors-sdk/tutors-live:17.1.0",
+          "time": "quay.io/tutors-sdk/tutors-time:17.1.0"
+        },
+        "b": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:sha-2ec6307",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:sha-2ec6307",
+          "live": "quay.io/tutors-sdk/tutors-live:sha-2ec6307",
+          "time": "quay.io/tutors-sdk/tutors-time:sha-2ec6307"
+        }
+      },
+      "harnessVersion": "1.61.1",
+      "runUrl": "https://github.com/tutors-sdk/tutors-release-harness/actions/runs/42595649078",
+      "score": {
+        "score": 25,
+        "grade": "D",
+        "normalness": "normal",
+        "manual": 5
+      },
+      "confidence": {
+        "gate": "FAIL",
+        "rcs": null,
+        "band": null,
+        "note": "No RCS: Gate FAIL. The Gate wins: no number talks a FAIL back on. The dimensions are shown for the 5 Whys, not for a decision.",
+        "glance": 0,
+        "scoredBy": "1.61.1"
+      },
+      "changes": {
+        "score": 57,
+        "prs": 7,
+        "risky": 4,
+        "floorBreached": false,
+        "range": "v17.1.0..2ec6307f1335b3f1d2ceaecd7a90b790408dd163"
+      },
+      "delta": {
+        "baseline": "17.1.0",
+        "against": {
+          "id": "2026-11-07T02-22-50Z-release",
+          "ranAt": "2026-11-07T02:22:50.211Z",
+          "candidate": "sha-47b7ddb",
+          "harnessVersion": "1.61.1"
+        },
+        "new": 0,
+        "gone": 0,
+        "byArtefact": {}
+      },
+      "files": [
+        "2026-11-09T10-10-49Z-release/migration/report.json",
+        "2026-11-09T10-10-49Z-release/migration/report.md",
+        "2026-11-09T10-10-49Z-release/migration/report.html",
+        "2026-11-09T10-10-49Z-release/upgrade/report.json",
+        "2026-11-09T10-10-49Z-release/upgrade/report.md",
+        "2026-11-09T10-10-49Z-release/upgrade/report.html",
+        "2026-11-09T10-10-49Z-release/report.json",
+        "2026-11-09T10-10-49Z-release/report.md",
+        "2026-11-09T10-10-49Z-release/report.html",
+        "2026-11-09T10-10-49Z-release/confidence.json",
+        "2026-11-09T10-10-49Z-release/changes.json",
+        "2026-11-09T10-10-49Z-release/quality.json",
+        "2026-11-09T10-10-49Z-release/scorecard.json",
+        "2026-11-09T10-10-49Z-release/scorecard.md"
+      ]
+    },
+    {
       "id": "2026-11-07T02-22-50Z-release",
       "mode": "release",
       "ranAt": "2026-11-07T02:22:50.211Z",
@@ -4838,62 +4913,6 @@
         "2026-09-29T08-48-03Z-release/changes.json",
         "2026-09-29T08-48-03Z-release/scorecard.json",
         "2026-09-29T08-48-03Z-release/scorecard.md"
-      ]
-    },
-    {
-      "id": "2026-09-28T08-59-53Z-release",
-      "mode": "release",
-      "ranAt": "2026-09-28T08:59:53.429Z",
-      "verdict": "fail",
-      "reasons": [
-        "893 unclaimed diff(s)",
-        "4 claim(s) matched nothing and should be removed from the changelog"
-      ],
-      "sides": {
-        "a": {
-          "reader": "quay.io/tutors-sdk/tutors-reader:16.2.2",
-          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:16.2.2",
-          "live": "quay.io/tutors-sdk/tutors-live:16.2.2",
-          "time": "quay.io/tutors-sdk/tutors-time:16.2.2"
-        },
-        "b": {
-          "reader": "quay.io/tutors-sdk/tutors-reader:sha-185e87f",
-          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:sha-185e87f",
-          "live": "quay.io/tutors-sdk/tutors-live:sha-185e87f",
-          "time": "quay.io/tutors-sdk/tutors-time:sha-185e87f"
-        }
-      },
-      "harnessVersion": "1.13.2",
-      "runUrl": "https://github.com/tutors-sdk/tutors-release-harness/actions/runs/36399691471",
-      "score": {
-        "score": 25,
-        "grade": "D",
-        "normalness": "normal",
-        "manual": 5
-      },
-      "confidence": {
-        "gate": "FAIL",
-        "rcs": null,
-        "band": null,
-        "note": "No RCS: Gate FAIL. The Gate wins: no number talks a FAIL back on. The dimensions are shown for the 5 Whys, not for a decision.",
-        "glance": 7,
-        "scoredBy": "1.13.2"
-      },
-      "changes": {
-        "score": 20,
-        "prs": 60,
-        "risky": 60,
-        "floorBreached": true,
-        "range": "v16.2.2..185e87f12d34e0e6d7a16714c29aa08bde629639"
-      },
-      "files": [
-        "2026-09-28T08-59-53Z-release/report.json",
-        "2026-09-28T08-59-53Z-release/report.md",
-        "2026-09-28T08-59-53Z-release/report.html",
-        "2026-09-28T08-59-53Z-release/confidence.json",
-        "2026-09-28T08-59-53Z-release/changes.json",
-        "2026-09-28T08-59-53Z-release/scorecard.json",
-        "2026-09-28T08-59-53Z-release/scorecard.md"
       ]
     }
   ]
