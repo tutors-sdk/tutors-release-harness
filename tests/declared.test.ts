@@ -204,6 +204,61 @@ describe("PASS, explained (since 1.42.0)", () => {
     expect(declaredPass(other.report, explainGap(other, [before]))).toBeUndefined();
   });
 
+  // 9 Nov 2026: every forecast beside 17.1.0 failed on the 17.1.0 claims still in release/claims.yaml, which matched
+  // nothing because production now ships them, while every unclaimed difference was pinned on the PR that made it.
+  describe("since 1.62.0, claims production already ships", () => {
+    const shippedClaim = { artefact: "network", scope: "POST /api/live/activity", reason: "Rule 0330: the reader posts each learning event to its server (#481)" };
+    const unnamed = { artefact: "network", scope: "* /api/whiteboard*", reason: "Rule 0068: whiteboard edits are saved through the server" };
+    const named = { artefact: "sbom", scope: "*/node", reason: "Rule 0667: node pinned by digest (PR #541)" };
+    const never = { artefact: "dom", scope: "reader:home", reason: "Rule 0999: a change that never happened" };
+    const hit = (artefact: Hunk["artefact"], scope: string): Hunk => ({ id: `${artefact}:${scope}`, artefact, scope, severity: "fail", summary: `${scope}: differs` });
+    // Beside 17.0.0 the harness saw the first two claims match: the change was made, and 17.1.0 carried it.
+    const old: LedgerRun = {
+      id: "n3",
+      ranAt: "2026-11-03T07:12:00Z",
+      report: { sides: { a: { reader: "quay.io/t/reader:17.0.0" }, b: { reader: "quay.io/t/reader:sha-b146cca" } }, compare: { unclaimed: [], hunks: [], matches: [{ hunk: hit("network", "POST /api/live/activity"), claim: shippedClaim }, { hunk: hit("network", "PUT /api/whiteboard/1"), claim: unnamed }] } } as unknown as RunReport,
+      changes: changes()
+    };
+    const at171 = (unclaimed: Hunk[], stale: object[], prs: PrRisk[]): LedgerRun => {
+      const r = { sides: { a: { reader: "quay.io/t/reader:17.1.0" }, b: { reader: "quay.io/t/reader:sha-41243b2" } }, verdict: "fail", reasons: [...(unclaimed.length ? [`${unclaimed.length} unclaimed diff(s)`] : []), `${stale.length} claim(s) matched nothing and should be removed from the changelog`], compare: { unclaimed, hunks: unclaimed, matches: unclaimed.map((hunk) => ({ hunk })), staleClaims: stale } } as unknown as RunReport;
+      return { id: "n9", ranAt: "2026-11-09T13:57:57Z", report: r, changes: changes(...prs) };
+    };
+    const quiet = run(8, { ...report([], "sha-2ec6307"), sides: { a: { reader: "quay.io/t/reader:17.1.0" }, b: { reader: "quay.io/t/reader:sha-2ec6307" } } } as RunReport, changes());
+
+    it("tells a claim seen matching beside an earlier production, or naming only PRs before the range, from one nobody saw ship", async () => {
+      const { shippedClaims } = await import("../src/changes/explain.ts");
+      const now = at171([], [shippedClaim, unnamed, named, never], [pr(589, ["apps/reader/src/app.css"])]);
+      expect(shippedClaims(now, [old, quiet])).toMatchObject([
+        { artefact: "network", scope: "POST /api/live/activity", how: "seen", beside: "17.0.0" },
+        { artefact: "network", scope: "* /api/whiteboard*", how: "seen", beside: "17.0.0" },
+        { artefact: "sbom", scope: "*/node", how: "named", prs: [541] }
+      ]);
+      // A PR in the run's own range is not shipped: its claim is about main, not production.
+      expect(shippedClaims(at171([], [named], [pr(541, ["apps/reader/Dockerfile"])]), [old])).toEqual([]);
+    });
+
+    it("passes a forecast whose differences are all pinned and whose stale claims all shipped, asking for them to be archived", async () => {
+      const { declaredPass } = await import("../src/changes/explain.ts");
+      const now = at171(today, [shippedClaim, unnamed, named], [nightly, fixed]);
+      expect(declaredPass(now.report, explainGap(now, [old, before]))).toBe(
+        "PASS, explained: all 6 differences no claim covers yet are declared in the CHANGELOG line of the PR that made them (#505: 6). Nothing is owed on main; the release author pastes the claims from those lines when the release is cut. 3 claims (2 seen matching beside 17.0.0; 1 naming only PRs merged before it (#541)) matched nothing because 17.1.0 already ships what they claim: archive them from release/claims.yaml."
+      );
+      const tidy = at171([], [shippedClaim], []);
+      expect(declaredPass(tidy.report, explainGap(tidy, [old]))).toBe(
+        "PASS, explained: every difference is claimed. 1 claim (1 seen matching beside 17.0.0) matched nothing because 17.1.0 already ships what it claims: archive it from release/claims.yaml."
+      );
+    });
+
+    it("keeps the FAIL for a stale claim nobody saw ship, and says that is why", async () => {
+      const { declaredPass } = await import("../src/changes/explain.ts");
+      const now = at171(today, [shippedClaim, never], [nightly, fixed]);
+      const e = explainGap(now, [old, before]);
+      expect(declaredPass(now.report, e)).toBeUndefined();
+      const partly = at171(today, [never], [nightly, a11y]);
+      expect(gateWhy({ verdict: "fail", reasons: [], report: partly.report, stream: "main-preview" }, explainGap(partly, [old, before]))).toMatch(/^FAIL because 1 claim matched nothing and no kept run saw it ship/);
+    });
+  });
+
   it("turns the kept score's Gate to PASS with the explanation as its note, and leaves a FAIL it cannot explain", async () => {
     const { mkdtempSync, mkdirSync, writeFileSync } = await import("node:fs");
     const { tmpdir } = await import("node:os");

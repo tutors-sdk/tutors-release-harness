@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.61.0`
+Contract version: `1.62.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -1524,7 +1524,8 @@ Gate and the kept verdict differ (a FAIL kept as WARN because the A/A did not co
 numbers and hashes folded. It is a lead to read: **it never changes the Gate, the score, a verdict or an exit code**, with one
 exception since 1.42.0, **PASS, explained**: a
 Main to RC forecast whose only reason to fail is unclaimed differences, every one of them declared by the PR that
-made it (`src/changes/explain.ts` `declaredPass`), or since 1.59.0 pinned on it by its code, shows its Gate as PASS, the explanation as the note of the
+made it (`src/changes/explain.ts` `declaredPass`), or since 1.59.0 pinned on it by its code, and since 1.62.0 whose
+claims that matched nothing are all claims production already ships (`shippedClaims`), shows its Gate as PASS, the explanation as the note of the
 kept `confidence.json`, in the index entry's `confidence`, the report's lead and `a3.json`'s `score`. The run's own
 `report.json` keeps its FAIL. A release candidate still needs every claim.
 
@@ -2222,6 +2223,16 @@ tag found. A reader that names a commit none of these match is drift too, and th
 runs it in a `production` job before the A/A, and Main to RC through `harness preview resolve`.
 
 ## Changes
+
+### 1.62.0 (minor; a claim production already ships never fails a forecast)
+
+The release note is [releases/1.62.0.md](releases/1.62.0.md). A minor. A stale claim (one that matched nothing) is
+**shipped** when a kept run beside an earlier production matched it, or when every PR its reason names was merged before
+the run's range (`src/changes/explain.ts` `shippedClaims`, listed in the ledger as `shipped`). A Main to RC forecast
+whose stale claims are all shipped, and whose unclaimed differences are all declared or pinned, is PASS, explained, and
+the note asks for those claims to be archived from `release/claims.yaml`. A stale claim no kept run saw ship still
+fails, and the A3 and `gateWhy` now say that it is the reason. `report.json`'s verdict, a release candidate's Gate and
+every exit code are unchanged.
 
 ### 1.61.0 (minor; production is what production serves)
 
