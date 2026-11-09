@@ -1,0 +1,1663 @@
+{
+  "schemaVersion": 1,
+  "harness": {
+    "version": "1.62.0",
+    "gitSha": "7790aee6e818d0c4cc7861c9d300f6800bc97eec",
+    "contractVersion": "1.62.0"
+  },
+  "harnessVersion": "1.62.0",
+  "mode": "upgrade",
+  "substrate": "compose",
+  "ranAt": "2026-11-09T19:07:39.648Z",
+  "now": "2026-09-16T09:05:00.000Z",
+  "runs": 1,
+  "sides": {
+    "a": {
+      "reader": "quay.io/tutors-sdk/tutors-reader:17.1.0",
+      "catalogue": "quay.io/tutors-sdk/tutors-catalogue:17.1.0",
+      "live": "quay.io/tutors-sdk/tutors-live:17.1.0",
+      "time": "quay.io/tutors-sdk/tutors-time:17.1.0"
+    },
+    "b": {
+      "reader": "quay.io/tutors-sdk/tutors-reader:sha-41243b2",
+      "catalogue": "quay.io/tutors-sdk/tutors-catalogue:sha-41243b2",
+      "live": "quay.io/tutors-sdk/tutors-live:sha-41243b2",
+      "time": "quay.io/tutors-sdk/tutors-time:sha-41243b2"
+    }
+  },
+  "provenance": {
+    "a": {
+      "summary": "pulled+verified",
+      "images": {
+        "reader": {
+          "ref": "quay.io/tutors-sdk/tutors-reader:17.1.0",
+          "id": "sha256:84aa66d82a6482006b0c92ed6db363ca244c5afea3d5673806560371e062f5c3",
+          "digest": "sha256:84aa66d82a6482006b0c92ed6db363ca244c5afea3d5673806560371e062f5c3",
+          "revision": "b146cca3900e27a2be21e99e873e731dfa6f9df8",
+          "version": "17.1.0-rc.1",
+          "created": "2026-11-03T11:29:11.151Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "catalogue": {
+          "ref": "quay.io/tutors-sdk/tutors-catalogue:17.1.0",
+          "id": "sha256:ecd47ce9b7cc160b8a913a31309e3b2aa637933988569d6aaedab3ae5fe78361",
+          "digest": "sha256:ecd47ce9b7cc160b8a913a31309e3b2aa637933988569d6aaedab3ae5fe78361",
+          "revision": "b146cca3900e27a2be21e99e873e731dfa6f9df8",
+          "version": "17.1.0-rc.1",
+          "created": "2026-11-03T11:29:16.952Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "live": {
+          "ref": "quay.io/tutors-sdk/tutors-live:17.1.0",
+          "id": "sha256:ca80e0e78a9b225b297ce4ccee1825204cd8fd501f3784829680ac4c0e49a6f9",
+          "digest": "sha256:ca80e0e78a9b225b297ce4ccee1825204cd8fd501f3784829680ac4c0e49a6f9",
+          "revision": "b146cca3900e27a2be21e99e873e731dfa6f9df8",
+          "version": "17.1.0-rc.1",
+          "created": "2026-11-03T11:29:16.873Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "time": {
+          "ref": "quay.io/tutors-sdk/tutors-time:17.1.0",
+          "id": "sha256:786e81c15a7a9537d71845df7e46efe49e3706df3c27656ee7d8072ada164b90",
+          "digest": "sha256:786e81c15a7a9537d71845df7e46efe49e3706df3c27656ee7d8072ada164b90",
+          "revision": "b146cca3900e27a2be21e99e873e731dfa6f9df8",
+          "version": "17.1.0-rc.1",
+          "created": "2026-11-03T11:29:13.256Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        }
+      }
+    },
+    "b": {
+      "summary": "pulled+verified",
+      "images": {
+        "reader": {
+          "ref": "quay.io/tutors-sdk/tutors-reader:sha-41243b2",
+          "id": "sha256:452f40f24d8ebdc83b4a46bbea67ca404370021d33491a5566688002479934a7",
+          "digest": "sha256:452f40f24d8ebdc83b4a46bbea67ca404370021d33491a5566688002479934a7",
+          "revision": "41243b2bda8c377e428e1de4a8a3d2a73583fdce",
+          "version": "sha-41243b2",
+          "created": "2026-11-09T12:20:52.603Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "catalogue": {
+          "ref": "quay.io/tutors-sdk/tutors-catalogue:sha-41243b2",
+          "id": "sha256:d823976f32811d1b8570caf99e6a54b86684056965b337910aab668d64d77033",
+          "digest": "sha256:d823976f32811d1b8570caf99e6a54b86684056965b337910aab668d64d77033",
+          "revision": "41243b2bda8c377e428e1de4a8a3d2a73583fdce",
+          "version": "sha-41243b2",
+          "created": "2026-11-09T12:20:40.946Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "live": {
+          "ref": "quay.io/tutors-sdk/tutors-live:sha-41243b2",
+          "id": "sha256:f2e83115794bd08f2637adf661adb6513525286cf8ecc87eb8730bf49da20f2c",
+          "digest": "sha256:f2e83115794bd08f2637adf661adb6513525286cf8ecc87eb8730bf49da20f2c",
+          "revision": "41243b2bda8c377e428e1de4a8a3d2a73583fdce",
+          "version": "sha-41243b2",
+          "created": "2026-11-09T12:20:59.463Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        },
+        "time": {
+          "ref": "quay.io/tutors-sdk/tutors-time:sha-41243b2",
+          "id": "sha256:8d522b42f76cfd85a1bd353e04d399fd5ccf942e05ca204f4b31af4645aa0c23",
+          "digest": "sha256:8d522b42f76cfd85a1bd353e04d399fd5ccf942e05ca204f4b31af4645aa0c23",
+          "revision": "41243b2bda8c377e428e1de4a8a3d2a73583fdce",
+          "version": "sha-41243b2",
+          "created": "2026-11-09T12:20:41.499Z",
+          "provenance": "pulled+verified",
+          "verifiedIdentity": "^https://github.com/tutors-sdk/tutors-mono-repo/\\.github/workflows/image-build\\.yml@"
+        }
+      }
+    }
+  },
+  "verdict": "pass",
+  "reasons": [
+    "the candidate rolled in under load with no failed request",
+    "14 difference(s) between a and b outside the rollout, judged by release mode",
+    "NOT COLLECTED: vulns of reader, catalogue, live, time on side a: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)",
+    "NOT COLLECTED: vulns of reader, catalogue, live, time on side b: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+  ],
+  "compare": {
+    "hunks": [
+      {
+        "id": "network:GET_/_app/immutable/assets/23.__hash__.css:1",
+        "artefact": "network",
+        "scope": "GET /_app/immutable/assets/23.{{hash}}.css",
+        "path": "/",
+        "severity": "fail",
+        "summary": "reader:home: request no longer made on b: GET /_app/immutable/assets/23.{{hash}}.css"
+      },
+      {
+        "id": "network:GET_/_app/immutable/chunks/__hash__.js:2",
+        "artefact": "network",
+        "scope": "GET /_app/immutable/chunks/{{hash}}.js",
+        "path": "/",
+        "severity": "fail",
+        "summary": "reader:home: GET /_app/immutable/chunks/{{hash}}.js requested 36× on a, 38× on b"
+      },
+      {
+        "id": "network:GET_/_app/immutable/nodes/23.__hash__.js:3",
+        "artefact": "network",
+        "scope": "GET /_app/immutable/nodes/23.{{hash}}.js",
+        "path": "/",
+        "severity": "fail",
+        "summary": "reader:home: request no longer made on b: GET /_app/immutable/nodes/23.{{hash}}.js"
+      },
+      {
+        "id": "network:GET_/_app/immutable/assets/24.__hash__.css:4",
+        "artefact": "network",
+        "scope": "GET /_app/immutable/assets/24.{{hash}}.css",
+        "path": "/",
+        "severity": "fail",
+        "summary": "reader:home: new request on b: GET /_app/immutable/assets/24.{{hash}}.css"
+      },
+      {
+        "id": "network:GET_/_app/immutable/nodes/24.__hash__.js:5",
+        "artefact": "network",
+        "scope": "GET /_app/immutable/nodes/24.{{hash}}.js",
+        "path": "/",
+        "severity": "fail",
+        "summary": "reader:home: new request on b: GET /_app/immutable/nodes/24.{{hash}}.js"
+      },
+      {
+        "id": "network:GET_/_app/immutable/chunks/__hash__.js:6",
+        "artefact": "network",
+        "scope": "GET /_app/immutable/chunks/{{hash}}.js",
+        "path": "/course/localhost:8080",
+        "severity": "fail",
+        "summary": "reader:course: GET /_app/immutable/chunks/{{hash}}.js requested 45× on a, 47× on b"
+      },
+      {
+        "id": "console:reader:home:7",
+        "artefact": "console",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "info",
+        "summary": "reader:home: console message gone on b",
+        "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/_bWaDvpg.js"
+      },
+      {
+        "id": "console:reader:home:8",
+        "artefact": "console",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "info",
+        "summary": "reader:home: console message gone on b",
+        "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/4IpujxjP.js"
+      },
+      {
+        "id": "console:reader:home:9",
+        "artefact": "console",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "info",
+        "summary": "reader:home: console message gone on b",
+        "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/BNZg-CQS.js"
+      },
+      {
+        "id": "console:reader:home:10",
+        "artefact": "console",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "info",
+        "summary": "reader:home: console message gone on b",
+        "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/Bwm3Z89P.js"
+      },
+      {
+        "id": "console:reader:home:11",
+        "artefact": "console",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "info",
+        "summary": "reader:home: console message gone on b",
+        "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/CDwwboVI.js"
+      },
+      {
+        "id": "console:reader:home:12",
+        "artefact": "console",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "info",
+        "summary": "reader:home: console message gone on b",
+        "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/CSGDl2Id.js"
+      },
+      {
+        "id": "console:reader:home:13",
+        "artefact": "console",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "info",
+        "summary": "reader:home: console message gone on b",
+        "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/CZgB_LrY.js"
+      },
+      {
+        "id": "console:reader:home:14",
+        "artefact": "console",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "info",
+        "summary": "reader:home: console message gone on b",
+        "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/D6W7vo6t.js"
+      },
+      {
+        "id": "console:reader:home:15",
+        "artefact": "console",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "info",
+        "summary": "reader:home: console message gone on b",
+        "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/Dqc0PMZ1.js"
+      },
+      {
+        "id": "console:reader:home:16",
+        "artefact": "console",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "info",
+        "summary": "reader:home: console message gone on b",
+        "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/Dz9xXPeN.js"
+      },
+      {
+        "id": "console:reader:home:17",
+        "artefact": "console",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "info",
+        "summary": "reader:home: console message gone on b",
+        "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/DZWm_aSH.js"
+      },
+      {
+        "id": "console:reader:home:18",
+        "artefact": "console",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "info",
+        "summary": "reader:home: console message gone on b",
+        "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/gk7aYMRT.js"
+      },
+      {
+        "id": "console:reader:home:19",
+        "artefact": "console",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "info",
+        "summary": "reader:home: console message gone on b",
+        "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/S552sQbP.js"
+      },
+      {
+        "id": "console:reader:home:20",
+        "artefact": "console",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "info",
+        "summary": "reader:home: console message gone on b",
+        "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/yN0wFYMB.js"
+      },
+      {
+        "id": "console:reader:home:21",
+        "artefact": "console",
+        "scope": "reader:home",
+        "path": "/",
+        "severity": "info",
+        "summary": "reader:home: console message gone on b",
+        "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/nodes/0.B_iVQinv.js"
+      },
+      {
+        "id": "sbom:reader/apt:22",
+        "artefact": "sbom",
+        "scope": "reader/apt",
+        "severity": "fail",
+        "summary": "reader: package bumped: apt 2.6.1 → 2.6.2"
+      },
+      {
+        "id": "sbom:reader/libapt-pkg6.0:23",
+        "artefact": "sbom",
+        "scope": "reader/libapt-pkg6.0",
+        "severity": "fail",
+        "summary": "reader: package bumped: libapt-pkg6.0 2.6.1 → 2.6.2"
+      },
+      {
+        "id": "vulns:reader/not-collected:24",
+        "artefact": "vulns",
+        "scope": "reader/not-collected",
+        "severity": "info",
+        "summary": "NOT COLLECTED: vulns of reader on both sides: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)",
+        "detail": "a: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)\nb: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+      },
+      {
+        "id": "sbom:catalogue/apt:25",
+        "artefact": "sbom",
+        "scope": "catalogue/apt",
+        "severity": "fail",
+        "summary": "catalogue: package bumped: apt 2.6.1 → 2.6.2"
+      },
+      {
+        "id": "sbom:catalogue/libapt-pkg6.0:26",
+        "artefact": "sbom",
+        "scope": "catalogue/libapt-pkg6.0",
+        "severity": "fail",
+        "summary": "catalogue: package bumped: libapt-pkg6.0 2.6.1 → 2.6.2"
+      },
+      {
+        "id": "vulns:catalogue/not-collected:27",
+        "artefact": "vulns",
+        "scope": "catalogue/not-collected",
+        "severity": "info",
+        "summary": "NOT COLLECTED: vulns of catalogue on both sides: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)",
+        "detail": "a: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)\nb: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+      },
+      {
+        "id": "sbom:live/apt:28",
+        "artefact": "sbom",
+        "scope": "live/apt",
+        "severity": "fail",
+        "summary": "live: package bumped: apt 2.6.1 → 2.6.2"
+      },
+      {
+        "id": "sbom:live/libapt-pkg6.0:29",
+        "artefact": "sbom",
+        "scope": "live/libapt-pkg6.0",
+        "severity": "fail",
+        "summary": "live: package bumped: libapt-pkg6.0 2.6.1 → 2.6.2"
+      },
+      {
+        "id": "vulns:live/not-collected:30",
+        "artefact": "vulns",
+        "scope": "live/not-collected",
+        "severity": "info",
+        "summary": "NOT COLLECTED: vulns of live on both sides: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)",
+        "detail": "a: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)\nb: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+      },
+      {
+        "id": "sbom:time/apt:31",
+        "artefact": "sbom",
+        "scope": "time/apt",
+        "severity": "fail",
+        "summary": "time: package bumped: apt 2.6.1 → 2.6.2"
+      },
+      {
+        "id": "sbom:time/libapt-pkg6.0:32",
+        "artefact": "sbom",
+        "scope": "time/libapt-pkg6.0",
+        "severity": "fail",
+        "summary": "time: package bumped: libapt-pkg6.0 2.6.1 → 2.6.2"
+      },
+      {
+        "id": "vulns:time/not-collected:33",
+        "artefact": "vulns",
+        "scope": "time/not-collected",
+        "severity": "info",
+        "summary": "NOT COLLECTED: vulns of time on both sides: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)",
+        "detail": "a: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)\nb: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+      },
+      {
+        "id": "runtime:runtime/summary:34",
+        "artefact": "runtime",
+        "scope": "runtime/summary",
+        "severity": "info",
+        "summary": "container posture collected for catalogue, live, reader, reader-auth, time on both sides (compose)",
+        "detail": "catalogue: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n           b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nlive: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n        b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader-auth: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n             b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\ntime: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter"
+      },
+      {
+        "id": "startup:startup/not-collected:35",
+        "artefact": "startup",
+        "scope": "startup/not-collected",
+        "severity": "info",
+        "summary": "NOT COLLECTED: startup time on side a: switched off with --startup-restarts 0"
+      },
+      {
+        "id": "startup:startup/not-collected:36",
+        "artefact": "startup",
+        "scope": "startup/not-collected",
+        "severity": "info",
+        "summary": "NOT COLLECTED: startup time on side b: switched off with --startup-restarts 0"
+      },
+      {
+        "id": "image-hardening:reader/unrecorded-base:37",
+        "artefact": "image-hardening",
+        "scope": "reader/unrecorded-base",
+        "severity": "info",
+        "summary": "reader: records no base image (no org.opencontainers.image.base.name label), so a base that moved upstream reads as a rebuild no PR declared (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "image-hardening:catalogue/unrecorded-base:38",
+        "artefact": "image-hardening",
+        "scope": "catalogue/unrecorded-base",
+        "severity": "info",
+        "summary": "catalogue: records no base image (no org.opencontainers.image.base.name label), so a base that moved upstream reads as a rebuild no PR declared (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "image-hardening:live/unrecorded-base:39",
+        "artefact": "image-hardening",
+        "scope": "live/unrecorded-base",
+        "severity": "info",
+        "summary": "live: records no base image (no org.opencontainers.image.base.name label), so a base that moved upstream reads as a rebuild no PR declared (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "image-hardening:time/unrecorded-base:40",
+        "artefact": "image-hardening",
+        "scope": "time/unrecorded-base",
+        "severity": "info",
+        "summary": "time: records no base image (no org.opencontainers.image.base.name label), so a base that moved upstream reads as a rebuild no PR declared (production too)",
+        "level": "informing"
+      },
+      {
+        "id": "build-provenance:reader/summary:41",
+        "artefact": "build-provenance",
+        "scope": "reader/summary",
+        "severity": "info",
+        "summary": "reader: build-provenance holds on b: SLSA provenance v1 by .github/workflows/image-build.yml@refs/heads/main"
+      },
+      {
+        "id": "build-provenance:catalogue/summary:42",
+        "artefact": "build-provenance",
+        "scope": "catalogue/summary",
+        "severity": "info",
+        "summary": "catalogue: build-provenance holds on b: SLSA provenance v1 by .github/workflows/image-build.yml@refs/heads/main"
+      },
+      {
+        "id": "build-provenance:live/summary:43",
+        "artefact": "build-provenance",
+        "scope": "live/summary",
+        "severity": "info",
+        "summary": "live: build-provenance holds on b: SLSA provenance v1 by .github/workflows/image-build.yml@refs/heads/main"
+      },
+      {
+        "id": "build-provenance:time/summary:44",
+        "artefact": "build-provenance",
+        "scope": "time/summary",
+        "severity": "info",
+        "summary": "time: build-provenance holds on b: SLSA provenance v1 by .github/workflows/image-build.yml@refs/heads/main"
+      },
+      {
+        "id": "vuln-ceiling:reader/not-evaluated:45",
+        "artefact": "vuln-ceiling",
+        "scope": "reader/not-evaluated",
+        "severity": "info",
+        "summary": "reader: vuln-ceiling could not be evaluated on b: no vulnerability scan: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+      },
+      {
+        "id": "vuln-ceiling:catalogue/not-evaluated:46",
+        "artefact": "vuln-ceiling",
+        "scope": "catalogue/not-evaluated",
+        "severity": "info",
+        "summary": "catalogue: vuln-ceiling could not be evaluated on b: no vulnerability scan: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+      },
+      {
+        "id": "vuln-ceiling:live/not-evaluated:47",
+        "artefact": "vuln-ceiling",
+        "scope": "live/not-evaluated",
+        "severity": "info",
+        "summary": "live: vuln-ceiling could not be evaluated on b: no vulnerability scan: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+      },
+      {
+        "id": "vuln-ceiling:time/not-evaluated:48",
+        "artefact": "vuln-ceiling",
+        "scope": "time/not-evaluated",
+        "severity": "info",
+        "summary": "time: vuln-ceiling could not be evaluated on b: no vulnerability scan: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+      },
+      {
+        "id": "asset-graph:reader:49",
+        "artefact": "asset-graph",
+        "scope": "reader",
+        "severity": "info",
+        "summary": "reader: the asset graph changed: 117 → 121 immutable requests (JS 98 → 102, CSS 19 → 19), 1.1 MB → 1.1 MB; 6 network and 0 headers difference(s) are this churn",
+        "level": "informing"
+      },
+      {
+        "id": "slo:reader-availability/not-evaluated:50",
+        "artefact": "slo",
+        "scope": "reader-availability/not-evaluated",
+        "severity": "info",
+        "summary": "reader-availability: not evaluated on b: 4 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "slo:reader-latency/not-evaluated:51",
+        "artefact": "slo",
+        "scope": "reader-latency/not-evaluated",
+        "severity": "info",
+        "summary": "reader-latency: not evaluated on b: 4 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "slo:catalogue-availability/not-evaluated:52",
+        "artefact": "slo",
+        "scope": "catalogue-availability/not-evaluated",
+        "severity": "info",
+        "summary": "catalogue-availability: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "slo:catalogue-latency/not-evaluated:53",
+        "artefact": "slo",
+        "scope": "catalogue-latency/not-evaluated",
+        "severity": "info",
+        "summary": "catalogue-latency: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "slo:live-availability/not-evaluated:54",
+        "artefact": "slo",
+        "scope": "live-availability/not-evaluated",
+        "severity": "info",
+        "summary": "live-availability: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "slo:live-latency/not-evaluated:55",
+        "artefact": "slo",
+        "scope": "live-latency/not-evaluated",
+        "severity": "info",
+        "summary": "live-latency: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "slo:time-availability/not-evaluated:56",
+        "artefact": "slo",
+        "scope": "time-availability/not-evaluated",
+        "severity": "info",
+        "summary": "time-availability: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "slo:time-latency/not-evaluated:57",
+        "artefact": "slo",
+        "scope": "time-latency/not-evaluated",
+        "severity": "info",
+        "summary": "time-latency: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+      },
+      {
+        "id": "secrets-in-response:summary:58",
+        "artefact": "secrets-in-response",
+        "scope": "summary",
+        "severity": "info",
+        "summary": "secrets-in-response holds on b: no secret-shaped value in the accessibility tree, document headers, response URLs, console or HTML and JSON bodies of 5 page capture(s)"
+      },
+      {
+        "id": "upgrade:rollout:1",
+        "artefact": "upgrade",
+        "scope": "rollout",
+        "severity": "info",
+        "summary": "901 requests through the rollout, none failed; switched at 17.7s"
+      }
+    ],
+    "matches": [
+      {
+        "hunk": {
+          "id": "network:GET_/_app/immutable/assets/23.__hash__.css:1",
+          "artefact": "network",
+          "scope": "GET /_app/immutable/assets/23.{{hash}}.css",
+          "path": "/",
+          "severity": "fail",
+          "summary": "reader:home: request no longer made on b: GET /_app/immutable/assets/23.{{hash}}.css"
+        }
+      },
+      {
+        "hunk": {
+          "id": "network:GET_/_app/immutable/chunks/__hash__.js:2",
+          "artefact": "network",
+          "scope": "GET /_app/immutable/chunks/{{hash}}.js",
+          "path": "/",
+          "severity": "fail",
+          "summary": "reader:home: GET /_app/immutable/chunks/{{hash}}.js requested 36× on a, 38× on b"
+        }
+      },
+      {
+        "hunk": {
+          "id": "network:GET_/_app/immutable/nodes/23.__hash__.js:3",
+          "artefact": "network",
+          "scope": "GET /_app/immutable/nodes/23.{{hash}}.js",
+          "path": "/",
+          "severity": "fail",
+          "summary": "reader:home: request no longer made on b: GET /_app/immutable/nodes/23.{{hash}}.js"
+        }
+      },
+      {
+        "hunk": {
+          "id": "network:GET_/_app/immutable/assets/24.__hash__.css:4",
+          "artefact": "network",
+          "scope": "GET /_app/immutable/assets/24.{{hash}}.css",
+          "path": "/",
+          "severity": "fail",
+          "summary": "reader:home: new request on b: GET /_app/immutable/assets/24.{{hash}}.css"
+        }
+      },
+      {
+        "hunk": {
+          "id": "network:GET_/_app/immutable/nodes/24.__hash__.js:5",
+          "artefact": "network",
+          "scope": "GET /_app/immutable/nodes/24.{{hash}}.js",
+          "path": "/",
+          "severity": "fail",
+          "summary": "reader:home: new request on b: GET /_app/immutable/nodes/24.{{hash}}.js"
+        }
+      },
+      {
+        "hunk": {
+          "id": "network:GET_/_app/immutable/chunks/__hash__.js:6",
+          "artefact": "network",
+          "scope": "GET /_app/immutable/chunks/{{hash}}.js",
+          "path": "/course/localhost:8080",
+          "severity": "fail",
+          "summary": "reader:course: GET /_app/immutable/chunks/{{hash}}.js requested 45× on a, 47× on b"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader:home:7",
+          "artefact": "console",
+          "scope": "reader:home",
+          "path": "/",
+          "severity": "info",
+          "summary": "reader:home: console message gone on b",
+          "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/_bWaDvpg.js"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader:home:8",
+          "artefact": "console",
+          "scope": "reader:home",
+          "path": "/",
+          "severity": "info",
+          "summary": "reader:home: console message gone on b",
+          "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/4IpujxjP.js"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader:home:9",
+          "artefact": "console",
+          "scope": "reader:home",
+          "path": "/",
+          "severity": "info",
+          "summary": "reader:home: console message gone on b",
+          "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/BNZg-CQS.js"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader:home:10",
+          "artefact": "console",
+          "scope": "reader:home",
+          "path": "/",
+          "severity": "info",
+          "summary": "reader:home: console message gone on b",
+          "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/Bwm3Z89P.js"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader:home:11",
+          "artefact": "console",
+          "scope": "reader:home",
+          "path": "/",
+          "severity": "info",
+          "summary": "reader:home: console message gone on b",
+          "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/CDwwboVI.js"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader:home:12",
+          "artefact": "console",
+          "scope": "reader:home",
+          "path": "/",
+          "severity": "info",
+          "summary": "reader:home: console message gone on b",
+          "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/CSGDl2Id.js"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader:home:13",
+          "artefact": "console",
+          "scope": "reader:home",
+          "path": "/",
+          "severity": "info",
+          "summary": "reader:home: console message gone on b",
+          "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/CZgB_LrY.js"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader:home:14",
+          "artefact": "console",
+          "scope": "reader:home",
+          "path": "/",
+          "severity": "info",
+          "summary": "reader:home: console message gone on b",
+          "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/D6W7vo6t.js"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader:home:15",
+          "artefact": "console",
+          "scope": "reader:home",
+          "path": "/",
+          "severity": "info",
+          "summary": "reader:home: console message gone on b",
+          "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/Dqc0PMZ1.js"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader:home:16",
+          "artefact": "console",
+          "scope": "reader:home",
+          "path": "/",
+          "severity": "info",
+          "summary": "reader:home: console message gone on b",
+          "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/Dz9xXPeN.js"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader:home:17",
+          "artefact": "console",
+          "scope": "reader:home",
+          "path": "/",
+          "severity": "info",
+          "summary": "reader:home: console message gone on b",
+          "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/DZWm_aSH.js"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader:home:18",
+          "artefact": "console",
+          "scope": "reader:home",
+          "path": "/",
+          "severity": "info",
+          "summary": "reader:home: console message gone on b",
+          "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/gk7aYMRT.js"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader:home:19",
+          "artefact": "console",
+          "scope": "reader:home",
+          "path": "/",
+          "severity": "info",
+          "summary": "reader:home: console message gone on b",
+          "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/S552sQbP.js"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader:home:20",
+          "artefact": "console",
+          "scope": "reader:home",
+          "path": "/",
+          "severity": "info",
+          "summary": "reader:home: console message gone on b",
+          "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/chunks/yN0wFYMB.js"
+        }
+      },
+      {
+        "hunk": {
+          "id": "console:reader:home:21",
+          "artefact": "console",
+          "scope": "reader:home",
+          "path": "/",
+          "severity": "info",
+          "summary": "reader:home: console message gone on b",
+          "detail": "error: Failed to load resource: net::ERR_NETWORK_CHANGED: {{origin}}/_app/immutable/nodes/0.B_iVQinv.js"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:reader/apt:22",
+          "artefact": "sbom",
+          "scope": "reader/apt",
+          "severity": "fail",
+          "summary": "reader: package bumped: apt 2.6.1 → 2.6.2"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:reader/libapt-pkg6.0:23",
+          "artefact": "sbom",
+          "scope": "reader/libapt-pkg6.0",
+          "severity": "fail",
+          "summary": "reader: package bumped: libapt-pkg6.0 2.6.1 → 2.6.2"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:reader/not-collected:24",
+          "artefact": "vulns",
+          "scope": "reader/not-collected",
+          "severity": "info",
+          "summary": "NOT COLLECTED: vulns of reader on both sides: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)",
+          "detail": "a: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)\nb: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:catalogue/apt:25",
+          "artefact": "sbom",
+          "scope": "catalogue/apt",
+          "severity": "fail",
+          "summary": "catalogue: package bumped: apt 2.6.1 → 2.6.2"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:catalogue/libapt-pkg6.0:26",
+          "artefact": "sbom",
+          "scope": "catalogue/libapt-pkg6.0",
+          "severity": "fail",
+          "summary": "catalogue: package bumped: libapt-pkg6.0 2.6.1 → 2.6.2"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:catalogue/not-collected:27",
+          "artefact": "vulns",
+          "scope": "catalogue/not-collected",
+          "severity": "info",
+          "summary": "NOT COLLECTED: vulns of catalogue on both sides: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)",
+          "detail": "a: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)\nb: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:live/apt:28",
+          "artefact": "sbom",
+          "scope": "live/apt",
+          "severity": "fail",
+          "summary": "live: package bumped: apt 2.6.1 → 2.6.2"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:live/libapt-pkg6.0:29",
+          "artefact": "sbom",
+          "scope": "live/libapt-pkg6.0",
+          "severity": "fail",
+          "summary": "live: package bumped: libapt-pkg6.0 2.6.1 → 2.6.2"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:live/not-collected:30",
+          "artefact": "vulns",
+          "scope": "live/not-collected",
+          "severity": "info",
+          "summary": "NOT COLLECTED: vulns of live on both sides: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)",
+          "detail": "a: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)\nb: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:time/apt:31",
+          "artefact": "sbom",
+          "scope": "time/apt",
+          "severity": "fail",
+          "summary": "time: package bumped: apt 2.6.1 → 2.6.2"
+        }
+      },
+      {
+        "hunk": {
+          "id": "sbom:time/libapt-pkg6.0:32",
+          "artefact": "sbom",
+          "scope": "time/libapt-pkg6.0",
+          "severity": "fail",
+          "summary": "time: package bumped: libapt-pkg6.0 2.6.1 → 2.6.2"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vulns:time/not-collected:33",
+          "artefact": "vulns",
+          "scope": "time/not-collected",
+          "severity": "info",
+          "summary": "NOT COLLECTED: vulns of time on both sides: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)",
+          "detail": "a: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)\nb: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      {
+        "hunk": {
+          "id": "runtime:runtime/summary:34",
+          "artefact": "runtime",
+          "scope": "runtime/summary",
+          "severity": "info",
+          "summary": "container posture collected for catalogue, live, reader, reader-auth, time on both sides (compose)",
+          "detail": "catalogue: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n           b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nlive: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n        b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\nreader-auth: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n             b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\ntime: a — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter\n      b — uid 1001:0, caps none, root fs ro, /tmp rw, no-new-privileges, seccomp filter"
+        }
+      },
+      {
+        "hunk": {
+          "id": "startup:startup/not-collected:35",
+          "artefact": "startup",
+          "scope": "startup/not-collected",
+          "severity": "info",
+          "summary": "NOT COLLECTED: startup time on side a: switched off with --startup-restarts 0"
+        }
+      },
+      {
+        "hunk": {
+          "id": "startup:startup/not-collected:36",
+          "artefact": "startup",
+          "scope": "startup/not-collected",
+          "severity": "info",
+          "summary": "NOT COLLECTED: startup time on side b: switched off with --startup-restarts 0"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-hardening:reader/unrecorded-base:37",
+          "artefact": "image-hardening",
+          "scope": "reader/unrecorded-base",
+          "severity": "info",
+          "summary": "reader: records no base image (no org.opencontainers.image.base.name label), so a base that moved upstream reads as a rebuild no PR declared (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-hardening:catalogue/unrecorded-base:38",
+          "artefact": "image-hardening",
+          "scope": "catalogue/unrecorded-base",
+          "severity": "info",
+          "summary": "catalogue: records no base image (no org.opencontainers.image.base.name label), so a base that moved upstream reads as a rebuild no PR declared (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-hardening:live/unrecorded-base:39",
+          "artefact": "image-hardening",
+          "scope": "live/unrecorded-base",
+          "severity": "info",
+          "summary": "live: records no base image (no org.opencontainers.image.base.name label), so a base that moved upstream reads as a rebuild no PR declared (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "image-hardening:time/unrecorded-base:40",
+          "artefact": "image-hardening",
+          "scope": "time/unrecorded-base",
+          "severity": "info",
+          "summary": "time: records no base image (no org.opencontainers.image.base.name label), so a base that moved upstream reads as a rebuild no PR declared (production too)",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "build-provenance:reader/summary:41",
+          "artefact": "build-provenance",
+          "scope": "reader/summary",
+          "severity": "info",
+          "summary": "reader: build-provenance holds on b: SLSA provenance v1 by .github/workflows/image-build.yml@refs/heads/main"
+        }
+      },
+      {
+        "hunk": {
+          "id": "build-provenance:catalogue/summary:42",
+          "artefact": "build-provenance",
+          "scope": "catalogue/summary",
+          "severity": "info",
+          "summary": "catalogue: build-provenance holds on b: SLSA provenance v1 by .github/workflows/image-build.yml@refs/heads/main"
+        }
+      },
+      {
+        "hunk": {
+          "id": "build-provenance:live/summary:43",
+          "artefact": "build-provenance",
+          "scope": "live/summary",
+          "severity": "info",
+          "summary": "live: build-provenance holds on b: SLSA provenance v1 by .github/workflows/image-build.yml@refs/heads/main"
+        }
+      },
+      {
+        "hunk": {
+          "id": "build-provenance:time/summary:44",
+          "artefact": "build-provenance",
+          "scope": "time/summary",
+          "severity": "info",
+          "summary": "time: build-provenance holds on b: SLSA provenance v1 by .github/workflows/image-build.yml@refs/heads/main"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vuln-ceiling:reader/not-evaluated:45",
+          "artefact": "vuln-ceiling",
+          "scope": "reader/not-evaluated",
+          "severity": "info",
+          "summary": "reader: vuln-ceiling could not be evaluated on b: no vulnerability scan: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vuln-ceiling:catalogue/not-evaluated:46",
+          "artefact": "vuln-ceiling",
+          "scope": "catalogue/not-evaluated",
+          "severity": "info",
+          "summary": "catalogue: vuln-ceiling could not be evaluated on b: no vulnerability scan: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vuln-ceiling:live/not-evaluated:47",
+          "artefact": "vuln-ceiling",
+          "scope": "live/not-evaluated",
+          "severity": "info",
+          "summary": "live: vuln-ceiling could not be evaluated on b: no vulnerability scan: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      {
+        "hunk": {
+          "id": "vuln-ceiling:time/not-evaluated:48",
+          "artefact": "vuln-ceiling",
+          "scope": "time/not-evaluated",
+          "severity": "info",
+          "summary": "time: vuln-ceiling could not be evaluated on b: no vulnerability scan: grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      {
+        "hunk": {
+          "id": "asset-graph:reader:49",
+          "artefact": "asset-graph",
+          "scope": "reader",
+          "severity": "info",
+          "summary": "reader: the asset graph changed: 117 → 121 immutable requests (JS 98 → 102, CSS 19 → 19), 1.1 MB → 1.1 MB; 6 network and 0 headers difference(s) are this churn",
+          "level": "informing"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:reader-availability/not-evaluated:50",
+          "artefact": "slo",
+          "scope": "reader-availability/not-evaluated",
+          "severity": "info",
+          "summary": "reader-availability: not evaluated on b: 4 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:reader-latency/not-evaluated:51",
+          "artefact": "slo",
+          "scope": "reader-latency/not-evaluated",
+          "severity": "info",
+          "summary": "reader-latency: not evaluated on b: 4 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:catalogue-availability/not-evaluated:52",
+          "artefact": "slo",
+          "scope": "catalogue-availability/not-evaluated",
+          "severity": "info",
+          "summary": "catalogue-availability: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:catalogue-latency/not-evaluated:53",
+          "artefact": "slo",
+          "scope": "catalogue-latency/not-evaluated",
+          "severity": "info",
+          "summary": "catalogue-latency: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:live-availability/not-evaluated:54",
+          "artefact": "slo",
+          "scope": "live-availability/not-evaluated",
+          "severity": "info",
+          "summary": "live-availability: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:live-latency/not-evaluated:55",
+          "artefact": "slo",
+          "scope": "live-latency/not-evaluated",
+          "severity": "info",
+          "summary": "live-latency: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:time-availability/not-evaluated:56",
+          "artefact": "slo",
+          "scope": "time-availability/not-evaluated",
+          "severity": "info",
+          "summary": "time-availability: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "slo:time-latency/not-evaluated:57",
+          "artefact": "slo",
+          "scope": "time-latency/not-evaluated",
+          "severity": "info",
+          "summary": "time-latency: not evaluated on b: 0 request(s) from its /metrics across the journeys, fewer than 20"
+        }
+      },
+      {
+        "hunk": {
+          "id": "secrets-in-response:summary:58",
+          "artefact": "secrets-in-response",
+          "scope": "summary",
+          "severity": "info",
+          "summary": "secrets-in-response holds on b: no secret-shaped value in the accessibility tree, document headers, response URLs, console or HTML and JSON bodies of 5 page capture(s)"
+        }
+      },
+      {
+        "hunk": {
+          "id": "upgrade:rollout:1",
+          "artefact": "upgrade",
+          "scope": "rollout",
+          "severity": "info",
+          "summary": "901 requests through the rollout, none failed; switched at 17.7s"
+        }
+      }
+    ],
+    "unclaimed": [
+      {
+        "id": "network:GET_/_app/immutable/assets/23.__hash__.css:1",
+        "artefact": "network",
+        "scope": "GET /_app/immutable/assets/23.{{hash}}.css",
+        "path": "/",
+        "severity": "fail",
+        "summary": "reader:home: request no longer made on b: GET /_app/immutable/assets/23.{{hash}}.css"
+      },
+      {
+        "id": "network:GET_/_app/immutable/chunks/__hash__.js:2",
+        "artefact": "network",
+        "scope": "GET /_app/immutable/chunks/{{hash}}.js",
+        "path": "/",
+        "severity": "fail",
+        "summary": "reader:home: GET /_app/immutable/chunks/{{hash}}.js requested 36× on a, 38× on b"
+      },
+      {
+        "id": "network:GET_/_app/immutable/nodes/23.__hash__.js:3",
+        "artefact": "network",
+        "scope": "GET /_app/immutable/nodes/23.{{hash}}.js",
+        "path": "/",
+        "severity": "fail",
+        "summary": "reader:home: request no longer made on b: GET /_app/immutable/nodes/23.{{hash}}.js"
+      },
+      {
+        "id": "network:GET_/_app/immutable/assets/24.__hash__.css:4",
+        "artefact": "network",
+        "scope": "GET /_app/immutable/assets/24.{{hash}}.css",
+        "path": "/",
+        "severity": "fail",
+        "summary": "reader:home: new request on b: GET /_app/immutable/assets/24.{{hash}}.css"
+      },
+      {
+        "id": "network:GET_/_app/immutable/nodes/24.__hash__.js:5",
+        "artefact": "network",
+        "scope": "GET /_app/immutable/nodes/24.{{hash}}.js",
+        "path": "/",
+        "severity": "fail",
+        "summary": "reader:home: new request on b: GET /_app/immutable/nodes/24.{{hash}}.js"
+      },
+      {
+        "id": "network:GET_/_app/immutable/chunks/__hash__.js:6",
+        "artefact": "network",
+        "scope": "GET /_app/immutable/chunks/{{hash}}.js",
+        "path": "/course/localhost:8080",
+        "severity": "fail",
+        "summary": "reader:course: GET /_app/immutable/chunks/{{hash}}.js requested 45× on a, 47× on b"
+      },
+      {
+        "id": "sbom:reader/apt:22",
+        "artefact": "sbom",
+        "scope": "reader/apt",
+        "severity": "fail",
+        "summary": "reader: package bumped: apt 2.6.1 → 2.6.2"
+      },
+      {
+        "id": "sbom:reader/libapt-pkg6.0:23",
+        "artefact": "sbom",
+        "scope": "reader/libapt-pkg6.0",
+        "severity": "fail",
+        "summary": "reader: package bumped: libapt-pkg6.0 2.6.1 → 2.6.2"
+      },
+      {
+        "id": "sbom:catalogue/apt:25",
+        "artefact": "sbom",
+        "scope": "catalogue/apt",
+        "severity": "fail",
+        "summary": "catalogue: package bumped: apt 2.6.1 → 2.6.2"
+      },
+      {
+        "id": "sbom:catalogue/libapt-pkg6.0:26",
+        "artefact": "sbom",
+        "scope": "catalogue/libapt-pkg6.0",
+        "severity": "fail",
+        "summary": "catalogue: package bumped: libapt-pkg6.0 2.6.1 → 2.6.2"
+      },
+      {
+        "id": "sbom:live/apt:28",
+        "artefact": "sbom",
+        "scope": "live/apt",
+        "severity": "fail",
+        "summary": "live: package bumped: apt 2.6.1 → 2.6.2"
+      },
+      {
+        "id": "sbom:live/libapt-pkg6.0:29",
+        "artefact": "sbom",
+        "scope": "live/libapt-pkg6.0",
+        "severity": "fail",
+        "summary": "live: package bumped: libapt-pkg6.0 2.6.1 → 2.6.2"
+      },
+      {
+        "id": "sbom:time/apt:31",
+        "artefact": "sbom",
+        "scope": "time/apt",
+        "severity": "fail",
+        "summary": "time: package bumped: apt 2.6.1 → 2.6.2"
+      },
+      {
+        "id": "sbom:time/libapt-pkg6.0:32",
+        "artefact": "sbom",
+        "scope": "time/libapt-pkg6.0",
+        "severity": "fail",
+        "summary": "time: package bumped: libapt-pkg6.0 2.6.1 → 2.6.2"
+      }
+    ],
+    "staleClaims": [],
+    "broadUnapproved": []
+  },
+  "masksApplied": {
+    "response-date": 4,
+    "request-id": 4,
+    "etag": 4,
+    "metrics-process": 599,
+    "metrics-timing-histograms": 32,
+    "third-party-requests": 62,
+    "persistence-stub-requests": 0,
+    "realtime-rest-fallback-warning": 0,
+    "oauth-callback-state": 0,
+    "media-range-status": 0,
+    "chromium-compute-pressure-policy": 0,
+    "course-media-http2-reset": 0,
+    "hashed-assets": 238,
+    "footer-tutors-version": 20,
+    "transport-length": 4,
+    "transport-connection": 4,
+    "transport-encoding": 0,
+    "transport-transfer": 0,
+    "transport-keepalive": 4
+  },
+  "upgrade": {
+    "substrate": "compose",
+    "requests": 901,
+    "failed": 0,
+    "serverErrors": 0,
+    "byUpstream": {
+      "a": {
+        "requests": 300,
+        "failed": 0,
+        "serverErrors": 0,
+        "p95": 4.7
+      },
+      "b": {
+        "requests": 601,
+        "failed": 0,
+        "serverErrors": 0,
+        "p95": 3.9
+      }
+    },
+    "switchedAt": 17659,
+    "durationMs": 47964
+  },
+  "imageArtefacts": {
+    "a": {
+      "reader": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "9 layers, 108.0 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "144 distinct package(s)"
+        },
+        "vulns": {
+          "collected": false,
+          "reason": "grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      "catalogue": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "9 layers, 94.0 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "135 distinct package(s)"
+        },
+        "vulns": {
+          "collected": false,
+          "reason": "grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      "live": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "9 layers, 94.1 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "135 distinct package(s)"
+        },
+        "vulns": {
+          "collected": false,
+          "reason": "grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      "time": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "9 layers, 94.3 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "135 distinct package(s)"
+        },
+        "vulns": {
+          "collected": false,
+          "reason": "grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      }
+    },
+    "b": {
+      "reader": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "9 layers, 109.7 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "144 distinct package(s)"
+        },
+        "vulns": {
+          "collected": false,
+          "reason": "grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      "catalogue": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "9 layers, 95.6 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "135 distinct package(s)"
+        },
+        "vulns": {
+          "collected": false,
+          "reason": "grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      "live": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "9 layers, 95.7 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "135 distinct package(s)"
+        },
+        "vulns": {
+          "collected": false,
+          "reason": "grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      },
+      "time": {
+        "manifest": {
+          "collected": true,
+          "source": "docker image inspect",
+          "summary": "9 layers, 95.9 MB, USER 1001, ports 3000/tcp"
+        },
+        "sbom": {
+          "collected": true,
+          "source": "cosign attestation (signature verified)",
+          "summary": "135 distinct package(s)"
+        },
+        "vulns": {
+          "collected": false,
+          "reason": "grype is not installed (https://github.com/anchore/grype#installation, or set HARNESS_VULN_CMD to another scanner, e.g. trivy)"
+        }
+      }
+    }
+  },
+  "clock": {
+    "a": {
+      "verdict": "no-evidence",
+      "samples": []
+    },
+    "b": {
+      "verdict": "no-evidence",
+      "samples": []
+    }
+  },
+  "levels": {
+    "dom": {
+      "level": "blocking"
+    },
+    "screenshot": {
+      "level": "blocking"
+    },
+    "network": {
+      "level": "blocking"
+    },
+    "console": {
+      "level": "blocking"
+    },
+    "headers": {
+      "level": "blocking"
+    },
+    "axe": {
+      "level": "blocking"
+    },
+    "focus": {
+      "level": "blocking"
+    },
+    "metrics": {
+      "level": "blocking"
+    },
+    "logs": {
+      "level": "blocking"
+    },
+    "timing": {
+      "level": "informing"
+    },
+    "persistence": {
+      "level": "blocking"
+    },
+    "bus": {
+      "level": "blocking"
+    },
+    "migration": {
+      "level": "blocking"
+    },
+    "upgrade": {
+      "level": "blocking"
+    },
+    "image-manifest": {
+      "level": "blocking"
+    },
+    "sbom": {
+      "level": "blocking"
+    },
+    "vulns": {
+      "level": "blocking"
+    },
+    "runtime": {
+      "level": "blocking"
+    },
+    "startup": {
+      "level": "blocking"
+    },
+    "image-hardening": {
+      "level": "informing"
+    },
+    "build-provenance": {
+      "level": "informing"
+    },
+    "vuln-ceiling": {
+      "level": "informing"
+    },
+    "timing-tolerance": {
+      "level": "informing"
+    },
+    "asset-graph": {
+      "level": "informing"
+    },
+    "replay": {
+      "level": "informing"
+    },
+    "slo": {
+      "level": "informing"
+    },
+    "realtime": {
+      "level": "informing"
+    },
+    "secrets-in-response": {
+      "level": "informing"
+    },
+    "headers-policy": {
+      "level": "informing"
+    }
+  },
+  "timingControl": {
+    "journeys": [
+      {
+        "journey": "anonymous-student-reads-course",
+        "a": [
+          11526
+        ],
+        "b": [
+          10557
+        ],
+        "above": 0,
+        "below": 0
+      }
+    ]
+  },
+  "causes": {
+    "unclaimed": 14,
+    "causes": [
+      {
+        "id": "2bc87b7a",
+        "key": "sbom: package bumped",
+        "artefact": "sbom",
+        "kind": "package bumped",
+        "hunks": 8,
+        "apps": [
+          "reader",
+          "catalogue",
+          "live",
+          "time"
+        ],
+        "pages": [],
+        "items": [
+          "apt",
+          "libapt-pkg6.0"
+        ],
+        "example": {
+          "id": "sbom:reader/apt:22",
+          "scope": "reader/apt",
+          "summary": "reader: package bumped: apt 2.6.1 → 2.6.2"
+        }
+      },
+      {
+        "id": "9b37aef5",
+        "key": "network: GET {{asset}} requested #× on a, #× on b",
+        "artefact": "network",
+        "kind": "GET {{asset}} requested #× on a, #× on b",
+        "hunks": 2,
+        "apps": [
+          "reader"
+        ],
+        "pages": [
+          "reader:course",
+          "reader:home"
+        ],
+        "items": [
+          "GET /_app/immutable/chunks/{{hash}}.js"
+        ],
+        "example": {
+          "id": "network:GET_/_app/immutable/chunks/__hash__.js:2",
+          "scope": "GET /_app/immutable/chunks/{{hash}}.js",
+          "summary": "reader:home: GET /_app/immutable/chunks/{{hash}}.js requested 36× on a, 38× on b"
+        }
+      },
+      {
+        "id": "d09da70d",
+        "key": "network: new request on b: GET {{asset}}",
+        "artefact": "network",
+        "kind": "new request on b: GET {{asset}}",
+        "hunks": 2,
+        "apps": [
+          "reader"
+        ],
+        "pages": [
+          "reader:home"
+        ],
+        "items": [
+          "GET /_app/immutable/assets/24.{{hash}}.css",
+          "GET /_app/immutable/nodes/24.{{hash}}.js"
+        ],
+        "example": {
+          "id": "network:GET_/_app/immutable/assets/24.__hash__.css:4",
+          "scope": "GET /_app/immutable/assets/24.{{hash}}.css",
+          "summary": "reader:home: new request on b: GET /_app/immutable/assets/24.{{hash}}.css"
+        }
+      },
+      {
+        "id": "e300ea08",
+        "key": "network: request no longer made on b: GET {{asset}}",
+        "artefact": "network",
+        "kind": "request no longer made on b: GET {{asset}}",
+        "hunks": 2,
+        "apps": [
+          "reader"
+        ],
+        "pages": [
+          "reader:home"
+        ],
+        "items": [
+          "GET /_app/immutable/assets/23.{{hash}}.css",
+          "GET /_app/immutable/nodes/23.{{hash}}.js"
+        ],
+        "example": {
+          "id": "network:GET_/_app/immutable/assets/23.__hash__.css:1",
+          "scope": "GET /_app/immutable/assets/23.{{hash}}.css",
+          "summary": "reader:home: request no longer made on b: GET /_app/immutable/assets/23.{{hash}}.css"
+        }
+      }
+    ],
+    "together": []
+  }
+}
