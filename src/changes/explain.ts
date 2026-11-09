@@ -30,6 +30,13 @@
  *    (named as suspects, never counted as theirs). Since 1.49.4 also `rebuilt`: a difference in what an image is built
  *    from (sbom, image-manifest, vulns) on a night no merged PR touched a Dockerfile, a manifest or the lockfile.
  *
+ * 4. **Shipped claims** (since 1.62.0): a claim that matched nothing in the run because what it claims is already in
+ *    production. Leigh, 9 Nov 2026: "We have the code, the PR and the reference so this shouldn't cause a fail when we
+ *    know what happened". Every forecast beside 17.1.0 failed on the ten 17.1.0 claims still in release/claims.yaml,
+ *    while every one of its differences was pinned on the PR that made it. A stale claim is shipped when a kept run
+ *    beside an earlier production matched it (the harness saw the change, and the release that carried it is now
+ *    production), or when every PR its reason names is outside the run's range (merged before production's tag).
+ *
  * Differences are matched across runs by artefact, scope and kind (src/report/causes.ts `kindOf`), with numbers and
  * hashes folded away, so a difference whose figures move a little is still the same difference.
  *
@@ -116,8 +123,71 @@ export interface Explanation {
   unexplained: { hunks: number; rows: UnexplainedRow[] };
   /** Since 1.43.0: the Rule journeys among the run's unclaimed differences (src/report/rules-touched.ts); absent when none. */
   rules?: RuleTouched[];
+  /** Since 1.62.0: the run's stale claims that production already ships; absent when none. */
+  shipped?: ShippedClaim[];
   /** The forecasts read for history, oldest first; the run itself is not among them. */
   history: { runs: number; first: string | null; last: string | null };
+}
+
+/** Since 1.62.0: a claim that matched nothing because production already has what it claims. */
+export interface ShippedClaim {
+  /** The claim as the reports name it (src/claims/rules.ts `claimLabel`), or `<artefact> <scope>`. */
+  label: string;
+  artefact: string;
+  scope: string;
+  /** `seen`: a kept run beside an earlier production matched it; `named`: every PR its reason names is before the run's range. */
+  how: "seen" | "named";
+  /** seen: the production it matched beside, and when; named: the PRs. */
+  beside?: string;
+  at?: string;
+  prs?: number[];
+}
+
+const claimKey = (c: { artefact: string; scope: string }) => `${c.artefact}|${c.scope}`;
+const tagOfRef = (ref?: string) => (ref ?? "").split("@")[0]!.split(":").at(-1) ?? "";
+
+/**
+ * Since 1.62.0: the run's stale claims that production already ships. `history` is any kept runs, beside any baseline;
+ * only those that ran before `run` beside another production are read. A stale claim neither seen nor named stays
+ * stale: a claim to remove, or a difference that did not happen.
+ */
+export function shippedClaims(run: LedgerRun, history: LedgerRun[]): ShippedClaim[] {
+  const stale = run.report.compare?.staleClaims ?? [];
+  if (!stale.length) return [];
+  const baseline = run.report.sides?.a?.reader;
+  const seen = new Map<string, { beside: string; at: string }>();
+  for (const h of history) {
+    const other = h.report.sides?.a?.reader;
+    if (h.id === run.id || !other || other === baseline || Date.parse(h.ranAt) >= Date.parse(run.ranAt)) continue;
+    for (const m of h.report.compare?.matches ?? []) {
+      if (!m?.claim) continue;
+      const k = claimKey(m.claim);
+      const was = seen.get(k);
+      if (!was || was.at < h.ranAt) seen.set(k, { beside: tagOfRef(other), at: h.ranAt });
+    }
+  }
+  const inRange = new Set((run.changes?.prs ?? []).map((p) => p.pr).filter((n): n is number => typeof n === "number"));
+  const out: ShippedClaim[] = [];
+  for (const c of stale) {
+    const label = claimLabel(c) || `${c.artefact} ${c.scope}`;
+    const s = seen.get(claimKey(c));
+    if (s) {
+      out.push({ label, artefact: c.artefact, scope: c.scope, how: "seen", beside: s.beside, at: s.at });
+      continue;
+    }
+    const prs = [...new Set([...(c.reason ?? "").matchAll(/#(\d+)/g)].map((m) => Number(m[1])))];
+    if (run.changes && prs.length && prs.every((n) => !inRange.has(n))) out.push({ label, artefact: c.artefact, scope: c.scope, how: "named", prs });
+  }
+  return out;
+}
+
+/** `10 claims (seen matching beside 17.0.0: 9; naming PRs before the range: #541)`. */
+export function shippedWords(shipped: ShippedClaim[]): string {
+  const seen = shipped.filter((s) => s.how === "seen");
+  const besides = [...new Set(seen.map((s) => s.beside!))];
+  const named = [...new Set(shipped.filter((s) => s.how === "named").flatMap((s) => s.prs ?? []))];
+  const parts = [seen.length ? `${seen.length} seen matching beside ${besides.join(", ")}` : "", named.length ? `${shipped.length - seen.length} naming only PRs merged before it (${named.map((n) => `#${n}`).join(", ")})` : ""].filter(Boolean);
+  return `${shipped.length} claim${shipped.length === 1 ? "" : "s"} (${parts.join("; ")})`;
 }
 
 /** The identity of a difference across runs: artefact, scope and kind, numbers and hashes folded. */
@@ -290,6 +360,7 @@ export function explainGap(run: LedgerRun, history: LedgerRun[]): Explanation {
     .sort((x, y) => y.hunks - x.hunks);
   const sum = (rows: { hunks: number }[]) => rows.reduce((n, r) => n + r.hunks, 0);
   const rules = rulesTouched(unclaimed);
+  const shipped = shippedClaims(run, history);
   return {
     total: claimedHunks + unclaimed.length,
     claimed: { hunks: claimedHunks, rows: [...claims.values()].sort((x, y) => y.hunks - x.hunks || x.label.localeCompare(y.label)) },
@@ -297,6 +368,7 @@ export function explainGap(run: LedgerRun, history: LedgerRun[]): Explanation {
     declared: { hunks: sum(declaredRows), rows: declaredRows },
     unexplained: { hunks: sum(unexplainedRows), rows: unexplainedRows },
     ...(rules.length ? { rules } : {}),
+    ...(shipped.length ? { shipped } : {}),
     history: { runs: past.length, first: past[0]?.ranAt ?? null, last: past.at(-1)?.ranAt ?? null }
   };
 }
@@ -390,21 +462,33 @@ export const mismatchWords = (m: HintMismatch): string =>
  * (`pinned`) counts the same: the gate reads the code, and a hint that leaves an artefact out is a warning
  * (`hintMismatches`). The sentence says so and names the PRs; the release author still pastes the claims when the
  * release is cut, and a release candidate still needs them.
- * Undefined for anything else: a release candidate, another reason to fail, or one difference no PR can be held to.
+ * Since 1.62.0 a stale claim production already ships (`shippedClaims`) is no reason to fail either: the sentence asks
+ * for it to be archived.
+ * Undefined for anything else: a release candidate, another reason to fail, a stale claim nobody saw ship, or one
+ * difference no PR can be held to.
  */
 export function declaredPass(run: Pick<RunReport, "verdict" | "reasons" | "sides" | "compare">, e: Explanation): string | undefined {
   if (run.verdict !== "fail" || !forecastOf(run as RunReport)) return undefined;
-  if (!(run.reasons ?? []).every((r) => /^\d+ unclaimed diff\(s\)$/.test(r))) return undefined;
+  const STALE = /^\d+ claim\(s\) matched nothing/;
+  if (!(run.reasons ?? []).every((r) => /^\d+ unclaimed diff\(s\)$/.test(r) || STALE.test(r))) return undefined;
+  // Since 1.62.0: a claim that matched nothing because production already ships it is no reason to fail a forecast.
+  const stale = run.compare?.staleClaims?.length ?? 0;
+  const shipped = e.shipped ?? [];
+  if ((run.reasons ?? []).some((r) => STALE.test(r)) && shipped.length < stale) return undefined;
+  const prod = tagOfRef(run.sides?.a?.reader) || "production";
+  const archive = stale ? ` ${shippedWords(shipped)} matched nothing because ${prod} already ships what ${stale === 1 ? "it claims" : "they claim"}: archive ${stale === 1 ? "it" : "them"} from release/claims.yaml.` : "";
   const unclaimed = (run.compare?.unclaimed ?? []).filter((h) => h.severity === "fail").length;
   const declared = e.declared?.hunks ?? 0;
   const pinned = pinnedHunks(e);
-  if (!unclaimed || declared + pinned !== unclaimed || e.contributed.hunks !== pinned || e.unexplained.hunks) return undefined;
+  if (!unclaimed && !stale) return undefined;
+  if (declared + pinned !== unclaimed || e.contributed.hunks !== pinned || e.unexplained.hunks) return undefined;
+  if (!unclaimed) return `PASS, explained: every difference is claimed.${archive}`;
   const by = e.declared?.rows.map((r) => `${prWords([r.pr])}: ${r.hunks}`).join(", ") ?? "";
   const all = unclaimed === 1 ? "the 1 difference no claim covers yet is" : `all ${unclaimed} differences no claim covers yet are`;
-  if (!pinned) return `PASS, explained: ${all} declared in the CHANGELOG line of the PR that made ${unclaimed === 1 ? "it" : "them"} (${by}). Nothing is owed on main; the release author pastes the claims from those lines when the release is cut.`;
+  if (!pinned) return `PASS, explained: ${all} declared in the CHANGELOG line of the PR that made ${unclaimed === 1 ? "it" : "them"} (${by}). Nothing is owed on main; the release author pastes the claims from those lines when the release is cut.${archive}`;
   const traced = e.contributed.rows.filter((r) => r.pinned).map((r) => `${prWords([r.prs[0]!])}: ${r.hunks}`).join(", ");
   const ways = [declared ? `declared in its CHANGELOG line (${by})` : "", `traced by its code (${traced})`].filter(Boolean).join(" or ");
   const off = hintMismatches(e);
   const warn = off.length ? ` Warning: ${off.length === 1 ? "1 PR's hint leaves" : `${off.length} PRs' hints leave`} out what its code moved (${off.map(mismatchWords).join("; ")}); fix the title so the release's changelog says so.` : "";
-  return `PASS, explained: ${all} pinned on the PR that made ${unclaimed === 1 ? "it" : "them"}, ${ways}. Nothing is owed on main; the release author pastes the claims when the release is cut.${warn}`;
+  return `PASS, explained: ${all} pinned on the PR that made ${unclaimed === 1 ? "it" : "them"}, ${ways}. Nothing is owed on main; the release author pastes the claims when the release is cut.${archive}${warn}`;
 }

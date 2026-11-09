@@ -12,7 +12,7 @@
  * Pure: src/a3/read.ts reads the files, src/a3/github.ts asks GitHub, src/a3/render.ts draws the page.
  */
 import { coverageWords } from "../readiness/claims.ts";
-import { declaredPass, explainGap, hintMismatches, ledgerSentence, missedWords, pinnedHunks, prWords, type Explanation, type HintMismatch, type LedgerRun } from "../changes/explain.ts";
+import { declaredPass, explainGap, hintMismatches, shippedClaims, shippedWords, ledgerSentence, missedWords, pinnedHunks, prWords, type Explanation, type HintMismatch, type LedgerRun } from "../changes/explain.ts";
 import type { Changes } from "../changes/signals.ts";
 import { decidingClaims, decisionsOf } from "../claims/decisions.ts";
 import { claimLabel } from "../claims/rules.ts";
@@ -402,6 +402,9 @@ export function gateWhy(run: Pick<KeptRun, "verdict" | "reasons" | "report"> & {
     const then = forecast ? "nothing is owed on main, and the release author claims them when the release is cut" : "claim each in release/claims.yaml";
     const held = declared + pinned;
     const by = [...(e!.declared?.rows ?? []).map((r) => `${prWords([r.pr])}: ${r.hunks} declared`), ...e!.contributed.rows.filter((r) => r.pinned).map((r) => `${prWords([r.prs[0]!])}: ${r.hunks} by its code`)].join(", ");
+    // Since 1.62.0: stale claims nobody saw ship fail a forecast whose every difference is pinned; say so, not "only".
+    const stale = (run.report?.compare?.staleClaims?.length ?? 0) - (e!.shipped?.length ?? 0);
+    if (held >= unclaimed.length && stale > 0) return `FAIL because ${plural(stale, "claim")} matched nothing and no kept run saw ${stale === 1 ? "it" : "them"} ship: remove ${stale === 1 ? "it" : "them"} from release/claims.yaml, or make the difference ${stale === 1 ? "it claims" : "they claim"}. Every unclaimed difference is pinned on the PR that made it (${by}): ${then}.`;
     if (held >= unclaimed.length) return `FAIL only because ${plural(held, "difference")} ${held === 1 ? "is" : "are"} not claimed yet, and each is pinned on the PR that made it (${by}): ${then}.`;
     return `FAIL because ${unclaimed.length - held === 1 ? "1 difference has" : `${unclaimed.length - held} differences have`} no claim and no PR its code or its CHANGELOG line pins it on. The other ${held} ${held === 1 ? "is" : "are"} pinned on the PR that made ${held === 1 ? "it" : "them"} (${by}): ${then}. A Rule that claims the rest, or a fix on main, turns this to PASS; the gap below says where each came from.`;
   }
@@ -775,7 +778,7 @@ function rcaOf(i: A3Inputs, subject: KeptRun | undefined, paretos: Map<string, P
       out.push({
         id: "stale-claims",
         question: "Why do claims match nothing?",
-        answer: `${plural(stale.length, "claim")} matched nothing in this run: each is a claim to remove or a difference that did not happen (${stale.map((c) => `${c.artefact} ${c.scope}`).join("; ")}).`,
+        answer: staleAnswer(i, subject!, stale),
         evidence: [{ label: "report.html, stale claims", href: `${subject!.dir}/report.html#stale-claims` }],
         depth: { kind: "evidence stops", why: "the report names each claim; whether it is early or wrong is the author's to say" }
       });
@@ -831,6 +834,21 @@ function rcaOf(i: A3Inputs, subject: KeptRun | undefined, paretos: Map<string, P
     depth: { kind: "evidence stops", why: "release cadence is a decision, not a defect: the map shows the batch, the team chooses its size" }
   });
   return out;
+}
+
+/**
+ * Since 1.62.0: why claims match nothing, with those production already ships told apart from the rest: a shipped claim
+ * is housekeeping (archive it), never a reason to fail.
+ */
+function staleAnswer(i: A3Inputs, subject: KeptRun, stale: NonNullable<RunReport["compare"]>["staleClaims"]): string {
+  const shipped = subject.report?.compare ? shippedClaims(ledgerRun(subject), i.runs.filter((r) => r.report?.compare).map(ledgerRun)) : [];
+  const done = new Set(shipped.map((c) => `${c.artefact}|${c.scope}`));
+  const rest = stale.filter((c) => !done.has(`${c.artefact}|${c.scope}`));
+  const prod = tagOf(subject.sides?.a?.reader) || "production";
+  const parts: string[] = [];
+  if (shipped.length) parts.push(`${shippedWords(shipped)} matched nothing because ${prod} already ships what they claim: archive them from release/claims.yaml; they never fail a forecast`);
+  if (rest.length) parts.push(`${plural(rest.length, "claim")} matched nothing in this run: each is a claim to remove or a difference that did not happen (${rest.map((c) => `${c.artefact} ${c.scope}`).join("; ")})`);
+  return `${parts.join(". ")}.`;
 }
 
 const ledgerRun = (r: KeptRun): LedgerRun => ({ id: r.id, ranAt: r.ranAt, report: r.report!, ...(r.changes ? { changes: r.changes } : {}) });
