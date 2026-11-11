@@ -1,0 +1,415 @@
+{
+  "schemaVersion": 1,
+  "gate": "PASS",
+  "weightsUsed": {
+    "claim-coverage": 21.05,
+    "noise-health": 15.79,
+    "statistical-margin": 10.53,
+    "rehearsals": 10.53,
+    "test-signal": 15.79,
+    "traceability": 10.53,
+    "change-risk": 15.79
+  },
+  "weightsVersion": "5943f7bc2e73",
+  "dimensions": [
+    {
+      "id": "claim-coverage",
+      "name": "Claim coverage",
+      "weight": 20,
+      "status": "measured",
+      "score": 0,
+      "floorBreached": true,
+      "deductions": [
+        {
+          "points": 20,
+          "why": "unclaimed: network /: reader:home: request no longer made on b: GET /_app/immutable/assets/23.{{hash}}.css",
+          "evidence": "report.html#hunk-network:GET_/_app/immutable/assets/23.__hash__.css:1"
+        },
+        {
+          "points": 20,
+          "why": "unclaimed: network /: reader:home: request no longer made on b: GET /_app/immutable/nodes/23.{{hash}}.js",
+          "evidence": "report.html#hunk-network:GET_/_app/immutable/nodes/23.__hash__.js:3"
+        },
+        {
+          "points": 20,
+          "why": "unclaimed: network /: reader:home: new request on b: GET /_app/immutable/assets/24.{{hash}}.css",
+          "evidence": "report.html#hunk-network:GET_/_app/immutable/assets/24.__hash__.css:4"
+        },
+        {
+          "points": 20,
+          "why": "unclaimed: network /: reader:home: new request on b: GET /_app/immutable/nodes/24.{{hash}}.js",
+          "evidence": "report.html#hunk-network:GET_/_app/immutable/nodes/24.__hash__.js:5"
+        },
+        {
+          "points": 20,
+          "why": "unclaimed: network /: reader-auth:rule-0586-turned-away: request no longer made on b: GET /_app/immutable/assets/23.{{hash}}.css (and 15 more like it, not counted again: report.html#differences)",
+          "evidence": "report.html#hunk-network:GET_/_app/immutable/assets/23.__hash__.css:21"
+        },
+        {
+          "points": 15,
+          "why": "stale claim network * /api/{me,profile,presence,analytics,courses/visit}: matched nothing (Rule 0072: the reader stores a signed-in student's data through its /api routes, under the session's login)",
+          "evidence": "report.html#stale-claims",
+          "floor": true
+        },
+        {
+          "points": 15,
+          "why": "stale claim network * /api/whiteboard*: matched nothing (Rule 0068: a signed-in student's whiteboard edits are saved through the server, in a room only its owner can read or overwrite)",
+          "evidence": "report.html#stale-claims",
+          "floor": true
+        },
+        {
+          "points": 15,
+          "why": "stale claim persistence */tutors-connect-{courses,profiles}: matched nothing (Rule 0072: student rows are written by the reader's server under the session's login, not by the browser)",
+          "evidence": "report.html#stale-claims",
+          "floor": true
+        },
+        {
+          "points": 15,
+          "why": "stale claim network GET /api/time/*: matched nothing (CHANGELOG Unreleased (Time): the dashboard loads time data from the reader)",
+          "evidence": "report.html#stale-claims",
+          "floor": true
+        },
+        {
+          "points": 15,
+          "why": "stale claim logs reader-auth/{courseId,role}: matched nothing (CHANGELOG Unreleased (Time): the reader logs each time data read with the course and the viewer's role (logs) (PR #320))",
+          "evidence": "report.html#stale-claims",
+          "floor": true
+        },
+        {
+          "points": 15,
+          "why": "stale claim sbom */node: matched nothing (Rule 0667: the Node base image is pinned by digest, node 22.23.3 -> 22.23.4 in every image (PR #541))",
+          "evidence": "report.html#stale-claims",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "stale claim network POST /api/live/activity: matched nothing (Rule 0330: the reader sends each learning event to its own server (POST /api/live/activity) instead of broadcasting it from the browser (#481)) (and 2 more like it, not counted again)",
+          "evidence": "report.html#stale-claims",
+          "floor": true
+        },
+        {
+          "points": 5,
+          "why": "claim network GET /_app/immutable/chunks/\\{\\{hash\\}\\}.js covers 20 hunks at once (not narrow)",
+          "evidence": "report.html#claim-hygiene"
+        }
+      ],
+      "evidence": [
+        "report.html#differences"
+      ]
+    },
+    {
+      "id": "noise-health",
+      "name": "Noise health",
+      "weight": 15,
+      "status": "measured",
+      "score": 80,
+      "floorBreached": false,
+      "deductions": [
+        {
+          "points": 5,
+          "why": "mask realtime-rest-fallback-warning fired nothing in this run (a mask that never fires is a mask to delete)",
+          "evidence": "report.html#masks"
+        },
+        {
+          "points": 5,
+          "why": "mask chromium-compute-pressure-policy fired nothing in this run (a mask that never fires is a mask to delete)",
+          "evidence": "report.html#masks"
+        },
+        {
+          "points": 5,
+          "why": "mask course-media-http2-reset fired nothing in this run (a mask that never fires is a mask to delete)",
+          "evidence": "report.html#masks"
+        },
+        {
+          "points": 5,
+          "why": "mask transport-encoding fired nothing in this run (a mask that never fires is a mask to delete) (and 1 more like it, not counted again)",
+          "evidence": "report.html#masks"
+        }
+      ],
+      "evidence": [
+        "report.html#noise",
+        "report.html#masks"
+      ],
+      "gaps": [
+        "masks added this release (needs the diff of normalise/masks.yaml between the two tags: C1)"
+      ]
+    },
+    {
+      "id": "statistical-margin",
+      "name": "Statistical margin",
+      "weight": 10,
+      "status": "measured",
+      "score": 100,
+      "floorBreached": false,
+      "deductions": [],
+      "evidence": [
+        "report.html#differences",
+        "report.html#load"
+      ]
+    },
+    {
+      "id": "rehearsals",
+      "name": "Rehearsals",
+      "weight": 10,
+      "status": "measured",
+      "score": 100,
+      "floorBreached": false,
+      "deductions": [],
+      "evidence": [
+        "migration/report.html#migration",
+        "upgrade/report.html#upgrade"
+      ]
+    },
+    {
+      "id": "test-signal",
+      "name": "Test signal",
+      "weight": 15,
+      "status": "measured",
+      "score": 100,
+      "floorBreached": false,
+      "deductions": [],
+      "evidence": [
+        "https://github.com/tutors-sdk/tutors-mono-repo/actions/runs/42939267383"
+      ]
+    },
+    {
+      "id": "traceability",
+      "name": "Requirements traceability",
+      "weight": 10,
+      "status": "measured",
+      "score": 0,
+      "floorBreached": true,
+      "deductions": [
+        {
+          "points": 0,
+          "why": "6 orphan changes between the tags (a changelog entry with no diff, or a diff with no entry); each costs change risk its points",
+          "evidence": "changes.json",
+          "floor": true
+        },
+        {
+          "points": 10,
+          "why": "changelog entry \"#571 feat(release): fail fast when a deployment lacks an environment variable or a usable service key (logs, network)\" has no claim",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/571"
+        },
+        {
+          "points": 20,
+          "why": "changelog entry \"#576 fix(nightly): make the Nightly green again (calendar journey, stack clock, mutation dry run and floor)\" has no EARS file",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/576"
+        },
+        {
+          "points": 10,
+          "why": "changelog entry \"#580 feat(create): tutors validate on the CLI (sbom)\" has no claim",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/580"
+        },
+        {
+          "points": 20,
+          "why": "changelog entry \"#590 fix(reader): save content locks independently of student lists (network, persistence)\" has no EARS file",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/590"
+        },
+        {
+          "points": 10,
+          "why": "changelog entry \"#590 fix(reader): save content locks independently of student lists (network, persistence)\" has no claim",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/590"
+        },
+        {
+          "points": 10,
+          "why": "claim 6 (logs reader-auth/{courseId,role}) names #320, not between 17.1.0 and 769010a7d05a491694d5a30967e968e99632491f traces to no changelog entry",
+          "evidence": "changes.json and claims.yaml"
+        },
+        {
+          "points": 10,
+          "why": "claim 7 (image-manifest */base) names #541, not between 17.1.0 and 769010a7d05a491694d5a30967e968e99632491f traces to no changelog entry",
+          "evidence": "changes.json and claims.yaml"
+        },
+        {
+          "points": 10,
+          "why": "claim 8 (sbom */node) names #541, not between 17.1.0 and 769010a7d05a491694d5a30967e968e99632491f traces to no changelog entry",
+          "evidence": "changes.json and claims.yaml"
+        },
+        {
+          "points": 10,
+          "why": "claim 9 (network POST /api/live/activity) names #481, not between 17.1.0 and 769010a7d05a491694d5a30967e968e99632491f traces to no changelog entry",
+          "evidence": "changes.json and claims.yaml"
+        },
+        {
+          "points": 10,
+          "why": "claim 10 (persistence */realtime_claim_live_publish) names #481, not between 17.1.0 and 769010a7d05a491694d5a30967e968e99632491f traces to no changelog entry",
+          "evidence": "changes.json and claims.yaml"
+        },
+        {
+          "points": 10,
+          "why": "claim 11 (persistence */realtime_watch) names #481, not between 17.1.0 and 769010a7d05a491694d5a30967e968e99632491f traces to no changelog entry",
+          "evidence": "changes.json and claims.yaml"
+        },
+        {
+          "points": 10,
+          "why": "claim 12 (network GET /_app/immutable/chunks/\\{\\{hash\\}\\}.js) names #478, #481, not between 17.1.0 and 769010a7d05a491694d5a30967e968e99632491f traces to no changelog entry",
+          "evidence": "changes.json and claims.yaml"
+        }
+      ],
+      "evidence": [
+        "changes.json and claims.yaml"
+      ]
+    },
+    {
+      "id": "change-risk",
+      "name": "Change risk",
+      "weight": 15,
+      "status": "measured",
+      "score": 32,
+      "floorBreached": false,
+      "deductions": [
+        {
+          "points": 3,
+          "why": "PR #571 touches 4 hotspots apps/reader/src/hooks.server.ts (4 of the last 6 releases), apps/time/src/hooks.server.ts (4 of the last 6 releases), apps/catalogue/src/hooks.server.ts (3 of the last 6 releases) and 1 more",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/571/files#diff-d6d421ccc99e28b6214f7df730798547515a524700fe6758ff2aaa6b7cdd8856"
+        },
+        {
+          "points": 10,
+          "why": "PR #571 changed Reader, Live, Catalogue, Time, Infrastructure, Development but no changelog entry under v769010a7d05a491694d5a30967e968e99632491f names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/571/files#diff-c5f7478f9ea43955917de963b542918dbd3c74bd2e710935fd2606ee0ce67ecd"
+        },
+        {
+          "points": 10,
+          "why": "PR #573 changed Infrastructure, Development but no changelog entry under v769010a7d05a491694d5a30967e968e99632491f names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/573/files#diff-462bfbca9b703476f3fe4060b6328ae17d503dc2dd0a5e1622e08b29e639af04"
+        },
+        {
+          "points": 10,
+          "why": "PR #578 changed Shared Packages, Infrastructure, Development but no changelog entry under v769010a7d05a491694d5a30967e968e99632491f names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/578/files#diff-e0e5989842fab699476d2b93b4bcd90e7227db970de9f2a4690876f9d99b3531"
+        },
+        {
+          "points": 10,
+          "why": "PR #580 changed Shared Packages, Infrastructure, Development but no changelog entry under v769010a7d05a491694d5a30967e968e99632491f names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/580/files#diff-2ac9f030258ef25ea469c8f7640816bd3789bab9bcd342c2ad6595bf45d87f9c"
+        },
+        {
+          "points": 5,
+          "why": "reader churn 232 lines, above 2× its median of 114 over the last 6 releases; PR #589 is the largest part (171 lines)",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/589/files#diff-2ea6c6513893a92dd7a8d6ede788516f1791b20b0be0ab5b5daef72d5dbc4d86"
+        },
+        {
+          "points": 10,
+          "why": "PR #586 changed Infrastructure but no changelog entry under v769010a7d05a491694d5a30967e968e99632491f names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/586/files#diff-dd2c0eb6ea5cfc6c4bd4eac30934e2d5746747af48fef6da689e85b752f39557"
+        },
+        {
+          "points": 10,
+          "why": "PR #569 changed Infrastructure but no changelog entry under v769010a7d05a491694d5a30967e968e99632491f names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/569/files#diff-e7b6c114ef82064ee727e4b82ff224a76afb80501270bfc909d0364cb3152656"
+        }
+      ],
+      "evidence": [
+        "changes.json"
+      ],
+      "gaps": [
+        "orphan entries (a changelog entry with no diff): CHANGELOG.md at 769010a7d05a491694d5a30967e968e99632491f has no \"### v769010a7d05a491694d5a30967e968e99632491f\" entries under a product section"
+      ]
+    },
+    {
+      "id": "post-deploy",
+      "name": "Post-deploy history",
+      "weight": 5,
+      "status": "not measured",
+      "score": null,
+      "floorBreached": false,
+      "reason": "needs the last release's post-deploy record: pass --post-deploy <its run dir or report.json>",
+      "deductions": [],
+      "evidence": []
+    }
+  ],
+  "glance": [],
+  "run": {
+    "candidate": "sha-769010a",
+    "baseline": "17.1.0",
+    "ranAt": "2026-11-11T09:50:44.678Z",
+    "reports": {
+      "release": "report.json",
+      "migration": "migration/report.json",
+      "upgrade": "upgrade/report.json"
+    },
+    "inputs": {
+      "testSignal": "quality.json",
+      "traceability": "changes.json",
+      "changeRisk": "changes.json"
+    },
+    "harness": {
+      "version": "1.63.0",
+      "contractVersion": "1.63.0"
+    }
+  },
+  "rcs": null,
+  "band": null,
+  "mean": null,
+  "note": "PASS, explained: all 20 differences no claim covers yet are pinned on the PR that made them, traced by its code (#589: 12, #571: 8). Nothing is owed on main; the release author pastes the claims when the release is cut. 9 claims (9 seen matching beside 17.0.0) matched nothing because 17.1.0 already ships what they claim: archive them from release/claims.yaml. Warning: 2 PRs' hints leave out what its code moved (#589 says (sbom); its code also moved network (12); #571 says (logs, network); its code also moved sbom (8)); fix the title so the release's changelog says so.",
+  "glanceBasis": {
+    "rule": "novelty × exposure, highest first, at most 7; ties in the plan's order (broad-claim, mask-added, near-miss, first-time-hotspot, new-persistence, fixed-on-b, major-bump, duration-moved). Novelty is (n − seen + 1) ÷ (n + 1) over the last 6 releases on the scoreboard that recorded the kind (1 with no history); exposure is the share of the journey set the finding touches (1 when it cannot be placed).",
+    "history": {
+      "releases": [
+        "17.0.0-rc.1",
+        "17.1.0-rc.1"
+      ],
+      "source": "/home/runner/work/tutors-release-harness/tutors-release-harness/scoreboard.jsonl"
+    },
+    "journeys": {
+      "total": 17,
+      "names": [
+        "anonymous-student-reads-course",
+        "anonymous-student-searches",
+        "catalogue-loads",
+        "live-loads",
+        "reference-course-reads",
+        "rule-0582-signed-in-lab",
+        "rule-0583-presence",
+        "rule-0584-quiz-notebook-talk",
+        "rule-0585-preferences",
+        "rule-0586-private-course",
+        "rule-0587-calendar-llm",
+        "rule-0588-content-lock",
+        "rule-0589-live",
+        "rule-0590-time-calendar",
+        "rule-0591-time-labs",
+        "rule-0592-whiteboard",
+        "student-signs-in"
+      ],
+      "source": "the journeys in the release run's a/ and b/ capture.json"
+    },
+    "checked": [
+      {
+        "kind": "broad-claim",
+        "candidates": 0
+      },
+      {
+        "kind": "mask-added",
+        "candidates": 0
+      },
+      {
+        "kind": "near-miss",
+        "candidates": 0
+      },
+      {
+        "kind": "first-time-hotspot",
+        "candidates": 0
+      },
+      {
+        "kind": "new-persistence",
+        "candidates": 0
+      },
+      {
+        "kind": "fixed-on-b",
+        "candidates": 0
+      },
+      {
+        "kind": "major-bump",
+        "candidates": 0
+      },
+      {
+        "kind": "duration-moved",
+        "candidates": 0
+      }
+    ],
+    "notChecked": [],
+    "seen": []
+  }
+}

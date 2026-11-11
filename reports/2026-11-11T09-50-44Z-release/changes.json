@@ -1,0 +1,1558 @@
+{
+  "schemaVersion": 1,
+  "a": "17.1.0",
+  "b": "769010a7d05a491694d5a30967e968e99632491f",
+  "refs": {
+    "a": "v17.1.0",
+    "b": "769010a7d05a491694d5a30967e968e99632491f"
+  },
+  "version": "769010a7d05a491694d5a30967e968e99632491f",
+  "repo": "tutors-sdk/tutors-mono-repo",
+  "history": {
+    "asked": 6,
+    "releases": [
+      {
+        "from": "v17.0.0",
+        "to": "v17.1.0"
+      },
+      {
+        "from": "v16.2.2",
+        "to": "v17.0.0"
+      },
+      {
+        "from": "v16.2.1",
+        "to": "v16.2.2"
+      },
+      {
+        "from": "v16.2.0",
+        "to": "v16.2.1"
+      },
+      {
+        "from": "v16.1.8",
+        "to": "v16.2.0"
+      },
+      {
+        "from": "v16.1.6",
+        "to": "v16.1.8"
+      }
+    ]
+  },
+  "score": 32,
+  "lost": 68,
+  "floorBreached": false,
+  "prs": [
+    {
+      "pr": 571,
+      "sha": "72f51090e9ff49fe34f984e8f7b0d117b70b118d",
+      "title": "feat(release): fail fast when a deployment lacks an environment variable or a usable service key (logs, network)",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/571",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        ".env.example",
+        ".github/workflows/ci.yml",
+        "apps/catalogue/netlify.toml",
+        "apps/catalogue/src/hooks.server.ts",
+        "apps/catalogue/src/routes/healthz/+server.ts",
+        "apps/live/netlify.toml",
+        "apps/live/src/hooks.server.ts",
+        "apps/live/src/routes/healthz/+server.ts",
+        "apps/reader/netlify.toml",
+        "apps/reader/src/hooks.server.ts",
+        "apps/reader/src/routes/healthz/+server.ts",
+        "apps/time/netlify.toml",
+        "apps/time/src/hooks.server.ts",
+        "apps/time/src/routes/healthz/+server.ts",
+        "deploy/README.md",
+        "package.json",
+        "packages/svelte/app-config/package.json",
+        "packages/svelte/app-config/src/env-contract.js",
+        "packages/svelte/app-config/src/env.js",
+        "packages/svelte/app-config/src/service-key.js",
+        "scripts/checks/env-contract.ts",
+        "tests/bdd/features/developer/environment-contract.feature",
+        "tests/bdd/steps/developer/environment-contract.steps.ts",
+        "tests/e2e-stack/compose.yaml"
+      ],
+      "churn": 1254,
+      "hotspotsTouched": [
+        "apps/reader/src/hooks.server.ts",
+        "apps/time/src/hooks.server.ts",
+        "apps/catalogue/src/hooks.server.ts",
+        "apps/live/src/hooks.server.ts"
+      ],
+      "testDelta": {
+        "production": 316,
+        "tests": 619,
+        "ratio": 1.96,
+        "packages": [
+          {
+            "package": "apps/catalogue",
+            "production": 17,
+            "tests": 619,
+            "ratio": 36.41
+          },
+          {
+            "package": "apps/live",
+            "production": 17,
+            "tests": 619,
+            "ratio": 36.41
+          },
+          {
+            "package": "apps/reader",
+            "production": 34,
+            "tests": 619,
+            "ratio": 18.21
+          },
+          {
+            "package": "apps/time",
+            "production": 17,
+            "tests": 619,
+            "ratio": 36.41
+          },
+          {
+            "package": "packages/svelte/app-config",
+            "production": 231,
+            "tests": 619,
+            "ratio": 2.68
+          }
+        ]
+      },
+      "reviewed": true,
+      "points": 13,
+      "deductions": [
+        {
+          "points": 3,
+          "rule": "hotspot",
+          "why": "PR #571 touches 4 hotspots apps/reader/src/hooks.server.ts (4 of the last 6 releases), apps/time/src/hooks.server.ts (4 of the last 6 releases), apps/catalogue/src/hooks.server.ts (3 of the last 6 releases) and 1 more",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/571/files#diff-d6d421ccc99e28b6214f7df730798547515a524700fe6758ff2aaa6b7cdd8856",
+          "file": "apps/reader/src/hooks.server.ts",
+          "pr": 571,
+          "author": "Claude"
+        },
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #571 changed Reader, Live, Catalogue, Time, Infrastructure, Development but no changelog entry under v769010a7d05a491694d5a30967e968e99632491f names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/571/files#diff-c5f7478f9ea43955917de963b542918dbd3c74bd2e710935fd2606ee0ce67ecd",
+          "file": "apps/catalogue/netlify.toml",
+          "pr": 571,
+          "author": "Claude"
+        }
+      ],
+      "declares": {
+        "artefacts": [
+          "logs",
+          "network"
+        ],
+        "entry": "feat(release): fail fast when a deployment lacks an environment variable or a usable service key",
+        "source": "title"
+      }
+    },
+    {
+      "pr": 572,
+      "sha": "b094dfc3aed5e846f6115093e5002c4b545311e1",
+      "title": "docs(release): push the final vX.Y.Z tag by hand before any deploy, Netlify included (none)",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/572",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        "guides/Release-Strategy.md",
+        "release/SOP.md"
+      ],
+      "churn": 16,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 0,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": true,
+      "points": 0,
+      "deductions": []
+    },
+    {
+      "pr": 573,
+      "sha": "f58895d0712a5282c447560f2331ea8ba989ae70",
+      "title": "deploy: pin production to 17.1.0",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/573",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        "deploy/k8s/overlays/catalogue/kustomization.yaml",
+        "deploy/k8s/overlays/live/kustomization.yaml",
+        "deploy/k8s/overlays/reader/kustomization.yaml",
+        "deploy/k8s/overlays/time/kustomization.yaml",
+        "release/deployed.json"
+      ],
+      "churn": 30,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 0,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": true,
+      "points": 10,
+      "deductions": [
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #573 changed Infrastructure, Development but no changelog entry under v769010a7d05a491694d5a30967e968e99632491f names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/573/files#diff-462bfbca9b703476f3fe4060b6328ae17d503dc2dd0a5e1622e08b29e639af04",
+          "file": "deploy/k8s/overlays/catalogue/kustomization.yaml",
+          "pr": 573,
+          "author": "Claude"
+        }
+      ]
+    },
+    {
+      "pr": 576,
+      "sha": "47b7ddbba1fb3b2f5c07059b4d63ceb30eb3859b",
+      "title": "fix(nightly): make the Nightly green again (calendar journey, stack clock, mutation dry run and floor)",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/576",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        "tests/e2e-stack/journeys/authorisation.journey.spec.ts",
+        "tests/e2e-stack/journeys/signed-in.journey.spec.ts",
+        "tests/e2e-stack/journeys/signed-in.ts",
+        "tests/mutation/nightly-mutation-floors.json",
+        "tests/unit/utils/runtime.test.ts",
+        "vitest.config.mutation-nightly.ts"
+      ],
+      "churn": 47,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 43,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": true,
+      "points": 0,
+      "deductions": []
+    },
+    {
+      "pr": 578,
+      "sha": "47ed9861b0913bd71b0faa97aef5127e5d6673ed",
+      "title": "refactor(gen): expose the unpruned course tree",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/578",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        "etc/tutors-gen-lib.api.md",
+        "packages/jsr/gen/src/services/resource-builder.ts",
+        "packages/jsr/gen/src/tutors.ts",
+        "tests/contract/__snapshots__/gen-lib-api.test.ts.snap",
+        "tests/mutation/nightly-mutation-floors.json",
+        "tests/unit/gen/course-builder-mutations.test.ts"
+      ],
+      "churn": 97,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 35,
+        "tests": 42,
+        "ratio": 1.2,
+        "packages": [
+          {
+            "package": "packages/jsr/gen",
+            "production": 35,
+            "tests": 42,
+            "ratio": 1.2
+          }
+        ]
+      },
+      "reviewed": true,
+      "points": 10,
+      "deductions": [
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #578 changed Shared Packages, Infrastructure, Development but no changelog entry under v769010a7d05a491694d5a30967e968e99632491f names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/578/files#diff-e0e5989842fab699476d2b93b4bcd90e7227db970de9f2a4690876f9d99b3531",
+          "file": "etc/tutors-gen-lib.api.md",
+          "pr": 578,
+          "author": "Claude"
+        }
+      ]
+    },
+    {
+      "pr": 579,
+      "sha": "82de264ac4785d1dd00996c0b4b13757b7b8d291",
+      "title": "feat(course-rules): rule core, V001–V006",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/579",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        ".dependency-cruiser.cjs",
+        "deno.json",
+        "etc/course-rules.api.md",
+        "packages/jsr/course-rules/README.md",
+        "packages/jsr/course-rules/deno.json",
+        "packages/jsr/course-rules/src/adapters/memory-fs.ts",
+        "packages/jsr/course-rules/src/finding.ts",
+        "packages/jsr/course-rules/src/messages.ts",
+        "packages/jsr/course-rules/src/mod.ts",
+        "packages/jsr/course-rules/src/ports.ts",
+        "packages/jsr/course-rules/src/tree.ts",
+        "packages/jsr/course-rules/src/trim.ts",
+        "packages/jsr/course-rules/src/validate.ts",
+        "scripts/api-surface.ts",
+        "tests/bdd/features/instructor/course-validation.feature",
+        "tests/bdd/steps/instructor/course-validation.steps.ts",
+        "tests/fixtures/validate/README.md",
+        "tests/fixtures/validate/V001.yaml",
+        "tests/fixtures/validate/V002.yaml",
+        "tests/fixtures/validate/V003.yaml",
+        "tests/fixtures/validate/V004.yaml",
+        "tests/fixtures/validate/V005.yaml",
+        "tests/fixtures/validate/V006.yaml",
+        "tests/mutation/nightly-mutation-floors.json",
+        "tests/suite-health/coverage-floors.json",
+        "tests/support/validate-fixtures.ts",
+        "tests/unit/course-rules/course-rules.test.ts",
+        "tests/unit/course-rules/gen-conformance.test.ts",
+        "tests/unit/course-rules/trim.test.ts",
+        "vitest.aliases.ts"
+      ],
+      "churn": 1298,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 471,
+        "tests": 683,
+        "ratio": 1.45,
+        "packages": [
+          {
+            "package": "packages/jsr/course-rules",
+            "production": 471,
+            "tests": 683,
+            "ratio": 1.45
+          }
+        ]
+      },
+      "reviewed": true,
+      "points": 0,
+      "deductions": []
+    },
+    {
+      "pr": 580,
+      "sha": "2ec6307f1335b3f1d2ceaecd7a90b790408dd163",
+      "title": "feat(create): tutors validate on the CLI (sbom)",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/580",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        ".github/workflows/ci.yml",
+        ".github/workflows/rc-validation.yml",
+        "etc/course-rules.api.md",
+        "packages/jsr/course-rules/README.md",
+        "packages/jsr/course-rules/package.json",
+        "packages/jsr/course-rules/src/mod.ts",
+        "packages/jsr/course-rules/src/report.ts",
+        "packages/jsr/course-rules/src/version.ts",
+        "packages/jsr/create/deno.json",
+        "packages/jsr/create/main.ts",
+        "packages/jsr/create/package.json",
+        "packages/jsr/create/src/course-fs.ts",
+        "packages/jsr/create/src/validate-cli.ts",
+        "packages/jsr/create/test/validate.test.ts",
+        "pnpm-lock.yaml",
+        "tests/bdd/features/instructor/course-validation-cli.feature",
+        "tests/bdd/steps/instructor/course-validation-cli.steps.ts",
+        "tests/mutation/nightly-mutation-floors.json",
+        "tests/suite-health/coverage-floors.json",
+        "tests/unit/course-rules/course-fs.test.ts",
+        "tests/unit/course-rules/report.test.ts"
+      ],
+      "churn": 660,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 180,
+        "tests": 375,
+        "ratio": 2.08,
+        "packages": [
+          {
+            "package": "packages/jsr/course-rules",
+            "production": 77,
+            "tests": 345,
+            "ratio": 4.48
+          },
+          {
+            "package": "packages/jsr/create",
+            "production": 103,
+            "tests": 375,
+            "ratio": 3.64
+          }
+        ]
+      },
+      "reviewed": true,
+      "points": 10,
+      "deductions": [
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #580 changed Shared Packages, Infrastructure, Development but no changelog entry under v769010a7d05a491694d5a30967e968e99632491f names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/580/files#diff-2ac9f030258ef25ea469c8f7640816bd3789bab9bcd342c2ad6595bf45d87f9c",
+          "file": "etc/course-rules.api.md",
+          "pr": 580,
+          "author": "Claude"
+        }
+      ],
+      "declares": {
+        "artefacts": [
+          "sbom"
+        ],
+        "entry": "feat(create): tutors validate on the CLI",
+        "source": "title"
+      }
+    },
+    {
+      "pr": 589,
+      "sha": "ab462bd72c54b63da9d0b3b4cfe799c982641c31",
+      "title": "Land the merged course-rules stack (#581–#587) on main (sbom)",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/589",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        ".github/actions/tutors-validate/README.md",
+        ".github/actions/tutors-validate/action.yml",
+        "apps/reader/README.md",
+        "apps/reader/package.json",
+        "apps/reader/src/routes/(create)/create/+page.svelte",
+        "apps/reader/src/routes/(create)/create/Findings.svelte",
+        "apps/reader/src/routes/(create)/create/PreviewStep.svelte",
+        "apps/reader/src/routes/(create)/create/check.ts",
+        "apps/reader/src/routes/(create)/create/check/+page.svelte",
+        "deno.lock",
+        "etc/course-rules.api.md",
+        "package.json",
+        "packages/jsr/course-rules/README.md",
+        "packages/jsr/course-rules/deno.json",
+        "packages/jsr/course-rules/package.json",
+        "packages/jsr/course-rules/src/adapters/mermaid.ts",
+        "packages/jsr/course-rules/src/finding.ts",
+        "packages/jsr/course-rules/src/fix.ts",
+        "packages/jsr/course-rules/src/messages.ts",
+        "packages/jsr/course-rules/src/mod.ts",
+        "packages/jsr/course-rules/src/ports.ts",
+        "packages/jsr/course-rules/src/quiz/content.ts",
+        "packages/jsr/course-rules/src/quiz/diagnose.ts",
+        "packages/jsr/course-rules/src/quiz/mod.ts",
+        "packages/jsr/course-rules/src/quiz/parser.ts",
+        "packages/jsr/course-rules/src/quiz/types.ts",
+        "packages/jsr/course-rules/src/quiz/writer.ts",
+        "packages/jsr/course-rules/src/report.ts",
+        "packages/jsr/course-rules/src/rich.ts",
+        "packages/jsr/course-rules/src/shape.ts",
+        "packages/jsr/course-rules/src/templates.ts",
+        "packages/jsr/course-rules/src/tree.ts",
+        "packages/jsr/course-rules/src/validate.ts",
+        "packages/jsr/course-rules/src/warnings.ts",
+        "packages/jsr/create/deno.json",
+        "packages/jsr/create/main.ts",
+        "packages/jsr/create/package.json",
+        "packages/jsr/create/src/generate.ts",
+        "packages/jsr/create/src/import-cli.ts",
+        "packages/jsr/create/src/import-course.ts",
+        "packages/jsr/create/src/pattern-cli.ts",
+        "packages/jsr/create/src/pattern-course.ts",
+        "packages/jsr/create/src/patterns.ts",
+        "packages/jsr/create/src/templates.ts",
+        "packages/jsr/create/src/types.ts",
+        "packages/jsr/create/src/validate-cli.ts",
+        "packages/svelte/quiz/README.md",
+        "packages/svelte/quiz/package.json",
+        "packages/svelte/quiz/src/index.ts",
+        "packages/svelte/quiz/src/services/quiz-content.ts",
+        "packages/svelte/quiz/src/services/quiz-parser.ts",
+        "packages/svelte/quiz/src/types.ts",
+        "pnpm-lock.yaml",
+        "tests/bdd/features/instructor/course-check-reader.feature",
+        "tests/bdd/features/instructor/course-import.feature",
+        "tests/bdd/features/instructor/course-patterns.feature",
+        "tests/bdd/features/instructor/course-rich-content.feature",
+        "tests/bdd/features/instructor/course-validate-action.feature",
+        "tests/bdd/features/instructor/course-validation.feature",
+        "tests/bdd/features/instructor/course-warnings.feature",
+        "tests/bdd/steps/instructor/course-check-reader.component.steps.ts",
+        "tests/bdd/steps/instructor/course-import.steps.ts",
+        "tests/bdd/steps/instructor/course-patterns.steps.ts",
+        "tests/bdd/steps/instructor/course-rich-content.steps.ts",
+        "tests/bdd/steps/instructor/course-validate-action.steps.ts",
+        "tests/bdd/steps/instructor/course-validation.steps.ts",
+        "tests/bdd/steps/instructor/course-warnings.steps.ts",
+        "tests/fixtures/import/README.md",
+        "tests/fixtures/import/dated.yaml",
+        "tests/fixtures/import/lecture-and-notes.yaml",
+        "tests/fixtures/import/nothing-to-place.yaml",
+        "tests/fixtures/import/numbered.yaml",
+        "tests/fixtures/import/week-folders-numbered.yaml",
+        "tests/fixtures/import/week-folders.yaml",
+        "tests/fixtures/import/weekly-pdfs.yaml",
+        "tests/fixtures/validate/README.md",
+        "tests/fixtures/validate/V001.yaml",
+        "tests/fixtures/validate/V002.yaml",
+        "tests/fixtures/validate/V003.yaml",
+        "tests/fixtures/validate/V004.yaml",
+        "tests/fixtures/validate/V005.yaml",
+        "tests/fixtures/validate/V006.yaml",
+        "tests/fixtures/validate/V007.yaml",
+        "tests/fixtures/validate/V008.yaml",
+        "tests/fixtures/validate/V009.yaml",
+        "tests/fixtures/validate/V010.yaml",
+        "tests/fixtures/validate/V011.yaml",
+        "tests/fixtures/validate/V012.yaml",
+        "tests/fixtures/validate/V013.yaml",
+        "tests/fixtures/validate/V014.yaml",
+        "tests/fixtures/validate/V015.yaml",
+        "tests/fixtures/validate/V016.yaml",
+        "tests/fixtures/validate/V017.yaml",
+        "tests/fixtures/validate/V018.yaml",
+        "tests/fixtures/validate/V019.yaml",
+        "tests/mutation/nightly-mutation-floors.json",
+        "tests/suite-health/coverage-floors.json",
+        "tests/support/import-corpus.ts",
+        "tests/support/validate-fixtures.ts",
+        "tests/unit/course-rules/course-rich.test.ts",
+        "tests/unit/course-rules/course-rules.test.ts",
+        "tests/unit/course-rules/course-warnings.test.ts",
+        "tests/unit/course-rules/gen-conformance.test.ts",
+        "tests/unit/course-rules/patterns.test.ts",
+        "tests/unit/course-rules/reader-check.test.ts",
+        "tests/unit/course-rules/report.test.ts",
+        "tests/unit/course-rules/shape.test.ts",
+        "tests/unit/quiz/quiz-content.test.ts",
+        "tests/unit/quiz/quiz-diagnose.test.ts",
+        "tests/unit/quiz/quiz-parser.test.ts",
+        "tests/unit/quiz/quiz-writer.test.ts",
+        "vitest.aliases.ts"
+      ],
+      "churn": 7788,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 2684,
+        "tests": 3414,
+        "ratio": 1.27,
+        "packages": [
+          {
+            "package": "apps/reader",
+            "production": 169,
+            "tests": 3414,
+            "ratio": 20.2
+          },
+          {
+            "package": "packages/jsr/course-rules",
+            "production": 1518,
+            "tests": 3414,
+            "ratio": 2.25
+          },
+          {
+            "package": "packages/jsr/create",
+            "production": 662,
+            "tests": 3414,
+            "ratio": 5.16
+          },
+          {
+            "package": "packages/svelte/quiz",
+            "production": 335,
+            "tests": 3414,
+            "ratio": 10.19
+          }
+        ]
+      },
+      "reviewed": true,
+      "points": 5,
+      "deductions": [
+        {
+          "points": 5,
+          "rule": "churn",
+          "why": "reader churn 232 lines, above 2× its median of 114 over the last 6 releases; PR #589 is the largest part (171 lines)",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/589/files#diff-2ea6c6513893a92dd7a8d6ede788516f1791b20b0be0ab5b5daef72d5dbc4d86",
+          "file": "apps/reader/src/routes/(create)/create/check.ts",
+          "pr": 589,
+          "author": "Claude"
+        }
+      ],
+      "declares": {
+        "artefacts": [
+          "sbom"
+        ],
+        "entry": "Land the merged course-rules stack (#581–#587) on main",
+        "source": "title"
+      }
+    },
+    {
+      "pr": 588,
+      "sha": "41243b2bda8c377e428e1de4a8a3d2a73583fdce",
+      "title": "feat(create): let the lecturer shape the teaching week",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/588",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        "packages/jsr/create/src/pattern-course.ts",
+        "packages/jsr/create/src/types.ts",
+        "tests/bdd/features/instructor/course-patterns.feature",
+        "tests/bdd/steps/instructor/course-patterns.steps.ts"
+      ],
+      "churn": 35,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 10,
+        "tests": 25,
+        "ratio": 2.5,
+        "packages": [
+          {
+            "package": "packages/jsr/create",
+            "production": 10,
+            "tests": 25,
+            "ratio": 2.5
+          }
+        ]
+      },
+      "reviewed": true,
+      "points": 0,
+      "deductions": []
+    },
+    {
+      "pr": 590,
+      "sha": "8b006fdbd406e9566af718e21104331765558089",
+      "title": "fix(reader): save content locks independently of student lists (network, persistence)",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/590",
+      "direct": false,
+      "release": false,
+      "author": "Jordan Harrison",
+      "firstContribution": false,
+      "files": [
+        "apps/reader/src/lib/server/educator.ts",
+        "apps/reader/src/routes/api/courses/[courseid]/enrollment/+server.ts",
+        "tests/unit/reader/lock-enrollment.test.ts"
+      ],
+      "churn": 76,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 23,
+        "tests": 53,
+        "ratio": 2.3,
+        "packages": [
+          {
+            "package": "apps/reader",
+            "production": 23,
+            "tests": 53,
+            "ratio": 2.3
+          }
+        ]
+      },
+      "reviewed": true,
+      "points": 0,
+      "deductions": [],
+      "declares": {
+        "artefacts": [
+          "network",
+          "persistence"
+        ],
+        "entry": "fix(reader): save content locks independently of student lists",
+        "source": "title"
+      }
+    },
+    {
+      "pr": 586,
+      "sha": "94f384ba3c954db2f2e7f1095ab3228198a563e8",
+      "title": "build(deps): bump library/node from `bc0a2af` to `add5c17`",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/586",
+      "direct": false,
+      "release": false,
+      "author": "dependabot[bot]",
+      "firstContribution": false,
+      "files": [
+        "Dockerfile"
+      ],
+      "churn": 2,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 0,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": true,
+      "points": 10,
+      "deductions": [
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #586 changed Infrastructure but no changelog entry under v769010a7d05a491694d5a30967e968e99632491f names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/586/files#diff-dd2c0eb6ea5cfc6c4bd4eac30934e2d5746747af48fef6da689e85b752f39557",
+          "file": "Dockerfile",
+          "pr": 586,
+          "author": "dependabot[bot]"
+        }
+      ]
+    },
+    {
+      "pr": 591,
+      "sha": "4825d8109c202da05b26ce330345541990f4a1eb",
+      "title": "feat(create): a course with errors fails its Netlify deploy",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/591",
+      "direct": false,
+      "release": false,
+      "author": "Claude",
+      "firstContribution": false,
+      "files": [
+        "packages/jsr/course-rules/src/templates.ts",
+        "packages/jsr/create/deno.json",
+        "packages/jsr/create/package.json",
+        "packages/jsr/create/src/templates.ts",
+        "tests/bdd/features/instructor/course-warnings.feature",
+        "tests/bdd/steps/instructor/course-warnings.steps.ts",
+        "tests/fixtures/validate/V011.yaml"
+      ],
+      "churn": 53,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 11,
+        "tests": 38,
+        "ratio": 3.45,
+        "packages": [
+          {
+            "package": "packages/jsr/course-rules",
+            "production": 4,
+            "tests": 38,
+            "ratio": 9.5
+          },
+          {
+            "package": "packages/jsr/create",
+            "production": 7,
+            "tests": 38,
+            "ratio": 5.43
+          }
+        ]
+      },
+      "reviewed": true,
+      "points": 0,
+      "deductions": []
+    },
+    {
+      "pr": 569,
+      "sha": "769010a7d05a491694d5a30967e968e99632491f",
+      "title": "build(deps): bump grafana/grafana from 11.3.0 to 13.3.0 in /observability/grafana",
+      "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/569",
+      "direct": false,
+      "release": false,
+      "author": "dependabot[bot]",
+      "firstContribution": false,
+      "files": [
+        "observability/grafana/docker-compose.yml"
+      ],
+      "churn": 2,
+      "hotspotsTouched": [],
+      "testDelta": {
+        "production": 0,
+        "tests": 0,
+        "ratio": null,
+        "packages": []
+      },
+      "reviewed": true,
+      "points": 10,
+      "deductions": [
+        {
+          "points": 10,
+          "rule": "orphan",
+          "why": "PR #569 changed Infrastructure but no changelog entry under v769010a7d05a491694d5a30967e968e99632491f names it",
+          "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/569/files#diff-e7b6c114ef82064ee727e4b82ff224a76afb80501270bfc909d0364cb3152656",
+          "file": "observability/grafana/docker-compose.yml",
+          "pr": 569,
+          "author": "dependabot[bot]"
+        }
+      ]
+    }
+  ],
+  "signals": {
+    "churn": {
+      "status": "measured",
+      "apps": [
+        {
+          "app": "reader",
+          "churn": 232,
+          "median": 114,
+          "above": true,
+          "history": [
+            2135,
+            3795,
+            2,
+            109,
+            94,
+            119
+          ]
+        },
+        {
+          "app": "catalogue",
+          "churn": 21,
+          "median": 35.5,
+          "above": false,
+          "history": [
+            60,
+            206,
+            2,
+            11,
+            73,
+            2
+          ]
+        },
+        {
+          "app": "live",
+          "churn": 21,
+          "median": 26.5,
+          "above": false,
+          "history": [
+            50,
+            308,
+            2,
+            3,
+            73,
+            2
+          ]
+        },
+        {
+          "app": "time",
+          "churn": 21,
+          "median": 61,
+          "above": false,
+          "history": [
+            1088,
+            2177,
+            2,
+            15,
+            107,
+            13
+          ]
+        }
+      ]
+    },
+    "hotspots": {
+      "status": "measured",
+      "files": [
+        {
+          "path": "packages/svelte/utils/i18n/src/messages/fr.ts",
+          "releases": 4,
+          "weight": 450
+        },
+        {
+          "path": "packages/svelte/utils/i18n/src/messages/es.ts",
+          "releases": 4,
+          "weight": 430
+        },
+        {
+          "path": "packages/svelte/utils/i18n/src/messages/de.ts",
+          "releases": 4,
+          "weight": 416
+        },
+        {
+          "path": "packages/svelte/utils/i18n/src/messages/it.ts",
+          "releases": 4,
+          "weight": 366
+        },
+        {
+          "path": "packages/svelte/ui-components/src/learning-objects/content/whiteboard/WhiteboardViewer.svelte",
+          "releases": 4,
+          "weight": 310
+        },
+        {
+          "path": "packages/svelte/utils/logger/src/request-logger.ts",
+          "releases": 4,
+          "weight": 224
+        },
+        {
+          "path": "apps/reader/src/hooks.server.ts",
+          "releases": 4,
+          "weight": 183
+        },
+        {
+          "path": "packages/svelte/course/src/course/services/lo-tree.ts",
+          "releases": 4,
+          "weight": 109
+        },
+        {
+          "path": "packages/svelte/community/src/utils/error-transport.ts",
+          "releases": 4,
+          "weight": 82
+        },
+        {
+          "path": "packages/svelte/ui-components/src/learning-objects/content/talk/TalkMarp.svelte",
+          "releases": 4,
+          "weight": 73
+        },
+        {
+          "path": "apps/time/src/hooks.server.ts",
+          "releases": 4,
+          "weight": 54
+        },
+        {
+          "path": "packages/svelte/community/src/utils/supabase-client.ts",
+          "releases": 3,
+          "weight": 544
+        },
+        {
+          "path": "packages/svelte/utils/i18n/src/messages/en.ts",
+          "releases": 3,
+          "weight": 342
+        },
+        {
+          "path": "packages/svelte/utils/i18n/src/messages/ga.ts",
+          "releases": 3,
+          "weight": 320
+        },
+        {
+          "path": "packages/svelte/ui-components/src/quiz/QuizQuestion.svelte",
+          "releases": 3,
+          "weight": 298
+        },
+        {
+          "path": "apps/time/src/lib/server/api/moodle.ts",
+          "releases": 3,
+          "weight": 266
+        },
+        {
+          "path": "packages/svelte/community/src/services/presence.svelte.ts",
+          "releases": 3,
+          "weight": 229
+        },
+        {
+          "path": "packages/svelte/ui-primitives/src/components/LoContextTreeView.svelte",
+          "releases": 3,
+          "weight": 159
+        },
+        {
+          "path": "packages/svelte/connect/src/services/connect.svelte.ts",
+          "releases": 3,
+          "weight": 135
+        },
+        {
+          "path": "apps/time/src/lib/server/db/submissionsRepository.ts",
+          "releases": 3,
+          "weight": 132
+        },
+        {
+          "path": "packages/svelte/course/src/course/services/course.svelte.ts",
+          "releases": 3,
+          "weight": 130
+        },
+        {
+          "path": "packages/svelte/community/src/services/live.svelte.ts",
+          "releases": 3,
+          "weight": 93
+        },
+        {
+          "path": "apps/time/src/lib/components/tables/AssignmentsTable.svelte",
+          "releases": 3,
+          "weight": 82
+        },
+        {
+          "path": "apps/time/src/routes/+page.svelte",
+          "releases": 3,
+          "weight": 75
+        },
+        {
+          "path": "apps/reader/src/routes/(course-reader)/+layout.svelte",
+          "releases": 3,
+          "weight": 74
+        },
+        {
+          "path": "apps/time/src/lib/components/tables/LearningRecordsTable.svelte",
+          "releases": 3,
+          "weight": 62
+        },
+        {
+          "path": "packages/jsr/model/src/utils/markdown-utils.ts",
+          "releases": 3,
+          "weight": 51
+        },
+        {
+          "path": "apps/time/src/lib/server/services/AssignmentsSyncService.ts",
+          "releases": 3,
+          "weight": 50
+        },
+        {
+          "path": "apps/time/src/lib/components/tables/CalendarTable.svelte",
+          "releases": 3,
+          "weight": 48
+        },
+        {
+          "path": "packages/svelte/utils/logger/src/index.ts",
+          "releases": 3,
+          "weight": 47
+        },
+        {
+          "path": "apps/reader/src/hooks.client.ts",
+          "releases": 3,
+          "weight": 46
+        },
+        {
+          "path": "packages/jsr/model/src/utils/course-utils.ts",
+          "releases": 3,
+          "weight": 43
+        },
+        {
+          "path": "apps/catalogue/src/hooks.server.ts",
+          "releases": 3,
+          "weight": 41
+        },
+        {
+          "path": "apps/live/src/hooks.server.ts",
+          "releases": 3,
+          "weight": 41
+        },
+        {
+          "path": "packages/jsr/create/src/cli.ts",
+          "releases": 3,
+          "weight": 37
+        },
+        {
+          "path": "packages/jsr/tutors-lite/main.ts",
+          "releases": 3,
+          "weight": 37
+        },
+        {
+          "path": "apps/time/src/hooks.client.ts",
+          "releases": 3,
+          "weight": 35
+        },
+        {
+          "path": "apps/time/src/routes/[courseid]/(calendar-lab)/+layout.ts",
+          "releases": 3,
+          "weight": 32
+        },
+        {
+          "path": "apps/time/src/lib/enrichCourseUserFields.ts",
+          "releases": 3,
+          "weight": 27
+        },
+        {
+          "path": "apps/time/src/routes/[courseid]/[studentid]/+page.ts",
+          "releases": 3,
+          "weight": 24
+        },
+        {
+          "path": "packages/jsr/gen/src/services/course-builder.ts",
+          "releases": 3,
+          "weight": 21
+        },
+        {
+          "path": "apps/reader/src/app.css",
+          "releases": 3,
+          "weight": 15
+        },
+        {
+          "path": "packages/svelte/course/src/markdown/services/markdown.svelte.ts",
+          "releases": 3,
+          "weight": 15
+        },
+        {
+          "path": "apps/catalogue/src/hooks.client.ts",
+          "releases": 3,
+          "weight": 14
+        },
+        {
+          "path": "apps/live/src/hooks.client.ts",
+          "releases": 3,
+          "weight": 14
+        },
+        {
+          "path": "apps/catalogue/src/app.css",
+          "releases": 3,
+          "weight": 11
+        },
+        {
+          "path": "apps/live/src/app.css",
+          "releases": 3,
+          "weight": 11
+        }
+      ],
+      "touched": [
+        {
+          "path": "apps/reader/src/hooks.server.ts",
+          "prs": [
+            571
+          ]
+        },
+        {
+          "path": "apps/time/src/hooks.server.ts",
+          "prs": [
+            571
+          ]
+        },
+        {
+          "path": "apps/catalogue/src/hooks.server.ts",
+          "prs": [
+            571
+          ]
+        },
+        {
+          "path": "apps/live/src/hooks.server.ts",
+          "prs": [
+            571
+          ]
+        }
+      ]
+    },
+    "ownership": {
+      "files": []
+    },
+    "orphans": {
+      "diffs": {
+        "status": "measured",
+        "source": "pnpm release:changelog --json",
+        "items": [
+          {
+            "pr": 571,
+            "sha": "72f5109",
+            "title": "Fail fast when a deployment lacks an environment variable or a usable service key",
+            "sections": [
+              "Reader",
+              "Live",
+              "Catalogue",
+              "Time",
+              "Infrastructure",
+              "Development"
+            ]
+          },
+          {
+            "pr": 573,
+            "sha": "f58895d",
+            "title": "Pin production to 17.1.0",
+            "sections": [
+              "Infrastructure",
+              "Development"
+            ]
+          },
+          {
+            "pr": 578,
+            "sha": "47ed986",
+            "title": "Expose the unpruned course tree",
+            "sections": [
+              "Shared Packages",
+              "Infrastructure",
+              "Development"
+            ]
+          },
+          {
+            "pr": 580,
+            "sha": "2ec6307",
+            "title": "Tutors validate on the CLI",
+            "sections": [
+              "Shared Packages",
+              "Infrastructure",
+              "Development"
+            ]
+          },
+          {
+            "pr": 586,
+            "sha": "94f384b",
+            "title": "Bump library/node from `bc0a2af` to `add5c17`",
+            "sections": [
+              "Infrastructure"
+            ]
+          },
+          {
+            "pr": 569,
+            "sha": "769010a",
+            "title": "Bump grafana/grafana from 11.3.0 to 13.3.0 in /observability/grafana",
+            "sections": [
+              "Infrastructure"
+            ]
+          }
+        ]
+      },
+      "entries": {
+        "status": "not measured",
+        "reason": "CHANGELOG.md at 769010a7d05a491694d5a30967e968e99632491f has no \"### v769010a7d05a491694d5a30967e968e99632491f\" entries under a product section"
+      }
+    },
+    "tests": {
+      "packages": [
+        {
+          "package": "apps/catalogue",
+          "production": 17,
+          "tests": 619,
+          "ratio": 36.41,
+          "below": false
+        },
+        {
+          "package": "apps/live",
+          "production": 17,
+          "tests": 619,
+          "ratio": 36.41,
+          "below": false
+        },
+        {
+          "package": "apps/reader",
+          "production": 226,
+          "tests": 4086,
+          "ratio": 18.08,
+          "below": false
+        },
+        {
+          "package": "apps/time",
+          "production": 17,
+          "tests": 619,
+          "ratio": 36.41,
+          "below": false
+        },
+        {
+          "package": "packages/jsr/course-rules",
+          "production": 2070,
+          "tests": 4480,
+          "ratio": 2.16,
+          "below": false
+        },
+        {
+          "package": "packages/jsr/create",
+          "production": 782,
+          "tests": 3852,
+          "ratio": 4.93,
+          "below": false
+        },
+        {
+          "package": "packages/jsr/gen",
+          "production": 35,
+          "tests": 42,
+          "ratio": 1.2,
+          "below": false
+        },
+        {
+          "package": "packages/svelte/app-config",
+          "production": 231,
+          "tests": 619,
+          "ratio": 2.68,
+          "below": false
+        },
+        {
+          "package": "packages/svelte/quiz",
+          "production": 335,
+          "tests": 3414,
+          "ratio": 10.19,
+          "below": false
+        }
+      ]
+    },
+    "reviews": {
+      "status": "measured",
+      "reviewed": [
+        571,
+        572,
+        573,
+        576,
+        578,
+        579,
+        580,
+        589,
+        588,
+        590,
+        586,
+        591,
+        569
+      ],
+      "unreviewed": [],
+      "unknown": [],
+      "problems": [],
+      "direct": []
+    },
+    "dependencies": {
+      "status": "measured",
+      "majorBumps": [],
+      "newPackages": [
+        {
+          "kind": "new",
+          "name": "@types/js-yaml",
+          "importer": "packages/jsr/course-rules",
+          "to": "4.0.9",
+          "pr": 580
+        },
+        {
+          "kind": "new",
+          "name": "fflate",
+          "importer": ".",
+          "to": "0.8.3",
+          "pr": 589
+        },
+        {
+          "kind": "new",
+          "name": "js-yaml",
+          "importer": "packages/jsr/course-rules",
+          "to": "4.3.2",
+          "pr": 580
+        }
+      ]
+    }
+  },
+  "notMeasured": [
+    {
+      "signal": "orphan entries (a changelog entry with no diff)",
+      "reason": "CHANGELOG.md at 769010a7d05a491694d5a30967e968e99632491f has no \"### v769010a7d05a491694d5a30967e968e99632491f\" entries under a product section"
+    }
+  ],
+  "changeRisk": {
+    "score": 32,
+    "prs": [
+      {
+        "number": 571,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/571",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": [
+          "apps/reader/src/hooks.server.ts",
+          "apps/time/src/hooks.server.ts",
+          "apps/catalogue/src/hooks.server.ts",
+          "apps/live/src/hooks.server.ts"
+        ]
+      },
+      {
+        "number": 572,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/572",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 573,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/573",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 576,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/576",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 578,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/578",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 579,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/579",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 580,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/580",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 589,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/589",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 588,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/588",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 590,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/590",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 586,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/586",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 591,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/591",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      },
+      {
+        "number": 569,
+        "url": "https://github.com/tutors-sdk/tutors-mono-repo/pull/569",
+        "reviewed": true,
+        "firstTimeContributor": false,
+        "hotspots": []
+      }
+    ],
+    "direct": [],
+    "deductions": [
+      {
+        "points": 3,
+        "rule": "hotspot",
+        "why": "PR #571 touches 4 hotspots apps/reader/src/hooks.server.ts (4 of the last 6 releases), apps/time/src/hooks.server.ts (4 of the last 6 releases), apps/catalogue/src/hooks.server.ts (3 of the last 6 releases) and 1 more",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/571/files#diff-d6d421ccc99e28b6214f7df730798547515a524700fe6758ff2aaa6b7cdd8856",
+        "file": "apps/reader/src/hooks.server.ts",
+        "pr": 571,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #571 changed Reader, Live, Catalogue, Time, Infrastructure, Development but no changelog entry under v769010a7d05a491694d5a30967e968e99632491f names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/571/files#diff-c5f7478f9ea43955917de963b542918dbd3c74bd2e710935fd2606ee0ce67ecd",
+        "file": "apps/catalogue/netlify.toml",
+        "pr": 571,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #573 changed Infrastructure, Development but no changelog entry under v769010a7d05a491694d5a30967e968e99632491f names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/573/files#diff-462bfbca9b703476f3fe4060b6328ae17d503dc2dd0a5e1622e08b29e639af04",
+        "file": "deploy/k8s/overlays/catalogue/kustomization.yaml",
+        "pr": 573,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #578 changed Shared Packages, Infrastructure, Development but no changelog entry under v769010a7d05a491694d5a30967e968e99632491f names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/578/files#diff-e0e5989842fab699476d2b93b4bcd90e7227db970de9f2a4690876f9d99b3531",
+        "file": "etc/tutors-gen-lib.api.md",
+        "pr": 578,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #580 changed Shared Packages, Infrastructure, Development but no changelog entry under v769010a7d05a491694d5a30967e968e99632491f names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/580/files#diff-2ac9f030258ef25ea469c8f7640816bd3789bab9bcd342c2ad6595bf45d87f9c",
+        "file": "etc/course-rules.api.md",
+        "pr": 580,
+        "author": "Claude"
+      },
+      {
+        "points": 5,
+        "rule": "churn",
+        "why": "reader churn 232 lines, above 2× its median of 114 over the last 6 releases; PR #589 is the largest part (171 lines)",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/589/files#diff-2ea6c6513893a92dd7a8d6ede788516f1791b20b0be0ab5b5daef72d5dbc4d86",
+        "file": "apps/reader/src/routes/(create)/create/check.ts",
+        "pr": 589,
+        "author": "Claude"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #586 changed Infrastructure but no changelog entry under v769010a7d05a491694d5a30967e968e99632491f names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/586/files#diff-dd2c0eb6ea5cfc6c4bd4eac30934e2d5746747af48fef6da689e85b752f39557",
+        "file": "Dockerfile",
+        "pr": 586,
+        "author": "dependabot[bot]"
+      },
+      {
+        "points": 10,
+        "rule": "orphan",
+        "why": "PR #569 changed Infrastructure but no changelog entry under v769010a7d05a491694d5a30967e968e99632491f names it",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/569/files#diff-e7b6c114ef82064ee727e4b82ff224a76afb80501270bfc909d0364cb3152656",
+        "file": "observability/grafana/docker-compose.yml",
+        "pr": 569,
+        "author": "dependabot[bot]"
+      }
+    ],
+    "gaps": [
+      "orphan entries (a changelog entry with no diff): CHANGELOG.md at 769010a7d05a491694d5a30967e968e99632491f has no \"### v769010a7d05a491694d5a30967e968e99632491f\" entries under a product section"
+    ],
+    "orphans": 6,
+    "evidence": "changes.json"
+  },
+  "harness": {
+    "version": "1.63.0",
+    "contractVersion": "1.63.0"
+  },
+  "traceability": {
+    "entries": [
+      {
+        "entry": "#571 feat(release): fail fast when a deployment lacks an environment variable or a usable service key (logs, network)",
+        "kind": "feature",
+        "ears": "tests/bdd/features/developer/environment-contract.feature",
+        "claimed": false,
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/571"
+      },
+      {
+        "entry": "#576 fix(nightly): make the Nightly green again (calendar journey, stack clock, mutation dry run and floor)",
+        "kind": "fix",
+        "ears": null,
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/576"
+      },
+      {
+        "entry": "#579 feat(course-rules): rule core, V001–V006",
+        "kind": "feature",
+        "ears": "tests/bdd/features/instructor/course-validation.feature",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/579"
+      },
+      {
+        "entry": "#580 feat(create): tutors validate on the CLI (sbom)",
+        "kind": "feature",
+        "ears": "tests/bdd/features/instructor/course-validation-cli.feature",
+        "claimed": false,
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/580"
+      },
+      {
+        "entry": "#588 feat(create): let the lecturer shape the teaching week",
+        "kind": "feature",
+        "ears": "tests/bdd/features/instructor/course-patterns.feature",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/588"
+      },
+      {
+        "entry": "#590 fix(reader): save content locks independently of student lists (network, persistence)",
+        "kind": "fix",
+        "ears": null,
+        "claimed": false,
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/590"
+      },
+      {
+        "entry": "#591 feat(create): a course with errors fails its Netlify deploy",
+        "kind": "feature",
+        "ears": "tests/bdd/features/instructor/course-warnings.feature",
+        "evidence": "https://github.com/tutors-sdk/tutors-mono-repo/pull/591"
+      }
+    ],
+    "untracedClaims": [
+      "6 (logs reader-auth/{courseId,role}) names #320, not between 17.1.0 and 769010a7d05a491694d5a30967e968e99632491f",
+      "7 (image-manifest */base) names #541, not between 17.1.0 and 769010a7d05a491694d5a30967e968e99632491f",
+      "8 (sbom */node) names #541, not between 17.1.0 and 769010a7d05a491694d5a30967e968e99632491f",
+      "9 (network POST /api/live/activity) names #481, not between 17.1.0 and 769010a7d05a491694d5a30967e968e99632491f",
+      "10 (persistence */realtime_claim_live_publish) names #481, not between 17.1.0 and 769010a7d05a491694d5a30967e968e99632491f",
+      "11 (persistence */realtime_watch) names #481, not between 17.1.0 and 769010a7d05a491694d5a30967e968e99632491f",
+      "12 (network GET /_app/immutable/chunks/\\{\\{hash\\}\\}.js) names #478, #481, not between 17.1.0 and 769010a7d05a491694d5a30967e968e99632491f"
+    ],
+    "evidence": "changes.json and claims.yaml"
+  }
+}
