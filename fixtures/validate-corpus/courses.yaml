@@ -1,0 +1,29 @@
+# The validate corpus (since 1.63.0, docs/validate-forecast.md): real course SOURCES, pinned by commit, that
+# `harness validate forecast` runs tutors validate over, main's beside the published one.
+#
+#   pnpm harness validate forecast --candidate ../tutors-mono-repo
+#
+# The same five courses as the mono-repo's tests/validate-corpus/corpus.yaml (Rules 0758-0760), which fails a rule
+# change in CI; this one asks the release question of main. At most eight; add a course only with a reason.
+courses:
+  - name: reference-course
+    repo: https://github.com/tutors-sdk/tutors-reference-course
+    commit: 78b771238c58bcb3d97d6ef3eb8fa41c02359a23
+    why: Every learning object kind, side units and podcasts; the course the reader suites already trust.
+  - name: python
+    repo: https://github.com/tutors-sdk/python
+    commit: ab84bc06743b2b968222f5a2a3c05c3ec2ae02e6
+    why: Notebooks, labs with many numbered steps and a calendar, in the current layout.
+  # Leigh's sample courses for compliance (2026-11-09): three generations of a lecturer's real material.
+  - name: web-dev-2-2022
+    repo: https://github.com/edeleastar/module-web-dev-2-2022
+    commit: dfa26b8cc5dbe4904f77411f3df881fdba1f722d
+    why: A 2022 module with books (labs) holding extra pages, many images and units inside topics.
+  - name: mobile-app-dev-oth
+    repo: https://github.com/edeleastar/module-mobile-app-dev-oth
+    commit: 6950eb7b20b9d382e372599caff1fbbb2a2b8c2a
+    why: The largest sample (860 files, big decks and media), with a folder hidden by a leading dash.
+  - name: agile-soft-dev-2013
+    repo: https://github.com/edeleastar/module-agile-soft-dev-2013
+    commit: 0a68842326ddff4bd3b3f90a6d81a480aa42bc04
+    why: A 2013 course in the oldest layout (topic01- names, reference- code folders the generator leaves out).
