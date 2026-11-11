@@ -14,6 +14,7 @@ Otherwise start with the [user guide](user-guide/README.md): what the harness is
 | [local.md](local.md) | Running the harness on your own machine: the parity matrix with the workflows, state, scheduling, Windows notes |
 | [noise-burndown.md](noise-burndown.md) | The playbook for taking the A/A from noisy to clean: reading a noisy A/A, mask or fix, likely noise sources, overrides |
 | [course-capture.md](course-capture.md) | `harness course capture`, `verify` and `serve`: a live, public Tutors course onto disk as the reader sees it, pinned by sha256, and served back for an A/B (since 1.29.0) |
+| [validate-forecast.md](validate-forecast.md) | `harness validate deploy` and `forecast`: whether a course built from main's netlify.toml can deploy (JSR has what its build command names), and what main's `tutors validate` would tell lecturers about real courses beside the published one, by rule (since 1.63.0) |
 | [bus.md](bus.md) | The bus collector (disabled until a bus exists) |
 | [harness-now.md](harness-now.md) | The decision on `HARNESS_NOW` and time-derived stats |
 | [monorepo/](monorepo/README.md) | What the monorepo needs to do, with reference copies of its two workflows |

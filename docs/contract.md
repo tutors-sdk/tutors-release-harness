@@ -1,6 +1,6 @@
 # The integration contract
 
-Contract version: `1.62.0`
+Contract version: `1.63.0`
 
 This is what `tutors-sdk/tutors-mono-repo` (or anything else) may build
 against. Everything here is derived from the code, and
@@ -2223,6 +2223,16 @@ tag found. A reader that names a commit none of these match is drift too, and th
 runs it in a `production` job before the A/A, and Main to RC through `harness preview resolve`.
 
 ## Changes
+
+### 1.63.0 (minor; tutors validate: can a course deploy, and what main's validate would change)
+
+The release note is [releases/1.63.0.md](releases/1.63.0.md). A minor: a new command, `harness validate deploy|forecast`
+(not stable), the validate corpus `fixtures/validate-corpus/courses.yaml`, and the workflow `validate-forecast.yml`
+with its artifact `validate-forecast`. Since mono-repo #591 the standard netlify.toml runs `tutors validate` before the
+generator, so whether a lecturer's course deploys depends on two things this release watches: that JSR has the
+tutors-create the build command names, with its validate command (`deploy`), and what main's validate reports on real
+course sources beside the published one, each difference counted under the rule that made it (`forecast`).
+`report.json`, a release candidate's Gate and every existing exit code are unchanged.
 
 ### 1.62.0 (minor; a claim production already ships never fails a forecast)
 

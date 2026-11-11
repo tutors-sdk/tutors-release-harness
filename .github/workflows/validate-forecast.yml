@@ -1,0 +1,108 @@
+# tutors validate, the release question (since 1.63.0, docs/validate-forecast.md). Since mono-repo #591 the standard
+# netlify.toml runs `tutors validate` before the generator, so validate decides whether a lecturer's course deploys.
+#
+#   deploy:   can the build command in main's template run at all? Every jsr: specifier it names must resolve on JSR,
+#             and the tutors-create it runs as validate must have that command. A course built from the template
+#             fails its deploy otherwise. Fails a scheduled or dispatched run; reported only on a pull request here.
+#   forecast: main's validate (from the mono-repo's source) beside the one lecturers run today (the template's
+#             tutors-create as JSR resolves it), over real course sources pinned by commit
+#             (fixtures/validate-corpus/courses.yaml), every difference explained by the rule that made it. Advisory.
+#
+# Daily, on demand, and on a pull request that changes the command or the corpus. The mono-repo's own CI holds the
+# same courses (tests/validate-corpus, Rules 0758-0760) and fails a rule change that moves a finding; this asks what
+# main, as it is, would do to lecturers.
+name: Validate forecast
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "The mono-repo ref whose validate to forecast"
+        required: false
+        default: "main"
+  schedule:
+    - cron: "37 5 * * *"
+  pull_request:
+    paths:
+      - "src/validate/**"
+      - "fixtures/validate-corpus/**"
+      - ".github/workflows/validate-forecast.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-forecast-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  forecast:
+    name: Can courses deploy, and what main's validate would change
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      REF: ${{ inputs.ref || 'main' }}
+      EVENT: ${{ github.event_name }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check out the monorepo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: tutors-sdk/tutors-mono-repo
+          ref: ${{ inputs.ref || 'main' }}
+          path: monorepo
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2
+        with:
+          deno-version-file: monorepo/.dvmrc
+      - run: pnpm install --frozen-lockfile
+      - name: Can a course built from main's template deploy?
+        id: deploy
+        run: |
+          mkdir -p "$RUNNER_TEMP/validate"
+          status=0
+          pnpm --silent harness validate deploy --candidate monorepo --out "$RUNNER_TEMP/validate/deploy.json" > "$RUNNER_TEMP/validate/deploy.txt" || status=$?
+          cat "$RUNNER_TEMP/validate/deploy.txt"
+          if [ "$status" = 1 ]; then
+            echo "::error title=Courses cannot deploy::A course built from $REF's netlify.toml fails its Netlify deploy: see the job summary."
+            # A pull request here changes the harness, not JSR: report it, and let the run judge the change.
+            if [ "$EVENT" = "pull_request" ]; then status=0; fi
+          fi
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+      - name: What main's validate would change
+        run: |
+          status=0
+          pnpm --silent harness validate forecast --candidate monorepo --dir "$RUNNER_TEMP/work" --out "$RUNNER_TEMP/validate/validate-forecast.json" > "$RUNNER_TEMP/validate/forecast.txt" || status=$?
+          cat "$RUNNER_TEMP/validate/forecast.txt"
+          exit "$status"
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### tutors validate: $REF"
+            echo "#### Can a course deploy?"
+            echo '```'
+            cat "$RUNNER_TEMP/validate/deploy.txt" 2>/dev/null || echo "no deploy check"
+            echo '```'
+            echo "#### Forecast"
+            echo '```'
+            cat "$RUNNER_TEMP/validate/forecast.txt" 2>/dev/null || echo "no forecast"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: validate-forecast
+          path: ${{ runner.temp }}/validate
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Fail when courses cannot deploy
+        if: steps.deploy.outputs.status != '0'
+        run: exit 1

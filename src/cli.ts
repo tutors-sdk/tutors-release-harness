@@ -25,6 +25,7 @@ import { productionResolve } from "./ci/live-production.ts";
 import { UsageError, changesCommand, confidenceCommand, doctorCommand, glanceCommand, guardCommand, localCommand, noiseCommand, overrideCommand, pruneCommand, recordAppliedOverride, releaseCommand, reportsCommand, scoreboardCommand, scorecardCommand, vulnDbCommand, whyCommand, a3Command, readinessCommand } from "./local/cli.ts";
 import { defaultNoise } from "./local/noise-store.ts";
 import { courseCommand, CourseUsageError } from "./course/command.ts";
+import { validateCommand } from "./validate/command.ts";
 import { harnessHome } from "./local/home.ts";
 
 const USAGE = `tutors-release-harness
@@ -309,6 +310,18 @@ const USAGE = `tutors-release-harness
       there (--dir) on --port, --port+1, ...; a corpus course that cannot be captured or does not load fails the command.
       Exit 0 done, 1 the course could not be read (--strict: or a file or linked course), a capture drifted or a check
       failed, 2 usage. Not stable.
+  harness validate deploy --candidate <mono-repo checkout> [--out f] [--json]
+  harness validate forecast --candidate <mono-repo checkout> [--corpus fixtures/validate-corpus/courses.yaml] [--production auto | jsr:...] [--dir work] [--out f] [--json] [--strict]
+      The mono-repo's tutors validate, which decides whether a lecturer's course deploys since the standard netlify.toml
+      runs it before the generator (since 1.63.0; docs/validate-forecast.md). deploy reads the build command in the
+      checkout's template (packages/jsr/course-rules/src/templates.ts) and asks jsr.io whether every jsr: specifier in it
+      resolves, and whether the tutors-create it runs as validate has that command; exit 1 when a course built from the
+      template would fail its deploy. forecast runs main's validate (from the checkout's source, under Deno) and the one
+      lecturers run today (--production auto: the template's tutors-create as JSR resolves it now) over real course
+      sources pinned by commit, and explains every difference by the rule that made it: which courses main would stop
+      deploying, and which of them production lets through. Writes validate-forecast.json (--out; default
+      HARNESS_HOME/validate/). Exit 0 done, 1 main's validate could not run (--strict: or main newly stops a course or
+      adds an error), 2 usage. Needs Deno and git. Not stable.
 `;
 
 function fail(message: string): never {
@@ -688,6 +701,8 @@ async function main(argv: string[]): Promise<number> {
       return readinessCommand(values);
     case "course":
       return courseCommand(positionals[0], values, { home: harnessHome(), harnessVersion: harnessInfo().version });
+    case "validate":
+      return validateCommand(positionals[0], values, { home: harnessHome() });
     case "journeys":
       for (const j of journeys) console.log(`${j.name.padEnd(34)} set=${j.set.padEnd(9)} ${j.anonymous ? "anonymous" : "signed-in"}${j.role ? ` as ${j.role}` : ""}${j.rules?.length ? `  Rule ${j.rules[0]}${j.rules.length > 1 ? `, exercises ${j.rules.slice(1).join(" ")}` : ""}` : ""}`);
       return 0;
