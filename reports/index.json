@@ -2,6 +2,81 @@
   "schemaVersion": 1,
   "runs": [
     {
+      "id": "2026-11-25T14-03-43Z-release",
+      "mode": "release",
+      "ranAt": "2026-11-25T14:03:43.674Z",
+      "verdict": "fail",
+      "reasons": [
+        "129 unclaimed diff(s)",
+        "8 claim(s) matched nothing and should be removed from the changelog"
+      ],
+      "sides": {
+        "a": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:17.1.0",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:17.1.0",
+          "live": "quay.io/tutors-sdk/tutors-live:17.1.0",
+          "time": "quay.io/tutors-sdk/tutors-time:17.1.0"
+        },
+        "b": {
+          "reader": "quay.io/tutors-sdk/tutors-reader:sha-2b96b69",
+          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:sha-2b96b69",
+          "live": "quay.io/tutors-sdk/tutors-live:sha-2b96b69",
+          "time": "quay.io/tutors-sdk/tutors-time:sha-2b96b69"
+        }
+      },
+      "harnessVersion": "1.63.0",
+      "runUrl": "https://github.com/tutors-sdk/tutors-release-harness/actions/runs/45625141140",
+      "score": {
+        "score": 22,
+        "grade": "D",
+        "normalness": "normal",
+        "manual": 5
+      },
+      "confidence": {
+        "gate": "PASS",
+        "rcs": null,
+        "band": null,
+        "note": "PASS, explained: all 129 differences no claim covers yet are pinned on the PR that made them, declared in its CHANGELOG line (#593: 48) or traced by its code (#605: 43, #593: 14, #589: 12, #571: 8, #609: 4). Nothing is owed on main; the release author pastes the claims when the release is cut. 8 claims (8 seen matching beside 17.0.0) matched nothing because 17.1.0 already ships what they claim: archive them from release/claims.yaml. Warning: 5 PRs' hints leave out what its code moved (#605 says (sbom); its code also moved network (40), metrics (2), logs (1); #593 says (dom, axe, network, headers, sbom); its code also moved focus (7), screenshot (7); #589 says (sbom); its code also moved network (12); #571 says (logs, network); its code also moved sbom (8); #609 has no hint; its code also moved network (4)); fix the title so the release's changelog says so.",
+        "glance": 0,
+        "scoredBy": "1.63.0"
+      },
+      "changes": {
+        "score": 0,
+        "prs": 29,
+        "risky": 20,
+        "floorBreached": false,
+        "range": "v17.1.0..2b96b69b6e99ffde04cf29a17b7e377e9d9c9510"
+      },
+      "delta": {
+        "baseline": "17.1.0",
+        "against": {
+          "id": "2026-11-20T12-53-19Z-release",
+          "ranAt": "2026-11-20T12:53:19.153Z",
+          "candidate": "sha-b1e19af",
+          "harnessVersion": "1.63.0"
+        },
+        "new": 0,
+        "gone": 0,
+        "byArtefact": {}
+      },
+      "files": [
+        "2026-11-25T14-03-43Z-release/migration/report.json",
+        "2026-11-25T14-03-43Z-release/migration/report.md",
+        "2026-11-25T14-03-43Z-release/migration/report.html",
+        "2026-11-25T14-03-43Z-release/upgrade/report.json",
+        "2026-11-25T14-03-43Z-release/upgrade/report.md",
+        "2026-11-25T14-03-43Z-release/upgrade/report.html",
+        "2026-11-25T14-03-43Z-release/report.json",
+        "2026-11-25T14-03-43Z-release/report.md",
+        "2026-11-25T14-03-43Z-release/report.html",
+        "2026-11-25T14-03-43Z-release/confidence.json",
+        "2026-11-25T14-03-43Z-release/changes.json",
+        "2026-11-25T14-03-43Z-release/quality.json",
+        "2026-11-25T14-03-43Z-release/scorecard.json",
+        "2026-11-25T14-03-43Z-release/scorecard.md"
+      ]
+    },
+    {
       "id": "2026-11-20T12-53-19Z-release",
       "mode": "release",
       "ranAt": "2026-11-20T12:53:19.153Z",
@@ -4884,80 +4959,6 @@
         "2026-10-09T09-26-46Z-release/quality.json",
         "2026-10-09T09-26-46Z-release/scorecard.json",
         "2026-10-09T09-26-46Z-release/scorecard.md"
-      ]
-    },
-    {
-      "id": "2026-10-08T09-19-47Z-release",
-      "mode": "release",
-      "ranAt": "2026-10-08T09:19:47.687Z",
-      "verdict": "fail",
-      "reasons": [
-        "216 unclaimed diff(s)"
-      ],
-      "sides": {
-        "a": {
-          "reader": "quay.io/tutors-sdk/tutors-reader:16.2.2",
-          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:16.2.2",
-          "live": "quay.io/tutors-sdk/tutors-live:16.2.2",
-          "time": "quay.io/tutors-sdk/tutors-time:16.2.2"
-        },
-        "b": {
-          "reader": "quay.io/tutors-sdk/tutors-reader:sha-7c5f248",
-          "catalogue": "quay.io/tutors-sdk/tutors-catalogue:sha-7c5f248",
-          "live": "quay.io/tutors-sdk/tutors-live:sha-7c5f248",
-          "time": "quay.io/tutors-sdk/tutors-time:sha-7c5f248"
-        }
-      },
-      "harnessVersion": "1.30.0",
-      "runUrl": "https://github.com/tutors-sdk/tutors-release-harness/actions/runs/37754519284",
-      "score": {
-        "score": 37,
-        "grade": "D",
-        "normalness": "normal",
-        "manual": 5
-      },
-      "confidence": {
-        "gate": "FAIL",
-        "rcs": null,
-        "band": null,
-        "note": "No RCS: Gate FAIL. The Gate wins: no number talks a FAIL back on. The dimensions are shown for the 5 Whys, not for a decision.",
-        "glance": 7,
-        "scoredBy": "1.30.0"
-      },
-      "changes": {
-        "score": 0,
-        "prs": 89,
-        "risky": 82,
-        "floorBreached": true,
-        "range": "v16.2.2..7c5f248269445fad730e65054c937bc5dcc7f675"
-      },
-      "delta": {
-        "baseline": "16.2.2",
-        "against": {
-          "id": "2026-10-07T08-59-41Z-release",
-          "ranAt": "2026-10-07T08:59:41.401Z",
-          "candidate": "sha-a40307a",
-          "harnessVersion": "1.28.4"
-        },
-        "new": 0,
-        "gone": 0,
-        "byArtefact": {}
-      },
-      "files": [
-        "2026-10-08T09-19-47Z-release/migration/report.json",
-        "2026-10-08T09-19-47Z-release/migration/report.md",
-        "2026-10-08T09-19-47Z-release/migration/report.html",
-        "2026-10-08T09-19-47Z-release/upgrade/report.json",
-        "2026-10-08T09-19-47Z-release/upgrade/report.md",
-        "2026-10-08T09-19-47Z-release/upgrade/report.html",
-        "2026-10-08T09-19-47Z-release/report.json",
-        "2026-10-08T09-19-47Z-release/report.md",
-        "2026-10-08T09-19-47Z-release/report.html",
-        "2026-10-08T09-19-47Z-release/confidence.json",
-        "2026-10-08T09-19-47Z-release/changes.json",
-        "2026-10-08T09-19-47Z-release/quality.json",
-        "2026-10-08T09-19-47Z-release/scorecard.json",
-        "2026-10-08T09-19-47Z-release/scorecard.md"
       ]
     }
   ]
